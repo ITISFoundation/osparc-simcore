@@ -2,7 +2,7 @@
 
 Used for static content serving.
 
-### Nex steps
+### Furtherr steps
 
 In the future will fully serve all static content. Currently the `webserver` is still serving the following routes:
 
