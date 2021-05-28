@@ -34,10 +34,12 @@ def run_sequentially_in_context(target_args: List[str] = None):
 
         functions = [
             func(1, "something", 3),
-            func(1, "else", 3),
+            func(1, "argument.attribute", 3),
             func(1, "here", 3),
         ]
         await asyncio.gather(*functions)
+
+    note the special "argument.attribute", which will use the attribute of argument to create the context.
 
     The following calls will run in parallel, because they have different contexts:
 
