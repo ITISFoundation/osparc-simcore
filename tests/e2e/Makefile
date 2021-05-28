@@ -6,7 +6,7 @@ SIMCORE_DOT_ENV = $(abspath $(CURDIR)/../../.env)
 # UTILS ############
 define _build_simcore_images
 # build simcore images using the selected flavor
-$(if $(findstring -ci,$@),$(MAKE_C) $(REPO_BASE_DIR) pull-version tag-local ||,) $(MAKE_C) $(REPO_BASE_DIR) build$(if $(findstring -dev,$@),-devel,)-x
+$(if $(findstring -ci,$@),$(MAKE_C) $(REPO_BASE_DIR) pull-version tag-local ||,) $(MAKE_C) $(REPO_BASE_DIR) build$(if $(findstring -dev,$@),-devel,)
 $(MAKE_C) $(REPO_BASE_DIR) info-images
 endef
 
