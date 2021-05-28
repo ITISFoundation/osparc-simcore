@@ -32,7 +32,7 @@ class CommonConfig:
 
 
 class ApiServiceSettings(BaseSettings):
-    """ Settings needed to connect a osparc-simcore service API"""
+    """Settings needed to connect a osparc-simcore service API"""
 
     enabled: bool = Field(True, description="Enables/Disables connection with service")
 
@@ -74,7 +74,7 @@ class PGSettings(PostgresSettings):
 
 
 class RegistrySettings(BaseSettings):
-    """ Settings for docker_registry module """
+    """Settings for docker_registry module"""
 
     enabled: bool = Field(True, description="Enables/Disables connection with service")
 
@@ -112,6 +112,17 @@ class RegistrySettings(BaseSettings):
         env_prefix = "REGISTRY_"
 
 
+class CelerySchedulerSettings(BaseSettings):
+    enabled: bool = Field(
+        True,
+        description="Enables/Disables the scheduler",
+        env="DIRECTOR_V2_SCHEDULER_ENABLED",
+    )
+
+    class Config(CommonConfig):
+        pass
+
+
 class AppSettings(BaseSettings):
     @classmethod
     def create_from_env(cls, **settings_kwargs) -> "AppSettings":
@@ -122,6 +133,7 @@ class AppSettings(BaseSettings):
             celery=CelerySettings.create_from_env(),
             dynamic_services=DynamicServicesSettings(),
             client_request=ClientRequestSettings(),
+            scheduler=CelerySchedulerSettings(),
             **settings_kwargs,
         )
 
@@ -219,6 +231,8 @@ class AppSettings(BaseSettings):
     remote_debug_port: PortInt = 3000
 
     client_request: ClientRequestSettings
+
+    scheduler: CelerySchedulerSettings
 
     class Config(CommonConfig):
         env_prefix = ""

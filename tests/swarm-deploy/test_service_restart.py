@@ -103,8 +103,6 @@ def test_graceful_restart_services(
         The test sends a kill signal and expects the app process inside to
         receive it and shut-down gracefuly returning statuscode 0.
 
-        NOTE: needs to run AFTER test_core_service_running
-
 
     Did this case FAILED? These are the typical reasons:
 

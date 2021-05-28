@@ -31,7 +31,9 @@ def get_pipeline_state_from_task_states(
                     the_state = RunningState.NOT_STARTED
             return the_state
 
-        if set_states.issubset({RunningState.SUCCESS, RunningState.PENDING}):
+        if set_states.issubset(
+            {RunningState.SUCCESS, RunningState.PENDING}
+        ) or set_states.issubset({RunningState.SUCCESS, RunningState.PUBLISHED}):
             # this is a started pipeline
             return RunningState.STARTED
 
