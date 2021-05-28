@@ -11,7 +11,7 @@ from aioresponses.core import aioresponses
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir):
+def app_cfg(default_app_cfg, aiohttp_unused_port):
     """App's configuration used for every test in this module
 
     NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
@@ -19,7 +19,6 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir):
     cfg = deepcopy(default_app_cfg)
 
     cfg["main"]["port"] = aiohttp_unused_port()
-    cfg["main"]["client_outdir"] = str(qx_client_outdir)
     cfg["main"]["studies_access_enabled"] = True
 
     exclude = {

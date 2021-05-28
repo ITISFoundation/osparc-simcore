@@ -45,8 +45,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
 
-# TODO: rename with common prefix!
-ENV SIMCORE_WEB_OUTDIR /home/scu/services/web/client
 # TODO: eliminate this variable!
 ENV IS_CONTAINER_CONTEXT Yes
 
@@ -59,9 +57,6 @@ EXPOSE 8080
 #
 # + /build             WORKDIR
 #    + packages
-#    + services/web/client         $SIMCORE_WEB_OUTDIR
-#       - index.html
-#        ...
 #    + services/web/server
 #       + src
 #       + tests
@@ -150,10 +145,6 @@ RUN apt-get update \
 COPY --chown=scu:scu services/web/server/docker services/web/server/docker
 RUN chmod +x services/web/server/docker/*.sh
 
-# front-end client last (image name is the path to the Dockerfile)
-COPY --from=client/tools/qooxdoo-kit/builder:latest --chown=scu:scu \
-      /project/build-output "${SIMCORE_WEB_OUTDIR}"
-
 HEALTHCHECK --interval=30s \
       --timeout=120s \
       --start-period=30s \
@@ -176,8 +167,6 @@ CMD ["services/web/server/docker/boot.sh"]
 FROM build as development
 
 ENV SC_BUILD_TARGET development
-
-ENV SIMCORE_WEB_OUTDIR /devel/services/web/client
 
 WORKDIR /devel
 

@@ -115,6 +115,34 @@ services:
       - interactive_services_subnet
       - computational_services_subnet
 
+  static-webserver:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    environment:
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8000
+      - SERVER_LOG_LEVEL=error
+      - SERVER_ROOT=/static-content
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+      labels:
+        - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_gzip.compress=true
+        - traefik.enable=true
+        - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.server.port=8000
+        - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.path=/
+        - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.interval=2000ms
+        - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.timeout=1000ms
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_static_webserver_retry.retry.attempts=2
+        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.rule=hostregexp(`{host:.+}`) && (PathPrefix(`/osparc`) || PathPrefix(`/s4l`) || PathPrefix(`/tis`) || PathPrefix(`/transpiled`) || PathPrefix(`/resource`))
+        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.entrypoints=http
+        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.priority=2
+        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME}_static_webserver_retry
+    networks:
+      - default
+
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -149,7 +177,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.timeout=1000ms
         - traefik.http.middlewares.${SWARM_STACK_NAME}_webserver_retry.retry.attempts=2
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=hostregexp(`{host:.+}`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=hostregexp(`{host:.+}`) && (PathPrefix(`/`) || PathPrefix(`/v0`) || PathPrefix(`/socket.io`) || PathPrefix(`/static-frontend-data.json`))
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.priority=1
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@docker, ${SWARM_STACK_NAME}_webserver_retry

@@ -1468,7 +1468,7 @@
             "format": "uri"
           }
         },
-        "description": "A released solver with a specific version ",
+        "description": "A released solver with a specific version",
         "example": {
           "id": "simcore/services/comp/isolve",
           "version": "2.1.1",

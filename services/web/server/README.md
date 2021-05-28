@@ -46,7 +46,6 @@ diagnostics. This is an example of how the ``app`` section of the config file mi
 # reduced-config.yml
 version: '1.0'
 app:
-  client_outdir: ~/devp/osparc-simcore/services/web/client/source-output
   host: 127.0.0.1
   log_level: DEBUG
   port: 8080

@@ -260,7 +260,10 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         )
     except KeyError as exc:
         log.exception(
-            "Cannot redirect to website because route was not registered. Probably qx output was not ready and it was disabled (see statics.py)"
+            (
+                "Cannot redirect to website because route was not registered. "
+                "Probably the static-webserver is disabled (see statics.py)"
+            )
         )
         raise web.HTTPInternalServerError(
             reason=compose_error_msg("Unable to serve front-end.")

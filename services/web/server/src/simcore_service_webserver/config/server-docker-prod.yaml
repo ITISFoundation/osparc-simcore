@@ -8,7 +8,6 @@ version: "1.0"
 main:
   host: 0.0.0.0
   port: 8080
-  client_outdir: ${SIMCORE_WEB_OUTDIR}
   log_level: ${WEBSERVER_LOGLEVEL}
   testing: False
   studies_access_enabled: ${WEBSERVER_STUDIES_ACCESS_ENABLED}

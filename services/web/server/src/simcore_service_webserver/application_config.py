@@ -58,7 +58,6 @@ def create_schema() -> T.Dict:
                 {
                     "host": T.IP,
                     "port": T.ToInt(),
-                    "client_outdir": T.String(),
                     "log_level": T.Enum(*logging._nameToLevel.keys()),
                     "testing": T.Bool(),
                     T.Key("studies_access_enabled", default=False): T.Or(
@@ -118,7 +117,6 @@ app_schema = create_schema()
 class MainSettings(BaseSettings):
     host: str = "0.0.0.0"  # nosec
     port: PortInt = 8080
-    client_outdir: Path = Field(..., env="SIMCORE_WEB_OUTDIR")
     log_level: LogLevel = Field(LogLevel.INFO, env="WEBSERVER_LOGLEVEL")
     testing: bool = False
     studies_access_enabled: bool = False

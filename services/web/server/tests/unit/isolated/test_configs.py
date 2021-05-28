@@ -40,7 +40,6 @@ def service_webserver_environ(
     """
     host_environ = env_devel_dict.copy()
     image_environ = {
-        "SIMCORE_WEB_OUTDIR": "home/scu/services/web/client",  # defined in Dockerfile
         "OSPARC_SIMCORE_REPO_ROOTDIR": str(
             osparc_simcore_root_dir
         ),  # defined if pip install --edit (but not in travis!)

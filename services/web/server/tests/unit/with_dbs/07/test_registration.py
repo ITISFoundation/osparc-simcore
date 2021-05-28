@@ -17,7 +17,12 @@ EMAIL, PASSWORD = "tester@test.com", "password"
 async def test_regitration_availibility(client):
     url = client.app.router["auth_register"].url_for()
     r = await client.post(
-        url, json={"email": EMAIL, "password": PASSWORD, "confirm": PASSWORD,}
+        url,
+        json={
+            "email": EMAIL,
+            "password": PASSWORD,
+            "confirm": PASSWORD,
+        },
     )
 
     await assert_status(r, web.HTTPOk)
@@ -108,7 +113,10 @@ async def test_registration_with_confirmation(client, capsys, monkeypatch):
     resp = await client.get(link)
     text = await resp.text()
 
-    assert "welcome to fake web front-end" in text
+    assert (
+        "This is a result of disable_static_webserver fixture for product OSPARC"
+        in text
+    )
     assert resp.status == 200
 
     user = await db.get_user({"email": EMAIL})
@@ -126,7 +134,7 @@ async def test_registration_with_confirmation(client, capsys, monkeypatch):
     ],
 )
 async def test_registration_with_invitation(
-    client, is_invitation_required, has_valid_invitation, expected_response,
+    client, is_invitation_required, has_valid_invitation, expected_response
 ):
     from servicelib.application_keys import APP_CONFIG_KEY
     from simcore_service_webserver.login.config import CONFIG_SECTION_NAME
