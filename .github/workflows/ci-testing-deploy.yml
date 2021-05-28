@@ -1548,6 +1548,13 @@ jobs:
           driver: docker
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: cache docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1605,10 +1612,16 @@ jobs:
           driver: docker
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: cache docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - uses: actions/cache@v2
@@ -1664,9 +1677,16 @@ jobs:
       - name: setup docker-compose
         if: github.event_name == 'push'
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: cache docker layers
+        if: github.event_name == 'push'
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: show system environs
         if: github.event_name == 'push'
-        run: ./ci/helpers/show_system_versions.bash
       - name: build images
         if: github.event_name == 'push'
         run: ./ci/build/test-images.bash build_images
@@ -1709,10 +1729,16 @@ jobs:
           driver: docker
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: cache docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - uses: actions/cache@v2
@@ -1782,10 +1808,16 @@ jobs:
           driver: docker
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: cache docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - uses: actions/cache@v2
@@ -1855,10 +1887,16 @@ jobs:
           driver: docker
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: cache docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - uses: actions/cache@v2
@@ -1928,10 +1966,16 @@ jobs:
           driver: docker
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: cache docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - uses: actions/cache@v2
@@ -2001,10 +2045,16 @@ jobs:
           driver: docker
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: cache docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - uses: actions/cache@v2
@@ -2074,6 +2124,13 @@ jobs:
           driver: docker
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: cache docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: setup python environment
         uses: actions/setup-python@v2
         with:

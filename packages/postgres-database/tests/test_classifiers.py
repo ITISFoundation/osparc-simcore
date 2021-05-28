@@ -21,7 +21,12 @@ from sqlalchemy import literal_column
 @pytest.fixture
 def web_client_resource_folder(osparc_simcore_root_dir: Path) -> Path:
     wcrf_path = (
-        osparc_simcore_root_dir / "services" / "web" / "client" / "source" / "resource"
+        osparc_simcore_root_dir
+        / "services"
+        / "static-webserver"
+        / "client"
+        / "source"
+        / "resource"
     )
     assert wcrf_path.exists()
     return wcrf_path

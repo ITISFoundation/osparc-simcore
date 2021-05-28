@@ -105,25 +105,19 @@ SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),N
 
 define _docker_compose_build
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,production);\
-pushd services && docker buildx bake --file docker-compose-build.yml $(if $(target),$(target),) && popd;
+pushd services; \
+docker buildx bake \
+	--set *.cache-from="type=local,src=/tmp/.buildx-cache" \
+	--set *.cache-to="type=local,dest=/tmp/.buildx-cache" \
+	--set *.output="type=docker,push=false" \
+	--file docker-compose-build.yml $(if $(target),$(target),); \
+popd;
 endef
 
 rebuild: build-nc # alias
 build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
-ifeq ($(target),)
-	# Compiling front-end
-	$(MAKE_C) services/static-webserver/client compile
-
-	# Building services
+	# Building service(s) $(target)
 	$(_docker_compose_build)
-else
-ifeq ($(findstring static-webserver,$(target)),static-webserver)
-	# Compiling front-end
-	$(MAKE_C) services/static-webserver/client clean compile
-endif
-	# Building service $(target)
-	$(_docker_compose_build)
-endif
 
 
 build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
@@ -131,10 +125,10 @@ ifeq ($(target),)
 	# Building services
 	$(_docker_compose_build)
 else
-ifeq ($(findstring static-webserver,$(target)),static-webserver)
-	# Compiling front-end
-	$(MAKE_C) services/static-webserver/client touch compile-dev
-endif
+# ifeq ($(findstring static-webserver,$(target)),static-webserver)
+# 	# Compiling front-end
+# 	$(MAKE_C) services/static-webserver/client touch compile-dev
+# endif
 	# Building service $(target)
 	@$(_docker_compose_build)
 endif

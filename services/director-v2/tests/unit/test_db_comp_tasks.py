@@ -17,7 +17,9 @@ from simcore_service_director_v2.modules.db.repositories.comp_tasks import (
 
 @pytest.fixture(scope="session")
 def frontend_client_dir(osparc_simcore_root_dir: Path) -> Path:
-    frontend_client_dir = osparc_simcore_root_dir / "services" / "web" / "client"
+    frontend_client_dir = (
+        osparc_simcore_root_dir / "services" / "static-webserver" / "client"
+    )
     assert frontend_client_dir.exists()
     return frontend_client_dir
 

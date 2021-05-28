@@ -126,6 +126,11 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:staging-github-latest
         - ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
+      args:
+        - QOOXDOO_KIT_TAG=${QOOXDOO_KIT_TAG:-latest}
+        - BUILD_DATE=${BUILD_DATE}
+        - VCS_URL=${VCS_URL}
+        - VCS_REF=${VCS_REF}
       labels:
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
