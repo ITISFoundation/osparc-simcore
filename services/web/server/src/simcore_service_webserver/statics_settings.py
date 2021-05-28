@@ -59,7 +59,7 @@ class StaticWebserverModuleSettings(BaseSettings):
     )
 
     static_web_server_url: AnyHttpUrl = Field(
-        "http://static-webserver",
+        "http://static-webserver:8080",
         description="address where the static content is being served",
     )
 
