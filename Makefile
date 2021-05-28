@@ -263,18 +263,12 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 
 ## DOCKER TAGS  -------------------------------
 
-.PHONY: tag-local tag-cache tag-version tag-latest
+.PHONY: tag-local tag-version tag-latest
 
 tag-local: ## Tags version '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' images as 'local/{service}:production'
 	# Tagging all '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' as 'local/{service}:production'
 	@$(foreach service, $(SERVICES_LIST)\
 		,docker tag ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG} local/$(service):production; \
-	)
-
-tag-cache: ## Tags 'local/{service}:cache' images as '${DOCKER_REGISTRY}/{service}:cache'
-	# Tagging all 'local/{service}:cache' as '${DOCKER_REGISTRY}/{service}:cache'
-	@$(foreach service, $(SERVICES_LIST)\
-		,docker tag local/$(service):cache ${DOCKER_REGISTRY}/$(service):cache; \
 	)
 
 tag-version: ## Tags 'local/{service}:production' images as versioned '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
@@ -301,11 +295,7 @@ pull-version: .env ## pulls images from DOCKER_REGISTRY tagged as DOCKER_IMAGE_T
 	@docker-compose --file services/docker-compose.yml pull
 
 
-.PHONY: push-cache push-version push-latest
-
-push-cache: tag-cache ## Pushes service images tagged as 'cache' into current registry
-	@export DOCKER_IMAGE_TAG=cache; \
-	$(MAKE) push-version
+.PHONY: push-version push-latest
 
 push-latest: tag-latest
 	@export DOCKER_IMAGE_TAG=latest; \
