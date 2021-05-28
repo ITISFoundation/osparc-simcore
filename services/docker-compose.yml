@@ -118,7 +118,7 @@ services:
     init: true
     environment:
       - SERVER_HOST=0.0.0.0
-      - SERVER_PORT=80
+      - SERVER_PORT=8000
       - SERVER_LOG_LEVEL=error
       - SERVER_ROOT=/static-content
     deploy:
@@ -129,7 +129,7 @@ services:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
         - traefik.http.middlewares.${SWARM_STACK_NAME}_gzip.compress=true
         - traefik.enable=true
-        - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.server.port=80
+        - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.server.port=8000
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.path=/
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.timeout=1000ms
