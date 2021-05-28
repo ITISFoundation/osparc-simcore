@@ -1,4 +1,4 @@
-"""Only used to initialize uvcorn: ASGI application to run in the format 'module:attribute'
+"""Main application to be deployed in for example uvcorn.
 """
 from fastapi import FastAPI
 from simcore_service_director_v2.core.application import init_app
