@@ -564,7 +564,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           get: {
             method: "GET",
-            url: "/resource/statics.json",
+            url: "/static-frontend-data.json",
             isJsonFile: true
           }
         }

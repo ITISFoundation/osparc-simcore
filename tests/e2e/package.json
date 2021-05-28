@@ -15,7 +15,7 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "jest --runInBand --colors",
+    "test": "jest --debug --runInBand --colors",
     "demo": "node demo/puppeteerDemo.js",
     "tutorials": "node tutorials/sleepers.js"
   },

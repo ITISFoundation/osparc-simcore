@@ -1,4 +1,3 @@
-# pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
@@ -17,7 +16,7 @@ def users_api(api_client):
 @pytest.fixture
 def expected_profile(registered_user):
     email = registered_user["email"]
-    name, surname = email.split("@")[0].split(".")
+    name, _ = email.split("@")[0].split(".")
 
     return {
         "first_name": name.capitalize(),
