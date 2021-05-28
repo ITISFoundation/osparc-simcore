@@ -12,11 +12,11 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 LABEL maintainer=pcrespov
 
 RUN set -eux; \
-	apt-get update; \
-	apt-get install -y gosu; \
-	rm -rf /var/lib/apt/lists/*; \
-# verify that the binary works
-	gosu nobody true
+    apt-get update; \
+    apt-get install -y gosu; \
+    rm -rf /var/lib/apt/lists/*; \
+    # verify that the binary works
+    gosu nobody true
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
@@ -57,10 +57,10 @@ FROM base as build
 ENV SC_BUILD_TARGET=build
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends \
     build-essential \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
@@ -79,15 +79,15 @@ COPY  --chown=scu:scu services/catalog/requirements/_base.txt .
 RUN pip --no-cache-dir install -r _base.txt
 
 
-# --------------------------Cache stage -------------------
-# CI in master buils & pushes this target to speed-up image build
+# --------------------------Prod-depends-only stage -------------------
+# This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
 #
 #  + /build
 #    + services/catalog [scu:scu] WORKDIR
 #
-FROM build as cache
+FROM build as prod-only-deps
 
-ENV SC_BUILD_TARGET cache
+ENV SC_BUILD_TARGET prod-only-deps
 
 COPY --chown=scu:scu packages /build/packages
 COPY --chown=scu:scu services/catalog /build/services/catalog
@@ -114,8 +114,8 @@ ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
-# Starting from clean base image, copies pre-installed virtualenv from cache
-COPY --chown=scu:scu --from=cache  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+# Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
+COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Copies booting scripts
 COPY --chown=scu:scu services/catalog/docker services/catalog/docker

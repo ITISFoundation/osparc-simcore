@@ -11,31 +11,31 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 LABEL maintainer="Andrei Neagu <neagu@itis.swiss>"
 
 RUN set -eux; \
-	apt-get update; \
-	apt-get install -y gosu; \
-	rm -rf /var/lib/apt/lists/*; \
-# verify that the binary works
-	gosu nobody true
+    apt-get update; \
+    apt-get install -y gosu; \
+    rm -rf /var/lib/apt/lists/*; \
+    # verify that the binary works
+    gosu nobody true
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
-      SC_USER_NAME=scu \
-      SC_BUILD_TARGET=base \
-      SC_BOOT_MODE=default
+    SC_USER_NAME=scu \
+    SC_BUILD_TARGET=base \
+    SC_BOOT_MODE=default
 
 RUN adduser \
-      --uid ${SC_USER_ID} \
-      --disabled-password \
-      --gecos "" \
-      --shell /bin/sh \
-      --home /home/${SC_USER_NAME} \
-      ${SC_USER_NAME}
+    --uid ${SC_USER_ID} \
+    --disabled-password \
+    --gecos "" \
+    --shell /bin/sh \
+    --home /home/${SC_USER_NAME} \
+    ${SC_USER_NAME}
 
 # Sets utf-8 encoding for Python et al
 ENV LANG=C.UTF-8
 # Turns off writing .pyc files; superfluous on an ephemeral container.
 ENV PYTHONDONTWRITEBYTECODE=1 \
-      VIRTUAL_ENV=/home/scu/.venv
+    VIRTUAL_ENV=/home/scu/.venv
 # Ensures that the python and pip executables used
 # in the image will be those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
@@ -70,15 +70,15 @@ WORKDIR /build
 COPY --chown=scu:scu services/dynamic-sidecar/requirements/_base.txt .
 RUN pip --no-cache-dir install -r _base.txt
 
-# --------------------------Cache stage -------------------
-# CI in master buils & pushes this target to speed-up image build
+# --------------------------Prod-depends-only stage -------------------
+# This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
 #
 #  + /build
 #    + services/dynamic-sidecar [scu:scu] WORKDIR
 #
-FROM build as cache
+FROM build as prod-only-deps
 
-ENV SC_BUILD_TARGET cache
+ENV SC_BUILD_TARGET prod-only-deps
 
 COPY --chown=scu:scu packages /build/packages
 COPY --chown=scu:scu services/dynamic-sidecar /build/services/dynamic-sidecar
@@ -105,8 +105,8 @@ ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
-# Starting from clean base image, copies pre-installed virtualenv from cache
-COPY --chown=scu:scu --from=cache  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+# Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
+COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Copies booting scripts
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
