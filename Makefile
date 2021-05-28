@@ -308,9 +308,7 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 # TODO: cannot push modified/untracked
 # TODO: cannot push disceted
 #
-.PHONY: pull-cache pull-version
-pull-cache: .env
-	@export DOCKER_IMAGE_TAG=cache; $(MAKE) pull-version
+.PHONY: pull-version
 
 pull-version: .env ## pulls images from DOCKER_REGISTRY tagged as DOCKER_IMAGE_TAG
 	# Pulling images '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'

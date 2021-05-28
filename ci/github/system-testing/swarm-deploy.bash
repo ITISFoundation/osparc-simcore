@@ -6,9 +6,9 @@
 #
 
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
-set -o errexit   # abort on nonzero exitstatus
-set -o nounset   # abort on unbound variable
-set -o pipefail  # don't hide errors within pipes
+set -o errexit  # abort on nonzero exitstatus
+set -o nounset  # abort on unbound variable
+set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 # in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
@@ -20,7 +20,7 @@ install() {
   pushd tests/swarm-deploy
   pip3 install -r requirements/ci.txt
   popd
-  make pull-version || ( (make pull-cache || true) && make build-x tag-version)
+  make pull-version || (make build-x tag-version)
   make .env
   pip list -v
   make info-images
