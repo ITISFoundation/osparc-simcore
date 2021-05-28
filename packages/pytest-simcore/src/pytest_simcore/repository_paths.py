@@ -80,7 +80,7 @@ def services_docker_compose_file(services_dir):
 
 @pytest.fixture(scope="session")
 def web_client_dir(services_dir: Path) -> Path:
-    wbc_dir = services_dir / "web/client"
+    wbc_dir = services_dir / "static-webserver/client"
     assert wbc_dir.exists()
     return wbc_dir
 

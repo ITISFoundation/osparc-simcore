@@ -7,7 +7,6 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 #     docker run web:ci
 #
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
-#  REQUIRED: client_qx:build image ready
 
 
 LABEL maintainer=pcrespov
@@ -171,10 +170,6 @@ ENV SC_BUILD_TARGET development
 WORKDIR /devel
 
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
-
-# NOTE: declaring VOLUMEs here makes troubles mounting
-#       the client's output folder to /devel/services/web/client.
-#       The latter ls no files
 
 ENTRYPOINT [ "/bin/sh", "services/web/server/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/web/server/docker/boot.sh"]

@@ -1,7 +1,7 @@
 #
 # Compiles client's source code within an image based in qooxdoo-kit
 #
-# Note: context at osparc-simcore/services/web/client expected
+# Note: context at osparc-simcore/services/static-webserver/client expected
 #
 ARG tag
 FROM itisfoundation/qooxdoo-kit:${tag} as touch
@@ -21,8 +21,8 @@ COPY --chown=node:node Manifest.json Manifest.json
 # Install packages (warning: cache might keep these library out-of-date!)
 # TODO: should we freeze packages??
 RUN qx package update &&\
-    qx package install &&\
-    ls -la qx_packages
+  qx package install &&\
+  ls -la qx_packages
 # -> /project/qx_packages
 
 

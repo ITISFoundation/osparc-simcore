@@ -1,42 +1,38 @@
 #!/bin/bash
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
-set -o errexit   # abort on nonzero exitstatus
-set -o nounset   # abort on unbound variable
-set -o pipefail  # don't hide errors within pipes
+set -o errexit  # abort on nonzero exitstatus
+set -o nounset  # abort on unbound variable
+set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 FOLDER_CHECKS=(js eslintrc json .travis.yml)
 
 before_install() {
-    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
-    then
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}"; then
         bash ci/helpers/show_system_versions.bash
     fi
 }
 
 install() {
-    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
-    then
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}"; then
         npm install
-        make -C services/web/client clean
+        make -C services/static-webserver/client clean
     fi
 }
 
 before_script() {
-    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
-    then
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}"; then
         npx eslint --version
-        make -C services/web/client info
+        make -C services/static-webserver/client info
     fi
 }
 
 script() {
-    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
-    then
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}"; then
         echo "# Running Linter"
         npm run linter
 
-        pushd services/web/client
+        pushd services/static-webserver/client
 
         echo "# Building build version"
         make compile
@@ -50,7 +46,7 @@ script() {
         #TODO: move this inside qx-kit container
         echo "# Waiting for build to complete"
         while ! nc -z localhost 8080; do
-          sleep 1 # wait for 10 second before check again
+            sleep 1 # wait for 10 second before check again
         done
 
         # FIXME: reports ERROR ReferenceError: URL is not defined. See https://github.com/ITISFoundation/osparc-simcore/issues/1071
@@ -72,31 +68,30 @@ after_success() {
     # if we have old cruft hanging around, we should remove all this will
     # only trigger once
     if [ -d itisfoundation.github.io/transpiled ]; then
-      rm -rf itisfoundation.github.io/*
+        rm -rf itisfoundation.github.io/*
     fi
 
     # add the default homepage
     cp -rp docs/webdocroot/* itisfoundation.github.io
 
     # add our build
-    if [ -d services/web/client/build-output ]; then
-      rm -rf itisfoundation.github.io/frontend
-      cp -rp services/web/client/build-output itisfoundation.github.io/frontend
+    if [ -d services/static-webserver/client/build-output ]; then
+        rm -rf itisfoundation.github.io/frontend
+        cp -rp services/static-webserver/client/build-output itisfoundation.github.io/frontend
     fi
 }
 
 after_failure() {
-    make -C services/web/client clean
+    make -C services/static-webserver/client clean
     echo "failure... you can always write something more interesting here..."
 }
 
 # Check if the function exists (bash specific)
-if declare -f "$1" > /dev/null
-then
-  # call arguments verbatim
-  "$@"
+if declare -f "$1" >/dev/null; then
+    # call arguments verbatim
+    "$@"
 else
-  # Show a helpful error
-  echo "'$1' is not a known function name" >&2
-  exit 1
+    # Show a helpful error
+    echo "'$1' is not a known function name" >&2
+    exit 1
 fi

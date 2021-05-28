@@ -41,12 +41,12 @@ SERVICES_LIST := \
 	storage \
 	webserver
 
-CLIENT_WEB_OUTPUT       := $(CURDIR)/services/web/client/source-output
+CLIENT_WEB_OUTPUT       := $(CURDIR)/services/static-webserver/client/source-output
 
 # version control
 export VCS_URL          := $(shell git config --get remote.origin.url)
 export VCS_REF          := $(shell git rev-parse --short HEAD)
-export VCS_REF_CLIENT   := $(shell git log --pretty=tformat:"%h" -n1 services/web/client)
+export VCS_REF_CLIENT   := $(shell git log --pretty=tformat:"%h" -n1 services/static-webserver/client)
 export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','clean')
 export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
@@ -112,14 +112,14 @@ rebuild: build-nc # alias
 build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
 ifeq ($(target),)
 	# Compiling front-end
-	$(MAKE_C) services/web/client compile
+	$(MAKE_C) services/static-webserver/client compile
 
 	# Building services
 	$(_docker_compose_build)
 else
 ifeq ($(findstring static-webserver,$(target)),static-webserver)
 	# Compiling front-end
-	$(MAKE_C) services/web/client clean compile
+	$(MAKE_C) services/static-webserver/client clean compile
 endif
 	# Building service $(target)
 	$(_docker_compose_build)
@@ -133,7 +133,7 @@ ifeq ($(target),)
 else
 ifeq ($(findstring static-webserver,$(target)),static-webserver)
 	# Compiling front-end
-	$(MAKE_C) services/web/client touch compile-dev
+	$(MAKE_C) services/static-webserver/client touch compile-dev
 endif
 	# Building service $(target)
 	@$(_docker_compose_build)
@@ -213,12 +213,12 @@ show-endpoints:
 
 up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Start compile+watch front-end container [front-end]
-	@$(MAKE_C) services/web/client down compile-dev flags=--watch
+	@$(MAKE_C) services/static-webserver/client down compile-dev flags=--watch
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
 	@$(MAKE) .deploy-ops
 	@$(_show_endpoints)
-	@$(MAKE_C) services/web/client follow-dev-logs
+	@$(MAKE_C) services/static-webserver/client follow-dev-logs
 
 
 up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable or target=<service-name> to deploy a single service)
@@ -251,7 +251,7 @@ down: ## Stops and removes stack
 		$(shell docker stack ls --format={{.Name}} | tac),\
 		docker stack rm $(stack);)
 	# Removing client containers (if any)
-	-@$(MAKE_C) services/web/client down
+	-@$(MAKE_C) services/static-webserver/client down
 	# Removing generated docker compose configurations, i.e. .stack-*
 	-@rm $(wildcard .stack-*)
 	# Removing local registry if any
@@ -336,7 +336,7 @@ devenv: .venv ## create a python virtual environment with dev tools (e.g. linter
 
 devenv-all: devenv ## sets up extra development tools (everything else besides python)
 	# Upgrading client compiler
-	@$(MAKE_C) services/web/client upgrade
+	@$(MAKE_C) services/static-webserver/client upgrade
 	# Building tools
 	@$(MAKE_C) scripts/json-schema-to-openapi-schema
 
@@ -509,7 +509,7 @@ ifeq ($(target),)
 			$(call show-meta,$(service))\
 		)
 	## Client images:
-	@$(MAKE_C) services/web/client info
+	@$(MAKE_C) services/static-webserver/client info
 else
 	## $(target) images:
 	@$(call show-meta,$(target))
@@ -554,8 +554,8 @@ clean-hooks: ## Uninstalls git pre-commit hooks
 clean: .check-clean ## cleans all unversioned files in project and temp files create by this makefile
 	# Cleaning unversioned
 	@git clean $(_git_clean_args)
-	# Cleaning web/client
-	@$(MAKE_C) services/web/client clean-files
+	# Cleaning static-webserver/client
+	@$(MAKE_C) services/static-webserver/client clean-files
 
 clean-more: ## cleans containers and unused volumes
 	# stops and deletes running containers
@@ -568,7 +568,7 @@ clean-images: ## removes all created images
 	-$(foreach service,$(SERVICES_LIST)\
 		,docker image rm --force $(shell docker images */$(service):* -q);)
 	# Cleaning webclient
-	@$(MAKE_C) services/web/client clean-images
+	@$(MAKE_C) services/static-webserver/client clean-images
 	# Cleaning postgres maintenance
 	@$(MAKE_C) packages/postgres-database/docker clean
 

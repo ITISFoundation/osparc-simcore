@@ -55,7 +55,7 @@
   <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="61" x="320" y="66">web/server</text>
   <polygon fill="rgb(255,255,255)" points="130,54 130,57 140,57 140,60 130,60 130,63 138,72 134,72 128,66 122,72 118,72 126,63 126,60 116,60 116,57 126,57 126,54" stroke="rgb(0,0,0)" />
   <ellipse cx="128" cy="51" fill="rgb(255,255,255)" rx="4" ry="4" stroke="rgb(0,0,0)" />
-  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="61" x="128" y="85">web/client</text>
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="61" x="128" y="85">static-webserver/client</text>
   <path d="M 72 280 L 184 280 A8,8 0 0 1 192 288 L 192 312 A8,8 0 0 1 184 320 L 72 320 A8,8 0 0 1 64 312 L 64 288 A8,8 0 0 1 72 280" fill="rgb(255,255,255)" stroke="rgb(0,0,0)" />
   <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="13" x="128" y="306">db</text>
   <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="64" y="360" />

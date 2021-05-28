@@ -1,6 +1,6 @@
 """
     This tests some invariants considered in the webserver code regarding
-    the structure of the frontend apps produced after compiling web/client
+    the structure of the frontend apps produced after compiling static-webserver/client
 """
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
@@ -37,7 +37,7 @@ def source_boot_index_html(web_client_dir: Path) -> str:
 def test_expected_frontend_apps_produced_by_webclient(client_compile_cfg: Dict):
     """
     tests that names in FRONTEND_APP_DEFAULT and FRONTEND_APPS_AVAILABLE
-    corresponds to actual front-end apps produced by web/client
+    corresponds to actual front-end apps produced by static-webserver/client
     """
     frontend_apps_in_repo = {
         feapp["name"] for feapp in client_compile_cfg["applications"]

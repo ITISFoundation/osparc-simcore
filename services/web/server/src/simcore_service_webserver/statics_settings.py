@@ -11,7 +11,7 @@ from .utils import snake_to_camel
 APP_CLIENTAPPS_SETTINGS_KEY = f"{__file__}.client_apps_settings"
 
 
-# these are the apps built right now by web/client
+# these are the apps built right now by static-webserver/client
 FRONTEND_APPS_AVAILABLE = frozenset({"osparc", "tis", "s4l"})
 FRONTEND_APP_DEFAULT = "osparc"
 

@@ -1,4 +1,4 @@
-# web/client
+# static-webserver/client
 
 This is the front-end (client-side) application of the osparc-simcore platform.
 
@@ -7,7 +7,7 @@ This application is written using [qooxdoo] and the [source](source) needs to be
 
 ## [qooxdoo] compiler
 
-All [qooxdoo] tools used to compile this source code are pre-installed in the [itisfoundation/qooxdoo-kit](https://github.com/ITISFoundation/dockerfiles/tree/master/qooxdoo-kit) docker image. This toolkit is configured for this project in [tools](services/web/client/tools).
+All [qooxdoo] tools used to compile this source code are pre-installed in the [itisfoundation/qooxdoo-kit](https://github.com/ITISFoundation/dockerfiles/tree/master/qooxdoo-kit) docker image. This toolkit is configured for this project in [tools](services/static-webserver/client/tools).
 
 A **makefile** provides recipies to easily compile and *statically* serve the client application. The latter is mostly for development purposes.
 
@@ -16,7 +16,7 @@ A **makefile** provides recipies to easily compile and *statically* serve the cl
 The [itisfoundation/qooxdoo-kit] is used in two different ways:
 
 - runs **as a container**, binds the current directly and compiles the code at **run-time**
-- used **as a base image** of a [Dockerfile](services/web/client/tools/qooxdoo-kit/builder/Dockerfile) that compiles the source code at **build-time**.
+- used **as a base image** of a [Dockerfile](services/static-webserver/client/tools/qooxdoo-kit/builder/Dockerfile) that compiles the source code at **build-time**.
 
 The former is used in development and the latter is used for production. Some (hopefully) self-explanatory examples:
 
