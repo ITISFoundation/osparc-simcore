@@ -15,7 +15,7 @@ install() {
   pip3 install -r requirements/ci.txt
   popd
   pip list -v
-  make pull-version || (make build tag-version)
+  make pull-version || (make buildg-version)
   make info-images
 }
 
