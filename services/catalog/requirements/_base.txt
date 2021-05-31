@@ -10,6 +10,8 @@ aiopg[sa]==1.2.1
     # via -r requirements/_base.in
 aniso8601==7.0.0
     # via graphene
+async-cache==1.1.0
+    # via -r requirements/_base.in
 async-exit-stack==1.0.1 ; python_version < "3.7"
     # via
     #   -r requirements/_base.in
@@ -25,7 +27,7 @@ certifi==2020.12.5
     # via
     #   httpx
     #   requests
-chardet==3.0.4
+chardet==4.0.0
     # via requests
 click==7.1.2
     # via uvicorn
@@ -37,11 +39,15 @@ dataclasses==0.8 ; python_version < "3.7"
     #   pydantic
 dnspython==2.1.0
     # via email-validator
+docker-registry-client==0.5.2
+    # via -r requirements/_base.in
+ecdsa==0.13.3
+    # via docker-registry-client
 email-validator==1.1.2
     # via
     #   fastapi
     #   pydantic
-fastapi[all]==0.63.0
+fastapi[all]==0.65.1
     # via -r requirements/_base.in
 graphene==2.1.8
     # via fastapi
@@ -57,7 +63,7 @@ h11==0.12.0
     #   uvicorn
 httpcore==0.13.3
     # via httpx
-httptools==0.1.1
+httptools==0.1.2
     # via uvicorn
 httpx==0.18.1
     # via -r requirements/_base.in
@@ -79,11 +85,13 @@ jinja2==2.11.3
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
-markupsafe==1.1.1
+jws==0.1.3
+    # via docker-registry-client
+markupsafe==2.0.1
     # via jinja2
 multidict==5.1.0
     # via yarl
-orjson==3.4.8
+orjson==3.5.2
     # via fastapi
 packaging==20.9
     # via -r requirements/_base.in
@@ -97,12 +105,15 @@ psycopg2-binary==2.8.6
     #   sqlalchemy
 pydantic[dotenv,email]==1.8.2
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/_base.in
     #   fastapi
 pyparsing==2.4.7
     # via packaging
-python-dotenv==0.15.0
+python-dotenv==0.17.1
     # via
     #   pydantic
     #   uvicorn
@@ -117,12 +128,14 @@ pyyaml==5.4.1
     #   fastapi
     #   uvicorn
 requests==2.25.1
-    # via fastapi
-rfc3986[idna2008]==1.4.0
+    # via
+    #   docker-registry-client
+    #   fastapi
+rfc3986[idna2008]==1.5.0
     # via httpx
 rx==1.6.1
     # via graphql-core
-six==1.15.0
+six==1.16.0
     # via
     #   graphene
     #   graphql-core
@@ -133,31 +146,31 @@ sniffio==1.2.0
     # via
     #   httpcore
     #   httpx
-sqlalchemy[postgresql_psycopg2binary]==1.3.23
+sqlalchemy[postgresql_psycopg2binary]==1.3.24
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
-starlette==0.13.6
+starlette==0.14.2
     # via fastapi
-tenacity==6.3.1
+tenacity==7.0.0
     # via -r requirements/_base.in
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.0
     # via
     #   pydantic
     #   uvicorn
     #   yarl
-ujson==3.2.0
+ujson==4.0.2
     # via fastapi
-urllib3==1.26.4
+urllib3==1.26.5
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-uvicorn[standard]==0.13.3
+uvicorn[standard]==0.13.4
     # via fastapi
 uvloop==0.14.0 ; python_version < "3.7"
     # via
@@ -165,7 +178,7 @@ uvloop==0.14.0 ; python_version < "3.7"
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   uvicorn
-watchgod==0.6
+watchgod==0.7
     # via uvicorn
 websockets==8.1
     # via uvicorn

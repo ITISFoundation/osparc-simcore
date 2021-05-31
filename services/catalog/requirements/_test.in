@@ -19,6 +19,7 @@ pytest-cov
 pytest-mock
 pytest-runner
 pytest-docker
+asgi-lifespan
 
 # fixtures
 Faker
@@ -26,6 +27,8 @@ respx
 
 # migration due to pytest_simcore.postgres_service
 alembic
+aio_pika
+aioredis
 docker
 click
 
