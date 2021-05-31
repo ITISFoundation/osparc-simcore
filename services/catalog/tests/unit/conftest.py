@@ -9,6 +9,7 @@ from typing import Dict
 
 import pytest
 import simcore_service_catalog
+from _pytest.monkeypatch import MonkeyPatch
 
 pytest_plugins = [
     "pytest_simcore.docker_compose",
@@ -116,3 +117,8 @@ def fake_data_dag_in() -> Dict:
         },
     }
     return deepcopy(DAG_DATA_IN_DICT)
+
+
+@pytest.fixture(autouse=True)
+def disable_registry(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setenv("registry_enabled", "false")
