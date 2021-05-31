@@ -21,7 +21,6 @@ pytest-instafail
 pytest-mock
 pytest-runner
 pytest-sugar
-aioresponses
 
 # fixtures
 openapi-spec-validator~=0.2  # TODO: this library is limiting jsonschema<3

@@ -10,6 +10,7 @@ import uuid
 
 import docker
 import pytest
+
 from simcore_service_director import config, exceptions, producer
 
 
@@ -22,7 +23,6 @@ async def run_services(
     docker_swarm,
     user_id,
     project_id,
-    director_v2_service_mock,
 ):
     started_services = []
 
@@ -50,8 +50,6 @@ async def run_services(
                 service_version,
                 service_uuid,
                 service_basepath,
-                "localhost",
-                "http",
             )
             assert "published_port" in started_service
             if service_description["type"] == "dynamic":

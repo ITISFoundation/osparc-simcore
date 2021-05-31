@@ -6,6 +6,7 @@ from typing import Optional
 import pkg_resources
 import yaml
 from aiohttp import web, web_exceptions
+
 from simcore_service_director import exceptions, producer, registry_proxy, resources
 
 log = logging.getLogger(__name__)
@@ -119,9 +120,6 @@ async def running_interactive_services_list_get(
         service = await producer.get_services_details(request.app, user_id, project_id)
         return web.json_response(data=dict(data=service), status=200)
     except Exception as err:
-        log.exception(
-            "There was an error while requesting list of running interactive services"
-        )
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
 
@@ -145,11 +143,6 @@ async def running_interactive_services_post(
         service_basepath,
     )
     try:
-        # not mandatory, only used by service sidecar
-        # used to properly Content-Security-Policy and CORS policies
-        # used by the proxy spawned together with the dynamic-sidecar
-        request_dns = request.headers.get("X-Dynamic-Sidecar-Request-DNS", None)
-        request_scheme = request.headers.get("X-Dynamic-Sidecar-Request-Scheme", None)
         service = await producer.start_service(
             request.app,
             user_id,
@@ -158,34 +151,17 @@ async def running_interactive_services_post(
             service_tag,
             service_uuid,
             service_basepath,
-            request_dns,
-            request_scheme,
         )
         return web.json_response(data=dict(data=service), status=201)
     except exceptions.ServiceStartTimeoutError as err:
-        log.exception(
-            "There was an error while requesting list of running interactive services"
-        )
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
     except exceptions.ServiceNotAvailableError as err:
-        log.exception(
-            "There was an error while requesting list of running interactive services"
-        )
         raise web_exceptions.HTTPNotFound(reason=str(err))
     except exceptions.ServiceUUIDInUseError as err:
-        log.exception(
-            "There was an error while requesting list of running interactive services"
-        )
         raise web_exceptions.HTTPConflict(reason=str(err))
     except exceptions.RegistryConnectionError as err:
-        log.exception(
-            "There was an error while requesting list of running interactive services"
-        )
         raise web_exceptions.HTTPUnauthorized(reason=str(err))
     except Exception as err:
-        log.exception(
-            "There was an error while requesting list of running interactive services"
-        )
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
 
@@ -201,14 +177,8 @@ async def running_interactive_services_get(
         service = await producer.get_service_details(request.app, service_uuid)
         return web.json_response(data=dict(data=service), status=200)
     except exceptions.ServiceUUIDNotFoundError as err:
-        log.exception(
-            "There was an error while requesting list of running interactive services"
-        )
         raise web_exceptions.HTTPNotFound(reason=str(err))
     except Exception as err:
-        log.exception(
-            "There was an error while requesting list of running interactive services"
-        )
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
 
@@ -223,14 +193,8 @@ async def running_interactive_services_delete(
     try:
         await producer.stop_service(request.app, service_uuid, save_state)
     except exceptions.ServiceUUIDNotFoundError as err:
-        log.exception(
-            "There was an error while requesting list of running interactive services"
-        )
         raise web_exceptions.HTTPNotFound(reason=str(err))
     except Exception as err:
-        log.exception(
-            "There was an error while requesting list of running interactive services"
-        )
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
     return web.json_response(status=204)

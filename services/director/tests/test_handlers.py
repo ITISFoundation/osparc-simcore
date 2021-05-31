@@ -393,7 +393,6 @@ async def test_running_services_post_and_delete(
     save_state: Optional[bool],
     exp_save_state_call: bool,
     mocker,
-    director_v2_service_mock,
 ):
     await _start_get_stop_services(
         client,

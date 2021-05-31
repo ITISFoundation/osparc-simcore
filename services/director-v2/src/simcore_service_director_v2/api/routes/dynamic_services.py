@@ -71,7 +71,7 @@ async def service_retrieve_data_on_ports(
 
 @router.post(
     "/{node_uuid}:start",
-    summary="start the dynamic-sidecar for this service",
+    summary="create & start the dynamic-sidecar for this service",
     responses={
         status.HTTP_500_INTERNAL_SERVER_ERROR: {
             "description": "Error while starting dynamic sidecar"
