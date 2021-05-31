@@ -66,7 +66,7 @@ class RegistryClient:
             self.executor, self._get_labels, service_key, service_version
         )
 
-    @AsyncTTL(time_to_live=REPOSITIRES_CACHE_TTL_SECONDS, maxsize=1)
+    @AsyncTTL(time_to_live=REPOSITIRES_CACHE_TTL_SECONDS, maxsize=2)
     async def get_repositories(self) -> List[str]:
         return await self.loop.run_in_executor(self.executor, self._get_repositories)
 
