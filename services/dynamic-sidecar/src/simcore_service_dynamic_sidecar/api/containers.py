@@ -15,7 +15,7 @@ from fastapi import (
 )
 from fastapi.responses import PlainTextResponse
 
-from ..core.dependencies import get_settings, get_shared_store, get_application_health
+from ..core.dependencies import get_application_health, get_settings, get_shared_store
 from ..core.settings import DynamicSidecarSettings
 from ..core.shared_handlers import remove_the_compose_spec, write_file_and_run_command
 from ..core.utils import assemble_container_names, docker_client
