@@ -1,4 +1,4 @@
-"""Main application to be deployed in for example uvcorn.
+"""Main application to be deployed in for example uvicorn.
 """
 
 from fastapi import FastAPI
