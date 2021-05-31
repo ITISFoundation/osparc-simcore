@@ -1,5 +1,7 @@
 import asyncio
 import json
+import logging
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List
 
@@ -13,6 +15,16 @@ MAX_CACHE_ITEMS = 256
 # after this interval new services will be seen
 # in the cache, currently set at 5 minutes
 REPOSITIRES_CACHE_TTL_SECONDS = 5 * 60
+
+log = logging.getLogger(__name__)
+
+if sys.version_info >= (3, 8):
+    logging.warning(
+        (
+            "Consider replacing docker_registry_client with "
+            "https://pypi.org/project/docker-registry-client-async/"
+        )
+    )
 
 
 def setup_registry(app: FastAPI) -> None:
