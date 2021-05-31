@@ -45,7 +45,24 @@ qx.Class.define("osparc.ui.window.Dialog", {
 
   members: {
     __messageLabel: null,
-    __btnToolbar: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "buttons-toolbar":
+          control = new qx.ui.toolbar.ToolBar();
+          control.addSpacer();
+          this.add(control);
+          break;
+        case "cancel-button": {
+          const btnToolbar = this.getChildControl("buttons-toolbar");
+          control = new qx.ui.toolbar.Button(this.tr("Cancel"));
+          btnToolbar.add(control);
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
+    },
 
     __buildLayout: function() {
       this.__messageLabel = new qx.ui.basic.Label().set({
@@ -55,9 +72,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
       this.add(this.__messageLabel, {
         flex: 1
       });
-      this.__btnToolbar = new qx.ui.toolbar.ToolBar();
-      this.__btnToolbar.addSpacer();
-      this.add(this.__btnToolbar);
+      this.getChildControl("buttons-toolbar");
     },
 
     _applyMessage: function(message) {
@@ -69,16 +84,16 @@ qx.Class.define("osparc.ui.window.Dialog", {
      * @param {qx.ui.toolbar.Button} button Button that will be added to the bottom bar of the dialog.
      */
     addButton: function(button) {
-      this.__btnToolbar.add(button);
+      const btnToolbar = this.getChildControl("buttons-toolbar");
+      btnToolbar.add(button);
     },
 
     /**
      * Adds a default cancel button to the dialog.
      */
     addCancelButton: function() {
-      const cancelButton = new qx.ui.toolbar.Button(this.tr("Cancel"));
+      const cancelButton = this.getChildControl("cancel-button");
       cancelButton.addListener("execute", () => this.close(), this);
-      this.addButton(cancelButton);
     }
   }
 });
