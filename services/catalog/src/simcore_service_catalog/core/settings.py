@@ -43,6 +43,7 @@ class PGSettings(PostgresSettings):
 
 
 class RegistrySettings(BaseSettings):
+    enabled: bool = True
     url: str = Field(..., description="URL to the docker registry")
     ssl: bool = Field(..., description="if registry is secore or not")
 

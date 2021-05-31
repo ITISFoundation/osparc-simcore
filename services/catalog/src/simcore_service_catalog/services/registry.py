@@ -30,7 +30,7 @@ if sys.version_info >= (3, 8):
 def setup_registry(app: FastAPI) -> None:
     settings: RegistrySettings = app.state.settings.registry
 
-    app.state.registry_client = RegistryClient(settings)
+    app.state.registry_client = RegistryClient(settings) if settings.enabled else None
 
 
 class RegistryClient:
