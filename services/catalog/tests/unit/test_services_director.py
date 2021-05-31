@@ -14,6 +14,7 @@ from simcore_service_catalog.core.settings import (
     ClientRequestSettings,
     DirectorSettings,
     PGSettings,
+    RegistrySettings,
 )
 from simcore_service_catalog.services.director import DirectorApi
 from starlette.testclient import TestClient
@@ -28,6 +29,7 @@ def minimal_app(loop, testing_environ_vars) -> Iterator[FastAPI]:
         postgres=PGSettings(enabled=False),
         director=DirectorSettings(enabled=False),
         client_request=ClientRequestSettings(),
+        registry=RegistrySettings(),
     )
     app = init_app(settings)
 
