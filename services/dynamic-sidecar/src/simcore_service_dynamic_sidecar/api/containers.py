@@ -15,12 +15,13 @@ from fastapi import (
 )
 from fastapi.responses import PlainTextResponse
 
-from ..core.dependencies import get_settings, get_shared_store
+from ..core.dependencies import get_settings, get_shared_store, get_application_health
 from ..core.settings import DynamicSidecarSettings
 from ..core.shared_handlers import remove_the_compose_spec, write_file_and_run_command
 from ..core.utils import assemble_container_names, docker_client
 from ..core.validation import InvalidComposeSpec, validate_compose_spec
 from ..models.domains.shared_store import SharedStore
+from ..models.schemas.application_health import ApplicationHealth
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ containers_router = APIRouter(tags=["containers"])
 async def task_docker_compose_up(
     settings: DynamicSidecarSettings,
     shared_store: SharedStore,
+    application_health: ApplicationHealth = Depends(get_application_health),
 ) -> None:
     # building is a security risk hence is disabled via "--no-build" parameter
     command = (
@@ -47,7 +49,9 @@ async def task_docker_compose_up(
     if finished_without_errors:
         logger.info(message)
     else:
-        logger.error(message)
+        application_health.is_healthy = False
+        application_health.error_message = message
+        logger.error("Marked sidecar as unhealthy, see below for details\n:%s", message)
 
     return None
 
