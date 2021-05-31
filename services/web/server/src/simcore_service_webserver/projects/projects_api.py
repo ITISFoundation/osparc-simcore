@@ -34,6 +34,7 @@ from ..director_v2 import (
     delete_pipeline,
     get_computation_task,
     request_retrieve_dyn_service,
+    start_service
 )
 from ..resource_manager.websocket_manager import managed_resource
 from ..socketio.events import (
@@ -150,7 +151,7 @@ async def start_project_interactive_services(
     log.debug("Services to start %s", project_needed_services)
 
     start_service_tasks = [
-        director_api.start_service(
+        start_service(
             request.app,
             user_id=user_id,
             project_id=project["uuid"],
