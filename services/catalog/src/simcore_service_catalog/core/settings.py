@@ -42,6 +42,24 @@ class PGSettings(PostgresSettings):
         env_prefix = "POSTGRES_"
 
 
+class RegistrySettings(BaseSettings):
+    url: str = Field(..., description="URL to the docker registry")
+    ssl: bool = Field(..., description="if registry is secore or not")
+
+    threadpool_max_workers: int = Field(
+        None,
+        description="Amount of threads to put in the pool, if None uses threadpool's default",
+    )
+
+    @property
+    def address(self) -> str:
+        protocol = "https" if self.ssl else "http"
+        return f"{protocol}://{self.url}"
+
+    class Config(_CommonConfig):
+        env_prefix = "REGISTRY_"
+
+
 class AppSettings(BaseSettings):
     @classmethod
     def create_default(cls) -> "AppSettings":
@@ -49,6 +67,7 @@ class AppSettings(BaseSettings):
         return cls(
             postgres=PGSettings(),
             director=DirectorSettings(),
+            registry=RegistrySettings(),
             client_request=ClientRequestSettings(),
         )
 
@@ -81,12 +100,16 @@ class AppSettings(BaseSettings):
     # DIRECTOR SERVICE
     director: DirectorSettings
 
+    # Docker Registry
+    registry: RegistrySettings
+
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
     host: str = "0.0.0.0"  # nosec
     port: int = 8000
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
 
     # BACKGROUND TASK
+    background_task_enabled: bool = True
     background_task_rest_time: PositiveInt = 60
     background_task_wait_after_failure: PositiveInt = 5  # secs
     access_rights_default_product_name: str = "osparc"

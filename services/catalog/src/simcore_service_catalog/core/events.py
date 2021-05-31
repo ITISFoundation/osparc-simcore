@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from ..db.events import close_db_connection, connect_to_db
 from ..meta import __version__, project_name
 from ..services.director import close_director, setup_director
+from ..services.registry import setup_registry
 from ..services.remote_debug import setup_remote_debugging
 from .background_tasks import start_registry_sync_task, stop_registry_sync_task
 from .settings import BootModeEnum
@@ -53,6 +54,8 @@ def create_start_app_handler(app: FastAPI) -> Callable:
 
         # setup connection to director
         setup_director(app)
+
+        setup_registry(app)
 
         if app.state.settings.director.enabled:
             # FIXME: check director service is in place and ready. Hand-shake??

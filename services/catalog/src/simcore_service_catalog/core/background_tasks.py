@@ -12,6 +12,7 @@
 import asyncio
 import logging
 from asyncio.futures import CancelledError
+from cmath import log
 from pprint import pformat
 from typing import Dict, Set, Tuple
 
@@ -182,6 +183,10 @@ async def _ensure_published_templates_accessible(
 
 
 async def sync_registry_task(app: FastAPI) -> None:
+    if not app.state.settings.background_task_enabled:
+        logger.warning("Background task id disabled, will not try to start")
+        return None
+
     default_product: str = app.state.settings.access_rights_default_product_name
     engine: Engine = app.state.engine
 
@@ -216,5 +221,8 @@ async def start_registry_sync_task(app: FastAPI) -> None:
 
 async def stop_registry_sync_task(app: FastAPI) -> None:
     task = app.state.registry_sync_task
+    if task is None:
+        logger.warning("Background task id disabled, will not try to stop")
+
     task.cancel()
     await task
