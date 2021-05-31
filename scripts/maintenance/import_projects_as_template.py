@@ -1,13 +1,27 @@
 #! /usr/bin/env python3
 
 import asyncio
+import os
+from contextlib import suppress
 from pathlib import Path
+from pprint import pformat
 from typing import Optional
 
 import typer
-from httpx import URL, AsyncClient
+from httpx import URL, AsyncClient, HTTPStatusError
 from pydantic.networks import EmailStr
 from pydantic.types import SecretStr
+
+EVERYONE_GROUP_ID = 1
+
+
+def create_human_readable_message(exc: HTTPStatusError) -> str:
+    msg = str(exc)
+    with suppress(Exception):
+        error = exc.response.json()["error"]
+        for err in error["errors"]:
+            msg += "\n{code}: {message}".format(**err)
+    return msg
 
 
 async def login_user(client: AsyncClient, email: EmailStr, password: SecretStr):
@@ -100,7 +114,7 @@ async def import_project_as_template(
     password: SecretStr,
     project_file: Path,
     project_name: str,
-    share_with_gid: int,
+    share_with_gid: int,  # TODO: not used!?
 ) -> int:
     try:
         async with AsyncClient(base_url=endpoint.join("v0")) as client:
@@ -113,20 +127,26 @@ async def import_project_as_template(
                 fg=typer.colors.BRIGHT_WHITE,
             )
 
+    except HTTPStatusError as exc:
+        typer.secho(create_human_readable_message(exc), fg=typer.colors.RED, err=True)
+        return os.EX_SOFTWARE
+
     except Exception as exc:  # pylint: disable=broad-except
         typer.secho(f"Unexpected issue: {exc}", fg=typer.colors.RED, err=True)
-        return 1
+        return os.EX_SOFTWARE
 
-    return 0
+    return os.EX_OK
 
 
 def main(
     endpoint: str,
     username: str,
-    password: str,
     project_file: Path,
     project_name: Optional[str] = None,
-    share_with_gid: Optional[int] = 1,
+    share_with_gid: int = EVERYONE_GROUP_ID,
+    password: str = typer.Option(
+        ..., prompt=True, confirmation_prompt=True, hide_input=True
+    ),
 ) -> int:
 
     if project_name is None:
