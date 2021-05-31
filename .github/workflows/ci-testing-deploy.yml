@@ -1269,6 +1269,13 @@ jobs:
         # only pushes have access to the docker credentials
         if: github.event_name == 'push'
         run: ./ci/deploy/dockerhub-test-images.bash
+      - # Temp fix
+        # https://github.com/docker/build-push-action/issues/252
+        # https://github.com/moby/buildkit/issues/1896
+        name: move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   integration-test-webserver-01:
     timeout-minutes: 20 # if this timeout gets too small, then split the tests
@@ -1340,6 +1347,13 @@ jobs:
         with:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
+      - # Temp fix
+        # https://github.com/docker/build-push-action/issues/252
+        # https://github.com/moby/buildkit/issues/1896
+        name: move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   integration-test-webserver-02:
     timeout-minutes: 20 # if this timeout gets too small, then split the tests
@@ -1411,6 +1425,13 @@ jobs:
         with:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
+      - # Temp fix
+        # https://github.com/docker/build-push-action/issues/252
+        # https://github.com/moby/buildkit/issues/1896
+        name: move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   integration-test-director-v2:
     timeout-minutes: 20 # if this timeout gets too small, then split the tests
@@ -1482,6 +1503,13 @@ jobs:
         with:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
+      - # Temp fix
+        # https://github.com/docker/build-push-action/issues/252
+        # https://github.com/moby/buildkit/issues/1896
+        name: move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   integration-test-sidecar:
     timeout-minutes: 20 # if this timeout gets too small, then split the tests
@@ -1553,6 +1581,13 @@ jobs:
         with:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
+      - # Temp fix
+        # https://github.com/docker/build-push-action/issues/252
+        # https://github.com/moby/buildkit/issues/1896
+        name: move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   integration-test-simcore-sdk:
     timeout-minutes: 20 # if this timeout gets too small, then split the tests
@@ -1624,6 +1659,13 @@ jobs:
         with:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
+      - # Temp fix
+        # https://github.com/docker/build-push-action/issues/252
+        # https://github.com/moby/buildkit/issues/1896
+        name: move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   system-test-public-api:
     timeout-minutes: 25 # if this timeout gets too small, then split the tests
@@ -1676,6 +1718,13 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/system-testing/public-api.bash clean_up
+      - # Temp fix
+        # https://github.com/docker/build-push-action/issues/252
+        # https://github.com/moby/buildkit/issues/1896
+        name: move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   system-test-swarm-deploy:
     timeout-minutes: 20 # if this timeout gets too small, then split the tests
@@ -1728,6 +1777,13 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
+      - # Temp fix
+        # https://github.com/docker/build-push-action/issues/252
+        # https://github.com/moby/buildkit/issues/1896
+        name: move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   system-test-e2e:
     timeout-minutes: 20 # if this timeout gets too small, then split the tests
@@ -1813,6 +1869,13 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/system-testing/e2e.bash clean_up
+      - # Temp fix
+        # https://github.com/docker/build-push-action/issues/252
+        # https://github.com/moby/buildkit/issues/1896
+        name: move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   system-test-environment-setup:
     timeout-minutes: 20 # if this timeout gets too small, then split the tests
