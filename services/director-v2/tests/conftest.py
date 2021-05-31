@@ -2,13 +2,16 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Iterator
 
 import dotenv
+import httpx
 import pytest
 import simcore_service_director_v2
+from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.projects import Node, Workbench
 from simcore_service_director_v2.core.application import init_app
@@ -33,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session")
-def project_slug_dir(services_dir) -> Path:
+def project_slug_dir(services_dir: Path) -> Path:
     # uses pytest_simcore.environs.osparc_simcore_root_dir
     service_folder = services_dir / "director-v2"
     assert service_folder.exists()
@@ -49,7 +52,7 @@ def package_dir() -> Path:
 
 
 @pytest.fixture(scope="session")
-def project_env_devel_dict(project_slug_dir: Path) -> Dict:
+def project_env_devel_dict(project_slug_dir: Path) -> Dict[str, Any]:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
     environ = dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
@@ -57,7 +60,7 @@ def project_env_devel_dict(project_slug_dir: Path) -> Dict:
 
 
 @pytest.fixture(scope="function")
-def project_env_devel_environment(project_env_devel_dict, monkeypatch):
+def project_env_devel_environment(project_env_devel_dict: Dict[str, Any], monkeypatch):
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
 
@@ -76,7 +79,7 @@ def dynamic_sidecar_image(monkeypatch) -> None:
 
 
 @pytest.fixture(scope="function")
-def client(loop, dynamic_sidecar_image) -> TestClient:
+def client(loop: asyncio.BaseEventLoop, dynamic_sidecar_image) -> TestClient:
     settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
     app = init_app(settings)
 
@@ -87,7 +90,26 @@ def client(loop, dynamic_sidecar_image) -> TestClient:
 
 
 @pytest.fixture(scope="function")
-def minimal_app(client) -> FastAPI:
+async def initialized_app() -> Iterator[FastAPI]:
+    settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
+    app = init_app(settings)
+    async with LifespanManager(app):
+        yield app
+
+
+@pytest.fixture(scope="function")
+async def async_client(initialized_app: FastAPI) -> httpx.AsyncClient:
+
+    async with httpx.AsyncClient(
+        app=initialized_app,
+        base_url="http://director-v2.testserver.io",
+        headers={"Content-Type": "application/json"},
+    ) as client:
+        yield client
+
+
+@pytest.fixture(scope="function")
+def minimal_app(client: TestClient) -> FastAPI:
     # NOTICE that this app triggers events
     # SEE: https://fastapi.tiangolo.com/advanced/testing-events/
     return client.app

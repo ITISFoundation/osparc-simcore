@@ -13,6 +13,9 @@ class Context:
     initialized: bool
 
 
+contexts: Dict[str, Context] = {}
+
+
 def run_sequentially_in_context(target_args: List[str] = None):
     """All request to function with same calling context will be run sequentially.
 
@@ -32,10 +35,12 @@ def run_sequentially_in_context(target_args: List[str] = None):
 
         functions = [
             func(1, "something", 3),
-            func(1, "else", 3),
+            func(1, "argument.attribute", 3),
             func(1, "here", 3),
         ]
         await asyncio.gather(*functions)
+
+    note the special "argument.attribute", which will use the attribute of argument to create the context.
 
     The following calls will run in parallel, because they have different contexts:
 
@@ -50,8 +55,6 @@ def run_sequentially_in_context(target_args: List[str] = None):
     target_args = [] if target_args is None else target_args
 
     def internal(decorated_function):
-        contexts = {}
-
         def get_context(args, kwargs: Dict) -> Context:
             arg_names = decorated_function.__code__.co_varnames[
                 : decorated_function.__code__.co_argcount
@@ -61,13 +64,23 @@ def run_sequentially_in_context(target_args: List[str] = None):
 
             key_parts = deque()
             for arg in target_args:
-                if arg not in search_args:
+                sub_args = arg.split(".")
+                main_arg = sub_args[0]
+                if main_arg not in search_args:
                     message = (
-                        f"Expected '{arg}' in '{decorated_function.__name__}'"
+                        f"Expected '{main_arg}' in '{decorated_function.__name__}'"
                         f" arguments. Got '{search_args}'"
                     )
                     raise ValueError(message)
-                key_parts.append(search_args[arg])
+                context_key = search_args[main_arg]
+                for attribute in sub_args[1:]:
+                    potential_key = getattr(context_key, attribute)
+                    if not potential_key:
+                        message = f"Expected '{attribute}' attribute in '{context_key.__name__}' arguments."
+                        raise ValueError(message)
+                    context_key = potential_key
+
+                key_parts.append(f"{decorated_function.__name__}_{context_key}")
 
             key = ":".join(map(str, key_parts))
 

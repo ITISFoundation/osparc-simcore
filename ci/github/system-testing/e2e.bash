@@ -24,7 +24,7 @@ test() {
 
 setup_images() {
   echo "--------------- preparing docker images..."
-  make pull-version || ( (make pull-cache || true) && make build-x tag-version)
+  make pull-version || (make build tag-version)
   make info-images
 
 }

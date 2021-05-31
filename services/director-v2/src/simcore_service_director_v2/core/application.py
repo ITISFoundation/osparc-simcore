@@ -21,6 +21,7 @@ from ..modules import (
     dynamic_services,
     dynamic_sidecar,
     remote_debug,
+    scheduler,
 )
 from ..utils.logging_utils import config_all_loggers
 from .events import on_shutdown, on_startup
@@ -69,10 +70,12 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     dynamic_sidecar.setup(app)
 
+    if settings.scheduler.enabled:
+        scheduler.setup(app)
+
     # setup app --
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
-
     app.add_exception_handler(HTTPException, http_error_handler)
     app.add_exception_handler(RequestValidationError, http422_error_handler)
     # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
