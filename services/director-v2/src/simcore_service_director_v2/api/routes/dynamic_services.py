@@ -5,11 +5,17 @@ from uuid import UUID
 
 import httpx
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import RedirectResponse
+from pydantic.main import BaseModel
 from starlette import status
 from starlette.datastructures import URL
-from fastapi.responses import RedirectResponse
 
-from ...models.domains.dynamic_services import RetrieveDataIn, RetrieveDataOutEnveloped
+from ...models.domains.dynamic_services import (
+    DynamicServiceCreate,
+    DynamicServiceOut,
+    RetrieveDataIn,
+    RetrieveDataOutEnveloped,
+)
 from ...models.domains.dynamic_sidecar import StartDynamicSidecarModel
 from ...modules.dynamic_sidecar.config import DynamicSidecarSettings, get_settings
 from ...modules.dynamic_sidecar.constants import (
@@ -33,15 +39,19 @@ from ...modules.dynamic_sidecar.service_specs import (
     extract_service_port_from_compose_start_spec,
 )
 from ...utils.logging_utils import log_decorator
+from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
 from ..dependencies.dynamic_services import (
     ServicesClient,
     get_service_base_url,
     get_services_client,
 )
-from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
 
 router = APIRouter()
 log = logging.getLogger(__file__)
+
+
+class Message(BaseModel):
+    message: str
 
 
 @router.post(
@@ -49,6 +59,7 @@ log = logging.getLogger(__file__)
     summary="Calls the dynamic service's retrieve endpoint with optional port_keys",
     response_model=RetrieveDataOutEnveloped,
     status_code=status.HTTP_200_OK,
+    responses={status.HTTP_404_NOT_FOUND: {"model": Message}},
 )
 @log_decorator(logger=log)
 async def service_retrieve_data_on_ports(
@@ -67,6 +78,30 @@ async def service_retrieve_data_on_ports(
     )
     # validate and return
     return RetrieveDataOutEnveloped.parse_obj(resp.json())
+
+
+@router.post(
+    "",
+    summary="create & start the dynamic service",
+    status_code=status.HTTP_201_CREATED,
+    response_model=DynamicServiceOut,
+    responses={status.HTTP_404_NOT_FOUND: {"model": Message}},
+)
+async def create_dynamic_service(
+    service: DynamicServiceCreate,
+    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
+):
+    # fetch labels (FROM the catalog service at this point)
+    # if it is a legacy service redirect to director-v0
+    is_legacy_dynamic_service = True
+    log.info("Will request something for you!")
+
+    if is_legacy_dynamic_service:
+        # forward to director-v0
+        # pylint: disable=protected-access
+        director_v0_base_url = str(director_v0_client.client._base_url).strip("/")
+        redirect_url = f"{director_v0_base_url}/running_interactive_services"
+        return RedirectResponse(redirect_url)
 
 
 @router.post(
@@ -203,8 +238,8 @@ async def start_dynamic_sidecar(
     return await inspect_service(dynamic_sidecar_proxy_id)
 
 
-@router.post(
-    "/{node_uuid}:status",
+@router.get(
+    "/{node_uuid}",
     summary="assembles the status for the dynamic-sidecar",
     response_model=ServiceStateReply,
 )
@@ -214,65 +249,13 @@ async def dynamic_sidecar_status(
     return await monitor.get_stack_status(str(node_uuid))
 
 
-@router.post(
-    "/{node_uuid}:stop",
-    responses={status.HTTP_204_NO_CONTENT: {"model": None}},
+@router.delete(
+    "/{node_uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="stops previously spawned dynamic-sidecar",
+    responses={status.HTTP_404_NOT_FOUND: {"model": Message}},
 )
 async def stop_dynamic_sidecar(
     node_uuid: UUID, monitor: DynamicSidecarsMonitor = Depends(get_monitor)
 ) -> Dict[str, str]:
     await monitor.remove_service_from_monitor(str(node_uuid))
-
-
-# TODO: remember to change to /{node_uuid}:start
-@router.post("/{node_uuid}:start-service")
-async def start_service(
-    node_uuid: UUID,
-    user_id: str = Query(
-        ...,
-        description="The ID of the user that starts the service",
-        example="asdfgj233",
-    ),
-    project_id: str = Query(
-        ...,
-        description="The ID of the project in which the service starts",
-        example="asdfgj233",
-    ),
-    service_key: str = Query(
-        ...,
-        description="The key (url) of the service",
-        example=[
-            "simcore/services/comp/itis/sleeper",
-            "simcore/services/dynamic/3dviewer",
-        ],
-    ),
-    service_tag: str = Query(
-        ..., description="The tag/version of the service", example=["1.0.0", "0.0.1"]
-    ),
-    service_uuid: str = Query(
-        ...,
-        description="The uuid to assign the service with",
-        example="123e4567-e89b-12d3-a456-426655440000",
-    ),
-    service_basepath: str = Query(
-        "",
-        description="predefined basepath for the backend service otherwise uses root",
-        example="/x/EycCXbU0H/",
-    ),
-    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
-) -> None:
-    # fetch labels (FROM the catalog service at this point)
-    # if it is a legacy service redirect to director-v0
-    is_legacy_dynamic_service = True
-    log.info("Will request something for you!")
-
-    if is_legacy_dynamic_service:
-        # forward to director-v0
-        # pylint: disable=protected-access
-        director_v0_base_url = str(director_v0_client.client._base_url).strip("/")
-        redirect_url = f"{director_v0_base_url}/running_interactive_services"
-        return RedirectResponse(redirect_url)
-
-    log.error("TODO: implement start for node_uuid=%s", node_uuid)

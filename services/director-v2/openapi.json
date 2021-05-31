@@ -617,6 +617,67 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/dynamic_services": {
+      "post": {
+        "tags": [
+          "dynamic services"
+        ],
+        "summary": "create & start the dynamic service",
+        "operationId": "create_dynamic_service_v2_dynamic_services_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DynamicServiceCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DynamicServiceOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -635,7 +696,7 @@
         "tags": [
           "dynamic services"
         ],
-        "summary": "start the dynamic-sidecar for this service",
+        "summary": "create & start the dynamic-sidecar for this service",
         "operationId": "start_dynamic_sidecar_v2_dynamic_services__node_uuid__start_post",
         "parameters": [
           {
@@ -684,13 +745,13 @@
         }
       }
     },
-    "/v2/dynamic_services/{node_uuid}:status": {
-      "post": {
+    "/v2/dynamic_services/{node_uuid}": {
+      "get": {
         "tags": [
           "dynamic services"
         ],
         "summary": "assembles the status for the dynamic-sidecar",
-        "operationId": "dynamic_sidecar_status_v2_dynamic_services__node_uuid__status_post",
+        "operationId": "dynamic_sidecar_status_v2_dynamic_services__node_uuid__get",
         "parameters": [
           {
             "required": true,
@@ -725,15 +786,13 @@
             }
           }
         }
-      }
-    },
-    "/v2/dynamic_services/{node_uuid}:stop": {
-      "post": {
+      },
+      "delete": {
         "tags": [
           "dynamic services"
         ],
         "summary": "stops previously spawned dynamic-sidecar",
-        "operationId": "stop_dynamic_sidecar_v2_dynamic_services__node_uuid__stop_post",
+        "operationId": "stop_dynamic_sidecar_v2_dynamic_services__node_uuid__delete",
         "parameters": [
           {
             "required": true,
@@ -750,123 +809,13 @@
           "204": {
             "description": "Successful Response"
           },
-          "422": {
-            "description": "Validation Error",
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Message"
                 }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v2/dynamic_services/{node_uuid}:start-service": {
-      "post": {
-        "tags": [
-          "dynamic services"
-        ],
-        "summary": "Start Service",
-        "operationId": "start_service_v2_dynamic_services__node_uuid__start_service_post",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Node Uuid",
-              "type": "string",
-              "format": "uuid"
-            },
-            "name": "node_uuid",
-            "in": "path"
-          },
-          {
-            "description": "The ID of the user that starts the service",
-            "required": true,
-            "schema": {
-              "title": "User Id",
-              "type": "string",
-              "description": "The ID of the user that starts the service"
-            },
-            "example": "asdfgj233",
-            "name": "user_id",
-            "in": "query"
-          },
-          {
-            "description": "The ID of the project in which the service starts",
-            "required": true,
-            "schema": {
-              "title": "Project Id",
-              "type": "string",
-              "description": "The ID of the project in which the service starts"
-            },
-            "example": "asdfgj233",
-            "name": "project_id",
-            "in": "query"
-          },
-          {
-            "description": "The key (url) of the service",
-            "required": true,
-            "schema": {
-              "title": "Service Key",
-              "type": "string",
-              "description": "The key (url) of the service"
-            },
-            "example": [
-              "simcore/services/comp/itis/sleeper",
-              "simcore/services/dynamic/3dviewer"
-            ],
-            "name": "service_key",
-            "in": "query"
-          },
-          {
-            "description": "The tag/version of the service",
-            "required": true,
-            "schema": {
-              "title": "Service Tag",
-              "type": "string",
-              "description": "The tag/version of the service"
-            },
-            "example": [
-              "1.0.0",
-              "0.0.1"
-            ],
-            "name": "service_tag",
-            "in": "query"
-          },
-          {
-            "description": "The uuid to assign the service with",
-            "required": true,
-            "schema": {
-              "title": "Service Uuid",
-              "type": "string",
-              "description": "The uuid to assign the service with"
-            },
-            "example": "123e4567-e89b-12d3-a456-426655440000",
-            "name": "service_uuid",
-            "in": "query"
-          },
-          {
-            "description": "predefined basepath for the backend service otherwise uses root",
-            "required": false,
-            "schema": {
-              "title": "Service Basepath",
-              "type": "string",
-              "description": "predefined basepath for the backend service otherwise uses root",
-              "default": ""
-            },
-            "example": "/x/EycCXbU0H/",
-            "name": "service_basepath",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
               }
             }
           },
@@ -1102,6 +1051,100 @@
           }
         }
       },
+      "DynamicServiceCreate": {
+        "title": "DynamicServiceCreate",
+        "required": [
+          "user_id",
+          "project_id",
+          "service_key",
+          "service_version",
+          "service_uuid",
+          "service_basepath"
+        ],
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "title": "User Id",
+            "exclusiveMinimum": 0.0,
+            "type": "integer"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "service_key": {
+            "title": "Service Key",
+            "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
+            "type": "string",
+            "description": "distinctive name for the node based on the docker registry path"
+          },
+          "service_version": {
+            "title": "Service Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string",
+            "description": "semantic version number of the node"
+          },
+          "service_uuid": {
+            "title": "Service Uuid",
+            "type": "string",
+            "format": "uuid"
+          },
+          "service_basepath": {
+            "title": "Service Basepath",
+            "type": "string",
+            "description": "predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
+            "format": "path"
+          }
+        }
+      },
+      "DynamicServiceOut": {
+        "title": "DynamicServiceOut",
+        "required": [
+          "user_id",
+          "project_id",
+          "service_key",
+          "service_version",
+          "service_uuid",
+          "service_basepath"
+        ],
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "title": "User Id",
+            "exclusiveMinimum": 0.0,
+            "type": "integer"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "service_key": {
+            "title": "Service Key",
+            "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
+            "type": "string",
+            "description": "distinctive name for the node based on the docker registry path"
+          },
+          "service_version": {
+            "title": "Service Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string",
+            "description": "semantic version number of the node"
+          },
+          "service_uuid": {
+            "title": "Service Uuid",
+            "type": "string",
+            "format": "uuid"
+          },
+          "service_basepath": {
+            "title": "Service Basepath",
+            "type": "string",
+            "description": "predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
+            "format": "path"
+          }
+        }
+      },
       "HTTPValidationError": {
         "title": "HTTPValidationError",
         "type": "object",
@@ -1112,6 +1155,19 @@
             "items": {
               "$ref": "#/components/schemas/ValidationError"
             }
+          }
+        }
+      },
+      "Message": {
+        "title": "Message",
+        "required": [
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
           }
         }
       },

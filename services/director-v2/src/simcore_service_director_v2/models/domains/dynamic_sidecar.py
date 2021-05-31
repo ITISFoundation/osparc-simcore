@@ -39,7 +39,7 @@ class StartDynamicSidecarModel(BaseModel):
         ..., description="tag usually also known as version", regex=VERSION_RE
     )
 
-    # these come from the webserver via the director
+    # these come from the webserver
     request_scheme: str = Field(
         ..., description="Used for the proxy configuration either http or https"
     )
