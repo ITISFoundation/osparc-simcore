@@ -4,9 +4,10 @@ from typing import Any, Dict
 from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from starlette import status
 from starlette.datastructures import URL
+from fastapi.responses import RedirectResponse
 
 from ...models.domains.dynamic_services import RetrieveDataIn, RetrieveDataOutEnveloped
 from ...models.domains.dynamic_sidecar import StartDynamicSidecarModel
@@ -37,6 +38,7 @@ from ..dependencies.dynamic_services import (
     get_service_base_url,
     get_services_client,
 )
+from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
 
 router = APIRouter()
 log = logging.getLogger(__file__)
@@ -222,3 +224,55 @@ async def stop_dynamic_sidecar(
     node_uuid: UUID, monitor: DynamicSidecarsMonitor = Depends(get_monitor)
 ) -> Dict[str, str]:
     await monitor.remove_service_from_monitor(str(node_uuid))
+
+
+# TODO: remember to change to /{node_uuid}:start
+@router.post("/{node_uuid}:start-service")
+async def start_service(
+    node_uuid: UUID,
+    user_id: str = Query(
+        ...,
+        description="The ID of the user that starts the service",
+        example="asdfgj233",
+    ),
+    project_id: str = Query(
+        ...,
+        description="The ID of the project in which the service starts",
+        example="asdfgj233",
+    ),
+    service_key: str = Query(
+        ...,
+        description="The key (url) of the service",
+        example=[
+            "simcore/services/comp/itis/sleeper",
+            "simcore/services/dynamic/3dviewer",
+        ],
+    ),
+    service_tag: str = Query(
+        ..., description="The tag/version of the service", example=["1.0.0", "0.0.1"]
+    ),
+    service_uuid: str = Query(
+        ...,
+        description="The uuid to assign the service with",
+        example="123e4567-e89b-12d3-a456-426655440000",
+    ),
+    service_basepath: str = Query(
+        "",
+        description="predefined basepath for the backend service otherwise uses root",
+        example="/x/EycCXbU0H/",
+    ),
+    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
+) -> None:
+    # fetch labels (FROM the catalog service at this point)
+    # if it is a legacy service redirect to director-v0
+    is_legacy_dynamic_service = True
+    log.info("Will request something for you!")
+
+    if is_legacy_dynamic_service:
+        # forward to director-v0
+        # pylint: disable=protected-access
+        director_v0_base_url = str(director_v0_client.client._base_url).strip("/")
+        redirect_url = f"{director_v0_base_url}/running_interactive_services"
+        return RedirectResponse(redirect_url)
+
+    log.error("TODO: implement start for node_uuid=%s", node_uuid)
