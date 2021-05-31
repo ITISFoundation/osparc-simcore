@@ -311,11 +311,11 @@ async def test_websocket_disconnected_after_logout(
 
 
 @pytest.mark.parametrize(
-    "user_role",
+    "user_role, exp_save_state",
     [
-        (UserRole.GUEST),
-        (UserRole.USER),
-        (UserRole.TESTER),
+        (UserRole.GUEST, False),
+        (UserRole.USER, True),
+        (UserRole.TESTER, True),
     ],
 )
 async def test_interactive_services_removed_after_logout(
@@ -328,6 +328,7 @@ async def test_interactive_services_removed_after_logout(
     socketio_client_factory: Callable,
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     director_v2_service_mock: aioresponses,
+    exp_save_state: bool,
 ):
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # login - logged_user fixture
@@ -349,16 +350,16 @@ async def test_interactive_services_removed_after_logout(
     # ensure sufficient time is wasted here
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 1)
     # assert dynamic service is removed
-    calls = [call(client.server.app, service["service_uuid"])]
+    calls = [call(client.server.app, service["service_uuid"], exp_save_state)]
     mocked_director_api["stop_service"].assert_has_calls(calls)
 
 
 @pytest.mark.parametrize(
-    "user_role",
+    "user_role, exp_save_state",
     [
-        UserRole.GUEST,
-        UserRole.USER,
-        UserRole.TESTER,
+        (UserRole.GUEST, False),
+        (UserRole.USER, True),
+        (UserRole.TESTER, True),
     ],
 )
 async def test_interactive_services_remain_after_websocket_reconnection_from_2_tabs(
@@ -370,6 +371,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     socketio_client_factory: Callable,
     client_session_id_factory: Callable[[], str],
     storage_subsystem_mock,  # when guest user logs out garbage is collected
+    exp_save_state: bool,
 ):
 
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
@@ -417,17 +419,16 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     # we need to wait for the service deletion delay
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 1)
     # assert dynamic service is gone
-    calls = [call(client.server.app, service["service_uuid"])]
+    calls = [call(client.server.app, service["service_uuid"], exp_save_state)]
     mocked_director_api["stop_service"].assert_has_calls(calls)
 
 
 @pytest.mark.parametrize(
-    "user_role",
+    "user_role, exp_save_state",
     [
-        # (UserRole.ANONYMOUS),
-        (UserRole.GUEST),
-        (UserRole.USER),
-        (UserRole.TESTER),
+        (UserRole.GUEST, False),
+        (UserRole.USER, True),
+        (UserRole.TESTER, True),
     ],
 )
 async def test_interactive_services_removed_per_project(
@@ -441,6 +442,7 @@ async def test_interactive_services_removed_per_project(
     client_session_id_factory: Callable[[], str],
     asyncpg_storage_system_mock,
     storage_subsystem_mock,  # when guest user logs out garbage is collected
+    exp_save_state: bool,
 ):
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # create server with delay set to DELAY
@@ -488,20 +490,20 @@ async def test_interactive_services_removed_per_project(
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 2)
     # assert dynamic service 2,3 is removed
     calls = [
-        call(client.server.app, service2["service_uuid"]),
-        call(client.server.app, service3["service_uuid"]),
+        call(client.server.app, service2["service_uuid"], exp_save_state),
+        call(client.server.app, service3["service_uuid"], exp_save_state),
     ]
     mocked_director_api["stop_service"].assert_has_calls(calls)
     mocked_director_api["stop_service"].reset_mock()
 
 
 @pytest.mark.parametrize(
-    "user_role",
+    "user_role, exp_save_state",
     [
         # (UserRole.ANONYMOUS),
         # (UserRole.GUEST),
-        (UserRole.USER),
-        (UserRole.TESTER),
+        (UserRole.USER, True),
+        (UserRole.TESTER, True),
     ],
 )
 async def test_services_remain_after_closing_one_out_of_two_tabs(
@@ -513,6 +515,7 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     mocked_dynamic_service,
     socketio_client_factory: Callable,
     client_session_id_factory: Callable[[], str],
+    exp_save_state: bool,
 ):
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # create server with delay set to DELAY
@@ -541,13 +544,17 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     # wait the defined delay
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL)
     mocked_director_api["stop_service"].assert_has_calls(
-        [call(client.server.app, service["service_uuid"])]
+        [call(client.server.app, service["service_uuid"], exp_save_state)]
     )
 
 
 @pytest.mark.parametrize(
-    "user_role, expect_call",
-    [(UserRole.USER, False), (UserRole.TESTER, False), (UserRole.GUEST, True)],
+    "user_role, expect_call, exp_save_state",
+    [
+        (UserRole.USER, False, True),
+        (UserRole.TESTER, False, True),
+        (UserRole.GUEST, True, False),
+    ],
 )
 async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     client,
@@ -559,7 +566,8 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     socketio_client_factory: Callable,
     # asyncpg_storage_system_mock,
     storage_subsystem_mock,  # when guest user logs out garbage is collected
-    expect_call,
+    expect_call: bool,
+    exp_save_state: bool,
 ):
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # login - logged_user fixture
@@ -583,7 +591,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 1)
 
     # assert dynamic service is removed
-    calls = [call(client.server.app, service["service_uuid"])]
+    calls = [call(client.server.app, service["service_uuid"], exp_save_state)]
     mocked_director_api["stop_service"].assert_has_calls(calls)
 
     if expect_call:
