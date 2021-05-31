@@ -155,11 +155,11 @@ def reduce_access_rights(
     # helper functions to simplify operation of access rights
 
     def get_target(access: ServiceAccessRightsAtDB) -> Tuple[Union[str, int], ...]:
-        """ Hashable identifier of the resource the access rights apply to """
+        """Hashable identifier of the resource the access rights apply to"""
         return tuple([access.key, access.version, access.gid, access.product_name])
 
     def get_flags(access: ServiceAccessRightsAtDB) -> Dict[str, bool]:
-        """ Extracts only """
+        """Extracts only"""
         return access.dict(include={"execute_access", "write_access"})
 
     access_flags_map = {}
