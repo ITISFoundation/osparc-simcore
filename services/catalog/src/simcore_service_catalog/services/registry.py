@@ -23,6 +23,7 @@ def setup_registry(app: FastAPI) -> None:
 
 class RegistryClient:
     def __init__(self, settings: RegistrySettings):
+        # pylint: disable=consider-using-with
         self.executor = ThreadPoolExecutor(max_workers=settings.threadpool_max_workers)
         self.client = DockerRegistryClient(settings.address)
         self.loop = asyncio.get_event_loop()

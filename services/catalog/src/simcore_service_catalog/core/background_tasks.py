@@ -12,7 +12,6 @@
 import asyncio
 import logging
 from asyncio.futures import CancelledError
-from cmath import log
 from pprint import pformat
 from typing import Dict, Set, Tuple
 
