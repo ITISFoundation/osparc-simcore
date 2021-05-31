@@ -31,7 +31,7 @@ def minimal_configuration(
 
 @pytest.fixture
 async def test_client(loop: BaseEventLoop) -> AsyncClient:
-    from simcore_service_catalog.__main__ import the_app
+    from simcore_service_catalog.main import the_app
 
     async with AsyncClient(
         app=the_app, base_url=f"http://test/{api_vtag}"
