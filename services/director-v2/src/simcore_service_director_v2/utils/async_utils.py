@@ -1,8 +1,9 @@
 import asyncio
-from functools import wraps
 from collections import deque
+from functools import wraps
+from typing import Dict, List
+
 import attr
-from typing import List, Dict
 
 
 @attr.s(auto_attribs=True)

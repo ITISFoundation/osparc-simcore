@@ -4,11 +4,12 @@ import asyncio
 import json
 import logging
 import re
+from collections import deque
 from datetime import datetime, timedelta
 from distutils.version import StrictVersion
 from enum import Enum
 from pprint import pformat
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Deque, Dict, List, Optional, Tuple, Union
 
 import aiodocker
 import tenacity
@@ -18,8 +19,14 @@ from servicelib.monitor_services import service_started, service_stopped
 
 from . import config, docker_utils, exceptions, registry_proxy
 from .config import APP_CLIENT_SESSION_KEY
+from .directorv2_proxy import (
+    get_dynamic_sidecar_stack_status,
+    start_dynamic_sidecar_stack,
+    stop_dynamic_sidecar_stack,
+)
 from .services_common import ServicesCommonSettings
 from .system_utils import get_system_extra_hosts_raw
+from .utils import get_swarm_network
 
 log = logging.getLogger(__name__)
 
@@ -248,7 +255,9 @@ async def _create_docker_service_params(
             dummy_string = dummy_string.replace("%service_uuid%", node_uuid)
             param["value"] = json.loads(dummy_string)
 
-        if param["type"] == "Resources":
+        # NOTE: the below capitalize addresses a bug in a lot of already in use services
+        # where Resources was written in lower case
+        if param["type"].capitalize() == "Resources":
             # python-API compatible for backward compatibility
             if "mem_limit" in param["value"]:
                 docker_params["task_template"]["Resources"]["Limits"][
@@ -308,7 +317,7 @@ async def _create_docker_service_params(
 
     # attach the service to the swarm network dedicated to services
     try:
-        swarm_network = await _get_swarm_network(client)
+        swarm_network = await get_swarm_network(client)
         swarm_network_id = swarm_network["Id"]
         swarm_network_name = swarm_network["Name"]
         docker_params["networks"].append(swarm_network_id)
@@ -439,7 +448,10 @@ async def _create_overlay_network_in_swarm(
         network_config = {
             "Name": network_name,
             "Driver": "overlay",
-            "Labels": {"uuid": node_uuid},
+            "Labels": {
+                "uuid": node_uuid,
+                "io.simcore.zone": f"{config.TRAEFIK_SIMCORE_ZONE}",
+            },
         }
         docker_network = await client.networks.create(network_config)
         log.debug(
@@ -456,18 +468,25 @@ async def _create_overlay_network_in_swarm(
         ) from err
 
 
+def _filter_remove_network(network: Dict, node_uuid: str) -> bool:
+    """Retruns True if network should be removed"""
+    labels = network["Labels"]
+    return (
+        labels
+        and labels.get("uuid") == node_uuid
+        and labels.get("io.simcore.zone") == f"{config.TRAEFIK_SIMCORE_ZONE}"
+    )
+
+
 async def _remove_overlay_network_of_swarm(
     client: aiodocker.docker.Docker, node_uuid: str
 ) -> None:
     log.debug("Removing overlay network for service with uuid %s", node_uuid)
     try:
-        networks = await client.networks.list()
         networks = [
             x
             for x in (await client.networks.list())
-            if x["Labels"]
-            and "uuid" in x["Labels"]
-            and x["Labels"]["uuid"] == node_uuid
+            if _filter_remove_network(x, node_uuid)
         ]
         log.debug("Found %s networks with uuid %s", len(networks), node_uuid)
         # remove any network in the list (should be only one)
@@ -717,20 +736,19 @@ async def _start_docker_service(
                 service_name, published_port, service_boot_parameters_labels, session
             )
 
-        container_meta_data = {
-            "published_port": published_port,
-            "entry_point": service_entrypoint,
-            "service_uuid": node_uuid,
-            "service_key": service_key,
-            "service_version": service_tag,
-            "service_host": service_name,
-            "service_port": target_port,
-            "service_basepath": node_base_path,
-            "service_state": service_state.value,
-            "service_message": service_msg,
-            "user_id": user_id,
-        }
-        return container_meta_data
+        return format_node_details_for_frontend(
+            published_port=published_port,
+            entry_point=service_entrypoint,
+            service_uuid=node_uuid,
+            service_key=service_key,
+            service_version=service_tag,
+            service_host=service_name,
+            service_port=target_port,
+            service_basepath=node_base_path,
+            service_state=service_state,
+            service_message=service_msg,
+            user_id=user_id,
+        )
 
     except exceptions.ServiceStartTimeoutError as err:
         log.exception("Service failed to start")
@@ -749,6 +767,290 @@ async def _silent_service_cleanup(app: web.Application, node_uuid: str) -> None:
         pass
 
 
+def _get_value_from_label(labels: Dict[str, Any], key: str) -> Any:
+    """
+    If a value is empty string it will be treated as None
+    'null' values in yaml spec are converted to empty string.
+    """
+    value = labels.get(key, None)
+    return None if value == "" else value
+
+
+MATCH_SERVICE_TAG = "${SERVICE_TAG}"
+MATCH_IMAGE_START = "${REGISTRY_URL}/"
+MATCH_IMAGE_END = f":{MATCH_SERVICE_TAG}"
+
+
+def _assemble_key(service_key: str, service_tag: str) -> str:
+    return f"{service_key}:{service_tag}"
+
+
+async def _extract_osparc_involved_service_labels(
+    app: web.Application,
+    service_key: str,
+    service_tag: str,
+    service_labels: Dict[str, str],
+    compose_spec: Optional[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """
+    Returns all the involved oSPARC services from the provided service labels.
+
+    If the service contains a compose-spec that will also be parsed for images.
+    Searches for images like the following in the spec:
+    - `${REGISTRY_URL}/**SOME_SERVICE_NAME**:${SERVICE_TAG}`
+    - `${REGISTRY_URL}/**SOME_SERVICE_NAME**:1.2.3` where `1.2.3` is a hardcoded tag
+    """
+
+    # initialize with existing labels
+    # stores labels mapped by image_name service:tag
+    docker_image_name_by_services: Dict[str, Any] = {
+        _assemble_key(service_key=service_key, service_tag=service_tag): service_labels
+    }
+    if compose_spec is None:
+        return docker_image_name_by_services
+
+    # maps form image_name to compose_spec key
+    reverse_mapping: Dict[str, str] = {}
+
+    for compose_service_key, service_data in compose_spec.get("services", {}).items():
+
+        image = service_data.get("image", None)
+        if image is None:
+            continue
+
+        # if image dose not have this format skip:
+        # - `${REGISTRY_URL}/**SOME_SERVICE_NAME**:${SERVICE_TAG}`
+        # - `${REGISTRY_URL}/**SOME_SERVICE_NAME**:1.2.3` a hardcoded tag
+        if not image.startswith(MATCH_IMAGE_START) or ":" not in image:
+            continue
+        if not image.startswith(MATCH_IMAGE_START) or not image.endswith(
+            MATCH_IMAGE_END
+        ):
+            continue
+
+        # strips `${REGISTRY_URL}/`; replaces `${SERVICE_TAG}` with `service_tag`
+        osparc_image_key = image.replace(MATCH_SERVICE_TAG, service_tag).replace(
+            MATCH_IMAGE_START, ""
+        )
+        current_service_key, current_service_tag = osparc_image_key.split(":")
+        involved_key = _assemble_key(
+            service_key=current_service_key, service_tag=current_service_tag
+        )
+        reverse_mapping[involved_key] = compose_service_key
+
+        # if the labels already existed no need to fetch them again
+        if involved_key in docker_image_name_by_services:
+            continue
+
+        docker_image_name_by_services[
+            involved_key
+        ] = await registry_proxy.get_image_labels(
+            app=app, image=current_service_key, tag=current_service_tag
+        )
+
+    # remaps from image_name as key to compose_spec key
+    compose_spec_mapped_labels = {
+        reverse_mapping[k]: v for k, v in docker_image_name_by_services.items()
+    }
+    return compose_spec_mapped_labels
+
+
+def _merge_resources_in_settings(
+    settings: Deque[Dict[str, Any]]
+) -> Deque[Dict[str, Any]]:
+    """All oSPARC services which have defined resource requirements will be added"""
+    result: Deque[Dict[str, Any]] = deque()
+    resources_entries: Deque[Dict[str, Any]] = deque()
+
+    log.debug("merging settings %s", settings)
+
+    for entry in settings:
+        if entry.get("name") == "Resources" and entry.get("type") == "Resources":
+            resources_entries.append(entry)
+        else:
+            result.append(entry)
+
+    if len(resources_entries) <= 1:
+        return settings
+
+    # merge all resources
+    empty_resource_entry: Dict[str, Any] = {
+        "name": "Resources",
+        "type": "Resources",
+        "value": {
+            "Limits": {"NanoCPUs": 0, "MemoryBytes": 0},
+            "Reservations": {
+                "NanoCPUs": 0,
+                "MemoryBytes": 0,
+                "GenericResources": [],
+            },
+        },
+    }
+
+    for resource_entry in resources_entries:
+        limits = resource_entry["value"].get("Limits", {})
+        empty_resource_entry["value"]["Limits"]["NanoCPUs"] += limits.get("NanoCPUs", 0)
+        empty_resource_entry["value"]["Limits"]["MemoryBytes"] += limits.get(
+            "MemoryBytes", 0
+        )
+
+        reservations = resource_entry["value"].get("Reservations", {})
+        empty_resource_entry["value"]["Reservations"]["NanoCPUs"] = reservations.get(
+            "NanoCPUs", 0
+        )
+        empty_resource_entry["value"]["Reservations"]["MemoryBytes"] = reservations.get(
+            "MemoryBytes", 0
+        )
+        empty_resource_entry["value"]["Reservations"]["GenericResources"] = []
+        # put all generic resources together without looking for duplicates
+        empty_resource_entry["value"]["Reservations"]["GenericResources"].extend(
+            reservations.get("GenericResources", [])
+        )
+
+    result.append(empty_resource_entry)
+
+    return result
+
+
+def _inject_target_service_into_env_vars(
+    settings: Deque[Dict[str, Any]]
+) -> Deque[Dict[str, Any]]:
+    """NOTE: this method will modify settings in place"""
+
+    def _forma_env_var(env_var: str, destination_container: str) -> str:
+        var_name, var_payload = env_var.split("=")
+        json_encoded = json.dumps(
+            dict(destination_container=destination_container, env_var=var_payload)
+        )
+        return f"{var_name}={json_encoded}"
+
+    for entry in settings:
+        if entry.get("name") == "env" and entry.get("type") == "string":
+            # process entry
+            list_of_env_vars = entry.get("value", [])
+            destination_container = entry["destination_container"]
+
+            # transforms settings defined environment variables
+            # from `ENV_VAR=PAYLOAD`
+            # to   `ENV_VAR={"destination_container": "destination_container", "env_var": "PAYLOAD"}`
+            entry["value"] = [
+                _forma_env_var(x, destination_container) for x in list_of_env_vars
+            ]
+
+    return settings
+
+
+def _add_compose_destination_container_to_settings_entries(
+    settings: Deque[Dict[str, Any]], destination_container: str
+) -> List[Dict[str, Any]]:
+    def _inject_destination_container(item: Dict[str, Any]):
+        item["destination_container"] = destination_container
+        return item
+
+    return [_inject_destination_container(x) for x in settings]
+
+
+def _strip_compose_destination_container_from_settings_entries(
+    settings: Deque[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    def _remove_destination_container(item: Dict[str, Any]):
+        item.pop("destination_container", None)
+        return item
+
+    return [_remove_destination_container(x) for x in settings]
+
+
+async def _start_docker_service_with_dynamic_service(
+    app: web.Application,
+    client: aiodocker.docker.Docker,
+    user_id: str,
+    project_id: str,
+    node_uuid: str,
+    service: Dict[str, Any],
+    request_scheme: str,
+    request_dns: str,
+):
+    """
+    Assembles and passes on all the required information for the service
+    to be ran by the dynamic-sidecar.
+    """
+    image_labels = await registry_proxy.get_image_labels(
+        app=app, image=service["key"], tag=service["tag"]
+    )
+    log.info(
+        "image=%s, tag=%s, labels=%s", service["key"], service["tag"], image_labels
+    )
+
+    # paths_mapping express how to map dynamic-sidecar paths to the compose-spec volumes
+    # where the service expects to find its certain folders
+    paths_mapping = _get_value_from_label(image_labels, "simcore.service.paths-mapping")
+    if paths_mapping is None:
+        raise exceptions.DirectorException(
+            f"No label 'simcore.service.paths-mapping' defined for service {service}"
+        )
+    paths_mapping: Dict[str, Any] = json.loads(paths_mapping)
+
+    str_compose_spec: Optional[str] = _get_value_from_label(
+        image_labels, "simcore.service.compose-spec"
+    )
+    compose_spec: Optional[Dict[str, Any]] = (
+        None if str_compose_spec is None else json.loads(str_compose_spec)
+    )
+
+    labels_for_involved_services: Dict[
+        str, Any
+    ] = await _extract_osparc_involved_service_labels(
+        app=app,
+        service_key=service["key"],
+        service_tag=service["tag"],
+        service_labels=image_labels,
+        compose_spec=compose_spec,
+    )
+    logging.info("labels_for_involved_services=%s", labels_for_involved_services)
+
+    target_container = _get_value_from_label(
+        image_labels, "simcore.service.container-http-entrypoint"
+    )
+
+    # merge the settings from the all the involved services
+    settings: Deque[Dict[str, Any]] = deque()
+    for compose_spec_key, service_labels in labels_for_involved_services.items():
+        service_settings: List[Dict[str, Any]] = json.loads(
+            service_labels["simcore.service.settings"]
+        )
+        settings.extend(
+            # inject compose spec key, used to target container specific services
+            _add_compose_destination_container_to_settings_entries(
+                settings=service_settings, destination_container=compose_spec_key
+            )
+        )
+
+    settings = _merge_resources_in_settings(settings)
+    settings = _inject_target_service_into_env_vars(settings)
+    # destination_container is no longer required, removing
+    settings = _strip_compose_destination_container_from_settings_entries(settings)
+
+    # calls into director-v2 to start
+    proxy_service_create_results = await start_dynamic_sidecar_stack(
+        app=app,
+        user_id=user_id,
+        project_id=project_id,
+        service_key=service["key"],
+        service_tag=service["tag"],
+        node_uuid=node_uuid,
+        settings=list(settings),
+        paths_mapping=paths_mapping,
+        compose_spec=compose_spec,
+        target_container=target_container,
+        request_scheme=request_scheme,
+        request_dns=request_dns,
+    )
+
+    return await _get_node_details(
+        app=app, client=client, service=proxy_service_create_results
+    )
+
+
 async def _create_node(
     app: web.Application,
     client: aiodocker.docker.Docker,
@@ -757,6 +1059,9 @@ async def _create_node(
     list_of_services: List[Dict],
     node_uuid: str,
     node_base_path: str,
+    request_scheme: str,
+    request_dns: str,
+    boot_as_dynamic_sidecar: bool,
 ) -> List[Dict]:  # pylint: disable=R0913, R0915
     log.debug(
         "Creating %s docker services for node %s and base path %s for user %s",
@@ -769,7 +1074,7 @@ async def _create_node(
 
     # if the service uses several docker images, a network needs to be setup to connect them together
     inter_docker_network_id = None
-    if len(list_of_services) > 1:
+    if len(list_of_services) > 1 and not boot_as_dynamic_sidecar:
         service_name = registry_proxy.get_service_first_name(list_of_services[0]["key"])
         inter_docker_network_id = await _create_overlay_network_in_swarm(
             client, service_name, node_uuid
@@ -778,17 +1083,41 @@ async def _create_node(
 
     containers_meta_data = list()
     for service in list_of_services:
-        service_meta_data = await _start_docker_service(
-            app,
-            client,
-            user_id,
-            project_id,
-            service["key"],
-            service["tag"],
-            list_of_services.index(service) == 0,
-            node_uuid,
-            node_base_path,
-            inter_docker_network_id,
+        log.debug("Service to start info %s", service)
+
+        # The platform currently supports 2 boot modes, legacy(which will be deprecated in the future)
+        # dynamic-sidecar. If inside the labels "simcore.service.boot-mode" is presend and is equal to
+        # "dynamic-sidecar", the dynamic sidecar will be used in place of the current system
+
+        if boot_as_dynamic_sidecar:
+            service_meta_data = await _start_docker_service_with_dynamic_service(
+                app=app,
+                client=client,
+                user_id=user_id,
+                project_id=project_id,
+                node_uuid=node_uuid,
+                service=service,
+                request_scheme=request_scheme,
+                request_dns=request_dns,
+            )
+        else:
+            service_meta_data = await _start_docker_service(
+                app,
+                client,
+                user_id,
+                project_id,
+                service["key"],
+                service["tag"],
+                list_of_services.index(service) == 0,
+                node_uuid,
+                node_base_path,
+                inter_docker_network_id,
+            )
+
+        log.debug(
+            "Result of service start is_dynamic_sidecar=%s %s",
+            boot_as_dynamic_sidecar,
+            service_meta_data,
         )
         containers_meta_data.append(service_meta_data)
 
@@ -814,6 +1143,16 @@ async def _get_service_basepath_from_docker_service(service: Dict) -> str:
     return envs_dict["SIMCORE_NODE_BASEPATH"]
 
 
+async def _boot_as_dynamic_sidecar(
+    app: web.Application, service_key: str, service_tag: str
+) -> bool:
+    image_labels = await registry_proxy.get_image_labels(
+        app=app, image=service_key, tag=service_tag
+    )
+
+    return image_labels.get("simcore.service.boot-mode") == "dynamic-sidecar"
+
+
 async def start_service(
     app: web.Application,
     user_id: str,
@@ -822,6 +1161,8 @@ async def start_service(
     service_tag: str,
     node_uuid: str,
     node_base_path: str,
+    request_dns: str,
+    request_scheme: str,
 ) -> Dict:
     # pylint: disable=C0103
     log.debug(
@@ -841,7 +1182,11 @@ async def start_service(
         # find the service dependencies
         list_of_dependencies = await _get_dependant_repos(app, service_key, service_tag)
         log.debug("Found service dependencies: %s", list_of_dependencies)
-        if list_of_dependencies:
+
+        boot_as_dynamic_sidecar = await _boot_as_dynamic_sidecar(
+            app=app, service_key=service_key, service_tag=service_tag
+        )
+        if list_of_dependencies and not boot_as_dynamic_sidecar:
             list_of_services_to_start.extend(list_of_dependencies)
 
         containers_meta_data = await _create_node(
@@ -852,6 +1197,9 @@ async def start_service(
             list_of_services_to_start,
             node_uuid,
             node_base_path,
+            request_scheme,
+            request_dns,
+            boot_as_dynamic_sidecar,
         )
         node_details = containers_meta_data[0]
         if config.MONITORING_ENABLED:
@@ -866,9 +1214,88 @@ async def start_service(
         return node_details
 
 
+def format_node_details_for_frontend(**kwargs) -> Dict[str, Union[str, int]]:
+    """this is used to format the node_details for either old
+    or dynamic-sidecar interactive services
+
+    Usually 10 (old interactive service) or 11 (dynamic-sidecar) fields are provided.
+    When less the 10 fields are provided there is usually an error or something is still being formatted
+    """
+
+    def _format_service_state(
+        input_service_state: Optional[Union[str, ServiceState]]
+    ) -> str:
+        if input_service_state is None:
+            return ServiceState.PENDING.value
+        return (
+            input_service_state
+            if isinstance(input_service_state, str)
+            else input_service_state.value
+        )
+
+    node_status: Dict[str, Union[str, int]] = {}
+    dynamic_type: Optional[str] = kwargs.get("dynamic_type", None)
+    if dynamic_type is not None:
+        # if this field is preset the service will be served via dynamic-sidecar
+        node_status["dynamic_type"] = dynamic_type
+
+    service_state: Optional[Union[str, ServiceState]] = kwargs.get(
+        "service_state", None
+    )
+
+    if len(kwargs) < 10:
+        # for the servie-sidecar sometimes the status is not availabe because:
+        # API not responding, generic errors
+        node_status["service_state"] = _format_service_state(service_state)
+        node_status["service_message"] = kwargs.get("service_message", "")
+        node_status["service_uuid"] = kwargs.get("service_uuid", "")
+        return node_status
+
+    node_status["published_port"] = kwargs["published_port"]
+    node_status["entry_point"] = kwargs["entry_point"]
+    node_status["service_uuid"] = kwargs["service_uuid"]
+    node_status["service_key"] = kwargs["service_key"]
+    node_status["service_version"] = kwargs["service_version"]
+    node_status["service_host"] = kwargs["service_host"]
+    node_status["service_port"] = kwargs["service_port"]
+    node_status["service_basepath"] = kwargs["service_basepath"]
+    node_status["service_state"] = _format_service_state(service_state)
+    node_status["service_message"] = kwargs["service_message"]
+    node_status["user_id"] = kwargs["user_id"]
+
+    return node_status
+
+
+async def _compute_dynamic_sidecar_node_details(
+    app: web.Application, node_uuid: str
+) -> Dict[str, Union[str, int]]:
+    # pull all the details from the dynamic-sidecar via an API call and pass it forward
+    status_result = await get_dynamic_sidecar_stack_status(app=app, node_uuid=node_uuid)
+    if status_result is None:
+        raise exceptions.DirectorException(
+            f"Error while retriving status from dynamic-sidecar for node {node_uuid}"
+        )
+    if (
+        len(status_result) == 2
+        and "service_state" in status_result
+        and "service_message" in status_result
+    ):
+        return status_result
+    return format_node_details_for_frontend(**status_result)
+
+
 async def _get_node_details(
     app: web.Application, client: aiodocker.docker.Docker, service: Dict
 ) -> Dict:
+    is_dynamic_sidecar = (
+        service["Spec"]["Labels"].get("dynamic_type") == "dynamic-sidecar"
+    )
+    if is_dynamic_sidecar:
+        return await _compute_dynamic_sidecar_node_details(
+            app=app, node_uuid=service["Spec"]["Labels"]["uuid"]
+        )
+
+    # legacy node details computation
     service_key, service_tag = await _get_service_key_version_from_docker_service(
         service
     )
@@ -892,20 +1319,19 @@ async def _get_node_details(
 
     # get the published port
     published_port, target_port = await _get_docker_image_port_mapping(service)
-    node_details = {
-        "published_port": published_port,
-        "entry_point": service_entrypoint,
-        "service_uuid": service_uuid,
-        "service_key": service_key,
-        "service_version": service_tag,
-        "service_host": service_name,
-        "service_port": target_port,
-        "service_basepath": service_basepath,
-        "service_state": service_state.value,
-        "service_message": service_msg,
-        "user_id": user_id,
-    }
-    return node_details
+    return format_node_details_for_frontend(
+        published_port=published_port,
+        entry_point=service_entrypoint,
+        service_uuid=service_uuid,
+        service_key=service_key,
+        service_version=service_tag,
+        service_host=service_name,
+        service_port=target_port,
+        service_basepath=service_basepath,
+        service_state=service_state,
+        service_message=service_msg,
+        user_id=user_id,
+    )
 
 
 async def get_services_details(
@@ -996,16 +1422,21 @@ async def stop_service(app: web.Application, node_uuid: str, save_state: bool) -
         log.debug("found service(s) with uuid %s", list_running_services_with_uuid)
         # save the state of the main service if it can
         service_details = await get_service_details(app, node_uuid)
-        # FIXME: the exception for the 3d-viewer shall be removed once the dy-sidecar comes in
-        service_host_name = "{}:{}{}".format(
-            service_details["service_host"],
-            service_details["service_port"]
-            if service_details["service_port"]
-            else "80",
-            service_details["service_basepath"]
-            if not "3d-viewer" in service_details["service_host"]
-            else "",
-        )
+
+        if service_details.get("dynamic_type") == "dynamic-sidecar":
+            # dynamic-sidecar is exposed on port 8000 by default
+            service_host_name = service_details["service_host"] + ":8000"
+        else:
+            # FIXME: the exception for the 3d-viewer shall be removed once the dy-sidecar comes in
+            service_host_name = "{}:{}{}".format(
+                service_details["service_host"],
+                service_details["service_port"]
+                if service_details["service_port"]
+                else "80",
+                service_details["service_basepath"]
+                if not "3d-viewer" in service_details["service_host"]
+                else "",
+            )
         log.debug("saving state of service %s...", service_host_name)
         if save_state:
             try:
@@ -1035,6 +1466,8 @@ async def stop_service(app: web.Application, node_uuid: str, save_state: bool) -
         try:
             log.debug("removing services...")
             for service in list_running_services_with_uuid:
+                # calls into director-v2 to stop
+                await stop_dynamic_sidecar_stack(app=app, node_uuid=node_uuid)
                 await client.services.delete(service["Spec"]["Name"])
             log.debug("removed services, now removing network...")
         except aiodocker.exceptions.DockerError as err:

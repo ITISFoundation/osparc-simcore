@@ -189,9 +189,9 @@ endif
 
 define _show_endpoints
 # The following endpoints are available
-echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9081                                                                 - oSparc platform"
-echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18080/?pgsql=postgres&username=scu&db=simcoredb&ns=public  - Postgres DB"
-echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9000                                                                 - Portainer"
+echo "http://$(get_my_ip).nip.io:9081							- oSparc platform"
+echo "http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username=scu&db=simcoredb&ns=public	- Postgres DB"
+echo "http://$(get_my_ip).nip.io:9000							- Portainer"
 endef
 
 up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)

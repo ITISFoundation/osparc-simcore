@@ -19,6 +19,7 @@ from ..modules import (
     director_v0,
     docker_registry,
     dynamic_services,
+    dynamic_sidecar,
     remote_debug,
     scheduler,
 )
@@ -66,6 +67,8 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     if settings.registry.enabled:
         docker_registry.setup(app, settings.registry)
+
+    dynamic_sidecar.setup(app)
 
     if settings.scheduler.enabled:
         scheduler.setup(app)

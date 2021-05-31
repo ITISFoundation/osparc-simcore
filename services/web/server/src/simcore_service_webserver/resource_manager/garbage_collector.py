@@ -356,7 +356,10 @@ async def remove_orphaned_services(
     ] = await get_running_interactive_services(app)
     logger.info(
         "Will collect the following: %s",
-        [x["service_host"] for x in running_interactive_services],
+        [
+            (x.get("service_uuid", ""), x.get("service_host", ""))
+            for x in running_interactive_services
+        ],
     )
     for interactive_service in running_interactive_services:
         # if not present in DB or not part of currently opened projects, can be removed

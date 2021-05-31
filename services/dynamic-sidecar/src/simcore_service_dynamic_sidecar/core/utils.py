@@ -2,16 +2,15 @@ import asyncio
 import logging
 import tempfile
 import traceback
-from contextlib import contextmanager
 from pathlib import Path
-from typing import AsyncGenerator, Generator, List, Tuple
+from typing import AsyncGenerator, List, Tuple
 
 import aiodocker
 import aiofiles
 import yaml
 from async_generator import asynccontextmanager
 from async_timeout import timeout
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
@@ -31,18 +30,16 @@ async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
         await aiofiles.os.remove(file_path)
 
 
-@contextmanager
-def docker_client() -> Generator[aiodocker.Docker, None, None]:
+@asynccontextmanager
+async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
     docker = aiodocker.Docker()
     try:
         yield docker
     except aiodocker.exceptions.DockerError as error:
         logger.exception("An unexpected Docker error occurred")
-        raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error.message
-        ) from error
+        raise HTTPException(error.status, detail=error.message) from error
     finally:
-        docker.close()
+        await docker.close()
 
 
 async def async_command(command: str, command_timeout: float) -> Tuple[bool, str]:

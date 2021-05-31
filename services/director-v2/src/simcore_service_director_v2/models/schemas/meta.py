@@ -1,8 +1,7 @@
 from typing import Dict, Optional
 
-from pydantic import BaseModel, Field, constr
-
 from models_library.basic_regex import VERSION_RE
+from pydantic import BaseModel, Field, constr
 
 VersionStr = constr(regex=VERSION_RE)
 

@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import logging
 import json
 from pathlib import Path
 from typing import Any, Dict, Iterator
@@ -31,6 +32,8 @@ pytest_plugins = [
     "pytest_simcore.simcore_services",
     "pytest_simcore.tmp_path_extra",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session")
@@ -63,8 +66,21 @@ def project_env_devel_environment(project_env_devel_dict: Dict[str, Any], monkey
         monkeypatch.setenv(key, value)
 
 
+@pytest.fixture
+def dynamic_sidecar_image(monkeypatch) -> None:
+    # Works as below line in docker.compose.yml
+    # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
+
+    registry = os.environ.get("DOCKER_REGISTRY", "local")
+    image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
+
+    image_name = f"{registry}/dynamic-sidecar:{image_tag}".strip("/")
+    logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", image_name)
+
+
 @pytest.fixture(scope="function")
-def client(loop: asyncio.BaseEventLoop) -> TestClient:
+def client(loop: asyncio.BaseEventLoop, dynamic_sidecar_image) -> TestClient:
     settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
     app = init_app(settings)
 

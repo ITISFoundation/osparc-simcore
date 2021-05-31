@@ -1,8 +1,8 @@
 import logging
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Union
 from uuid import UUID
 
-from aiohttp import ClientError, ClientTimeout, web
+from aiohttp import ClientError, ClientResponse, ClientTimeout, web
 from models_library.projects_pipeline import ComputationTask
 from pydantic.types import PositiveInt
 from servicelib.application_setup import ModuleCategory, app_module_setup
@@ -34,6 +34,22 @@ class _DirectorServiceError(Exception):
         super().__init__(f"forwarded call failed with status {status}, reason {reason}")
 
 
+async def _handle_response(
+    response: ClientResponse, expected_status: web.HTTPSuccessful
+) -> Dict:
+    if response.status != expected_status.status_code:
+        # in some cases the director answers with plain text
+        payload: Union[Dict, str] = (
+            await response.json()
+            if response.content_type == "application/json"
+            else await response.text()
+        )
+        raise _DirectorServiceError(response.status, payload)
+
+    payload: Dict = await response.json()
+    return payload
+
+
 async def _request_director_v2(
     app: web.Application,
     method: str,
@@ -42,23 +58,27 @@ async def _request_director_v2(
     headers: Optional[Dict[str, str]] = None,
     data: Optional[bytes] = None,
     **kwargs,
-) -> Tuple[Dict, int]:
+) -> Dict:
     session = get_client_session(app)
     try:
+        # disables automatic redirect allows to
+        # manually handle a 307 reply
+        kwargs["allow_redirects"] = False
+
         async with session.request(
             method, url, headers=headers, json=data, **kwargs
         ) as resp:
-            if resp.status != expected_status.status_code:
-                # in some cases the director answers with plain text
-                payload: Union[Dict, str] = (
-                    await resp.json()
-                    if resp.content_type == "application/json"
-                    else await resp.text()
-                )
-                raise _DirectorServiceError(resp.status, payload)
+            # Since 307 dose not include the redirect body 
+            # here we follow up the request
+            # if this is a redirect request, fetch the location header and forward to it
+            redirect_url = resp.headers.get("Location", None)
+            if redirect_url is not None:
+                async with session.request(
+                    method, redirect_url, headers=headers, json=data, **kwargs
+                ) as redirected_response:
+                    return await _handle_response(redirected_response, expected_status)
 
-            payload: Dict = await resp.json()
-            return payload
+            return await _handle_response(resp, expected_status)
 
     except TimeoutError as err:
         raise _DirectorServiceError(
@@ -252,6 +272,48 @@ async def request_retrieve_dyn_service(
             exc.status,
             exc.reason,
         )
+
+
+@log_decorator(logger=log)
+async def start_service(
+    app: web.Application,
+    user_id: str,
+    project_id: str,
+    service_key: str,
+    service_version: str,
+    service_uuid: str,
+    request_dns: str,
+    request_scheme: str,
+) -> Optional[Dict]:
+    params = {
+        "user_id": user_id,
+        "project_id": project_id,
+        "service_key": service_key,
+        "service_tag": service_version,
+        "service_uuid": service_uuid,
+        "service_basepath": f"/x/{service_uuid}",
+    }
+
+    headers = {
+        "X-Dynamic-Sidecar-Request-DNS": request_dns,
+        "X-Dynamic-Sidecar-Request-Scheme": request_scheme,
+    }
+
+    director2_settings: Directorv2Settings = get_settings(app)
+    backend_url = (
+        URL(director2_settings.endpoint)
+        / "dynamic_services"
+        / f"{service_uuid}:start-service"
+    )
+
+    return await _request_director_v2(
+        app,
+        "POST",
+        backend_url,
+        params=params,
+        headers=headers,
+        expected_status=web.HTTPCreated,
+    )
 
 
 @app_module_setup(

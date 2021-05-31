@@ -4,6 +4,16 @@
 # pylint: disable=redefined-outer-name
 
 import os
+import sys
+import re
+from pathlib import Path
+
+import pytest
+from aioresponses import aioresponses
+from aiohttp import ClientSession
+
+import simcore_service_director
+from simcore_service_director import config, resources, directorv2_proxy
 from pathlib import Path
 
 import pytest
@@ -94,6 +104,7 @@ async def aiohttp_mock_app(loop, mocker):
         config.APP_CLIENT_SESSION_KEY: session,
         config.APP_REGISTRY_CACHE_DATA_KEY: dict(),
     }
+    directorv2_proxy.setup_director_v2(mock_app_storage)
 
     def _get_item(self, key):
         return mock_app_storage[key]
@@ -112,3 +123,29 @@ async def aiohttp_mock_app(loop, mocker):
 def api_version_prefix() -> str:
     assert "v0" in resources.listdir(resources.RESOURCE_OPENAPI_ROOT)
     return "v0"
+
+
+@pytest.fixture
+async def director_v2_service_mock() -> aioresponses:
+
+    """uses aioresponses to mock all calls of an aiohttpclient
+    WARNING: any request done through the client will go through aioresponses. It is
+    unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
+    Other than that it seems to behave nicely
+    """
+    PASSTHROUGH_REQUESTS_PREFIXES = [
+        "http://127.0.0.1",
+        "http://localhost",
+        "unix://localhost",
+    ]
+    dynamic_services_stop = re.compile(
+        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/.*:stop$"
+    )
+    with aioresponses(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
+        mock.post(
+            dynamic_services_stop,
+            status=200,
+            repeat=True,
+        )
+
+        yield mock

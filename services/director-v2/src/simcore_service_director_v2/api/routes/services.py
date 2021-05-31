@@ -5,9 +5,7 @@ from fastapi import APIRouter, Depends, Path, Query, Response
 from models_library.services import KEY_RE, VERSION_RE, ServiceType
 
 from ...models.schemas.services import ServiceExtrasEnveloped, ServicesArrayEnveloped
-from ..dependencies.director_v0 import (
-    forward_to_director_v0,
-)
+from ..dependencies.director_v0 import forward_to_director_v0
 
 router = APIRouter()
 
