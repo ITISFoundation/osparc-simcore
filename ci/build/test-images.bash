@@ -11,7 +11,7 @@ pull_images() {
 }
 
 build_images() {
-    make build
+    make build-ci
     make info-images
 }
 

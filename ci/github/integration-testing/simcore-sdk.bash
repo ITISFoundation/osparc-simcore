@@ -15,7 +15,7 @@ install() {
   popd
   pip list -v
   # pull the test images if registry is set up, else build the images
-  make pull-version || (make build tag-version)
+  make pull-version || (make build-ci tag-version)
   make info-images
   # pip3 install services/storage/client-sdk/python
 }

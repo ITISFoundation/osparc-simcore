@@ -30,7 +30,7 @@ install() {
     pushd tests/swarm-deploy
     pip3 install -r requirements/ci.txt
     popd
-    make pull-version || (make build tag-version)
+    make pull-version || (make build-ci tag-version)
     make .env
 }
 

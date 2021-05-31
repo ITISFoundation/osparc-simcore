@@ -35,7 +35,7 @@ before_script() {
     if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}"; then
         pip list -v
         # pull the test images if registry is set up, else build the images
-        make pull-version || (make build tag-version)
+        make pull-version || (make build-ci tag-version)
         make info-images
     fi
 }
