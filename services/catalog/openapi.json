@@ -566,6 +566,117 @@
           }
         }
       }
+    },
+    "/v0/registry/{service_key}/{service_version}:labels": {
+      "get": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "Get Service Labels",
+        "operationId": "get_service_labels_v0_registry__service_key___service_version__labels_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Key",
+              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "type": "string"
+            },
+            "name": "service_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "service_version",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/registry/repository": {
+      "get": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "Get Registry Repositories",
+        "operationId": "get_registry_repositories_v0_registry_repository_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/registry/{service_key}:tags": {
+      "get": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "Get Service Tags",
+        "operationId": "get_service_tags_v0_registry__service_key__tags_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Key",
+              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "type": "string"
+            },
+            "name": "service_key",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -752,7 +863,7 @@
                 "type": "integer"
               }
             ],
-            "description": "The store identifier, '0' or 0 for simcore S3, '1' or 1 for datcore"
+            "description": "The store identifier: '0' or 0 for simcore S3, '1' or 1 for datcore"
           },
           "path": {
             "title": "Path",
@@ -760,15 +871,15 @@
             "type": "string",
             "description": "The path to the file in the storage provider domain"
           },
-          "eTag": {
-            "title": "Etag",
-            "type": "string",
-            "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
-          },
           "label": {
             "title": "Label",
             "type": "string",
             "description": "The real file name"
+          },
+          "eTag": {
+            "title": "Etag",
+            "type": "string",
+            "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
           },
           "dataset": {
             "title": "Dataset",
@@ -779,7 +890,14 @@
             ]
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "I/O port type to hold a link to a file in DATCORE storage ",
+        "example": {
+          "store": 1,
+          "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+          "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+          "label": "initial_WTstates"
+        }
       },
       "DownloadLink": {
         "title": "DownloadLink",
@@ -800,7 +918,8 @@
             "type": "string"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc) "
       },
       "HTTPValidationError": {
         "title": "HTTPValidationError",
@@ -1034,7 +1153,8 @@
             ]
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "I/O port type to reference to an output port of another node in the same project "
       },
       "Position": {
         "title": "Position",
@@ -1305,7 +1425,7 @@
             "format": "email"
           }
         },
-        "description": "Service base schema (used for docker labels on docker images)",
+        "description": "Static metadata for a service injected in the image labels",
         "example": {
           "name": "File Picker",
           "description": "File Picker",
@@ -1545,7 +1665,7 @@
                 "type": "integer"
               }
             ],
-            "description": "The store identifier, '0' or 0 for simcore S3, '1' or 1 for datcore"
+            "description": "The store identifier: '0' or 0 for simcore S3, '1' or 1 for datcore"
           },
           "path": {
             "title": "Path",
@@ -1553,18 +1673,30 @@
             "type": "string",
             "description": "The path to the file in the storage provider domain"
           },
+          "label": {
+            "title": "Label",
+            "type": "string",
+            "description": "The real file name"
+          },
           "eTag": {
             "title": "Etag",
             "type": "string",
             "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
           },
-          "label": {
-            "title": "Label",
+          "dataset": {
+            "title": "Dataset",
             "type": "string",
-            "description": "The real file name"
+            "deprecated": true
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "I/O port type to hold a link to a file in simcore S3 storage ",
+        "example": {
+          "store": "0",
+          "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+          "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
+          "label": "input.txt"
+        }
       },
       "Structure": {
         "title": "Structure",
