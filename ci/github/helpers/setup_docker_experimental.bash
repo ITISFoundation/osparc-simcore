@@ -7,3 +7,5 @@ IFS=$'\n\t'
 
 mkdir --parents ~/.docker/
 echo '{"experimental":"enabled"}' > ~/.docker/config.json
+
+docker buildx create --use
