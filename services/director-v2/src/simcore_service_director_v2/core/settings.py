@@ -223,11 +223,10 @@ class AppSettings(BaseSettings):
     # monitoring
     monitoring_enabled: str = Field(False, env="MONITORING_ENABLED")
 
-    # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
-    host: str = "0.0.0.0"  # nosec
-    port: PortInt = 8000
+    # fastappi app settings
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
 
+    # ptvsd settings
     remote_debug_port: PortInt = 3000
 
     client_request: ClientRequestSettings

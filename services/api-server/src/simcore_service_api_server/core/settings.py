@@ -118,10 +118,6 @@ class AppSettings(BaseSettings):
 
     client_request: ClientRequestSettings
 
-    # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
-    host: str = "0.0.0.0"  # nosec
-    port: int = 8000
-
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
     remote_debug_port: int = 3000
     dev_features_enabled: bool = Field(
