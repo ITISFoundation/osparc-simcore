@@ -133,7 +133,7 @@ ifeq ($(findstring static-webserver,$(target)),static-webserver)
 	$(MAKE_C) services/web/client touch compile-dev
 endif
 	# Building service $(target)
-	@$(_docker_compose_build) $(target)
+	@$(_docker_compose_build)
 endif
 
 
