@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 from typing import Any, Dict, List, Set
 
 import networkx as nx
@@ -197,19 +198,11 @@ async def compute_pipeline_details(
     )
 
 
-@log_decorator(logger=logger)
-def topological_sort_grouping(dag_graph: nx.DiGraph) -> List[Dict[str, Dict[str, Any]]]:
-    """Returns a list of tasks grouped by the number of incoming edges. E.g. These groups may be inputed
-    to Celery as a group of tasks that can run in parallel before the next group, etc...
-    """
-    # copy the graph
-    graph_copy = dag_graph.copy()
-    res = []
-    while graph_copy:
-        zero_indegree = {
-            v: graph_copy.nodes[v] for v, d in graph_copy.in_degree() if d == 0
-        }
-
-        res.append(zero_indegree)
-        graph_copy.remove_nodes_from(zero_indegree.keys())
-    return res
+def find_computational_node_cycles(dag: nx.DiGraph) -> List[List[str]]:
+    """returns a list of nodes part of a cycle and computational, which is currently forbidden."""
+    computational_node_cycles = []
+    list_potential_cycles = nx.simple_cycles(dag)
+    for cycle in list_potential_cycles:
+        if any(_is_node_computational(dag.nodes[node_id]["key"]) for node_id in cycle):
+            computational_node_cycles.append(deepcopy(cycle))
+    return computational_node_cycles

@@ -106,6 +106,7 @@ class AppSettings(BaseSettings):
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
     host: str = "0.0.0.0"  # nosec
     port: int = 8000
+    # fastappi app settings
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
 
     # BACKGROUND TASK

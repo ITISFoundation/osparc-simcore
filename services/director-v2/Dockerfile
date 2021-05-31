@@ -58,7 +58,7 @@ ENV SC_BUILD_TARGET=build
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-    build-essential \
+  build-essential \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -80,15 +80,15 @@ COPY  --chown=scu:scu services/director-v2/requirements/_base.txt .
 RUN pip --no-cache-dir install -r _base.txt
 
 
-# --------------------------Cache stage -------------------
-# CI in master buils & pushes this target to speed-up image build
+# --------------------------Prod-depends-only stage -------------------
+# This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
 #
 #  + /build
 #    + services/director-v2 [scu:scu] WORKDIR
 #
-FROM build as cache
+FROM build as prod-only-deps
 
-ENV SC_BUILD_TARGET cache
+ENV SC_BUILD_TARGET prod-only-deps
 
 COPY --chown=scu:scu packages /build/packages
 COPY --chown=scu:scu services/director-v2 /build/services/director-v2
@@ -115,8 +115,8 @@ ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
-# Starting from clean base image, copies pre-installed virtualenv from cache
-COPY --chown=scu:scu --from=cache  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+# Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
+COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Copies booting scripts
 COPY --chown=scu:scu services/director-v2/docker services/director-v2/docker

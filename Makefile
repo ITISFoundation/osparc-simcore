@@ -98,72 +98,47 @@ endif
 #
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
 
-.PHONY: build build-nc rebuild build-devel build-devel-nc build-devel-kit build-devel-x build-cache build-cache-kit build-cache-x build-cache-nc build-kit build-x
+.PHONY: build build-nc rebuild build-devel build-devel-nc
 
 define _docker_compose_build
-export BUILD_TARGET=$(if $(findstring -devel,$@),development,$(if $(findstring -cache,$@),cache,production));\
-$(if $(findstring -x,$@),\
-	pushd services; docker buildx bake --file docker-compose-build.yml $(if $(target),$(target),); popd;,\
-	docker-compose --file services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,) $(if $(target),,--parallel)\
-)
+export BUILD_TARGET=$(if $(findstring -devel,$@),development,production);\
+pushd services; docker buildx bake --file docker-compose-build.yml $(if $(target),$(target),); popd;
 endef
 
 rebuild: build-nc # alias
-build build-nc build-kit build-x: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
+build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
 ifeq ($(target),)
 	# Compiling front-end
-
-	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
-	$(MAKE_C) services/web/client compile$(if $(findstring -x,$@),-x,)
+	$(MAKE_C) services/web/client compile
 
 	# Building services
-	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
 	$(_docker_compose_build)
 else
-ifeq ($(findstring webserver,$(target)),webserver)
+ifeq ($(findstring static-webserver,$(target)),static-webserver)
 	# Compiling front-end
-	$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
-	$(MAKE_C) services/web/client clean compile$(if $(findstring -x,$@),-x,)
+	$(MAKE_C) services/web/client clean compile
 endif
 	# Building service $(target)
-	$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
 	$(_docker_compose_build)
 endif
 
 
-build-devel build-devel-nc build-devel-kit build-devel-x: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
+build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
 ifeq ($(target),)
 	# Building services
-	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
 	$(_docker_compose_build)
 else
-ifeq ($(findstring webserver,$(target)),webserver)
+ifeq ($(findstring static-webserver,$(target)),static-webserver)
 	# Compiling front-end
-	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
-	$(MAKE_C) services/web/client touch$(if $(findstring -x,$@),-x,) compile-dev
+	$(MAKE_C) services/web/client touch compile-dev
 endif
 	# Building service $(target)
-	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
-	$(_docker_compose_build) $(target)
-endif
-
-
-build-cache build-cache-nc build-cache-kit build-cache-x: .env ## Build cache images and tags them as 'local/{service-name}:cache'
-ifeq ($(target),)
-	# Compiling front-end
-	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,)
-	$(MAKE_C) services/web/client compile$(if $(findstring -x,$@),-x,)
-	# Building cache images
-	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,)
-	$(_docker_compose_build)
-else
-	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,)
-	$(_docker_compose_build) $(target)
+	@$(_docker_compose_build)
 endif
 
 
 $(CLIENT_WEB_OUTPUT):
-	# Ensures source-output folder always exists to avoid issues when mounting webclient->webserver dockers. Supports PowerShell
+	# Ensures source-output folder always exists to avoid issues when mounting webclient->static-webserver dockers. Supports PowerShell
 	-mkdir $(if $(IS_WIN),,-p) $(CLIENT_WEB_OUTPUT)
 
 
@@ -277,18 +252,12 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 
 ## DOCKER TAGS  -------------------------------
 
-.PHONY: tag-local tag-cache tag-version tag-latest
+.PHONY: tag-local tag-version tag-latest
 
 tag-local: ## Tags version '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' images as 'local/{service}:production'
 	# Tagging all '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' as 'local/{service}:production'
 	@$(foreach service, $(SERVICES_LIST)\
 		,docker tag ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG} local/$(service):production; \
-	)
-
-tag-cache: ## Tags 'local/{service}:cache' images as '${DOCKER_REGISTRY}/{service}:cache'
-	# Tagging all 'local/{service}:cache' as '${DOCKER_REGISTRY}/{service}:cache'
-	@$(foreach service, $(SERVICES_LIST)\
-		,docker tag local/$(service):cache ${DOCKER_REGISTRY}/$(service):cache; \
 	)
 
 tag-version: ## Tags 'local/{service}:production' images as versioned '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
@@ -308,20 +277,14 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 # TODO: cannot push modified/untracked
 # TODO: cannot push disceted
 #
-.PHONY: pull-cache pull-version
-pull-cache: .env
-	@export DOCKER_IMAGE_TAG=cache; $(MAKE) pull-version
+.PHONY: pull-version
 
 pull-version: .env ## pulls images from DOCKER_REGISTRY tagged as DOCKER_IMAGE_TAG
 	# Pulling images '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
 	@docker-compose --file services/docker-compose.yml pull
 
 
-.PHONY: push-cache push-version push-latest
-
-push-cache: tag-cache ## Pushes service images tagged as 'cache' into current registry
-	@export DOCKER_IMAGE_TAG=cache; \
-	$(MAKE) push-version
+.PHONY: push-version push-latest
 
 push-latest: tag-latest
 	@export DOCKER_IMAGE_TAG=latest; \
