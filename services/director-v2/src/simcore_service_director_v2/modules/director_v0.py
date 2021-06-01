@@ -16,7 +16,11 @@ from starlette import status
 from starlette.datastructures import URL
 
 from ..core.settings import DirectorV0Settings
-from ..models.schemas.services import RunningServiceDetails, ServiceExtras, ServiceSettings
+from ..models.schemas.services import (
+    RunningServiceDetails,
+    ServiceExtras,
+    ServiceSettings,
+)
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
 from ..utils.logging_utils import log_decorator
@@ -109,7 +113,6 @@ class DirectorV0Client:
         if resp.status_code == status.HTTP_200_OK:
             return ServiceExtras.parse_obj(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
-
 
     @log_decorator(logger=logger)
     async def get_service_settings(self, service: ServiceKeyVersion) -> ServiceSettings:

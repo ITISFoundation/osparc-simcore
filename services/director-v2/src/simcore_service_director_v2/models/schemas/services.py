@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from models_library.basic_types import PortInt
 from models_library.projects_nodes_io import UUID_REGEX
@@ -19,10 +19,8 @@ class ServiceBuildDetails(BaseModel):
     vcs_url: str
 
 
-from typing import Dict, Any
-
 class ServiceSettings(BaseModel):
-    boot: Dict[str,Any]
+    boot: Dict[str, Any]
     reverse_proxy: Dict[str, Any]
     runtime: Dict[str, Any]
 

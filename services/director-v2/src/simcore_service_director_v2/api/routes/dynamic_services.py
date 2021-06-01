@@ -6,6 +6,7 @@ from uuid import UUID
 import httpx
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import RedirectResponse
+from models_library.services import ServiceKeyVersion
 from pydantic.main import BaseModel
 from starlette import status
 from starlette.datastructures import URL
@@ -85,13 +86,19 @@ async def service_retrieve_data_on_ports(
     summary="create & start the dynamic service",
     status_code=status.HTTP_201_CREATED,
     response_model=DynamicServiceOut,
-    responses={status.HTTP_404_NOT_FOUND: {"model": Message}},
+    responses={
+        status.HTTP_404_NOT_FOUND: {"model": Message},
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Unexpected error"},
+    },
 )
 async def create_dynamic_service(
     service: DynamicServiceCreate,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
 ):
     # fetch labels (FROM the catalog service at this point)
+    service_settings = await director_v0_client.get_service_settings(
+        ServiceKeyVersion(key=service.key, version=service.version)
+    )
     # if it is a legacy service redirect to director-v0
     is_legacy_dynamic_service = True
     log.info("Will request something for you!")
