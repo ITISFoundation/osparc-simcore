@@ -17,8 +17,6 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import uuid4
 
 from aiohttp import web
-from yarl import URL
-
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
@@ -31,6 +29,7 @@ from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_service_webserver.director import director_exceptions
+from yarl import URL
 
 from ..director import director_api
 from ..director_v2 import (

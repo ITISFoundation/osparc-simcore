@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from models_library.basic_types import PortInt
 from models_library.projects_nodes_io import UUID_REGEX
@@ -17,6 +17,13 @@ class ServiceBuildDetails(BaseModel):
     build_date: str
     vcs_ref: str
     vcs_url: str
+
+
+class ServiceSettings(BaseModel):
+    # TODO: DYNAMIC-SIDECAR: use models-library settings from ANE
+    boot: Dict[str, Any]
+    reverse_proxy: Dict[str, Any]
+    runtime: Dict[str, Any]
 
 
 class ServiceExtras(BaseModel):

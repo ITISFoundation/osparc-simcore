@@ -390,7 +390,6 @@ async def test_running_services_post_and_delete(
     user_id,
     project_id,
     api_version_prefix,
-    director_v2_service_mock,
     save_state: Optional[bool],
     exp_save_state_call: bool,
     mocker,

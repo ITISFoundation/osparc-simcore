@@ -24,6 +24,7 @@ from .basic_regex import VERSION_RE
 
 # NOTE: needs to end with / !!
 SERVICE_KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$"
+DYNAMIC_SERVICE_KEY_RE = r"^(simcore)/(services)/dynamic(/[\w/-]+)+$"
 COMPUTATIONAL_SERVICE_KEY_RE = r"^(simcore)/(services)/comp(/[\w/-]+)+$"
 KEY_RE = SERVICE_KEY_RE  # TODO: deprecate this global constant by SERVICE_KEY_RE
 SERVICE_NETWORK_RE = r"^([a-zA-Z0-9_]+)$"

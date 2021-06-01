@@ -4,14 +4,19 @@ from typing import Any, Dict
 from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Header
 from fastapi.responses import RedirectResponse
 from models_library.services import ServiceKeyVersion
+from pydantic.main import BaseModel
 from starlette import status
 from starlette.datastructures import URL
 
-from ...models.domains.dynamic_services import RetrieveDataIn, RetrieveDataOutEnveloped
-from ...models.domains.dynamic_sidecar import StartDynamicSidecarModel
+from ...models.domains.dynamic_services import (
+    DynamicServiceCreate,
+    DynamicServiceOut,
+    RetrieveDataIn,
+    RetrieveDataOutEnveloped,
+)
 from ...modules.dynamic_sidecar.config import DynamicSidecarSettings, get_settings
 from ...modules.dynamic_sidecar.constants import (
     DYNAMIC_SIDECAR_PREFIX,
@@ -23,7 +28,6 @@ from ...modules.dynamic_sidecar.docker_utils import (
     create_service_and_get_id,
     get_node_id_from_task_for_service,
     get_swarm_network,
-    inspect_service,
 )
 from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor, get_monitor
 from ...modules.dynamic_sidecar.monitor.models import ServiceStateReply
@@ -71,41 +75,63 @@ async def service_retrieve_data_on_ports(
 
 
 @router.post(
-    "/{node_uuid}:start",
-    summary="start the dynamic-sidecar for this service",
-    responses={
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {
-            "description": "Error while starting dynamic sidecar"
-        }
-    },
+    "",
+    summary="create & start the dynamic service",
+    status_code=status.HTTP_201_CREATED,
+    response_model=ServiceStateReply,
 )
-async def start_dynamic_sidecar(
-    node_uuid: UUID,
-    model: StartDynamicSidecarModel,
+@log_decorator(logger=log)
+async def create_dynamic_service(
+    service: DynamicServiceCreate,
+    x_dynamic_sidecar_request_dns: str = Header(...),
+    x_dynamic_sidecar_request_scheme: str = Header(...),
+    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> Dict[str, str]:
-    log.debug("DYNAMIC_SIDECAR: %s, node_uuid=%s", model, node_uuid)
+):
+    # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model
+    service_labels: Dict[str, str] = await director_v0_client.get_service_labels(
+        service=ServiceKeyVersion(key=service.key, version=service.version)
+    )
+    log.debug("Fetched service labels %s", service_labels)
+
+    use_dynamic_sidecar = (
+        service_labels.get("simcore.service.boot-mode") == "dynamic-sidecar"
+    )
+
+    if not use_dynamic_sidecar:
+        # forward to director-v0
+        redirect_url = director_v0_client.client.base_url.copy_with(
+            query={
+                "user_id": f"{service.user_id}",
+                "project_id": f"{service.project_id}",
+                "service_uuid": f"{service.uuid}",
+                "service_key": f"{service.key}",
+                "service_version": f"{service.version}",
+                "service_basepath": f"{service.basepath}",
+            }
+        )
+        return RedirectResponse(redirect_url)
 
     # Service naming schema:
     # -  dysdcr_{uuid}_{first_two_project_id}_prxy_{name_from_service_key}
     # -  dysdcr_{uuid}_{first_two_project_id}_sdcr_{name_from_service_key}
 
     service_name_dynamic_sidecar = assemble_service_name(
-        model.project_id, model.service_key, node_uuid, SERVICE_NAME_SIDECAR
+        service.project_id, service.key, service.uuid, SERVICE_NAME_SIDECAR
     )
     service_name_proxy = assemble_service_name(
-        model.project_id, model.service_key, node_uuid, SERVICE_NAME_PROXY
+        service.project_id, service.key, service.uuid, SERVICE_NAME_PROXY
     )
 
-    first_two_project_id = str(model.project_id)[:2]
+    first_two_project_id = str(service.project_id)[:2]
 
     # unique name for the traefik constraints
-    io_simcore_zone = f"{DYNAMIC_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
+    io_simcore_zone = f"{DYNAMIC_SIDECAR_PREFIX}_{service.uuid}_{first_two_project_id}"
 
     # based on the node_id and project_id
     dynamic_sidecar_network_name = (
-        f"{DYNAMIC_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
+        f"{DYNAMIC_SIDECAR_PREFIX}_{service.uuid}_{first_two_project_id}"
     )
     # these configuration should guarantee 245 address network
     network_config = {
@@ -113,8 +139,8 @@ async def start_dynamic_sidecar(
         "Driver": "overlay",
         "Labels": {
             "io.simcore.zone": f"{dynamic_sidecar_settings.traefik_simcore_zone}",
-            "com.simcore.description": f"interactive for node: {node_uuid}_{first_two_project_id}",
-            "uuid": f"{node_uuid}",  # needed for removal when project is closed
+            "com.simcore.description": f"interactive for node: {service.uuid}_{first_two_project_id}",
+            "uuid": f"{service.uuid}",  # needed for removal when project is closed
         },
         "Attachable": True,
         "Internal": False,
@@ -127,7 +153,7 @@ async def start_dynamic_sidecar(
     swarm_network_name = swarm_network["Name"]
 
     # start dynamic-sidecar and run the proxy on the same node
-
+    # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model
     dynamic_sidecar_create_service_params = await dynamic_sidecar_assembly(
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         io_simcore_zone=io_simcore_zone,
@@ -135,15 +161,15 @@ async def start_dynamic_sidecar(
         dynamic_sidecar_network_id=dynamic_sidecar_network_id,
         swarm_network_id=swarm_network_id,
         dynamic_sidecar_name=service_name_dynamic_sidecar,
-        user_id=model.user_id,
-        node_uuid=node_uuid,
-        service_key=model.service_key,
-        service_tag=model.service_tag,
-        paths_mapping=model.paths_mapping,
-        compose_spec=model.compose_spec,
-        target_container=model.target_container,
-        project_id=model.project_id,
-        settings=model.settings,
+        user_id=service.user_id,
+        node_uuid=service.uuid,
+        service_key=service.key,
+        service_tag=service.version,
+        paths_mapping=service_labels["simcore.service.paths_mapping"],
+        compose_spec=service_labels["simcore.service.compose-spec"],
+        target_container=service_labels["simcore.service.target_container"],
+        project_id=service.project_id,
+        settings=service_labels["simcore.service.settings"],
     )
     log.debug(
         "dynamic-sidecar create_service_params %s",
@@ -160,39 +186,40 @@ async def start_dynamic_sidecar(
 
     dynamic_sidecar_proxy_create_service_params = await dyn_proxy_entrypoint_assembly(
         dynamic_sidecar_settings=dynamic_sidecar_settings,
-        node_uuid=node_uuid,
+        node_uuid=service.uuid,
         io_simcore_zone=io_simcore_zone,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
         dynamic_sidecar_network_id=dynamic_sidecar_network_id,
         service_name=service_name_proxy,
         swarm_network_id=swarm_network_id,
         swarm_network_name=swarm_network_name,
-        user_id=model.user_id,
-        project_id=model.project_id,
+        user_id=service.user_id,
+        project_id=service.project_id,
         dynamic_sidecar_node_id=dynamic_sidecar_node_id,
-        request_scheme=model.request_scheme,
-        request_dns=model.request_dns,
+        request_scheme=x_dynamic_sidecar_request_scheme,
+        request_dns=x_dynamic_sidecar_request_dns,
     )
     log.debug(
         "dynamic-sidecar-proxy create_service_params %s",
         pformat(dynamic_sidecar_proxy_create_service_params),
     )
 
-    dynamic_sidecar_proxy_id = await create_service_and_get_id(
-        dynamic_sidecar_proxy_create_service_params
-    )
+    # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model
+    # returning the status makes more sense than returning the entire docker service inspect
+    _ = await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
 
     # services where successfully started and they can be monitored
+    # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model, also passing the models would use less lines..
     await monitor.add_service_to_monitor(
         service_name=service_name_dynamic_sidecar,
-        node_uuid=str(node_uuid),
+        node_uuid=str(service.uuid),
         hostname=service_name_dynamic_sidecar,
         port=dynamic_sidecar_settings.web_service_port,
-        service_key=model.service_key,
-        service_tag=model.service_tag,
-        paths_mapping=model.paths_mapping,
-        compose_spec=model.compose_spec,
-        target_container=model.target_container,
+        service_key=service.key,
+        service_tag=service.version,
+        paths_mapping=service_labels["simcore.service.paths_mapping"],
+        compose_spec=service_labels["simcore.service.compose-spec"],
+        target_container=service_labels["simcore.service.target_container"],
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
         simcore_traefik_zone=io_simcore_zone,
         service_port=extract_service_port_from_compose_start_spec(
@@ -201,11 +228,11 @@ async def start_dynamic_sidecar(
     )
 
     # returning data for the proxy service so the service UI metadata can be extracted from here
-    return await inspect_service(dynamic_sidecar_proxy_id)
+    return await monitor.get_stack_status(str(service.uuid))
 
 
-@router.post(
-    "/{node_uuid}:status",
+@router.get(
+    "/{node_uuid}",
     summary="assembles the status for the dynamic-sidecar",
     response_model=ServiceStateReply,
 )
@@ -215,9 +242,8 @@ async def dynamic_sidecar_status(
     return await monitor.get_stack_status(str(node_uuid))
 
 
-@router.post(
-    "/{node_uuid}:stop",
-    responses={status.HTTP_204_NO_CONTENT: {"model": None}},
+@router.delete(
+    "/{node_uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="stops previously spawned dynamic-sidecar",
 )
@@ -225,62 +251,3 @@ async def stop_dynamic_sidecar(
     node_uuid: UUID, monitor: DynamicSidecarsMonitor = Depends(get_monitor)
 ) -> Dict[str, str]:
     await monitor.remove_service_from_monitor(str(node_uuid))
-
-
-# TODO: remember to change to /{node_uuid}:start
-@router.post("/{node_uuid}:start-service")
-async def start_service(
-    node_uuid: UUID,
-    user_id: str = Query(
-        ...,
-        description="The ID of the user that starts the service",
-        example="asdfgj233",
-    ),
-    project_id: str = Query(
-        ...,
-        description="The ID of the project in which the service starts",
-        example="asdfgj233",
-    ),
-    service_key: str = Query(
-        ...,
-        description="The key (url) of the service",
-        example=[
-            "simcore/services/comp/itis/sleeper",
-            "simcore/services/dynamic/3dviewer",
-        ],
-    ),
-    service_tag: str = Query(
-        ..., description="The tag/version of the service", example=["1.0.0", "0.0.1"]
-    ),
-    service_uuid: str = Query(
-        ...,
-        description="The uuid to assign the service with",
-        example="123e4567-e89b-12d3-a456-426655440000",
-    ),
-    service_basepath: str = Query(
-        "",
-        description="predefined basepath for the backend service otherwise uses root",
-        example="/x/EycCXbU0H/",
-    ),
-    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
-) -> None:
-    # fetch labels (FROM the catalog service at this point)
-    # if it is a legacy service redirect to director-v0
-
-    service_labels: Dict[str, str] = await director_v0_client.get_service_labels(
-        service=ServiceKeyVersion(key=service_key, version=service_tag)
-    )
-    log.debug("Fetched service labels %s", service_labels)
-
-    use_dynamic_sidecar = (
-        service_labels.get("simcore.service.boot-mode") == "dynamic-sidecar"
-    )
-
-    if not use_dynamic_sidecar:
-        # forward to director-v0
-        # pylint: disable=protected-access
-        director_v0_base_url = str(director_v0_client.client._base_url).strip("/")
-        redirect_url = f"{director_v0_base_url}/running_interactive_services"
-        return RedirectResponse(redirect_url)
-
-    log.error("TODO: implement start for node_uuid=%s", node_uuid)
