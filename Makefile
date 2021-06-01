@@ -104,8 +104,10 @@ define _docker_compose_build
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,production);\
 pushd services; \
 docker buildx bake \
-	--set *.cache-from="type=local,src=/tmp/.buildx-cache" \
-	--set *.cache-to="type=local,dest=/tmp/.buildx-cache" \
+	$(foreach service, $(SERVICES_LIST),\
+		--set $(service).cache-from="type=local,src=/tmp/.buildx-cache/$(service)" \
+		--set $(service).cache-to="type=local,dest=/tmp/.buildx-cache/$(service)" \
+	)\
 	--set *.output="type=docker,push=false" \
 	--file docker-compose-build.yml $(if $(target),$(target),); \
 popd;
