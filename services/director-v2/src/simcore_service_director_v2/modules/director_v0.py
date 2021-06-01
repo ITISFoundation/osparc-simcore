@@ -5,6 +5,7 @@
 import logging
 import urllib
 from dataclasses import dataclass
+from typing import Dict
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request, Response
@@ -117,4 +118,14 @@ class DirectorV0Client:
         resp = await self.request("GET", f"running_interactive_services/{service_uuid}")
         if resp.status_code == status.HTTP_200_OK:
             return RunningServiceDetails.parse_obj(unenvelope_or_raise_error(resp))
+        raise HTTPException(status_code=resp.status_code, detail=resp.content)
+
+    @log_decorator(logger=logger)
+    async def get_service_labels(self, service: ServiceKeyVersion) -> Dict[str, str]:
+        resp = await self.request(
+            "GET",
+            f"services/{urllib.parse.quote_plus(service.key)}/{service.version}:labels",
+        )
+        if resp.status_code == status.HTTP_200_OK:
+            return unenvelope_or_raise_error(resp)
         raise HTTPException(status_code=resp.status_code, detail=resp.content)

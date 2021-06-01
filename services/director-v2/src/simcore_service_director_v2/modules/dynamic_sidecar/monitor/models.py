@@ -210,8 +210,6 @@ class MonitorData(BaseModel):
 
 
 class LockWithMonitorData(BaseModel):
-    """Used to wrap the """
-
     # locking is required to guarantee the monitoring will not be triggered
     # twice in a row for the service
     resource_lock: AsyncResourceLock = Field(

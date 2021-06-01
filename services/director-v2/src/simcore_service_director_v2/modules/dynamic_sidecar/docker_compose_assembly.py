@@ -99,7 +99,10 @@ async def assemble_spec(
     simcore_traefik_zone: str,
     service_port: PositiveInt,
 ) -> str:
-    """returns a docker-compose spec which will be use by the dynamic-sidecar to start the service """
+    """
+    returns a docker-compose spec used by
+    the dynamic-sidecar to start the service
+    """
 
     container_name = target_container
     service_spec = compose_spec

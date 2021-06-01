@@ -135,7 +135,7 @@ class DynamicSidecarClient:
             return False
 
     async def run_docker_compose_down(self, dynamic_sidecar_endpoint: str) -> None:
-        """runs docker compose down on the started spec """
+        """runs docker compose down on the started spec"""
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers:down")
         try:
             response = await self.httpx_client.post(url)

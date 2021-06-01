@@ -5,9 +5,10 @@ from uuid import UUID
 
 import httpx
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import RedirectResponse
+from models_library.services import ServiceKeyVersion
 from starlette import status
 from starlette.datastructures import URL
-from fastapi.responses import RedirectResponse
 
 from ...models.domains.dynamic_services import RetrieveDataIn, RetrieveDataOutEnveloped
 from ...models.domains.dynamic_sidecar import StartDynamicSidecarModel
@@ -33,12 +34,12 @@ from ...modules.dynamic_sidecar.service_specs import (
     extract_service_port_from_compose_start_spec,
 )
 from ...utils.logging_utils import log_decorator
+from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
 from ..dependencies.dynamic_services import (
     ServicesClient,
     get_service_base_url,
     get_services_client,
 )
-from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
 
 router = APIRouter()
 log = logging.getLogger(__file__)
@@ -265,10 +266,17 @@ async def start_service(
 ) -> None:
     # fetch labels (FROM the catalog service at this point)
     # if it is a legacy service redirect to director-v0
-    is_legacy_dynamic_service = True
-    log.info("Will request something for you!")
 
-    if is_legacy_dynamic_service:
+    service_labels: Dict[str, str] = await director_v0_client.get_service_labels(
+        service=ServiceKeyVersion(key=service_key, version=service_tag)
+    )
+    log.debug("Fetched service labels %s", service_labels)
+
+    use_dynamic_sidecar = (
+        service_labels.get("simcore.service.boot-mode") == "dynamic-sidecar"
+    )
+
+    if not use_dynamic_sidecar:
         # forward to director-v0
         # pylint: disable=protected-access
         director_v0_base_url = str(director_v0_client.client._base_url).strip("/")

@@ -276,7 +276,7 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
     project_id: ProjectID,
     settings: List[Dict[str, Any]],
 ) -> Dict[str, Any]:
-    """This service contains the dynamic-sidecar which will spawn the dynamic service itself """
+    """This service contains the dynamic-sidecar which will spawn the dynamic service itself"""
     mounts = [
         # docker socket needed to use the docker api
         {
