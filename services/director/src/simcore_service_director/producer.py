@@ -747,6 +747,7 @@ async def _start_docker_service(
             service_basepath=node_base_path,
             service_state=service_state,
             service_message=service_msg,
+            user_id=user_id,
         )
 
     except exceptions.ServiceStartTimeoutError as err:
@@ -761,7 +762,7 @@ async def _start_docker_service(
 
 async def _silent_service_cleanup(app: web.Application, node_uuid: str) -> None:
     try:
-        await stop_service(app, node_uuid)
+        await stop_service(app, node_uuid, False)
     except exceptions.DirectorException:
         pass
 
@@ -1242,7 +1243,7 @@ def format_node_details_for_frontend(**kwargs) -> Dict[str, Union[str, int]]:
         "service_state", None
     )
 
-    if len(kwargs) < 10:
+    if len(kwargs) < 11:
         # for the servie-sidecar sometimes the status is not availabe because:
         # API not responding, generic errors
         node_status["service_state"] = _format_service_state(service_state)
@@ -1260,6 +1261,7 @@ def format_node_details_for_frontend(**kwargs) -> Dict[str, Union[str, int]]:
     node_status["service_basepath"] = kwargs["service_basepath"]
     node_status["service_state"] = _format_service_state(service_state)
     node_status["service_message"] = kwargs["service_message"]
+    node_status["user_id"] = kwargs["user_id"]
 
     return node_status
 
@@ -1313,6 +1315,7 @@ async def _get_node_details(
     service_state, service_msg = results[2]
     service_name = service["Spec"]["Name"]
     service_uuid = service["Spec"]["Labels"]["uuid"]
+    user_id = service["Spec"]["Labels"]["user_id"]
 
     # get the published port
     published_port, target_port = await _get_docker_image_port_mapping(service)
@@ -1327,6 +1330,7 @@ async def _get_node_details(
         service_basepath=service_basepath,
         service_state=service_state,
         service_message=service_msg,
+        user_id=user_id,
     )
 
 
@@ -1393,7 +1397,7 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
 
 
 @run_sequentially_in_context(target_args=["node_uuid"])
-async def stop_service(app: web.Application, node_uuid: str) -> None:
+async def stop_service(app: web.Application, node_uuid: str, save_state: bool) -> None:
     log.debug("stopping service with uuid %s", node_uuid)
     # get the docker client
     async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
@@ -1434,27 +1438,29 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
                 else "",
             )
         log.debug("saving state of service %s...", service_host_name)
-        try:
-            session = app[APP_CLIENT_SESSION_KEY]
-            service_url = "http://" + service_host_name + "/" + "state"
-            async with session.post(
-                service_url,
-                timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
-            ) as response:
-                if 199 < response.status < 300:
-                    log.debug(
-                        "service %s successfully saved its state", service_host_name
-                    )
-                else:
-                    log.warning(
-                        "service %s does not allow saving state, answered %s",
-                        service_host_name,
-                        await response.text(),
-                    )
-        except ClientConnectionError:
-            log.warning(
-                "service %s could not be contacted, state not saved", service_host_name
-            )
+        if save_state:
+            try:
+                session = app[APP_CLIENT_SESSION_KEY]
+                service_url = "http://" + service_host_name + "/" + "state"
+                async with session.post(
+                    service_url,
+                    timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
+                ) as response:
+                    if 199 < response.status < 300:
+                        log.debug(
+                            "service %s successfully saved its state", service_host_name
+                        )
+                    else:
+                        log.warning(
+                            "service %s does not allow saving state, answered %s",
+                            service_host_name,
+                            await response.text(),
+                        )
+            except ClientConnectionError:
+                log.warning(
+                    "service %s could not be contacted, state not saved",
+                    service_host_name,
+                )
 
         # remove the services
         try:

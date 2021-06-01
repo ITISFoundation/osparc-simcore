@@ -2,7 +2,7 @@ import asyncio
 import logging
 from contextlib import suppress
 from itertools import chain
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import asyncpg.exceptions
 import psycopg2
@@ -247,7 +247,7 @@ async def remove_disconnected_user_resources(
                     #
                     await emit(
                         event="SIGNAL_PROJECT_CLOSE",
-                        user_id=None,
+                        user_id=int(dead_key["user_id"]),
                         project_uuid=resource_value,
                         app=app,
                     )
@@ -351,7 +351,9 @@ async def remove_orphaned_services(
         node_ids = await get_workbench_node_ids_from_project_uuid(app, project_uuid)
         currently_opened_projects_node_ids.update(node_ids)
 
-    running_interactive_services = await get_running_interactive_services(app)
+    running_interactive_services: List[
+        Dict[str, Any]
+    ] = await get_running_interactive_services(app)
     logger.info(
         "Will collect the following: %s",
         [
@@ -362,12 +364,25 @@ async def remove_orphaned_services(
     for interactive_service in running_interactive_services:
         # if not present in DB or not part of currently opened projects, can be removed
         node_id = interactive_service["service_uuid"]
-        if (
-            not await is_node_id_present_in_any_project_workbench(app, node_id)
-            or node_id not in currently_opened_projects_node_ids
-        ):
+        # if the node does not exist in any project in the db, we can safely remove it without saving any state
+        if not await is_node_id_present_in_any_project_workbench(app, node_id):
+            logger.info(
+                "Will remove orphaned service without saving state since this service should is not part of any project %s",
+                service_host,
+            )
+            try:
+                await stop_service(app, node_id, save_state=False)
+            except (ServiceNotFoundError, DirectorException) as err:
+                logger.warning("Error while stopping service: %s", err)
+            continue
+
+        # if the node is not present in any of the currently opened project it shall be closed
+        if node_id not in currently_opened_projects_node_ids:
             service_host = interactive_service["service_host"]
-            if interactive_service.get("service_state") != "running":
+            if interactive_service.get("service_state") in [
+                "pulling",
+                "starting",
+            ]:
                 # Services returned in running_interactive_services
                 # might be still pulling its image and when stop_service is
                 # called, will cancel the pull operation as well.
@@ -380,12 +395,28 @@ async def remove_orphaned_services(
                 # This should eventually be responsibility of the director, but
                 # the functionality is in the old service which is frozen.
                 #
-                logger.warning("Skipping %s since image is still pulling", service_host)
+                # a service state might be one of [pending, pulling, starting, running, complete, failed]
+                logger.warning(
+                    "Skipping %s since image is in %s",
+                    service_host,
+                    interactive_service.get("service_state", "unknown"),
+                )
                 continue
 
             logger.info("Will remove service %s", service_host)
             try:
-                await stop_service(app, node_id)
+                # let's be conservative here.
+                # 1. opened project disappeared from redis?
+                # 2. something bad happened when closing a project?
+                user_id = int(interactive_service.get("user_id", 0))
+
+                await stop_service(
+                    app,
+                    node_id,
+                    save_state=not await is_user_guest(app, user_id)
+                    if user_id
+                    else True,
+                )
             except (ServiceNotFoundError, DirectorException) as err:
                 logger.warning("Error while stopping service: %s", err)
 
