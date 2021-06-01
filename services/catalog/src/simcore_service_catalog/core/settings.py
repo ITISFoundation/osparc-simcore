@@ -43,7 +43,7 @@ class PGSettings(PostgresSettings):
 
 
 class RegistrySettings(BaseSettings):
-    enabled: bool = True
+    enabled: bool = Field(True, description="Enables/Disables the Docker registry API")
     url: str = Field(..., description="URL to the docker registry")
     ssl: bool = Field(..., description="if registry is secore or not")
 
