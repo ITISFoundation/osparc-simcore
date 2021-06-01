@@ -78,7 +78,7 @@ async def service_retrieve_data_on_ports(
     "",
     summary="create & start the dynamic service",
     status_code=status.HTTP_201_CREATED,
-    response_model=DynamicServiceOut,
+    response_model=ServiceStateReply,
 )
 @log_decorator(logger=log)
 async def create_dynamic_service(
