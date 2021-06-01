@@ -3,7 +3,7 @@ from typing import Any, List
 from pydantic import BaseModel, Extra, Field
 
 
-class ServiceSetting(BaseModel):
+class SimcoreServiceSetting(BaseModel):
     name: str = Field(..., description="The name of the service setting")
     setting_type: str = Field(
         ...,
@@ -59,8 +59,8 @@ class ServiceSetting(BaseModel):
         }
 
 
-class ServiceSettings(BaseModel):
-    __root__: List[ServiceSetting]
+class SimcoreServiceSettings(BaseModel):
+    __root__: List[SimcoreServiceSetting]
 
     def __iter__(self):
         return iter(self.__root__)
