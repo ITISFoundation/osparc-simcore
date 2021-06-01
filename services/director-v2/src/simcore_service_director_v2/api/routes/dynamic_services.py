@@ -4,7 +4,7 @@ from typing import Any, Dict
 from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
 from models_library.services import ServiceKeyVersion
 from pydantic.main import BaseModel
@@ -91,6 +91,7 @@ async def service_retrieve_data_on_ports(
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Unexpected error"},
     },
 )
+@log_decorator(logger=log)
 async def create_dynamic_service(
     service: DynamicServiceCreate,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
@@ -99,54 +100,44 @@ async def create_dynamic_service(
     service_settings = await director_v0_client.get_service_settings(
         ServiceKeyVersion(key=service.key, version=service.version)
     )
-    # if it is a legacy service redirect to director-v0
-    is_legacy_dynamic_service = True
-    log.info("Will request something for you!")
 
-    if is_legacy_dynamic_service:
+    # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model
+    if service_settings.legacy_mode:
         # forward to director-v0
         # pylint: disable=protected-access
-        director_v0_base_url = str(director_v0_client.client._base_url).strip("/")
-        redirect_url = f"{director_v0_base_url}/running_interactive_services"
+        redirect_url = director_v0_client.client.base_url.copy_with(
+            query={
+                "user_id": f"{service.user_id}",
+                "project_id": f"{service.project_id}",
+                "service_uuid": f"{service.uuid}",
+                "service_key": f"{service.key}",
+                "service_version": f"{service.version}",
+                "service_basepath": f"{service.basepath}",
+            }
+        )
+        # director_v0_base_url = str(director_v0_client.client._base_url).strip("/")
+        # redirect_url = f"{director_v0_base_url}/running_interactive_services"
         return RedirectResponse(redirect_url)
-
-
-@router.post(
-    "/{node_uuid}:start",
-    summary="create & start the dynamic-sidecar for this service",
-    responses={
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {
-            "description": "Error while starting dynamic sidecar"
-        }
-    },
-)
-async def start_dynamic_sidecar(
-    node_uuid: UUID,
-    model: StartDynamicSidecarModel,
-    dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
-    monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> Dict[str, str]:
-    log.debug("DYNAMIC_SIDECAR: %s, node_uuid=%s", model, node_uuid)
 
     # Service naming schema:
     # -  dysdcr_{uuid}_{first_two_project_id}_prxy_{name_from_service_key}
     # -  dysdcr_{uuid}_{first_two_project_id}_sdcr_{name_from_service_key}
 
     service_name_dynamic_sidecar = assemble_service_name(
-        model.project_id, model.service_key, node_uuid, SERVICE_NAME_SIDECAR
+        service.project_id, service.key, service.uuid, SERVICE_NAME_SIDECAR
     )
     service_name_proxy = assemble_service_name(
-        model.project_id, model.service_key, node_uuid, SERVICE_NAME_PROXY
+        service.project_id, service.key, service.uuid, SERVICE_NAME_PROXY
     )
 
-    first_two_project_id = str(model.project_id)[:2]
+    first_two_project_id = str(service.project_id)[:2]
 
     # unique name for the traefik constraints
-    io_simcore_zone = f"{DYNAMIC_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
+    io_simcore_zone = f"{DYNAMIC_SIDECAR_PREFIX}_{service.uuid}_{first_two_project_id}"
 
     # based on the node_id and project_id
     dynamic_sidecar_network_name = (
-        f"{DYNAMIC_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
+        f"{DYNAMIC_SIDECAR_PREFIX}_{service.uuid}_{first_two_project_id}"
     )
     # these configuration should guarantee 245 address network
     network_config = {
@@ -154,8 +145,8 @@ async def start_dynamic_sidecar(
         "Driver": "overlay",
         "Labels": {
             "io.simcore.zone": f"{dynamic_sidecar_settings.traefik_simcore_zone}",
-            "com.simcore.description": f"interactive for node: {node_uuid}_{first_two_project_id}",
-            "uuid": f"{node_uuid}",  # needed for removal when project is closed
+            "com.simcore.description": f"interactive for node: {service.uuid}_{first_two_project_id}",
+            "uuid": f"{service.uuid}",  # needed for removal when project is closed
         },
         "Attachable": True,
         "Internal": False,
@@ -176,10 +167,10 @@ async def start_dynamic_sidecar(
         dynamic_sidecar_network_id=dynamic_sidecar_network_id,
         swarm_network_id=swarm_network_id,
         dynamic_sidecar_name=service_name_dynamic_sidecar,
-        user_id=model.user_id,
-        node_uuid=node_uuid,
-        service_key=model.service_key,
-        service_tag=model.service_tag,
+        user_id=service.user_id,
+        node_uuid=service.uuid,
+        service_key=service.key,
+        service_tag=service.tag,
         paths_mapping=model.paths_mapping,
         compose_spec=model.compose_spec,
         target_container=model.target_container,
@@ -201,15 +192,15 @@ async def start_dynamic_sidecar(
 
     dynamic_sidecar_proxy_create_service_params = await dyn_proxy_entrypoint_assembly(
         dynamic_sidecar_settings=dynamic_sidecar_settings,
-        node_uuid=node_uuid,
+        node_uuid=service.uuid,
         io_simcore_zone=io_simcore_zone,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
         dynamic_sidecar_network_id=dynamic_sidecar_network_id,
         service_name=service_name_proxy,
         swarm_network_id=swarm_network_id,
         swarm_network_name=swarm_network_name,
-        user_id=model.user_id,
-        project_id=model.project_id,
+        user_id=service.user_id,
+        project_id=service.project_id,
         dynamic_sidecar_node_id=dynamic_sidecar_node_id,
         request_scheme=model.request_scheme,
         request_dns=model.request_dns,
