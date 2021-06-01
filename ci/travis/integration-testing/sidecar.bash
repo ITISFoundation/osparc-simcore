@@ -28,7 +28,7 @@ install() {
 
 before_script() {
     pip list -v
-    make pull-version || (make build-ci tag-version)
+    make pull-version || (make build tag-version)
     make info-images
 }
 
