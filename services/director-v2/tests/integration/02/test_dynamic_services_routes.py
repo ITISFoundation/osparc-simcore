@@ -3,7 +3,6 @@
 
 import asyncio
 import logging
-import subprocess
 import os
 from typing import Any, Dict
 from uuid import uuid4
