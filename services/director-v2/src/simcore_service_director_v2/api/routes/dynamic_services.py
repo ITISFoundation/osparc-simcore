@@ -202,9 +202,9 @@ async def create_dynamic_service(
         pformat(dynamic_sidecar_proxy_create_service_params),
     )
 
-    dynamic_sidecar_proxy_id = await create_service_and_get_id(
-        dynamic_sidecar_proxy_create_service_params
-    )
+    # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model
+    # returning the status makes more sense than returning the entire docker service inspect
+    _ = await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
 
     # services where successfully started and they can be monitored
     # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model
@@ -226,7 +226,7 @@ async def create_dynamic_service(
     )
 
     # returning data for the proxy service so the service UI metadata can be extracted from here
-    return await inspect_service(dynamic_sidecar_proxy_id)
+    return await monitor.get_stack_status(str(service.uuid))
 
 
 @router.get(
