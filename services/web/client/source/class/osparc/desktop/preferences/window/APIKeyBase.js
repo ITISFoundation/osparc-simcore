@@ -26,6 +26,7 @@ qx.Class.define("osparc.desktop.preferences.window.APIKeyBase", {
       modal: true,
       showMaximize: false,
       showMinimize: false,
+      contentPadding: 0,
       width: 350,
       clickAwayClose: true
     });
@@ -38,7 +39,8 @@ qx.Class.define("osparc.desktop.preferences.window.APIKeyBase", {
   members: {
     __addInfoText: function(infoText) {
       const introLabel = new qx.ui.basic.Label(infoText).set({
-        padding: 5,
+        paddingLeft: 5,
+        paddingRight: 5,
         rich: true
       });
       this._add(introLabel);
