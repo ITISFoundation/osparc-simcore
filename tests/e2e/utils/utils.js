@@ -47,6 +47,31 @@ function parseCommandLineArgumentsTemplate(args) {
   }
 }
 
+function parseCommandLineArgumentsStudyDispatcherParams(args) {
+  // node $template.js [url] [file_type] [viewer_key] [viewer_vs] [download_link] [file_name] [file_size] [--demo]
+
+  if (args.length < 7) {
+    console.log('More arguments expected: $template.js [url] [file_type] [viewer_key] [viewer_vs] [download_link] [file_name] [file_size] [--demo]');
+    process.exit(1);
+  }
+
+  const urlPrefix = args[0];
+  const params = {};
+  params["file_type"] = encodeURIComponent(args[1]);
+  params["viewer_key"] = encodeURIComponent(args[2]);
+  params["viewer_version"] = encodeURIComponent(args[3]);
+  params["download_link"] = encodeURIComponent(args[4]);
+  params["file_name"] = encodeURIComponent(args[5]);
+  params["file_size"] = encodeURIComponent(args[6]);
+  const enableDemoMode = args.includes("--demo");
+
+  return {
+    urlPrefix,
+    params,
+    enableDemoMode
+  }
+}
+
 function getUserAndPass(args) {
   const userPass = {
     user: null,
@@ -451,6 +476,7 @@ module.exports = {
   extractWorkbenchData,
   parseCommandLineArguments,
   parseCommandLineArgumentsTemplate,
+  parseCommandLineArgumentsStudyDispatcherParams,
   getGrayLogSnapshotUrl,
   typeInInputElement,
   isElementVisible,

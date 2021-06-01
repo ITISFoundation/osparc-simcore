@@ -6,22 +6,16 @@ const utils = require('../utils/utils');
 const args = process.argv.slice(2);
 const {
   urlPrefix,
+  params,
   enableDemoMode
-} = utils.parseCommandLineArgumentsTemplate(args);
+} = utils.parseCommandLineArgumentsStudyDispatcherParams(args);
 
 let anonURL = urlPrefix + "/view";
-const params = [
-  ["file_type", "VTK"],
-  ["viewer_key", "simcore/services/dynamic/3d-viewer-gpu"],
-  ["viewer_version", "3.0.2"],
-  ["download_link", "https://raw.githubusercontent.com/germannp/yalla/master/examples/teapot.vtk"],
-  ["file_name", "teapot.vtk"],
-  ["file_size", "45500"]
-];
-for (let i=0; i<params.length; i++) {
-  const param =  params[i];
+for (let i=0; i<Object.keys(params).length; i++) {
+  const paramKey =  Object.keys(params)[i];
+  const paramValue =  params[paramKey];
   i==0 ? anonURL += "?" : anonURL += "&";
-  anonURL += param[0] + "=" + encodeURIComponent(param[1])
+  anonURL += paramKey[0] + "=" + paramValue
 }
 const screenshotPrefix = "VTK_file_";
 
