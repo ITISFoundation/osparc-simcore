@@ -51,16 +51,11 @@ router = APIRouter()
 log = logging.getLogger(__file__)
 
 
-class Message(BaseModel):
-    message: str
-
-
 @router.post(
     "/{node_uuid}:retrieve",
     summary="Calls the dynamic service's retrieve endpoint with optional port_keys",
     response_model=RetrieveDataOutEnveloped,
     status_code=status.HTTP_200_OK,
-    responses={status.HTTP_404_NOT_FOUND: {"model": Message}},
 )
 @log_decorator(logger=log)
 async def service_retrieve_data_on_ports(
@@ -249,7 +244,6 @@ async def dynamic_sidecar_status(
     "/{node_uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="stops previously spawned dynamic-sidecar",
-    responses={status.HTTP_404_NOT_FOUND: {"model": Message}},
 )
 async def stop_dynamic_sidecar(
     node_uuid: UUID, monitor: DynamicSidecarsMonitor = Depends(get_monitor)
