@@ -1455,7 +1455,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-catalog:
-    timeout-minutes: 10 # if this timeout gets too small, then split the tests
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[int] catalog"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
