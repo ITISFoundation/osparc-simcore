@@ -76,7 +76,9 @@ async def start_service(
         return payload["data"]
 
 
-async def stop_service(app: web.Application, service_uuid: str) -> None:
+async def stop_service(
+    app: web.Application, service_uuid: str, save_state: Optional[bool] = True
+) -> None:
     session, api_endpoint = _get_director_client(app)
     # stopping a service can take a lot of time
     # bumping the stop command timeout to 1 hour
@@ -86,6 +88,7 @@ async def stop_service(app: web.Application, service_uuid: str) -> None:
         url,
         ssl=False,
         timeout=ServicesCommonSettings().webserver_director_stop_service_timeout,
+        params={"save_state": "true" if save_state else "false"},
     ) as resp:
         if resp.status == 404:
             raise director_exceptions.ServiceNotFoundError(service_uuid)
@@ -98,6 +101,7 @@ async def stop_services(
     app: web.Application,
     user_id: Optional[str] = None,
     project_id: Optional[str] = None,
+    save_state: Optional[bool] = True,
 ) -> None:
     if not user_id and not project_id:
         raise ValueError("Expected either user or project")
@@ -106,10 +110,9 @@ async def stop_services(
         app, user_id=user_id, project_id=project_id
     )
 
-    stop_tasks = [stop_service(app, s["service_uuid"]) for s in services]
-
-    # FIXME: if stop_service is cancelled, it will and is running stop_tasks, it will never cancel!
-    await logged_gather(*stop_tasks, reraise=True)
+    stop_tasks = [stop_service(app, s["service_uuid"], save_state) for s in services]
+    if stop_tasks:
+        await logged_gather(*stop_tasks, reraise=True)
 
 
 async def get_service_by_key_version(

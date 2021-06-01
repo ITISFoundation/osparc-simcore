@@ -1,15 +1,14 @@
 # pylint: disable=too-many-arguments
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, List
 
 import networkx as nx
-from celery import exceptions as celery_exceptions
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_state import RunningState
-from models_library.services import ServiceKeyVersion
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
+from simcore_service_director_v2.utils.async_utils import run_sequentially_in_context
 from starlette import status
 from starlette.requests import Request
 from tenacity import (
@@ -28,12 +27,13 @@ from ...models.schemas.comp_tasks import (
     ComputationTaskStop,
 )
 from ...models.schemas.constants import UserID
-from ...models.schemas.services import NodeRequirement
 from ...modules.celery import CeleryClient
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.director_v0 import DirectorV0Client
+from ...modules.scheduler import CeleryScheduler
+from ...utils.async_utils import run_sequentially_in_context
 from ...utils.computations import (
     get_pipeline_state_from_task_states,
     is_pipeline_running,
@@ -44,32 +44,18 @@ from ...utils.dags import (
     create_complete_dag,
     create_complete_dag_from_tasks,
     create_minimal_computational_graph_based_on_selection,
-    topological_sort_grouping,
+    find_computational_node_cycles,
 )
 from ...utils.exceptions import PipelineNotFoundError, ProjectNotFoundError
 from ..dependencies.celery import get_celery_client
 from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
+from ..dependencies.scheduler import get_scheduler
 
 router = APIRouter()
 log = logging.getLogger(__file__)
 
 PIPELINE_ABORT_TIMEOUT_S = 10
-
-
-def celery_on_message(body: Any) -> None:
-    # FIXME: this might become handy when we stop starting tasks recursively
-    log.warning(body)
-
-
-def background_on_message(task: Any) -> None:
-    # FIXME: this might become handy when we stop starting tasks recursively
-    try:
-        task.get(on_message=celery_on_message, propagate=True)
-    except celery_exceptions.TimeoutError:
-        log.error("timeout on waiting for task %s", task)
-    except Exception:  # pylint: disable=broad-except
-        log.error("An unexpected error happend while running Celery task %s", task)
 
 
 async def _abort_pipeline_tasks(
@@ -92,6 +78,8 @@ async def _abort_pipeline_tasks(
     response_model=ComputationTaskOut,
     status_code=status.HTTP_201_CREATED,
 )
+# NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
+@run_sequentially_in_context(target_args=["job.project_id"])
 async def create_computation(
     job: ComputationTaskCreate,
     request: Request,
@@ -104,6 +92,7 @@ async def create_computation(
     ),
     celery_client: CeleryClient = Depends(get_celery_client),
     director_client: DirectorV0Client = Depends(get_director_v0_client),
+    scheduler: CeleryScheduler = Depends(get_scheduler),
 ) -> ComputationTaskOut:
     log.debug(
         "User %s is creating a new computation from project %s",
@@ -139,7 +128,7 @@ async def create_computation(
 
         # ok so put the tasks in the db
         await computation_pipelines.upsert_pipeline(
-            project.uuid, computational_dag, job.start_pipeline
+            job.user_id, project.uuid, computational_dag, job.start_pipeline
         )
         inserted_comp_tasks = await computation_tasks.upsert_tasks_from_project(
             project,
@@ -149,58 +138,19 @@ async def create_computation(
 
         if job.start_pipeline:
             if not computational_dag.nodes():
+                # 2 options here: either we have cycles in the graph or it's really done
+                list_of_cycles = find_computational_node_cycles(complete_dag)
+                if list_of_cycles:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail=f"Project {job.project_id} contains cycles with computational services which are currently not supported! Please remove them.",
+                    )
                 # there is nothing else to be run here, so we are done
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"Project {job.project_id} has no computational services, or contains cycles",
                 )
-
-            # find how to run this pipeline
-            topologically_sorted_grouped_nodes: List[
-                Dict[str, Dict[str, Any]]
-            ] = topological_sort_grouping(computational_dag)
-            log.debug("grouped nodes: %s", topologically_sorted_grouped_nodes)
-
-            # find what are the nodes requirements
-            async def _set_nodes_requirements(
-                grouped_nodes: List[Dict[str, Dict[str, Any]]]
-            ) -> None:
-                for nodes_group in grouped_nodes:
-                    for node in nodes_group.values():
-                        service_key_version = ServiceKeyVersion(
-                            key=node["key"],
-                            version=node["version"],
-                        )
-                        service_extras = await director_client.get_service_extras(
-                            service_key_version
-                        )
-                        node["runtime_requirements"] = "cpu"
-                        if service_extras:
-                            requires_gpu = (
-                                NodeRequirement.GPU in service_extras.node_requirements
-                            )
-                            if requires_gpu:
-                                node["runtime_requirements"] = "gpu"
-                            requires_mpi = (
-                                NodeRequirement.MPI in service_extras.node_requirements
-                            )
-                            if requires_mpi:
-                                node["runtime_requirements"] = "mpi"
-
-            await _set_nodes_requirements(topologically_sorted_grouped_nodes)
-            # trigger celery
-            task = celery_client.send_computation_tasks(
-                job.user_id, job.project_id, topologically_sorted_grouped_nodes
-            )
-            # NOTE: This is currently disabled. this makes test wait for the task to run completely
-            # We will see if we need this with airflow or not.
-            # background_tasks.add_task(background_on_message, task)
-            log.debug(
-                "Started computational task %s for user %s based on project %s",
-                task.id,
-                job.user_id,
-                job.project_id,
-            )
+            await scheduler.run_new_pipeline(job.user_id, job.project_id)
 
         return ComputationTaskOut(
             id=job.project_id,
@@ -249,9 +199,7 @@ async def get_computation(
         pipeline_at_db: CompPipelineAtDB = await computation_pipelines.get_pipeline(
             project_id
         )
-        pipeline_dag: nx.DiGraph = nx.from_dict_of_lists(
-            pipeline_at_db.dag_adjacency_list, create_using=nx.DiGraph
-        )
+        pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
 
         # get the project task states
         all_comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_all_tasks(
@@ -291,18 +239,6 @@ async def get_computation(
     except (ProjectNotFoundError, PipelineNotFoundError) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
-    # NOTE: this will be re-used for the prep2go API stuff... don't worry...
-    # task = AsyncResult(str(computation_id))
-    # if task.state == RunningState.SUCCESS:
-    #     return ComputationTask(id=task.id, state=task.state, result=task.result)
-    # if task.state == RunningState.FAILED:
-    #     return ComputationTask(
-    #         id=task.id,
-    #         state=task.state,
-    #         result=task.backend.get(task.backend.get_key_for_task(task.id)),
-    #     )
-    # return ComputationTask(id=task.id, state=task.state, result=task.info)
-
 
 @router.post(
     "/{project_id}:stop",
@@ -335,9 +271,7 @@ async def stop_computation_project(
         pipeline_at_db: CompPipelineAtDB = await computation_pipelines.get_pipeline(
             project_id
         )
-        pipeline_dag: nx.DiGraph = nx.from_dict_of_lists(
-            pipeline_at_db.dag_adjacency_list, create_using=nx.DiGraph
-        )
+        pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
         # get the project task states
         tasks: List[CompTaskAtDB] = await computation_tasks.get_all_tasks(project_id)
         # create the complete DAG graph

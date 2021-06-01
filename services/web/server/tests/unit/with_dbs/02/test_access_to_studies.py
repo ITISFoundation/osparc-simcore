@@ -32,7 +32,7 @@ SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_service):
+def app_cfg(default_app_cfg, aiohttp_unused_port, redis_service):
     """App's configuration used for every test in this module
 
     NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
@@ -40,7 +40,6 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_servic
     cfg = deepcopy(default_app_cfg)
 
     cfg["main"]["port"] = aiohttp_unused_port()
-    cfg["main"]["client_outdir"] = str(qx_client_outdir)
     cfg["main"]["studies_access_enabled"] = True
 
     exclude = {
@@ -153,7 +152,7 @@ async def assert_redirected_to_study(
     content = await resp.text()
     assert resp.status == web.HTTPOk.status_code, f"Got {content}"
 
-    # Expects redirection to osparc web (see qx_client_outdir fixture)
+    # Expects redirection to osparc web
     assert resp.url.path == "/"
     assert (
         "OSPARC-SIMCORE" in content

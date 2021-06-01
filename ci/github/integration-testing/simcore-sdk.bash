@@ -1,7 +1,7 @@
 #!/bin/bash
-set -o errexit   # abort on nonzero exitstatus
-set -o nounset   # abort on unbound variable
-set -o pipefail  # don't hide errors within pipes
+set -o errexit  # abort on nonzero exitstatus
+set -o nounset  # abort on unbound variable
+set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 # in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
@@ -15,7 +15,7 @@ install() {
   popd
   pip list -v
   # pull the test images if registry is set up, else build the images
-  make pull-version || ( (make pull-cache || true) && make build-x tag-version)
+  make pull-version || (make build tag-version)
   make info-images
   # pip3 install services/storage/client-sdk/python
 }

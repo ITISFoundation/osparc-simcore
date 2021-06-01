@@ -286,6 +286,7 @@ paths:
       operationId: running_interactive_services_delete
       parameters:
         - $ref: "#/components/parameters/ServiceUuid"
+        - $ref: "#/components/parameters/SaveState"
       responses:
         "204":
           description: Succesfully stopped and removed the service from the oSparc platform
@@ -424,6 +425,15 @@ components:
         example:
           - 1.0.0
           - 0.0.1
+
+    SaveState:
+      in: query
+      name: save_state
+      description: Save the state prior to removing the service
+      required: false
+      schema:
+        type: boolean
+        default: true
 
   schemas:
     ErrorEnveloped:

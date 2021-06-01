@@ -2,4 +2,4 @@ black
 httpx
 pydantic[email,dotenv]
 pylint
-typer[colorama]
+typer[all]
