@@ -207,7 +207,7 @@ async def create_dynamic_service(
     _ = await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
 
     # services where successfully started and they can be monitored
-    # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model
+    # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model, also passing the models would use less lines..
     await monitor.add_service_to_monitor(
         service_name=service_name_dynamic_sidecar,
         node_uuid=str(service.uuid),
