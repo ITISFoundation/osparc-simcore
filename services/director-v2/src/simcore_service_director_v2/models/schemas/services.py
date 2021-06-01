@@ -19,6 +19,14 @@ class ServiceBuildDetails(BaseModel):
     vcs_url: str
 
 
+from typing import Dict, Any
+
+class ServiceSettings(BaseModel):
+    boot: Dict[str,Any]
+    reverse_proxy: Dict[str, Any]
+    runtime: Dict[str, Any]
+
+
 class ServiceExtras(BaseModel):
     node_requirements: List[NodeRequirement]
     service_build_details: Optional[ServiceBuildDetails]
