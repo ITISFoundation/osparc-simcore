@@ -116,6 +116,7 @@ class DirectorV0Client:
 
     @log_decorator(logger=logger)
     async def get_service_settings(self, service: ServiceKeyVersion) -> ServiceSettings:
+        # TODO: DYNAMIC-SIDECAR: refactor to use endpoint defined by ANE
         resp = await self.request(
             "GET",
             f"service_labels/{urllib.parse.quote_plus(service.key)}/{service.version}",

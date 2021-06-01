@@ -20,6 +20,7 @@ class ServiceBuildDetails(BaseModel):
 
 
 class ServiceSettings(BaseModel):
+    # TODO: DYNAMIC-SIDECAR: use models-library settings from ANE
     boot: Dict[str, Any]
     reverse_proxy: Dict[str, Any]
     runtime: Dict[str, Any]
