@@ -4,7 +4,7 @@ from typing import Any, Dict
 from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header
 from fastapi.responses import RedirectResponse
 from models_library.services import ServiceKeyVersion
 from pydantic.main import BaseModel
@@ -86,15 +86,15 @@ async def service_retrieve_data_on_ports(
     summary="create & start the dynamic service",
     status_code=status.HTTP_201_CREATED,
     response_model=DynamicServiceOut,
-    responses={
-        status.HTTP_404_NOT_FOUND: {"model": Message},
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Unexpected error"},
-    },
 )
 @log_decorator(logger=log)
 async def create_dynamic_service(
     service: DynamicServiceCreate,
+    x_dynamic_sidecar_request_dns: str = Header(...),
+    x_dynamic_sidecar_request_scheme: str = Header(...),
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
+    dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
+    monitor: DynamicSidecarsMonitor = Depends(get_monitor),
 ):
     # fetch labels (FROM the catalog service at this point)
     service_settings = await director_v0_client.get_service_settings(
@@ -104,7 +104,6 @@ async def create_dynamic_service(
     # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model
     if service_settings.legacy_mode:
         # forward to director-v0
-        # pylint: disable=protected-access
         redirect_url = director_v0_client.client.base_url.copy_with(
             query={
                 "user_id": f"{service.user_id}",
@@ -115,8 +114,6 @@ async def create_dynamic_service(
                 "service_basepath": f"{service.basepath}",
             }
         )
-        # director_v0_base_url = str(director_v0_client.client._base_url).strip("/")
-        # redirect_url = f"{director_v0_base_url}/running_interactive_services"
         return RedirectResponse(redirect_url)
 
     # Service naming schema:
@@ -159,7 +156,7 @@ async def create_dynamic_service(
     swarm_network_name = swarm_network["Name"]
 
     # start dynamic-sidecar and run the proxy on the same node
-
+    # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model
     dynamic_sidecar_create_service_params = await dynamic_sidecar_assembly(
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         io_simcore_zone=io_simcore_zone,
@@ -170,12 +167,12 @@ async def create_dynamic_service(
         user_id=service.user_id,
         node_uuid=service.uuid,
         service_key=service.key,
-        service_tag=service.tag,
-        paths_mapping=model.paths_mapping,
-        compose_spec=model.compose_spec,
-        target_container=model.target_container,
-        project_id=model.project_id,
-        settings=model.settings,
+        service_tag=service.version,
+        paths_mapping=service_settings.paths_mapping,
+        compose_spec=service_settings.compose_spec,
+        target_container=service_settings.target_container,
+        project_id=service.project_id,
+        settings=service_settings.settings,
     )
     log.debug(
         "dynamic-sidecar create_service_params %s",
@@ -202,8 +199,8 @@ async def create_dynamic_service(
         user_id=service.user_id,
         project_id=service.project_id,
         dynamic_sidecar_node_id=dynamic_sidecar_node_id,
-        request_scheme=model.request_scheme,
-        request_dns=model.request_dns,
+        request_scheme=x_dynamic_sidecar_request_scheme,
+        request_dns=x_dynamic_sidecar_request_dns,
     )
     log.debug(
         "dynamic-sidecar-proxy create_service_params %s",
@@ -215,16 +212,17 @@ async def create_dynamic_service(
     )
 
     # services where successfully started and they can be monitored
+    # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model
     await monitor.add_service_to_monitor(
         service_name=service_name_dynamic_sidecar,
-        node_uuid=str(node_uuid),
+        node_uuid=str(service.uuid),
         hostname=service_name_dynamic_sidecar,
         port=dynamic_sidecar_settings.web_service_port,
-        service_key=model.service_key,
-        service_tag=model.service_tag,
-        paths_mapping=model.paths_mapping,
-        compose_spec=model.compose_spec,
-        target_container=model.target_container,
+        service_key=service.key,
+        service_tag=service.version,
+        paths_mapping=service_settings.paths_mapping,
+        compose_spec=service_settings.compose_spec,
+        target_container=service_settings.target_container,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
         simcore_traefik_zone=io_simcore_zone,
         service_port=extract_service_port_from_compose_start_spec(
