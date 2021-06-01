@@ -617,16 +617,6 @@
               }
             }
           },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Message"
-                }
-              }
-            }
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -647,6 +637,26 @@
         ],
         "summary": "create & start the dynamic service",
         "operationId": "create_dynamic_service_v2_dynamic_services_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "X-Dynamic-Sidecar-Request-Dns",
+              "type": "string"
+            },
+            "name": "x-dynamic-sidecar-request-dns",
+            "in": "header"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "X-Dynamic-Sidecar-Request-Scheme",
+              "type": "string"
+            },
+            "name": "x-dynamic-sidecar-request-scheme",
+            "in": "header"
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -667,70 +677,6 @@
                 }
               }
             }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Message"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v2/dynamic_services/{node_uuid}:start": {
-      "post": {
-        "tags": [
-          "dynamic services"
-        ],
-        "summary": "create & start the dynamic-sidecar for this service",
-        "operationId": "start_dynamic_sidecar_v2_dynamic_services__node_uuid__start_post",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Node Uuid",
-              "type": "string",
-              "format": "uuid"
-            },
-            "name": "node_uuid",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StartDynamicSidecarModel"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "500": {
-            "description": "Error while starting dynamic sidecar"
           },
           "422": {
             "description": "Validation Error",
@@ -808,16 +754,6 @@
         "responses": {
           "204": {
             "description": "Successful Response"
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Message"
-                }
-              }
-            }
           },
           "422": {
             "description": "Validation Error",
@@ -1056,10 +992,10 @@
         "required": [
           "user_id",
           "project_id",
-          "service_key",
-          "service_version",
-          "service_uuid",
-          "service_basepath"
+          "key",
+          "version",
+          "uuid",
+          "basepath"
         ],
         "type": "object",
         "properties": {
@@ -1073,29 +1009,37 @@
             "type": "string",
             "format": "uuid"
           },
-          "service_key": {
-            "title": "Service Key",
+          "key": {
+            "title": "Key",
             "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path"
           },
-          "service_version": {
-            "title": "Service Version",
+          "version": {
+            "title": "Version",
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "type": "string",
             "description": "semantic version number of the node"
           },
-          "service_uuid": {
-            "title": "Service Uuid",
+          "uuid": {
+            "title": "Uuid",
             "type": "string",
             "format": "uuid"
           },
-          "service_basepath": {
-            "title": "Service Basepath",
+          "basepath": {
+            "title": "Basepath",
             "type": "string",
             "description": "predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
             "format": "path"
           }
+        },
+        "example": {
+          "user_id": 234,
+          "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+          "key": "simcore/services/dynamic/3dviewer",
+          "version": "2.4.5",
+          "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+          "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa"
         }
       },
       "DynamicServiceOut": {
@@ -1103,10 +1047,14 @@
         "required": [
           "user_id",
           "project_id",
-          "service_key",
-          "service_version",
-          "service_uuid",
-          "service_basepath"
+          "key",
+          "version",
+          "uuid",
+          "basepath",
+          "host",
+          "internal_port",
+          "published_port",
+          "state"
         ],
         "type": "object",
         "properties": {
@@ -1120,29 +1068,74 @@
             "type": "string",
             "format": "uuid"
           },
-          "service_key": {
-            "title": "Service Key",
+          "key": {
+            "title": "Key",
             "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path"
           },
-          "service_version": {
-            "title": "Service Version",
+          "version": {
+            "title": "Version",
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "type": "string",
             "description": "semantic version number of the node"
           },
-          "service_uuid": {
-            "title": "Service Uuid",
+          "uuid": {
+            "title": "Uuid",
             "type": "string",
             "format": "uuid"
           },
-          "service_basepath": {
-            "title": "Service Basepath",
+          "basepath": {
+            "title": "Basepath",
             "type": "string",
             "description": "predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
             "format": "path"
+          },
+          "host": {
+            "title": "Host",
+            "type": "string",
+            "description": "the service swarm internal host name"
+          },
+          "internal_port": {
+            "title": "Internal Port",
+            "exclusiveMaximum": 65535.0,
+            "exclusiveMinimum": 0.0,
+            "type": "integer",
+            "description": "the service swarm internal port"
+          },
+          "published_port": {
+            "title": "Published Port",
+            "exclusiveMaximum": 65535.0,
+            "exclusiveMinimum": 0.0,
+            "type": "integer",
+            "description": "the service swarm published port if any"
+          },
+          "entry_point": {
+            "title": "Entry Point",
+            "type": "string",
+            "description": "if empty the service entrypoint is on the root endpoint."
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/simcore_service_director_v2__models__domains__dynamic_services__ServiceState"
+              }
+            ],
+            "description": "service current state"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string",
+            "description": "additional information related to service state"
           }
+        },
+        "example": {
+          "user_id": 234,
+          "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+          "key": "simcore/services/dynamic/3dviewer",
+          "version": "2.4.5",
+          "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+          "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa"
         }
       },
       "HTTPValidationError": {
@@ -1155,19 +1148,6 @@
             "items": {
               "$ref": "#/components/schemas/ValidationError"
             }
-          }
-        }
-      },
-      "Message": {
-        "title": "Message",
-        "required": [
-          "message"
-        ],
-        "type": "object",
-        "properties": {
-          "message": {
-            "title": "Message",
-            "type": "string"
           }
         }
       },
@@ -1248,38 +1228,6 @@
           }
         },
         "additionalProperties": false
-      },
-      "PathsMappingModel": {
-        "title": "PathsMappingModel",
-        "required": [
-          "inputs_path",
-          "outputs_path"
-        ],
-        "type": "object",
-        "properties": {
-          "inputs_path": {
-            "title": "Inputs Path",
-            "type": "string",
-            "description": "path where the service expects all the inputs folder",
-            "format": "path"
-          },
-          "outputs_path": {
-            "title": "Outputs Path",
-            "type": "string",
-            "description": "path where the service expects all the outputs folder",
-            "format": "path"
-          },
-          "other_paths": {
-            "title": "Other Paths",
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "path"
-            },
-            "description": "optional list of path which contents need to be saved and restored",
-            "default": []
-          }
-        }
       },
       "PipelineDetails": {
         "title": "PipelineDetails",
@@ -1430,7 +1378,7 @@
           "service_state": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/ServiceState"
+                "$ref": "#/components/schemas/simcore_service_director_v2__models__schemas__services__ServiceState"
               }
             ],
             "description": "the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start"
@@ -1813,19 +1761,6 @@
         "additionalProperties": false,
         "description": "Metadata on a service input or output port"
       },
-      "ServiceState": {
-        "title": "ServiceState",
-        "enum": [
-          "pending",
-          "pulling",
-          "starting",
-          "running",
-          "complete",
-          "failed"
-        ],
-        "type": "string",
-        "description": "An enumeration."
-      },
       "ServiceStateReply": {
         "title": "ServiceStateReply",
         "required": [
@@ -1924,126 +1859,6 @@
               "$ref": "#/components/schemas/ServiceDockerData"
             }
           }
-        }
-      },
-      "StartDynamicSidecarModel": {
-        "title": "StartDynamicSidecarModel",
-        "required": [
-          "user_id",
-          "project_id",
-          "service_key",
-          "service_tag",
-          "request_scheme",
-          "request_dns",
-          "settings",
-          "paths_mapping"
-        ],
-        "type": "object",
-        "properties": {
-          "user_id": {
-            "title": "User Id",
-            "exclusiveMinimum": 0.0,
-            "type": "integer"
-          },
-          "project_id": {
-            "title": "Project Id",
-            "type": "string",
-            "format": "uuid"
-          },
-          "service_key": {
-            "title": "Service Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
-            "type": "string",
-            "description": "name of the service"
-          },
-          "service_tag": {
-            "title": "Service Tag",
-            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-            "type": "string",
-            "description": "tag usually also known as version"
-          },
-          "request_scheme": {
-            "title": "Request Scheme",
-            "type": "string",
-            "description": "Used for the proxy configuration either http or https"
-          },
-          "request_dns": {
-            "title": "Request Dns",
-            "type": "string",
-            "description": "Used for the proxy configuration"
-          },
-          "settings": {
-            "title": "Settings",
-            "type": "array",
-            "items": {
-              "type": "object"
-            },
-            "description": "settings for the services define by the service maintainer in the labels"
-          },
-          "paths_mapping": {
-            "title": "Paths Mapping",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PathsMappingModel"
-              }
-            ],
-            "description": "the service explicitly requests where to mount all paths which will be handeled by the dynamic-sidecar"
-          },
-          "compose_spec": {
-            "title": "Compose Spec",
-            "type": "object",
-            "description": "if the user provides a compose_spec, it will be used instead of compsing one from the service_key and service_tag"
-          },
-          "target_container": {
-            "title": "Target Container",
-            "type": "string",
-            "description": "when the user defines a compose spec, it should pick a container inside the spec to receive traffic on a defined port"
-          }
-        },
-        "example": {
-          "user_id": 10,
-          "project_id": "eb2ba037-4fb6-45da-80c8-00809399f24a",
-          "service_key": "simcore/services/dynamic/httpbin-dynamic-sidecar-compose",
-          "service_tag": "1.0.1",
-          "request_scheme": "http",
-          "request_dns": "localhost",
-          "settings": [
-            {
-              "name": "resources",
-              "type": "Resources",
-              "value": {
-                "mem_limit": 17179869184,
-                "cpu_limit": 1000000000
-              }
-            },
-            {
-              "name": "ports",
-              "type": "int",
-              "value": 80
-            },
-            {
-              "name": "constraints",
-              "type": "string",
-              "value": [
-                "node.platform.os == linux"
-              ]
-            }
-          ],
-          "compose_spec": {
-            "version": "2.3",
-            "services": {
-              "httpbin-docker-compose-spec": {
-                "image": "${REGISTRY_URL}/simcore/services/dynamic/httpbin-dynamic-sidecar-compose:${SERVICE_TAG}",
-                "environment": [
-                  "MOCK_VALUE=MOCK_VALUE"
-                ],
-                "volumes": [
-                  "/tmp/nothing:/tmp/nothing"
-                ]
-              }
-            }
-          },
-          "target_container": "httpbin-docker-compose-spec"
         }
       },
       "Structure": {
@@ -2152,6 +1967,32 @@
         "enum": [
           "TextArea",
           "SelectBox"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
+      "simcore_service_director_v2__models__domains__dynamic_services__ServiceState": {
+        "title": "ServiceState",
+        "enum": [
+          "pending",
+          "pulling",
+          "starting",
+          "running",
+          "complete",
+          "failed"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
+      "simcore_service_director_v2__models__schemas__services__ServiceState": {
+        "title": "ServiceState",
+        "enum": [
+          "pending",
+          "pulling",
+          "starting",
+          "running",
+          "complete",
+          "failed"
         ],
         "type": "string",
         "description": "An enumeration."

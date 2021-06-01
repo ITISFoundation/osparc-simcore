@@ -17,7 +17,6 @@ from ...models.domains.dynamic_services import (
     RetrieveDataIn,
     RetrieveDataOutEnveloped,
 )
-from ...models.domains.dynamic_sidecar import StartDynamicSidecarModel
 from ...modules.dynamic_sidecar.config import DynamicSidecarSettings, get_settings
 from ...modules.dynamic_sidecar.constants import (
     DYNAMIC_SIDECAR_PREFIX,
@@ -29,7 +28,6 @@ from ...modules.dynamic_sidecar.docker_utils import (
     create_service_and_get_id,
     get_node_id_from_task_for_service,
     get_swarm_network,
-    inspect_service,
 )
 from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor, get_monitor
 from ...modules.dynamic_sidecar.monitor.models import ServiceStateReply
