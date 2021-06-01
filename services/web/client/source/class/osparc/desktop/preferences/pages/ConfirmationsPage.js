@@ -103,11 +103,39 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       const cbConfirmDeleteStudy = new qx.ui.form.CheckBox(this.tr("Delete a Study"));
       preferencesSettings.bind("confirmDeleteStudy", cbConfirmDeleteStudy, "value");
       cbConfirmDeleteStudy.bind("value", preferencesSettings, "confirmDeleteStudy");
+      cbConfirmDeleteStudy.addListener("changeValue", e => {
+        if (!e.getData()) {
+          const msg = this.tr("Warning: deleting a study cannot be undone");
+          const win = new osparc.ui.window.Confirmation(msg);
+          win.getConfirmButton().setLabel(this.tr("OK"));
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (!win.getConfirmed()) {
+              cbConfirmDeleteStudy.setValue(true);
+            }
+          }, this);
+        }
+      }, this);
       box.add(cbConfirmDeleteStudy);
 
       const cbConfirmDeleteNode = new qx.ui.form.CheckBox(this.tr("Delete a Node"));
       preferencesSettings.bind("confirmDeleteNode", cbConfirmDeleteNode, "value");
       cbConfirmDeleteNode.bind("value", preferencesSettings, "confirmDeleteNode");
+      cbConfirmDeleteNode.addListener("changeValue", e => {
+        if (!e.getData()) {
+          const msg = this.tr("Warning: deleting a node cannot be undone");
+          const win = new osparc.ui.window.Confirmation(msg);
+          win.getConfirmButton().setLabel(this.tr("OK"));
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (!win.getConfirmed()) {
+              cbConfirmDeleteNode.setValue(true);
+            }
+          }, this);
+        }
+      }, this);
       box.add(cbConfirmDeleteNode);
 
       const cbConfirmWindowSize = new qx.ui.form.CheckBox(this.tr("Window size check"));
