@@ -11,10 +11,7 @@ from models_library.projects import Project
 from pytest_simcore.helpers.utils_login import NewUser
 from pytest_simcore.helpers.utils_mock import future_with_result
 from pytest_simcore.helpers.utils_projects import delete_all_projects
-from pytest_simcore.helpers.utils_services import (
-    FAKE_FILE_CONSUMER_SERVICES,
-    list_fake_file_consumers,
-)
+from pytest_simcore.helpers.utils_services import list_fake_file_consumers
 from simcore_service_webserver.groups_api import auto_add_user_to_groups
 
 # from simcore_postgres_database.models.projects import projects as projects_table
@@ -32,7 +29,7 @@ FAKE_FILE_VIEWS = list_fake_file_consumers()
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_service):
+def app_cfg(default_app_cfg, aiohttp_unused_port, redis_service):
     """App's configuration used for every test in this module
 
     NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
@@ -40,7 +37,6 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_servic
     cfg = deepcopy(default_app_cfg)
 
     cfg["main"]["port"] = aiohttp_unused_port()
-    cfg["main"]["client_outdir"] = str(qx_client_outdir)
     cfg["main"]["studies_access_enabled"] = True
 
     exclude = {

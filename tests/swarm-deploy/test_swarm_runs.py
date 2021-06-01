@@ -87,6 +87,7 @@ def test_all_services_up(
         "sidecar",
         "storage",
         "webserver",
+        "static-webserver",
         "rabbit",
         "postgres",
         "redis",

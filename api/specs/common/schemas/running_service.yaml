@@ -6,7 +6,7 @@ components:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/RunningServicesArray'
+          $ref: "#/components/schemas/RunningServicesArray"
         error:
           nullable: true
           default: null
@@ -14,7 +14,7 @@ components:
     RunningServicesArray:
       type: array
       items:
-        $ref: '#/components/schemas/RunningServiceType'
+        $ref: "#/components/schemas/RunningServiceType"
 
     RunningServiceEnveloped:
       type: object
@@ -22,7 +22,7 @@ components:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/RunningServiceType'
+          $ref: "#/components/schemas/RunningServiceType"
         error:
           nullable: true
           default: null
@@ -37,6 +37,7 @@ components:
         - service_host
         - service_port
         - service_state
+        - user_id
       properties:
         published_port:
           description: The ports where the service provides its interface
@@ -80,8 +81,8 @@ components:
         service_basepath:
           description: different base path where current service is mounted otherwise defaults to root
           type: string
-          example: '/x/E1O2E-LAH'
-          default: ''
+          example: "/x/E1O2E-LAH"
+          default: ""
         service_state:
           description: >
             the service state
@@ -104,3 +105,8 @@ components:
             the service message
           type: string
           example: no suitable node (insufficient resources on 1 node)
+        user_id:
+          description: >-
+            the user that started the service
+          type: string
+          example: "123"

@@ -17,7 +17,6 @@ import pytest
 import simcore_service_webserver.director.config as director_config
 import yaml
 from aiohttp import web
-from aiohttp.client import ClientSession
 from aioresponses.core import CallbackResult, aioresponses
 from servicelib.client_session import get_client_session
 from simcore_service_webserver.director.config import DirectorSettings
@@ -235,6 +234,14 @@ def mock_director_service(
 
         def stop_service_handler(url: URL, **kwargs):
             service_uuid = url.parts[-1]
+            required_query_parameter = "save_state"
+            if required_query_parameter not in kwargs["params"]:
+                return CallbackResult(
+                    payload={
+                        "error": f"stop_service endpoint was called without query parameter {required_query_parameter} {url}"
+                    },
+                    status=500,
+                )
 
             try:
                 service = next(

@@ -72,15 +72,11 @@ def webserver_environ(
     """
     assert "webserver" not in docker_stack["services"]
 
-    dockerfile_environ = {
-        "SIMCORE_WEB_OUTDIR": "undefined"
-    }  # TODO: parse webserver dockerfile ??
     docker_compose_environ = simcore_docker_compose["services"]["webserver"].get(
         "environment", {}
     )
 
     environ = {}
-    environ.update(dockerfile_environ)
     environ.update(docker_compose_environ)
 
     # get the list of core services the test module wants

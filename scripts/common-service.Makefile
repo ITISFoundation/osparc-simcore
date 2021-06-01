@@ -57,8 +57,8 @@ test-dev-integration test-ci-integration:
 test-dev: test-dev-unit test-dev-integration ## runs unit and integration tests for development (e.g. w/ pdb)
 
 
-.PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
-build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## builds docker image in many flavours
+.PHONY: build build-nc build-devel build-devel-nc
+build build-nc build-devel build-devel-nc: ## builds docker image in many flavours
 	# building docker image for ${APP_NAME} ...
 	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
 

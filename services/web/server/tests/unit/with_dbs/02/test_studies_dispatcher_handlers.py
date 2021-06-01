@@ -121,7 +121,6 @@ def patch_list_viewers_info_in_handlers_rest(mocker):
 def app_cfg(
     default_app_cfg,
     aiohttp_unused_port,
-    qx_client_outdir,
     redis_service,
     # patch_list_viewers_info_in_handlers_rest,
     inject_tables,
@@ -133,7 +132,6 @@ def app_cfg(
     cfg = deepcopy(default_app_cfg)
 
     cfg["main"]["port"] = aiohttp_unused_port()
-    cfg["main"]["client_outdir"] = str(qx_client_outdir)
     cfg["main"]["studies_access_enabled"] = True
 
     exclude = {
@@ -302,7 +300,7 @@ async def assert_redirected_to_study(
     content = await resp.text()
     assert resp.status == web.HTTPOk.status_code, f"Got {content}"
 
-    # Expects redirection to osparc web (see qx_client_outdir fixture)
+    # Expects redirection to osparc web
     assert resp.url.path == "/"
     assert (
         "OSPARC-SIMCORE" in content
