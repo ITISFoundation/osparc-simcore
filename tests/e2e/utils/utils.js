@@ -263,6 +263,7 @@ async function makePingRequest(page, path) {
   // https://github.com/Netflix/pollyjs/issues/149#issuecomment-481108446
   await page.setBypassCSP(true);
   return await page.evaluate(async (path) => {
+    // eslint-disable-next-line no-useless-escape
     const url = (path).replace(/\/\//g, "\/");
     console.log("makePingRequest", url);
     return fetch(url, {
