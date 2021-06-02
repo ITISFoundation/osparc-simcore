@@ -3,6 +3,7 @@ import asyncio
 import json
 import logging
 import time
+from contextlib import suppress
 from typing import Any, Deque, Dict, Optional, Set, Tuple
 
 import aiodocker
@@ -109,6 +110,7 @@ async def inspect_service(service_id: str) -> Dict[str, Any]:
 async def get_dynamic_sidecars_to_monitor(
     dynamic_sidecar_settings: DynamicSidecarSettings,
 ) -> Deque[ServiceLabelsStoredData]:
+    """called when monitor is started to discover new services to monitor"""
     async with docker_client() as client:  # pylint: disable=not-async-context-manager
         running_services = await client.services.list(
             filters={
@@ -251,3 +253,52 @@ async def get_dynamic_sidecar_state(
 
     task_status = last_task["Status"]
     return extract_task_state(task_status=task_status)
+
+
+async def are_all_services_present(
+    node_uuid: str, dynamic_sidecar_settings: DynamicSidecarSettings
+) -> bool:
+    """
+    The dynamic-sidecar stack always expects to have 2 running services
+    """
+    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+        stack_services = await client.services.list(
+            filters={
+                "label": [
+                    f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}",
+                    f"uuid={node_uuid}",
+                ]
+            }
+        )
+        if len(stack_services) != 2:
+            log.warning("Expected 2 services found %s", stack_services)
+            return False
+
+        return True
+
+
+async def remove_dynamic_sidecar_stack(
+    node_uuid: str, dynamic_sidecar_settings: DynamicSidecarSettings
+) -> None:
+    """Removes all services from the stack, in theory there should only be 2 services"""
+    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+        services_to_remove = await client.services.list(
+            filters={
+                "label": [
+                    f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}",
+                    f"uuid={node_uuid}",
+                ]
+            }
+        )
+        to_remove_tasks = [
+            client.services.delete(service["ID"]) for service in services_to_remove
+        ]
+        await asyncio.gather(*to_remove_tasks)
+
+
+# TODO: remove network( we should already have the network name)
+async def remove_dynamic_sidecar_network(network_name: str):
+    with suppress(aiodocker.exceptions.DockerError):
+        async with docker_client() as client:  # pylint: disable=not-async-context-manager
+            network = await client.networks.get(network_name)
+            await network.delete()

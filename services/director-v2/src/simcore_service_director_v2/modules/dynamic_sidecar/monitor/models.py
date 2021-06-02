@@ -128,6 +128,10 @@ class MonitorData(BaseModel):
         ..., description="Name of the current dynamic-sidecar being monitored"
     )
 
+    node_uuid: str = Field(
+        ..., description="the node_id of the service as defined in the workbench"
+    )
+
     dynamic_sidecar: DynamicSidecar = Field(
         ...,
         description="stores information fetched from the dynamic-sidecar",
@@ -180,6 +184,7 @@ class MonitorData(BaseModel):
         # pylint: disable=too-many-arguments
         cls,
         service_name: str,
+        node_uuid: str,
         hostname: str,
         port: int,
         service_key: str,
@@ -193,6 +198,7 @@ class MonitorData(BaseModel):
     ) -> "MonitorData":
         payload = dict(
             service_name=service_name,
+            node_uuid=node_uuid,
             service_key=service_key,
             service_tag=service_tag,
             paths_mapping=paths_mapping,

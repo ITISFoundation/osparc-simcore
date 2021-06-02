@@ -20,6 +20,9 @@ from ..docker_utils import (
     ServiceLabelsStoredData,
     get_dynamic_sidecar_state,
     get_dynamic_sidecars_to_monitor,
+    are_all_services_present,
+    remove_dynamic_sidecar_stack,
+    remove_dynamic_sidecar_network,
 )
 from ..exceptions import DynamicSidecarError
 from ..parse_docker_status import ServiceState, extract_containers_minimim_statuses
@@ -44,13 +47,29 @@ MONITOR_KEY = f"{__name__}.DynamicSidecarsMonitor"
 
 async def apply_monitoring(
     app: FastAPI, input_monitor_data: MonitorData
-) -> MonitorData:
+) -> Optional[MonitorData]:
     """
     fetches status for service and then processes all the registered events
     and updates the status back
     """
+    # TODO: check if service is still present, if not remove
+    # self from monitor and log it as warning
+    dynamic_sidecar_settings: DynamicSidecarSettings = (
+        app.state.dynamic_sidecar_settings
+    )
 
     output_monitor_data: MonitorData = input_monitor_data.copy(deep=True)
+
+    if not await are_all_services_present(
+        node_uuid=input_monitor_data.node_uuid,
+        dynamic_sidecar_settings=dynamic_sidecar_settings,
+    ):
+        monitor: DynamicSidecarsMonitor = _get_monitor(app)
+        # always save the state when removing zombie services
+        await monitor.remove_service_from_monitor(
+            node_uuid=input_monitor_data.node_uuid, save_state=True
+        )
+        return None
 
     # if the service is not OK (for now failing) monitoring cycle will
     # be skipped. This will allow for others to debug it
@@ -66,9 +85,6 @@ async def apply_monitoring(
         logger.warning(message)
         return output_monitor_data
 
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        app.state.dynamic_sidecar_settings
-    )
     try:
         with timeout(dynamic_sidecar_settings.max_status_api_duration):
             output_monitor_data = await update_dynamic_sidecar_health(
@@ -149,6 +165,7 @@ class DynamicSidecarsMonitor:
                 resource_lock=AsyncResourceLock(False),
                 monitor_data=MonitorData.assemble(
                     service_name=service_name,
+                    node_uuid=node_uuid,
                     hostname=hostname,
                     port=port,
                     service_key=service_key,
@@ -163,8 +180,10 @@ class DynamicSidecarsMonitor:
             )
             logger.debug("Added service '%s' to monitor", service_name)
 
-    async def remove_service_from_monitor(self, node_uuid: str) -> None:
-        # invoked before the service is removed
+    async def remove_service_from_monitor(
+        self, node_uuid: str, save_state: Optional[bool]
+    ) -> None:
+        """Handles the removal cycle of the services, saving states etc..."""
         async with self._lock:
             if node_uuid not in self._inverse_search_mapping:
                 return
@@ -182,7 +201,25 @@ class DynamicSidecarsMonitor:
                 dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
             )
 
-            # finally remove this service
+            dynamic_sidecar_settings: DynamicSidecarSettings = (
+                self._app.state.dynamic_sidecar_settings
+            )
+
+            # TODO: continue to remove all the networks and services from here!!
+            _ = save_state
+            # TODO: save state and others go here
+
+            # remove the 2 services
+            await remove_dynamic_sidecar_stack(
+                node_uuid=current.monitor_data.node_uuid,
+                dynamic_sidecar_settings=dynamic_sidecar_settings,
+            )
+            # remove network
+            await remove_dynamic_sidecar_network(
+                current.monitor_data.dynamic_sidecar_network_name
+            )
+
+            # finally remove it from the monitor
             del self._to_monitor[service_name]
             del self._inverse_search_mapping[node_uuid]
             logger.debug("Removed service '%s' from monitoring", service_name)
@@ -258,15 +295,18 @@ class DynamicSidecarsMonitor:
 
     async def _runner(self) -> None:
         """This code runs under a lock and can safely change the Monitor data of all entries"""
-        logger.info("Doing some monitorung here")
+        logger.info("Monitoring dynamic-sidecars")
 
         async def monitor_single_service(service_name: str) -> None:
             lock_with_monitor_data: LockWithMonitorData = self._to_monitor[service_name]
 
             try:
-                self._to_monitor[service_name].monitor_data = await apply_monitoring(
+                logger.debug("monitor_data=%s", lock_with_monitor_data.monitor_data)
+                output_minitor_data: Optional[MonitorData] = await apply_monitoring(
                     self._app, lock_with_monitor_data.monitor_data
                 )
+                if output_minitor_data:
+                    self._to_monitor[service_name].monitor_data = output_minitor_data
             except asyncio.CancelledError:
                 raise
             except Exception:  # pylint: disable=broad-except
@@ -361,8 +401,12 @@ class DynamicSidecarsMonitor:
         self._to_monitor = dict()
 
 
+def _get_monitor(app: FastAPI) -> DynamicSidecarsMonitor:
+    return app.state.dynamic_sidecar_monitor
+
+
 def get_monitor(request: Request) -> DynamicSidecarsMonitor:
-    return request.app.state.dynamic_sidecar_monitor
+    return _get_monitor(request.app)
 
 
 async def setup_monitor(app: FastAPI):
