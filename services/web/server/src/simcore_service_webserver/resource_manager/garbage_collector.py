@@ -15,8 +15,8 @@ from simcore_service_webserver import users_exceptions
 from simcore_service_webserver.db_models import GroupType
 from simcore_service_webserver.director.director_api import (
     get_running_interactive_services,
-    stop_service,
 )
+from simcore_service_webserver.director_v2 import stop_service
 from simcore_service_webserver.director.director_exceptions import (
     DirectorException,
     ServiceNotFoundError,
@@ -364,6 +364,8 @@ async def remove_orphaned_services(
     for interactive_service in running_interactive_services:
         # if not present in DB or not part of currently opened projects, can be removed
         node_id = interactive_service["service_uuid"]
+        service_key = interactive_service["service_key"]
+        service_version = interactive_service["service_version"]
         # if the node does not exist in any project in the db, we can safely remove it without saving any state
         if not await is_node_id_present_in_any_project_workbench(app, node_id):
             logger.info(
@@ -371,7 +373,9 @@ async def remove_orphaned_services(
                 service_host,
             )
             try:
-                await stop_service(app, node_id, save_state=False)
+                await stop_service(
+                    app, node_id, service_key, service_version, save_state=False
+                )
             except (ServiceNotFoundError, DirectorException) as err:
                 logger.warning("Error while stopping service: %s", err)
             continue
@@ -410,12 +414,9 @@ async def remove_orphaned_services(
                 # 2. something bad happened when closing a project?
                 user_id = int(interactive_service.get("user_id", 0))
 
+                save_state = not await is_user_guest(app, user_id) if user_id else True
                 await stop_service(
-                    app,
-                    node_id,
-                    save_state=not await is_user_guest(app, user_id)
-                    if user_id
-                    else True,
+                    app, node_id, service_key, service_version, save_state
                 )
             except (ServiceNotFoundError, DirectorException) as err:
                 logger.warning("Error while stopping service: %s", err)

@@ -1,6 +1,6 @@
 import logging
 from pprint import pformat
-from typing import Dict, Union, List
+from typing import Dict, Union, List, Optional
 from uuid import UUID
 
 import httpx
@@ -261,7 +261,6 @@ async def dynamic_sidecar_status(
         - "Dict" if dynamic-service
         - "List" if legacy dynamic service (reply of GET /running_interactive_services)
     """
-    # user_id, project_id in the query
     simcore_service: SimcoreService = await director_v0_client.get_service_labels(
         service=ServiceKeyVersion(key=service_key, version=service_version)
     )
@@ -286,6 +285,36 @@ async def dynamic_sidecar_status(
     summary="stops previously spawned dynamic-sidecar",
 )
 async def stop_dynamic_sidecar(
-    node_uuid: UUID, monitor: DynamicSidecarsMonitor = Depends(get_monitor)
+    node_uuid: UUID,
+    save_state: Optional[bool],
+    service_key: str = Query(
+        ...,
+        description="distinctive name for the node based on the docker registry path",
+        regex=DYNAMIC_SERVICE_KEY_RE,
+    ),
+    service_version: str = Query(
+        ...,
+        description="semantic version number of the node",
+        regex=VERSION_RE,
+    ),
+    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
+    monitor: DynamicSidecarsMonitor = Depends(get_monitor),
 ) -> Dict[str, str]:
-    await monitor.remove_service_from_monitor(str(node_uuid))
+    simcore_service: SimcoreService = await director_v0_client.get_service_labels(
+        service=ServiceKeyVersion(key=service_key, version=service_version)
+    )
+    use_dynamic_sidecar = simcore_service.boot_mode == "dynamic-sidecar"
+
+    if not use_dynamic_sidecar:
+        # forward to director-v0
+        base_url = (
+            str(director_v0_client.client.base_url)
+            + f"running_interactive_services/{node_uuid}"
+        )
+        redirect_url_with_query = yarl.URL(base_url).with_query(
+            save_state="true" if save_state else "false"
+        )
+        log.error("Redirecting to %s", redirect_url_with_query)
+        return RedirectResponse(redirect_url_with_query)
+
+    await monitor.remove_service_from_monitor(str(node_uuid), save_state)

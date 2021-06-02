@@ -1,9 +1,11 @@
+import asyncio
 import logging
 from typing import Any, Dict, List, Optional, Set, Union
 from uuid import UUID
 
 from aiohttp import ClientError, ClientTimeout, web
 from models_library.projects_pipeline import ComputationTask
+from models_library.settings.services_common import ServicesCommonSettings
 from pydantic.types import PositiveInt
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import log_decorator
@@ -21,6 +23,7 @@ from .director_v2_settings import (
 from .login.decorators import RQT_USERID_KEY, login_required
 from .rest_config import APP_OPENAPI_SPECS_KEY
 from .security_decorators import permission_required
+from .director.director_api import get_running_interactive_services
 
 log = logging.getLogger(__file__)
 
@@ -48,16 +51,17 @@ async def _request_director_v2(
         async with session.request(
             method, url, headers=headers, json=data, **kwargs
         ) as response:
+            # sometimes director-v0 (via redirects) replies
+            # in plain text
+            payload: Union[Dict, str] = (
+                await response.json()
+                if response.content_type == "application/json"
+                else await response.text()
+            )
+
             if response.status != expected_status.status_code:
-                # in some cases the director answers with plain text
-                payload: Union[Dict, str] = (
-                    await response.json()
-                    if response.content_type == "application/json"
-                    else await response.text()
-                )
                 raise _DirectorServiceError(response.status, payload)
 
-            payload: Dict = await response.json()
             return payload
 
     except TimeoutError as err:
@@ -323,6 +327,57 @@ async def get_service_state(
     return await _request_director_v2(
         app, "GET", backend_url, params=params, expected_status=web.HTTPOk
     )
+
+
+@log_decorator(logger=log)
+async def stop_service(
+    app: web.Application,
+    service_uuid: str,
+    service_key: str,
+    service_version: str,
+    save_state: Optional[bool] = True,
+) -> None:
+    # stopping a service can take a lot of time
+    # bumping the stop command timeout to 1 hour
+    # this will allow to sava bigger datasets from the services
+    timeout = ServicesCommonSettings().webserver_director_stop_service_timeout
+
+    director2_settings: Directorv2Settings = get_settings(app)
+    backend_url = (
+        URL(director2_settings.endpoint) / "dynamic_services" / f"{service_uuid}"
+    ).update_query(
+        service_key=service_key,
+        service_version=service_version,
+        save_state="true" if save_state else "false",
+    )
+    return await _request_director_v2(
+        app, "DELETE", backend_url, expected_status=web.HTTPNoContent, timeout=timeout
+    )
+
+
+@log_decorator(logger=log)
+async def stop_services(
+    app: web.Application,
+    user_id: Optional[str] = None,
+    project_id: Optional[str] = None,
+    save_state: Optional[bool] = True,
+) -> None:
+    """Stops all services in parallel"""
+    services = await get_running_interactive_services(
+        app, user_id=user_id, project_id=project_id
+    )
+
+    services_to_stop = [
+        stop_service(
+            app=app,
+            service_uuid=service["service_uuid"],
+            service_key=service["service_key"],
+            service_version=service["service_version"],
+            save_state=save_state,
+        )
+        for service in services
+    ]
+    await asyncio.gather(*services_to_stop)
 
 
 @app_module_setup(

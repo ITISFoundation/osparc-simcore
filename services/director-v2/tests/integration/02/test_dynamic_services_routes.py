@@ -208,8 +208,8 @@ async def test_start(
     assert data["service_state"] == "running"
 
     # finally stopping the service
-    response: Response = await test_client.post(
-        f"/v2/dynamic_services/{node_uuid}:stop", json=start_request_data
+    response: Response = await test_client.delete(
+        f"/v2/dynamic_services/{node_uuid}", json=start_request_data
     )
     assert response.status_code == 204, response.text
     assert response.json() is None

@@ -37,6 +37,8 @@ from ..director_v2 import (
     get_computation_task,
     request_retrieve_dyn_service,
     start_service,
+    stop_service,
+    stop_services,
 )
 from ..resource_manager.websocket_manager import managed_resource
 from ..socketio.events import (
@@ -199,7 +201,7 @@ async def remove_project_interactive_services(
     # save the state if the user is not a guest. if we do not know we save in any case.
     with suppress(director_exceptions.DirectorException):
         # here director exceptions are suppressed. in case the service is not found to preserve old behavior
-        await director_api.stop_services(
+        await stop_services(
             app=app,
             user_id=user_id,
             project_id=project_uuid,
@@ -254,8 +256,6 @@ async def add_project_node(
     return node_uuid
 
 
-
-
 async def delete_project_node(
     request: web.Request, project_uuid: str, user_id: int, node_uuid: str
 ) -> None:
@@ -269,8 +269,15 @@ async def delete_project_node(
     # stop the service if it is running
     for service in list_of_services:
         if service["service_uuid"] == node_uuid:
+            log.error("deleting service=%s", service)
             # no need to save the state of the node when deleting it
-            await director_api.stop_service(request.app, node_uuid, save_state=False)
+            await stop_service(
+                request.app,
+                node_uuid,
+                service["key"],
+                service["version"],
+                save_state=False,
+            )
             break
     # remove its data if any
     await delete_data_folders_of_project_node(
