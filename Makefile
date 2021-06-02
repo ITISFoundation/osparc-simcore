@@ -108,13 +108,16 @@ export BUILD_TARGET=$(if $(findstring -devel,$@),development,production);\
 pushd services; \
 docker buildx create --name osparc-builder --use || true; \
 docker buildx bake \
+	$(if $(findstring -devel,$@),,\
 	$(foreach service, $(SERVICES_LIST),\
 		--set $(service).cache-from="type=local,src=/tmp/.buildx-cache/$(service)" \
 		--set $(service).cache-to="type=local,mode=max,dest=/tmp/.buildx-cache/$(service)" \
 	)\
+	)\
 	--set *.output="type=docker,push=false" \
 	--file docker-compose-build.yml $(if $(target),$(target),); \
-popd;
+popd; \
+docker buildx rm osparc-builder;
 endef
 
 rebuild: build-nc # alias

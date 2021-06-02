@@ -131,6 +131,8 @@ services:
         - BUILD_DATE=${BUILD_DATE}
         - VCS_URL=${VCS_URL}
         - VCS_REF=${VCS_REF}
+        - VCS_REF_CLIENT=${VCS_REF_CLIENT}
+        - VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT}
       labels:
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
