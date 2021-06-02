@@ -31,16 +31,11 @@ async function runTutorial () {
     console.log("Study ID:", studyId);
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
-    await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][2]]);
+    await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][1]]);
 
     // Some time for starting the service
     await tutorial.waitFor(10000);
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
-
-    const outFiles = [
-      "data.zip"
-    ];
-    await tutorial.checkNodeResults(2, outFiles);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
