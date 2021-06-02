@@ -35,7 +35,7 @@ async function runTutorial () {
     await tutorial.waitForServices(workbenchData["studyId"], [nodeIdViewer]);
 
     // Some time for starting the service
-    await tutorial.waitFor(10000);
+    await tutorial.waitFor(5000);
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
     const iframeHandles = await page.$$("iframe");
@@ -47,12 +47,18 @@ async function runTutorial () {
     // url/x/nodeIdViewer
     const frame = iframes.find(iframe => iframe._url.includes(nodeIdViewer));
 
-    // inside the iFrame, click on doscument icon on top
-    const docSelector = 'body > div > div > div.MainView-topBar_4t9p4 > div.MainView-title_2sz83 > div.MainView-menu_37qbe > div.ToggleIcons-container_4prdd > div:nth-child(1) > i.ToggleIcons-openFileButtonActive_3q2p5.ToggleIcons-openFileButton_3bz5y.ToggleIcons-button_2phh8.font-awesome-fa_4nxvz.font-awesome-fa-fw_vg4ef.font-awesome-fa-file-text-o_3dsxg.ToggleIcons-activeButton_3cj9s';
-    await frame.waitForSelector(docSelector);
-    await frame.click(docSelector);
-    await tutorial.waitFor(2000);
-    await utils.takeScreenshot(page, screenshotPrefix + 'iFrame1');
+    // inside the iFrame, click on document icon on top
+    const docSelector = '/html/body/div/div/div[1]/div[1]/div[2]/div[1]/div[1]/i[2]';
+    const docElements = await frame.$x(docSelector);
+    await docElements[0].click();
+
+    // then click on the file to render it
+    const fileSelector = '/html/body/div/div/div[1]/div[1]/div[2]/div[2]/div/ul[2]';
+    const fileElements = await frame.$x(fileSelector);
+    await fileElements[0].click();
+
+    await tutorial.waitFor(5000);
+    await utils.takeScreenshot(page, screenshotPrefix + 'teapot');
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
