@@ -11,6 +11,7 @@ import httpx
 from fastapi import FastAPI, HTTPException, Request, Response
 from models_library.projects_nodes import NodeID
 from models_library.services import ServiceDockerData, ServiceKeyVersion
+from models_library.service_settings import SimcoreService
 
 # Module's business logic ---------------------------------------------
 from starlette import status
@@ -136,11 +137,11 @@ class DirectorV0Client:
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)
-    async def get_service_labels(self, service: ServiceKeyVersion) -> Dict[str, str]:
+    async def get_service_labels(self, service: ServiceKeyVersion) -> SimcoreService:
         resp = await self.request(
             "GET",
             f"services/{urllib.parse.quote_plus(service.key)}/{service.version}:labels",
         )
         if resp.status_code == status.HTTP_200_OK:
-            return unenvelope_or_raise_error(resp)
+            return SimcoreService.parse_obj(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)

@@ -14,7 +14,7 @@ from typing import Deque, Dict, Optional
 from async_timeout import timeout
 from fastapi import FastAPI, Request
 
-from ....models.domains.dynamic_sidecar import ComposeSpecModel, PathsMappingModel
+from models_library.service_settings import ComposeSpecModel, PathsMapping
 from ..config import DynamicSidecarSettings
 from ..docker_utils import (
     ServiceLabelsStoredData,
@@ -123,7 +123,7 @@ class DynamicSidecarsMonitor:
         port: int,
         service_key: str,
         service_tag: str,
-        paths_mapping: PathsMappingModel,
+        paths_mapping: PathsMapping,
         compose_spec: ComposeSpecModel,
         target_container: Optional[str],
         dynamic_sidecar_network_name: str,

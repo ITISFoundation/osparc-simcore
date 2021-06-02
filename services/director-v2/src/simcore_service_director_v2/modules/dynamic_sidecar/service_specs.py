@@ -5,11 +5,15 @@ from uuid import UUID
 
 from models_library.projects import ProjectID
 
-from ...models.domains.dynamic_sidecar import ComposeSpecModel, PathsMappingModel
+from models_library.service_settings import (
+    ComposeSpecModel,
+    PathsMapping,
+    SimcoreServiceSettings,
+    SimcoreServiceSetting,
+)
 from ...models.schemas.constants import UserID
 from .config import DynamicSidecarSettings
 from .constants import DYNAMIC_SIDECAR_PREFIX
-from .exceptions import DynamicSidecarError
 from .utils import unused_port
 
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
@@ -131,11 +135,6 @@ async def dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
     }
 
 
-def _check_setting_correctness(setting: Dict) -> None:
-    if "name" not in setting or "type" not in setting or "value" not in setting:
-        raise DynamicSidecarError("Invalid setting in %s" % setting)
-
-
 def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
     mounts = list()
     for s in settings:
@@ -177,73 +176,70 @@ def _parse_env_settings(settings: List[str]) -> Dict:
 
 # pylint: disable=too-many-branches
 def _inject_settings_to_create_service_params(
-    labels_service_settings: List[Dict[str, Any]],
+    labels_service_settings: SimcoreServiceSettings,
     create_service_params: Dict[str, Any],
 ) -> None:
     for param in labels_service_settings:
-        _check_setting_correctness(param)
-
+        param: SimcoreServiceSetting = param
         # NOTE: the below capitalize addresses a bug in a lot of already in use services
         # where Resources was written in lower case
-        if param["type"].capitalize() == "Resources":
+        if param.setting_type.capitalize() == "Resources":
             # python-API compatible for backward compatibility
-            if "mem_limit" in param["value"]:
+            if "mem_limit" in param.value:
                 create_service_params["task_template"]["Resources"]["Limits"][
                     "MemoryBytes"
-                ] = param["value"]["mem_limit"]
-            if "cpu_limit" in param["value"]:
+                ] = param.value["mem_limit"]
+            if "cpu_limit" in param.value:
                 create_service_params["task_template"]["Resources"]["Limits"][
                     "NanoCPUs"
-                ] = param["value"]["cpu_limit"]
-            if "mem_reservation" in param["value"]:
+                ] = param.value["cpu_limit"]
+            if "mem_reservation" in param.value:
                 create_service_params["task_template"]["Resources"]["Reservations"][
                     "MemoryBytes"
-                ] = param["value"]["mem_reservation"]
-            if "cpu_reservation" in param["value"]:
+                ] = param.value["mem_reservation"]
+            if "cpu_reservation" in param.value:
                 create_service_params["task_template"]["Resources"]["Reservations"][
                     "NanoCPUs"
-                ] = param["value"]["cpu_reservation"]
+                ] = param.value["cpu_reservation"]
             # REST-API compatible
-            if "Limits" in param["value"] or "Reservations" in param["value"]:
-                create_service_params["task_template"]["Resources"].update(
-                    param["value"]
-                )
+            if "Limits" in param.value or "Reservations" in param.value:
+                create_service_params["task_template"]["Resources"].update(param.value)
 
         # publishing port on the ingress network.
-        elif param["name"] == "ports" and param["type"] == "int":  # backward comp
+        elif param.name == "ports" and param.setting_type == "int":  # backward comp
             create_service_params["labels"]["port"] = create_service_params["labels"][
                 "service_port"
-            ] = str(param["value"])
+            ] = str(param.value)
         # REST-API compatible
-        elif param["type"] == "EndpointSpec":
-            if "Ports" in param["value"]:
+        elif param.setting_type == "EndpointSpec":
+            if "Ports" in param.value:
                 if (
-                    isinstance(param["value"]["Ports"], list)
-                    and "TargetPort" in param["value"]["Ports"][0]
+                    isinstance(param.value["Ports"], list)
+                    and "TargetPort" in param.value["Ports"][0]
                 ):
                     create_service_params["labels"]["port"] = create_service_params[
                         "labels"
-                    ]["service_port"] = str(param["value"]["Ports"][0]["TargetPort"])
+                    ]["service_port"] = str(param.value["Ports"][0]["TargetPort"])
 
         # placement constraints
-        elif param["name"] == "constraints":  # python-API compatible
-            create_service_params["task_template"]["Placement"]["Constraints"] += param[
-                "value"
-            ]
-        elif param["type"] == "Constraints":  # REST-API compatible
-            create_service_params["task_template"]["Placement"]["Constraints"] += param[
-                "value"
-            ]
-        elif param["name"] == "env":
-            log.debug("Found env parameter %s", param["value"])
-            env_settings = _parse_env_settings(param["value"])
+        elif param.name == "constraints":  # python-API compatible
+            create_service_params["task_template"]["Placement"][
+                "Constraints"
+            ] += param.value
+        elif param.setting_type == "Constraints":  # REST-API compatible
+            create_service_params["task_template"]["Placement"][
+                "Constraints"
+            ] += param.value
+        elif param.name == "env":
+            log.debug("Found env parameter %s", param.value)
+            env_settings = _parse_env_settings(param.value)
             if env_settings:
                 create_service_params["task_template"]["ContainerSpec"]["Env"].update(
                     env_settings
                 )
-        elif param["name"] == "mount":
-            log.debug("Found mount parameter %s", param["value"])
-            mount_settings: List[Dict] = _parse_mount_settings(param["value"])
+        elif param.name == "mount":
+            log.debug("Found mount parameter %s", param.value)
+            mount_settings: List[Dict] = _parse_mount_settings(param.value)
             if mount_settings:
                 create_service_params["task_template"]["ContainerSpec"][
                     "Mounts"
@@ -270,11 +266,11 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
     node_uuid: UUID,
     service_key: str,
     service_tag: str,
-    paths_mapping: PathsMappingModel,
+    paths_mapping: PathsMapping,
     compose_spec: ComposeSpecModel,
     target_container: Optional[str],
     project_id: ProjectID,
-    settings: List[Dict[str, Any]],
+    settings: SimcoreServiceSettings,
 ) -> Dict[str, Any]:
     """This service contains the dynamic-sidecar which will spawn the dynamic service itself"""
     mounts = [
@@ -353,7 +349,7 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
             "service_tag": service_tag,
             "paths_mapping": paths_mapping.json(),
             "compose_spec": json.dumps(compose_spec),
-            "target_container": json.dumps(target_container),
+            "target_container": target_container,
         },
         "name": dynamic_sidecar_name,
         "networks": [swarm_network_id, dynamic_sidecar_network_id],

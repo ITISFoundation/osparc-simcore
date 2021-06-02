@@ -8,7 +8,7 @@ from typing import Any, Deque, Dict, Optional, Set, Tuple
 import aiodocker
 from asyncio_extras import async_contextmanager
 
-from ...models.domains.dynamic_sidecar import ComposeSpecModel, PathsMappingModel
+from models_library.service_settings import ComposeSpecModel, PathsMapping
 from .config import DynamicSidecarSettings
 from .constants import DYNAMIC_SIDECAR_PREFIX, SERVICE_NAME_SIDECAR
 from .exceptions import DynamicSidecarError, GenericDockerError
@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 
 
 ServiceLabelsStoredData = Tuple[
-    str, str, str, PathsMappingModel, ComposeSpecModel, Optional[str], str, str, int
+    str, str, str, PathsMapping, ComposeSpecModel, Optional[str], str, str, int
 ]
 
 # `assemble_service_name`function will join 5 strings together
@@ -140,11 +140,11 @@ async def get_dynamic_sidecars_to_monitor(
         node_uuid = service["Spec"]["Labels"]["uuid"]
         service_key = service["Spec"]["Labels"]["service_key"]
         service_tag = service["Spec"]["Labels"]["service_tag"]
-        paths_mapping = PathsMappingModel.parse_raw(
+        paths_mapping = PathsMapping.parse_raw(
             service["Spec"]["Labels"]["paths_mapping"]
         )
         compose_spec = json.loads(service["Spec"]["Labels"]["compose_spec"])
-        target_container = json.loads(service["Spec"]["Labels"]["target_container"])
+        target_container = service["Spec"]["Labels"]["target_container"]
 
         dynamic_sidecar_network_name = service["Spec"]["Labels"][
             "traefik.docker.network"

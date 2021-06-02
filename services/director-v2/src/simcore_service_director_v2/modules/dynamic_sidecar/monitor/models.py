@@ -7,7 +7,7 @@ from models_library.basic_regex import VERSION_RE
 from models_library.services import SERVICE_KEY_RE
 from pydantic import BaseModel, Field, PositiveInt
 
-from ....models.domains.dynamic_sidecar import ComposeSpecModel, PathsMappingModel
+from models_library.service_settings import ComposeSpecModel, PathsMapping
 from ..parse_docker_status import ServiceState
 from .utils import AsyncResourceLock
 
@@ -143,7 +143,7 @@ class MonitorData(BaseModel):
         regex=VERSION_RE,
         description="together with the key used to compose the docker-compose spec for the service",
     )
-    paths_mapping: PathsMappingModel = Field(
+    paths_mapping: PathsMapping = Field(
         ...,
         description=(
             "the service explicitly requests where to mount all paths "
@@ -184,7 +184,7 @@ class MonitorData(BaseModel):
         port: int,
         service_key: str,
         service_tag: str,
-        paths_mapping: PathsMappingModel,
+        paths_mapping: PathsMapping,
         compose_spec: ComposeSpecModel,
         target_container: Optional[str],
         dynamic_sidecar_network_name: str,

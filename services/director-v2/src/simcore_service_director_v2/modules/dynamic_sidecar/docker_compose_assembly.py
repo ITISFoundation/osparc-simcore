@@ -5,7 +5,7 @@ import yaml
 from fastapi.applications import FastAPI
 from pydantic import PositiveInt
 
-from ...models.domains.dynamic_sidecar import ComposeSpecModel, PathsMappingModel
+from models_library.service_settings import ComposeSpecModel, PathsMapping
 from .config import DynamicSidecarSettings
 
 CONTAINER_NAME = "container"
@@ -92,7 +92,7 @@ async def assemble_spec(
     app: FastAPI,
     service_key: str,
     service_tag: str,
-    paths_mapping: PathsMappingModel,  # pylint: disable=unused-argument
+    paths_mapping: PathsMapping,  # pylint: disable=unused-argument
     compose_spec: ComposeSpecModel,
     target_container: Optional[str],
     dynamic_sidecar_network_name: str,

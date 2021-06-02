@@ -4,12 +4,14 @@ from typing import Any, Dict
 from uuid import UUID
 
 import httpx
+import yarl
 from fastapi import APIRouter, Depends, Header
 from fastapi.responses import RedirectResponse
 from models_library.services import ServiceKeyVersion
 from pydantic.main import BaseModel
 from starlette import status
 from starlette.datastructures import URL
+
 
 from ...models.domains.dynamic_services import (
     DynamicServiceCreate,
@@ -44,6 +46,7 @@ from ..dependencies.dynamic_services import (
     get_service_base_url,
     get_services_client,
 )
+from models_library.service_settings import SimcoreService
 
 router = APIRouter()
 log = logging.getLogger(__file__)
@@ -89,26 +92,23 @@ async def create_dynamic_service(
     dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
 ):
-    # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model
-    service_labels: Dict[str, str] = await director_v0_client.get_service_labels(
+    simcore_service: SimcoreService = await director_v0_client.get_service_labels(
         service=ServiceKeyVersion(key=service.key, version=service.version)
     )
-    log.debug("Fetched service labels %s", service_labels)
-
-    use_dynamic_sidecar = (
-        service_labels.get("simcore.service.boot-mode") == "dynamic-sidecar"
-    )
-
+    use_dynamic_sidecar = simcore_service.boot_mode == "dynamic-sidecar"
     if not use_dynamic_sidecar:
         # forward to director-v0
-        redirect_url = director_v0_client.client.base_url.copy_with(
-            query={
+        base_url = (
+            str(director_v0_client.client.base_url) + "running_interactive_services"
+        )
+        redirect_url = yarl.URL(base_url).with_query(
+            {
                 "user_id": f"{service.user_id}",
                 "project_id": f"{service.project_id}",
                 "service_uuid": f"{service.uuid}",
                 "service_key": f"{service.key}",
                 "service_version": f"{service.version}",
-                "service_basepath": f"{service.basepath}",
+                "service_basepath": str(service.basepath),
             }
         )
         return RedirectResponse(redirect_url)
@@ -165,11 +165,11 @@ async def create_dynamic_service(
         node_uuid=service.uuid,
         service_key=service.key,
         service_tag=service.version,
-        paths_mapping=service_labels["simcore.service.paths_mapping"],
-        compose_spec=service_labels["simcore.service.compose-spec"],
-        target_container=service_labels["simcore.service.target_container"],
+        paths_mapping=simcore_service.paths_mapping,
+        compose_spec=simcore_service.compose_spec,
+        target_container=simcore_service.container_http_entry,
         project_id=service.project_id,
-        settings=service_labels["simcore.service.settings"],
+        settings=simcore_service.settings,
     )
     log.debug(
         "dynamic-sidecar create_service_params %s",
@@ -204,9 +204,8 @@ async def create_dynamic_service(
         pformat(dynamic_sidecar_proxy_create_service_params),
     )
 
-    # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model
-    # returning the status makes more sense than returning the entire docker service inspect
-    _ = await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
+    # no need for the id any longer
+    await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
 
     # services where successfully started and they can be monitored
     # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model, also passing the models would use less lines..
@@ -217,9 +216,9 @@ async def create_dynamic_service(
         port=dynamic_sidecar_settings.web_service_port,
         service_key=service.key,
         service_tag=service.version,
-        paths_mapping=service_labels["simcore.service.paths_mapping"],
-        compose_spec=service_labels["simcore.service.compose-spec"],
-        target_container=service_labels["simcore.service.target_container"],
+        paths_mapping=simcore_service.paths_mapping,
+        compose_spec=simcore_service.compose_spec,
+        target_container=simcore_service.container_http_entry,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
         simcore_traefik_zone=io_simcore_zone,
         service_port=extract_service_port_from_compose_start_spec(
