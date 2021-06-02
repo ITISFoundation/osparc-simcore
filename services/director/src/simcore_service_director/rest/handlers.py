@@ -12,7 +12,9 @@ from simcore_service_director import exceptions, producer, registry_proxy, resou
 log = logging.getLogger(__name__)
 
 
-async def root_get(request: web.Request,) -> web.Response:
+async def root_get(
+    request: web.Request,
+) -> web.Response:
     log.debug("Client does root_get request %s", request)
     distb = pkg_resources.get_distribution("simcore-service-director")
     with resources.stream(resources.RESOURCE_OPEN_API) as file_ptr:
@@ -181,7 +183,7 @@ async def running_interactive_services_get(
 
 
 async def running_interactive_services_delete(
-    request: web.Request, service_uuid: str
+    request: web.Request, service_uuid: str, save_state: Optional[bool] = True
 ) -> web.Response:
     log.debug(
         "Client does running_interactive_services_delete request %s with service_uuid %s",
@@ -189,7 +191,7 @@ async def running_interactive_services_delete(
         service_uuid,
     )
     try:
-        await producer.stop_service(request.app, service_uuid)
+        await producer.stop_service(request.app, service_uuid, save_state)
     except exceptions.ServiceUUIDNotFoundError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
     except Exception as err:

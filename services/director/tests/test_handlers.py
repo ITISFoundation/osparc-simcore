@@ -7,14 +7,14 @@
 
 import json
 import uuid
+from typing import Optional
 from urllib.parse import quote
 
 import pytest
-from aiohttp import web, web_exceptions
-
+from aioresponses.core import CallbackResult, aioresponses
 from helpers import json_schema_validator
 from servicelib.rest_responses import unwrap_envelope
-from simcore_service_director import config, main, resources, rest
+from simcore_service_director import main, resources, rest
 
 
 @pytest.fixture
@@ -195,7 +195,14 @@ async def test_services_extras_by_key_version_get(
 
 
 async def _start_get_stop_services(
-    client, push_services, user_id, project_id, api_version_prefix
+    client,
+    push_services,
+    user_id,
+    project_id,
+    api_version_prefix: str,
+    save_state: Optional[bool],
+    exp_save_state_call: bool,
+    mocker,
 ):
     params = {}
     web_response = await client.post(
@@ -313,9 +320,34 @@ async def _start_get_stop_services(
         assert running_service_enveloped["data"]["service_basepath"] == service_basepath
 
         # stop the service
-        web_response = await client.delete(
-            f"/{api_version_prefix}/running_interactive_services/{params['service_uuid']}"
+        query_params = {}
+        if save_state:
+            query_params.update({"save_state": "true" if save_state else "false"})
+
+        mocked_save_state_cb = mocker.MagicMock(
+            return_value=CallbackResult(status=200, payload={})
         )
+        PASSTHROUGH_REQUESTS_PREFIXES = [
+            "http://127.0.0.1",
+            "http://localhost",
+            "unix://",  # docker engine
+            "ws://",  # websockets
+        ]
+        with aioresponses(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
+
+            # POST /http://service_host:service_port service_basepath/state -------------------------------------------------
+            mock.post(
+                f"http://{service_host}:{service_port}{service_basepath}/state",
+                status=200,
+                callback=mocked_save_state_cb,
+            )
+            web_response = await client.delete(
+                f"/{api_version_prefix}/running_interactive_services/{params['service_uuid']}",
+                params=query_params,
+            )
+            if exp_save_state_call:
+                mocked_save_state_cb.assert_called_once()
+
         text = await web_response.text()
         assert web_response.status == 204, text
         assert web_response.content_type == "application/json"
@@ -347,6 +379,9 @@ async def test_running_services_post_and_delete_no_swarm(
     assert web_response.status == 500, data
 
 
+@pytest.mark.parametrize(
+    "save_state, exp_save_state_call", [(True, True), (False, False), (None, True)]
+)
 async def test_running_services_post_and_delete(
     configure_swarm_stack_name,
     client,
@@ -355,9 +390,19 @@ async def test_running_services_post_and_delete(
     user_id,
     project_id,
     api_version_prefix,
+    save_state: Optional[bool],
+    exp_save_state_call: bool,
+    mocker,
 ):
     await _start_get_stop_services(
-        client, push_services, user_id, project_id, api_version_prefix
+        client,
+        push_services,
+        user_id,
+        project_id,
+        api_version_prefix,
+        save_state,
+        exp_save_state_call,
+        mocker,
     )
 
 

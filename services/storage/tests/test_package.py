@@ -3,16 +3,17 @@
 # pylint:disable=redefined-outer-name
 
 
-import pytest
-from pytest_simcore.helpers.utils_pylint import assert_pylint_is_passing
-
-
-@pytest.fixture
-def pylintrc(osparc_simcore_root_dir):
-    pylintrc = osparc_simcore_root_dir / ".pylintrc"
-    assert pylintrc.exists()
-    return pylintrc
+from pytest_simcore.helpers.utils_pylint import (
+    assert_no_pdb_in_code,
+    assert_pylint_is_passing,
+)
 
 
 def test_run_pylint(pylintrc, package_dir):
+    # fixtures in pytest_simcore.environs
     assert_pylint_is_passing(pylintrc=pylintrc, package_dir=package_dir)
+
+
+def test_no_pdbs_in_place(package_dir):
+    # fixtures in pytest_simcore.environs
+    assert_no_pdb_in_code(code_dir=package_dir)

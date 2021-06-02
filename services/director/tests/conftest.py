@@ -3,27 +3,22 @@
 # pylint: disable=bare-except
 # pylint: disable=redefined-outer-name
 
-import logging
 import os
-import sys
 from pathlib import Path
 
 import pytest
-from aiohttp import ClientSession
-
 import simcore_service_director
+from aiohttp import ClientSession
 from simcore_service_director import config, resources
 
 pytest_plugins = [
-    "pytest_simcore.repository_paths",
-    "pytest_simcore.docker_compose",
-    "pytest_simcore.docker_swarm",
-    "pytest_simcore.docker_registry",
     "fixtures.fake_services",
+    "pytest_simcore.docker_compose",
+    "pytest_simcore.docker_registry",
+    "pytest_simcore.docker_swarm",
+    "pytest_simcore.repository_paths",
+    "pytest_simcore.tmp_path_extra",
 ]
-current_dir = Path(
-    sys.argv[0] if __name__ == "__main__" else __file__
-).parent.absolute()
 
 
 @pytest.fixture

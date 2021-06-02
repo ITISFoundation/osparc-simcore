@@ -4,6 +4,7 @@ from typing import Callable, Optional
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.gzip import GZipMiddleware
 from starlette import status
 from starlette.exceptions import HTTPException
 
@@ -88,5 +89,8 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
             process_time = time.time() - start_time
             response.headers["X-Process-Time"] = str(process_time)
             return response
+
+    # gzip middleware
+    app.add_middleware(GZipMiddleware)
 
     return app

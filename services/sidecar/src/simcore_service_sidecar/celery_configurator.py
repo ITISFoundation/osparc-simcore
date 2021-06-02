@@ -14,7 +14,7 @@ from celery.contrib.abortable import AbortableTask
 from kombu import Queue
 
 from . import config
-from .boot_mode import BootMode, get_boot_mode, set_boot_mode
+from .boot_mode import BootMode
 from .celery_task import entrypoint
 from .celery_task_utils import (
     on_task_failure_handler,
@@ -61,15 +61,16 @@ def configure_node(bootmode: BootMode) -> Celery:
         Queue("celery"),
         Queue(CELERY_APP_CONFIGS[bootmode]["queue_name"]),
     ]
+    app.conf.osparc_sidecar_bootmode = bootmode
+    app.conf.result_extended = True  # so the original arguments are also in the results
 
     define_celery_task(app, config.CELERY_CONFIG.task_name)
-    set_boot_mode(bootmode)
-    log.info("Initialized celery app in %s", get_boot_mode())
+    log.info("Initialized celery app in %s", bootmode)
     return app
 
 
 def create_celery_app() -> Celery:
-    """ Configures the Celery APP for CPU, GPU, MPI mode."""
+    """Configures the Celery APP for CPU, GPU, MPI mode."""
     bootmode = BootMode.CPU
 
     if start_as_mpi_node():

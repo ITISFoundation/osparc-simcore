@@ -17,7 +17,7 @@ from servicelib.aiopg_utils import (
 )
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
-from tenacity import Retrying
+from tenacity import AsyncRetrying
 
 from .db_config import CONFIG_SECTION_NAME, assert_valid_config
 
@@ -41,7 +41,9 @@ async def pg_engine(app: web.Application):
     )
 
     log.info("Creating pg engine for %s", dsn)
-    for attempt in Retrying(**PostgresRetryPolicyUponInitialization(log).kwargs):
+    async for attempt in AsyncRetrying(
+        **PostgresRetryPolicyUponInitialization(log).kwargs
+    ):
         with attempt:
             engine = await create_pg_engine(
                 dsn, minsize=pg_cfg["minsize"], maxsize=pg_cfg["maxsize"]
@@ -70,7 +72,9 @@ async def _create_pg_engine(
     dsn: DataSourceName, min_size: int, max_size: int
 ) -> Engine:
     log.info("Creating pg engine for %s", dsn)
-    for attempt in Retrying(**PostgresRetryPolicyUponInitialization(log).kwargs):
+    async for attempt in AsyncRetrying(
+        **PostgresRetryPolicyUponInitialization(log).kwargs
+    ):
         with attempt:
             engine = await create_pg_engine(dsn, minsize=min_size, maxsize=max_size)
             await raise_if_not_responsive(engine)

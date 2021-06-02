@@ -24,7 +24,7 @@ async def test_python_package_installation(
     simcore_docker_compose: Dict,
     osparc_simcore_root_dir: Path,
 ):
-    def _extract_from_dockerfile(service_name: str) -> None:
+    def _extract_from_dockerfile(service_name: str) -> str:
         dockerfile_path: Path = (
             osparc_simcore_root_dir
             / "services"

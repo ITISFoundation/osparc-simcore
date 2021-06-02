@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
-from copy import deepcopy
 from random import randint
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
@@ -14,7 +13,8 @@ from celery.contrib.testing.worker import TestWorkController
 from fastapi import FastAPI
 from models_library.settings.celery import CeleryConfig
 from pydantic.types import PositiveInt
-from simcore_service_director_v2.modules.celery import CeleryClient
+from simcore_service_director_v2.models.domains.comp_tasks import Image
+from simcore_service_director_v2.modules.celery import CeleryClient, CeleryTaskIn
 
 
 # Fixtures -----------------------------------------------------------------
@@ -42,6 +42,7 @@ def minimal_celery_config(
     monkeypatch.setenv("POSTGRES_ENABLED", "0")
     monkeypatch.setenv("CELERY_ENABLED", "1")
     monkeypatch.setenv("REGISTRY_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_SCHEDULER_ENABLED", "0")
 
     monkeypatch.setattr(CeleryConfig, "broker_url", celery_config["broker_url"])
     monkeypatch.setattr(CeleryConfig, "result_backend", celery_config["result_backend"])
@@ -84,27 +85,7 @@ def test_create_task(celery_app: Celery, celery_worker: TestWorkController):
     assert mul.delay(4, 4).get(timeout=10) == 16
 
 
-def sorted_nodes() -> List[Dict[str, Dict[str, Any]]]:
-    return [
-        {
-            "grp_1_node_0": {"runtime_requirements": "cpu"},
-            "grp_1_node_1": {"runtime_requirements": "cpu"},
-        },
-        {
-            "grp_2_node_0": {"runtime_requirements": "cpu"},
-            "grp_2_node_1": {"runtime_requirements": "cpu"},
-        },
-        {
-            "grp_3_node_0": {"runtime_requirements": "cpu"},
-            "grp_3_node_1": {"runtime_requirements": "cpu"},
-        },
-        {
-            "grp_4_node_0": {"runtime_requirements": "cpu"},
-            "grp_4_node_1": {"runtime_requirements": "cpu"},
-        },
-    ]
-
-
+@pytest.mark.parametrize("runtime_requirements", ["cpu", "gpu", "mpi", "gpu:mpi"])
 def test_send_computation_tasks(
     minimal_app: FastAPI,
     celery_app: Celery,
@@ -113,7 +94,11 @@ def test_send_computation_tasks(
     celery_configuration: CeleryConfig,
     user_id: PositiveInt,
     project_id: str,
+    runtime_requirements: str,
+    mocker,
 ):
+    callback_fct = mocker.MagicMock()
+
     @celery_app.task(name=celery_configuration.task_name, bind=True)
     def some_task(
         self,
@@ -125,28 +110,75 @@ def test_send_computation_tasks(
     ) -> str:
         return f"task created for {user_id} and {project_id}:{node_id}"
 
-    celery_app.control.add_consumer(f"{celery_configuration.task_name}.cpu")
+    celery_app.control.add_consumer(
+        f"{celery_configuration.task_name}.{runtime_requirements}"
+    )
     celery_worker.reload()
 
-    list_of_nodes = sorted_nodes()
+    list_of_tasks: List[CeleryTaskIn] = [
+        CeleryTaskIn(node_id=f"task_{i}", runtime_requirements=runtime_requirements)
+        for i in range(3)
+    ]
     celery_client: CeleryClient = minimal_app.state.celery_client
-    task = celery_client.send_computation_tasks(user_id, project_id, list_of_nodes)
-    # NOTE: this returns the last node group results
-    results = task.get(timeout=10)
+    celery_tasks = celery_client.send_computation_tasks(
+        user_id, project_id, list_of_tasks, callback_fct
+    )
 
-    # check that all the last tasks were effectively done
-    def _assert_tasks_done(results: List, expected_nodes: List):
-        assert len(results) == len(expected_nodes)
-        for result in results:
-            node_uuid = str(result).split(":")[1]
-            assert node_uuid in expected_nodes
-            expected_nodes.pop(node_uuid)
+    assert len(celery_tasks) == len(list_of_tasks)
+
+    for task in list_of_tasks:
+        assert task.node_id in celery_tasks
+        task_results = celery_tasks[task.node_id].get(timeout=10)
         assert (
-            expected_nodes == {}
-        ), f"there are remaining nodes that were not executed in {expected_nodes}"
+            task_results
+            == f"task created for {user_id} and {project_id}:{task.node_id}"
+        )
 
-    expected_nodes = deepcopy(list_of_nodes)
-    _assert_tasks_done(results, expected_nodes[-1])
+    callback_fct.assert_called()
 
-    last_node_uuid = next(iter(list_of_nodes[-1].keys()))
-    assert results[0] == f"task created for {user_id} and {project_id}:{last_node_uuid}"
+
+@pytest.mark.parametrize(
+    "image, exp_requirement",
+    [
+        (
+            Image(
+                name="simcore/services/dynamic/fake",
+                tag="1.2.3",
+                requires_gpu=False,
+                requires_mpi=False,
+            ),
+            "cpu",
+        ),
+        (
+            Image(
+                name="simcore/services/dynamic/fake",
+                tag="1.2.3",
+                requires_gpu=True,
+                requires_mpi=False,
+            ),
+            "gpu",
+        ),
+        (
+            Image(
+                name="simcore/services/dynamic/fake",
+                tag="1.2.3",
+                requires_gpu=False,
+                requires_mpi=True,
+            ),
+            "mpi",
+        ),
+        (
+            Image(
+                name="simcore/services/dynamic/fake",
+                tag="1.2.3",
+                requires_gpu=True,
+                requires_mpi=True,
+            ),
+            "gpu:mpi",
+        ),
+    ],
+)
+def test_celery_in_constructor(image: Image, exp_requirement: str):
+    assert CeleryTaskIn.from_node_image("fake_node_id", image) == CeleryTaskIn(
+        "fake_node_id", exp_requirement
+    )

@@ -12,9 +12,9 @@ import pytest
 import socketio
 import socketio.exceptions
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import NewProject
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
@@ -23,7 +23,10 @@ from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.resource_manager import config, setup_resource_manager
-from simcore_service_webserver.resource_manager.registry import get_registry
+from simcore_service_webserver.resource_manager.registry import (
+    RedisResourceRegistry,
+    get_registry,
+)
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
@@ -72,6 +75,13 @@ def client(loop, aiohttp_client, app_cfg, postgres_db, mock_orphaned_services):
     )
 
 
+@pytest.fixture()
+def socket_registry(client: TestClient) -> RedisResourceRegistry:
+    app = client.server.app
+    socket_registry = get_registry(app)
+    return socket_registry
+
+
 @pytest.fixture
 async def empty_user_project(client, empty_project, logged_user):
     project = empty_project()
@@ -116,8 +126,8 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
 
 # ------------------------ TESTS -------------------------------
 async def test_anonymous_websocket_connection(
-    client_session_id: Callable[[], str],
-    socketio_url: Callable,
+    client_session_id_factory: Callable[[], str],
+    socketio_url_factory: Callable,
     security_cookie_factory: Callable,
     mocker,
 ):
@@ -127,7 +137,9 @@ async def test_anonymous_websocket_connection(
         ssl_verify=False
     )  # enginio 3.10.0 introduced ssl verification
     url = str(
-        URL(socketio_url()).with_query({"client_session_id": client_session_id()})
+        URL(socketio_url_factory()).with_query(
+            {"client_session_id": client_session_id_factory()}
+        )
     )
     headers = {}
     cookie = await security_cookie_factory()
@@ -155,23 +167,23 @@ async def test_anonymous_websocket_connection(
     ],
 )
 async def test_websocket_resource_management(
-    client,
     logged_user,
-    socketio_client,
-    client_session_id: Callable[[], str],
+    socket_registry: RedisResourceRegistry,
+    socketio_client_factory: Callable,
+    client_session_id_factory: Callable[[], str],
 ):
-    app = client.server.app
-    socket_registry = get_registry(app)
-    cur_client_session_id = client_session_id()
-    sio = await socketio_client(cur_client_session_id)
+    cur_client_session_id = client_session_id_factory()
+    sio = await socketio_client_factory(cur_client_session_id)
     sid = sio.sid
     resource_key = {
         "user_id": str(logged_user["id"]),
         "client_session_id": cur_client_session_id,
     }
+    # FIXME: this check fails with python-socketio>=5.0.0 (see requirements/_base.in)
     assert await socket_registry.find_keys(("socket_id", sio.sid)) == [resource_key]
     assert sio.sid in await socket_registry.find_resources(resource_key, "socket_id")
     assert len(await socket_registry.find_resources(resource_key, "socket_id")) == 1
+
     # NOTE: the socket.io client needs the websockets package in order to upgrade to websocket transport
     await sio.disconnect()
     assert not sio.sid
@@ -190,19 +202,17 @@ async def test_websocket_resource_management(
     ],
 )
 async def test_websocket_multiple_connections(
-    client,
+    socket_registry: RedisResourceRegistry,
     logged_user,
-    socketio_client,
-    client_session_id: Callable[[], str],
+    socketio_client_factory: Callable,
+    client_session_id_factory: Callable[[], str],
 ):
-    app = client.server.app
-    socket_registry = get_registry(app)
     NUMBER_OF_SOCKETS = 5
     # connect multiple clients
     clients = []
     for socket_count in range(1, NUMBER_OF_SOCKETS + 1):
-        cur_client_session_id = client_session_id()
-        sio = await socketio_client(cur_client_session_id)
+        cur_client_session_id = client_session_id_factory()
+        sio = await socketio_client_factory(cur_client_session_id)
         resource_key = {
             "user_id": str(logged_user["id"]),
             "client_session_id": cur_client_session_id,
@@ -248,8 +258,8 @@ async def test_websocket_multiple_connections(
 async def test_websocket_disconnected_after_logout(
     client,
     logged_user,
-    socketio_client,
-    client_session_id: Callable[[], str],
+    socketio_client_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     expected,
     mocker,
 ):
@@ -257,20 +267,20 @@ async def test_websocket_disconnected_after_logout(
     socket_registry = get_registry(app)
 
     # connect first socket
-    cur_client_session_id1 = client_session_id()
-    sio = await socketio_client(cur_client_session_id1)
+    cur_client_session_id1 = client_session_id_factory()
+    sio = await socketio_client_factory(cur_client_session_id1)
     socket_logout_mock_callable = mocker.Mock()
     sio.on("logout", handler=socket_logout_mock_callable)
 
     # connect second socket
-    cur_client_session_id2 = client_session_id()
-    sio2 = await socketio_client(cur_client_session_id2)
+    cur_client_session_id2 = client_session_id_factory()
+    sio2 = await socketio_client_factory(cur_client_session_id2)
     socket_logout_mock_callable2 = mocker.Mock()
     sio2.on("logout", handler=socket_logout_mock_callable2)
 
     # connect third socket
-    cur_client_session_id3 = client_session_id()
-    sio3 = await socketio_client(cur_client_session_id3)
+    cur_client_session_id3 = client_session_id_factory()
+    sio3 = await socketio_client_factory(cur_client_session_id3)
     socket_logout_mock_callable3 = mocker.Mock()
     sio3.on("logout", handler=socket_logout_mock_callable3)
 
@@ -301,11 +311,11 @@ async def test_websocket_disconnected_after_logout(
 
 
 @pytest.mark.parametrize(
-    "user_role",
+    "user_role, exp_save_state",
     [
-        (UserRole.GUEST),
-        (UserRole.USER),
-        (UserRole.TESTER),
+        (UserRole.GUEST, False),
+        (UserRole.USER, True),
+        (UserRole.TESTER, True),
     ],
 )
 async def test_interactive_services_removed_after_logout(
@@ -314,10 +324,11 @@ async def test_interactive_services_removed_after_logout(
     empty_user_project,
     mocked_director_api,
     mocked_dynamic_service,
-    client_session_id: Callable[[], str],
-    socketio_client,
+    client_session_id_factory: Callable[[], str],
+    socketio_client_factory: Callable,
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     director_v2_service_mock: aioresponses,
+    exp_save_state: bool,
 ):
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # login - logged_user fixture
@@ -327,8 +338,8 @@ async def test_interactive_services_removed_after_logout(
         logged_user["id"], empty_user_project["uuid"]
     )
     # create websocket
-    client_session_id1 = client_session_id()
-    sio = await socketio_client(client_session_id1)
+    client_session_id1 = client_session_id_factory()
+    sio = await socketio_client_factory(client_session_id1)
     # open project in client 1
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # logout
@@ -339,28 +350,28 @@ async def test_interactive_services_removed_after_logout(
     # ensure sufficient time is wasted here
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 1)
     # assert dynamic service is removed
-    calls = [call(client.server.app, service["service_uuid"])]
+    calls = [call(client.server.app, service["service_uuid"], exp_save_state)]
     mocked_director_api["stop_service"].assert_has_calls(calls)
 
 
 @pytest.mark.parametrize(
-    "user_role, expected",
+    "user_role, exp_save_state",
     [
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.GUEST, False),
+        (UserRole.USER, True),
+        (UserRole.TESTER, True),
     ],
 )
 async def test_interactive_services_remain_after_websocket_reconnection_from_2_tabs(
     client,
     logged_user,
-    expected,
     empty_user_project,
     mocked_director_api,
     mocked_dynamic_service,
-    socketio_client,
-    client_session_id: Callable[[], str],
+    socketio_client_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     storage_subsystem_mock,  # when guest user logs out garbage is collected
+    exp_save_state: bool,
 ):
 
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
@@ -372,14 +383,14 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
         logged_user["id"], empty_user_project["uuid"]
     )
     # create first websocket
-    client_session_id1 = client_session_id()
-    sio = await socketio_client(client_session_id1)
+    client_session_id1 = client_session_id_factory()
+    sio = await socketio_client_factory(client_session_id1)
     # open project in client 1
     await open_project(client, empty_user_project["uuid"], client_session_id1)
 
     # create second websocket
-    client_session_id2 = client_session_id()
-    sio2 = await socketio_client(client_session_id2)
+    client_session_id2 = client_session_id_factory()
+    sio2 = await socketio_client_factory(client_session_id2)
     assert sio.sid != sio2.sid
     # open project in second client
     await open_project(client, empty_user_project["uuid"], client_session_id2)
@@ -396,7 +407,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     # assert dynamic service is still around for now
     mocked_director_api["stop_service"].assert_not_called()
     # reconnect websocket
-    sio2 = await socketio_client(client_session_id2)
+    sio2 = await socketio_client_factory(client_session_id2)
     # assert dynamic service is still around
     mocked_director_api["stop_service"].assert_not_called()
     # event after waiting some time
@@ -408,17 +419,16 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     # we need to wait for the service deletion delay
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 1)
     # assert dynamic service is gone
-    calls = [call(client.server.app, service["service_uuid"])]
+    calls = [call(client.server.app, service["service_uuid"], exp_save_state)]
     mocked_director_api["stop_service"].assert_has_calls(calls)
 
 
 @pytest.mark.parametrize(
-    "user_role",
+    "user_role, exp_save_state",
     [
-        # (UserRole.ANONYMOUS),
-        (UserRole.GUEST),
-        (UserRole.USER),
-        (UserRole.TESTER),
+        (UserRole.GUEST, False),
+        (UserRole.USER, True),
+        (UserRole.TESTER, True),
     ],
 )
 async def test_interactive_services_removed_per_project(
@@ -428,10 +438,11 @@ async def test_interactive_services_removed_per_project(
     empty_user_project2,
     mocked_director_api,
     mocked_dynamic_service,
-    socketio_client,
-    client_session_id: Callable[[], str],
+    socketio_client_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     asyncpg_storage_system_mock,
     storage_subsystem_mock,  # when guest user logs out garbage is collected
+    exp_save_state: bool,
 ):
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # create server with delay set to DELAY
@@ -451,12 +462,12 @@ async def test_interactive_services_removed_per_project(
         logged_user["id"], empty_user_project2["uuid"]
     )
     # create websocket1 from tab1
-    client_session_id1 = client_session_id()
-    sio1 = await socketio_client(client_session_id1)
+    client_session_id1 = client_session_id_factory()
+    sio1 = await socketio_client_factory(client_session_id1)
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # create websocket2 from tab2
-    client_session_id2 = client_session_id()
-    sio2 = await socketio_client(client_session_id2)
+    client_session_id2 = client_session_id_factory()
+    sio2 = await socketio_client_factory(client_session_id2)
     await open_project(client, empty_user_project2["uuid"], client_session_id2)
     # disconnect websocket1
     await sio1.disconnect()
@@ -466,7 +477,7 @@ async def test_interactive_services_removed_per_project(
     # wait the defined delay
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL)
     # assert dynamic service 1 is removed
-    calls = [call(client.server.app, service["service_uuid"])]
+    calls = [call(client.server.app, service["service_uuid"], exp_save_state)]
     mocked_director_api["stop_service"].assert_has_calls(calls)
     mocked_director_api["stop_service"].reset_mock()
 
@@ -479,20 +490,20 @@ async def test_interactive_services_removed_per_project(
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 2)
     # assert dynamic service 2,3 is removed
     calls = [
-        call(client.server.app, service2["service_uuid"]),
-        call(client.server.app, service3["service_uuid"]),
+        call(client.server.app, service2["service_uuid"], exp_save_state),
+        call(client.server.app, service3["service_uuid"], exp_save_state),
     ]
     mocked_director_api["stop_service"].assert_has_calls(calls)
     mocked_director_api["stop_service"].reset_mock()
 
 
 @pytest.mark.parametrize(
-    "user_role",
+    "user_role, exp_save_state",
     [
         # (UserRole.ANONYMOUS),
         # (UserRole.GUEST),
-        (UserRole.USER),
-        (UserRole.TESTER),
+        (UserRole.USER, True),
+        (UserRole.TESTER, True),
     ],
 )
 async def test_services_remain_after_closing_one_out_of_two_tabs(
@@ -502,8 +513,9 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     empty_user_project2,
     mocked_director_api,
     mocked_dynamic_service,
-    socketio_client,
-    client_session_id: Callable[[], str],
+    socketio_client_factory: Callable,
+    client_session_id_factory: Callable[[], str],
+    exp_save_state: bool,
 ):
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # create server with delay set to DELAY
@@ -514,12 +526,12 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
         logged_user["id"], empty_user_project["uuid"]
     )
     # open project in tab1
-    client_session_id1 = client_session_id()
-    sio1 = await socketio_client(client_session_id1)
+    client_session_id1 = client_session_id_factory()
+    sio1 = await socketio_client_factory(client_session_id1)
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # open project in tab2
-    client_session_id2 = client_session_id()
-    sio2 = await socketio_client(client_session_id2)
+    client_session_id2 = client_session_id_factory()
+    sio2 = await socketio_client_factory(client_session_id2)
     await open_project(client, empty_user_project["uuid"], client_session_id2)
     # close project in tab1
     await close_project(client, empty_user_project["uuid"], client_session_id1)
@@ -532,13 +544,17 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     # wait the defined delay
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL)
     mocked_director_api["stop_service"].assert_has_calls(
-        [call(client.server.app, service["service_uuid"])]
+        [call(client.server.app, service["service_uuid"], exp_save_state)]
     )
 
 
 @pytest.mark.parametrize(
-    "user_role, expect_call",
-    [(UserRole.USER, False), (UserRole.TESTER, False), (UserRole.GUEST, True)],
+    "user_role, expect_call, exp_save_state",
+    [
+        (UserRole.USER, False, True),
+        (UserRole.TESTER, False, True),
+        (UserRole.GUEST, True, False),
+    ],
 )
 async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     client,
@@ -546,11 +562,12 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     empty_user_project,
     mocked_director_api,
     mocked_dynamic_service,
-    client_session_id: Callable[[], str],
-    socketio_client,
+    client_session_id_factory: Callable[[], str],
+    socketio_client_factory: Callable,
     # asyncpg_storage_system_mock,
     storage_subsystem_mock,  # when guest user logs out garbage is collected
-    expect_call,
+    expect_call: bool,
+    exp_save_state: bool,
 ):
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # login - logged_user fixture
@@ -560,8 +577,8 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
         logged_user["id"], empty_user_project["uuid"]
     )
     # create websocket
-    client_session_id1 = client_session_id()
-    sio = await socketio_client(client_session_id1)
+    client_session_id1 = client_session_id_factory()
+    sio: socketio.AsyncClient = await socketio_client_factory(client_session_id1)
     # open project in client 1
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # logout
@@ -574,7 +591,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 1)
 
     # assert dynamic service is removed
-    calls = [call(client.server.app, service["service_uuid"])]
+    calls = [call(client.server.app, service["service_uuid"], exp_save_state)]
     mocked_director_api["stop_service"].assert_has_calls(calls)
 
     if expect_call:

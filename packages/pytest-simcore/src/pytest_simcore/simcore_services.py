@@ -21,11 +21,13 @@ SERVICE_HEALTHCHECK_ENTRYPOINT = {"director-v2": "/"}
 
 @pytest.fixture(scope="module")
 def services_endpoint(
-    core_services_selection: List[str], docker_stack: Dict, devel_environ: Dict
+    core_services_selection: List[str], docker_stack: Dict, testing_environ_vars: Dict
 ) -> Dict[str, URL]:
     services_endpoint = {}
+
+    stack_name = testing_environ_vars["SWARM_STACK_NAME"]
     for service in core_services_selection:
-        assert f"simcore_{service}" in docker_stack["services"]
+        assert f"{stack_name}_{service}" in docker_stack["services"]
         if not service in SERVICES_TO_SKIP:
             endpoint = URL(
                 f"http://127.0.0.1:{get_service_published_port(service, [8080, 8000])}"

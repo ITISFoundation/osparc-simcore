@@ -23,7 +23,7 @@ def the_service():
         base_url="http://the_service",
         assert_all_mocked=True,
     ) as respx_mock:
-        respx_mock.get("/health", content="healthy", alias="health_check")
+        respx_mock.get("/health", name="health_check").respond(200, content="healthy")
 
         yield respx_mock
 

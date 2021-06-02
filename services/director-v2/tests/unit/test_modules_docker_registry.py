@@ -15,6 +15,7 @@ def minimal_director_config(project_env_devel_environment, monkeypatch):
     monkeypatch.setenv("POSTGRES_ENABLED", "0")
     monkeypatch.setenv("CELERY_ENABLED", "0")
     monkeypatch.setenv("REGISTRY_ENABLED", "1")
+    monkeypatch.setenv("DIRECTOR_V2_SCHEDULER_ENABLED", "0")
 
 
 @pytest.fixture
@@ -25,16 +26,15 @@ def mocked_registry_service_api(minimal_app):
         assert_all_mocked=True,
     ) as respx_mock:
         # lists images catalog
-        respx_mock.get(
-            re.compile(r"/v2/_catalog\?n=\d+"),
-            content={"repositories": ["/simcore/services/comp/itis/sleeper"]},
-            alias="catalog",
+        respx_mock.get(re.compile(r"/v2/_catalog\?n=\d+"), name="catalog",).respond(
+            json={"repositories": ["/simcore/services/comp/itis/sleeper"]},
         )
         # lists tags of sleeper
         respx_mock.get(
             "/v2/simcore/services/comp/itis/sleeper/tags/list?n=50",
-            content={"tags": ["1.0", "2.0"]},
-            alias="sleeper-tags",
+            name="sleeper-tags",
+        ).respond(
+            json={"tags": ["1.0", "2.0"]},
         )
         yield respx_mock
 

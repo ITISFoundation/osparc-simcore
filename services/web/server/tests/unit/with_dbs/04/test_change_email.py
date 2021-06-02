@@ -75,7 +75,10 @@ async def test_change_and_confirm(client, capsys):
         txt = await rsp.text()
 
         assert rsp.url_obj.path == index_url.path
-        assert "welcome to fake web front-end" in txt
+        assert (
+            "This is a result of disable_static_webserver fixture for product OSPARC"
+            in txt
+        )
 
         rsp = await client.post(
             login_url,

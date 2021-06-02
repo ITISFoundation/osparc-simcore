@@ -1,2 +1,5 @@
+black
 httpx
-typer[colorama]
+pydantic[email,dotenv]
+pylint
+typer[all]

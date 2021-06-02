@@ -16,6 +16,7 @@ from simcore_sdk.node_ports_v2 import log as node_port_v2_log
 from sqlalchemy import and_, literal_column
 
 from . import config, exceptions
+from .boot_mode import BootMode
 from .executor import Executor
 from .rabbitmq import RabbitMQ
 from .utils import execution_graph
@@ -36,10 +37,7 @@ async def _try_get_task_from_db(
         query=comp_tasks.select(for_update=True).where(
             (comp_tasks.c.node_id == node_id)
             & (comp_tasks.c.project_id == project_id)
-            & (
-                (comp_tasks.c.state == StateType.PENDING)
-                | (comp_tasks.c.state == StateType.PUBLISHED)
-            )
+            & ((comp_tasks.c.state == StateType.PENDING))
         ),
     )
     task: RowProxy = await result.fetchone()
@@ -131,6 +129,7 @@ async def run_computational_task(
     node_id: str,
     retry: int,
     max_retries: int,
+    sidecar_mode: BootMode,
 ) -> None:
 
     async with db_engine.acquire() as connection:
@@ -185,6 +184,7 @@ async def run_computational_task(
                 rabbit_mq=rabbit_mq,
                 task=task,
                 user_id=user_id,
+                sidecar_mode=sidecar_mode,
             )
             await executor.run()
             run_result = StateType.SUCCESS

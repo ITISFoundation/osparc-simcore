@@ -1,13 +1,15 @@
 import asyncio.events
 import time
-from asyncio.base_events import _format_handle
+import sys
 from typing import List
+
+from pyinstrument import Profiler
 
 from .incidents import SlowCallback
 
 
 def enable(slow_duration_secs: float, incidents: List[SlowCallback]) -> None:
-    """ Based in from aiodebug
+    """Based in from aiodebug
 
     Patches ``asyncio.events.Handle`` to report an incident every time a callback
     takes ``slow_duration_secs`` seconds or more to run.
@@ -19,13 +21,26 @@ def enable(slow_duration_secs: float, incidents: List[SlowCallback]) -> None:
     _run = asyncio.events.Handle._run
 
     def instrumented(self):
-        t0 = time.monotonic()
-        retval = _run(self)
-        dt = time.monotonic() - t0
+        # unsetting profiler, helps with development mode and tests
+        sys.setprofile(None)
+
+        with Profiler(interval=slow_duration_secs) as profiler:
+            t0 = time.monotonic()
+
+            retval = _run(self)
+
+            dt = time.monotonic() - t0
+
         if dt >= slow_duration_secs:
-            task_info = _format_handle(self)
-            incidents.append(SlowCallback(msg=task_info, delay_secs=dt))
-            logger.warning("Executing %s took %.3f seconds", task_info, dt)
+            # the indentation is correct, the profiler needs to be stopped when
+            # printing the output, the profiler is started and stopped by the
+            # contextmanger
+            profiler_result = profiler.output_text(
+                unicode=True, color=False, show_all=True
+            )
+            incidents.append(SlowCallback(msg=profiler_result, delay_secs=dt))
+            logger.warning("Executing took %.3f seconds\n%s", dt, profiler_result)
+
         return retval
 
     asyncio.events.Handle._run = instrumented

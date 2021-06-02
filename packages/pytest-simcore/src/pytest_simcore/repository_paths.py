@@ -36,6 +36,7 @@ def osparc_simcore_root_dir(request) -> Path:
 
 @pytest.fixture(scope="session")
 def osparc_simcore_services_dir(osparc_simcore_root_dir) -> Path:
+    """ Path to osparc-simcore/services folder """
     services_dir = osparc_simcore_root_dir / "services"
     assert services_dir.exists()
     return services_dir
@@ -43,6 +44,7 @@ def osparc_simcore_services_dir(osparc_simcore_root_dir) -> Path:
 
 @pytest.fixture(scope="session")
 def env_devel_file(osparc_simcore_root_dir: Path) -> Path:
+    """ Path to osparc-simcore/.env-devel file """
     env_devel_fpath = osparc_simcore_root_dir / ".env-devel"
     assert env_devel_fpath.exists()
     return env_devel_fpath
@@ -74,12 +76,6 @@ def services_docker_compose_file(services_dir):
     dcpath = services_dir / "docker-compose.yml"
     assert dcpath.exists()
     return dcpath
-
-
-@pytest.fixture(scope="module")
-def temp_folder(request, tmpdir_factory) -> Path:
-    tmp = Path(tmpdir_factory.mktemp(f"tmp_module_{request.module.__name__}"))
-    return tmp
 
 
 @pytest.fixture(scope="session")

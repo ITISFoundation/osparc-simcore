@@ -20,7 +20,7 @@ from starlette.testclient import TestClient
 
 
 @pytest.fixture
-def minimal_app(loop, devel_environ) -> Iterator[FastAPI]:
+def minimal_app(loop, testing_environ_vars) -> Iterator[FastAPI]:
     # TODO: auto generate fakes
 
     # avoid init of pg or director API clients
@@ -44,8 +44,8 @@ def mocked_director_service_api(minimal_app):
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-        respx_mock.get(
-            "/v0/services", content={"data": ["one", "two"]}, alias="list_services"
+        respx_mock.get("/services", name="list_services").respond(
+            200, json={"data": ["one", "two"]}
         )
 
         yield respx_mock

@@ -6090,6 +6090,12 @@ paths:
               - template
               - user
               - all
+        - name: show_hidden
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: includes projects marked as hidden in the listing
         - name: offset
           in: query
           schema:
@@ -6712,6 +6718,12 @@ paths:
           schema:
             type: string
           description: 'Option to create a template from existing project: as_template={study_uuid}'
+        - name: hidden
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Enables/disables hidden flag. Hidden projects are by default unlisted.
       requestBody:
         content:
           application/json:
@@ -11370,6 +11382,7 @@ paths:
                       - service_host
                       - service_port
                       - service_state
+                      - user_id
                     properties:
                       published_port:
                         description: The ports where the service provides its interface
@@ -11428,6 +11441,10 @@ paths:
                         description: the service message
                         type: string
                         example: no suitable node (insufficient resources on 1 node)
+                      user_id:
+                        description: the user that started the service
+                        type: string
+                        example: '123'
                   error:
                     nullable: true
                     default: null

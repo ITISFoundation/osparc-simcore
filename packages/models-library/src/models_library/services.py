@@ -253,6 +253,8 @@ class ServiceOutput(ServiceProperty):
 
 
 class ServiceKeyVersion(BaseModel):
+    """This pair uniquely identifies a services"""
+
     key: constr(regex=KEY_RE) = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
@@ -303,7 +305,7 @@ ServiceOutputs = Dict[PropertyName, ServiceOutput]
 
 class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
     """
-    Service base schema (used for docker labels on docker images)
+    Static metadata for a service injected in the image labels
     """
 
     integration_version: Optional[constr(regex=VERSION_RE)] = Field(
@@ -339,6 +341,47 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
         description = "Description of a simcore node 'class' with input and output"
         extra = Extra.forbid
 
+        schema_extra = {
+            "example": {
+                "name": "oSparc Python Runner",
+                "key": "simcore/services/comp/osparc-python-runner",
+                "type": "computational",
+                "integration-version": "1.0.0",
+                "version": "1.7.0",
+                "description": "oSparc Python Runner",
+                "contact": "smith@company.com",
+                "authors": [
+                    {
+                        "name": "John Smith",
+                        "email": "smith@company.com",
+                        "affiliation": "Company",
+                    },
+                    {
+                        "name": "Richard Brown",
+                        "email": "brown@uni.edu",
+                        "affiliation": "University",
+                    },
+                ],
+                "inputs": {
+                    "input_1": {
+                        "displayOrder": 1,
+                        "label": "Input data",
+                        "description": "Any code, requirements or data file",
+                        "type": "data:*/*",
+                    }
+                },
+                "outputs": {
+                    "output_1": {
+                        "displayOrder": 1,
+                        "label": "Output data",
+                        "description": "All data produced by the script is zipped as output_data.zip",
+                        "type": "data:*/*",
+                        "fileToKeyMap": {"output_data.zip": "output_1"},
+                    }
+                },
+            }
+        }
+
 
 # Service access rights models
 class ServiceGroupAccessRights(BaseModel):
@@ -360,6 +403,10 @@ class ServiceAccessRights(BaseModel):
 class ServiceMetaData(ServiceCommonData):
     # Overrides all fields of ServiceCommonData:
     #    - for a partial update all members must be Optional
+    #  FIXME: if API entry needs a schema to allow partial updates (e.g. patch/put),
+    #        it should be implemented with a different model e.g. ServiceMetaDataUpdate
+    #
+
     name: Optional[str]
     thumbnail: Optional[HttpUrl]
     description: Optional[str]
@@ -368,8 +415,41 @@ class ServiceMetaData(ServiceCommonData):
     classifiers: Optional[List[str]]
     quality: Dict[str, Any] = {}
 
+    class Config:
+        schema_extra = {
+            "example": {
+                "key": "simcore/services/dynamic/sim4life",
+                "version": "1.0.9",
+                "name": "sim4life",
+                "description": "s4l web",
+                "thumbnail": "http://thumbnailit.org/image",
+                "quality": {
+                    "enabled": True,
+                    "tsr_target": {
+                        f"r{n:02d}": {"level": 4, "references": ""}
+                        for n in range(1, 11)
+                    },
+                    "annotations": {
+                        "vandv": "",
+                        "limitations": "",
+                        "certificationLink": "",
+                        "certificationStatus": "Uncertified",
+                    },
+                    "tsr_current": {
+                        f"r{n:02d}": {"level": 0, "references": ""}
+                        for n in range(1, 11)
+                    },
+                },
+            }
+        }
 
-# Databases models (tables services_meta_data and services_access_rights)
+
+# -------------------------------------------------------------------
+# Databases models
+#  - table services_meta_data
+#  - table services_access_rights
+
+
 class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaData):
     # for a partial update all members must be Optional
     classifiers: Optional[List[str]] = Field([])
@@ -377,6 +457,35 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaData):
 
     class Config:
         orm_mode = True
+        schema_extra = {
+            "example": {
+                "key": "simcore/services/dynamic/sim4life",
+                "version": "1.0.9",
+                "owner": 8,
+                "name": "sim4life",
+                "description": "s4l web",
+                "thumbnail": "http://thumbnailit.org/image",
+                "created": "2021-01-18 12:46:57.7315",
+                "modified": "2021-01-19 12:45:00",
+                "quality": {
+                    "enabled": True,
+                    "tsr_target": {
+                        f"r{n:02d}": {"level": 4, "references": ""}
+                        for n in range(1, 11)
+                    },
+                    "annotations": {
+                        "vandv": "",
+                        "limitations": "",
+                        "certificationLink": "",
+                        "certificationStatus": "Uncertified",
+                    },
+                    "tsr_current": {
+                        f"r{n:02d}": {"level": 0, "references": ""}
+                        for n in range(1, 11)
+                    },
+                },
+            }
+        }
 
 
 class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
@@ -387,3 +496,15 @@ class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
 
     class Config:
         orm_mode = True
+        schema_extra = {
+            "example": {
+                "key": "simcore/services/dynamic/sim4life",
+                "version": "1.0.9",
+                "gid": 8,
+                "execute_access": True,
+                "write_access": True,
+                "product_name": "osparc",
+                "created": "2021-01-18 12:46:57.7315",
+                "modified": "2021-01-19 12:45:00",
+            }
+        }

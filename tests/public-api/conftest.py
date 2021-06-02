@@ -18,28 +18,28 @@ log = logging.getLogger(__name__)
 
 
 pytest_plugins = [
-    "pytest_simcore.repository_paths",
     "pytest_simcore.docker_compose",
-    "pytest_simcore.docker_swarm",
     "pytest_simcore.docker_registry",
+    "pytest_simcore.docker_swarm",
+    "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
+    "pytest_simcore.tmp_path_extra",
 ]
 
 
 @pytest.fixture(scope="session")
-def devel_environ(devel_environ: Dict[str, str]) -> Dict[str, str]:
-    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::devel_environ fixture
+def testing_environ_vars(testing_environ_vars: Dict[str, str]) -> Dict[str, str]:
+    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::testing_environ_vars fixture
 
     # help faster update of service_metadata table by catalog
-    devel_environ["CATALOG_BACKGROUND_TASK_REST_TIME"] = "1"
-    return devel_environ.copy()
+    testing_environ_vars["CATALOG_BACKGROUND_TASK_REST_TIME"] = "1"
+    return testing_environ_vars.copy()
 
 
 @pytest.fixture(scope="module")
 def core_services_selection(simcore_docker_compose: Dict) -> List[str]:
     """ Selection of services from the simcore stack """
-    # TODO: this should be the default if NOT defined
-    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection
+    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection fixture
     all_core_services = list(simcore_docker_compose["services"].keys())
     return all_core_services
 
@@ -47,13 +47,13 @@ def core_services_selection(simcore_docker_compose: Dict) -> List[str]:
 @pytest.fixture(scope="module")
 def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
     """ Selection of services from the ops stack """
-    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection
+    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection fixture
     all_ops_services = list(ops_docker_compose["services"].keys())
     return all_ops_services
 
 
 @pytest.fixture(scope="module")
-def make_up_prod(
+def simcore_docker_stack_and_registry_ready(
     docker_stack: Dict,
     docker_registry,
 ) -> Dict:
@@ -72,7 +72,7 @@ def make_up_prod(
 
 
 @pytest.fixture(scope="module")
-def registered_user(make_up_prod):
+def registered_user(simcore_docker_stack_and_registry_ready):
     user = {
         "email": "first.last@mymail.com",
         "password": "my secret",
@@ -123,7 +123,7 @@ def registered_user(make_up_prod):
 def services_registry(
     docker_registry_image_injector: Callable,
     registered_user: Dict[str, str],
-    devel_environ: Dict[str, str],
+    testing_environ_vars: Dict[str, str],
 ) -> Dict[str, Any]:
     # NOTE: service image MUST be injected in registry AFTER user is registered
     #
@@ -200,7 +200,7 @@ def services_registry(
     }
 
     wait_for_catalog_to_detect = float(
-        devel_environ["CATALOG_BACKGROUND_TASK_REST_TIME"]
+        testing_environ_vars["CATALOG_BACKGROUND_TASK_REST_TIME"]
     )
     print(
         f"Catalog should take {wait_for_catalog_to_detect} secs to detect new services ...",

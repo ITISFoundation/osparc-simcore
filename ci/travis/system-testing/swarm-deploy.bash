@@ -6,9 +6,9 @@
 #
 
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
-set -o errexit   # abort on nonzero exitstatus
-set -o nounset   # abort on unbound variable
-set -o pipefail  # don't hide errors within pipes
+set -o errexit  # abort on nonzero exitstatus
+set -o nounset  # abort on unbound variable
+set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 # in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
@@ -19,7 +19,6 @@ if [[ ! -v DOCKER_REGISTRY ]]; then
     export DOCKER_REGISTRY="itisfoundation"
 fi
 
-
 before_install() {
     bash ci/travis/helpers/update-docker.bash
     bash ci/travis/helpers/install-docker-compose.bash
@@ -28,8 +27,10 @@ before_install() {
 
 install() {
     bash ci/helpers/ensure_python_pip.bash
-    pushd tests/swarm-deploy; pip3 install -r requirements/ci.txt; popd
-    make pull-version || ( (make pull-cache || true) && make build tag-version)
+    pushd tests/swarm-deploy
+    pip3 install -r requirements/ci.txt
+    popd
+    make pull-version || (make build tag-version)
     make .env
 }
 
@@ -39,7 +40,7 @@ before_script() {
 }
 
 script() {
-    pytest  --color=yes --cov-report=term-missing -v tests/swarm-deploy
+    pytest --color=yes --cov-report=term-missing -v tests/swarm-deploy
 }
 
 after_success() {
@@ -52,12 +53,11 @@ after_failure() {
 }
 
 # Check if the function exists (bash specific)
-if declare -f "$1" > /dev/null
-then
-  # call arguments verbatim
-  "$@"
+if declare -f "$1" >/dev/null; then
+    # call arguments verbatim
+    "$@"
 else
-  # Show a helpful error
-  echo "'$1' is not a known function name" >&2
-  exit 1
+    # Show a helpful error
+    echo "'$1' is not a known function name" >&2
+    exit 1
 fi
