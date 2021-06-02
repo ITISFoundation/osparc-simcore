@@ -35,7 +35,6 @@ async function runTutorial () {
     await tutorial.waitForServices(workbenchData["studyId"], [nodeIdViewer]);
 
     // Some time for starting the service
-    await tutorial.waitFor(5000);
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
     const iframeHandles = await page.$$("iframe");
@@ -57,7 +56,7 @@ async function runTutorial () {
     const fileElements = await frame.$x(fileSelector);
     await fileElements[0].click();
 
-    await tutorial.waitFor(5000);
+    await tutorial.waitFor(2000);
     await utils.takeScreenshot(page, screenshotPrefix + 'teapot');
   }
   catch(err) {
