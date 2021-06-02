@@ -48,10 +48,10 @@ function parseCommandLineArgumentsTemplate(args) {
 }
 
 function parseCommandLineArgumentsStudyDispatcherParams(args) {
-  // node $template.js [url] [file_type] [viewer_key] [viewer_vs] [download_link] [file_name] [file_size] [--demo]
+  // [url] [file_type] [viewer_key] [viewer_vs] [download_link] [file_name] [file_size] [--demo]
 
   if (args.length < 7) {
-    console.log('More arguments expected: $template.js [url] [file_type] [viewer_key] [viewer_vs] [download_link] [file_name] [file_size] [--demo]');
+    console.log('More arguments expected: [url] [file_type] [viewer_key] [viewer_vs] [download_link] [file_name] [file_size] [--demo]');
     process.exit(1);
   }
 
