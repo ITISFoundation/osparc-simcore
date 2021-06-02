@@ -265,7 +265,12 @@ async def start_service(
     request_dns: str,
     request_scheme: str,
 ) -> Optional[Dict]:
-    params = {
+    """
+    Requests to start a service:
+    - legacy services request is redirected to `director-v0`
+    - dynamic-sidecar `director-v2` will handle the request
+    """
+    data = {
         "user_id": user_id,
         "project_id": project_id,
         "key": service_key,
@@ -286,9 +291,37 @@ async def start_service(
         app,
         "POST",
         backend_url,
-        data=params,
+        data=data,
         headers=headers,
         expected_status=web.HTTPCreated,
+    )
+
+
+@log_decorator(logger=log)
+async def get_service_state(
+    app: web.Application,
+    user_id: str,
+    project_id: str,
+    service_key: str,
+    service_version: str,
+    node_uuid: str,
+):
+    """
+    Requests the status of a service:
+    - legacy services request is redirected to `director-v0`
+    - dynamic-sidecar `director-v2` will handle the request
+    """
+    params = {
+        "service_key": service_key,
+        "service_version": service_version,
+        "user_id": user_id,
+        "project_id": project_id,
+    }
+    director2_settings: Directorv2Settings = get_settings(app)
+    backend_url = URL(director2_settings.endpoint) / "dynamic_services" / f"{node_uuid}"
+
+    return await _request_director_v2(
+        app, "GET", backend_url, params=params, expected_status=web.HTTPOk
     )
 
 

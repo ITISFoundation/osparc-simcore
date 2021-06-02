@@ -5,7 +5,7 @@
 
 import json
 import logging
-from typing import Any, Coroutine, Dict, List, Optional, Set
+from typing import Any, Coroutine, Dict, List, Optional, Set, Union
 
 import aioredlock
 from aiohttp import web
@@ -570,18 +570,42 @@ async def get_node(request: web.Request) -> web.Response:
     node_uuid = request.match_info.get("node_id")
     try:
         # ensure the project exists
-
-        await projects_api.get_project_for_user(
+        project: Dict = await projects_api.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True,
         )
 
-        node_details = await projects_api.get_project_node(
-            request, project_uuid, user_id, node_uuid
+        node = project["workbench"][node_uuid]
+        service_key = node["key"]
+        service_version = node["version"]
+
+        # NOTE: for legacy cervices a redirect to director-v0 is made
+        reply: Union[Dict, List] = await director_v2.get_service_state(
+            app=request.app,
+            user_id=user_id,
+            project_id=project_uuid,
+            service_key=service_key,
+            service_version=service_version,
+            node_uuid=node_uuid,
         )
-        return web.json_response({"data": node_details})
+
+        if "data" not in reply:
+            # dynamic-service NODE STATE
+            return web.json_response({"data": reply})
+
+        # LEGACY-service NODE STATE
+        data = {"service_uuid": node_uuid, "service_state": "idle"}
+        list_of_interactive_services = reply["data"]
+        # get the project if it is running
+        for service in list_of_interactive_services:
+            if service["service_uuid"] == node_uuid:
+                data = service
+        # the service is not running, it's a computational service maybe
+        # TODO: find out if computational service is running if not throw a 404 since it's not around
+        return web.json_response({"data": data})
+
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 

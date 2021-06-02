@@ -1,13 +1,17 @@
 import logging
 from pprint import pformat
-from typing import Any, Dict
+from typing import Dict, Union, List
 from uuid import UUID
 
 import httpx
 import yarl
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Query
 from fastapi.responses import RedirectResponse
-from models_library.services import ServiceKeyVersion
+from models_library.services import (
+    DYNAMIC_SERVICE_KEY_RE,
+    VERSION_RE,
+    ServiceKeyVersion,
+)
 from pydantic.main import BaseModel
 from starlette import status
 from starlette.datastructures import URL
@@ -101,7 +105,7 @@ async def create_dynamic_service(
         base_url = (
             str(director_v0_client.client.base_url) + "running_interactive_services"
         )
-        redirect_url = yarl.URL(base_url).with_query(
+        redirect_url_with_query = yarl.URL(base_url).with_query(
             {
                 "user_id": f"{service.user_id}",
                 "project_id": f"{service.project_id}",
@@ -111,7 +115,7 @@ async def create_dynamic_service(
                 "service_basepath": str(service.basepath),
             }
         )
-        return RedirectResponse(redirect_url)
+        return RedirectResponse(redirect_url_with_query)
 
     # Service naming schema:
     # -  dysdcr_{uuid}_{first_two_project_id}_prxy_{name_from_service_key}
@@ -236,8 +240,43 @@ async def create_dynamic_service(
     response_model=ServiceStateReply,
 )
 async def dynamic_sidecar_status(
-    node_uuid: UUID, monitor: DynamicSidecarsMonitor = Depends(get_monitor)
-) -> Dict[str, Any]:
+    node_uuid: UUID,
+    service_key: str = Query(
+        ...,
+        description="distinctive name for the node based on the docker registry path",
+        regex=DYNAMIC_SERVICE_KEY_RE,
+    ),
+    service_version: str = Query(
+        ...,
+        description="semantic version number of the node",
+        regex=VERSION_RE,
+    ),
+    user_id: int = Query(..., description="required by director-v1"),
+    project_id: UUID = Query(..., description="required by director-v1"),
+    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
+    monitor: DynamicSidecarsMonitor = Depends(get_monitor),
+) -> Union[Dict, List]:
+    """
+    returns:
+        - "Dict" if dynamic-service
+        - "List" if legacy dynamic service (reply of GET /running_interactive_services)
+    """
+    # user_id, project_id in the query
+    simcore_service: SimcoreService = await director_v0_client.get_service_labels(
+        service=ServiceKeyVersion(key=service_key, version=service_version)
+    )
+    use_dynamic_sidecar = simcore_service.boot_mode == "dynamic-sidecar"
+
+    if not use_dynamic_sidecar:
+        # forward to director-v0
+        base_url = (
+            str(director_v0_client.client.base_url) + "running_interactive_services"
+        )
+        redirect_url_with_query = yarl.URL(base_url).with_query(
+            {"user_id": f"{user_id}", "project_id": f"{project_id}"}
+        )
+        return RedirectResponse(redirect_url_with_query)
+
     return await monitor.get_stack_status(str(node_uuid))
 
 
