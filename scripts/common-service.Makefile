@@ -36,7 +36,7 @@ export APP_VERSION
 .PHONY: install-dev install-prod install-ci
 
 install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
-	# installing in $(subst install-,,$@) mode
+	# Installing in $(subst install-,,$@) mode
 	pip-sync --pip-args="--use-feature=in-tree-build" requirements/$(subst install-,,$@).txt
 
 ## 2021.06.03
@@ -48,11 +48,11 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 .PHONY: test-dev-unit test-ci-unit test-dev-integration test-ci-integration test-dev
 
 test-dev-unit test-ci-unit: _check_venv_active
-	# targets tests/unit folder
+	# Targets tests/unit folder
 	@make --no-print-directory _run-$(subst -unit,,$@) target=$(CURDIR)/tests/unit
 
 test-dev-integration test-ci-integration:
-	# targets tests/integration folder using local/$(image-name):production images
+	# Targets tests/integration folder using local/$(image-name):production images
 	@export DOCKER_REGISTRY=local; \
 	export DOCKER_IMAGE_TAG=production; \
 	make --no-print-directory _run-$(subst -integration,,$@) target=$(CURDIR)/tests/integration
@@ -60,10 +60,12 @@ test-dev-integration test-ci-integration:
 
 test-dev: test-dev-unit test-dev-integration ## runs unit and integration tests for development (e.g. w/ pdb)
 
+test-ci: test-ci-unit test-ci-integration ## runs unit and integration tests for CI
+
 
 .PHONY: build build-nc build-devel build-devel-nc
 build build-nc build-devel build-devel-nc: ## builds docker image in many flavours
-	# building docker image for ${APP_NAME} ...
+	# Building docker image for ${APP_NAME} ...
 	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
 
@@ -104,8 +106,7 @@ TEST_TARGET := $(if $(target),$(target),$(CURDIR)/tests/unit)
 
 _run-test-dev: _check_venv_active
 	# runs tests for development (e.g w/ pdb)
-	pytest -vv --exitfirst --failed-first --durations=10 --pdb --color=yes \
-	--cov=$(APP_PACKAGE_NAME) --cov-report=term-missing --cov-config=.coveragerc $(TEST_TARGET)
+	pytest -vv --exitfirst --failed-first --durations=10 --pdb --color=yes --cov=$(APP_PACKAGE_NAME) --cov-report=term-missing --cov-config=.coveragerc $(TEST_TARGET)
 
 
 _run-test-ci: _check_venv_active

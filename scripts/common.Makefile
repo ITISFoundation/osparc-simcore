@@ -163,11 +163,11 @@ _check_python_version:
 
 
 _check_venv_active: _check_python_version
-	# checking whether virtual environment was activated
+	# Checking whether virtual environment was activated
 	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
 
 
 define _bumpversion
-	# upgrades as $(subst version-,,$@) version, commits and tags
+	# Upgrades as $(subst version-,,$@) version, commits and tags
 	@bump2version --verbose --list $(subst version-,,$@)
 endef
