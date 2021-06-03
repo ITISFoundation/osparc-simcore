@@ -22,16 +22,16 @@ async function runTutorial () {
   const viewer = viewers["data"].find(viewer => viewer.file_type === fileType)
   console.log(viewer.view_url);
 
+  // append the command line arguments
   const urlParams = new URLSearchParams(viewer.view_url);
-  for (const [key, value] of urlParams.entries()) {
-    console.log(key, value);
-  }
-  let anonURL = encodeURI(viewer.view_url);
   for (let i=0; i<Object.keys(params).length; i++) {
     const paramKey =  Object.keys(params)[i];
     const paramValue =  params[paramKey];
-    anonURL += "&" + paramKey + "=" + paramValue
+    urlParams.append(paramKey, paramValue);
   }
+  console.log(urlParams.toString());
+
+  const anonURL = new URL(viewer.view_url);
 
   const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, enableDemoMode);
 
