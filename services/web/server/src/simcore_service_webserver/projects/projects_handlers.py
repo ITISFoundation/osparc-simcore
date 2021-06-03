@@ -578,6 +578,7 @@ async def get_node(request: web.Request) -> web.Response:
         )
 
         node = project["workbench"][node_uuid]
+        #TODO: not a good place to fetch the version here
         service_key = node["key"]
         service_version = node["version"]
 

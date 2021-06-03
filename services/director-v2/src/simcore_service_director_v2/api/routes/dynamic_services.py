@@ -53,6 +53,8 @@ from ..dependencies.dynamic_services import (
 )
 from models_library.service_settings import SimcoreService
 
+DynamicServicesList = List[Dict[str, Union[str, int]]]
+
 router = APIRouter()
 log = logging.getLogger(__file__)
 
@@ -328,26 +330,24 @@ async def stop_dynamic_service(
         "both from director-v0 and director-v2"
     ),
 )
-async def list_running_dynamic_sidecar_services(
+async def list_running_dynamic_services(
     user_id: str,
     project_id: str,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> List[Dict[str, Any]]:
-    running_interactive_services = await director_v0_client.get_running_services(
-        user_id, project_id
-    )
-    dynamic_sidecar_services = await list_dynamic_sidecar_services(
-        dynamic_sidecar_settings
+) -> DynamicServicesList:
+    running_interactive_services: DynamicServicesList = (
+        await director_v0_client.get_running_services(user_id, project_id)
     )
 
-    get_stack_statuse_tasks = [
+    get_stack_statuse_tasks: List[ServiceStateReply] = [
         monitor.get_stack_status(service["Spec"]["Labels"]["uuid"])
-        for service in dynamic_sidecar_services
+        for service in await list_dynamic_sidecar_services(dynamic_sidecar_settings)
     ]
-    running_dynamic_sidecar_services = [
-        x.dict() for x in await asyncio.gather(*get_stack_statuse_tasks)
+    running_dynamic_sidecar_services: DynamicServicesList = [
+        x.dict(exclude_unset=True)
+        for x in await asyncio.gather(*get_stack_statuse_tasks)
     ]
 
     return running_interactive_services + running_dynamic_sidecar_services

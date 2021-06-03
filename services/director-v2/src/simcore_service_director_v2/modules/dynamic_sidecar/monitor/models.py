@@ -244,32 +244,32 @@ class ServiceStateReply(BaseModel):
         ..., description="used to transmit error messages to the user"
     )
 
-    published_port: Optional[int] = Field(..., description="the proxy's default port")
+    published_port: Optional[int] = Field(None, description="the proxy's default port")
 
     service_uuid: Optional[str] = Field(
-        ..., description="equals to the node_uuid value"
+        None, description="equals to the node_uuid value"
     )
 
     service_key: Optional[str] = Field(
-        ..., description="starte service image service_key"
+        None, description="starte service image service_key"
     )
     service_version: Optional[str] = Field(
-        ..., description="starte service image service_version"
+        None, description="starte service image service_version"
     )
 
     service_host: Optional[str] = Field(
-        ...,
+        None,
         description="using the dynamic-sidecar's host",
     )
     service_port: Optional[str] = Field(
-        ..., description="using the dynamic-sidecar's port"
+        None, description="using the dynamic-sidecar's port"
     )
 
     service_basepath: Optional[str] = Field(
-        ..., description="not used by the dynamic-sidecar"
+        None, description="not used by the dynamic-sidecar"
     )
     entry_point: Optional[str] = Field(
-        ..., description="can be removed when dynamic_type='dynamic-sidecar'"
+        None, description="can be removed when dynamic_type='dynamic-sidecar'"
     )
 
     @classmethod
@@ -280,9 +280,7 @@ class ServiceStateReply(BaseModel):
             service_message=f"Could not find a service for node_uuid={node_uuid}",
         )
         logging.warning(
-            "Producting error status for dynamic-sidecar with node_uuid=%s\n%s",
-            node_uuid,
-            error_status,
+            "dynamic-sidecar error status node_uuid=%s\n%s", node_uuid, error_status
         )
         return error_status
 
@@ -307,6 +305,3 @@ class ServiceStateReply(BaseModel):
             service_state=service_state.value,
             service_message=service_message,
         )
-
-    class Config:
-        exclude_unset = True

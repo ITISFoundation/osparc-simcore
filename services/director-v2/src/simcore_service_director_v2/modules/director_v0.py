@@ -154,7 +154,7 @@ class DirectorV0Client:
         request_url = yarl.URL("running_interactive_services").with_query(
             user_id=user_id, project_id=project_id
         )
-        logger.error("DV0 request_url=%s", request_url)
+
         resp = await self.request("GET", str(request_url))
         if resp.status_code == status.HTTP_200_OK:
             return [

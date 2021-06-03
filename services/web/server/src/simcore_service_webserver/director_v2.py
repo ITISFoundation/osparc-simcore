@@ -23,7 +23,6 @@ from .director_v2_settings import (
 from .login.decorators import RQT_USERID_KEY, login_required
 from .rest_config import APP_OPENAPI_SPECS_KEY
 from .security_decorators import permission_required
-from .director.director_api import get_running_interactive_services
 
 log = logging.getLogger(__file__)
 
@@ -48,7 +47,6 @@ async def _request_director_v2(
 ) -> Dict:
     session = get_client_session(app)
     try:
-        log.error("[REQUESTING] %s %s %s %s %s", method, url, headers, data, kwargs)
         async with session.request(
             method, url, headers=headers, json=data, **kwargs
         ) as response:
