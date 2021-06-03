@@ -58,7 +58,7 @@ function parseCommandLineArgumentsStudyDispatcherParams(args) {
   const urlPrefix = args[0];
   const params = {};
   params["download_link"] = args[1];
-  params["file_name"] = args[2];
+  params["file_size"] = args[2];
   const enableDemoMode = args.includes("--demo");
 
   return {

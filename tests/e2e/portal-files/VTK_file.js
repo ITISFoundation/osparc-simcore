@@ -19,21 +19,17 @@ async function runTutorial () {
   const urlViewers = urlPrefix + "/v0/viewers/default";
   const response = await fetch(urlViewers);
   const viewers = await response.json();
-  const viewer = viewers["data"].find(viewer => viewer.file_type === fileType)
-  console.log(viewer.view_url);
+  const viewer = viewers["data"].find(viewer => viewer.file_type === fileType);
+
+  const url = new URL(viewer.view_url);
 
   // append the command line arguments
-  const urlParams = new URLSearchParams(viewer.view_url);
-  for (let i=0; i<Object.keys(params).length; i++) {
-    const paramKey =  Object.keys(params)[i];
-    const paramValue =  params[paramKey];
-    urlParams.append(paramKey, paramValue);
-  }
-  console.log(urlParams.toString());
+  Object.entries(params).forEach(entry => {
+    const [key, value] = entry;
+    url.searchParams.append(key, value);
+  });
 
-  const anonURL = new URL(viewer.view_url);
-
-  const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, enableDemoMode);
+  const tutorial = new tutorialBase.TutorialBase(url.toString(), screenshotPrefix, null, null, null, enableDemoMode);
 
   try {
     tutorial.startScreenshooter();
