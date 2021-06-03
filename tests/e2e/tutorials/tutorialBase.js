@@ -35,7 +35,7 @@ class TutorialBase {
 
     this.__interval = setInterval(async () => {
       await this.takeScreenshot();
-    }, 2000);
+    }, 4000);
   }
 
   stopScreenshooter() {
