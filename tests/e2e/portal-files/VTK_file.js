@@ -10,33 +10,28 @@ const {
   enableDemoMode
 } = utils.parseCommandLineArgumentsStudyDispatcherParams(args);
 
-const urlViewer = urlPrefix + "/v0/viewers/default"
-const screenshotPrefix = "VTK_file_";
+const fileType = "VTK"
+const screenshotPrefix = fileType + "_file_";
 
 
 async function runTutorial () {
-  const getData = async url => {
-    try {
-      const response = await fetch(url);
-      const json = await response.json();
-      console.log(json);
-      return json;
-    }
-    catch (error) {
-      console.log(error);
-      return null;
-    }
-  };
-  const viewers = await getData(urlViewer);
-  console.log(viewers);
+  const urlViewers = urlPrefix + "/v0/viewers/default";
+  const response = await fetch(urlViewers);
+  const viewers = await response.json();
+  const viewer = viewers["data"].find(viewer => viewer.file_type === fileType)
+  console.log(viewer.view_url);
 
-  let anonURL = urlPrefix + "/view";
+  const urlParams = new URLSearchParams(viewer.view_url);
+  for (const [key, value] of urlParams.entries()) {
+    console.log(key, value);
+  }
+  let anonURL = encodeURI(viewer.view_url);
   for (let i=0; i<Object.keys(params).length; i++) {
     const paramKey =  Object.keys(params)[i];
     const paramValue =  params[paramKey];
-    i==0 ? anonURL += "?" : anonURL += "&";
-    anonURL += paramKey + "=" + paramValue
+    anonURL += "&" + paramKey + "=" + paramValue
   }
+
   const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, enableDemoMode);
 
   try {
