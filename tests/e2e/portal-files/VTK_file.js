@@ -1,4 +1,4 @@
-// node VTK_file.js [url] [file_type] [viewer_key] [viewer_vs] [download_link] [file_name] [file_size] [--demo]
+// node VTK_file.js [url] [download_link] [file_size] [--demo]
 
 const fetch = require('node-fetch');
 const tutorialBase = require('../tutorials/tutorialBase');
