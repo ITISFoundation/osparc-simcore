@@ -10,17 +10,33 @@ const {
   enableDemoMode
 } = utils.parseCommandLineArgumentsStudyDispatcherParams(args);
 
-let anonURL = urlPrefix + "/view";
-for (let i=0; i<Object.keys(params).length; i++) {
-  const paramKey =  Object.keys(params)[i];
-  const paramValue =  params[paramKey];
-  i==0 ? anonURL += "?" : anonURL += "&";
-  anonURL += paramKey + "=" + paramValue
-}
+const urlViewer = urlPrefix + "/v0/viewers/default"
 const screenshotPrefix = "VTK_file_";
 
 
 async function runTutorial () {
+  const getData = async url => {
+    try {
+      const response = await fetch(url);
+      const json = await response.json();
+      console.log(json);
+      return json;
+    }
+    catch (error) {
+      console.log(error);
+      return null;
+    }
+  };
+  const viewers = await getData(urlViewer);
+  console.log(viewers);
+
+  let anonURL = urlPrefix + "/view";
+  for (let i=0; i<Object.keys(params).length; i++) {
+    const paramKey =  Object.keys(params)[i];
+    const paramValue =  params[paramKey];
+    i==0 ? anonURL += "?" : anonURL += "&";
+    anonURL += paramKey + "=" + paramValue
+  }
   const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, enableDemoMode);
 
   try {
