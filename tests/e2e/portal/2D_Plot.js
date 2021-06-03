@@ -19,7 +19,6 @@ async function runTutorial () {
   const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, enableDemoMode);
 
   try {
-    tutorial.startScreenshooter();
     const page = await tutorial.beforeScript();
     const studyData = await tutorial.openStudyLink();
     const studyId = studyData["data"]["uuid"];
@@ -30,7 +29,7 @@ async function runTutorial () {
     await tutorial.waitForServices(workbenchData["studyId"], [nodeIdViewer]);
 
     // Some time for starting the service
-    await tutorial.waitFor(5000);
+    await tutorial.waitFor(5000, 'Some time for starting the service');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
     // await tutorial.openNode(1);
@@ -68,7 +67,6 @@ async function runTutorial () {
   }
   finally {
     await tutorial.logOut();
-    tutorial.stopScreenshooter();
     await tutorial.close();
   }
 

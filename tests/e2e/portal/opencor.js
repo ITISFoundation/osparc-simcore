@@ -24,7 +24,7 @@ async function runTutorial () {
     console.log("Study ID:", studyId);
 
     // Some time for loading the workbench
-    await tutorial.waitFor(10000);
+    await tutorial.waitFor(10000, 'Some time for loading the workbench');
     await utils.takeScreenshot(page, screenshotPrefix + 'workbench_loaded');
 
     await tutorial.runPipeline();
