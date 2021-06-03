@@ -921,7 +921,7 @@ async def get_services_details(
             list_running_services = await client.services.list(
                 filters={"label": filters}
             )
-            log.error("REMOVE_ME list_running_services=%s", list_running_services)
+
             services_details = [
                 await _get_node_details(app, client, service)
                 for service in list_running_services
