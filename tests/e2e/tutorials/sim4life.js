@@ -14,14 +14,15 @@ const {
 
 const templateName = "sim4life";
 
+
 async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
+  let studyId
 
   try {
-    tutorial.startScreenshooter();
     await tutorial.start();
     const studyData = await tutorial.openService(1000);
-    const studyId = studyData["data"]["uuid"];
+    studyId = studyData["data"]["uuid"];
     console.log("Study ID:", studyId);
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
@@ -29,19 +30,15 @@ async function runTutorial() {
     await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][0]], 20000);
 
     // Wait for some time
-    await tutorial.waitFor(12000);
-
-    await tutorial.toDashboard();
-
-    await tutorial.removeStudy(studyId);
+    await tutorial.waitFor(12000, 'Wait for some time');
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
   }
   finally {
+    await tutorial.removeStudy2(studyId);
     await tutorial.logOut();
-    tutorial.stopScreenshooter();
     await tutorial.close();
   }
 

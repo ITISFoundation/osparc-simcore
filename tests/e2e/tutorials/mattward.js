@@ -50,7 +50,6 @@ async function runTutorial() {
     console.log('Tutorial error: ' + err);
   }
   finally {
-    await tutorial.toDashboard();
     await tutorial.removeStudy2(studyId);
     await tutorial.logOut();
     await tutorial.close();

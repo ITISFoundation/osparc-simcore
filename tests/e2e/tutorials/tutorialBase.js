@@ -427,8 +427,10 @@ class TutorialBase {
 
   async waitFor(waitFor, reason) {
     console.log(`Waiting for ${waitFor}ms. Reason: ${reason}`)
+    this.startScreenshooter()
     await utils.sleep(waitFor);
     await this.takeScreenshot('waitFor_finished')
+    this.stopScreenshooter()
   }
 
   async takeScreenshot(screenshotTitle) {

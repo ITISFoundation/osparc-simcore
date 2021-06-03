@@ -26,7 +26,7 @@ async function runTutorial() {
     console.log("Study ID:", studyId);
 
     // Some time for loading the workbench
-    await tutorial.waitFor(5000);
+    await tutorial.waitFor(5000, 'Some time for loading the workbench');
 
     await tutorial.runPipeline();
     await tutorial.waitForStudyDone(studyId, 30000);
@@ -44,7 +44,6 @@ async function runTutorial() {
     console.log('Tutorial error: ' + err);
   }
   finally {
-    await tutorial.toDashboard();
     await tutorial.removeStudy2(studyId);
     await tutorial.logOut();
     await tutorial.close();

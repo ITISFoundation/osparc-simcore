@@ -16,16 +16,15 @@ const templateName = "isolve-mpi";
 
 async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
-
+  let studyId
   try {
-    tutorial.startScreenshooter();
     await tutorial.start();
     const studyData = await tutorial.openTemplate(1000);
-    const studyId = studyData["data"]["uuid"];
+    studyId = studyData["data"]["uuid"];
     console.log("Study ID:", studyId);
 
     // Some time for loading the workbench
-    await tutorial.waitFor(5000);
+    await tutorial.waitFor(5000, 'Some time for loading the workbench');
 
     await tutorial.runPipeline();
     await tutorial.waitForStudyDone(studyId, 120000);
@@ -35,7 +34,8 @@ async function runTutorial() {
       "output.h5",
       "log.tgz"
     ];
-    await tutorial.checkNodeResults(1, outFiles);
+    await tutorial.openNodeFiles(1)
+    await tutorial.checkResults2(outFiles1);
 
     // check logs
     const mustHave = "Running MPI version 3.1 on 2 processes";
@@ -46,18 +46,14 @@ async function runTutorial() {
     else {
       throw "MPI not working";
     }
-
-    await tutorial.toDashboard();
-
-    await tutorial.removeStudy(studyId);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
   }
   finally {
+    await tutorial.removeStudy2(studyId);
     await tutorial.logOut();
-    tutorial.stopScreenshooter();
     await tutorial.close();
   }
 

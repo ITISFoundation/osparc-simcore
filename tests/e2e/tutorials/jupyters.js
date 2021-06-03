@@ -109,7 +109,7 @@ async function runTutorial() {
     console.log('Checking results for the jupyter lab cell:', jLabVvalue);
     await tutorial.takeScreenshot("pressRunJLab");
     // wait sufficiently before getting the results
-    await tutorial.waitFor(15000);
+    await tutorial.waitFor(15000, 'wait sufficiently before getting the results');
 
     console.log('Checking results for the jupyter lab:');
     const outFiles2 = [
@@ -124,8 +124,7 @@ async function runTutorial() {
     console.log('Tutorial error: ' + err);
   }
   finally {
-    await tutorial.toDashboard();
-    await tutorial.removeStudy(studyId);
+    await tutorial.removeStudy2(studyId);
     await tutorial.logOut();
     await tutorial.close();
   }
