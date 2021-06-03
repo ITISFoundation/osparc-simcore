@@ -53,9 +53,9 @@ _DEFAULT_TIMEOUT_S: int = 5
 
 
 def _get_repository(
-    db_engine: Engine, repo_type: Type[BaseRepository]
+    db_engine: Engine, repo_cls: Type[BaseRepository]
 ) -> BaseRepository:
-    return repo_type(db_engine=db_engine)
+    return repo_cls(db_engine=db_engine)  # type: ignore
 
 
 Iteration = PositiveInt
@@ -88,12 +88,12 @@ class CeleryScheduler:
             scheduled_pipelines={
                 (r.user_id, r.project_uuid, r.iteration) for r in runs
             },
-        )
+        )  # type: ignore
 
     async def run_new_pipeline(self, user_id: UserID, project_id: ProjectID) -> None:
         runs_repo: CompRunsRepository = _get_repository(
             self.db_engine, CompRunsRepository
-        )
+        )  # type: ignore
         new_run: CompRunsAtDB = await runs_repo.create(
             user_id=user_id, project_id=project_id
         )
@@ -114,7 +114,7 @@ class CeleryScheduler:
     async def _get_pipeline_dag(self, project_id: ProjectID) -> nx.DiGraph:
         comp_pipeline_repo: CompPipelinesRepository = _get_repository(
             self.db_engine, CompPipelinesRepository
-        )
+        )  # type: ignore
         pipeline_at_db: CompPipelineAtDB = await comp_pipeline_repo.get_pipeline(
             project_id
         )
@@ -131,7 +131,7 @@ class CeleryScheduler:
     ) -> Dict[str, CompTaskAtDB]:
         comp_tasks_repo: CompTasksRepository = _get_repository(
             self.db_engine, CompTasksRepository
-        )
+        )  # type: ignore
         pipeline_comp_tasks: Dict[str, CompTaskAtDB] = {
             str(t.node_id): t
             for t in await comp_tasks_repo.get_comp_tasks(project_id)
@@ -152,12 +152,13 @@ class CeleryScheduler:
     ) -> RunningState:
 
         pipeline_state_from_tasks = get_pipeline_state_from_task_states(
-            pipeline_tasks.values(), self.celery_client.settings.publication_timeout
+            list(pipeline_tasks.values()),
+            self.celery_client.settings.publication_timeout,
         )
 
         comp_runs_repo: CompRunsRepository = _get_repository(
             self.db_engine, CompRunsRepository
-        )
+        )  # type: ignore
         await comp_runs_repo.set_run_result(
             user_id=user_id,
             project_id=project_id,
@@ -183,7 +184,7 @@ class CeleryScheduler:
         # The sidecar only pick up tasks that are in PENDING state
         comp_tasks_repo: CompTasksRepository = _get_repository(
             self.db_engine, CompTasksRepository
-        )
+        )  # type: ignore
         await comp_tasks_repo.mark_project_tasks_as_pending(project_id, tasks)
         # notify the sidecar they should start now
         self.celery_client.send_computation_tasks(
