@@ -12,6 +12,11 @@ from .projects_access import Owner
 
 @unique
 class RunningState(str, Enum):
+    """State of execution of a project's computational workflow
+
+    SEE StateType for task state
+    """
+
     UNKNOWN = "UNKNOWN"
     PUBLISHED = "PUBLISHED"
     NOT_STARTED = "NOT_STARTED"
