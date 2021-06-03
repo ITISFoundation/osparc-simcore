@@ -855,7 +855,7 @@
           "dynamic services"
         ],
         "summary": "returns a list of running interactive services both from director-v0 and director-v2",
-        "operationId": "list_running_dynamic_sidecar_services_v2_dynamic_services_running__get",
+        "operationId": "list_running_dynamic_services_v2_dynamic_services_running__get",
         "parameters": [
           {
             "required": true,
@@ -1812,15 +1812,7 @@
         "title": "ServiceStateReply",
         "required": [
           "service_state",
-          "service_message",
-          "published_port",
-          "service_uuid",
-          "service_key",
-          "service_version",
-          "service_host",
-          "service_port",
-          "service_basepath",
-          "entry_point"
+          "service_message"
         ],
         "type": "object",
         "properties": {
