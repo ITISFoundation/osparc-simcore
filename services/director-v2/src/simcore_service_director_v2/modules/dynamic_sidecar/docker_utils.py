@@ -4,7 +4,7 @@ import json
 import logging
 import time
 from contextlib import suppress
-from typing import Any, Deque, Dict, Optional, Set, Tuple
+from typing import Any, Deque, Dict, Optional, Set, Tuple, List
 
 import aiodocker
 from asyncio_extras import async_contextmanager
@@ -19,6 +19,7 @@ from .parse_docker_status import (
     ServiceState,
     extract_task_state,
 )
+from ...core.settings import ServiceType
 
 log = logging.getLogger(__name__)
 
@@ -296,9 +297,23 @@ async def remove_dynamic_sidecar_stack(
         await asyncio.gather(*to_remove_tasks)
 
 
-# TODO: remove network( we should already have the network name)
 async def remove_dynamic_sidecar_network(network_name: str):
     with suppress(aiodocker.exceptions.DockerError):
         async with docker_client() as client:  # pylint: disable=not-async-context-manager
             network = await client.networks.get(network_name)
             await network.delete()
+
+
+async def list_dynamic_sidecar_services(
+    dynamic_sidecar_settings: DynamicSidecarSettings,
+) -> List[Dict[str, Any]]:
+    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+        dynamic_sidecar_services = await client.services.list(
+            filters={
+                "label": [
+                    f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}",
+                    f"type={ServiceType.MAIN.value}",
+                ]
+            }
+        )
+        return dynamic_sidecar_services

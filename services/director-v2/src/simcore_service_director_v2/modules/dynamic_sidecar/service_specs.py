@@ -15,6 +15,7 @@ from ...models.schemas.constants import UserID
 from .config import DynamicSidecarSettings
 from .constants import DYNAMIC_SIDECAR_PREFIX
 from .utils import unused_port
+from ...core.settings import ServiceType
 
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 
@@ -86,7 +87,7 @@ async def dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
             f"traefik.http.routers.{service_name}.priority": "10",
             f"traefik.http.routers.{service_name}.rule": f"hostregexp(`{node_uuid}.services.{{host:.+}}`)",
             f"traefik.http.routers.{service_name}.middlewares": f"master-simcore_gzip@docker, {service_name}-security-headers",
-            "type": "main",  # main is required to be monitored by the frontend
+            "type": ServiceType.DEPENDENCY.value,
             "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
             "study_id": f"{project_id}",
             "user_id": f"{user_id}",
@@ -340,7 +341,7 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
             f"traefik.http.routers.{dynamic_sidecar_name}.priority": "10",
             f"traefik.http.routers.{dynamic_sidecar_name}.rule": "PathPrefix(`/`)",
             f"traefik.http.services.{dynamic_sidecar_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.web_service_port}",
-            "type": "dependency",
+            "type": ServiceType.MAIN.value,  # required to be listed as an interactive service and be properly cleaned up
             "user_id": f"{user_id}",
             # the following are used for monitoring
             "uuid": f"{node_uuid}",  # also needed for removal when project is closed

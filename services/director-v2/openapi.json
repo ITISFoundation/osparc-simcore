@@ -673,7 +673,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DynamicServiceOut"
+                  "$ref": "#/components/schemas/ServiceStateReply"
                 }
               }
             }
@@ -697,6 +697,7 @@
           "dynamic services"
         ],
         "summary": "assembles the status for the dynamic-sidecar",
+        "description": "returns:\n    - \"Dict\" if dynamic-service\n    - \"List\" if legacy dynamic service (reply of GET /running_interactive_services)",
         "operationId": "dynamic_sidecar_status_v2_dynamic_services__node_uuid__get",
         "parameters": [
           {
@@ -708,6 +709,53 @@
             },
             "name": "node_uuid",
             "in": "path"
+          },
+          {
+            "description": "distinctive name for the node based on the docker registry path",
+            "required": true,
+            "schema": {
+              "title": "Service Key",
+              "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
+              "type": "string",
+              "description": "distinctive name for the node based on the docker registry path"
+            },
+            "name": "service_key",
+            "in": "query"
+          },
+          {
+            "description": "semantic version number of the node",
+            "required": true,
+            "schema": {
+              "title": "Service Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string",
+              "description": "semantic version number of the node"
+            },
+            "name": "service_version",
+            "in": "query"
+          },
+          {
+            "description": "required by director-v1",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer",
+              "description": "required by director-v1"
+            },
+            "name": "user_id",
+            "in": "query"
+          },
+          {
+            "description": "required by director-v1",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string",
+              "description": "required by director-v1",
+              "format": "uuid"
+            },
+            "name": "project_id",
+            "in": "query"
           }
         ],
         "responses": {
@@ -738,7 +786,7 @@
           "dynamic services"
         ],
         "summary": "stops previously spawned dynamic-sidecar",
-        "operationId": "stop_dynamic_sidecar_v2_dynamic_services__node_uuid__delete",
+        "operationId": "stop_dynamic_service_v2_dynamic_services__node_uuid__delete",
         "parameters": [
           {
             "required": true,
@@ -749,11 +797,93 @@
             },
             "name": "node_uuid",
             "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Save State",
+              "type": "boolean"
+            },
+            "name": "save_state",
+            "in": "query"
+          },
+          {
+            "description": "distinctive name for the node based on the docker registry path",
+            "required": true,
+            "schema": {
+              "title": "Service Key",
+              "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
+              "type": "string",
+              "description": "distinctive name for the node based on the docker registry path"
+            },
+            "name": "service_key",
+            "in": "query"
+          },
+          {
+            "description": "semantic version number of the node",
+            "required": true,
+            "schema": {
+              "title": "Service Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string",
+              "description": "semantic version number of the node"
+            },
+            "name": "service_version",
+            "in": "query"
           }
         ],
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/dynamic_services/running/": {
+      "get": {
+        "tags": [
+          "dynamic services"
+        ],
+        "summary": "returns a list of running interactive services both from director-v0 and director-v2",
+        "operationId": "list_running_dynamic_sidecar_services_v2_dynamic_services_running__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            },
+            "name": "user_id",
+            "in": "query"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            },
+            "name": "project_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -1042,102 +1172,6 @@
           "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa"
         }
       },
-      "DynamicServiceOut": {
-        "title": "DynamicServiceOut",
-        "required": [
-          "user_id",
-          "project_id",
-          "key",
-          "version",
-          "uuid",
-          "basepath",
-          "host",
-          "internal_port",
-          "published_port",
-          "state"
-        ],
-        "type": "object",
-        "properties": {
-          "user_id": {
-            "title": "User Id",
-            "exclusiveMinimum": 0.0,
-            "type": "integer"
-          },
-          "project_id": {
-            "title": "Project Id",
-            "type": "string",
-            "format": "uuid"
-          },
-          "key": {
-            "title": "Key",
-            "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
-            "type": "string",
-            "description": "distinctive name for the node based on the docker registry path"
-          },
-          "version": {
-            "title": "Version",
-            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-            "type": "string",
-            "description": "semantic version number of the node"
-          },
-          "uuid": {
-            "title": "Uuid",
-            "type": "string",
-            "format": "uuid"
-          },
-          "basepath": {
-            "title": "Basepath",
-            "type": "string",
-            "description": "predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
-            "format": "path"
-          },
-          "host": {
-            "title": "Host",
-            "type": "string",
-            "description": "the service swarm internal host name"
-          },
-          "internal_port": {
-            "title": "Internal Port",
-            "exclusiveMaximum": 65535.0,
-            "exclusiveMinimum": 0.0,
-            "type": "integer",
-            "description": "the service swarm internal port"
-          },
-          "published_port": {
-            "title": "Published Port",
-            "exclusiveMaximum": 65535.0,
-            "exclusiveMinimum": 0.0,
-            "type": "integer",
-            "description": "the service swarm published port if any"
-          },
-          "entry_point": {
-            "title": "Entry Point",
-            "type": "string",
-            "description": "if empty the service entrypoint is on the root endpoint."
-          },
-          "state": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/simcore_service_director_v2__models__domains__dynamic_services__ServiceState"
-              }
-            ],
-            "description": "service current state"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string",
-            "description": "additional information related to service state"
-          }
-        },
-        "example": {
-          "user_id": 234,
-          "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-          "key": "simcore/services/dynamic/3dviewer",
-          "version": "2.4.5",
-          "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-          "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa"
-        }
-      },
       "HTTPValidationError": {
         "title": "HTTPValidationError",
         "type": "object",
@@ -1378,7 +1412,7 @@
           "service_state": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/simcore_service_director_v2__models__schemas__services__ServiceState"
+                "$ref": "#/components/schemas/ServiceState"
               }
             ],
             "description": "the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start"
@@ -1761,6 +1795,19 @@
         "additionalProperties": false,
         "description": "Metadata on a service input or output port"
       },
+      "ServiceState": {
+        "title": "ServiceState",
+        "enum": [
+          "pending",
+          "pulling",
+          "starting",
+          "running",
+          "complete",
+          "failed"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
       "ServiceStateReply": {
         "title": "ServiceStateReply",
         "required": [
@@ -1967,32 +2014,6 @@
         "enum": [
           "TextArea",
           "SelectBox"
-        ],
-        "type": "string",
-        "description": "An enumeration."
-      },
-      "simcore_service_director_v2__models__domains__dynamic_services__ServiceState": {
-        "title": "ServiceState",
-        "enum": [
-          "pending",
-          "pulling",
-          "starting",
-          "running",
-          "complete",
-          "failed"
-        ],
-        "type": "string",
-        "description": "An enumeration."
-      },
-      "simcore_service_director_v2__models__schemas__services__ServiceState": {
-        "title": "ServiceState",
-        "enum": [
-          "pending",
-          "pulling",
-          "starting",
-          "running",
-          "complete",
-          "failed"
         ],
         "type": "string",
         "description": "An enumeration."

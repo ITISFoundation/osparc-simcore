@@ -5,9 +5,10 @@
 import logging
 import urllib
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, List
 
 import httpx
+import yarl
 from fastapi import FastAPI, HTTPException, Request, Response
 from models_library.projects_nodes import NodeID
 from models_library.services import ServiceDockerData, ServiceKeyVersion
@@ -144,4 +145,20 @@ class DirectorV0Client:
         )
         if resp.status_code == status.HTTP_200_OK:
             return SimcoreService.parse_obj(unenvelope_or_raise_error(resp))
+        raise HTTPException(status_code=resp.status_code, detail=resp.content)
+
+    @log_decorator(logger=logger)
+    async def get_running_services(
+        self, user_id: str, project_id: str
+    ) -> List[RunningServiceDetails]:
+        request_url = yarl.URL("running_interactive_services").with_query(
+            user_id=user_id, project_id=project_id
+        )
+        logger.error("DV0 request_url=%s", request_url)
+        resp = await self.request("GET", str(request_url))
+        if resp.status_code == status.HTTP_200_OK:
+            return [
+                RunningServiceDetails.parse_obj(x)
+                for x in unenvelope_or_raise_error(resp)
+            ]
         raise HTTPException(status_code=resp.status_code, detail=resp.content)

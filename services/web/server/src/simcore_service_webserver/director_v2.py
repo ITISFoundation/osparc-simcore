@@ -48,6 +48,7 @@ async def _request_director_v2(
 ) -> Dict:
     session = get_client_session(app)
     try:
+        log.error("[REQUESTING] %s %s %s %s %s", method, url, headers, data, kwargs)
         async with session.request(
             method, url, headers=headers, json=data, **kwargs
         ) as response:
@@ -356,6 +357,23 @@ async def stop_service(
 
 
 @log_decorator(logger=log)
+async def list_running_dynamic_services(
+    app: web.Application, user_id: str, project_id: str
+) -> None:
+    """
+    Retruns the running dynamic services from director-v0 and director-v2
+    """
+    director2_settings: Directorv2Settings = get_settings(app)
+    backend_url = (
+        URL(director2_settings.endpoint) / "dynamic_services" / "running/"
+    ).update_query(user_id=user_id, project_id=project_id)
+
+    return await _request_director_v2(
+        app, "GET", backend_url, expected_status=web.HTTPOk
+    )
+
+
+@log_decorator(logger=log)
 async def stop_services(
     app: web.Application,
     user_id: Optional[str] = None,
@@ -363,7 +381,7 @@ async def stop_services(
     save_state: Optional[bool] = True,
 ) -> None:
     """Stops all services in parallel"""
-    services = await get_running_interactive_services(
+    running_dynamic_services = await list_running_dynamic_services(
         app, user_id=user_id, project_id=project_id
     )
 
@@ -375,7 +393,7 @@ async def stop_services(
             service_version=service["service_version"],
             save_state=save_state,
         )
-        for service in services
+        for service in running_dynamic_services
     ]
     await asyncio.gather(*services_to_stop)
 

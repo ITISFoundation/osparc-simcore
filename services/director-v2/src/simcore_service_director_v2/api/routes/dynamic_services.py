@@ -1,6 +1,7 @@
+import asyncio
 import logging
 from pprint import pformat
-from typing import Dict, Union, List, Optional
+from typing import Dict, Union, List, Optional, Any
 from uuid import UUID
 
 import httpx
@@ -12,14 +13,12 @@ from models_library.services import (
     VERSION_RE,
     ServiceKeyVersion,
 )
-from pydantic.main import BaseModel
 from starlette import status
 from starlette.datastructures import URL
 
 
 from ...models.domains.dynamic_services import (
     DynamicServiceCreate,
-    DynamicServiceOut,
     RetrieveDataIn,
     RetrieveDataOutEnveloped,
 )
@@ -34,7 +33,9 @@ from ...modules.dynamic_sidecar.docker_utils import (
     create_service_and_get_id,
     get_node_id_from_task_for_service,
     get_swarm_network,
+    list_dynamic_sidecar_services,
 )
+from ...models.schemas.services import RunningServiceDetails
 from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor, get_monitor
 from ...modules.dynamic_sidecar.monitor.models import ServiceStateReply
 from ...modules.dynamic_sidecar.service_specs import (
@@ -284,7 +285,7 @@ async def dynamic_sidecar_status(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="stops previously spawned dynamic-sidecar",
 )
-async def stop_dynamic_sidecar(
+async def stop_dynamic_service(
     node_uuid: UUID,
     save_state: Optional[bool],
     service_key: str = Query(
@@ -314,7 +315,39 @@ async def stop_dynamic_sidecar(
         redirect_url_with_query = yarl.URL(base_url).with_query(
             save_state="true" if save_state else "false"
         )
-        log.error("Redirecting to %s", redirect_url_with_query)
         return RedirectResponse(redirect_url_with_query)
 
     await monitor.remove_service_from_monitor(str(node_uuid), save_state)
+
+
+@router.get(
+    "/running/",
+    status_code=status.HTTP_200_OK,
+    summary=(
+        "returns a list of running interactive services "
+        "both from director-v0 and director-v2"
+    ),
+)
+async def list_running_dynamic_sidecar_services(
+    user_id: str,
+    project_id: str,
+    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
+    dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
+    monitor: DynamicSidecarsMonitor = Depends(get_monitor),
+) -> List[Dict[str, Any]]:
+    running_interactive_services = await director_v0_client.get_running_services(
+        user_id, project_id
+    )
+    dynamic_sidecar_services = await list_dynamic_sidecar_services(
+        dynamic_sidecar_settings
+    )
+
+    get_stack_statuse_tasks = [
+        monitor.get_stack_status(service["Spec"]["Labels"]["uuid"])
+        for service in dynamic_sidecar_services
+    ]
+    running_dynamic_sidecar_services = [
+        x.dict() for x in await asyncio.gather(*get_stack_statuse_tasks)
+    ]
+
+    return running_interactive_services + running_dynamic_sidecar_services
