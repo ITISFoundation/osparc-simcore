@@ -332,13 +332,15 @@ class TutorialBase {
     await this.takeScreenshot("checkNodeResults_after");
   }
 
-  async checkResults2(fileNames) {
+  async checkResults2(fileNames, checkNFiles=true) {
     try {
       await this.takeScreenshot("checkResults_before");
       const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
         elements => elements.map(el => el.textContent.trim()));
-      assert(files.length === fileNames.length, 'Number of files is incorrect')
-      console.log('Number of files is correct')
+      if (checkNFiles) {
+        assert(files.length === fileNames.length, 'Number of files is incorrect')
+        console.log('Number of files is correct')
+      }
       assert(
         fileNames.every(fileName => files.some(file => file.includes(fileName))),
         'File names are incorrect'
