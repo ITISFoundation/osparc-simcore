@@ -1,0 +1,19 @@
+# This file exists so you can easily regenerate your project.
+#
+#  cookiecutter --overwrite-if-exists --config-file=.cookiecutterrc .
+#
+
+default_context:
+
+    _extensions:               ['jinja2_time.TimeExtension']
+    _template:                 '.'
+    detailed_doc:              'n'
+    distribution_name:         'simcore-service-workflows'
+    full_name:                 'Pedro Crespo-Valero'
+    github_username:           'pcrespov'
+    package_name:              'simcore_service_workflows'
+    project_name:              'Workflows manager service'
+    project_short_description: 'Service to manage dask workflows'
+    project_slug:              'workflows'
+    version:                   '0.1.0-alpha'
+    year:                      '2021'
