@@ -57,6 +57,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         orgEditor.addListener("createOrg", () => {
           this.__createOrganization(win, orgEditor.getChildControl("create"), orgEditor);
         });
+        orgEditor.addListener("cancel", () => win.close());
       }, this);
       return createOrgBtn;
     },
@@ -279,6 +280,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       orgEditor.addListener("updateOrg", () => {
         this.__updateOrganization(win, orgEditor.getChildControl("save"), orgEditor);
       });
+      orgEditor.addListener("cancel", () => win.close());
     },
 
     __deleteOrganization: function(orgKey) {
