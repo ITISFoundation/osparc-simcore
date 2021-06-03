@@ -71,6 +71,23 @@ class TutorialBase {
       await this.beforeScript();
       await this.__goTo();
 
+      // Logs notifications
+      const waitForFlash = () => {
+        this.__page.waitForSelector('[qxclass="osparc.ui.message.FlashMessage"]', {
+          timeout: 0
+        }).then(async () => {
+          const messages = await this.__page.$$eval('[qxclass="osparc.ui.message.FlashMessage"]',
+            elements => {
+              const flashText = elements.map(element => element.textContent)
+              elements.forEach(element => element.remove())
+              return flashText
+            })
+          console.log('Flash message', messages)
+          setTimeout(waitForFlash, 0)
+        }).catch(() => {})
+      }
+      setTimeout(waitForFlash, 0)
+
       const needsRegister = await this.registerIfNeeded();
       if (!needsRegister) {
         await this.login();
