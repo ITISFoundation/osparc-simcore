@@ -76,7 +76,8 @@ qx.Class.define("osparc.Error", {
           control = new qx.ui.basic.Label().set({
             font: "text-18",
             alignX: "center",
-            width: 200
+            width: 200,
+            rich: true
           });
           break;
         }
