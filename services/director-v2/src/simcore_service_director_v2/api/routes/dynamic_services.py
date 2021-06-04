@@ -1,13 +1,14 @@
 import asyncio
 import logging
 from pprint import pformat
-from typing import Dict, Union, List, Optional, Any
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 import httpx
 import yarl
 from fastapi import APIRouter, Depends, Header, Query
 from fastapi.responses import RedirectResponse
+from models_library.service_settings import SimcoreService
 from models_library.services import (
     DYNAMIC_SERVICE_KEY_RE,
     VERSION_RE,
@@ -16,12 +17,12 @@ from models_library.services import (
 from starlette import status
 from starlette.datastructures import URL
 
-
 from ...models.domains.dynamic_services import (
     DynamicServiceCreate,
     RetrieveDataIn,
     RetrieveDataOutEnveloped,
 )
+from ...models.schemas.services import RunningServiceDetails
 from ...modules.dynamic_sidecar.config import DynamicSidecarSettings, get_settings
 from ...modules.dynamic_sidecar.constants import (
     DYNAMIC_SIDECAR_PREFIX,
@@ -35,7 +36,6 @@ from ...modules.dynamic_sidecar.docker_utils import (
     get_swarm_network,
     list_dynamic_sidecar_services,
 )
-from ...models.schemas.services import RunningServiceDetails
 from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor, get_monitor
 from ...modules.dynamic_sidecar.monitor.models import ServiceStateReply
 from ...modules.dynamic_sidecar.service_specs import (
@@ -51,7 +51,6 @@ from ..dependencies.dynamic_services import (
     get_service_base_url,
     get_services_client,
 )
-from models_library.service_settings import SimcoreService
 
 DynamicServicesList = List[Dict[str, Union[str, int]]]
 
@@ -102,8 +101,7 @@ async def create_dynamic_service(
     simcore_service: SimcoreService = await director_v0_client.get_service_labels(
         service=ServiceKeyVersion(key=service.key, version=service.version)
     )
-    use_dynamic_sidecar = simcore_service.boot_mode == "dynamic-sidecar"
-    if not use_dynamic_sidecar:
+    if not simcore_service.needs_dynamic_sidecar:
         # forward to director-v0
         base_url = (
             str(director_v0_client.client.base_url) + "running_interactive_services"
