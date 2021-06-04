@@ -637,6 +637,9 @@ qx.Class.define("osparc.data.Resources", {
             status = req.getStatus();
           }
           res.dispose();
+          if ([404, 503].includes(status)) {
+            message += "<br>Please, try again later";
+          }
           const err = Error(message ? message : `Error while trying to fetch ${endpoint} ${resource}`);
           if (status) {
             err.status = status;
