@@ -1,10 +1,18 @@
 <!-- Common title prefixes/annotations:
 
-  WIP:
-  bugfix:
-  🏗️ maintenance:
+WIP: work in progress
 
-  (⚠️ devops)  = changes in devops config required before deploying
+Consider prefix your PR message with an emoticon
+  🐛 bugfix
+  ✨ new feature
+  🔨 refactoring
+  🏗️ maintenance
+  📚 documentation
+
+and append (⚠️ devops) if changes in devops configuration required before deploying
+
+  SEE https://github.com/dannyfritz/commit-message-emoji
+  SEE https://emojipedia.org
 -->
 
 ## What do these changes do?
