@@ -68,7 +68,7 @@ def client(
             "host": "localhost",
             "port": aiohttp_unused_port(),
             "debug": True,
-            "loglevel": "DEBUG",
+            "log_level": "DEBUG",
             "testing": True,
             "max_workers": 4,
             "monitoring_enabled": False,

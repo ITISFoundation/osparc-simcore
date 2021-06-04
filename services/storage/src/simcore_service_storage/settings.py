@@ -32,7 +32,7 @@ class BfApiToken(BaseSettings):
 class Settings(BaseAiohttpAppSettings):
     # GENERAL SETTINGS ---
 
-    loglevel: LogLevel = Field(
+    log_level: LogLevel = Field(
         "INFO", env=["STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
 

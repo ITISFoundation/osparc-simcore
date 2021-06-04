@@ -60,7 +60,7 @@ def main(check_settings: bool = False, show_settings_json_schema: bool = False):
         click.echo(settings.json(indent=2))
         sys.exit(os.EX_OK)
 
-    log_level = settings.loglevel
+    log_level = settings.log_level
     logging.basicConfig(level=getattr(logging, log_level))
     logging.root.setLevel(getattr(logging, log_level))
 
