@@ -14,7 +14,6 @@ RSP_*_KEY: is a key in response-storage
 See https://docs.aiohttp.org/en/stable/web_advanced.html#data-sharing-aka-no-singletons-please
 """
 
-import logging
 from typing import Any, Dict, List, Optional
 
 from models_library.basic_types import LogLevel

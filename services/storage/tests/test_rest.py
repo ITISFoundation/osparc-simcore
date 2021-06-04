@@ -1,6 +1,6 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import json
 import os
@@ -22,6 +22,7 @@ from simcore_service_storage.dsm import APP_DSM_KEY, DataStorageManager, setup_d
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.s3 import setup_s3
+from simcore_service_storage.settings import create_settings_class
 from tests.helpers.utils_assert import assert_status
 from tests.helpers.utils_project import clone_project_data
 from tests.utils import BUCKET_NAME, USER_ID, has_datcore_tokens
@@ -51,40 +52,38 @@ def client(
     postgres_service,
     minio_service,
     osparc_api_specs_dir,
+    project_env_devel_environment,
 ):
     app = web.Application()
 
-    api_token = os.environ.get("BF_API_KEY", "none")
-    api_secret = os.environ.get("BF_API_SECRET", "none")
+    ApplicationSettings = create_settings_class()
+    settings = ApplicationSettings.parse_obj(
+        {
+            "boot_mode": "local-development",
+            "log_level": "DEBUG",
+            "host": "localhost",
+            "port": aiohttp_unused_port(),
+            "debug": True,
+            "loglevel": "DEBUG",
+            "testing": True,
+            "max_workers": 4,
+            "monitoring_enabled": False,
+            "rest": {"enabled": True},
+            "tracing": {"enabled": False},
+        }
+    )
+    print(settings.json(indent=2))
 
-    main_cfg = {
-        "port": aiohttp_unused_port(),
-        "host": "localhost",
-        "max_workers": 4,
-        "testing": True,
-        "test_datcore": {"api_token": api_token, "api_secret": api_secret},
-    }
-    rest_cfg = {
-        "oas_repo": str(osparc_api_specs_dir),
-    }
-    postgres_cfg = postgres_service
-    s3_cfg = minio_service
-
-    # fake config
-    app_cfg = {
-        "postgres": postgres_cfg,
-        "s3": s3_cfg,
-        "rest": rest_cfg,
-    }
-    app_cfg.update(main_cfg)
-    app[APP_CONFIG_KEY] = app_cfg
+    app[APP_CONFIG_KEY] = settings.dict()
 
     setup_db(app)
     setup_rest(app)
     setup_dsm(app)
     setup_s3(app)
 
-    cli = loop.run_until_complete(aiohttp_client(app, server_kwargs=main_cfg))
+    cli = loop.run_until_complete(
+        aiohttp_client(app, server_kwargs={"port": settings.port})
+    )
     return cli
 
 
