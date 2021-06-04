@@ -53,11 +53,6 @@ DATCORE_ID = 1
 DATCORE_STR = "datcore"
 
 
-# RSC=resource
-RSC_CONFIG_DIR_KEY = "data"
-RSC_CONFIG_SCHEMA_KEY = RSC_CONFIG_DIR_KEY + "/config-schema-v1.json"
-
-
 # REST API ----------------------------
 API_MAJOR_VERSION = service_version.major  # NOTE: syncs with service key
 API_VERSION_TAG = "v{:.0f}".format(API_MAJOR_VERSION)
@@ -68,13 +63,13 @@ APP_OPENAPI_SPECS_KEY = (
 
 
 # DATABASE ----------------------------
-APP_DB_ENGINE_KEY = __name__ + ".db_engine"
+APP_DB_ENGINE_KEY = f"{__name__}.db_engine"
 
 
 # DATA STORAGE MANAGER ----------------------------------
-APP_DSM_THREADPOOL = __name__ + ".dsm_threadpool"
-APP_DSM_KEY = __name__ + ".DSM"
-APP_S3_KEY = __name__ + ".S3_CLIENT"
+APP_DSM_THREADPOOL = f"{__name__}.dsm_threadpool"
+APP_DSM_KEY = f"{__name__}.DSM"
+APP_S3_KEY = f"{__name__}.S3_CLIENT"
 
 
 class BfApiToken(BaseSettings):
@@ -82,34 +77,43 @@ class BfApiToken(BaseSettings):
     token_secret: str = Field(..., env="BF_API_SECRET")
 
 
-class ApplicationSettings(BaseAiohttpAppSettings):
-    loglevel: LogLevel = Field(
-        "INFO", env=["STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
-    )
+def create_settings_class():
+    class Settings(BaseAiohttpAppSettings):
+        # GENERAL SETTINGS ---
 
-    testing: bool = False
-
-    max_workers: int = 8
-
-    monitoring_enabled: bool = False
-
-    test_datcore: Optional[BfApiToken] = None
-
-    disable_services: List[str] = []
-
-    # settings for sub-modules
-    postgres: PostgresSettings
-    s3: S3Config
-    rest: Dict[str, Any] = {"enabled": True}
-    tracing: TracingSettings
-
-    class Config:
-        case_sensitive = False
-        env_prefix = "STORAGE_"
-        json_encoders = {SecretStr: lambda v: v.get_secret_value()}
-
-    @classmethod
-    def create_from_environ(cls):
-        return cls(
-            postgres=PostgresSettings(), s3=S3Config(), tracing=TracingSettings()
+        loglevel: LogLevel = Field(
+            "INFO", env=["STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
         )
+
+        testing: bool = False
+        max_workers: int = 8
+        monitoring_enabled: bool = False
+        test_datcore: Optional[BfApiToken] = None
+        disable_services: List[str] = []
+
+        # APP MODULES SETTINGS ----
+
+        postgres: PostgresSettings = PostgresSettings()
+
+        s3: S3Config = S3Config()
+
+        rest: Dict[str, Any] = {"enabled": True}
+
+        tracing: TracingSettings = TracingSettings()
+
+        class Config:
+            case_sensitive = False
+            env_prefix = "STORAGE_"
+            json_encoders = {SecretStr: lambda v: v.get_secret_value()}
+
+    return Settings
+
+
+def ApplicationSettings(**values):
+    # NOTE: naming this function as a class is some syntax sugar
+
+    # here we capture environs for sub-settings
+    cls_with_defaults = create_settings_class()
+
+    # here we overr
+    return cls_with_defaults(**values)

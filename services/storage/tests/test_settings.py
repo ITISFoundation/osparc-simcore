@@ -7,7 +7,7 @@ from simcore_service_storage.settings import ApplicationSettings
 
 
 def test_loading_env_devel_in_settings(project_env_devel_environment):
-    settings = ApplicationSettings.create_from_environ()
+    settings = ApplicationSettings()
     print("captured settings: \n", settings.json(indent=2))
 
     assert settings.logging_level == logging.DEBUG
