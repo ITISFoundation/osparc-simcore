@@ -34,6 +34,16 @@ from .access_layer import (
     get_project_access_rights,
     get_readable_project_ids,
 )
+from .constants import (
+    APP_CONFIG_KEY,
+    APP_DB_ENGINE_KEY,
+    APP_DSM_KEY,
+    APP_S3_KEY,
+    DATCORE_ID,
+    DATCORE_STR,
+    SIMCORE_S3_ID,
+    SIMCORE_S3_STR,
+)
 from .datcore_wrapper import DatcoreWrapper
 from .models import (
     DatasetMetaData,
@@ -45,16 +55,6 @@ from .models import (
 )
 from .s3 import get_config_s3
 from .s3wrapper.s3_client import MinioClientWrapper
-from .settings import (
-    APP_CONFIG_KEY,
-    APP_DB_ENGINE_KEY,
-    APP_DSM_KEY,
-    APP_S3_KEY,
-    DATCORE_ID,
-    DATCORE_STR,
-    SIMCORE_S3_ID,
-    SIMCORE_S3_STR,
-)
 from .utils import download_to_file_or_raise, expo
 
 logger = logging.getLogger(__name__)
@@ -436,7 +436,7 @@ class DataStorageManager:
             continue_loop = True
             sleep_generator = expo()
             update_succeeded = False
-            
+
             while continue_loop:
                 result = await client.list_objects_v2(
                     Bucket=bucket_name, Prefix=object_name

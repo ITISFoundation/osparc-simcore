@@ -1,12 +1,13 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 import logging
 
-from simcore_service_storage.settings import ApplicationSettings
+from simcore_service_storage.settings import create_settings_class
 
 
 def test_loading_env_devel_in_settings(project_env_devel_environment):
+    ApplicationSettings = create_settings_class()
     settings = ApplicationSettings()
     print("captured settings: \n", settings.json(indent=2))
 

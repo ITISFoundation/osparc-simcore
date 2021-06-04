@@ -14,8 +14,8 @@ from servicelib.aiopg_utils import (
 )
 from tenacity import AsyncRetrying
 
+from .constants import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from .models import metadata
-from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 
 log = logging.getLogger(__name__)
 

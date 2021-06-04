@@ -8,8 +8,8 @@ from typing import Dict
 from aiohttp import web
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
+from .constants import APP_CONFIG_KEY, APP_S3_KEY
 from .s3wrapper.s3_client import MinioClientWrapper
-from .settings import APP_CONFIG_KEY, APP_S3_KEY
 from .utils import RETRY_COUNT, RETRY_WAIT_SECS
 
 log = logging.getLogger(__name__)

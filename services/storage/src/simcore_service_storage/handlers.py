@@ -9,10 +9,10 @@ from aiohttp.web import RouteTableDef
 from servicelib.rest_utils import extract_and_validate
 
 from .access_layer import InvalidFileIdentifier
+from .constants import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 from .db_tokens import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
 from .meta import __version__, api_vtag
-from .settings import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 
 log = logging.getLogger(__name__)
 

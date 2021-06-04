@@ -7,8 +7,8 @@ from psycopg2 import Error as DbApiError
 from servicelib.aiopg_utils import PostgresRetryPolicyUponOperation
 from tenacity import retry
 
+from .constants import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from .models import tokens
-from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 
 log = logging.getLogger(__name__)
 
