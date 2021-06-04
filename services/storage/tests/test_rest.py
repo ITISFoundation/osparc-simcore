@@ -52,6 +52,7 @@ def client(
     postgres_service,
     minio_service,
     osparc_api_specs_dir,
+    monkeypatch,
 ):
     app = web.Application()
 
@@ -59,23 +60,15 @@ def client(
     pg_config = postgres_service.copy()
     pg_config.pop("database")
 
-    settings = Settings.create_from_env(
-        **{
-            "postgres": pg_config,
-            "s3": minio_service,
-            "boot_mode": "local-development",
-            "log_level": "DEBUG",
-            "host": "localhost",
-            "port": aiohttp_unused_port(),
-            "debug": True,
-            "log_level": "DEBUG",
-            "testing": True,
-            "max_workers": 4,
-            "monitoring_enabled": False,
-            "rest": {"enabled": True},
-            "tracing": {"enabled": False},
-        }
-    )
+    monkeypatch.setenv("STORAGE_POSTGRES", json.dumps(pg_config))
+    monkeypatch.setenv("STORAGE_S3", json.dumps(minio_service))
+    monkeypatch.setenv("STORAGE_PORT", aiohttp_unused_port())
+    monkeypatch.setenv("STORAGE_LOG_LEVEL", "DEBUG")
+    monkeypatch.setenv("STORAGE_TESTING", "1")
+
+    monkeypatch.setenv("SC_BOOT_MODE", "local-development")
+
+    settings = Settings.create_from_env()
     print(settings.json(indent=2))
 
     app[APP_CONFIG_KEY] = settings.dict()

@@ -14,6 +14,7 @@ RSP_*_KEY: is a key in response-storage
 See https://docs.aiohttp.org/en/stable/web_advanced.html#data-sharing-aka-no-singletons-please
 """
 
+import os
 from typing import Any, Dict, List, Optional
 
 from models_library.basic_types import LogLevel
@@ -58,17 +59,17 @@ class Settings(BaseAiohttpAppSettings):
         json_encoders = {SecretStr: lambda v: v.get_secret_value()}
 
     @classmethod
-    def create_from_env(cls, **overrides) -> "Settings":
+    def create_from_env(cls) -> "Settings":
         # NOTE: having a settings class factory would avoid
         # this function but we found more natural to have direct access
         # to Settings class to use e.g. autocompletion
-        values = {
-            name: (overrides[name] if name in overrides else default_cls())
-            for name, default_cls in [
-                ("postgres", PostgresSettings),
-                ("s3", S3Config),
-                ("tracing", TracingSettings),
-            ]
-        }
-        values.update(**overrides)
-        return cls.parse_obj(values)
+
+        defaults = {}
+        for name, default_cls in [
+            ("postgres", PostgresSettings),
+            ("s3", S3Config),
+            ("tracing", TracingSettings),
+        ]:
+            if f"STORAGE_{name.upper()}" not in os.environ:
+                defaults[name] = default_cls()
+        return cls(**defaults)
