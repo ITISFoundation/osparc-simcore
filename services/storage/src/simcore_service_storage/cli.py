@@ -2,19 +2,16 @@ import json
 import logging
 import os
 import sys
-from pathlib import Path
 from pprint import pformat
-from typing import Dict, List, Optional, Union
 
 import click
-import yaml
 from pydantic import ValidationError
 
 from . import application
-from .resources import resources
-from .settings import ApplicationSettings
+from .settings import create_settings_class
 
 log = logging.getLogger(__name__)
+HEADER = "{:-^50}"
 
 
 @click.command("Service to manage data storage in simcore.")
@@ -23,21 +20,36 @@ log = logging.getLogger(__name__)
     "-C",
     default=False,
     is_flag=True,
+    help="Validates settings, prints them and exits",
+)
+@click.option(
+    "--show-settings-json-schema",
+    default=False,
+    is_flag=True,
     help="Checks building settings, prints result and exits",
 )
-def main(check_settings: bool = False):
+def main(check_settings: bool = False, show_settings_json_schema: bool = False):
+
+    json_schema: str = "Undefined"
+
     try:
+        ApplicationSettings = create_settings_class()
+
+        json_schema = ApplicationSettings.schema_json(indent=2)
+        if show_settings_json_schema:
+            click.echo(json_schema)
+            sys.exit(os.EX_OK)
+
         settings = ApplicationSettings()
 
     except ValidationError as err:
-        HEADER = "{:-^50}"
         log.error(
-            "Invalid settings. %s:\n%s\n%s\n%s\n%s",
+            "Invalid settings\n %s \n%s\n%s\n%s\n%s",
             err,
-            HEADER.format("config_dict"),
-            pformat(config_dict),
             HEADER.format("environment variables"),
             pformat(dict(os.environ)),
+            HEADER.format("json-schema"),
+            json_schema,
             exc_info=False,
         )
         sys.exit(os.EX_DATAERR)

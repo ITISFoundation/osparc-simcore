@@ -5,11 +5,6 @@
 import json
 import os
 import subprocess
-import sys
-from pathlib import Path
-
-import pytest
-from simcore_service_storage.resources import resources
 
 # pylint: disable=subprocess-run-check
 COMMON_KWARGS = dict(

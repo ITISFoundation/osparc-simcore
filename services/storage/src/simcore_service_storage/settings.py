@@ -107,13 +107,3 @@ def create_settings_class():
             json_encoders = {SecretStr: lambda v: v.get_secret_value()}
 
     return Settings
-
-
-def ApplicationSettings(**values):
-    # NOTE: naming this function as a class is some syntax sugar
-
-    # here we capture environs for sub-settings
-    cls_with_defaults = create_settings_class()
-
-    # here we overr
-    return cls_with_defaults(**values)
