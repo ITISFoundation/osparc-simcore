@@ -31,6 +31,12 @@ class DiagnosticsSettings(BaseSettings):
 
     start_sensing_delay: NonNegativeFloat = 60.0
 
+    trace_memory_allocation: bool = Field(
+        False,
+        description="Starts tracing memory blocks allocated by Python (see https://docs.python.org/3/library/tracemalloc.html)",
+        env="PYTHONTRACEMALLOC",
+    )
+
     @validator("max_task_delay", pre=True)
     @classmethod
     def validate_max_task_delay(cls, v, values):
