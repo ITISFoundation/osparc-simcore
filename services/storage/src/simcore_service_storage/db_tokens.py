@@ -33,7 +33,7 @@ async def get_api_token_and_secret(app: web.Application, userid) -> Tuple[str, s
     engine = app.get(APP_DB_ENGINE_KEY, None)
 
     # defaults from config if any, othewise None
-    defaults = app[APP_CONFIG_KEY].get("test_datcore", {})
+    defaults = app[APP_CONFIG_KEY]["test_datcore"] or {}
     api_token, api_secret = defaults.get("api_token"), defaults.get("api_secret")
 
     if engine:

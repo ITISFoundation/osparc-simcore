@@ -29,33 +29,46 @@ class BfApiToken(BaseSettings):
     token_secret: str = Field(..., env="BF_API_SECRET")
 
 
-def create_settings_class():
-    class Settings(BaseAiohttpAppSettings):
-        # GENERAL SETTINGS ---
+class Settings(BaseAiohttpAppSettings):
+    # GENERAL SETTINGS ---
 
-        loglevel: LogLevel = Field(
-            "INFO", env=["STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
-        )
+    loglevel: LogLevel = Field(
+        "INFO", env=["STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+    )
 
-        testing: bool = False
-        max_workers: int = 8
-        monitoring_enabled: bool = False
-        test_datcore: Optional[BfApiToken] = None
-        disable_services: List[str] = []
+    testing: bool = False
+    max_workers: int = 8
+    monitoring_enabled: bool = False
+    test_datcore: Optional[BfApiToken] = None
+    disable_services: List[str] = []
 
-        # APP MODULES SETTINGS ----
+    # APP MODULES SETTINGS ----
 
-        postgres: PostgresSettings = PostgresSettings()
+    postgres: PostgresSettings
 
-        s3: S3Config = S3Config()
+    s3: S3Config
 
-        rest: Dict[str, Any] = {"enabled": True}
+    rest: Dict[str, Any] = {"enabled": True}
 
-        tracing: TracingSettings = TracingSettings()
+    tracing: TracingSettings
 
-        class Config:
-            case_sensitive = False
-            env_prefix = "STORAGE_"
-            json_encoders = {SecretStr: lambda v: v.get_secret_value()}
+    class Config:
+        case_sensitive = False
+        env_prefix = "STORAGE_"
+        json_encoders = {SecretStr: lambda v: v.get_secret_value()}
 
-    return Settings
+    @classmethod
+    def create_from_env(cls, **overrides) -> "Settings":
+        # NOTE: having a settings class factory would avoid
+        # this function but we found more natural to have direct access
+        # to Settings class to use e.g. autocompletion
+        values = {
+            name: (overrides[name] if name in overrides else default_cls())
+            for name, default_cls in [
+                ("postgres", PostgresSettings),
+                ("s3", S3Config),
+                ("tracing", TracingSettings),
+            ]
+        }
+        values.update(**overrides)
+        return cls.parse_obj(values)

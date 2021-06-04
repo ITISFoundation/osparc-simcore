@@ -22,7 +22,7 @@ from simcore_service_storage.dsm import APP_DSM_KEY, DataStorageManager, setup_d
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.s3 import setup_s3
-from simcore_service_storage.settings import create_settings_class
+from simcore_service_storage.settings import Settings
 from tests.helpers.utils_assert import assert_status
 from tests.helpers.utils_project import clone_project_data
 from tests.utils import BUCKET_NAME, USER_ID, has_datcore_tokens
@@ -52,13 +52,17 @@ def client(
     postgres_service,
     minio_service,
     osparc_api_specs_dir,
-    project_env_devel_environment,
 ):
     app = web.Application()
 
-    ApplicationSettings = create_settings_class()
-    settings = ApplicationSettings.parse_obj(
-        {
+    # FIXME: postgres_service fixture environs different from project_env_devel_environment. Do it after https://github.com/ITISFoundation/osparc-simcore/pull/2276 resolved
+    pg_config = postgres_service.copy()
+    pg_config.pop("database")
+
+    settings = Settings.create_from_env(
+        **{
+            "postgres": pg_config,
+            "s3": minio_service,
             "boot_mode": "local-development",
             "log_level": "DEBUG",
             "host": "localhost",
@@ -82,7 +86,7 @@ def client(
     setup_s3(app)
 
     cli = loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": settings.port})
+        aiohttp_client(app, server_kwargs={"port": settings.port, "host": "localhost"})
     )
     return cli
 

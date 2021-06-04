@@ -7,7 +7,7 @@ import click
 from pydantic import ValidationError
 
 from . import application
-from .settings import create_settings_class
+from .settings import Settings
 
 log = logging.getLogger(__name__)
 HEADER = "{:-^50}"
@@ -32,14 +32,12 @@ def main(check_settings: bool = False, show_settings_json_schema: bool = False):
     json_schema: str = "Undefined"
 
     try:
-        ApplicationSettings = create_settings_class()
-
-        json_schema = ApplicationSettings.schema_json(indent=2)
+        json_schema = Settings.schema_json(indent=2)
         if show_settings_json_schema:
             click.echo(json_schema)
             sys.exit(os.EX_OK)
 
-        settings = ApplicationSettings()
+        settings = Settings()
 
     except ValidationError as err:
         log.error(
