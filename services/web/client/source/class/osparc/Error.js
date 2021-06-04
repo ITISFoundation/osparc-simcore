@@ -76,22 +76,23 @@ qx.Class.define("osparc.Error", {
           control = new qx.ui.basic.Label().set({
             font: "text-18",
             alignX: "center",
-            width: 200,
-            rich: true
+            rich : true,
+            width: 300
           });
           break;
         }
         case "messages-layout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
             alignX: "center",
-            maxWidth: 200
+            maxWidth: 300
           });
           break;
         }
         case "message": {
           control = new qx.ui.basic.Label().set({
             font: "text-16",
-            maxWidth: 200
+            rich : true,
+            width: 300
           });
           break;
         }
