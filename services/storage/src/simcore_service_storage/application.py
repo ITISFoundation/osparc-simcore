@@ -1,12 +1,12 @@
 """ Main's application module for simcore_service_storage service
 
-    Functions to create, setup and run an aiohttp application provided a configuration object
+    Functions to create, setup and run an aiohttp application provided a settingsuration object
 """
-import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from aiohttp import web
+from pydantic import BaseSettings
 from servicelib.application import create_safe_application
 from servicelib.monitoring import setup_monitoring
 from servicelib.tracing import setup_tracing
@@ -20,42 +20,42 @@ from .s3 import setup_s3
 log = logging.getLogger(__name__)
 
 
-def create(config: Dict[str, Any]) -> web.Application:
+def create(settings: BaseSettings) -> web.Application:
     log.debug(
-        "Initializing app with config:\n%s",
-        json.dumps(config, indent=2, sort_keys=True),
+        "Initializing app with settings:\n%s",
+        settings.json(indent=2, sort_keys=True),
     )
 
-    app = create_safe_application(config)
+    # TODO: tmp using dict() until webserver is also pydantic-compatible
+    app = create_safe_application(settings.dict())
 
-    tracing = config["tracing"]["enabled"]
-    if tracing:
+    if settings.tracing.enabled:
         setup_tracing(
             app,
             "simcore_service_storage",
-            config["host"],
-            config["port"],
-            config["tracing"],
+            settings.host,
+            settings.port,
+            settings.tracing.dict(),
         )
     setup_db(app)  # -> postgres service
     setup_s3(app)  # -> minio service
     setup_dsm(app)  # core subsystem. Needs s3 and db setups done
     setup_rest(app)  # lastly, we expose API to the world
 
-    if config.get("monitoring_enabled", False):
+    if settings.monitoring_enabled:
         setup_monitoring(app, "simcore_service_storage")
 
     return app
 
 
-def run(config: Dict[str, Any], app: Optional[web.Application] = None):
+def run(settings: BaseSettings, app: Optional[web.Application] = None):
     log.debug("Serving application ")
     if not app:
-        app = create(config)
+        app = create(settings)
 
     async def welcome_banner(_app: web.Application):
         print(WELCOME_MSG, flush=True)
 
     app.on_startup.append(welcome_banner)
 
-    web.run_app(app, host=config["host"], port=config["port"])
+    web.run_app(app, host=settings.host, port=settings.port)

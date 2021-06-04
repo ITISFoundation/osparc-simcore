@@ -19,16 +19,14 @@ from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 
 log = logging.getLogger(__name__)
 
-THIS_SERVICE_NAME = "postgres"
-
 
 async def pg_engine(app: web.Application):
-    pg_cfg = app[APP_CONFIG_KEY][THIS_SERVICE_NAME]
+    pg_cfg = app[APP_CONFIG_KEY]["postgres"]
     dsn = DataSourceName(
         application_name=f"{__name__}_{id(app)}",
         database=pg_cfg["db"],
         user=pg_cfg["user"],
-        password=pg_cfg["password"],
+        password=pg_cfg["password"].get_secret_value(),
         host=pg_cfg["host"],
         port=pg_cfg["port"],
     )
@@ -80,17 +78,17 @@ def get_engine_state(app: web.Application) -> Dict[str, Any]:
 
 
 def setup_db(app: web.Application):
-    disable_services = app[APP_CONFIG_KEY].get("main", {}).get("disable_services", [])
+    disable_services = app[APP_CONFIG_KEY]["disable_services"]
 
-    if THIS_SERVICE_NAME in disable_services:
+    if "postgres" in disable_services:
         app[APP_DB_ENGINE_KEY] = None
-        log.warning("Service '%s' explicitly disabled in config", THIS_SERVICE_NAME)
+        log.warning("Service '%s' explicitly disabled in config", "postgres")
         return
 
     app[APP_DB_ENGINE_KEY] = None
 
     # app is created at this point but not yet started
-    log.debug("Setting up %s [service: %s] ...", __name__, THIS_SERVICE_NAME)
+    log.debug("Setting up %s [service: %s] ...", __name__, "postgres")
 
     # async connection to db
     app.cleanup_ctx.append(pg_engine)

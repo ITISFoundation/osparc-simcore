@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import sys
@@ -44,12 +43,17 @@ def main(check_settings: bool = False, show_settings_json_schema: bool = False):
 
     except ValidationError as err:
         log.error(
-            "Invalid settings\n %s \n%s\n%s\n%s\n%s",
-            err,
-            HEADER.format("environment variables"),
-            pformat(dict(os.environ)),
-            HEADER.format("json-schema"),
-            json_schema,
+            "Invalid application settings. Typically an environment variable is missing or mistyped :\n%s",
+            "\n".join(
+                [
+                    HEADER.format("detail"),
+                    str(err),
+                    HEADER.format("environment variables"),
+                    pformat(dict(os.environ)),
+                    HEADER.format("json-schema"),
+                    json_schema,
+                ]
+            ),
             exc_info=False,
         )
         sys.exit(os.EX_DATAERR)
@@ -62,6 +66,4 @@ def main(check_settings: bool = False, show_settings_json_schema: bool = False):
     logging.basicConfig(level=getattr(logging, log_level))
     logging.root.setLevel(getattr(logging, log_level))
 
-    # TODO: tmp converts all fields into primitive types
-    cfg = json.loads(settings.json())
-    application.run(config=cfg)
+    application.run(settings)
