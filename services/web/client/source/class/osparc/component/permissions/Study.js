@@ -47,7 +47,7 @@ qx.Class.define("osparc.component.permissions.Study", {
       }
       return false;
     },
-    canGroupWrite: function(accessRights, GID) {
+    __canGroupWrite: function(accessRights, GID) {
       if (GID in accessRights) {
         return accessRights[GID]["write"];
       }
@@ -63,7 +63,8 @@ qx.Class.define("osparc.component.permissions.Study", {
     canGroupsWrite: function(accessRights, GIDs) {
       let canWrite = false;
       for (let i=0; i<GIDs.length && !canWrite; i++) {
-        canWrite = this.self().canGroupWrite(accessRights, GIDs[i]);
+        // eslint-disable-next-line no-underscore-dangle
+        canWrite = this.self().__canGroupWrite(accessRights, GIDs[i]);
       }
       return canWrite;
     },
