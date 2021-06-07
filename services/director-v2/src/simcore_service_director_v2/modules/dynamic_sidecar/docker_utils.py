@@ -13,7 +13,7 @@ from models_library.service_settings import ComposeSpecModel, PathsMapping
 from simcore_service_director_v2.models.schemas.constants import UserID
 
 from .config import DynamicSidecarSettings
-from .constants import DYNAMIC_SIDECAR_PREFIX, SERVICE_NAME_SIDECAR
+from .constants import DYNAMIC_SIDECAR_PREFIX, SERVICE_NAME_PROXY, SERVICE_NAME_SIDECAR
 from .exceptions import DynamicSidecarError, GenericDockerError
 from .parse_docker_status import (
     TASK_STATES_ALL,
@@ -314,7 +314,7 @@ async def list_dynamic_sidecar_services(
         "label": [
             f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}",
         ],
-        "name": [DYNAMIC_SIDECAR_PREFIX],
+        "name": [f"{DYNAMIC_SIDECAR_PREFIX}"],
     }
     if user_id is not None:
         service_filters["label"].append(f"user_id={user_id}")
@@ -323,4 +323,9 @@ async def list_dynamic_sidecar_services(
 
     async with docker_client() as client:  # pylint: disable=not-async-context-manager
         dynamic_sidecar_services = await client.services.list(filters=service_filters)
-        return dynamic_sidecar_services
+        return [
+            s
+            for s in dynamic_sidecar_services
+            # FIXME: this sucks
+            if SERVICE_NAME_PROXY not in s["Spec"]["Name"]
+        ]
