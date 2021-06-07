@@ -150,6 +150,35 @@ class SimcoreService(BaseModel):
         ),
     )
 
+    # # TODO: fix validators
+    # @validator(
+    #     "settings", "boot_mode", "paths_mapping", "compose_spec", "container_http_entry"
+    # )
+    # @classmethod
+    # def validate_all(cls, v, values, **kwargs):
+    #     print(v)
+    #     print(values.keys())
+    #     print(kwargs.keys())
+
+    #     if "boot_mode" in values and "paths_mapping" not in values:
+    #         raise ValueError("Field `paths_mapping` must be defined but is missing")
+
+    # @validator("paths_mapping")
+    # @classmethod
+    # def boot_mode_requires_paths_mapping(cls, v, values, **kwargs):
+    #     if "boot_mode" not in values:
+    #         raise ValueError("Field `paths_mapping` must be defined but is missing")
+    #     return v
+
+    # @validator("container_http_entry")
+    # @classmethod
+    # def compose_spec_requires_container_http_entry(cls, v, values, **kwargs):
+    #     if v is None or "compose_spec" not in values:
+    #         raise ValueError(
+    #             "Field `container_http_entry` must be defined but is missing"
+    #         )
+    #     return v
+
     class Config(_BaseConfig):
         schema_extra = {
             "examples": [

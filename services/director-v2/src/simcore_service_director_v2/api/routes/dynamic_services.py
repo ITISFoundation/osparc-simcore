@@ -8,11 +8,7 @@ import httpx
 import yarl
 from fastapi import APIRouter, Depends, Header, Query
 from fastapi.responses import RedirectResponse
-from models_library.services import (
-    DYNAMIC_SERVICE_KEY_RE,
-    VERSION_RE,
-    ServiceKeyVersion,
-)
+from models_library.services import ServiceKeyVersion
 from starlette import status
 from starlette.datastructures import URL
 
@@ -34,7 +30,7 @@ from ...modules.dynamic_sidecar.docker_utils import (
     get_node_id_from_task_for_service,
     get_swarm_network,
     list_dynamic_sidecar_services,
-    is_dynamic_sidecar_service,
+    dynamic_service_is_running,
 )
 from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor, get_monitor
 from ...modules.dynamic_sidecar.monitor.models import ServiceStateReply
@@ -121,6 +117,10 @@ async def create_dynamic_service(
         )
         log.debug("Redirecting %s", redirect_url_with_query)
         return RedirectResponse(redirect_url_with_query)
+
+    # if service is already running return the status
+    if await dynamic_service_is_running(dynamic_sidecar_settings, str(service.uuid)):
+        return await monitor.get_stack_status(str(service.uuid))
 
     # the dynamic-sidecar should merge all the settings, especially:
     # resources and placement derived from all the images in
@@ -267,7 +267,7 @@ async def dynamic_sidecar_status(
         - "Dict" if dynamic-service
         - "List" if legacy dynamic service (reply of GET /running_interactive_services)
     """
-    use_dynamic_sidecar = await is_dynamic_sidecar_service(
+    use_dynamic_sidecar = await dynamic_service_is_running(
         dynamic_sidecar_settings, str(node_uuid)
     )
     if not use_dynamic_sidecar:
@@ -296,7 +296,7 @@ async def stop_dynamic_service(
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
 ) -> Dict[str, str]:
-    use_dynamic_sidecar = await is_dynamic_sidecar_service(
+    use_dynamic_sidecar = await dynamic_service_is_running(
         dynamic_sidecar_settings, str(node_uuid)
     )
 

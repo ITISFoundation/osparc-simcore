@@ -319,7 +319,7 @@ async def list_dynamic_sidecar_services(
         return dynamic_sidecar_services
 
 
-async def is_dynamic_sidecar_service(
+async def dynamic_service_is_running(
     dynamic_sidecar_settings: DynamicSidecarSettings, node_uuid: str
 ) -> Optional[Tuple[str, str]]:
     async with docker_client() as client:  # pylint: disable=not-async-context-manager
@@ -333,5 +333,5 @@ async def is_dynamic_sidecar_service(
             }
         )
 
-        is_dynamic_sidecar = len(dynamic_sidecar_services) != 1
+        is_dynamic_sidecar = len(dynamic_sidecar_services) == 1
         return is_dynamic_sidecar
