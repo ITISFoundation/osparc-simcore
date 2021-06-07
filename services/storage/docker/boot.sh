@@ -32,11 +32,10 @@ elif [ "${SC_BUILD_TARGET}" = "production" ]; then
 fi
 
 # RUNNING application ----------------------------------------
-echo "$INFO" "Selected config $APP_CONFIG"
-
+echo "$INFO" "Selected config ${SC_BUILD_TARGET}"
 if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
   # NOTE: needs ptvsd installed
-  echo "$INFO" "PTVSD Debugger initializing in port 3000 with ${APP_CONFIG}"
+  echo "$INFO" "PTVSD Debugger initializing in port 3000 with ${SC_BUILD_TARGET}"
   eval "$entrypoint" python3 -m ptvsd --host 0.0.0.0 --port 3000 -m \
     simcore_service_storage run
 else
