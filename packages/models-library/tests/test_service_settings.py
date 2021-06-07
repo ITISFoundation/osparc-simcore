@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 from typing import Any, Dict
-from xml.etree.ElementInclude import include
 
 import pytest
 from models_library.service_settings import (
@@ -27,9 +26,15 @@ def test_service_settings():
     )
     assert service_settings_instance
 
+    # ensure private attribute assignment
+    for service_setting in service_settings_instance:
+        # pylint: disable=protected-access
+        service_setting._destination_container = "random_value"
+
 
 SIMCORE_SERVICE_EXAMPLES = [
     (example, items, imdex)
+    # pylint: disable=unnecessary-comprehension
     for example, items, imdex in zip(
         SimcoreService.Config.schema_extra["examples"],
         [1, 3, 5],

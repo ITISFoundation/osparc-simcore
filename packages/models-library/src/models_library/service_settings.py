@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, List, Optional, Dict
 from pathlib import Path
 
-from pydantic import BaseModel, Extra, Field, Json, validator
+from pydantic import BaseModel, Extra, Field, Json, validator, PrivateAttr
 
 
 class _BaseConfig:
@@ -12,6 +12,7 @@ class _BaseConfig:
 
 
 class SimcoreServiceSetting(BaseModel):
+    _destination_container: str = PrivateAttr()
     name: str = Field(..., description="The name of the service setting")
     setting_type: str = Field(
         ...,
