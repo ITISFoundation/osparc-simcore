@@ -1,15 +1,15 @@
 import logging
-import os
 from typing import List, Optional
 
 from models_library.basic_types import LogLevel, PortInt
+from models_library.settings.base import BaseCustomSettings
 from models_library.settings.postgres import PostgresSettings
 from models_library.settings.s3 import S3Config
-from pydantic import BaseSettings, Field, PositiveInt, SecretStr
+from pydantic import Field, PositiveInt
 from servicelib.tracing import TracingSettings
 
 
-class Settings(BaseSettings):
+class Settings(BaseCustomSettings):
 
     STORAGE_HOST: str = "0.0.0.0"  # nosec
     STORAGE_PORT: PortInt = 8080
@@ -44,23 +44,16 @@ class Settings(BaseSettings):
 
     # ----
 
-    class Config:
-        json_encoders = {SecretStr: lambda v: v.get_secret_value()}
-
     @classmethod
     def create_from_env(cls) -> "Settings":
-        # NOTE: This control when defaults of sub-sections
-        # are created
-
-        defaults = {}
-        for name, default_cls in [
-            ("STORAGE_POSTGRES", PostgresSettings),
-            ("STORAGE_S3", S3Config),
-            ("STORAGE_TRACING", TracingSettings),
-        ]:
-            if name not in os.environ:
-                defaults[name] = default_cls()
-        return cls(**defaults)
+        cls.set_defaults_with_default_constructors(
+            [
+                ("STORAGE_POSTGRES", PostgresSettings),
+                ("STORAGE_S3", S3Config),
+                ("STORAGE_TRACING", TracingSettings),
+            ]
+        )
+        return cls()
 
     @property
     def logging_level(self) -> int:

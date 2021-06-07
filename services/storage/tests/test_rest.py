@@ -62,7 +62,7 @@ def client(
 
     monkeypatch.setenv("STORAGE_POSTGRES", json.dumps(pg_config))
     monkeypatch.setenv("STORAGE_S3", json.dumps(minio_service))
-    monkeypatch.setenv("STORAGE_PORT", aiohttp_unused_port())
+    monkeypatch.setenv("STORAGE_PORT", str(aiohttp_unused_port()))
     monkeypatch.setenv("STORAGE_LOG_LEVEL", "DEBUG")
     monkeypatch.setenv("STORAGE_TESTING", "1")
 

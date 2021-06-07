@@ -1,45 +1,64 @@
 import logging
 import os
-import sys
 from pprint import pformat
 
-import click
+import typer
 from pydantic import ValidationError
+from pydantic.env_settings import BaseSettings
 
 from . import application
 from .settings import Settings
 
-log = logging.getLogger(__name__)
 HEADER = "{:-^50}"
 
 
-@click.command("Service to manage data storage in simcore.")
-@click.option(
-    "--check-settings",
-    "-C",
-    default=False,
-    is_flag=True,
-    help="Validates settings, prints them and exits",
-)
-@click.option(
-    "--show-settings-json-schema",
-    default=False,
-    is_flag=True,
-    help="Checks building settings, prints result and exits",
-)
-def main(check_settings: bool = False, show_settings_json_schema: bool = False):
+log = logging.getLogger(__name__)
+main = typer.Typer(name="osparc-simcore storage service")
 
-    json_schema: str = "Undefined"
+
+def print_as_envfile(settings_obj, *, compact, verbose):
+    for name in settings_obj.__fields__:
+        value = getattr(settings_obj, name)
+
+        if isinstance(value, BaseSettings):
+            if compact:
+                value = f"'{value.json()}'"  # flat
+            else:
+                if verbose:
+                    typer.echo(f"\n# --- {name} --- ")
+                print_as_envfile(value, compact=False, verbose=verbose)
+                continue
+
+        if verbose:
+            field_info = settings_obj.__fields__[name].field_info
+            if field_info.description:
+                typer.echo(f"# {field_info.description}")
+
+        typer.echo(f"{name}={value}")
+
+
+def print_as_json(settings_obj, *, compact=False):
+    typer.echo(settings_obj.json(indent=None if compact else 2))
+
+
+@main.command()
+def settings(
+    as_json: bool = False,
+    as_json_schema: bool = False,
+    compact: bool = typer.Option(False, help="Print compact form"),
+    verbose: bool = False,
+):
+    """Resolves settings and prints envfile"""
+
+    if as_json_schema:
+        typer.echo(Settings.schema_json(indent=0 if compact else 2))
+        return
 
     try:
-        json_schema = Settings.schema_json(indent=2)
-        if show_settings_json_schema:
-            click.echo(json_schema)
-            sys.exit(os.EX_OK)
-
-        settings = Settings()
+        settings_obj = Settings.create_from_env()
 
     except ValidationError as err:
+        settings_schema = Settings.schema_json(indent=2)
         log.error(
             "Invalid application settings. Typically an environment variable is missing or mistyped :\n%s",
             "\n".join(
@@ -51,18 +70,28 @@ def main(check_settings: bool = False, show_settings_json_schema: bool = False):
                         {k: v for k, v in dict(os.environ).items() if k.upper() == k}
                     ),
                     HEADER.format("json-schema"),
-                    json_schema,
+                    settings_schema,
                 ]
             ),
             exc_info=False,
         )
-        sys.exit(os.EX_DATAERR)
+        raise
 
-    if check_settings:
-        click.echo(settings.json(indent=2))
-        sys.exit(os.EX_OK)
+    if as_json:
+        print_as_json(settings_obj, compact=compact)
+    else:
+        print_as_envfile(settings_obj, compact=compact, verbose=verbose)
 
-    logging.basicConfig(level=settings.logging_level)
-    logging.root.setLevel(settings.logging_level)
 
-    application.run(settings)
+@main.command()
+def run():
+    """Runs application"""
+    typer.secho("Resolving settings ...", nl=False)
+    settings_obj = Settings.create_from_env()
+    typer.secho("DONE", fg=typer.colors.GREEN)
+
+    logging.basicConfig(level=settings_obj.logging_level)
+    logging.root.setLevel(settings_obj.logging_level)
+
+    typer.secho("Starting app ... ")
+    application.run(settings_obj)
