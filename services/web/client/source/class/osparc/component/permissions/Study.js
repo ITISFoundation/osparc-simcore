@@ -60,6 +60,14 @@ qx.Class.define("osparc.component.permissions.Study", {
       return false;
     },
 
+    canGroupsWrite: function(accessRights, GIDs) {
+      let canWrite = false;
+      for (let i=0; i<GIDs.length && !canWrite; i++) {
+        canWrite = this.self().canGroupWrite(accessRights, GIDs[i]);
+      }
+      return canWrite;
+    },
+
     getViewerAccessRight: function() {
       return {
         "read": true,
