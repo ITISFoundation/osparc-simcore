@@ -62,3 +62,13 @@ async def start_interactive_service(
     forward_request: Response = Depends(forward_to_director_v0),
 ):
     return forward_request
+
+
+@router.delete(
+    "/{service_uuid}", status_code=status.HTTP_204_NO_CONTENT, response_model=None
+)
+async def stop_interactive_service(
+    service_uuid: str,
+    forward_request: Response = Depends(forward_to_director_v0),
+):
+    return forward_request
