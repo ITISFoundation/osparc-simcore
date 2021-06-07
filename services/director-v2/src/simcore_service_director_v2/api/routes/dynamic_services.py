@@ -1,14 +1,15 @@
-import asyncio
 import logging
 from pprint import pformat
-from typing import Dict, List, Optional, Union
+from typing import List, Optional
 from uuid import UUID
 
 import httpx
 from fastapi import APIRouter, Depends, Header
 from fastapi.responses import RedirectResponse
+from models_library.projects import ProjectID
 from models_library.service_settings import SimcoreService
 from models_library.services import ServiceKeyVersion
+from simcore_service_director_v2.models.schemas.constants import UserID
 from starlette import status
 from starlette.datastructures import URL
 
@@ -17,6 +18,7 @@ from ...models.domains.dynamic_services import (
     RetrieveDataIn,
     RetrieveDataOutEnveloped,
 )
+from ...models.schemas.services import RunningServiceDetails
 from ...modules.dynamic_sidecar.config import DynamicSidecarSettings, get_settings
 from ...modules.dynamic_sidecar.constants import (
     DYNAMIC_SIDECAR_PREFIX,
@@ -46,8 +48,6 @@ from ..dependencies.dynamic_services import (
     get_service_base_url,
     get_services_client,
 )
-
-DynamicServicesList = List[Dict[str, Union[str, int]]]
 
 router = APIRouter()
 log = logging.getLogger(__file__)
@@ -79,34 +79,33 @@ async def service_retrieve_data_on_ports(
 
 
 @router.get(
-    "/running/",
+    "",
     status_code=status.HTTP_200_OK,
+    response_model=List[ServiceStateReply],
     summary=(
-        "returns a list of running interactive services "
-        "both from director-v0 and director-v2"
+        "returns a list of running interactive services filtered by user_id and/or project_id"
+        "both legacy (director-v0) and modern (director-v2)"
     ),
 )
 async def list_running_dynamic_services(
-    user_id: str,
-    project_id: str,
+    user_id: Optional[UserID] = None,
+    project_id: Optional[ProjectID] = None,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> DynamicServicesList:
-    running_interactive_services: DynamicServicesList = (
-        await director_v0_client.get_running_services(user_id, project_id)
-    )
+) -> List[ServiceStateReply]:
+    legacy_running_services: List[
+        RunningServiceDetails
+    ] = await director_v0_client.get_running_services(user_id, project_id)
 
-    get_stack_statuse_tasks: List[ServiceStateReply] = [
-        monitor.get_stack_status(service["Spec"]["Labels"]["uuid"])
-        for service in await list_dynamic_sidecar_services(dynamic_sidecar_settings)
-    ]
-    running_dynamic_sidecar_services: DynamicServicesList = [
-        x.dict(exclude_unset=True)
-        for x in await asyncio.gather(*get_stack_statuse_tasks)
+    modern_running_services: List[ServiceStateReply] = [
+        await monitor.get_stack_status(service["Spec"]["Labels"]["uuid"])
+        for service in await list_dynamic_sidecar_services(
+            dynamic_sidecar_settings, user_id, project_id
+        )
     ]
 
-    return running_interactive_services + running_dynamic_sidecar_services
+    return legacy_running_services + modern_running_services
 
 
 @router.post(
