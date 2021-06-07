@@ -15,6 +15,10 @@ from models_library.projects_nodes import NodeID
 from models_library.service_settings import SimcoreService
 from models_library.services import ServiceDockerData, ServiceKeyVersion
 from simcore_service_director_v2.models.schemas.constants import UserID
+from simcore_service_director_v2.modules.dynamic_sidecar.monitor.models import (
+    ServiceBootType,
+    ServiceStateReply,
+)
 
 # Module's business logic ---------------------------------------------
 from starlette import status
@@ -153,7 +157,7 @@ class DirectorV0Client:
     @log_decorator(logger=logger)
     async def get_running_services(
         self, user_id: Optional[UserID] = None, project_id: Optional[ProjectID] = None
-    ) -> List[RunningServiceDetails]:
+    ) -> List[ServiceStateReply]:
         query_params = {}
         if user_id is not None:
             query_params["user_id"] = f"{user_id}"
@@ -166,7 +170,7 @@ class DirectorV0Client:
 
         if resp.status_code == status.HTTP_200_OK:
             return [
-                RunningServiceDetails.parse_obj(x)
+                ServiceStateReply(**x, boot_type=ServiceBootType.V0)
                 for x in unenvelope_or_raise_error(resp)
             ]
         raise HTTPException(status_code=resp.status_code, detail=resp.content)

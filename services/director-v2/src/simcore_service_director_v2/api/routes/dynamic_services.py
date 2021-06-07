@@ -70,7 +70,7 @@ async def list_running_dynamic_services(
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
 ) -> List[ServiceStateReply]:
     legacy_running_services: List[
-        RunningServiceDetails
+        ServiceStateReply
     ] = await director_v0_client.get_running_services(user_id, project_id)
 
     modern_running_services: List[ServiceStateReply] = [

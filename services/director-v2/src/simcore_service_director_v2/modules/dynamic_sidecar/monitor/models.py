@@ -1,13 +1,14 @@
 import datetime
 import logging
-from enum import Enum
+from enum import Enum, unique
 from typing import List, Optional
 
 from models_library.basic_regex import VERSION_RE
+from models_library.service_settings import ComposeSpecModel, PathsMapping
 from models_library.services import SERVICE_KEY_RE
 from pydantic import BaseModel, Field, PositiveInt
+from simcore_service_director_v2.models.schemas.services import RunningServiceDetails
 
-from models_library.service_settings import ComposeSpecModel, PathsMapping
 from ..parse_docker_status import ServiceState
 from .utils import AsyncResourceLock
 
@@ -234,48 +235,24 @@ class LockWithMonitorData(BaseModel):
         arbitrary_types_allowed = True
 
 
-class ServiceStateReply(BaseModel):
-    dynamic_type: str = Field(
-        "dynamic-sidecar",
-        description="tells the frontend this is run with a dynamic sidecar",
-    )
-    service_state: str = Field(..., description="refer to ")
-    service_message: str = Field(
-        ..., description="used to transmit error messages to the user"
-    )
+@unique
+class ServiceBootType(str, Enum):
+    V0 = "V0"
+    V2 = "V2"
 
-    published_port: Optional[int] = Field(None, description="the proxy's default port")
 
-    service_uuid: Optional[str] = Field(
-        None, description="equals to the node_uuid value"
+class ServiceStateReply(RunningServiceDetails):
+    boot_type: ServiceBootType = Field(
+        ...,
+        description="describes how the dynamic services was started",
     )
-
-    service_key: Optional[str] = Field(
-        None, description="starte service image service_key"
-    )
-    service_version: Optional[str] = Field(
-        None, description="starte service image service_version"
-    )
-
-    service_host: Optional[str] = Field(
-        None,
-        description="using the dynamic-sidecar's host",
-    )
-    service_port: Optional[str] = Field(
-        None, description="using the dynamic-sidecar's port"
-    )
-
-    service_basepath: Optional[str] = Field(
-        None, description="not used by the dynamic-sidecar"
-    )
-    entry_point: Optional[str] = Field(
-        None, description="can be removed when dynamic_type='dynamic-sidecar'"
-    )
+    entry_point: Optional[str] = Field(None, deprecated=True)
+    service_basepath: Optional[str] = Field(None, deprecated=True)
 
     @classmethod
     def error_status(cls, node_uuid: str) -> "ServiceStateReply":
         error_status = ServiceStateReply(
-            dynamic_type="dynamic-sidecar",
+            boot_type=ServiceBootType.V2,
             service_state="error",
             service_message=f"Could not find a service for node_uuid={node_uuid}",
         )
@@ -293,15 +270,12 @@ class ServiceStateReply(BaseModel):
         service_message: str,
     ) -> "ServiceStateReply":
         return cls(
-            dynamic_type="dynamic-sidecar",
-            published_port=80,
-            entry_point="",
+            boot_type=ServiceBootType.V2,
             service_uuid=node_uuid,
             service_key=monitor_data.service_key,
             service_version=monitor_data.service_tag,
             service_host=monitor_data.service_name,
             service_port=monitor_data.service_port,
-            service_basepath="",
             service_state=service_state.value,
             service_message=service_message,
         )
