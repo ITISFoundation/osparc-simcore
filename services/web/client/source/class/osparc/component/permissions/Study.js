@@ -41,12 +41,6 @@ qx.Class.define("osparc.component.permissions.Study", {
   },
 
   statics: {
-    canGroupRead: function(accessRights, GID) {
-      if (GID in accessRights) {
-        return accessRights[GID]["read"];
-      }
-      return false;
-    },
     __canGroupWrite: function(accessRights, GID) {
       if (GID in accessRights) {
         return accessRights[GID]["write"];
