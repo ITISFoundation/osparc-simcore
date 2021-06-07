@@ -271,7 +271,7 @@ async def stop_dynamic_service(
         # forward to director-v0
         redirection_url = director_v0_client.client.base_url.copy_with(
             path=f"/v0/running_interactive_services/{node_uuid}",
-            params={"save_state": True if save_state else False},
+            params={"save_state": bool(save_state)},
         )
 
         return RedirectResponse(redirection_url)

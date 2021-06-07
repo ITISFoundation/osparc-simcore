@@ -5,14 +5,14 @@
 import logging
 import urllib
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import List
 
 import httpx
 import yarl
 from fastapi import FastAPI, HTTPException, Request, Response
 from models_library.projects_nodes import NodeID
-from models_library.services import ServiceDockerData, ServiceKeyVersion
 from models_library.service_settings import SimcoreService
+from models_library.services import ServiceDockerData, ServiceKeyVersion
 
 # Module's business logic ---------------------------------------------
 from starlette import status
