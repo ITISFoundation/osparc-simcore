@@ -78,6 +78,37 @@ async def service_retrieve_data_on_ports(
     return RetrieveDataOutEnveloped.parse_obj(resp.json())
 
 
+@router.get(
+    "/running/",
+    status_code=status.HTTP_200_OK,
+    summary=(
+        "returns a list of running interactive services "
+        "both from director-v0 and director-v2"
+    ),
+)
+async def list_running_dynamic_services(
+    user_id: str,
+    project_id: str,
+    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
+    dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
+    monitor: DynamicSidecarsMonitor = Depends(get_monitor),
+) -> DynamicServicesList:
+    running_interactive_services: DynamicServicesList = (
+        await director_v0_client.get_running_services(user_id, project_id)
+    )
+
+    get_stack_statuse_tasks: List[ServiceStateReply] = [
+        monitor.get_stack_status(service["Spec"]["Labels"]["uuid"])
+        for service in await list_dynamic_sidecar_services(dynamic_sidecar_settings)
+    ]
+    running_dynamic_sidecar_services: DynamicServicesList = [
+        x.dict(exclude_unset=True)
+        for x in await asyncio.gather(*get_stack_statuse_tasks)
+    ]
+
+    return running_interactive_services + running_dynamic_sidecar_services
+
+
 @router.post(
     "",
     summary="create & start the dynamic service",
@@ -275,34 +306,3 @@ async def stop_dynamic_service(
         )
 
         return RedirectResponse(redirection_url)
-
-
-@router.get(
-    "/running/",
-    status_code=status.HTTP_200_OK,
-    summary=(
-        "returns a list of running interactive services "
-        "both from director-v0 and director-v2"
-    ),
-)
-async def list_running_dynamic_services(
-    user_id: str,
-    project_id: str,
-    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
-    dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
-    monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> DynamicServicesList:
-    running_interactive_services: DynamicServicesList = (
-        await director_v0_client.get_running_services(user_id, project_id)
-    )
-
-    get_stack_statuse_tasks: List[ServiceStateReply] = [
-        monitor.get_stack_status(service["Spec"]["Labels"]["uuid"])
-        for service in await list_dynamic_sidecar_services(dynamic_sidecar_settings)
-    ]
-    running_dynamic_sidecar_services: DynamicServicesList = [
-        x.dict(exclude_unset=True)
-        for x in await asyncio.gather(*get_stack_statuse_tasks)
-    ]
-
-    return running_interactive_services + running_dynamic_sidecar_services
