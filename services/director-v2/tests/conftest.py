@@ -5,6 +5,7 @@
 import asyncio
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, Iterator
 
@@ -66,7 +67,7 @@ def project_env_devel_environment(project_env_devel_dict: Dict[str, Any], monkey
         monkeypatch.setenv(key, value)
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def dynamic_sidecar_image(monkeypatch) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
