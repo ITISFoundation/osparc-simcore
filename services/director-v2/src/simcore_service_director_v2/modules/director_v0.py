@@ -145,6 +145,7 @@ class DirectorV0Client:
             "GET",
             f"services/{urllib.parse.quote_plus(service.key)}/{service.version}:labels",
         )
+        resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
             return SimcoreService.parse_obj(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
