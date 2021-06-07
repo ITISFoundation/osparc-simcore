@@ -41,9 +41,10 @@ async function runTutorial () {
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     const nodeIdViewer = workbenchData["nodeIds"][1];
     await tutorial.waitForServices(workbenchData["studyId"], [nodeIdViewer]);
-
-    // Some time for starting the service
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
+
+    // Some time for setting up service's frontend
+    await tutorial.waitFor(3000);
 
     const iframeHandles = await page.$$("iframe");
     const iframes = [];
