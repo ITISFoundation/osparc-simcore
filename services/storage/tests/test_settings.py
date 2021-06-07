@@ -10,5 +10,8 @@ def test_loading_env_devel_in_settings(project_env_devel_environment):
     settings = Settings.create_from_env()
     print("captured settings: \n", settings.json(indent=2))
 
-    assert settings.logging_level == logging.DEBUG
-    assert settings.postgres.dsn == "postgresql://test:secret@localhost:5432/testdb"
+    assert settings.logging_level == logging.INFO
+    assert (
+        settings.STORAGE_POSTGRES.dsn
+        == "postgresql://test:secret@localhost:5432/testdb"
+    )

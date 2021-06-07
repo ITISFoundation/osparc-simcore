@@ -15,9 +15,6 @@ from .utils import RETRY_COUNT, RETRY_WAIT_SECS
 log = logging.getLogger(__name__)
 
 
-_SERVICE_NAME = "s3"
-
-
 async def _setup_s3_bucket(app):
     log.debug("setup %s.setup.cleanup_ctx", __name__)
 
@@ -32,7 +29,7 @@ async def _setup_s3_bucket(app):
         reraise=True,
     )
     async def do_create_bucket():
-        s3_cfg = cfg[_SERVICE_NAME]
+        s3_cfg = cfg["STORAGE_S3"]
         s3_bucket = s3_cfg["bucket_name"]
         log.debug("Creating bucket: %s", pformat(s3_cfg))
         s3_client.create_bucket(s3_bucket)
@@ -63,14 +60,14 @@ def setup(app: web.Application):
     """ minio/s3 service setup"""
 
     log.debug("Setting up %s ...", __name__)
-    disable_services = app[APP_CONFIG_KEY]["disable_services"]
+    STORAGE_DISABLE_SERVICES = app[APP_CONFIG_KEY]["STORAGE_DISABLE_SERVICES"]
 
-    if _SERVICE_NAME in disable_services:
-        log.warning("Service '%s' explicitly disabled in config", _SERVICE_NAME)
+    if "s3" in STORAGE_DISABLE_SERVICES:
+        log.warning("Service '%s' explicitly disabled in config", "s3")
         return
 
     cfg = app[APP_CONFIG_KEY]
-    s3_cfg = cfg[_SERVICE_NAME]
+    s3_cfg = cfg["STORAGE_S3"]
     s3_access_key = s3_cfg["access_key"]
     s3_endpoint = s3_cfg["endpoint"]
     s3_secret_key = s3_cfg["secret_key"]
@@ -85,7 +82,7 @@ def setup(app: web.Application):
 
 
 def get_config(app: web.Application) -> Dict:
-    cfg = app[APP_CONFIG_KEY][_SERVICE_NAME]
+    cfg = app[APP_CONFIG_KEY]["STORAGE_S3"]
     return cfg
 
 

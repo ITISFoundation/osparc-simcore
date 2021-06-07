@@ -79,7 +79,9 @@ def client(
     setup_s3(app)
 
     cli = loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": settings.port, "host": "localhost"})
+        aiohttp_client(
+            app, server_kwargs={"port": settings.STORAGE_PORT, "host": "localhost"}
+        )
     )
     return cli
 

@@ -1,75 +1,67 @@
-""" Configuration of simcore_service_storage
-
-The application can consume settings revealed at different
-stages of the development workflow. This submodule gives access
-to all of them.
-
-
-Naming convention:
-
-APP_*_KEY: is a key in app-storage
-RQT_*_KEY: is a key in request-storage
-RSP_*_KEY: is a key in response-storage
-
-See https://docs.aiohttp.org/en/stable/web_advanced.html#data-sharing-aka-no-singletons-please
-"""
-
+import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
-from models_library.basic_types import LogLevel
-from models_library.settings.application_bases import BaseAiohttpAppSettings
+from models_library.basic_types import LogLevel, PortInt
 from models_library.settings.postgres import PostgresSettings
 from models_library.settings.s3 import S3Config
-from pydantic import BaseSettings, Field, SecretStr
+from pydantic import BaseSettings, Field, PositiveInt, SecretStr
 from servicelib.tracing import TracingSettings
 
 
-class BfApiToken(BaseSettings):
-    token_key: str = Field(..., env="BF_API_KEY")
-    token_secret: str = Field(..., env="BF_API_SECRET")
+class Settings(BaseSettings):
 
+    STORAGE_HOST: str = "0.0.0.0"  # nosec
+    STORAGE_PORT: PortInt = 8080
 
-class Settings(BaseAiohttpAppSettings):
-    # GENERAL SETTINGS ---
-
-    log_level: LogLevel = Field(
+    STORAGE_LOG_LEVEL: LogLevel = Field(
         "INFO", env=["STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
 
-    testing: bool = False
-    max_workers: int = 8
-    monitoring_enabled: bool = False
-    test_datcore: Optional[BfApiToken] = None
-    disable_services: List[str] = []
+    STORAGE_MAX_WORKERS: PositiveInt = Field(
+        8, description="Number of workers for the thead executor pool"
+    )
 
-    # APP MODULES SETTINGS ----
+    STORAGE_MONITORING_ENABLED: bool = False
 
-    postgres: PostgresSettings
+    STORAGE_DISABLE_SERVICES: List[str] = []
 
-    s3: S3Config
+    STORAGE_TESTING: bool = Field(
+        False, description="Flag to enable some fakes for testing purposes"
+    )
+    BF_API_KEY: Optional[str] = Field(
+        None, description="Blackfynn API key ONLY for testing purposes"
+    )
+    BF_API_SECRET: Optional[str] = Field(
+        None, description="Blackfynn API secret ONLY for testing purposes"
+    )
 
-    rest: Dict[str, Any] = {"enabled": True}
+    STORAGE_POSTGRES: PostgresSettings
 
-    tracing: TracingSettings
+    STORAGE_S3: S3Config
+
+    STORAGE_TRACING: TracingSettings
+
+    # ----
 
     class Config:
-        case_sensitive = False
-        env_prefix = "STORAGE_"
         json_encoders = {SecretStr: lambda v: v.get_secret_value()}
 
     @classmethod
     def create_from_env(cls) -> "Settings":
-        # NOTE: having a settings class factory would avoid
-        # this function but we found more natural to have direct access
-        # to Settings class to use e.g. autocompletion
+        # NOTE: This control when defaults of sub-sections
+        # are created
 
         defaults = {}
         for name, default_cls in [
-            ("postgres", PostgresSettings),
-            ("s3", S3Config),
-            ("tracing", TracingSettings),
+            ("STORAGE_POSTGRES", PostgresSettings),
+            ("STORAGE_S3", S3Config),
+            ("STORAGE_TRACING", TracingSettings),
         ]:
-            if f"STORAGE_{name.upper()}" not in os.environ:
+            if name not in os.environ:
                 defaults[name] = default_cls()
         return cls(**defaults)
+
+    @property
+    def logging_level(self) -> int:
+        return getattr(logging, self.STORAGE_LOG_LEVEL)

@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 
 
 async def pg_engine(app: web.Application):
-    pg_cfg = app[APP_CONFIG_KEY]["postgres"]
+    pg_cfg = app[APP_CONFIG_KEY]["STORAGE_POSTGRES"]
     dsn = DataSourceName(
         application_name=f"{__name__}_{id(app)}",
         database=pg_cfg["db"],
@@ -41,7 +41,7 @@ async def pg_engine(app: web.Application):
             )
             await raise_if_not_responsive(engine)
 
-    if app[APP_CONFIG_KEY]["testing"]:
+    if app[APP_CONFIG_KEY]["STORAGE_TESTING"]:
         log.info("Initializing tables for %s", dsn)
         init_pg_tables(dsn, schema=metadata)
 
@@ -78,9 +78,7 @@ def get_engine_state(app: web.Application) -> Dict[str, Any]:
 
 
 def setup_db(app: web.Application):
-    disable_services = app[APP_CONFIG_KEY]["disable_services"]
-
-    if "postgres" in disable_services:
+    if "postgres" in app[APP_CONFIG_KEY]["STORAGE_DISABLE_SERVICES"]:
         app[APP_DB_ENGINE_KEY] = None
         log.warning("Service '%s' explicitly disabled in config", "postgres")
         return

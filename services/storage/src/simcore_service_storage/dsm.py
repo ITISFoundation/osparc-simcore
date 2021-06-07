@@ -67,14 +67,16 @@ def setup_dsm(app: web.Application):
         main_cfg = app[APP_CONFIG_KEY]
         s3_cfg = get_config_s3(app)
 
-        with ThreadPoolExecutor(max_workers=main_cfg["max_workers"]) as executor:
+        with ThreadPoolExecutor(
+            max_workers=main_cfg["STORAGE_MAX_WORKERS"]
+        ) as executor:
             dsm = DataStorageManager(
                 s3_client=app.get(APP_S3_KEY),
                 engine=app.get(APP_DB_ENGINE_KEY),
                 loop=asyncio.get_event_loop(),
                 pool=executor,
                 simcore_bucket_name=s3_cfg["bucket_name"],
-                has_project_db=not main_cfg.get("testing", False),
+                has_project_db=not main_cfg.get("STORAGE_TESTING", False),
                 app=app,
             )  # type: ignore
 

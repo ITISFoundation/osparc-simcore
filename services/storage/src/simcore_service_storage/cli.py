@@ -47,7 +47,9 @@ def main(check_settings: bool = False, show_settings_json_schema: bool = False):
                     HEADER.format("detail"),
                     str(err),
                     HEADER.format("environment variables"),
-                    pformat(dict(os.environ)),
+                    pformat(
+                        {k: v for k, v in dict(os.environ).items() if k.upper() == k}
+                    ),
                     HEADER.format("json-schema"),
                     json_schema,
                 ]
@@ -60,8 +62,7 @@ def main(check_settings: bool = False, show_settings_json_schema: bool = False):
         click.echo(settings.json(indent=2))
         sys.exit(os.EX_OK)
 
-    log_level = settings.log_level
-    logging.basicConfig(level=getattr(logging, log_level))
-    logging.root.setLevel(getattr(logging, log_level))
+    logging.basicConfig(level=settings.logging_level)
+    logging.root.setLevel(settings.logging_level)
 
     application.run(settings)

@@ -29,20 +29,20 @@ def create(settings: BaseSettings) -> web.Application:
     # TODO: tmp using dict() until webserver is also pydantic-compatible
     app = create_safe_application(settings.dict())
 
-    if settings.tracing.enabled:
+    if settings.STORAGE_TRACING.enabled:
         setup_tracing(
             app,
             "simcore_service_storage",
-            settings.host,
-            settings.port,
-            settings.tracing.dict(),
+            settings.STORAGE_HOST,
+            settings.STORAGE_PORT,
+            settings.STORAGE_TRACING.dict(),
         )
     setup_db(app)  # -> postgres service
     setup_s3(app)  # -> minio service
     setup_dsm(app)  # core subsystem. Needs s3 and db setups done
     setup_rest(app)  # lastly, we expose API to the world
 
-    if settings.monitoring_enabled:
+    if settings.STORAGE_MONITORING_ENABLED:
         setup_monitoring(app, "simcore_service_storage")
 
     return app
@@ -58,4 +58,4 @@ def run(settings: BaseSettings, app: Optional[web.Application] = None):
 
     app.on_startup.append(welcome_banner)
 
-    web.run_app(app, host=settings.host, port=settings.port)
+    web.run_app(app, host=settings.STORAGE_HOST, port=settings.STORAGE_PORT)
