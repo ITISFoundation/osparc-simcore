@@ -250,8 +250,11 @@ qx.Class.define("osparc.data.model.Study", {
 
     __applyAccessRights: function(value) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
+      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      orgIDs.push(myGid);
+
       if (myGid) {
-        const canIWrite = osparc.component.permissions.Study.canGroupWrite(value, myGid);
+        const canIWrite = osparc.component.permissions.Study.canGroupsWrite(value, orgIDs);
         this.setReadOnly(!canIWrite);
       } else {
         this.setReadOnly(true);
