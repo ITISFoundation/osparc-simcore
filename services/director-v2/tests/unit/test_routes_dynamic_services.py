@@ -70,22 +70,22 @@ ServiceParams = namedtuple("ServiceParams", "service, service_labels, exp_status
             ),
             id="legacy service",
         ),
-        pytest.param(
-            *ServiceParams(
-                service=DynamicServiceCreate.Config.schema_extra["example"],
-                service_labels=SimcoreService.Config.schema_extra["examples"][1],
-                exp_status_code=status.HTTP_201_CREATED,
-            ),
-            id="dynamic sidecar service",
-        ),
-        pytest.param(
-            *ServiceParams(
-                service=DynamicServiceCreate.Config.schema_extra["example"],
-                service_labels=SimcoreService.Config.schema_extra["examples"][2],
-                exp_status_code=status.HTTP_201_CREATED,
-            ),
-            id="dynamic sidecar service with compose spec",
-        ),
+        # pytest.param(
+        #     *ServiceParams(
+        #         service=DynamicServiceCreate.Config.schema_extra["example"],
+        #         service_labels=SimcoreService.Config.schema_extra["examples"][1],
+        #         exp_status_code=status.HTTP_201_CREATED,
+        #     ),
+        #     id="dynamic sidecar service",
+        # ),
+        # pytest.param(
+        #     *ServiceParams(
+        #         service=DynamicServiceCreate.Config.schema_extra["example"],
+        #         service_labels=SimcoreService.Config.schema_extra["examples"][2],
+        #         exp_status_code=status.HTTP_201_CREATED,
+        #     ),
+        #     id="dynamic sidecar service with compose spec",
+        # ),
     ],
 )
 def test_create_dynamic_services(

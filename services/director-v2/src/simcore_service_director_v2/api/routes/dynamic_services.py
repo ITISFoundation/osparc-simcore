@@ -103,20 +103,18 @@ async def create_dynamic_service(
     )
     if not simcore_service.needs_dynamic_sidecar:
         # forward to director-v0
-        base_url = (
-            str(director_v0_client.client.base_url) + "running_interactive_services"
-        )
-        redirect_url_with_query = yarl.URL(base_url).with_query(
-            {
+        redirection_url = director_v0_client.client.base_url.copy_with(
+            path="/v0/running_interactive_services",
+            params={
                 "user_id": f"{service.user_id}",
                 "project_id": f"{service.project_id}",
                 "service_uuid": f"{service.uuid}",
                 "service_key": f"{service.key}",
                 "service_version": f"{service.version}",
-                "service_basepath": str(service.basepath),
-            }
+                "service_basepath": f"{service.basepath}",
+            },
         )
-        return RedirectResponse(redirect_url_with_query)
+        return RedirectResponse(redirection_url)
 
     # Service naming schema:
     # -  dysdcr_{uuid}_{first_two_project_id}_prxy_{name_from_service_key}
