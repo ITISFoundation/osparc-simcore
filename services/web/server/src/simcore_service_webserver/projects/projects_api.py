@@ -199,7 +199,7 @@ async def remove_project_interactive_services(
     user_id: Optional[int], project_uuid: Optional[str], app: web.Application
 ) -> None:
     # save the state if the user is not a guest. if we do not know we save in any case.
-    with suppress(director_exceptions.DirectorException):
+    with suppress(_DirectorServiceError):
         # here director exceptions are suppressed. in case the service is not found to preserve old behavior
         await stop_services(
             app=app,
