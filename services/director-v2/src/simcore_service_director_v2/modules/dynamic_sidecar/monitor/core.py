@@ -24,7 +24,7 @@ from ..docker_utils import (
     remove_dynamic_sidecar_network,
     remove_dynamic_sidecar_stack,
 )
-from ..exceptions import DynamicSidecarError
+from ..exceptions import DynamicSidecarError, DynamicSidecarNotFoundError
 from ..parse_docker_status import ServiceState, extract_containers_minimim_statuses
 from .dynamic_sidecar_api import (
     DynamicSidecarClient,
@@ -186,7 +186,7 @@ class DynamicSidecarsMonitor:
         """Handles the removal cycle of the services, saving states etc..."""
         async with self._lock:
             if node_uuid not in self._inverse_search_mapping:
-                return
+                raise DynamicSidecarNotFoundError(node_uuid)
 
             service_name = self._inverse_search_mapping[node_uuid]
             if service_name not in self._to_monitor:
@@ -227,8 +227,7 @@ class DynamicSidecarsMonitor:
     async def get_stack_status(self, node_uuid: str) -> ServiceStateReply:
         async with self._lock:
             if node_uuid not in self._inverse_search_mapping:
-                # TODO: ANE why not raising an exception here???
-                return ServiceStateReply.error_status(node_uuid)
+                raise DynamicSidecarNotFoundError(node_uuid)
 
             service_name = self._inverse_search_mapping[node_uuid]
             if service_name not in self._to_monitor:

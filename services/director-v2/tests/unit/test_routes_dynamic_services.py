@@ -5,14 +5,13 @@
 
 import urllib
 from collections import namedtuple
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import pytest
 import respx
 from fastapi import FastAPI
-from httpx import URL
+from httpx import URL, QueryParams
 from models_library.service_settings import SimcoreService
-from models_library.services import SERVICE_KEY_RE
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
 )
@@ -120,3 +119,117 @@ def test_create_dynamic_services(
     if exp_status_code == status.HTTP_201_CREATED:
         # check the returned data
         pass
+
+
+@pytest.mark.parametrize(
+    "service,service_labels, exp_status_code",
+    [
+        pytest.param(
+            *ServiceParams(
+                service=DynamicServiceCreate.Config.schema_extra["example"],
+                service_labels=SimcoreService.Config.schema_extra["examples"][0],
+                exp_status_code=status.HTTP_307_TEMPORARY_REDIRECT,
+            ),
+            id="legacy service",
+        ),
+        # pytest.param(
+        #     *ServiceParams(
+        #         service=DynamicServiceCreate.Config.schema_extra["example"],
+        #         service_labels=SimcoreService.Config.schema_extra["examples"][1],
+        #         exp_status_code=status.HTTP_201_CREATED,
+        #     ),
+        #     id="dynamic sidecar service",
+        # ),
+        # pytest.param(
+        #     *ServiceParams(
+        #         service=DynamicServiceCreate.Config.schema_extra["example"],
+        #         service_labels=SimcoreService.Config.schema_extra["examples"][2],
+        #         exp_status_code=status.HTTP_201_CREATED,
+        #     ),
+        #     id="dynamic sidecar service with compose spec",
+        # ),
+    ],
+)
+def test_get_service_status(
+    mocked_director_v0_service_api,
+    client: TestClient,
+    service: Dict[str, Any],
+    exp_status_code: int,
+):
+    url = URL(f"/v2/dynamic_services/{service['uuid']}")
+
+    response = client.get(str(url), allow_redirects=False)
+    assert (
+        response.status_code == exp_status_code
+    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
+        # check redirection header goes to director-v0
+        assert "location" in response.headers
+        redirect_url = URL(response.headers["location"])
+        assert redirect_url.host == "director"
+        assert (
+            redirect_url.path == f"/v0/running_interactive_services/{service['uuid']}"
+        )
+        assert redirect_url.params == QueryParams("")  # empty query
+
+
+@pytest.mark.parametrize(
+    "service,service_labels, exp_status_code",
+    [
+        pytest.param(
+            *ServiceParams(
+                service=DynamicServiceCreate.Config.schema_extra["example"],
+                service_labels=SimcoreService.Config.schema_extra["examples"][0],
+                exp_status_code=status.HTTP_307_TEMPORARY_REDIRECT,
+            ),
+            id="legacy service",
+        ),
+        # pytest.param(
+        #     *ServiceParams(
+        #         service=DynamicServiceCreate.Config.schema_extra["example"],
+        #         service_labels=SimcoreService.Config.schema_extra["examples"][1],
+        #         exp_status_code=status.HTTP_201_CREATED,
+        #     ),
+        #     id="dynamic sidecar service",
+        # ),
+        # pytest.param(
+        #     *ServiceParams(
+        #         service=DynamicServiceCreate.Config.schema_extra["example"],
+        #         service_labels=SimcoreService.Config.schema_extra["examples"][2],
+        #         exp_status_code=status.HTTP_201_CREATED,
+        #     ),
+        #     id="dynamic sidecar service with compose spec",
+        # ),
+    ],
+)
+@pytest.mark.parametrize(
+    "save_state,exp_save_state", [(None, True), (True, True), (False, False)]
+)
+def test_delete_service(
+    mocked_director_v0_service_api,
+    client: TestClient,
+    service: Dict[str, Any],
+    exp_status_code: int,
+    save_state: Optional[bool],
+    exp_save_state: bool,
+):
+
+    url = URL(f"/v2/dynamic_services/{service['uuid']}")
+    if save_state is not None:
+        url = url.copy_with(params={"save_state": save_state})
+
+    response = client.delete(str(url), allow_redirects=False)
+    assert (
+        response.status_code == exp_status_code
+    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
+        # check redirection header goes to director-v0
+        assert "location" in response.headers
+        redirect_url = URL(response.headers["location"])
+        assert redirect_url.host == "director"
+        assert (
+            redirect_url.path == f"/v0/running_interactive_services/{service['uuid']}"
+        )
+        assert redirect_url.params == QueryParams(
+            save_state=exp_save_state
+        )  # default save_state to True

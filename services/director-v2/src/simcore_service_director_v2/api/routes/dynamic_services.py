@@ -1,19 +1,14 @@
 import asyncio
 import logging
 from pprint import pformat
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 from uuid import UUID
 
 import httpx
-import yarl
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Depends, Header
 from fastapi.responses import RedirectResponse
 from models_library.service_settings import SimcoreService
-from models_library.services import (
-    DYNAMIC_SERVICE_KEY_RE,
-    VERSION_RE,
-    ServiceKeyVersion,
-)
+from models_library.services import ServiceKeyVersion
 from starlette import status
 from starlette.datastructures import URL
 
@@ -22,7 +17,6 @@ from ...models.domains.dynamic_services import (
     RetrieveDataIn,
     RetrieveDataOutEnveloped,
 )
-from ...models.schemas.services import RunningServiceDetails
 from ...modules.dynamic_sidecar.config import DynamicSidecarSettings, get_settings
 from ...modules.dynamic_sidecar.constants import (
     DYNAMIC_SIDECAR_PREFIX,
@@ -36,6 +30,7 @@ from ...modules.dynamic_sidecar.docker_utils import (
     get_swarm_network,
     list_dynamic_sidecar_services,
 )
+from ...modules.dynamic_sidecar.exceptions import DynamicSidecarNotFoundError
 from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor, get_monitor
 from ...modules.dynamic_sidecar.monitor.models import ServiceStateReply
 from ...modules.dynamic_sidecar.service_specs import (
@@ -97,7 +92,7 @@ async def create_dynamic_service(
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-):
+) -> ServiceStateReply:
     simcore_service: SimcoreService = await director_v0_client.get_service_labels(
         service=ServiceKeyVersion(key=service.key, version=service.version)
     )
@@ -240,82 +235,46 @@ async def create_dynamic_service(
 )
 async def dynamic_sidecar_status(
     node_uuid: UUID,
-    service_key: str = Query(
-        ...,
-        description="distinctive name for the node based on the docker registry path",
-        regex=DYNAMIC_SERVICE_KEY_RE,
-    ),
-    service_version: str = Query(
-        ...,
-        description="semantic version number of the node",
-        regex=VERSION_RE,
-    ),
-    user_id: int = Query(..., description="required by director-v1"),
-    project_id: UUID = Query(..., description="required by director-v1"),
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> Union[Dict, List]:
-    """
-    returns:
-        - "Dict" if dynamic-service
-        - "List" if legacy dynamic service (reply of GET /running_interactive_services)
-    """
-    simcore_service: SimcoreService = await director_v0_client.get_service_labels(
-        service=ServiceKeyVersion(key=service_key, version=service_version)
-    )
-    use_dynamic_sidecar = simcore_service.boot_mode == "dynamic-sidecar"
+) -> ServiceStateReply:
 
-    if not use_dynamic_sidecar:
+    try:
+        return await monitor.get_stack_status(str(node_uuid))
+    except DynamicSidecarNotFoundError:
+        # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0
-        base_url = (
-            str(director_v0_client.client.base_url) + "running_interactive_services"
+        redirection_url = director_v0_client.client.base_url.copy_with(
+            path=f"/v0/running_interactive_services/{node_uuid}",
         )
-        redirect_url_with_query = yarl.URL(base_url).with_query(
-            {"user_id": f"{user_id}", "project_id": f"{project_id}"}
-        )
-        return RedirectResponse(redirect_url_with_query)
 
-    return await monitor.get_stack_status(str(node_uuid))
+        return RedirectResponse(redirection_url)
 
 
 @router.delete(
     "/{node_uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="stops previously spawned dynamic-sidecar",
 )
 async def stop_dynamic_service(
     node_uuid: UUID,
-    save_state: Optional[bool],
-    service_key: str = Query(
-        ...,
-        description="distinctive name for the node based on the docker registry path",
-        regex=DYNAMIC_SERVICE_KEY_RE,
-    ),
-    service_version: str = Query(
-        ...,
-        description="semantic version number of the node",
-        regex=VERSION_RE,
-    ),
+    save_state: Optional[bool] = True,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> Dict[str, str]:
-    simcore_service: SimcoreService = await director_v0_client.get_service_labels(
-        service=ServiceKeyVersion(key=service_key, version=service_version)
-    )
-    use_dynamic_sidecar = simcore_service.boot_mode == "dynamic-sidecar"
+) -> None:
 
-    if not use_dynamic_sidecar:
+    try:
+        await monitor.remove_service_from_monitor(str(node_uuid), save_state)
+    except DynamicSidecarNotFoundError:
+        # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0
-        base_url = (
-            str(director_v0_client.client.base_url)
-            + f"running_interactive_services/{node_uuid}"
+        redirection_url = director_v0_client.client.base_url.copy_with(
+            path=f"/v0/running_interactive_services/{node_uuid}",
+            params={"save_state": True if save_state else False},
         )
-        redirect_url_with_query = yarl.URL(base_url).with_query(
-            save_state="true" if save_state else "false"
-        )
-        return RedirectResponse(redirect_url_with_query)
 
-    await monitor.remove_service_from_monitor(str(node_uuid), save_state)
+        return RedirectResponse(redirection_url)
 
 
 @router.get(
