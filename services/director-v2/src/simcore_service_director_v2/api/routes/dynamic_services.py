@@ -53,31 +53,6 @@ router = APIRouter()
 log = logging.getLogger(__file__)
 
 
-@router.post(
-    "/{node_uuid}:retrieve",
-    summary="Calls the dynamic service's retrieve endpoint with optional port_keys",
-    response_model=RetrieveDataOutEnveloped,
-    status_code=status.HTTP_200_OK,
-)
-@log_decorator(logger=log)
-async def service_retrieve_data_on_ports(
-    retrieve_settings: RetrieveDataIn,
-    service_base_url: URL = Depends(get_service_base_url),
-    services_client: ServicesClient = Depends(get_services_client),
-):
-    # the handling of client/server errors is already encapsulated in the call to request
-    resp = await services_client.request(
-        "POST",
-        f"{service_base_url}/retrieve",
-        data=retrieve_settings.json(by_alias=True),
-        timeout=httpx.Timeout(
-            5.0, read=60 * 60.0
-        ),  # this call waits for the service to download data
-    )
-    # validate and return
-    return RetrieveDataOutEnveloped.parse_obj(resp.json())
-
-
 @router.get(
     "",
     status_code=status.HTTP_200_OK,
@@ -305,3 +280,28 @@ async def stop_dynamic_service(
         )
 
         return RedirectResponse(redirection_url)
+
+
+@router.post(
+    "/{node_uuid}:retrieve",
+    summary="Calls the dynamic service's retrieve endpoint with optional port_keys",
+    response_model=RetrieveDataOutEnveloped,
+    status_code=status.HTTP_200_OK,
+)
+@log_decorator(logger=log)
+async def service_retrieve_data_on_ports(
+    retrieve_settings: RetrieveDataIn,
+    service_base_url: URL = Depends(get_service_base_url),
+    services_client: ServicesClient = Depends(get_services_client),
+):
+    # the handling of client/server errors is already encapsulated in the call to request
+    resp = await services_client.request(
+        "POST",
+        f"{service_base_url}/retrieve",
+        data=retrieve_settings.json(by_alias=True),
+        timeout=httpx.Timeout(
+            5.0, read=60 * 60.0
+        ),  # this call waits for the service to download data
+    )
+    # validate and return
+    return RetrieveDataOutEnveloped.parse_obj(resp.json())
