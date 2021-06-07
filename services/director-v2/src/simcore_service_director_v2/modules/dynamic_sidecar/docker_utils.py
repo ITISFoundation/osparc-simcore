@@ -12,7 +12,6 @@ from models_library.projects import ProjectID
 from models_library.service_settings import ComposeSpecModel, PathsMapping
 from simcore_service_director_v2.models.schemas.constants import UserID
 
-from ...core.settings import ServiceType
 from .config import DynamicSidecarSettings
 from .constants import DYNAMIC_SIDECAR_PREFIX, SERVICE_NAME_SIDECAR
 from .exceptions import DynamicSidecarError, GenericDockerError
@@ -314,8 +313,8 @@ async def list_dynamic_sidecar_services(
     service_filters = {
         "label": [
             f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}",
-            f"type={ServiceType.MAIN.value}",
-        ]
+        ],
+        "name": [DYNAMIC_SIDECAR_PREFIX],
     }
     if user_id is not None:
         service_filters["label"].append(f"user_id={user_id}")
