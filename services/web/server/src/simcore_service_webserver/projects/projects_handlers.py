@@ -570,25 +570,18 @@ async def get_node(request: web.Request) -> web.Response:
     node_uuid = request.match_info.get("node_id")
     try:
         # ensure the project exists
-        project: Dict = await projects_api.get_project_for_user(
+        await projects_api.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True,
         )
 
-        node = project["workbench"][node_uuid]
-        #TODO: not a good place to fetch the version here
-        service_key = node["key"]
-        service_version = node["version"]
-
         # NOTE: for legacy cervices a redirect to director-v0 is made
         reply: Union[Dict, List] = await director_v2.get_service_state(
             app=request.app,
             user_id=user_id,
             project_id=project_uuid,
-            service_key=service_key,
-            service_version=service_version,
             node_uuid=node_uuid,
         )
 

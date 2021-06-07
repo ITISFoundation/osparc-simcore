@@ -28,7 +28,6 @@ from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
-from simcore_service_webserver.director import director_exceptions
 from yarl import URL
 
 from ..director import director_api
@@ -39,6 +38,7 @@ from ..director_v2 import (
     start_service,
     stop_service,
     stop_services,
+    _DirectorServiceError,
 )
 from ..resource_manager.websocket_manager import managed_resource
 from ..socketio.events import (
@@ -243,15 +243,15 @@ async def add_project_node(
     )
     node_uuid = service_id if service_id else str(uuid4())
     if _is_node_dynamic(service_key):
-        await director_api.start_service(
+        await start_service(
             request.app,
-            user_id,
-            project_uuid,
-            service_key,
-            service_version,
-            node_uuid,
-            _extract_dns_without_default_port(request.url),
-            request.url.scheme,
+            project_id=project_uuid,
+            user_id=user_id,
+            service_key=service_key,
+            service_version=service_version,
+            service_uuid=node_uuid,
+            request_dns=_extract_dns_without_default_port(request.url),
+            request_scheme=request.url.scheme,
         )
     return node_uuid
 
@@ -274,8 +274,6 @@ async def delete_project_node(
             await stop_service(
                 request.app,
                 node_uuid,
-                service["key"],
-                service["version"],
                 save_state=False,
             )
             break

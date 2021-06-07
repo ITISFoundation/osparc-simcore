@@ -317,3 +317,21 @@ async def list_dynamic_sidecar_services(
             }
         )
         return dynamic_sidecar_services
+
+
+async def is_dynamic_sidecar_service(
+    dynamic_sidecar_settings: DynamicSidecarSettings, node_uuid: str
+) -> Optional[Tuple[str, str]]:
+    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+        dynamic_sidecar_services = await client.services.list(
+            filters={
+                "label": [
+                    f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}",
+                    f"type={ServiceType.MAIN.value}",
+                    f"uuid={node_uuid}",
+                ]
+            }
+        )
+
+        is_dynamic_sidecar = len(dynamic_sidecar_services) != 1
+        return is_dynamic_sidecar
