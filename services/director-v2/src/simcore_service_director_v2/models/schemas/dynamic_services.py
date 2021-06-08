@@ -44,7 +44,7 @@ class ServiceDetails(BaseModel):
     node_uuid: NodeID = Field(..., alias="service_uuid")
 
     basepath: Path = Field(
-        ...,
+        None,
         description="predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
         alias="service_basepath",
     )
@@ -102,6 +102,8 @@ class RunningServiceDetails(ServiceDetails):
     @classmethod
     def from_monitoring_status(
         cls,
+        user_id: UserID,
+        project_id: ProjectID,
         node_uuid: NodeID,
         monitor_data: "MonitorData",
         service_state: ServiceState,
@@ -109,13 +111,15 @@ class RunningServiceDetails(ServiceDetails):
     ) -> "RunningServiceDetails":
         return cls(
             boot_type=ServiceBootType.V2,
-            service_uuid=node_uuid,
-            service_key=monitor_data.service_key,
-            service_version=monitor_data.service_tag,
-            service_host=monitor_data.service_name,
-            service_port=monitor_data.service_port,
-            service_state=service_state.value,
-            service_message=service_message,
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
+            key=monitor_data.service_key,
+            version=monitor_data.service_tag,
+            host=monitor_data.service_name,
+            internal_port=monitor_data.service_port,
+            state=service_state.value,
+            message=service_message,
         )
 
     class Config(ServiceDetails.Config):

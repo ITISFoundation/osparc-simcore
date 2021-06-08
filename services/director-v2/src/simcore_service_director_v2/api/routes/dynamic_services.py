@@ -72,7 +72,12 @@ async def list_running_dynamic_services(
     ] = await director_v0_client.get_running_services(user_id, project_id)
 
     modern_running_services: List[DynamicServiceOut] = [
-        await monitor.get_stack_status(service["Spec"]["Labels"]["uuid"])
+        # FIXME: this sucks
+        await monitor.get_stack_status(
+            service["Spec"]["Labels"]["uuid"],
+            service["Spec"]["Labels"]["study_id"],
+            service["Spec"]["Labels"]["user_id"],
+        )
         for service in await list_dynamic_sidecar_services(
             dynamic_sidecar_settings, user_id, project_id
         )
@@ -227,7 +232,9 @@ async def create_dynamic_service(
     )
 
     # returning data for the proxy service so the service UI metadata can be extracted from here
-    return await monitor.get_stack_status(str(service.node_uuid))
+    return await monitor.get_stack_status(
+        service.node_uuid, service.project_id, service.user_id
+    )
 
 
 @router.get(
@@ -242,7 +249,7 @@ async def dynamic_sidecar_status(
 ) -> DynamicServiceOut:
 
     try:
-        return await monitor.get_stack_status(str(node_uuid))
+        return await monitor.get_stack_status(node_uuid)
     except DynamicSidecarNotFoundError:
         # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0

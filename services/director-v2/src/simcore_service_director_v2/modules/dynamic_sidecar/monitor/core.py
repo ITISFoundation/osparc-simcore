@@ -13,7 +13,10 @@ from typing import Deque, Dict, Optional
 
 from async_timeout import timeout
 from fastapi import FastAPI, Request
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.service_settings import ComposeSpecModel, PathsMapping
+from simcore_service_director_v2.models.schemas.constants import UserID
 
 from ....models.schemas.dynamic_services import RunningServiceDetails
 from ..config import DynamicSidecarSettings
@@ -224,7 +227,9 @@ class DynamicSidecarsMonitor:
             del self._inverse_search_mapping[node_uuid]
             logger.debug("Removed service '%s' from monitoring", service_name)
 
-    async def get_stack_status(self, node_uuid: str) -> RunningServiceDetails:
+    async def get_stack_status(
+        self, node_uuid: NodeID, project_id: ProjectID, user_id: UserID
+    ) -> RunningServiceDetails:
         async with self._lock:
             if node_uuid not in self._inverse_search_mapping:
                 raise DynamicSidecarNotFoundError(node_uuid)
@@ -247,6 +252,8 @@ class DynamicSidecarsMonitor:
             # while the dynamic-sidecar state is not RUNNING report it's state
             if service_state != ServiceState.RUNNING:
                 return RunningServiceDetails.from_monitoring_status(
+                    user_id=user_id,
+                    project_id=project_id,
                     node_uuid=node_uuid,
                     monitor_data=monitor_data,
                     service_state=service_state,
@@ -262,6 +269,8 @@ class DynamicSidecarsMonitor:
             # error fetching docker_statues, probably someone should check
             if docker_statuses is None:
                 return RunningServiceDetails.from_monitoring_status(
+                    user_id=user_id,
+                    project_id=project_id,
                     node_uuid=node_uuid,
                     monitor_data=monitor_data,
                     service_state=ServiceState.STARTING,
@@ -272,6 +281,8 @@ class DynamicSidecarsMonitor:
             if len(docker_statuses) == 0:
                 # marks status as waiting for containers
                 return RunningServiceDetails.from_monitoring_status(
+                    user_id=user_id,
+                    project_id=project_id,
                     node_uuid=node_uuid,
                     monitor_data=monitor_data,
                     service_state=ServiceState.STARTING,
@@ -283,6 +294,8 @@ class DynamicSidecarsMonitor:
                 docker_statuses
             )
             return RunningServiceDetails.from_monitoring_status(
+                user_id=user_id,
+                project_id=project_id,
                 node_uuid=node_uuid,
                 monitor_data=monitor_data,
                 service_state=container_state,
