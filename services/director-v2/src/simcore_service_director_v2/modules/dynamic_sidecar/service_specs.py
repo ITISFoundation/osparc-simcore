@@ -29,7 +29,7 @@ def _strip_service_name(service_name: str) -> str:
 
 
 def assemble_service_name(service_prefix: str, node_uuid: NodeID) -> str:
-    return _strip_service_name("_".join([service_prefix, node_uuid]))
+    return _strip_service_name("_".join([service_prefix, str(node_uuid)]))
 
 
 def extract_service_port_from_compose_start_spec(
