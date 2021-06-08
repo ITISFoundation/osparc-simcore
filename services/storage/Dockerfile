@@ -65,7 +65,7 @@ ENV SC_BUILD_TARGET build
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-    build-essential \
+  build-essential \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -89,15 +89,15 @@ RUN pip --no-cache-dir --quiet install -r requirements_base.txt
 
 
 
-# --------------------------Cache stage -------------------
-# CI in master buils & pushes this target to speed-up image build
+# --------------------------Prod-depends-only stage -------------------
+# This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
 #
 #  + /build
 #    + services/storage [scu:scu] WORKDIR
 #
-FROM build as cache
+FROM build as prod-only-deps
 
-ENV SC_BUILD_TARGET cache
+ENV SC_BUILD_TARGET prod-only-deps
 
 # 2nd party packages
 COPY --chown=scu:scu packages /build/packages
@@ -125,7 +125,7 @@ ENV PYTHONOPTIMIZE=TRUE
 WORKDIR /home/scu
 
 # bring installed package without build tools
-COPY --from=cache --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/storage/docker services/storage/docker

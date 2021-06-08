@@ -42,9 +42,9 @@ follow-dev-logs: ## follow the logs of the qx compiler
 
 
 .PHONY: compile touch upgrade
-compile compile-x: ## qx compiles host' 'source' -> image's 'build-output'
+compile: ## qx compiles host' 'source' -> image's 'build-output'
 	# qx compile 'source' within $(docker_image) image  [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
-	@docker $(if $(findstring -x,$@),buildx,) build --file $(docker_file) --tag $(docker_image) \
+	@docker buildx build --file $(docker_file) --tag $(docker_image) \
 		--build-arg tag=${QOOXDOO_KIT_TAG} \
 		--build-arg VCS_REF=${VCS_REF} \
 		--build-arg VCS_REF_CLIENT=${VCS_REF_CLIENT} \
@@ -52,9 +52,9 @@ compile compile-x: ## qx compiles host' 'source' -> image's 'build-output'
 		--build-arg VCS_URL=${VCS_URL} \
 		--target=build-client .
 
-touch touch-x: ## minimal image build with /project/output-build inside
+touch: ## minimal image build with /project/output-build inside
 	# touch /project/output-build such that multi-stage 'services/web/Dockerfile' can build development target (fixes #1097)
-	@docker $(if $(findstring -x,$@),buildx,) build --file $(docker_file) --tag $(docker_image) --build-arg tag=${QOOXDOO_KIT_TAG} --target=touch .
+	@docker buildx build --file $(docker_file) --tag $(docker_image) --build-arg tag=${QOOXDOO_KIT_TAG} --target=touch .
 
 upgrade: ## upgrade to official version of the tool
 	# upgrading to ${QOOXDOO_KIT_TAG}

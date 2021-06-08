@@ -13,33 +13,33 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 LABEL maintainer=pcrespov
 
 RUN set -eux; \
-	apt-get update; \
-	apt-get install -y gosu; \
-	rm -rf /var/lib/apt/lists/*; \
-# verify that the binary works
-	gosu nobody true
+  apt-get update; \
+  apt-get install -y gosu; \
+  rm -rf /var/lib/apt/lists/*; \
+  # verify that the binary works
+  gosu nobody true
 
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
-    SC_USER_NAME=scu \
-    SC_BUILD_TARGET=base \
-    SC_BOOT_MODE=default
+  SC_USER_NAME=scu \
+  SC_BUILD_TARGET=base \
+  SC_BOOT_MODE=default
 
 RUN adduser \
-    --uid ${SC_USER_ID} \
-    --disabled-password \
-    --gecos "" \
-    --shell /bin/sh \
-    --home /home/${SC_USER_NAME} \
-    ${SC_USER_NAME}
+  --uid ${SC_USER_ID} \
+  --disabled-password \
+  --gecos "" \
+  --shell /bin/sh \
+  --home /home/${SC_USER_NAME} \
+  ${SC_USER_NAME}
 
 
 # Sets utf-8 encoding for Python et al
 ENV LANG=C.UTF-8
 # Turns off writing .pyc files; superfluous on an ephemeral container.
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    VIRTUAL_ENV=/home/scu/.venv
+  VIRTUAL_ENV=/home/scu/.venv
 # Ensures that the python and pip executables used
 # in the image will be those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
@@ -67,8 +67,8 @@ ENV SC_BUILD_TARGET build
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-    build-essential \
-    libmagic1 \
+  build-essential \
+  libmagic1 \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -78,9 +78,9 @@ RUN apt-get update \
 RUN python -m venv "${VIRTUAL_ENV}"
 
 RUN pip --no-cache-dir install --upgrade \
-    pip~=21.0.1  \
-    wheel \
-    setuptools
+  pip~=21.0.1  \
+  wheel \
+  setuptools
 
 WORKDIR /build
 
@@ -88,15 +88,15 @@ WORKDIR /build
 COPY  --chown=scu:scu services/web/server/requirements/_base.txt requirements_base.txt
 RUN pip --no-cache-dir --quiet install -r requirements_base.txt
 
-# --------------------------Cache stage -------------------
-# CI in master buils & pushes this target to speed-up image build
+# --------------------------Prod-depends-only stage -------------------
+# This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
 #
 #  + /build
 #    + services/web/server [scu:scu] WORKDIR
 #
-FROM build as cache
+FROM build as prod-only-deps
 
-ENV SC_BUILD_TARGET cache
+ENV SC_BUILD_TARGET prod-only-deps
 
 # 2nd party packages
 COPY --chown=scu:scu packages /build/packages
@@ -120,24 +120,24 @@ ARG VCS_URL
 ARG VCS_REF
 
 ENV SC_BUILD_TARGET=production \
-    SC_BOOT_MODE=production \
-    SC_HEALTHCHECK_INTERVAL=30 \
-    SC_HEALTHCHECK_RETRY=3 \
-    SC_BUILD_DATE=${BUILD_DATE} \
-    SC_VCS_URL=${VCS_URL} \
-    SC_VCS_REF=${VCS_REF}
+  SC_BOOT_MODE=production \
+  SC_HEALTHCHECK_INTERVAL=30 \
+  SC_HEALTHCHECK_RETRY=3 \
+  SC_BUILD_DATE=${BUILD_DATE} \
+  SC_VCS_URL=${VCS_URL} \
+  SC_VCS_REF=${VCS_REF}
 
 ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
 # bring installed package without build tools
-COPY --from=cache --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # libmagic is requried by the exporter
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-    libmagic1 \
+  libmagic1 \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -146,10 +146,10 @@ COPY --chown=scu:scu services/web/server/docker services/web/server/docker
 RUN chmod +x services/web/server/docker/*.sh
 
 HEALTHCHECK --interval=30s \
-      --timeout=120s \
-      --start-period=30s \
-      --retries=3 \
-      CMD ["python3", "/home/scu/services/web/server/docker/healthcheck.py", "http://localhost:8080/v0/health"]
+  --timeout=120s \
+  --start-period=30s \
+  --retries=3 \
+  CMD ["python3", "/home/scu/services/web/server/docker/healthcheck.py", "http://localhost:8080/v0/health"]
 
 ENTRYPOINT [ "services/web/server/docker/entrypoint.sh" ]
 CMD ["services/web/server/docker/boot.sh"]

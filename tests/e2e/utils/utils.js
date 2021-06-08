@@ -47,6 +47,27 @@ function parseCommandLineArgumentsTemplate(args) {
   }
 }
 
+function parseCommandLineArgumentsStudyDispatcherParams(args) {
+  // [url] [download_link] [file_size] [--demo]
+
+  if (args.length < 3) {
+    console.log('More arguments expected: [url] [download_link] [file_size] [--demo]');
+    process.exit(1);
+  }
+
+  const urlPrefix = args[0];
+  const params = {};
+  params["download_link"] = args[1];
+  params["file_size"] = args[2];
+  const enableDemoMode = args.includes("--demo");
+
+  return {
+    urlPrefix,
+    params,
+    enableDemoMode
+  }
+}
+
 function getUserAndPass(args) {
   const userPass = {
     user: null,
@@ -238,6 +259,7 @@ async function makePingRequest(page, path) {
   // https://github.com/Netflix/pollyjs/issues/149#issuecomment-481108446
   await page.setBypassCSP(true);
   return await page.evaluate(async (path) => {
+    // eslint-disable-next-line no-useless-escape
     const url = (path).replace(/\/\//g, "\/");
     console.log("makePingRequest", url);
     return fetch(url, {
@@ -451,6 +473,7 @@ module.exports = {
   extractWorkbenchData,
   parseCommandLineArguments,
   parseCommandLineArgumentsTemplate,
+  parseCommandLineArgumentsStudyDispatcherParams,
   getGrayLogSnapshotUrl,
   typeInInputElement,
   isElementVisible,

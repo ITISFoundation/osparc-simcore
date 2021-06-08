@@ -82,16 +82,16 @@ RUN pip --no-cache-dir install \
   -r /build/services/sidecar/requirements/_base.txt \
   -r /build/services/sidecar/requirements/_packages.txt
 
-# --------------------------Cache stage -------------------
-# CI in master buils & pushes this target to speed-up image build
+# --------------------------Prod-depends-only stage -------------------
+# This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
 #
 #  + /build
 #    + services/sidecar [scu:scu] WORKDIR
 #
-FROM build as cache
+FROM build as prod-only-deps
 
 WORKDIR /build/services/sidecar
-ENV SC_BUILD_TARGET=cache
+ENV SC_BUILD_TARGET=prod-only-deps
 RUN pip --no-cache-dir install -r requirements/prod.txt
 
 # --------------------------Production stage -------------------
@@ -110,7 +110,7 @@ ENV PYTHONOPTIMIZE=TRUE
 WORKDIR /home/scu
 
 # bring installed package without build tools
-COPY --from=cache --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/sidecar/docker services/sidecar/docker
 
