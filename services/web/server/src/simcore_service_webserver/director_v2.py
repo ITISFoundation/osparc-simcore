@@ -301,27 +301,19 @@ async def start_service(
 
 
 @log_decorator(logger=log)
-async def get_service_state(
+async def get_services(
     app: web.Application,
-    user_id: str,
-    project_id: str,
-    service_key: str,
-    service_version: str,
-    node_uuid: str,
+    user_id: Optional[str] = None,
+    project_id: Optional[str] = None,
 ):
-    """
-    Requests the status of a service:
-    - legacy services request is redirected to `director-v0`
-    - dynamic-sidecar `director-v2` will handle the request
-    """
-    params = {
-        "service_key": service_key,
-        "service_version": service_version,
-        "user_id": user_id,
-        "project_id": project_id,
-    }
+    params = {}
+    if user_id:
+        params["user_id"] = user_id
+    if project_id:
+        params["project_id"] = project_id
+
     director2_settings: Directorv2Settings = get_settings(app)
-    backend_url = URL(director2_settings.endpoint) / "dynamic_services" / f"{node_uuid}"
+    backend_url = URL(director2_settings.endpoint) / "dynamic_services"
 
     return await _request_director_v2(
         app, "GET", backend_url, params=params, expected_status=web.HTTPOk
@@ -355,23 +347,6 @@ async def stop_service(
 
 
 @log_decorator(logger=log)
-async def list_running_dynamic_services(
-    app: web.Application, user_id: str, project_id: str
-) -> None:
-    """
-    Retruns the running dynamic services from director-v0 and director-v2
-    """
-    director2_settings: Directorv2Settings = get_settings(app)
-    backend_url = (
-        URL(director2_settings.endpoint) / "dynamic_services" / "running/"
-    ).update_query(user_id=user_id, project_id=project_id)
-
-    return await _request_director_v2(
-        app, "GET", backend_url, expected_status=web.HTTPOk
-    )
-
-
-@log_decorator(logger=log)
 async def stop_services(
     app: web.Application,
     user_id: Optional[str] = None,
@@ -379,7 +354,7 @@ async def stop_services(
     save_state: Optional[bool] = True,
 ) -> None:
     """Stops all services in parallel"""
-    running_dynamic_services = await list_running_dynamic_services(
+    running_dynamic_services = await get_services(
         app, user_id=user_id, project_id=project_id
     )
 

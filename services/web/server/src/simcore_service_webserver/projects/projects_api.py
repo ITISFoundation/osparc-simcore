@@ -31,10 +31,10 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_service_webserver.director import director_exceptions
 from yarl import URL
 
-from ..director import director_api
 from ..director_v2 import (
     delete_pipeline,
     get_computation_task,
+    get_services,
     request_retrieve_dyn_service,
     start_service,
     stop_service,
@@ -139,9 +139,7 @@ async def start_project_interactive_services(
         project["uuid"],
         user_id,
     )
-    running_services = await director_api.get_running_interactive_services(
-        request.app, user_id, project["uuid"]
-    )
+    running_services = await get_services(request.app, user_id, project["uuid"])
     log.debug("Running services %s", running_services)
 
     running_service_uuids = [x["service_uuid"] for x in running_services]
@@ -243,7 +241,7 @@ async def add_project_node(
     )
     node_uuid = service_id if service_id else str(uuid4())
     if _is_node_dynamic(service_key):
-        await director_api.start_service(
+        await start_service(
             request.app,
             user_id,
             project_uuid,
@@ -256,6 +254,25 @@ async def add_project_node(
     return node_uuid
 
 
+async def get_project_node(
+    request: web.Request, project_uuid: str, user_id: int, node_id: str
+):
+    log.debug(
+        "getting node %s in project %s for user %s", node_id, project_uuid, user_id
+    )
+
+    list_of_interactive_services = await get_services(
+        request.app, project_id=project_uuid, user_id=user_id
+    )
+    # get the project if it is running
+    for service in list_of_interactive_services:
+        if service["service_uuid"] == node_id:
+            return service
+    # the service is not running, it's a computational service maybe
+    # TODO: find out if computational service is running if not throw a 404 since it's not around
+    return {"service_uuid": node_id, "service_state": "idle"}
+
+
 async def delete_project_node(
     request: web.Request, project_uuid: str, user_id: int, node_uuid: str
 ) -> None:
@@ -263,7 +280,7 @@ async def delete_project_node(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
     )
 
-    list_of_services = await director_api.get_running_interactive_services(
+    list_of_services = await get_services(
         request.app, project_id=project_uuid, user_id=user_id
     )
     # stop the service if it is running
