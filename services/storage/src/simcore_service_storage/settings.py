@@ -19,7 +19,8 @@ class Settings(BaseCustomSettings):
     )
 
     STORAGE_MAX_WORKERS: PositiveInt = Field(
-        8, description="Number of workers for the thead executor pool"
+        8,
+        description="Number of workers for the thead executor pool used in DatcoreWrapper",
     )
 
     STORAGE_MONITORING_ENABLED: bool = False
