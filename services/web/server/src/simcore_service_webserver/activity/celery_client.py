@@ -1,5 +1,4 @@
 import logging
-import pdb
 
 import tenacity
 from aiohttp import web
@@ -8,7 +7,11 @@ from tenacity import before_log, stop_after_attempt, wait_fixed
 
 from ..computation_config import ComputationSettings
 from ..computation_config import get_settings as get_computation_settings
-from .config import APP_CLIENT_CELERY_CLIENT_KEY
+from .config import CONFIG_SECTION_NAME
+
+__APP_CLIENT_CELERY_CLIENT_KEY = ".".join(
+    [__name__, CONFIG_SECTION_NAME, "celery_client"]
+)
 
 log = logging.getLogger(__name__)
 
@@ -31,10 +34,10 @@ def _create_celery_app(app: web.Application) -> Celery:
 
 
 def setup(app: web.Application):
-    app[APP_CLIENT_CELERY_CLIENT_KEY] = celery_app = _create_celery_app(app)
+    app[__APP_CLIENT_CELERY_CLIENT_KEY] = celery_app = _create_celery_app(app)
 
     assert celery_app  # nosec
 
 
 def get_celery_client(app: web.Application) -> Celery:
-    return app[APP_CLIENT_CELERY_CLIENT_KEY]
+    return app[__APP_CLIENT_CELERY_CLIENT_KEY]

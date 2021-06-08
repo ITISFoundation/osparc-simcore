@@ -11,9 +11,7 @@ from pydantic import BaseSettings
 from servicelib.application_keys import APP_CONFIG_KEY
 
 CONFIG_SECTION_NAME = "activity"
-APP_CLIENT_CELERY_CLIENT_KEY = ".".join(
-    [__name__, CONFIG_SECTION_NAME, "celery_client"]
-)
+
 
 schema = T.Dict(
     {
