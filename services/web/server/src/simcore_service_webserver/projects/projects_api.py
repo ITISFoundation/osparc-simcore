@@ -291,8 +291,6 @@ async def delete_project_node(
             await stop_service(
                 request.app,
                 node_uuid,
-                service["key"],
-                service["version"],
                 save_state=False,
             )
             break

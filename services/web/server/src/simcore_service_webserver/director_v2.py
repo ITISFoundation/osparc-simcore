@@ -324,8 +324,6 @@ async def get_services(
 async def stop_service(
     app: web.Application,
     service_uuid: str,
-    service_key: str,
-    service_version: str,
     save_state: Optional[bool] = True,
 ) -> None:
     # stopping a service can take a lot of time
@@ -337,8 +335,6 @@ async def stop_service(
     backend_url = (
         URL(director2_settings.endpoint) / "dynamic_services" / f"{service_uuid}"
     ).update_query(
-        service_key=service_key,
-        service_version=service_version,
         save_state="true" if save_state else "false",
     )
     return await _request_director_v2(
@@ -362,8 +358,6 @@ async def stop_services(
         stop_service(
             app=app,
             service_uuid=service["service_uuid"],
-            service_key=service["service_key"],
-            service_version=service["service_version"],
             save_state=save_state,
         )
         for service in running_dynamic_services

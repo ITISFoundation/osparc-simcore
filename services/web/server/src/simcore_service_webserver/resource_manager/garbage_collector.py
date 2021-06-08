@@ -368,9 +368,7 @@ async def remove_orphaned_services(
                 service_host,
             )
             try:
-                await stop_service(
-                    app, node_id, service_key, service_version, save_state=False
-                )
+                await stop_service(app, node_id, save_state=False)
             except (ServiceNotFoundError, DirectorException) as err:
                 logger.warning("Error while stopping service: %s", err)
             continue
@@ -410,9 +408,7 @@ async def remove_orphaned_services(
                 user_id = int(interactive_service.get("user_id", 0))
 
                 save_state = not await is_user_guest(app, user_id) if user_id else True
-                await stop_service(
-                    app, node_id, service_key, service_version, save_state
-                )
+                await stop_service(app, node_id, save_state)
             except (ServiceNotFoundError, DirectorException) as err:
                 logger.warning("Error while stopping service: %s", err)
 
