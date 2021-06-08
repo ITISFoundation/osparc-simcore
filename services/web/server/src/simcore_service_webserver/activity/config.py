@@ -2,14 +2,18 @@
     - config-file schema
     - prometheus endpoint information
 """
-from aiohttp.web import Application
+from typing import Dict
+
 import trafaret as T
+from aiohttp.web import Application
 from models_library.basic_types import PortInt, VersionTag
 from pydantic import BaseSettings
 from servicelib.application_keys import APP_CONFIG_KEY
-from typing import Dict
 
 CONFIG_SECTION_NAME = "activity"
+APP_CLIENT_CELERY_CLIENT_KEY = ".".join(
+    [__name__, CONFIG_SECTION_NAME, "celery_client"]
+)
 
 schema = T.Dict(
     {

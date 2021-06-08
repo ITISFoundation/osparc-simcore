@@ -1,33 +1,13 @@
 """ API of computation subsystem within this application
 
 """
-# pylint: disable=too-many-arguments
-import logging
 
-from aiohttp import web
-from celery import Celery
 from models_library.projects_state import RunningState
 from simcore_postgres_database.models.comp_pipeline import StateType
-
-from .computation_config import ComputationSettings
-from .computation_config import get_settings as get_computation_settings
-
-log = logging.getLogger(__file__)
-
 
 #
 # API ------------------------------------------
 #
-
-
-def get_celery(app: web.Application) -> Celery:
-    comp_settings: ComputationSettings = get_computation_settings(app)
-    celery_app = Celery(
-        comp_settings.task_name,
-        broker=comp_settings.broker_url,
-        backend=comp_settings.result_backend,
-    )
-    return celery_app
 
 
 DB_TO_RUNNING_STATE = {
