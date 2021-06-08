@@ -5,6 +5,7 @@
 
 import logging
 import urllib.parse
+import warnings
 from typing import Any, Dict, List, Optional, Tuple
 
 from aiohttp import ClientSession, web
@@ -17,6 +18,8 @@ from . import director_exceptions
 from .config import get_config
 
 log = logging.getLogger(__name__)
+
+warnings.warn("Director-v0 is deprecated, please use Director-v2", DeprecationWarning)
 
 
 def _get_director_client(app: web.Application) -> Tuple[ClientSession, URL]:
