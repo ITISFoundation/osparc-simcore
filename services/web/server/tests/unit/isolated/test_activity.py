@@ -9,7 +9,7 @@ import pytest
 import yaml
 from aiohttp import web
 from aiohttp.client_exceptions import ClientConnectionError
-
+from celery import Celery
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_mock import future_with_result
 from servicelib.application import create_safe_application
@@ -17,6 +17,14 @@ from simcore_service_webserver.activity import handlers, setup_activity
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
+
+
+@pytest.fixture
+def mocked_celery_client(celery_app: Celery, mocker):
+    mocker.patch(
+        "simcore_service_webserver.activity.celery_client._create_celery_app",
+        return_value=celery_app,
+    )
 
 
 @pytest.fixture
@@ -82,7 +90,9 @@ def app_config(fake_data_dir: Path, osparc_simcore_root_dir: Path):
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_config, mock_orphaned_services):
+def client(
+    mocked_celery_client, loop, aiohttp_client, app_config, mock_orphaned_services
+):
     app = create_safe_application(app_config)
 
     setup_session(app)
