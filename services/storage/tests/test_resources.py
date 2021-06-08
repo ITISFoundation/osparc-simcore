@@ -1,35 +1,27 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-# pylint: disable=unused-import
+# pylint: disable=unused-variable
 
 import io
 import logging
-import pathlib
+from pathlib import Path
+from typing import List
 
 import pytest
-
-# under test
 from simcore_service_storage.resources import resources
 
 log = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def app_resources(package_dir):
-    resource_names = []
-    for name in ("api",):
-        folder = package_dir / name
-        resource_names += [
-            str(p.relative_to(package_dir)) for p in folder.rglob("*.y*ml")
-        ]
-
+def app_resources(package_dir: Path) -> List[str]:
+    resource_names = [
+        str(p.relative_to(package_dir)) for p in (package_dir / "api").rglob("*.y*ml")
+    ]
     return resource_names
 
 
-# ------------------------------------------------------------------------------
-
-
-def test_resource_io_utils(app_resources):
+def test_resource_io_utils(app_resources: List[str]):
 
     assert not resources.exists("fake_resource_name")
 
@@ -59,7 +51,7 @@ def test_named_resources():
         assert resources.listdir(resource_name)
 
 
-def test_paths(app_resources):
+def test_paths(app_resources: List[str]):
     for resource_name in app_resources:
         assert resources.get_path(resource_name).exists()
 
