@@ -5,14 +5,16 @@
 import logging
 import urllib
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import List, Optional
 
 import httpx
 import yarl
 from fastapi import FastAPI, HTTPException, Request, Response
+from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
-from models_library.services import ServiceDockerData, ServiceKeyVersion
 from models_library.service_settings import SimcoreService
+from models_library.services import ServiceDockerData, ServiceKeyVersion
+from simcore_service_director_v2.models.schemas.constants import UserID
 
 # Module's business logic ---------------------------------------------
 from starlette import status
@@ -143,19 +145,25 @@ class DirectorV0Client:
             "GET",
             f"services/{urllib.parse.quote_plus(service.key)}/{service.version}:labels",
         )
+        resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
             return SimcoreService.parse_obj(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)
     async def get_running_services(
-        self, user_id: str, project_id: str
+        self, user_id: Optional[UserID] = None, project_id: Optional[ProjectID] = None
     ) -> List[RunningServiceDetails]:
-        request_url = yarl.URL("running_interactive_services").with_query(
-            user_id=user_id, project_id=project_id
-        )
+        query_params = {}
+        if user_id is not None:
+            query_params["user_id"] = f"{user_id}"
+        if project_id is not None:
+            query_params["study_id"] = f"{project_id}"
+        request_url = yarl.URL("running_interactive_services").with_query(query_params)
 
         resp = await self.request("GET", str(request_url))
+        resp.raise_for_status()
+
         if resp.status_code == status.HTTP_200_OK:
             return [
                 RunningServiceDetails.parse_obj(x)

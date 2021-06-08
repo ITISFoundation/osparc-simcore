@@ -2,18 +2,25 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from pprint import pformat
 from typing import Any, Dict
 
 import pytest
 from models_library.service_settings import (
+    SimcoreService,
     SimcoreServiceSetting,
     SimcoreServiceSettings,
-    SimcoreService,
 )
+from pydantic import BaseModel
 
 
 @pytest.mark.parametrize(
-    "example", SimcoreServiceSetting.Config.schema_extra["examples"]
+    "model_cls",
+    (
+        SimcoreServiceSetting,
+        SimcoreServiceSettings,
+        SimcoreService,
+    ),
 )
 def test_service_setting(example: Dict[str, Any]):
     service_setting_instance = SimcoreServiceSetting.parse_obj(example)
@@ -52,3 +59,27 @@ def test_simcore_service_labels(example: Dict, items: int):
     simcore_service = SimcoreService.parse_obj(example)
     assert simcore_service
     assert len(simcore_service.dict(exclude_unset=True)) == items
+
+
+def test_service_settings_model_examples(
+    model_cls: BaseModel, model_cls_examples: Dict[str, Dict[str, Any]]
+):
+    for name, example in model_cls_examples.items():
+        print(name, ":", pformat(example))
+        model_instance = model_cls(**example)
+        assert model_instance, f"Failed with {name}"
+
+
+@pytest.mark.parametrize(
+    "model_cls",
+    (SimcoreService,),
+)
+def test_correctly_detect_dynamic_sidecar_boot(
+    model_cls: BaseModel, model_cls_examples: Dict[str, Dict[str, Any]]
+):
+    for name, example in model_cls_examples.items():
+        print(name, ":", pformat(example))
+        model_instance = model_cls(**example)
+        assert model_instance.needs_dynamic_sidecar == (
+            True if "simcore.service.paths-mapping" in example else False
+        )

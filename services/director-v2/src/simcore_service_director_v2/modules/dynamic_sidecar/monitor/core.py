@@ -13,18 +13,18 @@ from typing import Deque, Dict, Optional
 
 from async_timeout import timeout
 from fastapi import FastAPI, Request
-
 from models_library.service_settings import ComposeSpecModel, PathsMapping
+
 from ..config import DynamicSidecarSettings
 from ..docker_utils import (
     ServiceLabelsStoredData,
+    are_all_services_present,
     get_dynamic_sidecar_state,
     get_dynamic_sidecars_to_monitor,
-    are_all_services_present,
-    remove_dynamic_sidecar_stack,
     remove_dynamic_sidecar_network,
+    remove_dynamic_sidecar_stack,
 )
-from ..exceptions import DynamicSidecarError
+from ..exceptions import DynamicSidecarError, DynamicSidecarNotFoundError
 from ..parse_docker_status import ServiceState, extract_containers_minimim_statuses
 from .dynamic_sidecar_api import (
     DynamicSidecarClient,
@@ -186,7 +186,7 @@ class DynamicSidecarsMonitor:
         """Handles the removal cycle of the services, saving states etc..."""
         async with self._lock:
             if node_uuid not in self._inverse_search_mapping:
-                return
+                raise DynamicSidecarNotFoundError(node_uuid)
 
             service_name = self._inverse_search_mapping[node_uuid]
             if service_name not in self._to_monitor:
@@ -227,8 +227,7 @@ class DynamicSidecarsMonitor:
     async def get_stack_status(self, node_uuid: str) -> ServiceStateReply:
         async with self._lock:
             if node_uuid not in self._inverse_search_mapping:
-                # TODO: ANE why not raising an exception here???
-                return ServiceStateReply.error_status(node_uuid)
+                raise DynamicSidecarNotFoundError(node_uuid)
 
             service_name = self._inverse_search_mapping[node_uuid]
             if service_name not in self._to_monitor:
@@ -295,7 +294,7 @@ class DynamicSidecarsMonitor:
 
     async def _runner(self) -> None:
         """This code runs under a lock and can safely change the Monitor data of all entries"""
-        logger.info("Monitoring dynamic-sidecars")
+        logger.debug("Monitoring dynamic-sidecars")
 
         async def monitor_single_service(service_name: str) -> None:
             lock_with_monitor_data: LockWithMonitorData = self._to_monitor[service_name]

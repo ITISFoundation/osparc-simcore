@@ -1,23 +1,24 @@
-import asyncio
 import logging
 from pprint import pformat
-from typing import Dict, Union, List, Optional
+from typing import List, Optional
 from uuid import UUID
 
 import httpx
-import yarl
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Depends, Header
 from fastapi.responses import RedirectResponse
 from models_library.services import ServiceKeyVersion
+from models_library.projects import ProjectID
+from models_library.service_settings import SimcoreService
+from simcore_service_director_v2.models.schemas.constants import UserID
 from starlette import status
 from starlette.datastructures import URL
-
 
 from ...models.domains.dynamic_services import (
     DynamicServiceCreate,
     RetrieveDataIn,
     RetrieveDataOutEnveloped,
 )
+from ...models.schemas.services import RunningServiceDetails
 from ...modules.dynamic_sidecar.config import DynamicSidecarSettings, get_settings
 from ...modules.dynamic_sidecar.constants import (
     DYNAMIC_SIDECAR_PREFIX,
@@ -32,6 +33,7 @@ from ...modules.dynamic_sidecar.docker_utils import (
     list_dynamic_sidecar_services,
     dynamic_service_is_running,
 )
+from ...modules.dynamic_sidecar.exceptions import DynamicSidecarNotFoundError
 from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor, get_monitor
 from ...modules.dynamic_sidecar.monitor.models import ServiceStateReply
 from ...modules.dynamic_sidecar.service_specs import (
@@ -48,37 +50,39 @@ from ..dependencies.dynamic_services import (
     get_service_base_url,
     get_services_client,
 )
-from models_library.service_settings import SimcoreService
-
-DynamicServicesList = List[Dict[str, Union[str, int]]]
 
 router = APIRouter()
 log = logging.getLogger(__file__)
 
 
-@router.post(
-    "/{node_uuid}:retrieve",
-    summary="Calls the dynamic service's retrieve endpoint with optional port_keys",
-    response_model=RetrieveDataOutEnveloped,
+@router.get(
+    "",
     status_code=status.HTTP_200_OK,
+    response_model=List[ServiceStateReply],
+    summary=(
+        "returns a list of running interactive services filtered by user_id and/or project_id"
+        "both legacy (director-v0) and modern (director-v2)"
+    ),
 )
-@log_decorator(logger=log)
-async def service_retrieve_data_on_ports(
-    retrieve_settings: RetrieveDataIn,
-    service_base_url: URL = Depends(get_service_base_url),
-    services_client: ServicesClient = Depends(get_services_client),
-):
-    # the handling of client/server errors is already encapsulated in the call to request
-    resp = await services_client.request(
-        "POST",
-        f"{service_base_url}/retrieve",
-        data=retrieve_settings.json(by_alias=True),
-        timeout=httpx.Timeout(
-            5.0, read=60 * 60.0
-        ),  # this call waits for the service to download data
-    )
-    # validate and return
-    return RetrieveDataOutEnveloped.parse_obj(resp.json())
+async def list_running_dynamic_services(
+    user_id: Optional[UserID] = None,
+    project_id: Optional[ProjectID] = None,
+    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
+    dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
+    monitor: DynamicSidecarsMonitor = Depends(get_monitor),
+) -> List[ServiceStateReply]:
+    legacy_running_services: List[
+        RunningServiceDetails
+    ] = await director_v0_client.get_running_services(user_id, project_id)
+
+    modern_running_services: List[ServiceStateReply] = [
+        await monitor.get_stack_status(service["Spec"]["Labels"]["uuid"])
+        for service in await list_dynamic_sidecar_services(
+            dynamic_sidecar_settings, user_id, project_id
+        )
+    ]
+
+    return legacy_running_services + modern_running_services
 
 
 @router.post(
@@ -95,25 +99,22 @@ async def create_dynamic_service(
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-):
+) -> ServiceStateReply:
     simcore_service: SimcoreService = await director_v0_client.get_service_labels(
         service=ServiceKeyVersion(key=service.key, version=service.version)
     )
-    use_dynamic_sidecar = simcore_service.boot_mode == "dynamic-sidecar"
-    if not use_dynamic_sidecar:
+    if not simcore_service.needs_dynamic_sidecar:
         # forward to director-v0
-        base_url = (
-            str(director_v0_client.client.base_url) + "running_interactive_services"
-        )
-        redirect_url_with_query = yarl.URL(base_url).with_query(
-            {
+        redirect_url_with_query = director_v0_client.client.base_url.copy_with(
+            path="/v0/running_interactive_services",
+            params={
                 "user_id": f"{service.user_id}",
                 "project_id": f"{service.project_id}",
                 "service_uuid": f"{service.uuid}",
                 "service_key": f"{service.key}",
                 "service_version": f"{service.version}",
-                "service_basepath": str(service.basepath),
-            }
+                "service_basepath": f"{service.basepath}",
+            },
         )
         log.debug("Redirecting %s", redirect_url_with_query)
         return RedirectResponse(redirect_url_with_query)
@@ -256,91 +257,68 @@ async def create_dynamic_service(
 )
 async def dynamic_sidecar_status(
     node_uuid: UUID,
-    user_id: int = Query(..., description="required by director-v1"),
-    project_id: UUID = Query(..., description="required by director-v1"),
-    dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> Union[Dict, List]:
-    """
-    returns:
-        - "Dict" if dynamic-service
-        - "List" if legacy dynamic service (reply of GET /running_interactive_services)
-    """
-    use_dynamic_sidecar = await dynamic_service_is_running(
-        dynamic_sidecar_settings, str(node_uuid)
-    )
-    if not use_dynamic_sidecar:
-        # forward to director-v0
-        base_url = (
-            str(director_v0_client.client.base_url) + "running_interactive_services"
-        )
-        redirect_url_with_query = yarl.URL(base_url).with_query(
-            {"user_id": f"{user_id}", "project_id": f"{project_id}"}
-        )
-        log.debug("Redirecting %s", redirect_url_with_query)
-        return RedirectResponse(redirect_url_with_query)
+) -> ServiceStateReply:
 
-    return await monitor.get_stack_status(str(node_uuid))
+    try:
+        return await monitor.get_stack_status(str(node_uuid))
+    except DynamicSidecarNotFoundError:
+        # legacy service? if it's not then a 404 will anyway be received
+        # forward to director-v0
+        redirection_url = director_v0_client.client.base_url.copy_with(
+            path=f"/v0/running_interactive_services/{node_uuid}",
+        )
+
+        return RedirectResponse(redirection_url)
 
 
 @router.delete(
     "/{node_uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="stops previously spawned dynamic-sidecar",
 )
 async def stop_dynamic_service(
     node_uuid: UUID,
-    save_state: Optional[bool],
-    dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
+    save_state: Optional[bool] = True,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> Dict[str, str]:
-    use_dynamic_sidecar = await dynamic_service_is_running(
-        dynamic_sidecar_settings, str(node_uuid)
-    )
+) -> None:
 
-    if not use_dynamic_sidecar:
+    try:
+        await monitor.remove_service_from_monitor(str(node_uuid), save_state)
+    except DynamicSidecarNotFoundError:
+        # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0
-        base_url = (
-            str(director_v0_client.client.base_url)
-            + f"running_interactive_services/{node_uuid}"
+        redirection_url = director_v0_client.client.base_url.copy_with(
+            path=f"/v0/running_interactive_services/{node_uuid}",
+            params={"save_state": bool(save_state)},
         )
-        redirect_url_with_query = yarl.URL(base_url).with_query(
-            save_state="true" if save_state else "false"
-        )
-        log.debug("Redirecting %s", redirect_url_with_query)
-        return RedirectResponse(redirect_url_with_query)
 
-    await monitor.remove_service_from_monitor(str(node_uuid), save_state)
+        return RedirectResponse(redirection_url)
 
 
-@router.get(
-    "/running/",
+@router.post(
+    "/{node_uuid}:retrieve",
+    summary="Calls the dynamic service's retrieve endpoint with optional port_keys",
+    response_model=RetrieveDataOutEnveloped,
     status_code=status.HTTP_200_OK,
-    summary=(
-        "returns a list of running interactive services "
-        "both from director-v0 and director-v2"
-    ),
 )
-async def list_running_dynamic_services(
-    user_id: str,
-    project_id: str,
-    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
-    dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
-    monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> DynamicServicesList:
-    running_interactive_services: DynamicServicesList = (
-        await director_v0_client.get_running_services(user_id, project_id)
+@log_decorator(logger=log)
+async def service_retrieve_data_on_ports(
+    retrieve_settings: RetrieveDataIn,
+    service_base_url: URL = Depends(get_service_base_url),
+    services_client: ServicesClient = Depends(get_services_client),
+):
+    # the handling of client/server errors is already encapsulated in the call to request
+    resp = await services_client.request(
+        "POST",
+        f"{service_base_url}/retrieve",
+        data=retrieve_settings.json(by_alias=True),
+        timeout=httpx.Timeout(
+            5.0, read=60 * 60.0
+        ),  # this call waits for the service to download data
     )
-
-    get_stack_statuse_tasks: List[ServiceStateReply] = [
-        monitor.get_stack_status(service["Spec"]["Labels"]["uuid"])
-        for service in await list_dynamic_sidecar_services(dynamic_sidecar_settings)
-    ]
-    running_dynamic_sidecar_services: DynamicServicesList = [
-        x.dict(exclude_unset=True)
-        for x in await asyncio.gather(*get_stack_statuse_tasks)
-    ]
-
-    return running_interactive_services + running_dynamic_sidecar_services
+    # validate and return
+    return RetrieveDataOutEnveloped.parse_obj(resp.json())

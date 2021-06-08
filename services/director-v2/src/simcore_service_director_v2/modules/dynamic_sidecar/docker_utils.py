@@ -4,12 +4,14 @@ import json
 import logging
 import time
 from contextlib import suppress
-from typing import Any, Deque, Dict, Optional, Set, Tuple, List
+from typing import Any, Deque, Dict, List, Optional, Set, Tuple
 
 import aiodocker
 from asyncio_extras import async_contextmanager
-
+from models_library.projects import ProjectID
 from models_library.service_settings import ComposeSpecModel, PathsMapping
+from simcore_service_director_v2.models.schemas.constants import UserID
+
 from .config import DynamicSidecarSettings
 from .constants import DYNAMIC_SIDECAR_PREFIX, SERVICE_NAME_SIDECAR
 from .exceptions import DynamicSidecarError, GenericDockerError
@@ -19,7 +21,6 @@ from .parse_docker_status import (
     ServiceState,
     extract_task_state,
 )
-from ...core.settings import ServiceType
 
 log = logging.getLogger(__name__)
 
@@ -306,16 +307,22 @@ async def remove_dynamic_sidecar_network(network_name: str):
 
 async def list_dynamic_sidecar_services(
     dynamic_sidecar_settings: DynamicSidecarSettings,
+    user_id: Optional[UserID] = None,
+    project_id: Optional[ProjectID] = None,
 ) -> List[Dict[str, Any]]:
+    service_filters = {
+        "label": [
+            f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}",
+        ],
+        "name": [DYNAMIC_SIDECAR_PREFIX],
+    }
+    if user_id is not None:
+        service_filters["label"].append(f"user_id={user_id}")
+    if project_id is not None:
+        service_filters["label"].append(f"study_id={project_id}")
+
     async with docker_client() as client:  # pylint: disable=not-async-context-manager
-        dynamic_sidecar_services = await client.services.list(
-            filters={
-                "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}",
-                    f"type={ServiceType.MAIN.value}",
-                ]
-            }
-        )
+        dynamic_sidecar_services = await client.services.list(filters=service_filters)
         return dynamic_sidecar_services
 
 

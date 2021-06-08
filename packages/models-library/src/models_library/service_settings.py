@@ -1,8 +1,7 @@
 import json
-
 from enum import Enum
-from typing import Any, List, Optional, Dict
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, Field, Json, validator, PrivateAttr
 
@@ -77,10 +76,6 @@ class SimcoreServiceSettings(BaseModel):
         return self.__root__[item]
 
 
-class BootModeEnum(str, Enum):
-    DYNAMIC_SIDECAR = "dynamic-sidecar"
-
-
 class PathsMapping(BaseModel):
     inputs_path: Path = Field(
         ..., description="path where the service expects all the inputs folder"
@@ -122,14 +117,6 @@ class SimcoreService(BaseModel):
         ),
     )
 
-    boot_mode: Optional[BootModeEnum] = Field(
-        None,
-        alias="simcore.service.boot-mode",
-        description=(
-            "Field used to determine if the service is started in "
-            "legacy mode or via the dynamic-sidecar"
-        ),
-    )
     paths_mapping: Json[Optional[PathsMapping]] = Field(
         None,
         alias="simcore.service.paths-mapping",
@@ -149,6 +136,17 @@ class SimcoreService(BaseModel):
             "needs to send http traffic must be specified"
         ),
     )
+
+    needs_dynamic_sidecar: Optional[bool] = Field(
+        None, description="true if dynamic sidecar is needed to start that service"
+    )
+
+    @validator("needs_dynamic_sidecar", pre=True, always=True)
+    @classmethod
+    def auto_fill_dynamic_sidecar(cls, v, values):
+        if not v:
+            return True if values.get("paths_mapping") else False
+        return v
 
     # # TODO: fix validators
     # @validator(
@@ -193,7 +191,6 @@ class SimcoreService(BaseModel):
                     "simcore.service.settings": json.dumps(
                         SimcoreServiceSetting.Config.schema_extra["examples"]
                     ),
-                    "simcore.service.boot-mode": "dynamic-sidecar",
                     "simcore.service.paths-mapping": json.dumps(
                         PathsMapping.Config.schema_extra["examples"]
                     ),
@@ -203,7 +200,6 @@ class SimcoreService(BaseModel):
                     "simcore.service.settings": json.dumps(
                         SimcoreServiceSetting.Config.schema_extra["examples"]
                     ),
-                    "simcore.service.boot-mode": "dynamic-sidecar",
                     "simcore.service.paths-mapping": json.dumps(
                         PathsMapping.Config.schema_extra["examples"]
                     ),
