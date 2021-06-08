@@ -1,11 +1,12 @@
 # pylint: disable=redefined-outer-name
 import uuid
-import pytest
 
+import pytest
 from simcore_service_director_v2.modules.dynamic_sidecar.monitor.models import (
-    ServiceStateReply,
     MonitorData,
     PathsMapping,
+    ServiceBootType,
+    ServiceStateReply,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.parse_docker_status import (
     ServiceState,
@@ -49,18 +50,15 @@ def test_service_reply_make_status(node_uuid: str, monitor_data: MonitorData):
     )
     print(status)
     assert status
-    assert status.dict(exclude_unset=True) == {
-        "dynamic_type": "dynamic-sidecar",
-        "service_state": "running",
+    assert status.dict(exclude_unset=True, by_alias=True) == {
+        "boot_type": ServiceBootType.V2,
+        "service_state": ServiceState.RUNNING,
         "service_message": "",
-        "published_port": 80,
         "service_uuid": node_uuid,
         "service_key": "simcore/services/dynamic/test-image",
         "service_version": "1.0.1",
         "service_host": "some service",
         "service_port": "3000",
-        "service_basepath": "",
-        "entry_point": "",
     }
 
 
@@ -68,8 +66,8 @@ def test_service_reply_error_status(node_uuid: str):
     error_status = ServiceStateReply.error_status(node_uuid)
     print(error_status)
     assert error_status
-    assert error_status.dict(exclude_unset=True) == {
-        "dynamic_type": "dynamic-sidecar",
+    assert error_status.dict(exclude_unset=True, by_alias=True) == {
+        "boot_type": ServiceBootType.V2,
         "service_state": "error",
         "service_message": f"Could not find a service for node_uuid={node_uuid}",
     }
