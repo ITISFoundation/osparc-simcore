@@ -233,37 +233,3 @@ class LockWithMonitorData(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
-
-
-@unique
-class ServiceBootType(str, Enum):
-    V0 = "V0"
-    V2 = "V2"
-
-
-class ServiceStateReply(RunningServiceDetails):
-    boot_type: ServiceBootType = Field(
-        ...,
-        description="describes how the dynamic services was started",
-    )
-    entry_point: Optional[str] = Field(None, deprecated=True)
-    service_basepath: Optional[str] = Field(None, deprecated=True)
-
-    @classmethod
-    def make_status(
-        cls,
-        node_uuid: str,
-        monitor_data: MonitorData,
-        service_state: ServiceState,
-        service_message: str,
-    ) -> "ServiceStateReply":
-        return cls(
-            boot_type=ServiceBootType.V2,
-            service_uuid=node_uuid,
-            service_key=monitor_data.service_key,
-            service_version=monitor_data.service_tag,
-            service_host=monitor_data.service_name,
-            service_port=monitor_data.service_port,
-            service_state=service_state.value,
-            service_message=service_message,
-        )

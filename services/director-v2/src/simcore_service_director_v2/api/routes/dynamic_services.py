@@ -19,6 +19,7 @@ from starlette.datastructures import URL
 
 from ...models.domains.dynamic_services import (
     DynamicServiceCreate,
+    DynamicServiceOut,
     RetrieveDataIn,
     RetrieveDataOutEnveloped,
 )
@@ -32,7 +33,6 @@ from ...modules.dynamic_sidecar.docker_utils import (
 )
 from ...modules.dynamic_sidecar.exceptions import DynamicSidecarNotFoundError
 from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor, get_monitor
-from ...modules.dynamic_sidecar.monitor.models import ServiceStateReply
 from ...modules.dynamic_sidecar.service_specs import (
     assemble_service_name,
     dyn_proxy_entrypoint_assembly,
@@ -54,7 +54,7 @@ log = logging.getLogger(__file__)
 @router.get(
     "",
     status_code=status.HTTP_200_OK,
-    response_model=List[ServiceStateReply],
+    response_model=List[DynamicServiceOut],
     summary=(
         "returns a list of running interactive services filtered by user_id and/or project_id"
         "both legacy (director-v0) and modern (director-v2)"
@@ -66,12 +66,12 @@ async def list_running_dynamic_services(
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> List[ServiceStateReply]:
+) -> List[DynamicServiceOut]:
     legacy_running_services: List[
-        ServiceStateReply
+        DynamicServiceOut
     ] = await director_v0_client.get_running_services(user_id, project_id)
 
-    modern_running_services: List[ServiceStateReply] = [
+    modern_running_services: List[DynamicServiceOut] = [
         await monitor.get_stack_status(service["Spec"]["Labels"]["uuid"])
         for service in await list_dynamic_sidecar_services(
             dynamic_sidecar_settings, user_id, project_id
@@ -85,7 +85,7 @@ async def list_running_dynamic_services(
     "",
     summary="create & start the dynamic service",
     status_code=status.HTTP_201_CREATED,
-    response_model=ServiceStateReply,
+    response_model=DynamicServiceOut,
 )
 @log_decorator(logger=log)
 async def create_dynamic_service(
@@ -95,7 +95,7 @@ async def create_dynamic_service(
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> ServiceStateReply:
+) -> DynamicServiceOut:
     simcore_service: SimcoreService = await director_v0_client.get_service_labels(
         service=ServiceKeyVersion(key=service.key, version=service.version)
     )
@@ -231,13 +231,13 @@ async def create_dynamic_service(
 @router.get(
     "/{node_uuid}",
     summary="assembles the status for the dynamic-sidecar",
-    response_model=ServiceStateReply,
+    response_model=DynamicServiceOut,
 )
 async def dynamic_sidecar_status(
     node_uuid: UUID,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> ServiceStateReply:
+) -> DynamicServiceOut:
 
     try:
         return await monitor.get_stack_status(str(node_uuid))

@@ -9,11 +9,10 @@ from models_library.services import DYNAMIC_SERVICE_KEY_RE, VERSION_RE
 from pydantic import BaseModel, Field
 
 from .constants import UserID
+from .services import ServiceState
 
 
-class DynamicServiceBase(BaseModel):
-    user_id: UserID
-    project_id: ProjectID
+class ServiceDetails(BaseModel):
     key: str = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
@@ -28,7 +27,11 @@ class DynamicServiceBase(BaseModel):
         regex=VERSION_RE,
         examples=["1.0.0", "0.0.1"],
     )
+
+    user_id: UserID
+    project_id: ProjectID
     uuid: NodeID
+
     basepath: Path = Field(
         ...,
         description="predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
@@ -37,10 +40,10 @@ class DynamicServiceBase(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "user_id": 234,
-                "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                 "key": "simcore/services/dynamic/3dviewer",
                 "version": "2.4.5",
+                "user_id": 234,
+                "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                 "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
             }
@@ -48,26 +51,79 @@ class DynamicServiceBase(BaseModel):
 
 
 @unique
-class ServiceState(str, Enum):
-    PENDING = "pending"
-    PULLING = "pulling"
-    STARTING = "starting"
-    RUNNING = "running"
-    COMPLETE = "complete"
-    FAILED = "failed"
+class ServiceBootType(str, Enum):
+    V0 = "V0"
+    V2 = "V2"
 
 
-class DynamicServiceState(DynamicServiceBase):
+class RunningServiceDetails(ServiceDetails):
+    boot_type: ServiceBootType = Field(
+        ...,
+        description="describes how the dynamic services was started (legacy=V0, modern=V2)",
+    )
+
     host: str = Field(..., description="the service swarm internal host name")
     internal_port: PortInt = Field(..., description="the service swarm internal port")
     published_port: PortInt = Field(
-        ..., description="the service swarm published port if any"
-    )
-    entry_point: Optional[str] = Field(
-        None, description="if empty the service entrypoint is on the root endpoint."
+        None, description="the service swarm published port if any", deprecated=True
     )
 
+    entry_point: Optional[str] = Field(
+        None,
+        description="if empty the service entrypoint is on the root endpoint.",
+        deprecated=True,
+    )
     state: ServiceState = Field(..., description="service current state")
     message: Optional[str] = Field(
         None, description="additional information related to service state"
     )
+
+    @classmethod
+    def from_monitoring_status(
+        cls,
+        node_uuid: NodeID,
+        monitor_data: "MonitorData",
+        service_state: ServiceState,
+        service_message: str,
+    ) -> "RunningServiceDetails":
+        return cls(
+            boot_type=ServiceBootType.V2,
+            service_uuid=node_uuid,
+            service_key=monitor_data.service_key,
+            service_version=monitor_data.service_tag,
+            service_host=monitor_data.service_name,
+            service_port=monitor_data.service_port,
+            service_state=service_state.value,
+            service_message=service_message,
+        )
+
+    class Config(ServiceDetails.Config):
+        schema_extra = {
+            "examples": [
+                {
+                    "boot_type": "V0",
+                    "key": "simcore/services/dynamic/3dviewer",
+                    "version": "2.4.5",
+                    "user_id": 234,
+                    "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+                    "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "host": "3dviewer_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "internal_port": 8888,
+                    "state": "running",
+                    "message": "",
+                },
+                {
+                    "boot_type": "V2",
+                    "key": "simcore/services/dynamic/dy-static-file-viewer-dynamic-sidecar",
+                    "version": "1.0.0",
+                    "user_id": 234,
+                    "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+                    "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "host": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "internal_port": 80,
+                    "state": "running",
+                    "message": "",
+                },
+            ]
+        }

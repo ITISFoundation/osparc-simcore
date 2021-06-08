@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, unique
 from typing import Any, Dict, List, Optional
 
 from models_library.basic_types import PortInt
@@ -35,6 +35,7 @@ class ServiceExtrasEnveloped(BaseModel):
     data: ServiceExtras
 
 
+@unique
 class ServiceState(str, Enum):
     PENDING = "pending"
     PULLING = "pulling"
