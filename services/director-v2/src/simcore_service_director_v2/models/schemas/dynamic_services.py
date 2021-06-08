@@ -9,7 +9,16 @@ from models_library.services import DYNAMIC_SERVICE_KEY_RE, VERSION_RE
 from pydantic import BaseModel, Field
 
 from .constants import UserID
-from .services import ServiceState
+
+
+@unique
+class ServiceState(str, Enum):
+    PENDING = "pending"
+    PULLING = "pulling"
+    STARTING = "starting"
+    RUNNING = "running"
+    COMPLETE = "complete"
+    FAILED = "failed"
 
 
 class ServiceDetails(BaseModel):
@@ -20,21 +29,24 @@ class ServiceDetails(BaseModel):
         examples=[
             "simcore/services/dynamic/3dviewer",
         ],
+        alias="service_key",
     )
     version: str = Field(
         ...,
         description="semantic version number of the node",
         regex=VERSION_RE,
         examples=["1.0.0", "0.0.1"],
+        alias="service_version",
     )
 
     user_id: UserID
     project_id: ProjectID
-    uuid: NodeID
+    node_uuid: NodeID = Field(..., alias="service_uuid")
 
     basepath: Path = Field(
         ...,
         description="predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
+        alias="service_basepath",
     )
 
     class Config:
@@ -44,10 +56,11 @@ class ServiceDetails(BaseModel):
                 "version": "2.4.5",
                 "user_id": 234,
                 "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
             }
         }
+        allow_population_by_field_name = True
 
 
 @unique
@@ -62,8 +75,12 @@ class RunningServiceDetails(ServiceDetails):
         description="describes how the dynamic services was started (legacy=V0, modern=V2)",
     )
 
-    host: str = Field(..., description="the service swarm internal host name")
-    internal_port: PortInt = Field(..., description="the service swarm internal port")
+    host: str = Field(
+        ..., description="the service swarm internal host name", alias="service_host"
+    )
+    internal_port: PortInt = Field(
+        ..., description="the service swarm internal port", alias="service_port"
+    )
     published_port: PortInt = Field(
         None, description="the service swarm published port if any", deprecated=True
     )
@@ -73,9 +90,13 @@ class RunningServiceDetails(ServiceDetails):
         description="if empty the service entrypoint is on the root endpoint.",
         deprecated=True,
     )
-    state: ServiceState = Field(..., description="service current state")
+    state: ServiceState = Field(
+        ..., description="service current state", alias="service_state"
+    )
     message: Optional[str] = Field(
-        None, description="additional information related to service state"
+        None,
+        description="additional information related to service state",
+        alias="service_message",
     )
 
     @classmethod

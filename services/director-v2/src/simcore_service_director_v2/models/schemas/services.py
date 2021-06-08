@@ -6,6 +6,8 @@ from models_library.projects_nodes_io import UUID_REGEX
 from models_library.services import KEY_RE, VERSION_RE, ServiceDockerData
 from pydantic import BaseModel, Field, constr
 
+from .dynamic_services import ServiceState
+
 
 class NodeRequirement(str, Enum):
     CPU = "CPU"
@@ -33,16 +35,6 @@ class ServiceExtras(BaseModel):
 
 class ServiceExtrasEnveloped(BaseModel):
     data: ServiceExtras
-
-
-@unique
-class ServiceState(str, Enum):
-    PENDING = "pending"
-    PULLING = "pulling"
-    STARTING = "starting"
-    RUNNING = "running"
-    COMPLETE = "complete"
-    FAILED = "failed"
 
 
 class RunningServiceDetails(BaseModel):

@@ -278,7 +278,7 @@ async def start_service(
         "project_id": project_id,
         "key": service_key,
         "version": service_version,
-        "uuid": service_uuid,
+        "node_uuid": service_uuid,
         "basepath": f"/x/{service_uuid}",
     }
 
