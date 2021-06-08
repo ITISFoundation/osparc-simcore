@@ -14,17 +14,13 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings import SimcoreService
 from models_library.services import ServiceDockerData, ServiceKeyVersion
-from simcore_service_director_v2.models.schemas.constants import UserID
-from simcore_service_director_v2.modules.dynamic_sidecar.monitor.models import (
-    ServiceBootType,
-    ServiceStateReply,
-)
 
 # Module's business logic ---------------------------------------------
 from starlette import status
 from starlette.datastructures import URL
 
 from ..core.settings import DirectorV0Settings
+from ..models.schemas.constants import UserID
 from ..models.schemas.services import (
     RunningServiceDetails,
     ServiceExtras,
@@ -33,6 +29,7 @@ from ..models.schemas.services import (
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
 from ..utils.logging_utils import log_decorator
+from .dynamic_sidecar.monitor.models import ServiceBootType, ServiceStateReply
 
 logger = logging.getLogger(__name__)
 
