@@ -46,28 +46,17 @@ def test_service_reply_make_status(node_uuid: str, monitor_data: MonitorData):
         node_uuid=node_uuid,
         monitor_data=monitor_data,
         service_state=ServiceState.RUNNING,
-        service_message="",
+        service_message="starting...",
     )
     print(status)
     assert status
     assert status.dict(exclude_unset=True, by_alias=True) == {
-        "boot_type": ServiceBootType.V2,
-        "service_state": ServiceState.RUNNING,
-        "service_message": "",
+        "boot_type": "V2",
+        "service_state": "running",
+        "service_message": "starting...",
         "service_uuid": node_uuid,
         "service_key": "simcore/services/dynamic/test-image",
         "service_version": "1.0.1",
         "service_host": "some service",
-        "service_port": "3000",
-    }
-
-
-def test_service_reply_error_status(node_uuid: str):
-    error_status = ServiceStateReply.error_status(node_uuid)
-    print(error_status)
-    assert error_status
-    assert error_status.dict(exclude_unset=True, by_alias=True) == {
-        "boot_type": ServiceBootType.V2,
-        "service_state": "error",
-        "service_message": f"Could not find a service for node_uuid={node_uuid}",
+        "service_port": 3000,
     }

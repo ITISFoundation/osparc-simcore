@@ -160,6 +160,10 @@ class DynamicSidecarsMonitor:
                     f"service for node {node_uuid} already exists. Please checkout "
                     "other projects which may have this issue."
                 )
+            if not service_name:
+                raise DynamicSidecarError(
+                    "a service with no name is not valid. Invalid usage."
+                )
             self._inverse_search_mapping[node_uuid] = service_name
             self._to_monitor[service_name] = LockWithMonitorData(
                 resource_lock=AsyncResourceLock(False),
@@ -230,9 +234,6 @@ class DynamicSidecarsMonitor:
                 raise DynamicSidecarNotFoundError(node_uuid)
 
             service_name = self._inverse_search_mapping[node_uuid]
-            if service_name not in self._to_monitor:
-                # TODO: ANE why not raising an exception here???
-                return ServiceStateReply.error_status(node_uuid)
 
             monitor_data: MonitorData = self._to_monitor[service_name].monitor_data
             dynamic_sidecar_settings: DynamicSidecarSettings = (

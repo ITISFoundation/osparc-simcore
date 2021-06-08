@@ -250,18 +250,6 @@ class ServiceStateReply(RunningServiceDetails):
     service_basepath: Optional[str] = Field(None, deprecated=True)
 
     @classmethod
-    def error_status(cls, node_uuid: str) -> "ServiceStateReply":
-        error_status = ServiceStateReply(
-            boot_type=ServiceBootType.V2,
-            service_state="error",
-            service_message=f"Could not find a service for node_uuid={node_uuid}",
-        )
-        logging.warning(
-            "dynamic-sidecar error status node_uuid=%s\n%s", node_uuid, error_status
-        )
-        return error_status
-
-    @classmethod
     def make_status(
         cls,
         node_uuid: str,
