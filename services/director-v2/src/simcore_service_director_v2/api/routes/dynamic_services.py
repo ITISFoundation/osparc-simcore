@@ -9,7 +9,11 @@ from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID
 from models_library.service_settings import SimcoreService
 from models_library.services import ServiceKeyVersion
-from simcore_service_director_v2.models.schemas.constants import UserID
+from simcore_service_director_v2.models.schemas.constants import (
+    DYNAMIC_PROXY_SERVICE_PREFIX,
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
+    UserID,
+)
 from starlette import status
 from starlette.datastructures import URL
 
@@ -18,13 +22,7 @@ from ...models.domains.dynamic_services import (
     RetrieveDataIn,
     RetrieveDataOutEnveloped,
 )
-from ...models.schemas.services import RunningServiceDetails
 from ...modules.dynamic_sidecar.config import DynamicSidecarSettings, get_settings
-from ...modules.dynamic_sidecar.constants import (
-    DYNAMIC_SIDECAR_PREFIX,
-    SERVICE_NAME_PROXY,
-    SERVICE_NAME_SIDECAR,
-)
 from ...modules.dynamic_sidecar.docker_utils import (
     create_network,
     create_service_and_get_id,
@@ -117,32 +115,29 @@ async def create_dynamic_service(
         return RedirectResponse(redirection_url)
 
     # Service naming schema:
-    # -  dysdcr_{uuid}_{first_two_project_id}_prxy_{name_from_service_key}
-    # -  dysdcr_{uuid}_{first_two_project_id}_sdcr_{name_from_service_key}
+    # NOTE: name is max 63 characters
+    # dy-sidecar_4dde07ea-73be-4c44-845a-89479d1556cf
+    # dy-revproxy_4dde07ea-73be-4c44-845a-89479d1556cf
 
     service_name_dynamic_sidecar = assemble_service_name(
-        service.project_id, service.key, service.uuid, SERVICE_NAME_SIDECAR
+        DYNAMIC_SIDECAR_SERVICE_PREFIX, service.uuid
     )
     service_name_proxy = assemble_service_name(
-        service.project_id, service.key, service.uuid, SERVICE_NAME_PROXY
+        DYNAMIC_PROXY_SERVICE_PREFIX, service.uuid
     )
-
-    first_two_project_id = str(service.project_id)[:2]
 
     # unique name for the traefik constraints
-    io_simcore_zone = f"{DYNAMIC_SIDECAR_PREFIX}_{service.uuid}_{first_two_project_id}"
+    io_simcore_zone = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{service.uuid}"
 
     # based on the node_id and project_id
-    dynamic_sidecar_network_name = (
-        f"{DYNAMIC_SIDECAR_PREFIX}_{service.uuid}_{first_two_project_id}"
-    )
+    dynamic_sidecar_network_name = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{service.uuid}"
     # these configuration should guarantee 245 address network
     network_config = {
         "Name": dynamic_sidecar_network_name,
         "Driver": "overlay",
         "Labels": {
             "io.simcore.zone": f"{dynamic_sidecar_settings.traefik_simcore_zone}",
-            "com.simcore.description": f"interactive for node: {service.uuid}_{first_two_project_id}",
+            "com.simcore.description": f"interactive for node: {service.uuid}",
             "uuid": f"{service.uuid}",  # needed for removal when project is closed
         },
         "Attachable": True,
