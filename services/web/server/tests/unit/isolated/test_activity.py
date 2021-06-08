@@ -14,6 +14,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_mock import future_with_result
 from servicelib.application import create_safe_application
 from simcore_service_webserver.activity import handlers, setup_activity
+from simcore_service_webserver.computation_config import ComputationSettings
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
@@ -22,8 +23,8 @@ from simcore_service_webserver.session import setup_session
 @pytest.fixture
 def mocked_celery_client(celery_app: Celery, mocker):
     mocker.patch(
-        "simcore_service_webserver.activity.celery_client._create_celery_app",
-        return_value=celery_app,
+        "simcore_service_webserver.activity.celery_client._get_computation_settings",
+        return_value=ComputationSettings.create_from_env(),
     )
 
 
