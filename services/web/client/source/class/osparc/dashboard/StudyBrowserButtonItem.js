@@ -454,8 +454,11 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     __setStudyPermissions: function(accessRights) {
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      orgIDs.push(myGroupId);
+
       const image = this.getChildControl("permission-icon");
-      if (osparc.component.permissions.Study.canGroupWrite(accessRights, myGroupId)) {
+      if (osparc.component.permissions.Study.canGroupsWrite(accessRights, orgIDs)) {
         image.exclude();
       } else {
         image.setSource(this.self().PERM_READ);
