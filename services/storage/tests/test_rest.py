@@ -71,7 +71,7 @@ def client(
     settings = Settings.create_from_env()
     print(settings.json(indent=2))
 
-    app[APP_CONFIG_KEY] = settings.dict()
+    app[APP_CONFIG_KEY] = settings
 
     setup_db(app)
     setup_rest(app)

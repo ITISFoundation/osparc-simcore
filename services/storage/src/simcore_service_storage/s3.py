@@ -59,7 +59,7 @@ def setup_s3(app: web.Application):
     """minio/s3 service setup"""
 
     log.debug("Setting up %s ...", __name__)
-    STORAGE_DISABLE_SERVICES = app[APP_CONFIG_KEY]["STORAGE_DISABLE_SERVICES"]
+    STORAGE_DISABLE_SERVICES = app[APP_CONFIG_KEY].STORAGE_DISABLE_SERVICES
 
     if "s3" in STORAGE_DISABLE_SERVICES:
         log.warning("Service '%s' explicitly disabled in config", "s3")
@@ -79,5 +79,5 @@ def setup_s3(app: web.Application):
 
 
 def get_config_s3(app: web.Application) -> Dict:
-    cfg = app[APP_CONFIG_KEY]["STORAGE_S3"]
+    cfg = app[APP_CONFIG_KEY].STORAGE_S3
     return cfg

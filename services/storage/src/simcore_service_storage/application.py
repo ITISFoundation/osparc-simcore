@@ -6,8 +6,7 @@ import logging
 from typing import Optional
 
 from aiohttp import web
-from pydantic import BaseSettings
-from servicelib.application import create_safe_application
+from servicelib.application import APP_CONFIG_KEY, create_safe_application
 from servicelib.monitoring import setup_monitoring
 from servicelib.tracing import setup_tracing
 
@@ -16,18 +15,20 @@ from .dsm import setup_dsm
 from .meta import WELCOME_MSG
 from .rest import setup_rest
 from .s3 import setup_s3
+from .settings import Settings
 
 log = logging.getLogger(__name__)
 
 
-def create(settings: BaseSettings) -> web.Application:
+def create(settings: Settings) -> web.Application:
     log.debug(
         "Initializing app with settings:\n%s",
         settings.json(indent=2, sort_keys=True),
     )
 
     # TODO: tmp using dict() until webserver is also pydantic-compatible
-    app = create_safe_application(settings.dict())
+    app = create_safe_application(None)
+    app[APP_CONFIG_KEY] = settings
 
     if settings.STORAGE_TRACING.enabled:
         setup_tracing(
@@ -48,7 +49,7 @@ def create(settings: BaseSettings) -> web.Application:
     return app
 
 
-def run(settings: BaseSettings, app: Optional[web.Application] = None):
+def run(settings: Settings, app: Optional[web.Application] = None):
     log.debug("Serving application ")
     if not app:
         app = create(settings)

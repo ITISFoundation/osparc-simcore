@@ -16,20 +16,23 @@ from tenacity import AsyncRetrying
 
 from .constants import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from .models import metadata
+from .settings import PostgresSettings
 
 log = logging.getLogger(__name__)
 
 
 async def pg_engine(app: web.Application):
-    pg_cfg = app[APP_CONFIG_KEY]["STORAGE_POSTGRES"]
+    engine = None
+
+    pg_cfg: PostgresSettings = app[APP_CONFIG_KEY].STORAGE_POSTGRES
     dsn = DataSourceName(
         application_name=f"{__name__}_{id(app)}",
-        database=pg_cfg["db"],
-        user=pg_cfg["user"],
-        password=pg_cfg["password"].get_secret_value(),
-        host=pg_cfg["host"],
-        port=pg_cfg["port"],
-    )
+        database=pg_cfg.db,
+        user=pg_cfg.user,
+        password=pg_cfg.password.get_secret_value(),
+        host=pg_cfg.host,
+        port=pg_cfg.port,
+    )  # type: ignore
 
     log.info("Creating pg engine for %s", dsn)
     async for attempt in AsyncRetrying(
@@ -37,11 +40,11 @@ async def pg_engine(app: web.Application):
     ):
         with attempt:
             engine = await create_pg_engine(
-                dsn, minsize=pg_cfg["minsize"], maxsize=pg_cfg["maxsize"]
+                dsn, minsize=pg_cfg.minsize, maxsize=pg_cfg.maxsize
             )
             await raise_if_not_responsive(engine)
 
-    if app[APP_CONFIG_KEY]["STORAGE_TESTING"]:
+    if app[APP_CONFIG_KEY].STORAGE_TESTING:
         log.info("Initializing tables for %s", dsn)
         init_pg_tables(dsn, schema=metadata)
 
@@ -78,7 +81,7 @@ def get_engine_state(app: web.Application) -> Dict[str, Any]:
 
 
 def setup_db(app: web.Application):
-    if "postgres" in app[APP_CONFIG_KEY]["STORAGE_DISABLE_SERVICES"]:
+    if "postgres" in app[APP_CONFIG_KEY].STORAGE_DISABLE_SERVICES:
         app[APP_DB_ENGINE_KEY] = None
         log.warning("Service '%s' explicitly disabled in config", "postgres")
         return

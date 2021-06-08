@@ -33,8 +33,8 @@ async def get_api_token_and_secret(app: web.Application, userid) -> Tuple[str, s
     engine = app.get(APP_DB_ENGINE_KEY, None)
 
     # defaults from config if any, othewise None
-    api_token = app[APP_CONFIG_KEY]["BF_API_KEY"]
-    api_secret = app[APP_CONFIG_KEY]["BF_API_SECRET"]
+    api_token = app[APP_CONFIG_KEY].BF_API_KEY
+    api_secret = app[APP_CONFIG_KEY].BF_API_SECRET
 
     if engine:
         try:
