@@ -21,6 +21,7 @@ from .parse_docker_status import (
     ServiceState,
     extract_task_state,
 )
+from ...core.settings import ServiceType
 
 log = logging.getLogger(__name__)
 

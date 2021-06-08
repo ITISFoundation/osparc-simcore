@@ -348,9 +348,9 @@ async def list_running_dynamic_services(
     Retruns the running dynamic services from director-v0 and director-v2
     """
     director2_settings: Directorv2Settings = get_settings(app)
-    backend_url = (
-        URL(director2_settings.endpoint) / "dynamic_services" / "running/"
-    ).update_query(user_id=user_id, project_id=project_id)
+    backend_url = (URL(director2_settings.endpoint) / "dynamic_services").update_query(
+        user_id=user_id, project_id=project_id
+    )
 
     return await _request_director_v2(
         app, "GET", backend_url, expected_status=web.HTTPOk

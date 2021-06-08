@@ -590,15 +590,7 @@ async def get_node(request: web.Request) -> web.Response:
             return web.json_response({"data": reply})
 
         # LEGACY-service NODE STATE
-        data = {"service_uuid": node_uuid, "service_state": "idle"}
-        list_of_interactive_services = reply["data"]
-        # get the project if it is running
-        for service in list_of_interactive_services:
-            if service["service_uuid"] == node_uuid:
-                data = service
-        # the service is not running, it's a computational service maybe
-        # TODO: find out if computational service is running if not throw a 404 since it's not around
-        return web.json_response({"data": data})
+        return web.json_response({"data": reply["data"]})
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
