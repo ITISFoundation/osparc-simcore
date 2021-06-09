@@ -5,8 +5,12 @@ from models_library.basic_types import LogLevel, PortInt
 from models_library.settings.base import BaseCustomSettings
 from models_library.settings.postgres import PostgresSettings
 from models_library.settings.s3 import S3Config
-from pydantic import Field, PositiveInt
-from servicelib.tracing import TracingSettings
+from pydantic import AnyHttpUrl, Field, PositiveInt
+
+
+class TracingSettings(BaseCustomSettings):
+    TRACING_ENABLED: Optional[bool] = True
+    TRACING_ZIPKIN_ENDPOINT: AnyHttpUrl = "http://jaeger:9411"
 
 
 class Settings(BaseCustomSettings):
