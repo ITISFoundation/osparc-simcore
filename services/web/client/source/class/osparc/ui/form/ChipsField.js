@@ -15,8 +15,8 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.ui.basic.ChipCloseField", {
-  extend: qx.ui.container.Composite,
+qx.Class.define("osparc.ui.form.ChipsField", {
+  extend: qx.ui.form.AbstractField,
 
   construct: function(values) {
     this.base(arguments, new qx.ui.layout.Canvas());
@@ -36,7 +36,13 @@ qx.Class.define("osparc.ui.basic.ChipCloseField", {
     "changeValue" : "qx.event.type.Data"
   },
 
+  // eslint-disable-next-line qx-rules/no-refs-in-members
   members: {
+    _forwardStates: {
+      focused : true,
+      invalid : true
+    },
+
     __chips: null,
     __combobox: null,
     __ignoreComboboxChangeValue: null,
@@ -51,7 +57,7 @@ qx.Class.define("osparc.ui.basic.ChipCloseField", {
           });
 
           control = new qx.ui.container.Composite(l);
-          this.add(control, {
+          this._add(control, {
             left: 4,
             top: 4,
             right: 4,
@@ -65,7 +71,7 @@ qx.Class.define("osparc.ui.basic.ChipCloseField", {
           break;
         }
         case "combobox": {
-          control = new osparc.ui.basic.AutoVirtualComboBox();
+          control = new osparc.ui.form.AutoVirtualComboBox();
           control.addListener("click", e => {
             // we need this in order to keep a click on the combobox from triggering the click event
             // on the chipboard, which would put the focus into the combobox, closing the popup!
@@ -89,6 +95,8 @@ qx.Class.define("osparc.ui.basic.ChipCloseField", {
     },
 
     __init: function() {
+      this._removeAll();
+
       const d = new qx.ui.decoration.Decorator().set({
         color: "#000",
         width: 1
@@ -191,6 +199,33 @@ qx.Class.define("osparc.ui.basic.ChipCloseField", {
       }, this);
 
       return c;
+    },
+
+
+    /**
+     * @param value {Array} Array of Strings
+     */
+    setValue: function(value) {
+      if (Array.isArray(value)) {
+        this.setChips(value);
+      } else {
+        this.setChips([value]);
+      }
+    },
+
+
+    /**
+     * @return {Array} Array of Strings
+     */
+    getValue: function() {
+      if (this.__chips.length) {
+        return this.__chips;
+      }
+      return "";
+    },
+
+    resetValue: function() {
+      this.__init();
     }
   }
 });

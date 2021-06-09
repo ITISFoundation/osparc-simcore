@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.ui.basic.AutoVirtualComboBox", {
+qx.Class.define("osparc.ui.form.AutoVirtualComboBox", {
   extend: qx.ui.form.VirtualComboBox,
 
   construct: function() {
