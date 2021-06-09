@@ -1,4 +1,4 @@
-from enum import Enum, unique
+from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from models_library.basic_types import PortInt
