@@ -377,6 +377,15 @@ async def stop_services(
     await asyncio.gather(*services_to_stop)
 
 
+@log_decorator(logger=log)
+async def get_service_state(app: web.Application, node_uuid: str) -> Dict:
+    director2_settings: Directorv2Settings = get_settings(app)
+    backend_url = URL(director2_settings.endpoint) / "dynamic_services" / f"{node_uuid}"
+    return await _request_director_v2(
+        app, "GET", backend_url, expected_status=web.HTTPOk
+    )
+
+
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
