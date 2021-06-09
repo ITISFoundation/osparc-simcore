@@ -10,11 +10,11 @@ appdirs==1.4.4
     #   virtualenv
 argh==0.26.2
     # via watchdog
-black==21.5b1
+black==21.5b2
     # via -r requirements/../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
-cfgv==3.2.0
+cfgv==3.3.0
     # via pre-commit
 click==7.1.2
     # via
@@ -25,11 +25,11 @@ dataclasses==0.8
     # via
     #   -c requirements/_base.txt
     #   black
-distlib==0.3.1
+distlib==0.3.2
     # via virtualenv
 filelock==3.0.12
     # via virtualenv
-identify==2.2.4
+identify==2.2.9
     # via pre-commit
 importlib-metadata==4.0.1
     # via
@@ -38,7 +38,7 @@ importlib-metadata==4.0.1
     #   pep517
     #   pre-commit
     #   virtualenv
-importlib-resources==5.1.2
+importlib-resources==5.1.4
     # via
     #   pre-commit
     #   virtualenv
@@ -56,7 +56,7 @@ pep517==0.10.0
     # via pip-tools
 pip-tools==6.1.0
     # via -r requirements/../../../requirements/devenv.txt
-pre-commit==2.12.1
+pre-commit==2.13.0
     # via -r requirements/../../../requirements/devenv.txt
 pyyaml==5.4.1
     # via
@@ -88,9 +88,9 @@ typing-extensions==3.10.0.0
     #   -c requirements/_test.txt
     #   black
     #   importlib-metadata
-virtualenv==20.4.6
+virtualenv==20.4.7
     # via pre-commit
-watchdog[watchmedo]==2.1.1
+watchdog[watchmedo]==2.1.2
     # via -r requirements/_tools.in
 zipp==3.4.1
     # via

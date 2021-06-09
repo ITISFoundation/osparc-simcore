@@ -20,7 +20,7 @@ aiopg[sa]
 
 tenacity
 semantic_version
-click
+typer
 minio
 urllib3
 
