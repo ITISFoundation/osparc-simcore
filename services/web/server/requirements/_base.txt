@@ -238,8 +238,6 @@ tenacity==7.0.0
     # via -r requirements/../../../../packages/service-library/requirements/_base.in
 tqdm==4.61.1
     # via parfive
-trafaret==2.1.0
-    # via -r requirements/../../../../packages/service-library/requirements/_base.in
 typing-extensions==3.10.0.0
     # via
     #   aiohttp
