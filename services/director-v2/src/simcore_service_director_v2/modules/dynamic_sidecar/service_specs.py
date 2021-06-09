@@ -534,13 +534,13 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
                 }
             )
     # expose this service on an empty port
-    if dynamic_sidecar_settings.port_dev:
+    if dynamic_sidecar_settings.mount_path_dev:
         endpint_spec["Ports"] = [
             {
                 "Protocol": "tcp",
                 # TODO: letting it empty is enough for the swarm to generate one
                 "PublishedPort": unused_port(),
-                "TargetPort": dynamic_sidecar_settings.port_dev,
+                "TargetPort": dynamic_sidecar_settings.port,
             }
         ]
 
@@ -554,14 +554,14 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
         "labels": {
             # TODO: let's use a pydantic model with descriptions
             "io.simcore.zone": io_simcore_zone,
-            "port": f"{dynamic_sidecar_settings.port_dev}",
+            "port": f"{dynamic_sidecar_settings.port}",
             "study_id": f"{project_id}",
             "traefik.docker.network": dynamic_sidecar_network_name,  # also used for monitoring
             "traefik.enable": "true",
             f"traefik.http.routers.{dynamic_sidecar_name}.entrypoints": "http",
             f"traefik.http.routers.{dynamic_sidecar_name}.priority": "10",
             f"traefik.http.routers.{dynamic_sidecar_name}.rule": "PathPrefix(`/`)",
-            f"traefik.http.services.{dynamic_sidecar_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.port_dev}",
+            f"traefik.http.services.{dynamic_sidecar_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.port}",
             "type": ServiceType.MAIN.value,  # required to be listed as an interactive service and be properly cleaned up
             "user_id": f"{user_id}",
             # the following are used for monitoring

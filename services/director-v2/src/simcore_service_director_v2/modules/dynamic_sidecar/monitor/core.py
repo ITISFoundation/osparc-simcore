@@ -395,7 +395,7 @@ class DynamicSidecarsMonitor:
                 project_id=project_id,
                 user_id=user_id,
                 hostname=service_name,
-                port=dynamic_sidecar_settings.port_dev,
+                port=dynamic_sidecar_settings.port,
                 service_key=service_key,
                 service_tag=service_tag,
                 paths_mapping=paths_mapping,

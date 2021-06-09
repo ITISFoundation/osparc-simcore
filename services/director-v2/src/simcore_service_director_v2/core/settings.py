@@ -92,9 +92,9 @@ class DynamicSidecarSettings(BaseSettings):
         description="used by the director to start a specific version of the dynamic-sidecar",
     )
 
-    port_dev: Optional[PortInt] = Field(
-        None,
-        description="optional, port on which the webserver for the dynamic-sidecar is exposed",
+    port: PortInt = Field(
+        8000,
+        description="port on which the webserver for the dynamic-sidecar is exposed",
     )
     mount_path_dev: Optional[Path] = Field(
         None,

@@ -247,7 +247,7 @@ async def create_dynamic_service(
         project_id=service.project_id,
         user_id=service.user_id,
         hostname=service_name_dynamic_sidecar,
-        port=dynamic_services_settings.dynamic_sidecar.port_dev,
+        port=dynamic_services_settings.dynamic_sidecar.port,
         service_key=service.key,
         service_tag=service.version,
         paths_mapping=simcore_service.paths_mapping,
