@@ -13,6 +13,7 @@ from typing import Deque, Dict, Optional
 
 from async_timeout import timeout
 from fastapi import FastAPI, Request
+from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings import ComposeSpecModel, PathsMapping
@@ -142,7 +143,7 @@ class DynamicSidecarsMonitor:
         project_id: ProjectID,
         user_id: UserID,
         hostname: str,
-        port: int,
+        port: Optional[PortInt],
         service_key: str,
         service_tag: str,
         paths_mapping: PathsMapping,
@@ -394,7 +395,7 @@ class DynamicSidecarsMonitor:
                 project_id=project_id,
                 user_id=user_id,
                 hostname=service_name,
-                port=dynamic_sidecar_settings.web_service_port,
+                port=dynamic_sidecar_settings.port_dev,
                 service_key=service_key,
                 service_tag=service_tag,
                 paths_mapping=paths_mapping,

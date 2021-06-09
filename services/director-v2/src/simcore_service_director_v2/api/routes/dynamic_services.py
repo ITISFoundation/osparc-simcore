@@ -125,7 +125,9 @@ async def create_dynamic_service(
         return RedirectResponse(redirect_url_with_query)
 
     # if service is already running return the status
-    if await dynamic_service_is_running(dynamic_sidecar_settings, service.node_uuid):
+    if await dynamic_service_is_running(
+        dynamic_services_settings.dynamic_sidecar, service.node_uuid
+    ):
         return await monitor.get_stack_status(str(service.node_uuid))
 
     # the dynamic-sidecar should merge all the settings, especially:

@@ -79,7 +79,7 @@ class DynamicSidecar(BaseModel):
 
     hostname: str = Field(..., description="docker hostname for this service")
 
-    port: PositiveInt = Field(8000, description="dynamic-sidecar port")
+    port: Optional[PositiveInt] = Field(8000, description="dynamic-sidecar port")
 
     is_available: bool = Field(
         False,
@@ -200,7 +200,7 @@ class MonitorData(BaseModel):
         project_id: ProjectID,
         user_id: UserID,
         hostname: str,
-        port: int,
+        port: Optional[int],
         service_key: str,
         service_tag: str,
         paths_mapping: PathsMapping,
