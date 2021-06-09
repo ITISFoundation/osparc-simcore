@@ -16,11 +16,11 @@ from fastapi import FastAPI
 from pydantic import PositiveInt
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings, BootModeEnum
+from simcore_service_director_v2.models.schemas.constants import (
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
+)
 from simcore_service_director_v2.modules.dynamic_sidecar.config import (
     DynamicSidecarSettings,
-)
-from simcore_service_director_v2.modules.models.schemas.constants import (
-    DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.monitor.core import (
     DynamicSidecarsMonitor,
