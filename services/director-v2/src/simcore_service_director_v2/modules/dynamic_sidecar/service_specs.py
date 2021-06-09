@@ -57,6 +57,7 @@ async def dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
 
     mounts = [
         # docker socket needed to use the docker api
+        # TODO: needs to be set as readonly
         {
             "Source": "/var/run/docker.sock",
             "Target": "/var/run/docker.sock",
@@ -65,6 +66,7 @@ async def dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
     ]
 
     return {
+        # TODO: use a pydantic model, make the traefik version a setting, log level, etc...
         "labels": {
             "io.simcore.zone": f"{dynamic_sidecar_settings.traefik_simcore_zone}",
             "swarm_stack_name": dynamic_sidecar_settings.swarm_stack_name,
@@ -313,6 +315,7 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
         endpint_spec["Ports"] = [
             {
                 "Protocol": "tcp",
+                # TODO: letting it empty is enough for the swarm to generate one
                 "PublishedPort": unused_port(),
                 "TargetPort": dynamic_sidecar_settings.web_service_port,
             }
@@ -322,9 +325,11 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
     compose_namespace = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{node_uuid}"
 
     create_service_params = {
+        # TODO: we might want to have the dynamic-sidecar in the internal registry instead of dockerhub?
         # "auth": {"password": "adminadmin", "username": "admin"},   # maybe not needed together with registry
         "endpoint_spec": endpint_spec,
         "labels": {
+            # TODO: let's use a pydantic model with descriptions
             "io.simcore.zone": io_simcore_zone,
             "port": f"{dynamic_sidecar_settings.web_service_port}",
             "study_id": f"{project_id}",

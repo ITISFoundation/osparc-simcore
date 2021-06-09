@@ -124,6 +124,12 @@ async def create_dynamic_service(
     # dy-sidecar_4dde07ea-73be-4c44-845a-89479d1556cf
     # dy-revproxy_4dde07ea-73be-4c44-845a-89479d1556cf
 
+    # dynamic sidecar structure
+    # 0. a network is created: dy-sidecar_4dde07ea-73be-4c44-845a-89479d1556cf
+    # 1. a dynamic-sidecar is started: dy-sidecar_4dde07ea-73be-4c44-845a-89479d1556cf
+    # a traefik instance: dy-proxy_4dde07ea-73be-4c44-845a-89479d1556cf
+    #
+
     service_name_dynamic_sidecar = assemble_service_name(
         DYNAMIC_SIDECAR_SERVICE_PREFIX, service.node_uuid
     )
