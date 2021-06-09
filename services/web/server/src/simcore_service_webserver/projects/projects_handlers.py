@@ -5,7 +5,7 @@
 
 import json
 import logging
-from typing import Any, Coroutine, Dict, List, Optional, Set
+from typing import Any, Coroutine, Dict, List, Optional, Set, Union
 
 import aioredlock
 from aiohttp import web
@@ -578,12 +578,9 @@ async def get_node(request: web.Request) -> web.Response:
             include_templates=True,
         )
 
-        # NOTE: for legacy cervices a redirect to director-v0 is made
+        # NOTE: for legacy services a redirect to director-v0 is made
         reply: Union[Dict, List] = await director_v2.get_service_state(
-            app=request.app,
-            user_id=user_id,
-            project_id=project_uuid,
-            node_uuid=node_uuid,
+            app=request.app, node_uuid=node_uuid
         )
 
         if "data" not in reply:
@@ -592,12 +589,6 @@ async def get_node(request: web.Request) -> web.Response:
 
         # LEGACY-service NODE STATE
         return web.json_response({"data": reply["data"]})
-
-        # TODO: remove if not needed (SAN impmentaiton)
-        # node_details = await projects_api.get_project_node(
-        #     request, project_uuid, user_id, node_uuid
-        # )
-        # return web.json_response({"data": node_details})
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
