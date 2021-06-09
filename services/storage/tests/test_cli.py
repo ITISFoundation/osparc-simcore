@@ -5,11 +5,10 @@
 import json
 import os
 import subprocess
-import sys
-from pathlib import Path
+from io import StringIO
+from typing import Dict
 
-import pytest
-from simcore_service_storage.resources import resources
+from dotenv import dotenv_values
 
 # pylint: disable=subprocess-run-check
 COMMON_KWARGS = dict(
@@ -22,35 +21,39 @@ COMMON_KWARGS = dict(
 
 def test_cli_help():
     completed_process = subprocess.run(
-        "simcore-service-storage --help".split(), **COMMON_KWARGS
+        "simcore-service-storage run --help".split(), **COMMON_KWARGS
     )
 
     print(completed_process.stdout)
     assert completed_process.returncode == os.EX_OK
-    assert "Usage: simcore-service-storage [OPTIONS]" in completed_process.stdout
+    assert "Usage: simcore-service-storage run [OPTIONS]" in completed_process.stdout
 
 
-def test_cli_check_config_dumps_json(project_env_devel_environment):
+def test_cli_printenv(
+    project_env_devel_environment: None, project_env_devel_dict: Dict
+):
     completed_process = subprocess.run(
-        "simcore-service-storage --check-config".split(), **COMMON_KWARGS
+        "simcore-service-storage settings --compact --verbose".split(), **COMMON_KWARGS
+    )
+
+    print(completed_process.stdout)
+    assert completed_process.returncode == os.EX_OK
+
+    stream = StringIO(completed_process.stdout)
+    config = dotenv_values(stream)
+    assert config
+
+    for key, value in config.items():
+        # values are in env vars or in defaults
+        if key in project_env_devel_dict:
+            assert project_env_devel_dict[key] == value
+
+
+def test_cli_check_settings_dumps_json(project_env_devel_environment):
+    completed_process = subprocess.run(
+        "simcore-service-storage settings --as-json --compact".split(), **COMMON_KWARGS
     )
 
     print(completed_process.stdout)
     assert completed_process.returncode == os.EX_OK
     assert json.loads(completed_process.stdout), "Can load output as json"
-
-
-@pytest.mark.parametrize("config_name", resources.listdir("data"))
-def test_cli_config_with_environs(config_name, project_env_devel_environment):
-
-    config_path = Path(resources.get_path("data")) / config_name
-
-    completed_process = subprocess.run(
-        "simcore-service-storage  --check-config --config".split() + [config_path],
-        **COMMON_KWARGS
-    )
-
-    print(completed_process.stdout)
-    print(completed_process.stderr, file=sys.stderr)
-    assert completed_process.returncode == os.EX_OK
-    config = json.loads(completed_process.stdout)

@@ -62,7 +62,7 @@ chardet==4.0.0
     #   aiohttp
     #   requests
 click==7.1.2
-    # via -r requirements/_base.in
+    # via typer
 configparser==5.0.2
     # via blackfynn
 dataclasses==0.8
@@ -208,6 +208,8 @@ tenacity==7.0.0
     #   -r requirements/_base.in
 trafaret==2.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+typer==0.3.2
+    # via -r requirements/_base.in
 typing-extensions==3.10.0.0
     # via
     #   aiohttp
