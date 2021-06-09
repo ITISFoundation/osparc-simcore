@@ -6,9 +6,11 @@ from typing import List, Optional
 from models_library.basic_regex import VERSION_RE
 from models_library.service_settings import ComposeSpecModel, PathsMapping
 from models_library.services import SERVICE_KEY_RE
-from pydantic import BaseModel, Field, PositiveInt
+from models_library.projects import ProjectID
+from pydantic import BaseModel, Field, PositiveInt, validator
 
 from .utils import AsyncResourceLock
+from ....models.schemas.constants import UserID
 
 logger = logging.getLogger()
 
@@ -131,6 +133,12 @@ class MonitorData(BaseModel):
         ..., description="the node_id of the service as defined in the workbench"
     )
 
+    project_id: ProjectID = Field(
+        ..., description="project_uuid required by the status"
+    )
+
+    user_id: UserID = Field(..., description="user_id required by the status")
+
     dynamic_sidecar: DynamicSidecar = Field(
         ...,
         description="stores information fetched from the dynamic-sidecar",
@@ -178,12 +186,19 @@ class MonitorData(BaseModel):
         ..., description="port where the service is exposed defined by the service"
     )
 
+    @validator("project_id", always=True)
+    @classmethod
+    def str_project_id(cls, v):
+        return str(v)
+
     @classmethod
     def assemble(
         # pylint: disable=too-many-arguments
         cls,
         service_name: str,
         node_uuid: str,
+        project_id: ProjectID,
+        user_id: UserID,
         hostname: str,
         port: int,
         service_key: str,
@@ -198,6 +213,8 @@ class MonitorData(BaseModel):
         payload = dict(
             service_name=service_name,
             node_uuid=node_uuid,
+            project_id=project_id,
+            user_id=user_id,
             service_key=service_key,
             service_tag=service_tag,
             paths_mapping=paths_mapping,

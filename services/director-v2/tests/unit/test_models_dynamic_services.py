@@ -29,6 +29,8 @@ def monitor_data(node_uuid: str, paths_mapping: PathsMapping) -> MonitorData:
     return MonitorData.assemble(
         service_name="some service",
         node_uuid=node_uuid,
+        project_id=uuid.uuid4(),
+        user_id=123123,
         hostname="some host",
         port=1222,
         service_key="simcore/services/dynamic/test-image",

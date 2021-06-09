@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 
 
 ServiceLabelsStoredData = Tuple[
-    str, str, str, PathsMapping, ComposeSpecModel, Optional[str], str, str, int
+    str, str, str, PathsMapping, ComposeSpecModel, Optional[str], str, str, int, ProjectID, int
 ]
 
 
@@ -143,6 +143,8 @@ async def get_dynamic_sidecars_to_monitor(
         ]
         simcore_traefik_zone = service["Spec"]["Labels"]["io.simcore.zone"]
         service_port = service["Spec"]["Labels"]["service_port"]
+        project_id = ProjectID(service["Spec"]["Labels"]["study_id"])
+        user_id = int(service["Spec"]["Labels"]["user_id"])
 
         entry: ServiceLabelsStoredData = (
             service_name,
@@ -155,6 +157,8 @@ async def get_dynamic_sidecars_to_monitor(
             dynamic_sidecar_network_name,
             simcore_traefik_zone,
             service_port,
+            project_id,
+            user_id,
         )
         dynamic_sidecar_services.append(entry)
 

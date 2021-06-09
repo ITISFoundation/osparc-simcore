@@ -102,8 +102,6 @@ class RunningServiceDetails(ServiceDetails):
     @classmethod
     def from_monitoring_status(
         cls,
-        user_id: UserID,
-        project_id: ProjectID,
         node_uuid: NodeID,
         monitor_data: "MonitorData",
         service_state: ServiceState,
@@ -111,8 +109,8 @@ class RunningServiceDetails(ServiceDetails):
     ) -> "RunningServiceDetails":
         return cls(
             boot_type=ServiceBootType.V2,
-            user_id=user_id,
-            project_id=project_id,
+            user_id=monitor_data.user_id,
+            project_id=monitor_data.project_id,
             node_uuid=node_uuid,
             key=monitor_data.service_key,
             version=monitor_data.service_tag,

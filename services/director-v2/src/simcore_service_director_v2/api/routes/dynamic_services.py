@@ -1,7 +1,8 @@
 import logging
 from pprint import pformat
-from typing import List, Optional
+from typing import List, Optional, Dict
 from uuid import UUID
+import asyncio
 
 import httpx
 from fastapi import APIRouter, Depends, Header
@@ -70,21 +71,20 @@ async def list_running_dynamic_services(
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> List[DynamicServiceOut]:
+) -> List[Dict[str, str]]:
     legacy_running_services: List[
         DynamicServiceOut
     ] = await director_v0_client.get_running_services(user_id, project_id)
 
-    modern_running_services: List[DynamicServiceOut] = [
-        # FIXME: this sucks
-        await monitor.get_stack_status(
-            service["Spec"]["Labels"]["uuid"],
-            service["Spec"]["Labels"]["study_id"],
-            service["Spec"]["Labels"]["user_id"],
-        )
+    get_stack_statuse_tasks: List[DynamicServiceOut] = [
+        monitor.get_stack_status(service["Spec"]["Labels"]["uuid"])
         for service in await list_dynamic_sidecar_services(
             dynamic_sidecar_settings, user_id, project_id
         )
+    ]
+    modern_running_services: List[Dict[str, str]] = [
+        x.dict(exclude_unset=True)
+        for x in await asyncio.gather(*get_stack_statuse_tasks)
     ]
 
     return legacy_running_services + modern_running_services
@@ -125,8 +125,8 @@ async def create_dynamic_service(
         return RedirectResponse(redirect_url_with_query)
 
     # if service is already running return the status
-    if await dynamic_service_is_running(dynamic_sidecar_settings, str(service.uuid)):
-        return await monitor.get_stack_status(str(service.uuid))
+    if await dynamic_service_is_running(dynamic_sidecar_settings, service.node_uuid):
+        return await monitor.get_stack_status(str(service.node_uuid))
 
     # the dynamic-sidecar should merge all the settings, especially:
     # resources and placement derived from all the images in
@@ -150,10 +150,10 @@ async def create_dynamic_service(
     #
 
     service_name_dynamic_sidecar = assemble_service_name(
-        DYNAMIC_SIDECAR_SERVICE_PREFIX, str(service.uuid)
+        DYNAMIC_SIDECAR_SERVICE_PREFIX, service.node_uuid
     )
     service_name_proxy = assemble_service_name(
-        DYNAMIC_PROXY_SERVICE_PREFIX, str(service.uuid)
+        DYNAMIC_PROXY_SERVICE_PREFIX, service.node_uuid
     )
 
     # unique name for the traefik constraints
@@ -242,6 +242,8 @@ async def create_dynamic_service(
     await monitor.add_service_to_monitor(
         service_name=service_name_dynamic_sidecar,
         node_uuid=str(service.node_uuid),
+        project_id=service.project_id,
+        user_id=service.user_id,
         hostname=service_name_dynamic_sidecar,
         port=dynamic_sidecar_settings.web_service_port,
         service_key=service.key,
@@ -257,9 +259,7 @@ async def create_dynamic_service(
     )
 
     # returning data for the proxy service so the service UI metadata can be extracted from here
-    return await monitor.get_stack_status(
-        service.node_uuid, service.project_id, service.user_id
-    )
+    return await monitor.get_stack_status(str(service.node_uuid))
 
 
 @router.get(
@@ -274,7 +274,7 @@ async def dynamic_sidecar_status(
 ) -> DynamicServiceOut:
 
     try:
-        return await monitor.get_stack_status(node_uuid)
+        return await monitor.get_stack_status(str(node_uuid))
     except DynamicSidecarNotFoundError:
         # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0
