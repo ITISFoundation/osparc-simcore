@@ -327,7 +327,7 @@ async def list_dynamic_sidecar_services(
         return await client.services.list(filters=service_filters)
 
 
-async def dynamic_service_is_running(
+async def is_dynamic_service_running(
     dynamic_sidecar_settings: DynamicSidecarSettings, node_uuid: str
 ) -> Optional[Tuple[str, str]]:
     async with docker_client() as client:  # pylint: disable=not-async-context-manager

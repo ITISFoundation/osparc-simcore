@@ -29,7 +29,7 @@ from ...modules.dynamic_sidecar.config import DynamicSidecarSettings, get_settin
 from ...modules.dynamic_sidecar.docker_utils import (
     create_network,
     create_service_and_get_id,
-    dynamic_service_is_running,
+    is_dynamic_service_running,
     get_node_id_from_task_for_service,
     get_swarm_network,
     list_dynamic_sidecar_services,
@@ -124,7 +124,7 @@ async def create_dynamic_service(
         return RedirectResponse(redirect_url_with_query)
 
     # if service is already running return the status
-    if await dynamic_service_is_running(dynamic_sidecar_settings, service.node_uuid):
+    if await is_dynamic_service_running(dynamic_sidecar_settings, service.node_uuid):
         return await monitor.get_stack_status(str(service.node_uuid))
 
     # the dynamic-sidecar should merge all the settings, especially:
