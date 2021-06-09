@@ -94,8 +94,6 @@ strict-rfc3339==0.7
     # via openapi-core
 tenacity==7.0.0
     # via -r requirements/_base.in
-trafaret==2.1.0
-    # via -r requirements/_base.in
 typing-extensions==3.10.0.0
     # via
     #   aiohttp
