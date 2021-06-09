@@ -1,15 +1,13 @@
 import datetime
 import logging
-from enum import Enum, unique
+from enum import Enum
 from typing import List, Optional
 
 from models_library.basic_regex import VERSION_RE
 from models_library.service_settings import ComposeSpecModel, PathsMapping
 from models_library.services import SERVICE_KEY_RE
 from pydantic import BaseModel, Field, PositiveInt
-from simcore_service_director_v2.models.schemas.services import RunningServiceDetails
 
-from ..parse_docker_status import ServiceState
 from .utils import AsyncResourceLock
 
 logger = logging.getLogger()
