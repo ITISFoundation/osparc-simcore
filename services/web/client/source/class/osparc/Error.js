@@ -51,6 +51,52 @@ qx.Class.define("osparc.Error", {
     }
   },
 
+  statics: {
+    FRIENDLY_HTTP_STATUS: {
+      "200": "OK",
+      "201": "Created",
+      "202": "Accepted",
+      "203": "Non-Authoritative Information",
+      "204": "No Content",
+      "205": "Reset Content",
+      "206": "Partial Content",
+      "300": "Multiple Choices",
+      "301": "Moved Permanently",
+      "302": "Found",
+      "303": "See Other",
+      "304": "Not Modified",
+      "305": "Use Proxy",
+      "306": "Unused",
+      "307": "Temporary Redirect",
+      "400": "Bad Request",
+      "401": "Unauthorized",
+      "402": "Payment Required",
+      "403": "Forbidden",
+      "404": "Not Found",
+      "405": "Method Not Allowed",
+      "406": "Not Acceptable",
+      "407": "Proxy Authentication Required",
+      "408": "Request Timeout",
+      "409": "Conflict",
+      "410": "Gone",
+      "411": "Length Required",
+      "412": "Precondition Required",
+      "413": "Request Entry Too Large",
+      "414": "Request-URI Too Long",
+      "415": "Unsupported Media Type",
+      "416": "Requested Range Not Satisfiable",
+      "417": "Expectation Failed",
+      "418": "I'm a teapot",
+      "429": "Too Many Requests",
+      "500": "Internal Server Error",
+      "501": "Not Implemented",
+      "502": "Bad Gateway",
+      "503": "Service Unavailable",
+      "504": "Gateway Timeout",
+      "505": "HTTP Version Not Supported"
+    }
+  },
+
   members: {
     __status: null,
     __messages: null,
@@ -76,21 +122,23 @@ qx.Class.define("osparc.Error", {
           control = new qx.ui.basic.Label().set({
             font: "text-18",
             alignX: "center",
-            width: 200
+            rich : true,
+            width: 300
           });
           break;
         }
         case "messages-layout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
             alignX: "center",
-            maxWidth: 200
+            maxWidth: 300
           });
           break;
         }
         case "message": {
           control = new qx.ui.basic.Label().set({
             font: "text-16",
-            maxWidth: 200
+            rich : true,
+            width: 300
           });
           break;
         }
@@ -128,7 +176,9 @@ qx.Class.define("osparc.Error", {
     },
 
     _applyCode: function(status) {
-      this.__status.setValue("Error: " + status);
+      if (status in this.self().FRIENDLY_HTTP_STATUS) {
+        this.__status.setValue("Error: " + this.self().FRIENDLY_HTTP_STATUS[status]);
+      }
     },
 
     _applyMessages: function(messages) {

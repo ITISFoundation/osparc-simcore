@@ -46,7 +46,7 @@ class ServiceState(str, Enum):
 
 class RunningServiceDetails(BaseModel):
     published_port: Optional[PortInt] = Field(
-        ...,
+        None,
         description="The ports where the service provides its interface on the docker swarm",
         deprecated=True,
     )

@@ -5,7 +5,7 @@
 
 import json
 import logging
-from typing import Any, Coroutine, Dict, List, Optional, Set, Union
+from typing import Any, Coroutine, Dict, List, Optional, Set
 
 import aioredlock
 from aiohttp import web
@@ -570,6 +570,7 @@ async def get_node(request: web.Request) -> web.Response:
     node_uuid = request.match_info.get("node_id")
     try:
         # ensure the project exists
+
         await projects_api.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
@@ -592,6 +593,11 @@ async def get_node(request: web.Request) -> web.Response:
         # LEGACY-service NODE STATE
         return web.json_response({"data": reply["data"]})
 
+        # TODO: remove if not needed (SAN impmentaiton)
+        # node_details = await projects_api.get_project_node(
+        #     request, project_uuid, user_id, node_uuid
+        # )
+        # return web.json_response({"data": node_details})
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 

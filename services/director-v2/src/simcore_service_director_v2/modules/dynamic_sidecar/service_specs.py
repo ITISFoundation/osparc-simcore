@@ -4,18 +4,18 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from models_library.projects import ProjectID
-
+from models_library.projects_nodes import NodeID
 from models_library.service_settings import (
     ComposeSpecModel,
     PathsMapping,
-    SimcoreServiceSettings,
     SimcoreServiceSetting,
+    SimcoreServiceSettings,
 )
-from ...models.schemas.constants import UserID
-from .config import DynamicSidecarSettings
-from .constants import DYNAMIC_SIDECAR_PREFIX
-from .utils import unused_port
+
 from ...core.settings import ServiceType
+from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX, UserID
+from .config import DynamicSidecarSettings
+from .utils import unused_port
 
 
 from collections import deque
@@ -40,15 +40,8 @@ def _strip_service_name(service_name: str) -> str:
     return service_name[:MAX_ALLOWED_SERVICE_NAME_LENGTH]
 
 
-def assemble_service_name(
-    project_id: ProjectID, service_key: str, node_uuid: UUID, constant_service: str
-) -> str:
-    first_two_project_id = str(project_id)[:2]
-    name_from_service_key = service_key.split("/")[-1]
-    return _strip_service_name(
-        f"{DYNAMIC_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
-        f"_{constant_service}_{name_from_service_key}"
-    )
+def assemble_service_name(service_prefix: str, node_uuid: NodeID) -> str:
+    return _strip_service_name("_".join([service_prefix, node_uuid]))
 
 
 def extract_service_port_from_compose_start_spec(
@@ -556,7 +549,7 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
         ]
 
     # used for the container name to avoid collisions for started containers on the same node
-    compose_namespace = f"{DYNAMIC_SIDECAR_PREFIX}_{node_uuid}"
+    compose_namespace = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{node_uuid}"
 
     create_service_params = {
         # "auth": {"password": "adminadmin", "username": "admin"},   # maybe not needed together with registry

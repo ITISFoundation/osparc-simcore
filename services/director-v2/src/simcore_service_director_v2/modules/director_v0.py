@@ -14,13 +14,13 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings import SimcoreService
 from models_library.services import ServiceDockerData, ServiceKeyVersion
-from simcore_service_director_v2.models.schemas.constants import UserID
 
 # Module's business logic ---------------------------------------------
 from starlette import status
 from starlette.datastructures import URL
 
 from ..core.settings import DirectorV0Settings
+from ..models.schemas.constants import UserID
 from ..models.schemas.services import (
     RunningServiceDetails,
     ServiceExtras,
@@ -29,6 +29,7 @@ from ..models.schemas.services import (
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
 from ..utils.logging_utils import log_decorator
+from .dynamic_sidecar.monitor.models import ServiceBootType, ServiceStateReply
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +154,7 @@ class DirectorV0Client:
     @log_decorator(logger=logger)
     async def get_running_services(
         self, user_id: Optional[UserID] = None, project_id: Optional[ProjectID] = None
-    ) -> List[RunningServiceDetails]:
+    ) -> List[ServiceStateReply]:
         query_params = {}
         if user_id is not None:
             query_params["user_id"] = f"{user_id}"
@@ -166,7 +167,7 @@ class DirectorV0Client:
 
         if resp.status_code == status.HTTP_200_OK:
             return [
-                RunningServiceDetails.parse_obj(x)
+                ServiceStateReply(**x, boot_type=ServiceBootType.V0)
                 for x in unenvelope_or_raise_error(resp)
             ]
         raise HTTPException(status_code=resp.status_code, detail=resp.content)

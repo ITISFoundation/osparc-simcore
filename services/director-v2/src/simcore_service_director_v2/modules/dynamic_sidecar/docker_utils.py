@@ -10,10 +10,12 @@ import aiodocker
 from asyncio_extras import async_contextmanager
 from models_library.projects import ProjectID
 from models_library.service_settings import ComposeSpecModel, PathsMapping
-from simcore_service_director_v2.models.schemas.constants import UserID
+from simcore_service_director_v2.models.schemas.constants import (
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
+    UserID,
+)
 
 from .config import DynamicSidecarSettings
-from .constants import DYNAMIC_SIDECAR_PREFIX, SERVICE_NAME_SIDECAR
 from .exceptions import DynamicSidecarError, GenericDockerError
 from .parse_docker_status import (
     TASK_STATES_ALL,
@@ -32,7 +34,6 @@ ServiceLabelsStoredData = Tuple[
 
 # `assemble_service_name`function will join 5 strings together
 # resulting in a name composed by 5 strings separated by `_`
-EXPECTED_SERVICE_NAME_PARTS = 5
 
 
 @async_contextmanager
@@ -127,18 +128,7 @@ async def get_dynamic_sidecars_to_monitor(
 
     for service in running_services:
         service_name: str = service["Spec"]["Name"]
-        if not service_name.startswith(DYNAMIC_SIDECAR_PREFIX):
-            continue
-
-        service_name_parts = service_name.split("_")
-        if len(service_name_parts) < EXPECTED_SERVICE_NAME_PARTS:
-            continue
-
-        # check to see if this is a dynamic-sidecar
-        if (
-            service_name_parts[0] != DYNAMIC_SIDECAR_PREFIX
-            or service_name_parts[3] != SERVICE_NAME_SIDECAR
-        ):
+        if not service_name.startswith(DYNAMIC_SIDECAR_SERVICE_PREFIX):
             continue
 
         # push found data to list
@@ -315,7 +305,7 @@ async def list_dynamic_sidecar_services(
         "label": [
             f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}",
         ],
-        "name": [DYNAMIC_SIDECAR_PREFIX],
+        "name": [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"],
     }
     if user_id is not None:
         service_filters["label"].append(f"user_id={user_id}")
@@ -323,8 +313,7 @@ async def list_dynamic_sidecar_services(
         service_filters["label"].append(f"study_id={project_id}")
 
     async with docker_client() as client:  # pylint: disable=not-async-context-manager
-        dynamic_sidecar_services = await client.services.list(filters=service_filters)
-        return dynamic_sidecar_services
+        return await client.services.list(filters=service_filters)
 
 
 async def dynamic_service_is_running(
@@ -343,3 +332,4 @@ async def dynamic_service_is_running(
 
         is_dynamic_sidecar = len(dynamic_sidecar_services) == 1
         return is_dynamic_sidecar
+
