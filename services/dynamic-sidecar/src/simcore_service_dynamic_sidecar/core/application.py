@@ -9,6 +9,7 @@ from ..models.schemas.application_health import ApplicationHealth
 from .remote_debug import setup as remote_debug_setup
 from .settings import DynamicSidecarSettings
 from .shared_handlers import on_shutdown_handler
+from .utils import login_registry
 
 logger = logging.getLogger(__name__)
 
@@ -46,11 +47,16 @@ def assemble_application() -> FastAPI:
     # add routing paths
     application.include_router(main_router)
 
+    async def on_startup(app: FastAPI) -> None:
+        await login_registry(app)
+        logger.info("startup done")
+
     # setting up handler for lifecycle
     async def on_shutdown() -> None:
         await on_shutdown_handler(application)
         logger.info("shutdown cleanup completed")
 
+    application.add_event_handler("startup", on_startup(application))
     application.add_event_handler("shutdown", on_shutdown)
 
     return application
