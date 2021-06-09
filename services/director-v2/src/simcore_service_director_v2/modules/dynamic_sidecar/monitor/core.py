@@ -301,7 +301,6 @@ class DynamicSidecarsMonitor:
             lock_with_monitor_data: LockWithMonitorData = self._to_monitor[service_name]
 
             try:
-                logger.debug("monitor_data=%s", lock_with_monitor_data.monitor_data)
                 output_minitor_data: Optional[MonitorData] = await apply_monitoring(
                     self._app, lock_with_monitor_data.monitor_data
                 )
