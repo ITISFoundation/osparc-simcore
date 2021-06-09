@@ -4,13 +4,13 @@ from enum import Enum
 from typing import List, Optional
 
 from models_library.basic_regex import VERSION_RE
+from models_library.projects import ProjectID
 from models_library.service_settings import ComposeSpecModel, PathsMapping
 from models_library.services import SERVICE_KEY_RE
-from models_library.projects import ProjectID
 from pydantic import BaseModel, Field, PositiveInt, validator
 
-from .utils import AsyncResourceLock
 from ....models.schemas.constants import UserID
+from .utils import AsyncResourceLock
 
 logger = logging.getLogger()
 

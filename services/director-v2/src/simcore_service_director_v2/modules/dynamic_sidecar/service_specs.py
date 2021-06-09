@@ -1,6 +1,7 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from collections import deque
+from typing import Any, Deque, Dict, List, Optional
 from uuid import UUID
 
 from models_library.projects import ProjectID
@@ -8,21 +9,17 @@ from models_library.projects_nodes import NodeID
 from models_library.service_settings import (
     ComposeSpecModel,
     PathsMapping,
+    SimcoreService,
     SimcoreServiceSetting,
     SimcoreServiceSettings,
 )
+from models_library.services import ServiceKeyVersion
 
+from ...api.dependencies.director_v0 import DirectorV0Client
 from ...core.settings import ServiceType
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX, UserID
 from .config import DynamicSidecarSettings
 from .utils import unused_port
-
-
-from collections import deque
-from typing import Deque
-from ...api.dependencies.director_v0 import DirectorV0Client
-from models_library.service_settings import SimcoreService
-from models_library.services import ServiceKeyVersion
 
 MATCH_SERVICE_TAG = "${SERVICE_TAG}"
 MATCH_IMAGE_START = "${REGISTRY_URL}/"

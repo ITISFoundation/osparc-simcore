@@ -18,7 +18,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.service_settings import ComposeSpecModel, PathsMapping
 from simcore_service_director_v2.models.schemas.constants import UserID
 
-
 from ....models.schemas.constants import UserID
 from ....models.schemas.dynamic_services import RunningServiceDetails
 from ..config import DynamicSidecarSettings

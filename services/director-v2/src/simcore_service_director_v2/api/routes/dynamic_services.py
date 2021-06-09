@@ -1,17 +1,16 @@
+import asyncio
 import logging
 from pprint import pformat
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 from uuid import UUID
-import asyncio
 
 import httpx
 from fastapi import APIRouter, Depends, Header
 from fastapi.responses import RedirectResponse
-from models_library.services import ServiceKeyVersion
 from models_library.projects import ProjectID
 from models_library.service_settings import SimcoreService
-from simcore_service_director_v2.models.schemas.constants import UserID
 from models_library.services import ServiceKeyVersion
+from simcore_service_director_v2.models.schemas.constants import UserID
 from starlette import status
 from starlette.datastructures import URL
 
@@ -30,19 +29,19 @@ from ...modules.dynamic_sidecar.config import DynamicSidecarSettings, get_settin
 from ...modules.dynamic_sidecar.docker_utils import (
     create_network,
     create_service_and_get_id,
+    dynamic_service_is_running,
     get_node_id_from_task_for_service,
     get_swarm_network,
     list_dynamic_sidecar_services,
-    dynamic_service_is_running,
 )
 from ...modules.dynamic_sidecar.exceptions import DynamicSidecarNotFoundError
 from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor, get_monitor
 from ...modules.dynamic_sidecar.service_specs import (
     assemble_service_name,
-    merge_settings_before_use,
     dyn_proxy_entrypoint_assembly,
     dynamic_sidecar_assembly,
     extract_service_port_from_compose_start_spec,
+    merge_settings_before_use,
 )
 from ...utils.logging_utils import log_decorator
 from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client

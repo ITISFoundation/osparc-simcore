@@ -15,6 +15,7 @@ from simcore_service_director_v2.models.schemas.constants import (
     UserID,
 )
 
+from ...core.settings import ServiceType
 from .config import DynamicSidecarSettings
 from .exceptions import DynamicSidecarError, GenericDockerError
 from .parse_docker_status import (
@@ -23,13 +24,22 @@ from .parse_docker_status import (
     ServiceState,
     extract_task_state,
 )
-from ...core.settings import ServiceType
 
 log = logging.getLogger(__name__)
 
 
 ServiceLabelsStoredData = Tuple[
-    str, str, str, PathsMapping, ComposeSpecModel, Optional[str], str, str, int, ProjectID, int
+    str,
+    str,
+    str,
+    PathsMapping,
+    ComposeSpecModel,
+    Optional[str],
+    str,
+    str,
+    int,
+    ProjectID,
+    int,
 ]
 
 
@@ -333,4 +343,3 @@ async def dynamic_service_is_running(
 
         is_dynamic_sidecar = len(dynamic_sidecar_services) == 1
         return is_dynamic_sidecar
-

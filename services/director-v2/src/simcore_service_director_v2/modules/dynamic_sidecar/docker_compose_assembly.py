@@ -3,9 +3,9 @@ from typing import Any, Dict, Optional
 
 import yaml
 from fastapi.applications import FastAPI
+from models_library.service_settings import ComposeSpecModel, PathsMapping
 from pydantic import PositiveInt
 
-from models_library.service_settings import ComposeSpecModel, PathsMapping
 from .config import DynamicSidecarSettings
 
 CONTAINER_NAME = "container"
