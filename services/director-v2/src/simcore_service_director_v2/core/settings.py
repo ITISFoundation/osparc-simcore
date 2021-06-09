@@ -8,7 +8,7 @@ from models_library.basic_types import BootModeEnum, PortInt
 from models_library.settings.celery import CeleryConfig
 from models_library.settings.http_clients import ClientRequestSettings
 from models_library.settings.postgres import PostgresSettings
-from pydantic import BaseSettings, Field, SecretStr, constr, root_validator, validator
+from pydantic import BaseSettings, Field, constr, validator
 
 from ..meta import api_vtag
 
@@ -86,43 +86,6 @@ class PGSettings(PostgresSettings):
         env_prefix = "POSTGRES_"
 
 
-class RegistrySettings(BaseSettings):
-    """Settings for docker_registry module"""
-
-    enabled: bool = Field(True, description="Enables/Disables connection with service")
-
-    # entrypoint
-    ssl: bool = True
-    url: str = Field(..., description="URL to the docker registry", env="REGISTRY_URL")
-
-    # auth
-    auth: bool = True
-    user: Optional[str] = None
-    pw: Optional[SecretStr] = None
-
-    @validator("url", pre=True)
-    def secure_url(cls, v, values):
-        if values["ssl"]:
-            if v.startswith("http://"):
-                v = v.replace("http://", "https://")
-        return v
-
-    @root_validator
-    def check_auth_credentials(cls, values):
-        if values["auth"]:
-            user, pw = values.get("user"), values.get("pw")
-            if user is None or pw is None:
-                raise ValueError("Cannot authenticate without credentials user, pw")
-        return values
-
-    @property
-    def api_url(self) -> str:
-        return f"{self.url}/v2"
-
-    class Config(CommonConfig):
-        env_prefix = "REGISTRY_"
-
-
 class CelerySchedulerSettings(BaseSettings):
     enabled: bool = Field(
         True,
@@ -140,7 +103,6 @@ class AppSettings(BaseSettings):
         return cls(
             postgres=PGSettings(),
             director_v0=DirectorV0Settings(),
-            registry=RegistrySettings(),
             celery=CelerySettings.create_from_env(),
             dynamic_services=DynamicServicesSettings(),
             client_request=ClientRequestSettings(),
@@ -175,9 +137,6 @@ class AppSettings(BaseSettings):
 
     # Dynamic Services submodule
     dynamic_services: DynamicServicesSettings
-
-    # REGISTRY submodule
-    registry: RegistrySettings
 
     # POSTGRES
     postgres: PGSettings

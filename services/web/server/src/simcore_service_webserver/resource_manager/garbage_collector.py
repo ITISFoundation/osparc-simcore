@@ -13,14 +13,11 @@ from servicelib.observer import emit
 from servicelib.utils import logged_gather
 from simcore_service_webserver import users_exceptions
 from simcore_service_webserver.db_models import GroupType
-from simcore_service_webserver.director.director_api import (
-    get_running_interactive_services,
-)
-from simcore_service_webserver.director_v2 import stop_service
 from simcore_service_webserver.director.director_exceptions import (
     DirectorException,
     ServiceNotFoundError,
 )
+from simcore_service_webserver.director_v2 import get_services, stop_service
 from simcore_service_webserver.groups_api import get_group_from_gid
 from simcore_service_webserver.projects.projects_api import (
     delete_project_from_db,
@@ -351,9 +348,7 @@ async def remove_orphaned_services(
         node_ids = await get_workbench_node_ids_from_project_uuid(app, project_uuid)
         currently_opened_projects_node_ids.update(node_ids)
 
-    running_interactive_services: List[
-        Dict[str, Any]
-    ] = await get_running_interactive_services(app)
+    running_interactive_services: List[Dict[str, Any]] = await get_services(app)
     logger.info(
         "Will collect the following: %s",
         [

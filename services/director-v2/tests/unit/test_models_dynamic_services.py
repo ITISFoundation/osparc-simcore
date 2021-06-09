@@ -2,11 +2,12 @@
 import uuid
 
 import pytest
+from simcore_service_director_v2.models.schemas.dynamic_services import (
+    RunningServiceDetails,
+)
 from simcore_service_director_v2.modules.dynamic_sidecar.monitor.models import (
     MonitorData,
     PathsMapping,
-    ServiceBootType,
-    ServiceStateReply,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.parse_docker_status import (
     ServiceState,
@@ -41,8 +42,8 @@ def monitor_data(node_uuid: str, paths_mapping: PathsMapping) -> MonitorData:
     )
 
 
-def test_service_reply_make_status(node_uuid: str, monitor_data: MonitorData):
-    status = ServiceStateReply.make_status(
+def test_running_service_details_make_status(node_uuid: str, monitor_data: MonitorData):
+    status = RunningServiceDetails.from_monitoring_status(
         node_uuid=node_uuid,
         monitor_data=monitor_data,
         service_state=ServiceState.RUNNING,

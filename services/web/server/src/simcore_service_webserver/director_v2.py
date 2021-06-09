@@ -278,7 +278,7 @@ async def start_service(
         "project_id": project_id,
         "key": service_key,
         "version": service_version,
-        "uuid": service_uuid,
+        "node_uuid": service_uuid,
         "basepath": f"/x/{service_uuid}",
     }
 
@@ -332,8 +332,9 @@ async def stop_service(
     director2_settings: Directorv2Settings = get_settings(app)
     backend_url = (
         URL(director2_settings.endpoint) / "dynamic_services" / f"{service_uuid}"
-    ).update_query(save_state="true" if save_state else "false")
-
+    ).update_query(
+        save_state="true" if save_state else "false",
+    )
     return await _request_director_v2(
         app, "DELETE", backend_url, expected_status=web.HTTPNoContent, timeout=timeout
     )

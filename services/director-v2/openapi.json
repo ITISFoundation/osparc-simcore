@@ -365,6 +365,41 @@
         }
       }
     },
+    "/v0/running_interactive_services/{service_uuid}": {
+      "delete": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Stop Interactive Service",
+        "operationId": "stop_interactive_service_v0_running_interactive_services__service_uuid__delete",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Uuid",
+              "type": "string"
+            },
+            "name": "service_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v2/demo": {
       "get": {
         "tags": [
@@ -577,42 +612,46 @@
         }
       }
     },
-    "/v2/dynamic_services/{node_uuid}:retrieve": {
-      "post": {
+    "/v2/dynamic_services": {
+      "get": {
         "tags": [
           "dynamic services"
         ],
-        "summary": "Calls the dynamic service's retrieve endpoint with optional port_keys",
-        "operationId": "service_retrieve_data_on_ports_v2_dynamic_services__node_uuid__retrieve_post",
+        "summary": "returns a list of running interactive services filtered by user_id and/or project_idboth legacy (director-v0) and modern (director-v2)",
+        "operationId": "list_running_dynamic_services_v2_dynamic_services_get",
         "parameters": [
           {
-            "required": true,
+            "required": false,
             "schema": {
-              "title": "Node Uuid",
+              "title": "User Id",
+              "exclusiveMinimum": 0.0,
+              "type": "integer"
+            },
+            "name": "user_id",
+            "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Project Id",
               "type": "string",
               "format": "uuid"
             },
-            "name": "node_uuid",
-            "in": "path"
+            "name": "project_id",
+            "in": "query"
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RetrieveDataIn"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RetrieveDataOutEnveloped"
+                  "title": "Response List Running Dynamic Services V2 Dynamic Services Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DynamicServiceOut"
+                  }
                 }
               }
             }
@@ -628,9 +667,7 @@
             }
           }
         }
-      }
-    },
-    "/v2/dynamic_services": {
+      },
       "post": {
         "tags": [
           "dynamic services"
@@ -673,7 +710,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServiceStateReply"
+                  "$ref": "#/components/schemas/DynamicServiceOut"
                 }
               }
             }
@@ -697,7 +734,6 @@
           "dynamic services"
         ],
         "summary": "assembles the status for the dynamic-sidecar",
-        "description": "returns:\n    - \"Dict\" if dynamic-service\n    - \"List\" if legacy dynamic service (reply of GET /running_interactive_services)",
         "operationId": "dynamic_sidecar_status_v2_dynamic_services__node_uuid__get",
         "parameters": [
           {
@@ -709,53 +745,6 @@
             },
             "name": "node_uuid",
             "in": "path"
-          },
-          {
-            "description": "distinctive name for the node based on the docker registry path",
-            "required": true,
-            "schema": {
-              "title": "Service Key",
-              "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
-              "type": "string",
-              "description": "distinctive name for the node based on the docker registry path"
-            },
-            "name": "service_key",
-            "in": "query"
-          },
-          {
-            "description": "semantic version number of the node",
-            "required": true,
-            "schema": {
-              "title": "Service Version",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-              "type": "string",
-              "description": "semantic version number of the node"
-            },
-            "name": "service_version",
-            "in": "query"
-          },
-          {
-            "description": "required by director-v1",
-            "required": true,
-            "schema": {
-              "title": "User Id",
-              "type": "integer",
-              "description": "required by director-v1"
-            },
-            "name": "user_id",
-            "in": "query"
-          },
-          {
-            "description": "required by director-v1",
-            "required": true,
-            "schema": {
-              "title": "Project Id",
-              "type": "string",
-              "description": "required by director-v1",
-              "format": "uuid"
-            },
-            "name": "project_id",
-            "in": "query"
           }
         ],
         "responses": {
@@ -764,7 +753,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServiceStateReply"
+                  "$ref": "#/components/schemas/DynamicServiceOut"
                 }
               }
             }
@@ -799,36 +788,13 @@
             "in": "path"
           },
           {
-            "required": true,
+            "required": false,
             "schema": {
               "title": "Save State",
-              "type": "boolean"
+              "type": "boolean",
+              "default": true
             },
             "name": "save_state",
-            "in": "query"
-          },
-          {
-            "description": "distinctive name for the node based on the docker registry path",
-            "required": true,
-            "schema": {
-              "title": "Service Key",
-              "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
-              "type": "string",
-              "description": "distinctive name for the node based on the docker registry path"
-            },
-            "name": "service_key",
-            "in": "query"
-          },
-          {
-            "description": "semantic version number of the node",
-            "required": true,
-            "schema": {
-              "title": "Service Version",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-              "type": "string",
-              "description": "semantic version number of the node"
-            },
-            "name": "service_version",
             "in": "query"
           }
         ],
@@ -849,39 +815,43 @@
         }
       }
     },
-    "/v2/dynamic_services/running/": {
-      "get": {
+    "/v2/dynamic_services/{node_uuid}:retrieve": {
+      "post": {
         "tags": [
           "dynamic services"
         ],
-        "summary": "returns a list of running interactive services both from director-v0 and director-v2",
-        "operationId": "list_running_dynamic_services_v2_dynamic_services_running__get",
+        "summary": "Calls the dynamic service's retrieve endpoint with optional port_keys",
+        "operationId": "service_retrieve_data_on_ports_v2_dynamic_services__node_uuid__retrieve_post",
         "parameters": [
           {
             "required": true,
             "schema": {
-              "title": "User Id",
-              "type": "string"
+              "title": "Node Uuid",
+              "type": "string",
+              "format": "uuid"
             },
-            "name": "user_id",
-            "in": "query"
-          },
-          {
-            "required": true,
-            "schema": {
-              "title": "Project Id",
-              "type": "string"
-            },
-            "name": "project_id",
-            "in": "query"
+            "name": "node_uuid",
+            "in": "path"
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrieveDataIn"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/RetrieveDataOutEnveloped"
+                }
               }
             }
           },
@@ -1120,25 +1090,15 @@
       "DynamicServiceCreate": {
         "title": "DynamicServiceCreate",
         "required": [
-          "user_id",
-          "project_id",
           "key",
           "version",
+          "user_id",
+          "project_id",
           "uuid",
           "basepath"
         ],
         "type": "object",
         "properties": {
-          "user_id": {
-            "title": "User Id",
-            "exclusiveMinimum": 0.0,
-            "type": "integer"
-          },
-          "project_id": {
-            "title": "Project Id",
-            "type": "string",
-            "format": "uuid"
-          },
           "key": {
             "title": "Key",
             "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
@@ -1150,6 +1110,16 @@
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "type": "string",
             "description": "semantic version number of the node"
+          },
+          "user_id": {
+            "title": "User Id",
+            "exclusiveMinimum": 0.0,
+            "type": "integer"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string",
+            "format": "uuid"
           },
           "uuid": {
             "title": "Uuid",
@@ -1164,12 +1134,110 @@
           }
         },
         "example": {
-          "user_id": 234,
-          "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
           "key": "simcore/services/dynamic/3dviewer",
           "version": "2.4.5",
+          "user_id": 234,
+          "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
           "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
           "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa"
+        }
+      },
+      "DynamicServiceOut": {
+        "title": "DynamicServiceOut",
+        "required": [
+          "key",
+          "version",
+          "user_id",
+          "project_id",
+          "uuid",
+          "basepath",
+          "boot_type",
+          "host",
+          "internal_port",
+          "state"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
+            "type": "string",
+            "description": "distinctive name for the node based on the docker registry path"
+          },
+          "version": {
+            "title": "Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string",
+            "description": "semantic version number of the node"
+          },
+          "user_id": {
+            "title": "User Id",
+            "exclusiveMinimum": 0.0,
+            "type": "integer"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "uuid": {
+            "title": "Uuid",
+            "type": "string",
+            "format": "uuid"
+          },
+          "basepath": {
+            "title": "Basepath",
+            "type": "string",
+            "description": "predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
+            "format": "path"
+          },
+          "boot_type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceBootType"
+              }
+            ],
+            "description": "describes how the dynamic services was started (legacy=V0, modern=V2)"
+          },
+          "host": {
+            "title": "Host",
+            "type": "string",
+            "description": "the service swarm internal host name"
+          },
+          "internal_port": {
+            "title": "Internal Port",
+            "exclusiveMaximum": 65535.0,
+            "exclusiveMinimum": 0.0,
+            "type": "integer",
+            "description": "the service swarm internal port"
+          },
+          "published_port": {
+            "title": "Published Port",
+            "exclusiveMaximum": 65535.0,
+            "exclusiveMinimum": 0.0,
+            "type": "integer",
+            "description": "the service swarm published port if any",
+            "deprecated": true
+          },
+          "entry_point": {
+            "title": "Entry Point",
+            "type": "string",
+            "description": "if empty the service entrypoint is on the root endpoint.",
+            "deprecated": true
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceState"
+              }
+            ],
+            "description": "service current state"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string",
+            "description": "additional information related to service state"
+          }
         }
       },
       "HTTPValidationError": {
@@ -1340,7 +1408,6 @@
       "RunningServiceDetails": {
         "title": "RunningServiceDetails",
         "required": [
-          "published_port",
           "entry_point",
           "service_uuid",
           "service_key",
@@ -1476,6 +1543,15 @@
           }
         },
         "additionalProperties": false
+      },
+      "ServiceBootType": {
+        "title": "ServiceBootType",
+        "enum": [
+          "V0",
+          "V2"
+        ],
+        "type": "string",
+        "description": "An enumeration."
       },
       "ServiceBuildDetails": {
         "title": "ServiceBuildDetails",
@@ -1807,72 +1883,6 @@
         ],
         "type": "string",
         "description": "An enumeration."
-      },
-      "ServiceStateReply": {
-        "title": "ServiceStateReply",
-        "required": [
-          "service_state",
-          "service_message"
-        ],
-        "type": "object",
-        "properties": {
-          "dynamic_type": {
-            "title": "Dynamic Type",
-            "type": "string",
-            "description": "tells the frontend this is run with a dynamic sidecar",
-            "default": "dynamic-sidecar"
-          },
-          "service_state": {
-            "title": "Service State",
-            "type": "string",
-            "description": "refer to "
-          },
-          "service_message": {
-            "title": "Service Message",
-            "type": "string",
-            "description": "used to transmit error messages to the user"
-          },
-          "published_port": {
-            "title": "Published Port",
-            "type": "integer",
-            "description": "the proxy's default port"
-          },
-          "service_uuid": {
-            "title": "Service Uuid",
-            "type": "string",
-            "description": "equals to the node_uuid value"
-          },
-          "service_key": {
-            "title": "Service Key",
-            "type": "string",
-            "description": "starte service image service_key"
-          },
-          "service_version": {
-            "title": "Service Version",
-            "type": "string",
-            "description": "starte service image service_version"
-          },
-          "service_host": {
-            "title": "Service Host",
-            "type": "string",
-            "description": "using the dynamic-sidecar's host"
-          },
-          "service_port": {
-            "title": "Service Port",
-            "type": "string",
-            "description": "using the dynamic-sidecar's port"
-          },
-          "service_basepath": {
-            "title": "Service Basepath",
-            "type": "string",
-            "description": "not used by the dynamic-sidecar"
-          },
-          "entry_point": {
-            "title": "Entry Point",
-            "type": "string",
-            "description": "can be removed when dynamic_type='dynamic-sidecar'"
-          }
-        }
       },
       "ServiceType": {
         "title": "ServiceType",

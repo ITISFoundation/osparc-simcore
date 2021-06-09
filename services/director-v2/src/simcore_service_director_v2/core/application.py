@@ -17,7 +17,6 @@ from ..modules import (
     celery,
     db,
     director_v0,
-    docker_registry,
     dynamic_services,
     dynamic_sidecar,
     remote_debug,
@@ -64,9 +63,6 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     if settings.celery.enabled:
         celery.setup(app, settings.celery)
-
-    if settings.registry.enabled:
-        docker_registry.setup(app, settings.registry)
 
     dynamic_sidecar.setup(app)
 

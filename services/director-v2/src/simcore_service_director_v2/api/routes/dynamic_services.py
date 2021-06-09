@@ -11,18 +11,19 @@ from models_library.projects import ProjectID
 from models_library.service_settings import SimcoreService
 from simcore_service_director_v2.models.schemas.constants import UserID
 from models_library.services import ServiceKeyVersion
-from simcore_service_director_v2.models.schemas.constants import (
-    DYNAMIC_PROXY_SERVICE_PREFIX,
-    DYNAMIC_SIDECAR_SERVICE_PREFIX,
-    UserID,
-)
 from starlette import status
 from starlette.datastructures import URL
 
 from ...models.domains.dynamic_services import (
     DynamicServiceCreate,
+    DynamicServiceOut,
     RetrieveDataIn,
     RetrieveDataOutEnveloped,
+)
+from ...models.schemas.constants import (
+    DYNAMIC_PROXY_SERVICE_PREFIX,
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
+    UserID,
 )
 from ...modules.dynamic_sidecar.config import DynamicSidecarSettings, get_settings
 from ...modules.dynamic_sidecar.docker_utils import (
@@ -35,7 +36,6 @@ from ...modules.dynamic_sidecar.docker_utils import (
 )
 from ...modules.dynamic_sidecar.exceptions import DynamicSidecarNotFoundError
 from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor, get_monitor
-from ...modules.dynamic_sidecar.monitor.models import ServiceStateReply
 from ...modules.dynamic_sidecar.service_specs import (
     assemble_service_name,
     merge_settings_before_use,
@@ -58,7 +58,7 @@ log = logging.getLogger(__file__)
 @router.get(
     "",
     status_code=status.HTTP_200_OK,
-    response_model=List[ServiceStateReply],
+    response_model=List[DynamicServiceOut],
     summary=(
         "returns a list of running interactive services filtered by user_id and/or project_id"
         "both legacy (director-v0) and modern (director-v2)"
@@ -70,13 +70,18 @@ async def list_running_dynamic_services(
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> List[ServiceStateReply]:
+) -> List[DynamicServiceOut]:
     legacy_running_services: List[
-        ServiceStateReply
+        DynamicServiceOut
     ] = await director_v0_client.get_running_services(user_id, project_id)
 
-    modern_running_services: List[ServiceStateReply] = [
-        await monitor.get_stack_status(service["Spec"]["Labels"]["uuid"])
+    modern_running_services: List[DynamicServiceOut] = [
+        # FIXME: this sucks
+        await monitor.get_stack_status(
+            service["Spec"]["Labels"]["uuid"],
+            service["Spec"]["Labels"]["study_id"],
+            service["Spec"]["Labels"]["user_id"],
+        )
         for service in await list_dynamic_sidecar_services(
             dynamic_sidecar_settings, user_id, project_id
         )
@@ -89,7 +94,7 @@ async def list_running_dynamic_services(
     "",
     summary="create & start the dynamic service",
     status_code=status.HTTP_201_CREATED,
-    response_model=ServiceStateReply,
+    response_model=DynamicServiceOut,
 )
 @log_decorator(logger=log)
 async def create_dynamic_service(
@@ -99,7 +104,7 @@ async def create_dynamic_service(
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> ServiceStateReply:
+) -> DynamicServiceOut:
     simcore_service: SimcoreService = await director_v0_client.get_service_labels(
         service=ServiceKeyVersion(key=service.key, version=service.version)
     )
@@ -110,7 +115,7 @@ async def create_dynamic_service(
             params={
                 "user_id": f"{service.user_id}",
                 "project_id": f"{service.project_id}",
-                "service_uuid": f"{service.uuid}",
+                "service_uuid": f"{service.node_uuid}",
                 "service_key": f"{service.key}",
                 "service_version": f"{service.version}",
                 "service_basepath": f"{service.basepath}",
@@ -138,6 +143,12 @@ async def create_dynamic_service(
     # dy-sidecar_4dde07ea-73be-4c44-845a-89479d1556cf
     # dy-revproxy_4dde07ea-73be-4c44-845a-89479d1556cf
 
+    # dynamic sidecar structure
+    # 0. a network is created: dy-sidecar_4dde07ea-73be-4c44-845a-89479d1556cf
+    # 1. a dynamic-sidecar is started: dy-sidecar_4dde07ea-73be-4c44-845a-89479d1556cf
+    # a traefik instance: dy-proxy_4dde07ea-73be-4c44-845a-89479d1556cf
+    #
+
     service_name_dynamic_sidecar = assemble_service_name(
         DYNAMIC_SIDECAR_SERVICE_PREFIX, str(service.uuid)
     )
@@ -146,18 +157,20 @@ async def create_dynamic_service(
     )
 
     # unique name for the traefik constraints
-    io_simcore_zone = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{service.uuid}"
+    io_simcore_zone = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{service.node_uuid}"
 
     # based on the node_id and project_id
-    dynamic_sidecar_network_name = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{service.uuid}"
+    dynamic_sidecar_network_name = (
+        f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{service.node_uuid}"
+    )
     # these configuration should guarantee 245 address network
     network_config = {
         "Name": dynamic_sidecar_network_name,
         "Driver": "overlay",
         "Labels": {
             "io.simcore.zone": f"{dynamic_sidecar_settings.traefik_simcore_zone}",
-            "com.simcore.description": f"interactive for node: {service.uuid}",
-            "uuid": f"{service.uuid}",  # needed for removal when project is closed
+            "com.simcore.description": f"interactive for node: {service.node_uuid}",
+            "uuid": f"{service.node_uuid}",  # needed for removal when project is closed
         },
         "Attachable": True,
         "Internal": False,
@@ -179,7 +192,7 @@ async def create_dynamic_service(
         swarm_network_id=swarm_network_id,
         dynamic_sidecar_name=service_name_dynamic_sidecar,
         user_id=service.user_id,
-        node_uuid=service.uuid,
+        node_uuid=service.node_uuid,
         service_key=service.key,
         service_tag=service.version,
         paths_mapping=simcore_service.paths_mapping,
@@ -203,7 +216,7 @@ async def create_dynamic_service(
 
     dynamic_sidecar_proxy_create_service_params = await dyn_proxy_entrypoint_assembly(
         dynamic_sidecar_settings=dynamic_sidecar_settings,
-        node_uuid=service.uuid,
+        node_uuid=service.node_uuid,
         io_simcore_zone=io_simcore_zone,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
         dynamic_sidecar_network_id=dynamic_sidecar_network_id,
@@ -228,7 +241,7 @@ async def create_dynamic_service(
     # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model, also passing the models would use less lines..
     await monitor.add_service_to_monitor(
         service_name=service_name_dynamic_sidecar,
-        node_uuid=str(service.uuid),
+        node_uuid=str(service.node_uuid),
         hostname=service_name_dynamic_sidecar,
         port=dynamic_sidecar_settings.web_service_port,
         service_key=service.key,
@@ -244,22 +257,24 @@ async def create_dynamic_service(
     )
 
     # returning data for the proxy service so the service UI metadata can be extracted from here
-    return await monitor.get_stack_status(str(service.uuid))
+    return await monitor.get_stack_status(
+        service.node_uuid, service.project_id, service.user_id
+    )
 
 
 @router.get(
     "/{node_uuid}",
     summary="assembles the status for the dynamic-sidecar",
-    response_model=ServiceStateReply,
+    response_model=DynamicServiceOut,
 )
 async def dynamic_sidecar_status(
     node_uuid: UUID,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> ServiceStateReply:
+) -> DynamicServiceOut:
 
     try:
-        return await monitor.get_stack_status(str(node_uuid))
+        return await monitor.get_stack_status(node_uuid)
     except DynamicSidecarNotFoundError:
         # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0

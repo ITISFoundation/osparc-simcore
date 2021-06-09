@@ -21,15 +21,11 @@ from starlette.datastructures import URL
 
 from ..core.settings import DirectorV0Settings
 from ..models.schemas.constants import UserID
-from ..models.schemas.services import (
-    RunningServiceDetails,
-    ServiceExtras,
-    ServiceSettings,
-)
+from ..models.schemas.dynamic_services import RunningServiceDetails, ServiceBootType
+from ..models.schemas.services import ServiceExtras, ServiceSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
 from ..utils.logging_utils import log_decorator
-from .dynamic_sidecar.monitor.models import ServiceBootType, ServiceStateReply
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +150,7 @@ class DirectorV0Client:
     @log_decorator(logger=logger)
     async def get_running_services(
         self, user_id: Optional[UserID] = None, project_id: Optional[ProjectID] = None
-    ) -> List[ServiceStateReply]:
+    ) -> List[RunningServiceDetails]:
         query_params = {}
         if user_id is not None:
             query_params["user_id"] = f"{user_id}"
@@ -167,7 +163,7 @@ class DirectorV0Client:
 
         if resp.status_code == status.HTTP_200_OK:
             return [
-                ServiceStateReply(**x, boot_type=ServiceBootType.V0)
+                RunningServiceDetails(**x, boot_type=ServiceBootType.V0)
                 for x in unenvelope_or_raise_error(resp)
             ]
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
