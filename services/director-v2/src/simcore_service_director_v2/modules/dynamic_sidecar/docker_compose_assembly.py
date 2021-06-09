@@ -113,7 +113,7 @@ async def assemble_spec(
     # when no compose yaml file was provided
     if service_spec is None:
         service_spec = _assemble_from_service_key_and_tag(
-            resolved_registry_url=settings.resolved_registry_url,
+            resolved_registry_url=settings.registry.resolved_registry_url,
             service_key=service_key,
             service_tag=service_tag,
         )
@@ -135,7 +135,7 @@ async def assemble_spec(
     stringified_service_spec = yaml.safe_dump(service_spec)
     stringified_service_spec = _replace_env_vars_in_compose_spec(
         stringified_service_spec=stringified_service_spec,
-        resolved_registry_url=settings.resolved_registry_url,
+        resolved_registry_url=settings.registry.resolved_registry_url,
         service_tag=service_tag,
     )
 
