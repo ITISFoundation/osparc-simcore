@@ -62,7 +62,6 @@ strict-rfc3339==0.7       # via -r requirements/_base.txt, openapi-core
 tenacity==6.0.0           # via -r requirements/_base.txt, simcore-service-library
 termcolor==1.1.0          # via pytest-sugar
 toml==0.10.2              # via pylint, pytest
-trafaret==2.1.0           # via -r requirements/_base.txt, simcore-service-library
 typed-ast==1.4.1          # via astroid
 ujson==4.0.1              # via -r requirements/_base.txt, simcore-service-library
 urllib3==1.25.11          # via -r requirements/_base.txt, requests

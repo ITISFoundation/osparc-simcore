@@ -136,10 +136,6 @@ tenacity==6.0.0
     # via
     #   -r requirements/_base.in
     #   simcore-service-library
-trafaret==2.1.0
-    # via
-    #   -r requirements/_base.in
-    #   simcore-service-library
 ujson==4.0.1
     # via
     #   -r requirements/_base.in
