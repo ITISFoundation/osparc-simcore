@@ -91,7 +91,7 @@ async def dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
             f"traefik.http.routers.{service_name}.entrypoints": "http",
             f"traefik.http.routers.{service_name}.priority": "10",
             f"traefik.http.routers.{service_name}.rule": f"hostregexp(`{node_uuid}.services.{{host:.+}}`)",
-            f"traefik.http.routers.{service_name}.middlewares": f"master-simcore_gzip@docker, {service_name}-security-headers",
+            f"traefik.http.routers.{service_name}.middlewares": f"{dynamic_sidecar_settings.swarm_stack_name}_gzip@docker, {service_name}-security-headers",
             "type": ServiceType.DEPENDENCY.value,
             "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
             "study_id": f"{project_id}",
