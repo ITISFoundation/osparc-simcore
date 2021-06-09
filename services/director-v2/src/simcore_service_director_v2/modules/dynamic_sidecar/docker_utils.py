@@ -31,9 +31,6 @@ ServiceLabelsStoredData = Tuple[
     str, str, str, PathsMapping, ComposeSpecModel, Optional[str], str, str, int
 ]
 
-# `assemble_service_name`function will join 5 strings together
-# resulting in a name composed by 5 strings separated by `_`
-
 
 @async_contextmanager
 async def docker_client() -> aiodocker.docker.Docker:
