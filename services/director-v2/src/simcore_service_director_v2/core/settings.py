@@ -103,7 +103,6 @@ class AppSettings(BaseSettings):
         return cls(
             postgres=PGSettings(),
             director_v0=DirectorV0Settings(),
-            registry=RegistrySettings(),
             celery=CelerySettings.create_from_env(),
             dynamic_services=DynamicServicesSettings(),
             client_request=ClientRequestSettings(),
@@ -138,9 +137,6 @@ class AppSettings(BaseSettings):
 
     # Dynamic Services submodule
     dynamic_services: DynamicServicesSettings
-
-    # REGISTRY submodule
-    registry: RegistrySettings
 
     # POSTGRES
     postgres: PGSettings
