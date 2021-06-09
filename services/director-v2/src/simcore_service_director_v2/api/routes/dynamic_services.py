@@ -139,10 +139,10 @@ async def create_dynamic_service(
     # dy-revproxy_4dde07ea-73be-4c44-845a-89479d1556cf
 
     service_name_dynamic_sidecar = assemble_service_name(
-        DYNAMIC_SIDECAR_SERVICE_PREFIX, service.uuid
+        DYNAMIC_SIDECAR_SERVICE_PREFIX, str(service.uuid)
     )
     service_name_proxy = assemble_service_name(
-        DYNAMIC_PROXY_SERVICE_PREFIX, service.uuid
+        DYNAMIC_PROXY_SERVICE_PREFIX, str(service.uuid)
     )
 
     # unique name for the traefik constraints
