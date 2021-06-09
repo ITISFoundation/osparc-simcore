@@ -14,6 +14,7 @@ from simcore_service_director_v2.models.schemas.constants import UserID
 from starlette import status
 from starlette.datastructures import URL
 
+from ...core.settings import DynamicServicesSettings, DynamicSidecarSettings
 from ...models.domains.dynamic_services import (
     DynamicServiceCreate,
     DynamicServiceOut,
@@ -25,7 +26,6 @@ from ...models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
     UserID,
 )
-from ...modules.dynamic_sidecar.config import DynamicSidecarSettings, get_settings
 from ...modules.dynamic_sidecar.docker_utils import (
     create_network,
     create_service_and_get_id,
@@ -49,6 +49,7 @@ from ..dependencies.dynamic_services import (
     ServicesClient,
     get_service_base_url,
     get_services_client,
+    get_settings,
 )
 
 router = APIRouter()
@@ -68,7 +69,7 @@ async def list_running_dynamic_services(
     user_id: Optional[UserID] = None,
     project_id: Optional[ProjectID] = None,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
-    dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
+    dynamic_services_settings: DynamicServicesSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
 ) -> List[Dict[str, str]]:
     legacy_running_services: List[
@@ -78,7 +79,7 @@ async def list_running_dynamic_services(
     get_stack_statuse_tasks: List[DynamicServiceOut] = [
         monitor.get_stack_status(service["Spec"]["Labels"]["uuid"])
         for service in await list_dynamic_sidecar_services(
-            dynamic_sidecar_settings, user_id, project_id
+            dynamic_services_settings.dynamic_sidecar, user_id, project_id
         )
     ]
     modern_running_services: List[Dict[str, str]] = [
@@ -101,7 +102,7 @@ async def create_dynamic_service(
     x_dynamic_sidecar_request_dns: str = Header(...),
     x_dynamic_sidecar_request_scheme: str = Header(...),
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
-    dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
+    dynamic_services_settings: DynamicServicesSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
 ) -> DynamicServiceOut:
     simcore_service: SimcoreService = await director_v0_client.get_service_labels(
@@ -167,7 +168,7 @@ async def create_dynamic_service(
         "Name": dynamic_sidecar_network_name,
         "Driver": "overlay",
         "Labels": {
-            "io.simcore.zone": f"{dynamic_sidecar_settings.traefik_simcore_zone}",
+            "io.simcore.zone": f"{dynamic_services_settings.dynamic_sidecar.traefik_simcore_zone}",
             "com.simcore.description": f"interactive for node: {service.node_uuid}",
             "uuid": f"{service.node_uuid}",  # needed for removal when project is closed
         },
@@ -177,14 +178,14 @@ async def create_dynamic_service(
     dynamic_sidecar_network_id = await create_network(network_config)
 
     # attach the service to the swarm network dedicated to services
-    swarm_network = await get_swarm_network(dynamic_sidecar_settings)
+    swarm_network = await get_swarm_network(dynamic_services_settings.dynamic_sidecar)
     swarm_network_id = swarm_network["Id"]
     swarm_network_name = swarm_network["Name"]
 
     # start dynamic-sidecar and run the proxy on the same node
     # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model
     dynamic_sidecar_create_service_params = await dynamic_sidecar_assembly(
-        dynamic_sidecar_settings=dynamic_sidecar_settings,
+        dynamic_sidecar_settings=dynamic_services_settings.dynamic_sidecar,
         io_simcore_zone=io_simcore_zone,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
         dynamic_sidecar_network_id=dynamic_sidecar_network_id,
@@ -210,11 +211,11 @@ async def create_dynamic_service(
     )
 
     dynamic_sidecar_node_id = await get_node_id_from_task_for_service(
-        dynamic_sidecar_id, dynamic_sidecar_settings
+        dynamic_sidecar_id, dynamic_services_settings.dynamic_sidecar
     )
 
     dynamic_sidecar_proxy_create_service_params = await dyn_proxy_entrypoint_assembly(
-        dynamic_sidecar_settings=dynamic_sidecar_settings,
+        dynamic_sidecar_settings=dynamic_services_settings.dynamic_sidecar,
         node_uuid=service.node_uuid,
         io_simcore_zone=io_simcore_zone,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
@@ -244,7 +245,7 @@ async def create_dynamic_service(
         project_id=service.project_id,
         user_id=service.user_id,
         hostname=service_name_dynamic_sidecar,
-        port=dynamic_sidecar_settings.web_service_port,
+        port=dynamic_services_settings.dynamic_sidecar.port_dev,
         service_key=service.key,
         service_tag=service.version,
         paths_mapping=simcore_service.paths_mapping,

@@ -6,7 +6,7 @@ from fastapi.applications import FastAPI
 from models_library.service_settings import ComposeSpecModel, PathsMapping
 from pydantic import PositiveInt
 
-from .config import DynamicSidecarSettings
+from ...core.settings import DynamicSidecarSettings
 
 CONTAINER_NAME = "container"
 BASE_SERVICE_SPEC: Dict[str, Any] = {
@@ -106,8 +106,9 @@ async def assemble_spec(
 
     container_name = target_container
     service_spec = compose_spec
-
-    settings: DynamicSidecarSettings = app.state.dynamic_sidecar_settings
+    settings: DynamicSidecarSettings = (
+        app.state.settings.dynamic_services.dynamic_sidecar
+    )
 
     # when no compose yaml file was provided
     if service_spec is None:

@@ -15,8 +15,7 @@ from simcore_service_director_v2.models.schemas.constants import (
     UserID,
 )
 
-from ...core.settings import ServiceType
-from .config import DynamicSidecarSettings
+from ...core.settings import DynamicSidecarSettings, ServiceType
 from .exceptions import DynamicSidecarError, GenericDockerError
 from .parse_docker_status import (
     TASK_STATES_ALL,

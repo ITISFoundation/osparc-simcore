@@ -2,13 +2,16 @@
 # pylint: disable=no-self-use
 import logging
 from enum import Enum, unique
+from pathlib import Path
 from typing import Optional
 
 from models_library.basic_types import BootModeEnum, PortInt
+from models_library.services import SERVICE_NETWORK_RE
 from models_library.settings.celery import CeleryConfig
 from models_library.settings.http_clients import ClientRequestSettings
 from models_library.settings.postgres import PostgresSettings
-from pydantic import BaseSettings, Field, constr, validator
+from pydantic import BaseSettings, Field, PositiveFloat, PositiveInt, constr, validator
+from pydantic.main import BaseConfig
 
 from ..meta import api_vtag
 
@@ -72,11 +75,119 @@ class DirectorV0Settings(ApiServiceSettings):
         env_prefix = "DIRECTOR_"
 
 
+_DYNAMIC_SIDECAR_DOCKER_IMAGE_RE = (
+    r"(^(local|itisfoundation)/)?(dynamic-sidecar):([\w]*)"
+)
+
+
+class DynamicSidecarSettings(BaseSettings):
+    boot_mode: BootModeEnum = Field(
+        BootModeEnum.PRODUCTION,
+        description="Used to compute where or not should start sidecar in development mode",
+        env="SC_BOOT_MODE",
+    )
+    image: str = Field(
+        ...,
+        regex=_DYNAMIC_SIDECAR_DOCKER_IMAGE_RE,
+        description="used by the director to start a specific version of the dynamic-sidecar",
+    )
+
+    port_dev: Optional[PortInt] = Field(
+        None,
+        description="optional, port on which the webserver for the dynamic-sidecar is exposed",
+    )
+    mount_path_dev: Optional[Path] = Field(
+        None,
+        description="optional, only used for development, mounts the source of the dynamic-sidecar",
+    )
+
+    simcore_services_network_name: str = Field(
+        ...,
+        regex=SERVICE_NETWORK_RE,
+        description="network all dynamic services are connected to",
+        env="SIMCORE_SERVICES_NETWORK_NAME",
+    )
+    api_request_timeout: PositiveInt = Field(
+        15,
+        description=(
+            "the default timeout each request to the dynamic-sidecar API in seconds; as per "
+            "design, all requests should answer quite quickly, in theory a few seconds or less"
+        ),
+    )
+    # TODO: this should not work with a one only request right?
+    timeout_fetch_dynamic_sidecar_node_id: PositiveFloat = Field(
+        60,
+        description=(
+            "when starting the dynamic-sidecar proxy, the NodeID of the dynamic-sidecar container "
+            "is required; If something goes wrong timeout and do not wait forever in a loop"
+        ),
+    )
+
+    traefik_simcore_zone: str = Field(
+        ...,
+        description="Names the traefik zone for services that must be accessible from platform http entrypoint",
+        env="TRAEFIK_SIMCORE_ZONE",
+    )
+
+    registry_path: Optional[str] = Field(
+        None,
+        description="development mode only, in case a local registry is used",
+        env="REGISTRY_PATH",
+    )
+    registry_url: str = Field(
+        "", description="url to the docker registry", env="REGISTRY_URL"
+    )
+
+    swarm_stack_name: str = Field(
+        ...,
+        description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
+        env="SWARM_STACK_NAME",
+    )
+
+    @property
+    def resolved_registry_url(self) -> str:
+        return self.registry_path or self.registry_url
+
+    class Config(BaseConfig):
+        env_prefix = "DYNAMIC_SIDECAR_"
+
+
+class DynamicServicesMonitoringSettings(BaseSettings):
+    monitoring_enabled: bool = True
+
+    monitor_interval_seconds: PositiveFloat = Field(
+        5.0, description="interval at which the monitor cycle is repeated"
+    )
+
+    max_status_api_duration: PositiveFloat = Field(
+        1.0,
+        description=(
+            "when requesting the status of a service this is the "
+            "maximum amount of time the request can last"
+        ),
+    )
+
+
 class DynamicServicesSettings(BaseSettings):
+    @classmethod
+    def create_from_env(cls, **override) -> "DynamicServicesSettings":
+        # this calls trigger env parsers
+        return cls(
+            dynamic_sidecar=DynamicSidecarSettings(),
+            monitoring=DynamicServicesMonitoringSettings(),
+            **override,
+        )
+
     enabled: bool = Field(True, description="Enables/Disables connection with service")
 
+    # dynamic sidecar
+    dynamic_sidecar: DynamicSidecarSettings
+
+    # dynamic services monitoring
+    monitoring: DynamicServicesMonitoringSettings
+
     class Config(CommonConfig):
-        pass
+        env_prefix = "DIRECTOR_V2_DYNAMIC_SERVICES_"
 
 
 class PGSettings(PostgresSettings):
@@ -104,7 +215,7 @@ class AppSettings(BaseSettings):
             postgres=PGSettings(),
             director_v0=DirectorV0Settings(),
             celery=CelerySettings.create_from_env(),
-            dynamic_services=DynamicServicesSettings(),
+            dynamic_services=DynamicServicesSettings.create_from_env(),
             client_request=ClientRequestSettings(),
             scheduler=CelerySchedulerSettings(),
             **settings_kwargs,
