@@ -131,8 +131,12 @@ qx.Class.define("osparc.viewer.NodeViewer", {
             return;
           }
 
-          const dynamicType = data["dynamic_type"] || null;
-          if (dynamicType == null) {
+          const isDynamicType = data["boot_type"] === "V2" || false;
+          if (isDynamicType) {
+            // dynamic service
+            const srvUrl = window.location.protocol + "//" + nodeId + ".services." + window.location.host;
+            this.__waitForServiceReady(srvUrl);
+          } else {
             // old implementation
             const servicePath = data["service_basepath"];
             const entryPointD = data["entry_point"];
@@ -141,10 +145,6 @@ qx.Class.define("osparc.viewer.NodeViewer", {
               const srvUrl = servicePath + entryPoint;
               this.__waitForServiceReady(srvUrl);
             }
-          } else {
-            // dynamic service
-            const srvUrl = window.location.protocol + "//" + nodeId + ".services." + window.location.host;
-            this.__waitForServiceReady(srvUrl);
           }
           break;
         }
