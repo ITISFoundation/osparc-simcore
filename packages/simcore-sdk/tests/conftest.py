@@ -1,7 +1,8 @@
-import json
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+import json
 import sys
 from pathlib import Path
 from typing import Any, Dict
@@ -33,23 +34,6 @@ def package_dir():
     pdir = Path(simcore_sdk.__file__).resolve().parent
     assert pdir.exists()
     return pdir
-
-
-@pytest.fixture(scope="session")
-def osparc_simcore_root_dir() -> Path:
-    """ osparc-simcore repo root dir """
-    WILDCARD = "packages/simcore-sdk"
-
-    root_dir = Path(current_dir)
-    while not any(root_dir.glob(WILDCARD)) and root_dir != Path("/"):
-        root_dir = root_dir.parent
-
-    msg = f"'{root_dir}' does not look like the git root directory of osparc-simcore"
-    assert root_dir.exists(), msg
-    assert any(root_dir.glob(WILDCARD)), msg
-    assert any(root_dir.glob(".git")), msg
-
-    return root_dir
 
 
 @pytest.fixture(scope="session")

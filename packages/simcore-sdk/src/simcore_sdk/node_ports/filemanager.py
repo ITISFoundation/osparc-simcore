@@ -15,7 +15,7 @@ from simcore_service_storage_sdk.rest import ApiException
 from tqdm import tqdm
 from yarl import URL
 
-from ..config.http_clients import client_request_settings
+from ..settings import client_request_settings
 from . import config, exceptions
 
 log = logging.getLogger(__name__)

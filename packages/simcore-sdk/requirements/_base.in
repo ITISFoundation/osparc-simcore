@@ -14,7 +14,6 @@ psycopg2-binary
 pydantic[email]
 tenacity
 tqdm
-trafaret-config
 
 attrs
 packaging

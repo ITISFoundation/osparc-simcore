@@ -110,7 +110,6 @@ pyyaml==5.4.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   openapi-spec-validator
-    #   trafaret-config
 six==1.16.0
     # via
     #   isodate
@@ -136,12 +135,6 @@ tenacity==7.0.0
     #   -r requirements/_base.in
 tqdm==4.60.0
     # via -r requirements/_base.in
-trafaret-config==2.0.2
-    # via -r requirements/_base.in
-trafaret==2.1.0
-    # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
-    #   trafaret-config
 typing-extensions==3.10.0.0
     # via
     #   aiohttp
