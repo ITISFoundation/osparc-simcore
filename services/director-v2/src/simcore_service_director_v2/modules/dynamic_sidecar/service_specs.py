@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional
 from uuid import UUID
@@ -580,6 +581,11 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
                 "Env": {
                     "SIMCORE_HOST_NAME": dynamic_sidecar_name,
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
+                    **{
+                        e: v
+                        for e, v in os.environ.items()
+                        if str(e).startswith("REGISTRY_")
+                    },
                 },
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.image,
