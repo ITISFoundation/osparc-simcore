@@ -9,11 +9,6 @@ from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID
 from models_library.service_settings import SimcoreService
 from models_library.services import ServiceKeyVersion
-from simcore_service_director_v2.models.schemas.constants import (
-    DYNAMIC_PROXY_SERVICE_PREFIX,
-    DYNAMIC_SIDECAR_SERVICE_PREFIX,
-    UserID,
-)
 from starlette import status
 from starlette.datastructures import URL
 
@@ -22,6 +17,11 @@ from ...models.domains.dynamic_services import (
     DynamicServiceOut,
     RetrieveDataIn,
     RetrieveDataOutEnveloped,
+)
+from ...models.schemas.constants import (
+    DYNAMIC_PROXY_SERVICE_PREFIX,
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
+    UserID,
 )
 from ...modules.dynamic_sidecar.config import DynamicSidecarSettings, get_settings
 from ...modules.dynamic_sidecar.docker_utils import (
