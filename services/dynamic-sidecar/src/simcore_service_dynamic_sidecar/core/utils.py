@@ -27,7 +27,7 @@ async def login_registry(settings: RegistrySettings):
             "auths": {
                 f"{settings.resolved_registry_url}": {
                     "auth": base64.b64encode(
-                        f"{settings.registry_user}:{settings.registry_password.get_secret_value()}".encode(
+                        f"{settings.user}:{settings.password.get_secret_value()}".encode(
                             "utf-8"
                         )
                     ).decode("utf-8")
@@ -38,7 +38,7 @@ async def login_registry(settings: RegistrySettings):
         conf_file.parent.mkdir(exist_ok=True, parents=True)
         conf_file.write_text(json.dumps(docker_config))
 
-    if settings.registry_auth:
+    if settings.auth:
         await asyncio.get_event_loop().run_in_executor(
             None, create_docker_config_file, settings
         )

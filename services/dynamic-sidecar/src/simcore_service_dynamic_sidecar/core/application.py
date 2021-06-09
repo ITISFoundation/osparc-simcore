@@ -67,7 +67,7 @@ def assemble_application() -> FastAPI:
 
     def create_start_app_handler(app: FastAPI) -> Callable:
         async def on_startup() -> None:
-            await login_registry(app)
+            await login_registry(app.state.settings.registry)
             print(WELCOME_MSG, flush=True)
 
         return on_startup
