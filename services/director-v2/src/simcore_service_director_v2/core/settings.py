@@ -8,6 +8,7 @@ from typing import Optional
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.services import SERVICE_NETWORK_RE
 from models_library.settings.celery import CeleryConfig
+from models_library.settings.docker_registry import RegistrySettings
 from models_library.settings.http_clients import ClientRequestSettings
 from models_library.settings.postgres import PostgresSettings
 from pydantic import BaseSettings, Field, PositiveFloat, PositiveInt, constr, validator
@@ -129,24 +130,13 @@ class DynamicSidecarSettings(BaseSettings):
         env="TRAEFIK_SIMCORE_ZONE",
     )
 
-    registry_path: Optional[str] = Field(
-        None,
-        description="development mode only, in case a local registry is used",
-        env="REGISTRY_PATH",
-    )
-    registry_url: str = Field(
-        "", description="url to the docker registry", env="REGISTRY_URL"
-    )
-
     swarm_stack_name: str = Field(
         ...,
         description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
         env="SWARM_STACK_NAME",
     )
 
-    @property
-    def resolved_registry_url(self) -> str:
-        return self.registry_path or self.registry_url
+    registry: RegistrySettings
 
     class Config(BaseConfig):
         env_prefix = "DYNAMIC_SIDECAR_"
@@ -173,7 +163,7 @@ class DynamicServicesSettings(BaseSettings):
     def create_from_env(cls, **override) -> "DynamicServicesSettings":
         # this calls trigger env parsers
         return cls(
-            dynamic_sidecar=DynamicSidecarSettings(),
+            dynamic_sidecar=DynamicSidecarSettings(registry=RegistrySettings()),
             monitoring=DynamicServicesMonitoringSettings(),
             **override,
         )
@@ -254,52 +244,6 @@ class AppSettings(BaseSettings):
 
     # STORAGE
     storage_endpoint: str = Field("storage:8080", env="STORAGE_ENDPOINT")
-
-    # caching registry and TTL (time-to-live)
-    # TODO: fix these variables once the director-v2 is able to start dynamic services
-    registry_caching: bool = Field(True, env="DIRECTOR_V2_REGISTRY_CACHING")
-    registry_caching_ttl: int = Field(15 * MINS, env="DIRECTOR_V2_REGISTRY_CACHING_TTL")
-
-    # for passing self-signed certificate to spawned services
-    # TODO: fix these variables once the director-v2 is able to start dynamic services
-    self_signed_ssl_secret_id: str = Field(
-        "", env="DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID"
-    )
-    self_signed_ssl_secret_name: str = Field(
-        "", env="DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME"
-    )
-    self_signed_ssl_filename: str = Field(
-        "", env="DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME"
-    )
-
-    # extras
-    extra_hosts_suffix: str = Field("undefined", env="EXTRA_HOSTS_SUFFIX")
-    published_hosts_name: str = Field("", env="PUBLISHED_HOSTS_NAME")
-    swarm_stack_name: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
-
-    #
-    node_schema_location: str = Field(
-        f"{API_ROOT}/{api_vtag}/schemas/node-meta-v0.0.1.json",
-        description="used when in devel mode vs release mode",
-        env="NODE_SCHEMA_LOCATION",
-    )
-
-    #
-    simcore_services_network_name: Optional[str] = Field(
-        None,
-        description="used to find the right network name",
-        env="SIMCORE_SERVICES_NETWORK_NAME",
-    )
-    simcore_services_prefix: Optional[str] = Field(
-        "simcore/services",
-        description="useful when developing with an alternative registry namespace",
-        env="SIMCORE_SERVICES_PREFIX",
-    )
-
-    # traefik
-    traefik_simcore_zone: str = Field(
-        "internal_simcore_stack", env="TRAEFIK_SIMCORE_ZONE"
-    )
 
     # monitoring
     monitoring_enabled: str = Field(False, env="MONITORING_ENABLED")
