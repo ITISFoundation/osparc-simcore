@@ -19,8 +19,8 @@ from simcore_service_director_v2.core.settings import AppSettings, BootModeEnum
 from simcore_service_director_v2.modules.dynamic_sidecar.config import (
     DynamicSidecarSettings,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.constants import (
-    SERVICE_NAME_SIDECAR,
+from simcore_service_director_v2.modules.models.schemas.constants import (
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.monitor.core import (
     DynamicSidecarsMonitor,
@@ -160,7 +160,7 @@ async def _patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> None:
             service_name = service["Spec"]["Name"]
             if (
                 node_uuid in service_name
-                and f"_{SERVICE_NAME_SIDECAR}_" in service_name
+                and f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}-" in service_name
             ):
                 ports = service["Endpoint"]["Spec"]["Ports"]
                 assert len(ports) == 1
