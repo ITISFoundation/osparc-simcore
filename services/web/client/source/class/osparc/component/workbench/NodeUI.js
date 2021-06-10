@@ -225,14 +225,14 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
       let imageSrc = null;
       if (osparc.file.FilePicker.isOutputFromStore(outputs)) {
-        imageSrc = "@FontAwesome5Solid/file-alt/45";
+        imageSrc = "@FontAwesome5Solid/file-alt/40";
       }
       if (osparc.file.FilePicker.isOutputDownloadLink(outputs)) {
-        imageSrc = "@FontAwesome5Solid/link-alt/45";
+        imageSrc = "@FontAwesome5Solid/link/40";
       }
       if (imageSrc) {
         const fileImage = new osparc.ui.basic.Thumbnail(imageSrc).set({
-          padding: 8
+          padding: 10
         });
         this.__inputOutputLayout.addAt(fileImage, 1, {
           flex: 1
