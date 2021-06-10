@@ -28,3 +28,6 @@ cytoolz
 # math
 numpy
 pandas
+
+# to route to workers diagnostics web server
+jupyter-server-proxy
