@@ -26,7 +26,6 @@ async function runTutorial() {
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][0]]);
 
-    // Wait for the output files to be pushed
     await tutorial.waitFor(30000, 'Wait for the output files to be pushed');
 
     // This study opens in fullscreen mode
@@ -50,7 +49,8 @@ async function runTutorial() {
     console.log('Tutorial error: ' + err);
   }
   finally {
-    await tutorial.removeStudy2(studyId);
+    await tutorial.toDashboard()
+    await tutorial.removeStudy(studyId);
     await tutorial.logOut();
     await tutorial.close();
   }

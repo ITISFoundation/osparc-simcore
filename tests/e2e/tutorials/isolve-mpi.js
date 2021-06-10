@@ -23,7 +23,6 @@ async function runTutorial() {
     studyId = studyData["data"]["uuid"];
     console.log("Study ID:", studyId);
 
-    // Some time for loading the workbench
     await tutorial.waitFor(5000, 'Some time for loading the workbench');
 
     await tutorial.runPipeline();
@@ -52,7 +51,8 @@ async function runTutorial() {
     console.log('Tutorial error: ' + err);
   }
   finally {
-    await tutorial.removeStudy2(studyId);
+    await tutorial.toDashboard()
+    await tutorial.removeStudy(studyId);
     await tutorial.logOut();
     await tutorial.close();
   }

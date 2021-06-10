@@ -29,7 +29,6 @@ async function runTutorial() {
     console.log(workbenchData);
     await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][0]], 20000);
 
-    // Wait for some time
     await tutorial.waitFor(12000, 'Wait for some time');
   }
   catch(err) {
@@ -37,7 +36,8 @@ async function runTutorial() {
     console.log('Tutorial error: ' + err);
   }
   finally {
-    await tutorial.removeStudy2(studyId);
+    await tutorial.toDashboard()
+    await tutorial.removeStudy(studyId);
     await tutorial.logOut();
     await tutorial.close();
   }
