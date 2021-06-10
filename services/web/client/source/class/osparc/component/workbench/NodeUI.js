@@ -248,13 +248,13 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (isInput) {
         this.__inputLayout = label;
         this.__inputOutputLayout.addAt(label.ui, 0, {
-          width: "20%"
+          flex: 1
         });
       } else {
         this.__outputLayout = label;
         const nElements = this.__inputOutputLayout.getChildren().length;
         this.__inputOutputLayout.addAt(label.ui, nElements, {
-          width: "20%"
+          flex: 1
         });
         label.ui.addListener("tap", e => {
           this.__openNodeDataManager();
