@@ -13,7 +13,7 @@
 -c ../../../packages/postgres-database/requirements/_base.in
 -c ../../../packages/service-library/requirements/_base.in
 -c ../../../packages/simcore-sdk/requirements/_base.in
--c ../../../services/sidecar/requirements/_base.in
+-c ../../../services/sidecar/requirements/_base.txt
 -c ./constraints.txt
 
 dask[complete]

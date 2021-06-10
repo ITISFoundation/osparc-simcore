@@ -19,6 +19,7 @@
 -e ../../packages/service-library/
 -e ../../packages/simcore-sdk/
 -e ../../services/storage/client-sdk/python/
+-e ../../services/sidecar
 
 # installs current package
 -e .

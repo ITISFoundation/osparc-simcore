@@ -4,12 +4,12 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aiohttp==3.7.4.post0
+aiohttp==3.7.3
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   pytest-aiohttp
-aiopg==1.2.1
+aiopg[sa]==1.2.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
@@ -24,7 +24,7 @@ async-timeout==3.0.1
     #   -c requirements/_packages.txt
     #   aiohttp
     #   aiopg
-attrs==20.3.0
+attrs==20.2.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
@@ -34,7 +34,7 @@ certifi==2021.5.30
     # via
     #   minio
     #   requests
-chardet==4.0.0
+chardet==3.0.4
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
@@ -67,7 +67,7 @@ idna==2.10
     #   idna-ssl
     #   requests
     #   yarl
-importlib-metadata==4.5.0
+importlib-metadata==2.0.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
@@ -92,13 +92,13 @@ mccabe==0.6.1
     # via pylint
 minio==7.0.3
     # via -r requirements/_test.in
-multidict==5.1.0
+multidict==4.7.6
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   aiohttp
     #   yarl
-packaging==20.9
+packaging==20.4
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
@@ -162,12 +162,13 @@ requests==2.25.1
     # via
     #   coveralls
     #   docker
-six==1.16.0
+six==1.15.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
+    #   packaging
     #   python-dateutil
-sqlalchemy[postgresql_psycopg2binary]==1.3.24
+sqlalchemy[postgresql_psycopg2binary]==1.3.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -185,14 +186,13 @@ toml==0.10.2
     #   pytest-cov
 typed-ast==1.4.3
     # via astroid
-typing-extensions==3.10.0.0
+typing-extensions==3.7.4.3
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   aiohttp
-    #   importlib-metadata
     #   yarl
-urllib3==1.26.5
+urllib3==1.26.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_packages.txt
@@ -202,12 +202,12 @@ websocket-client==1.1.0
     # via docker
 wrapt==1.12.1
     # via astroid
-yarl==1.6.3
+yarl==1.5.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   aiohttp
-zipp==3.4.1
+zipp==3.2.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
