@@ -6,7 +6,7 @@ from fastapi.applications import FastAPI
 from models_library.service_settings import ComposeSpecModel, PathsMapping
 from pydantic import PositiveInt
 
-from .config import DynamicSidecarSettings
+from ...core.settings import DynamicSidecarSettings
 
 CONTAINER_NAME = "container"
 BASE_SERVICE_SPEC: Dict[str, Any] = {
@@ -106,13 +106,14 @@ async def assemble_spec(
 
     container_name = container_http_entry
     service_spec = compose_spec
-
-    settings: DynamicSidecarSettings = app.state.dynamic_sidecar_settings
+    settings: DynamicSidecarSettings = (
+        app.state.settings.dynamic_services.dynamic_sidecar
+    )
 
     # when no compose yaml file was provided
     if service_spec is None:
         service_spec = _assemble_from_service_key_and_tag(
-            resolved_registry_url=settings.resolved_registry_url,
+            resolved_registry_url=settings.registry.resolved_registry_url,
             service_key=service_key,
             service_tag=service_tag,
         )
@@ -134,7 +135,7 @@ async def assemble_spec(
     stringified_service_spec = yaml.safe_dump(service_spec)
     stringified_service_spec = _replace_env_vars_in_compose_spec(
         stringified_service_spec=stringified_service_spec,
-        resolved_registry_url=settings.resolved_registry_url,
+        resolved_registry_url=settings.registry.resolved_registry_url,
         service_tag=service_tag,
     )
 

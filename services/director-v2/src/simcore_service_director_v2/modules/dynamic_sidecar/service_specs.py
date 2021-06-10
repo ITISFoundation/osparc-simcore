@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional
 from uuid import UUID
@@ -16,9 +17,8 @@ from models_library.service_settings import (
 from models_library.services import ServiceKeyVersion
 
 from ...api.dependencies.director_v0 import DirectorV0Client
-from ...core.settings import ServiceType
+from ...core.settings import DynamicSidecarSettings, ServiceType
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX, UserID
-from .config import DynamicSidecarSettings
 from .utils import unused_port
 
 MATCH_SERVICE_TAG = "${SERVICE_TAG}"
@@ -507,8 +507,8 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
 
     endpint_spec = {}
 
-    if dynamic_sidecar_settings.is_dev_mode:
-        dynamic_sidecar_path = dynamic_sidecar_settings.dev_simcore_dynamic_sidecar_path
+    if dynamic_sidecar_settings.mount_path_dev is not None:
+        dynamic_sidecar_path = dynamic_sidecar_settings.mount_path_dev
         if dynamic_sidecar_path is None:
             log.warning(
                 (
@@ -524,27 +524,24 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
                     "Type": "bind",
                 }
             )
-            packages_pacth = (
-                dynamic_sidecar_settings.dev_simcore_dynamic_sidecar_path
-                / ".."
-                / ".."
-                / "packages"
+            packages_path = (
+                dynamic_sidecar_settings.mount_path_dev / ".." / ".." / "packages"
             )
             mounts.append(
                 {
-                    "Source": str(packages_pacth),
+                    "Source": str(packages_path),
                     "Target": "/devel/packages",
                     "Type": "bind",
                 }
             )
     # expose this service on an empty port
-    if dynamic_sidecar_settings.dev_expose_dynamic_sidecar:
+    if dynamic_sidecar_settings.mount_path_dev:
         endpint_spec["Ports"] = [
             {
                 "Protocol": "tcp",
                 # TODO: letting it empty is enough for the swarm to generate one
                 "PublishedPort": unused_port(),
-                "TargetPort": dynamic_sidecar_settings.web_service_port,
+                "TargetPort": dynamic_sidecar_settings.port,
             }
         ]
 
@@ -558,14 +555,14 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
         "labels": {
             # TODO: let's use a pydantic model with descriptions
             "io.simcore.zone": io_simcore_zone,
-            "port": f"{dynamic_sidecar_settings.web_service_port}",
+            "port": f"{dynamic_sidecar_settings.port}",
             "study_id": f"{project_id}",
             "traefik.docker.network": dynamic_sidecar_network_name,  # also used for monitoring
             "traefik.enable": "true",
             f"traefik.http.routers.{dynamic_sidecar_name}.entrypoints": "http",
             f"traefik.http.routers.{dynamic_sidecar_name}.priority": "10",
             f"traefik.http.routers.{dynamic_sidecar_name}.rule": "PathPrefix(`/`)",
-            f"traefik.http.services.{dynamic_sidecar_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.web_service_port}",
+            f"traefik.http.services.{dynamic_sidecar_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.port}",
             "type": ServiceType.MAIN.value,  # required to be listed as an interactive service and be properly cleaned up
             "user_id": f"{user_id}",
             # the following are used for monitoring
@@ -584,6 +581,11 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
                 "Env": {
                     "SIMCORE_HOST_NAME": dynamic_sidecar_name,
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
+                    **{
+                        e: v
+                        for e, v in os.environ.items()
+                        if str(e).startswith("REGISTRY_")
+                    },
                 },
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.image,

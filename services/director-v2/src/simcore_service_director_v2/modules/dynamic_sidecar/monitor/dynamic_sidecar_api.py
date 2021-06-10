@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 import httpx
 from fastapi import FastAPI
 
-from ..config import DynamicSidecarSettings
+from ....core.settings import DynamicSidecarSettings
 from .models import MonitorData
 
 logger = logging.getLogger(__name__)
@@ -42,12 +42,12 @@ class DynamicSidecarClient:
         self._heatlth_request_timeout = httpx.Timeout(1.0, connect=1.0)
 
         dynamic_sidecar_settings: DynamicSidecarSettings = (
-            app.state.dynamic_sidecar_settings
+            app.state.settings.dynamic_services.dynamic_sidecar
         )
 
         self.httpx_client = httpx.AsyncClient(
             timeout=httpx.Timeout(
-                dynamic_sidecar_settings.dynamic_sidecar_api_request_timeout,
+                dynamic_sidecar_settings.api_request_timeout,
                 connect=1.0,
             )
         )

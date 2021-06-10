@@ -225,7 +225,7 @@ class MonitorData(BaseModel):
         project_id: ProjectID,
         user_id: UserID,
         hostname: str,
-        port: int,
+        port: Optional[int],
         service_key: str,
         service_tag: str,
         paths_mapping: PathsMapping,

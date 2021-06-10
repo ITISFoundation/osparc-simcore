@@ -1,6 +1,5 @@
 from aiohttp.web import Application
 
-from .config import setup_settings
 from .monitor import (
     setup_api_client,
     setup_monitor,
@@ -11,7 +10,6 @@ from .monitor import (
 
 def setup(app: Application) -> None:
     async def on_startup() -> None:
-        await setup_settings(app)
         await setup_api_client(app)
         await setup_monitor(app)
 

@@ -4,6 +4,7 @@ from fastapi import Depends, Request
 from models_library.projects_nodes import NodeID
 from starlette.datastructures import URL
 
+from ...core.settings import DynamicServicesSettings
 from ...models.schemas.services import RunningServiceDetails
 from ...modules.dynamic_services import ServicesClient
 from ...utils.logging_utils import log_decorator
@@ -36,3 +37,7 @@ def get_services_client(
 
     client = ServicesClient.instance(request.app)
     return client
+
+
+def get_settings(request: Request) -> DynamicServicesSettings:
+    return request.app.state.settings.dynamic_services

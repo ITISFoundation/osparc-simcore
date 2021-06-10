@@ -1,4 +1,6 @@
 import asyncio
+import base64
+import json
 import logging
 import tempfile
 import traceback
@@ -12,9 +14,34 @@ from async_generator import asynccontextmanager
 from async_timeout import timeout
 from fastapi import HTTPException
 
+from .settings import RegistrySettings
+
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
 logger = logging.getLogger(__name__)
+
+
+async def login_registry(settings: RegistrySettings):
+    def create_docker_config_file(settings: RegistrySettings):
+        docker_config = {
+            "auths": {
+                f"{settings.resolved_registry_url}": {
+                    "auth": base64.b64encode(
+                        f"{settings.user}:{settings.password.get_secret_value()}".encode(
+                            "utf-8"
+                        )
+                    ).decode("utf-8")
+                }
+            }
+        }
+        conf_file = Path.home() / ".docker" / "config.json"
+        conf_file.parent.mkdir(exist_ok=True, parents=True)
+        conf_file.write_text(json.dumps(docker_config))
+
+    if settings.auth:
+        await asyncio.get_event_loop().run_in_executor(
+            None, create_docker_config_file, settings
+        )
 
 
 @asynccontextmanager

@@ -7,7 +7,7 @@ from fastapi import FastAPI
 
 from ....api.dependencies.director_v0 import _get_director_v0_client
 from ....modules.director_v0 import DirectorV0Client
-from ..config import DynamicSidecarSettings
+from ....core.settings import DynamicSidecarSettings
 from ..docker_compose_assembly import assemble_spec
 from ..docker_utils import (
     are_services_missing,
@@ -65,7 +65,7 @@ class CreateServices(MonitorEvent):
 
         return await are_services_missing(
             node_uuid=current.node_uuid,
-            dynamic_sidecar_settings=app.state.dynamic_sidecar_settings,
+            dynamic_sidecar_settings=app.state.settings.dynamic_services.dynamic_sidecar,
         )
 
     @classmethod
@@ -73,7 +73,7 @@ class CreateServices(MonitorEvent):
         cls, app: FastAPI, previous: MonitorData, current: MonitorData
     ) -> None:
         dynamic_sidecar_settings: DynamicSidecarSettings = (
-            app.state.dynamic_sidecar_settings
+            app.state.settings.dynamic_services.dynamic_sidecar
         )
         # the dynamic-sidecar should merge all the settings, especially:
         # resources and placement derived from all the images in

@@ -13,6 +13,7 @@ from simcore_service_director_v2.models.schemas.constants import UserID
 from starlette import status
 from starlette.datastructures import URL
 
+from ...core.settings import DynamicServicesSettings
 from ...models.domains.dynamic_services import (
     DynamicServiceCreate,
     DynamicServiceOut,
@@ -24,7 +25,6 @@ from ...models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
     UserID,
 )
-from ...modules.dynamic_sidecar.config import DynamicSidecarSettings, get_settings
 from ...modules.dynamic_sidecar.docker_utils import (
     is_dynamic_service_running,
     list_dynamic_sidecar_services,
@@ -39,6 +39,7 @@ from ..dependencies.dynamic_services import (
     ServicesClient,
     get_service_base_url,
     get_services_client,
+    get_settings,
 )
 
 router = APIRouter()
@@ -60,7 +61,7 @@ async def list_running_dynamic_services(
     user_id: Optional[UserID] = None,
     project_id: Optional[ProjectID] = None,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
-    dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
+    dynamic_services_settings: DynamicServicesSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
 ) -> List[Dict[str, str]]:
     legacy_running_services: List[
@@ -70,7 +71,7 @@ async def list_running_dynamic_services(
     get_stack_statuse_tasks: List[DynamicServiceOut] = [
         monitor.get_stack_status(service["Spec"]["Labels"]["uuid"])
         for service in await list_dynamic_sidecar_services(
-            dynamic_sidecar_settings, user_id, project_id
+            dynamic_services_settings.dynamic_sidecar, user_id, project_id
         )
     ]
     modern_running_services: List[Dict[str, str]] = [
@@ -93,7 +94,7 @@ async def create_dynamic_service(
     x_dynamic_sidecar_request_dns: str = Header(...),
     x_dynamic_sidecar_request_scheme: str = Header(...),
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
-    dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
+    dynamic_services_settings: DynamicServicesSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
 ) -> DynamicServiceOut:
     simcore_service: SimcoreService = await director_v0_client.get_service_labels(
@@ -116,7 +117,9 @@ async def create_dynamic_service(
         return RedirectResponse(redirect_url_with_query)
 
     # if service is already running return the status
-    if await is_dynamic_service_running(dynamic_sidecar_settings, service.node_uuid):
+    if await is_dynamic_service_running(
+        dynamic_services_settings.dynamic_sidecar, service.node_uuid
+    ):
         return await monitor.get_stack_status(str(service.node_uuid))
 
     # Service naming schema:
@@ -152,7 +155,7 @@ async def create_dynamic_service(
         project_id=service.project_id,
         user_id=service.user_id,
         hostname=service_name_dynamic_sidecar,
-        port=dynamic_sidecar_settings.web_service_port,
+        port=dynamic_services_settings.dynamic_sidecar.port,
         service_key=service.key,
         service_tag=service.version,
         paths_mapping=simcore_service.paths_mapping,

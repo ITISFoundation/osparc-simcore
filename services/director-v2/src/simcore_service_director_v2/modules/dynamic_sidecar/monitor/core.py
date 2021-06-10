@@ -15,8 +15,12 @@ from async_timeout import timeout
 from fastapi import FastAPI, Request
 from models_library.projects_nodes_io import NodeID
 
+from ....core.settings import (
+    DynamicServicesMonitoringSettings,
+    DynamicSidecarSettings,
+    DynamicServicesSettings,
+)
 from ....models.schemas.dynamic_services import RunningServiceDetails
-from ..config import DynamicSidecarSettings
 from ..docker_utils import (
     ServiceLabelsStoredData,
     are_all_services_present,
@@ -48,8 +52,8 @@ async def apply_monitoring(
     fetches status for service and then processes all the registered events
     and updates the status back
     """
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        app.state.dynamic_sidecar_settings
+    dynamic_services_settings: DynamicServicesSettings = (
+        app.state.settings.dynamic_services
     )
 
     output_monitor_data: MonitorData = input_monitor_data.copy(deep=True)
@@ -61,7 +65,7 @@ async def apply_monitoring(
         input_monitor_data.dynamic_sidecar.were_services_created
         and not await are_all_services_present(
             node_uuid=input_monitor_data.node_uuid,
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            dynamic_sidecar_settings=dynamic_services_settings.dynamic_sidecar,
         )
     ):
         monitor: DynamicSidecarsMonitor = _get_monitor(app)
@@ -87,7 +91,7 @@ async def apply_monitoring(
         return output_monitor_data
 
     try:
-        with timeout(dynamic_sidecar_settings.max_status_api_duration):
+        with timeout(dynamic_services_settings.monitoring.max_status_api_duration):
             output_monitor_data = await update_dynamic_sidecar_health(
                 app, input_monitor_data
             )
@@ -181,7 +185,7 @@ class DynamicSidecarsMonitor:
             )
 
             dynamic_sidecar_settings: DynamicSidecarSettings = (
-                self._app.state.dynamic_sidecar_settings
+                self._app.state.settings.dynamic_services.dynamic_sidecar
             )
 
             # TODO: continue to remove all the networks and services from here!!
@@ -212,7 +216,7 @@ class DynamicSidecarsMonitor:
 
             monitor_data: MonitorData = self._to_monitor[service_name].monitor_data
             dynamic_sidecar_settings: DynamicSidecarSettings = (
-                self._app.state.dynamic_sidecar_settings
+                self._app.state.settings.dynamic_services.dynamic_sidecar
             )
             services_sidecar_client: DynamicSidecarClient = get_api_client(self._app)
 
@@ -305,8 +309,8 @@ class DynamicSidecarsMonitor:
                 )
 
     async def _run_monitor_task(self) -> None:
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            self._app.state.dynamic_sidecar_settings
+        settings: DynamicServicesMonitoringSettings = (
+            self._app.state.settings.dynamic_services.monitoring
         )
 
         while self._keep_running:
@@ -315,7 +319,7 @@ class DynamicSidecarsMonitor:
                 async with self._lock:
                     await self._runner()
 
-                await sleep(dynamic_sidecar_settings.monitor_interval_seconds)
+                await sleep(settings.monitor_interval_seconds)
             except asyncio.CancelledError:
                 break
 
@@ -329,7 +333,7 @@ class DynamicSidecarsMonitor:
 
         # discover all services which were started before and add them to the monitor
         dynamic_sidecar_settings: DynamicSidecarSettings = (
-            self._app.state.dynamic_sidecar_settings
+            self._app.state.settings.dynamic_services.dynamic_sidecar
         )
         services_to_monitor: Deque[
             ServiceLabelsStoredData
@@ -361,7 +365,7 @@ class DynamicSidecarsMonitor:
                 project_id=project_id,
                 user_id=user_id,
                 hostname=service_name,
-                port=dynamic_sidecar_settings.web_service_port,
+                port=dynamic_sidecar_settings.port,
                 service_key=service_key,
                 service_tag=service_tag,
                 paths_mapping=paths_mapping,
@@ -392,10 +396,10 @@ async def setup_monitor(app: FastAPI):
     dynamic_sidecars_monitor = DynamicSidecarsMonitor(app)
     app.state.dynamic_sidecar_monitor = dynamic_sidecars_monitor
 
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        app.state.dynamic_sidecar_settings
+    settings: DynamicServicesMonitoringSettings = (
+        app.state.settings.dynamic_services.monitoring
     )
-    if dynamic_sidecar_settings.disable_monitor:
+    if not settings.monitoring_enabled:
         logger.warning("Monitor will not be started!!!")
         return
 
