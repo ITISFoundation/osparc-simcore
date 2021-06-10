@@ -5,20 +5,20 @@ from fastapi import FastAPI
 
 from ..api.module_setup import setup_api
 from ..meta import api_version, api_vtag
-from .settings import AppSettings
+from .settings import Settings
 
 logger = logging.getLogger(__name__)
 
 
-def create_app(settings: Optional[AppSettings] = None) -> FastAPI:
+def create_app(settings: Optional[Settings] = None) -> FastAPI:
     if settings is None:
-        settings = AppSettings()
+        settings = Settings()
 
-    logging.basicConfig(level=settings.loglevel)
-    logging.root.setLevel(settings.loglevel)
+    logging.basicConfig(level=settings.log_level)
+    logging.root.setLevel(settings.log_level)
 
     app = FastAPI(
-        debug=settings.debug,
+        debug=settings.WORKFLOW_DEBUG,
         title="Components Catalog Service",
         description="Manages and maintains a **catalog** of all published components (e.g. macro-algorithms, scripts, etc)",
         version=api_version,
