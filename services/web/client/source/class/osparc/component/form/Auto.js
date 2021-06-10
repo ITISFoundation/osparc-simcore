@@ -490,7 +490,14 @@ qx.Class.define("osparc.component.form.Auto", {
           setup = this.__setupComboBox;
           break;
         case "FileButton":
-          control = new qx.ui.form.TextField();
+          // control = new qx.ui.form.TextField();
+          control = new osparc.ui.form.ChipsField().set({
+            height: 23
+          });
+          control.addListener("valueSelected", e => {
+            const data = e.getData();
+            control.addChip(data);
+          }, this);
           setup = this.__setupFileButton;
           break;
         default:
