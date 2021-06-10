@@ -47,3 +47,8 @@ class Settings(BaseCustomSettings):
         "tcp://scheduler:8786",
         description="Address of the scheduler that manages this worker",
     )
+
+    @classmethod
+    def create_from_envs(cls) -> "Settings":
+        # cls.set_defaults_with_default_constructors([()])
+        return cls()
