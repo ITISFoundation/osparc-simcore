@@ -21,6 +21,8 @@ REPODIR := $(shell git rev-parse --show-toplevel)
 PACKAGES_DIR := $(abspath $(REPODIR)/packages)
 SERVICES_DIR := $(abspath $(REPODIR)/services)
 
+IMAGE := local/requirements/tools
+
 UPGRADE_OPTION := $(if $(upgrade),upgrade=$(upgrade),)
 
 # tools
