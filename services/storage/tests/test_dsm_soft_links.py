@@ -7,9 +7,9 @@ from typing import Iterable
 import attr
 import pytest
 from aiopg.sa.engine import Engine
+from simcore_service_storage.constants import SIMCORE_S3_STR
 from simcore_service_storage.dsm import DataStorageManager
 from simcore_service_storage.models import FileMetaData, FileMetaDataEx, file_meta_data
-from simcore_service_storage.settings import SIMCORE_S3_STR
 from simcore_service_storage.utils import create_resource_uuid
 from sqlalchemy.sql.expression import literal_column
 

@@ -16,8 +16,8 @@ from typing import List, Union
 from blackfynn import Blackfynn
 from blackfynn.models import BaseCollection, Collection, DataPackage, Dataset
 
-from simcore_service_storage.models import DatasetMetaData, FileMetaData, FileMetaDataEx
-from simcore_service_storage.settings import DATCORE_ID, DATCORE_STR
+from .constants import DATCORE_ID, DATCORE_STR
+from .models import DatasetMetaData, FileMetaData, FileMetaDataEx
 
 logger = logging.getLogger(__name__)
 
@@ -361,7 +361,7 @@ class DatcoreClient(object):
 
     def download_link(self, destination, filename):
         """
-            returns presigned url for download, destination is a dataset or collection
+        returns presigned url for download, destination is a dataset or collection
         """
         collection, collection_id = self._collection_from_destination(destination)
 
@@ -378,7 +378,7 @@ class DatcoreClient(object):
 
     def download_link_by_id(self, file_id):
         """
-            returns presigned url for download of a file given its file_id
+        returns presigned url for download of a file given its file_id
         """
         url = ""
         filename = ""
