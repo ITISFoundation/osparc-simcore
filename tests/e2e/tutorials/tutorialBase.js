@@ -410,13 +410,18 @@ class TutorialBase {
     try {
       // await this.waitForStudyUnlocked(studyId);
       const nTries = 3;
-      for (let i = 0; i < nTries; i++) {
+      let i
+      for (i = 0; i < nTries; i++) {
         const cardUnlocked = await auto.deleteFirstStudy(this.__page, this.__templateName);
         if (cardUnlocked) {
           break;
         }
         console.log(studyId, "study card still locked");
-        await this.waitFor(3000);
+        await this.waitFor(3000, 'Waiting in case the study was locked');
+      }
+      if (i === nTries) {
+        console.log(`Failed to delete the study after ${nTries}: Trying without the GUI`)
+        this.fetchRemoveStudy(studyId)
       }
     }
     catch (err) {
@@ -426,7 +431,7 @@ class TutorialBase {
     await this.takeScreenshot("deleteFirstStudy_after");
   }
 
-  async removeStudy2(studyId) {
+  async fetchRemoveStudy(studyId) {
     console.log(`Removing study ${studyId}`)
     const resp = await this.__page.evaluate(async function(studyId) {
       return await osparc.data.Resources.fetch('studies', 'delete', {
