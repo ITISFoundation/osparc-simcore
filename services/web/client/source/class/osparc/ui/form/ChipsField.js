@@ -17,6 +17,16 @@
 
 qx.Class.define("osparc.ui.form.ChipsField", {
   extend: qx.ui.form.AbstractField,
+  /*
+  extend: qx.ui.core.Widget,
+  implement: [
+    qx.ui.form.IStringForm,
+    qx.ui.form.IForm
+  ],
+  include: [
+    qx.ui.form.MForm
+  ],
+  */
 
   construct: function(values) {
     this.base(arguments, new qx.ui.layout.Canvas());
@@ -29,6 +39,16 @@ qx.Class.define("osparc.ui.form.ChipsField", {
     if (typeof values !== "undefined") {
       this.setChips(values);
     }
+
+    this.setSuggestions([{
+      caption: "Bat"
+    }, {
+      caption: "Bi"
+    }, {
+      caption: "Hiru"
+    }, {
+      caption: "Lau"
+    }], "caption");
   },
 
   events: {
@@ -219,7 +239,8 @@ qx.Class.define("osparc.ui.form.ChipsField", {
      */
     getValue: function() {
       if (this.__chips.length) {
-        return this.__chips;
+        // return this.__chips;
+        return "";
       }
       return "";
     },
