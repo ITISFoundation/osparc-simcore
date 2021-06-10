@@ -76,6 +76,7 @@ RUN pip --no-cache-dir install --upgrade \
 COPY --chown=scu:scu packages /build/packages
 COPY --chown=scu:scu services/dask-sidecar /build/services/dask-sidecar
 COPY --chown=scu:scu services/storage/client-sdk /build/services/storage/client-sdk
+COPY --chown=scu:scu services/sidecar /build/services/sidecar
 
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
 RUN pip --no-cache-dir install \

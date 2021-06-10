@@ -92,6 +92,7 @@ then
 fi
 
 echo "$INFO ensuring write rights on folders ..."
+mkdir --parents "${SIDECAR_INPUT_FOLDER}" "${SIDECAR_OUTPUT_FOLDER}" "${SIDECAR_LOG_FOLDER}"
 chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_INPUT_FOLDER}"
 chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_OUTPUT_FOLDER}"
 chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_LOG_FOLDER}"
