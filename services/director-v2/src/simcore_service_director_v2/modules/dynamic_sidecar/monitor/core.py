@@ -13,12 +13,8 @@ from typing import Deque, Dict, Optional
 
 from async_timeout import timeout
 from fastapi import FastAPI, Request
-from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.service_settings import ComposeSpecModel, PathsMapping
-from simcore_service_director_v2.models.schemas.constants import UserID
 
-from ....models.schemas.constants import UserID
 from ....models.schemas.dynamic_services import RunningServiceDetails
 from ..config import DynamicSidecarSettings
 from ..docker_utils import (
@@ -52,17 +48,21 @@ async def apply_monitoring(
     fetches status for service and then processes all the registered events
     and updates the status back
     """
-    # TODO: check if service is still present, if not remove
-    # self from monitor and log it as warning
     dynamic_sidecar_settings: DynamicSidecarSettings = (
         app.state.dynamic_sidecar_settings
     )
 
     output_monitor_data: MonitorData = input_monitor_data.copy(deep=True)
 
-    if not await are_all_services_present(
-        node_uuid=input_monitor_data.node_uuid,
-        dynamic_sidecar_settings=dynamic_sidecar_settings,
+    # checks if service is still present, if not removes
+    # self from monitor and log it as warning
+    # use a property to check that these are not here
+    if (  # do not refactor, second part of and condition is skiped most times
+        input_monitor_data.dynamic_sidecar.were_services_created
+        and not await are_all_services_present(
+            node_uuid=input_monitor_data.node_uuid,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+        )
     ):
         monitor: DynamicSidecarsMonitor = _get_monitor(app)
         # always save the state when removing zombie services
@@ -82,7 +82,8 @@ async def apply_monitoring(
             f"Input monitor data\n{input_monitor_data}\n"
             f"Output monitor data\n{output_monitor_data}\n"
         )
-        logger.warning(message)
+        # logging as error as this must be addressed by someone
+        logger.error(message)
         return output_monitor_data
 
     try:
@@ -94,7 +95,7 @@ async def apply_monitoring(
         output_monitor_data.dynamic_sidecar.is_available = False
 
     for event in REGISTERED_EVENTS:
-        if await event.will_trigger(input_monitor_data, output_monitor_data):
+        if await event.will_trigger(app, input_monitor_data, output_monitor_data):
             # event.action will apply changes to the output_monitor_data
             await event.action(app, input_monitor_data, output_monitor_data)
 
@@ -130,63 +131,33 @@ class DynamicSidecarsMonitor:
         self._keep_running: bool = False
         self._inverse_search_mapping: Dict[str, str] = dict()
 
-    async def add_service_to_monitor(
-        # pylint: disable=too-many-arguments
-        self,
-        service_name: str,
-        node_uuid: str,
-        project_id: ProjectID,
-        user_id: UserID,
-        hostname: str,
-        port: int,
-        service_key: str,
-        service_tag: str,
-        paths_mapping: PathsMapping,
-        compose_spec: ComposeSpecModel,
-        target_container: Optional[str],
-        dynamic_sidecar_network_name: str,
-        simcore_traefik_zone: str,
-        service_port: int,
-    ) -> None:
+    async def add_service_to_monitor(self, monitor_data: MonitorData) -> None:
         """Invoked before the service is started
 
         Because we do not have all items require to compute the service_name the node_uuid is used to
         keep track of the service for faster searches.
         """
         async with self._lock:
-            if service_name in self._to_monitor:
+            if monitor_data.service_name in self._to_monitor:
                 return
-            if node_uuid in self._inverse_search_mapping:
+            if monitor_data.node_uuid in self._inverse_search_mapping:
                 raise DynamicSidecarError(
                     "node_uuids at a global level collided. A running "
-                    f"service for node {node_uuid} already exists. Please checkout "
-                    "other projects which may have this issue."
+                    f"service for node {monitor_data.node_uuid} already exists. "
+                    "Please checkout other projects which may have this issue."
                 )
-            if not service_name:
+            if not monitor_data.service_name:
                 raise DynamicSidecarError(
                     "a service with no name is not valid. Invalid usage."
                 )
-            self._inverse_search_mapping[node_uuid] = service_name
-            self._to_monitor[service_name] = LockWithMonitorData(
+            self._inverse_search_mapping[
+                monitor_data.node_uuid
+            ] = monitor_data.service_name
+            self._to_monitor[monitor_data.service_name] = LockWithMonitorData(
                 resource_lock=AsyncResourceLock(False),
-                monitor_data=MonitorData.assemble(
-                    service_name=service_name,
-                    node_uuid=node_uuid,
-                    project_id=project_id,
-                    user_id=user_id,
-                    hostname=hostname,
-                    port=port,
-                    service_key=service_key,
-                    service_tag=service_tag,
-                    paths_mapping=paths_mapping,
-                    compose_spec=compose_spec,
-                    target_container=target_container,
-                    dynamic_sidecar_network_name=dynamic_sidecar_network_name,
-                    simcore_traefik_zone=simcore_traefik_zone,
-                    service_port=service_port,
-                ),
+                monitor_data=monitor_data,
             )
-            logger.debug("Added service '%s' to monitor", service_name)
+            logger.debug("Added service '%s' to monitor", monitor_data.service_name)
 
     async def remove_service_from_monitor(
         self, node_uuid: str, save_state: Optional[bool]
@@ -376,7 +347,7 @@ class DynamicSidecarsMonitor:
                 service_tag,
                 paths_mapping,
                 compose_spec,
-                target_container,
+                container_http_entry,
                 dynamic_sidecar_network_name,
                 simcore_traefik_zone,
                 service_port,
@@ -384,7 +355,7 @@ class DynamicSidecarsMonitor:
                 user_id,
             ) = service_to_monitor
 
-            await self.add_service_to_monitor(
+            monitor_data = MonitorData.assemble(
                 service_name=service_name,
                 node_uuid=node_uuid,
                 project_id=project_id,
@@ -395,11 +366,12 @@ class DynamicSidecarsMonitor:
                 service_tag=service_tag,
                 paths_mapping=paths_mapping,
                 compose_spec=compose_spec,
-                target_container=target_container,
+                container_http_entry=container_http_entry,
                 dynamic_sidecar_network_name=dynamic_sidecar_network_name,
                 simcore_traefik_zone=simcore_traefik_zone,
                 service_port=service_port,
             )
+            await self.add_service_to_monitor(monitor_data)
 
     async def shutdown(self):
         logging.info("Shutting down dynamic-sidecar monitor")

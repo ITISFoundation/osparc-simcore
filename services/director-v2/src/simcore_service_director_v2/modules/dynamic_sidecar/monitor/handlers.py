@@ -1,10 +1,27 @@
 import logging
 from collections import deque
+from pprint import pformat
 from typing import Any, Dict, List
 
 from fastapi import FastAPI
 
+from ....api.dependencies.director_v0 import _get_director_v0_client
+from ....modules.director_v0 import DirectorV0Client
+from ..config import DynamicSidecarSettings
 from ..docker_compose_assembly import assemble_spec
+from ..docker_utils import (
+    are_services_missing,
+    create_network,
+    create_service_and_get_id,
+    get_node_id_from_task_for_service,
+    get_swarm_network,
+)
+from ..service_specs import (
+    dyn_proxy_entrypoint_assembly,
+    dynamic_sidecar_assembly,
+    extract_service_port_from_compose_start_spec,
+    merge_settings_before_use,
+)
 from .dynamic_sidecar_api import get_api_client
 from .handlers_base import MonitorEvent
 from .models import (
@@ -36,13 +53,134 @@ def parse_containers_inspect(
     return list(results)
 
 
+class CreateServices(MonitorEvent):
+    @classmethod
+    async def will_trigger(
+        cls, app: FastAPI, previous: MonitorData, current: MonitorData
+    ) -> bool:
+        # the are_services_missing is expensive, if the proxy
+        # was already started just skip this event
+        if current.dynamic_sidecar.were_services_created:
+            return False
+
+        return await are_services_missing(
+            node_uuid=current.node_uuid,
+            dynamic_sidecar_settings=app.state.dynamic_sidecar_settings,
+        )
+
+    @classmethod
+    async def action(
+        cls, app: FastAPI, previous: MonitorData, current: MonitorData
+    ) -> None:
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            app.state.dynamic_sidecar_settings
+        )
+        # the dynamic-sidecar should merge all the settings, especially:
+        # resources and placement derived from all the images in
+        # the provided docker-compose spec
+        # also other encodes the env vars to target the proper container
+        director_v0_client: DirectorV0Client = _get_director_v0_client(app)
+        settings = await merge_settings_before_use(
+            director_v0_client=director_v0_client,
+            service_key=current.service_key,
+            service_tag=current.service_tag,
+        )
+
+        # these configuration should guarantee 245 address network
+        network_config = {
+            "Name": current.dynamic_sidecar_network_name,
+            "Driver": "overlay",
+            "Labels": {
+                "io.simcore.zone": f"{dynamic_sidecar_settings.traefik_simcore_zone}",
+                "com.simcore.description": f"interactive for node: {current.node_uuid}",
+                "uuid": f"{current.node_uuid}",  # needed for removal when project is closed
+            },
+            "Attachable": True,
+            "Internal": False,
+        }
+        dynamic_sidecar_network_id = await create_network(network_config)
+
+        # attach the service to the swarm network dedicated to services
+        swarm_network = await get_swarm_network(dynamic_sidecar_settings)
+        swarm_network_id = swarm_network["Id"]
+        swarm_network_name = swarm_network["Name"]
+
+        # start dynamic-sidecar and run the proxy on the same node
+        # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model
+        dynamic_sidecar_create_service_params = await dynamic_sidecar_assembly(
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            io_simcore_zone=current.simcore_traefik_zone,
+            dynamic_sidecar_network_name=current.dynamic_sidecar_network_name,
+            dynamic_sidecar_network_id=dynamic_sidecar_network_id,
+            swarm_network_id=swarm_network_id,
+            dynamic_sidecar_name=current.service_name,
+            user_id=current.user_id,
+            node_uuid=current.node_uuid,
+            service_key=current.service_key,
+            service_tag=current.service_tag,
+            paths_mapping=current.paths_mapping,
+            compose_spec=current.compose_spec,
+            container_http_entry=current.container_http_entry,
+            project_id=current.project_id,
+            settings=settings,
+        )
+        logger.debug(
+            "dynamic-sidecar create_service_params %s",
+            pformat(dynamic_sidecar_create_service_params),
+        )
+
+        dynamic_sidecar_id = await create_service_and_get_id(
+            dynamic_sidecar_create_service_params
+        )
+
+        dynamic_sidecar_node_id = await get_node_id_from_task_for_service(
+            dynamic_sidecar_id, dynamic_sidecar_settings
+        )
+
+        dynamic_sidecar_proxy_create_service_params = (
+            await dyn_proxy_entrypoint_assembly(
+                dynamic_sidecar_settings=dynamic_sidecar_settings,
+                node_uuid=current.node_uuid,
+                io_simcore_zone=current.simcore_traefik_zone,
+                dynamic_sidecar_network_name=current.dynamic_sidecar_network_name,
+                dynamic_sidecar_network_id=dynamic_sidecar_network_id,
+                service_name=current.proxy_service_name,
+                swarm_network_id=swarm_network_id,
+                swarm_network_name=swarm_network_name,
+                user_id=current.user_id,
+                project_id=current.project_id,
+                dynamic_sidecar_node_id=dynamic_sidecar_node_id,
+                request_scheme=current.request_scheme,
+                request_dns=current.request_dns,
+            )
+        )
+        logger.debug(
+            "dynamic-sidecar-proxy create_service_params %s",
+            pformat(dynamic_sidecar_proxy_create_service_params),
+        )
+
+        # no need for the id any longer
+        await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
+
+        # update service_port and assing it to the status
+        # needed by RunDockerComposeUp action
+        current.service_port = extract_service_port_from_compose_start_spec(
+            dynamic_sidecar_create_service_params
+        )
+
+        # finally mark services created
+        current.dynamic_sidecar.were_services_created = True
+
+
 class ServicesInspect(MonitorEvent):
     """
     Inspects the dynamic-sidecar, and store some information about the contaiers.
     """
 
     @classmethod
-    async def will_trigger(cls, previous: MonitorData, current: MonitorData) -> bool:
+    async def will_trigger(
+        cls, app: FastAPI, previous: MonitorData, current: MonitorData
+    ) -> bool:
         return (
             current.dynamic_sidecar.overall_status.status == DynamicSidecarStatus.OK
             and current.dynamic_sidecar.is_available == True
@@ -75,7 +213,9 @@ class RunDockerComposeUp(MonitorEvent):
     """Runs the docker-compose up command when and composes the spec if a service requires it"""
 
     @classmethod
-    async def will_trigger(cls, previous: MonitorData, current: MonitorData) -> bool:
+    async def will_trigger(
+        cls, app: FastAPI, previous: MonitorData, current: MonitorData
+    ) -> bool:
         return (
             current.dynamic_sidecar.overall_status.status == DynamicSidecarStatus.OK
             and current.dynamic_sidecar.is_available == True
@@ -98,7 +238,7 @@ class RunDockerComposeUp(MonitorEvent):
             service_tag=current.service_tag,
             paths_mapping=current.paths_mapping,
             compose_spec=current.compose_spec,
-            target_container=current.target_container,
+            container_http_entry=current.container_http_entry,
             dynamic_sidecar_network_name=current.dynamic_sidecar_network_name,
             simcore_traefik_zone=current.simcore_traefik_zone,
             service_port=current.service_port,
@@ -119,6 +259,7 @@ class RunDockerComposeUp(MonitorEvent):
 # register all handlers defined in this module here
 # A list is essential to guarantee execution order
 REGISTERED_EVENTS: List[MonitorEvent] = [
+    CreateServices,
     ServicesInspect,
     RunDockerComposeUp,
 ]

@@ -491,7 +491,7 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
     service_tag: str,
     paths_mapping: PathsMapping,
     compose_spec: ComposeSpecModel,
-    target_container: Optional[str],
+    container_http_entry: Optional[str],
     project_id: ProjectID,
     settings: SimcoreServiceSettings,
 ) -> Dict[str, Any]:
@@ -575,7 +575,7 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
             "service_tag": service_tag,
             "paths_mapping": paths_mapping.json(),
             "compose_spec": json.dumps(compose_spec),
-            "target_container": target_container,
+            "container_http_entry": container_http_entry,
         },
         "name": dynamic_sidecar_name,
         "networks": [swarm_network_id, dynamic_sidecar_network_id],

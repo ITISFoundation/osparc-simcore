@@ -37,7 +37,7 @@ def monitor_data(node_uuid: str, paths_mapping: PathsMapping) -> MonitorData:
         service_tag="1.0.1",
         paths_mapping=paths_mapping,
         compose_spec=None,
-        target_container=None,
+        container_http_entry=None,
         dynamic_sidecar_network_name="some_network_name",
         simcore_traefik_zone="main",
         service_port=3000,

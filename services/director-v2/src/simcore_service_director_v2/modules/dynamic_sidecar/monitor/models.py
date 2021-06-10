@@ -108,6 +108,14 @@ class DynamicSidecar(BaseModel):
         scription="docker inspect results from all the container ran at regular intervals",
     )
 
+    were_services_created: bool = Field(
+        False,
+        description=(
+            "when True no longer will the Docker api "
+            "be used to check if the services were started"
+        ),
+    )
+
     # consider adding containers for healthchecks but this is more difficult and it depends on each service
 
     @property
@@ -168,7 +176,7 @@ class MonitorData(BaseModel):
             "of compsing one from the service_key and service_tag"
         ),
     )
-    target_container: Optional[str] = Field(
+    container_http_entry: Optional[str] = Field(
         ...,
         description="when the user defines a compose spec, it should pick a container inside the spec to receive traffic on a defined port",
     )
@@ -182,8 +190,25 @@ class MonitorData(BaseModel):
         ...,
         description="required for Traefik to correctly route requests to the spawned container",
     )
+
     service_port: PositiveInt = Field(
-        ..., description="port where the service is exposed defined by the service"
+        ...,
+        description=(
+            "port where the service is exposed defined by the service; "
+            "NOTE: optional because it will be added once the service is started"
+        ),
+    )
+    # Below values are used only once and then are nto required, thus optional
+    # after the service is picked up by the monitor after a reboot these are not required
+    # and can be set to None
+    request_dns: Optional[str] = Field(
+        None, description="used when configuring the CORS options on the proxy"
+    )
+    request_scheme: Optional[str] = Field(
+        None, description="used when configuring the CORS options on the proxy"
+    )
+    proxy_service_name: Optional[str] = Field(
+        None, description="service name given to the proxy"
     )
 
     @validator("project_id", always=True)
@@ -205,10 +230,13 @@ class MonitorData(BaseModel):
         service_tag: str,
         paths_mapping: PathsMapping,
         compose_spec: ComposeSpecModel,
-        target_container: Optional[str],
+        container_http_entry: Optional[str],
         dynamic_sidecar_network_name: str,
         simcore_traefik_zone: str,
         service_port: int,
+        request_dns: str = None,
+        request_scheme: str = None,
+        proxy_service_name: str = None,
     ) -> "MonitorData":
         payload = dict(
             service_name=service_name,
@@ -219,10 +247,13 @@ class MonitorData(BaseModel):
             service_tag=service_tag,
             paths_mapping=paths_mapping,
             compose_spec=compose_spec,
-            target_container=target_container,
+            container_http_entry=container_http_entry,
             dynamic_sidecar_network_name=dynamic_sidecar_network_name,
             simcore_traefik_zone=simcore_traefik_zone,
             service_port=service_port,
+            request_dns=request_dns,
+            request_scheme=request_scheme,
+            proxy_service_name=proxy_service_name,
             dynamic_sidecar=dict(
                 hostname=hostname,
                 port=port,

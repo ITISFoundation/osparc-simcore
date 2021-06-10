@@ -10,7 +10,7 @@ class GenericDockerError(DynamicSidecarError):
     """Generic docker library error"""
 
     def __init__(self, msg: str, original_exception: Exception):
-        super().__init__(msg + ": {original_exception}")
+        super().__init__(msg + f": {original_exception.message}")
         self.original_exception = original_exception
 
 

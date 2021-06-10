@@ -94,7 +94,7 @@ async def assemble_spec(
     service_tag: str,
     paths_mapping: PathsMapping,  # pylint: disable=unused-argument
     compose_spec: ComposeSpecModel,
-    target_container: Optional[str],
+    container_http_entry: Optional[str],
     dynamic_sidecar_network_name: str,
     simcore_traefik_zone: str,
     service_port: PositiveInt,
@@ -104,7 +104,7 @@ async def assemble_spec(
     the dynamic-sidecar to start the service
     """
 
-    container_name = target_container
+    container_name = container_http_entry
     service_spec = compose_spec
 
     settings: DynamicSidecarSettings = app.state.dynamic_sidecar_settings

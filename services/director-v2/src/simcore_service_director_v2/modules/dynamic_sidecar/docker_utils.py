@@ -50,7 +50,8 @@ async def docker_client() -> aiodocker.docker.Docker:
         yield client
     except aiodocker.exceptions.DockerError as e:
         message = "Unexpected error from docker client"
-        log.exception(msg=message)
+        log_message = f"{message} {e.message}"
+        log.warning(log_message)
         raise GenericDockerError(message, e) from e
     finally:
         await client.close()
@@ -146,7 +147,7 @@ async def get_dynamic_sidecars_to_monitor(
             service["Spec"]["Labels"]["paths_mapping"]
         )
         compose_spec = json.loads(service["Spec"]["Labels"]["compose_spec"])
-        target_container = service["Spec"]["Labels"]["target_container"]
+        container_http_entry = service["Spec"]["Labels"]["container_http_entry"]
 
         dynamic_sidecar_network_name = service["Spec"]["Labels"][
             "traefik.docker.network"
@@ -163,7 +164,7 @@ async def get_dynamic_sidecars_to_monitor(
             service_tag,
             paths_mapping,
             compose_spec,
-            target_container,
+            container_http_entry,
             dynamic_sidecar_network_name,
             simcore_traefik_zone,
             service_port,
@@ -249,14 +250,40 @@ async def get_dynamic_sidecar_state(
     service_id: str, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> Tuple[ServiceState, str]:
 
-    last_task = await _extract_task_data_from_service_for_state(
-        service_id=service_id,
-        dynamic_sidecar_settings=dynamic_sidecar_settings,
-        target_statuses=TASK_STATES_ALL,
-    )
+    try:
+        last_task = await _extract_task_data_from_service_for_state(
+            service_id=service_id,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            target_statuses=TASK_STATES_ALL,
+        )
+    # GenericDockerError
+    except GenericDockerError as e:
+        if e.original_exception.message != f"service {service_id} not found":
+            raise e
+
+        # because the service is not there yet return a pending state
+        # it is looking for a service or something with no error message
+        pending_task_state = {"State": ServiceState.PENDING.value}
+        return extract_task_state(task_status=pending_task_state)
 
     task_status = last_task["Status"]
     return extract_task_state(task_status=task_status)
+
+
+async def are_services_missing(
+    node_uuid: str, dynamic_sidecar_settings: DynamicSidecarSettings
+) -> bool:
+    """Used to check if the service should be created"""
+    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+        stack_services = await client.services.list(
+            filters={
+                "label": [
+                    f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}",
+                    f"uuid={node_uuid}",
+                ]
+            }
+        )
+        return len(stack_services) == 0
 
 
 async def are_all_services_present(
