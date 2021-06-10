@@ -425,7 +425,6 @@ class TutorialBase {
   }
 
   async removeStudy2(studyId) {
-    await this.toDashboard()
     console.log(`Removing study ${studyId}`)
     const resp = await this.__page.evaluate(async function(studyId) {
       return await osparc.data.Resources.fetch('studies', 'delete', {
@@ -447,10 +446,8 @@ class TutorialBase {
 
   async waitFor(waitFor, reason) {
     console.log(`Waiting for ${waitFor}ms. Reason: ${reason}`)
-    this.startScreenshooter()
     await utils.sleep(waitFor);
     await this.takeScreenshot('waitFor_finished')
-    this.stopScreenshooter()
   }
 
   async takeScreenshot(screenshotTitle) {
