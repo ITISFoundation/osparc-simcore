@@ -200,6 +200,34 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       */
     },
 
+    turnIntoFileUI: function() {
+      const outputs = this.getNode().getOutputs();
+      if (osparc.file.FilePicker.getOutput(outputs) === null) {
+        return;
+      }
+
+      const fileUIWidth = 100;
+      this.set({
+        width: fileUIWidth,
+        maxWidth: fileUIWidth,
+        minWidth: fileUIWidth
+      });
+
+      const chipContainer = this.getChildControl("chips");
+      chipContainer.exclude();
+
+      if (this.__progressBar) {
+        this.__progressBar.exclude();
+      }
+
+      const fileImage = new osparc.ui.basic.Thumbnail("@FontAwesome5Solid/file-alt/45").set({
+        padding: 8
+      });
+      this.__inputOutputLayout.addAt(fileImage, 1, {
+        flex: 1
+      });
+    },
+
     getInputPort: function() {
       return this.__inputLayout;
     },

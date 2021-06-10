@@ -452,8 +452,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       let node = this.__getWorkbench().getNode(nodeId);
 
       const nodeUI = new osparc.component.workbench.NodeUI(node);
-      this.bind("scale", nodeUI, "scale");
       nodeUI.populateNodeLayout();
+      if (node.isFilePicker()) {
+        node.addListener("changeOutputs", e => {
+          nodeUI.turnIntoFileUI();
+        });
+        nodeUI.turnIntoFileUI();
+      }
+      this.bind("scale", nodeUI, "scale");
       this.__createDragDropMechanism(nodeUI);
 
       return nodeUI;
