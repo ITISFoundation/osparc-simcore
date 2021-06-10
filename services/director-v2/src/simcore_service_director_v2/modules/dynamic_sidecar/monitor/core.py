@@ -17,8 +17,8 @@ from models_library.projects_nodes_io import NodeID
 
 from ....core.settings import (
     DynamicServicesMonitoringSettings,
-    DynamicSidecarSettings,
     DynamicServicesSettings,
+    DynamicSidecarSettings,
 )
 from ....models.schemas.dynamic_services import RunningServiceDetails
 from ..docker_utils import (

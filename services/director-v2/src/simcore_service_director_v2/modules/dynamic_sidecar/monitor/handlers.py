@@ -6,8 +6,8 @@ from typing import Any, Dict, List
 from fastapi import FastAPI
 
 from ....api.dependencies.director_v0 import _get_director_v0_client
-from ....modules.director_v0 import DirectorV0Client
 from ....core.settings import DynamicSidecarSettings
+from ....modules.director_v0 import DirectorV0Client
 from ..docker_compose_assembly import assemble_spec
 from ..docker_utils import (
     are_services_missing,
