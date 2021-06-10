@@ -198,6 +198,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         converter: state => osparc.utils.StatusUI.getBorderDecorator(state)
       });
       */
+      if (node.isFilePicker()) {
+        this.turnIntoFileUI();
+      }
     },
 
     turnIntoFileUI: function() {
@@ -220,12 +223,21 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.__progressBar.exclude();
       }
 
-      const fileImage = new osparc.ui.basic.Thumbnail("@FontAwesome5Solid/file-alt/45").set({
-        padding: 8
-      });
-      this.__inputOutputLayout.addAt(fileImage, 1, {
-        flex: 1
-      });
+      let imageSrc = null;
+      if (osparc.file.FilePicker.isOutputFromStore(outputs)) {
+        imageSrc = "@FontAwesome5Solid/file-alt/45";
+      }
+      if (osparc.file.FilePicker.isOutputDownloadLink(outputs)) {
+        imageSrc = "@FontAwesome5Solid/link-alt/45";
+      }
+      if (imageSrc) {
+        const fileImage = new osparc.ui.basic.Thumbnail(imageSrc).set({
+          padding: 8
+        });
+        this.__inputOutputLayout.addAt(fileImage, 1, {
+          flex: 1
+        });
+      }
     },
 
     getInputPort: function() {
