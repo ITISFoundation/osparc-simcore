@@ -171,13 +171,13 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.setThumbnail(node.getThumbnail());
       }
       this.__inputOutputLayout = this.getChildControl("inputOutput");
-      this.__chipContainer = this.getChildControl("chips");
+      const chipContainer = this.getChildControl("chips");
       if (node.isComputational() || node.isFilePicker()) {
         this.__progressBar = this.getChildControl("progress");
       }
 
       const nodeStatus = new osparc.ui.basic.NodeStatusUI(node);
-      this.__chipContainer.add(nodeStatus);
+      chipContainer.add(nodeStatus);
     },
 
     populateNodeLayout: function() {
