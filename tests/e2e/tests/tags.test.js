@@ -106,7 +106,7 @@ describe('tags testing', () => {
 
   test('assign tag and reflect changes', async () => {
     await page.waitForSelector(
-      '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] > [qxclass="osparc.component.widget.Thumbnail"]',
+      '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] > [qxclass="osparc.ui.basic.Thumbnail"]',
       {
         hidden: true
       }

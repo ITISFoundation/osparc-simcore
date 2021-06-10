@@ -175,7 +175,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           });
           break;
         case "lock":
-          control = new osparc.component.widget.Thumbnail("@FontAwesome5Solid/lock/70");
+          control = new osparc.ui.basic.Thumbnail("@FontAwesome5Solid/lock/70");
           this._add(control, {
             top: 0,
             right: 0,
@@ -188,8 +188,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             alignX: "center",
             alignY: "middle"
           }));
-          // const icon = new osparc.component.widget.Thumbnail("@FontAwesome5Solid/file-export/60");
-          const icon = new osparc.component.widget.Thumbnail("@FontAwesome5Solid/cloud-download-alt/60");
+          // const icon = new osparc.ui.basic.Thumbnail("@FontAwesome5Solid/file-export/60");
+          const icon = new osparc.ui.basic.Thumbnail("@FontAwesome5Solid/cloud-download-alt/60");
           control.add(icon, {
             flex: 1
           });
