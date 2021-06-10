@@ -9,7 +9,7 @@ aiohttp==3.7.4.post0
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   pytest-aiohttp
-aiopg[sa]==1.2.1
+aiopg==1.2.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
@@ -85,7 +85,9 @@ lazy-object-proxy==1.4.3
 mako==1.1.4
     # via alembic
 markupsafe==2.0.1
-    # via mako
+    # via
+    #   -c requirements/_base.txt
+    #   mako
 mccabe==0.6.1
     # via pylint
 minio==7.0.3
@@ -98,6 +100,7 @@ multidict==5.1.0
     #   yarl
 packaging==20.9
     # via
+    #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   pytest
     #   pytest-sugar
@@ -119,6 +122,7 @@ pylint==2.8.3
     # via -r requirements/_test.in
 pyparsing==2.4.7
     # via
+    #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   packaging
 pytest-aiohttp==0.3.0

@@ -67,20 +67,41 @@ attrs==20.3.0
     #   openapi-core
 blosc==1.10.4
     # via -r requirements/_base.in
+bokeh==2.3.2
+    # via dask
 chardet==4.0.0
     # via aiohttp
+click==7.1.2
+    # via
+    #   -c requirements/../../../services/sidecar/requirements/_base.in
+    #   -c requirements/./constraints.txt
+    #   distributed
+cloudpickle==1.6.0
+    # via
+    #   dask
+    #   distributed
+contextvars==2.4
+    # via distributed
 cytoolz==0.11.0
     # via -r requirements/_base.in
-dask==2021.3.0
-    # via -r requirements/_base.in
+dask[complete]==2021.3.0
+    # via
+    #   -r requirements/_base.in
+    #   distributed
 dataclasses==0.8
     # via
     #   pydantic
     #   werkzeug
+distributed==2021.3.0
+    # via dask
 dnspython==2.1.0
     # via email-validator
 email-validator==1.1.2
     # via pydantic
+fsspec==2021.6.0
+    # via dask
+heapdict==1.0.1
+    # via zict
 idna-ssl==1.1.0
     # via aiohttp
 idna==2.10
@@ -100,12 +121,33 @@ idna==2.10
     #   email-validator
     #   idna-ssl
     #   yarl
+immutables==0.15
+    # via contextvars
 importlib-metadata==4.5.0
     # via jsonschema
 isodate==0.6.0
     # via
     #   openapi-core
     #   openapi-schema-validator
+jinja2==3.0.1
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../services/sidecar/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../services/sidecar/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../services/sidecar/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../services/sidecar/requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../services/sidecar/requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../services/sidecar/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../services/sidecar/requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../services/sidecar/requirements/../../../requirements/constraints.txt
+    #   bokeh
 jsonschema==3.2.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.in
@@ -121,8 +163,14 @@ lazy-object-proxy==1.4.3
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../services/sidecar/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   openapi-core
+locket==0.2.1
+    # via partd
 lz4==3.1.3
     # via -r requirements/_base.in
+markupsafe==2.0.1
+    # via jinja2
+msgpack==1.0.2
+    # via distributed
 multidict==5.1.0
     # via
     #   aiohttp
@@ -130,6 +178,8 @@ multidict==5.1.0
 numpy==1.19.5
     # via
     #   -r requirements/_base.in
+    #   bokeh
+    #   dask
     #   pandas
 openapi-core==0.12.0
     # via
@@ -141,14 +191,28 @@ openapi-schema-validator==0.1.5
     # via openapi-spec-validator
 openapi-spec-validator==0.3.1
     # via openapi-core
+packaging==20.9
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   -c requirements/../../../services/sidecar/requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   -c requirements/../../../services/sidecar/requirements/_base.in
+    #   bokeh
 pandas==1.1.5
-    # via -r requirements/_base.in
+    # via
+    #   -r requirements/_base.in
+    #   dask
+partd==1.2.0
+    # via dask
+pillow==8.2.0
+    # via bokeh
 prometheus-client==0.11.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.in
     #   -c requirements/../../../services/sidecar/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../services/sidecar/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+psutil==5.8.0
+    # via distributed
 psycopg2-binary==2.8.6
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.in
@@ -196,10 +260,14 @@ pyinstrument==3.4.2
     #   -c requirements/../../../services/sidecar/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../services/sidecar/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+pyparsing==2.4.7
+    # via packaging
 pyrsistent==0.17.3
     # via jsonschema
 python-dateutil==2.8.1
-    # via pandas
+    # via
+    #   bokeh
+    #   pandas
 pytz==2021.1
     # via pandas
 pyyaml==5.4.1
@@ -224,7 +292,9 @@ pyyaml==5.4.1
     #   -c requirements/../../../services/sidecar/requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../services/sidecar/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   bokeh
     #   dask
+    #   distributed
     #   openapi-spec-validator
 six==1.16.0
     # via
@@ -235,6 +305,8 @@ six==1.16.0
     #   openapi-spec-validator
     #   python-dateutil
     #   tenacity
+sortedcontainers==2.4.0
+    # via distributed
 sqlalchemy[postgresql_psycopg2binary]==1.3.24
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -265,6 +337,8 @@ sqlalchemy[postgresql_psycopg2binary]==1.3.24
     #   aiopg
 strict-rfc3339==0.7
     # via openapi-core
+tblib==1.7.0
+    # via distributed
 tenacity==7.0.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.in
@@ -275,7 +349,15 @@ tenacity==7.0.0
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../services/sidecar/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 toolz==0.11.1
-    # via cytoolz
+    # via
+    #   cytoolz
+    #   dask
+    #   distributed
+    #   partd
+tornado==6.1
+    # via
+    #   bokeh
+    #   distributed
 trafaret==2.1.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.in
@@ -285,6 +367,7 @@ trafaret==2.1.0
 typing-extensions==3.10.0.0
     # via
     #   aiohttp
+    #   bokeh
     #   importlib-metadata
     #   pydantic
     #   yarl
@@ -307,6 +390,8 @@ yarl==1.6.3
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../services/sidecar/requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiohttp
+zict==2.0.0
+    # via distributed
 zipp==3.4.1
     # via importlib-metadata
 

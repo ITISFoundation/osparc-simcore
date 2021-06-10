@@ -14,8 +14,9 @@
 -c ../../../packages/service-library/requirements/_base.in
 -c ../../../packages/simcore-sdk/requirements/_base.in
 -c ../../../services/sidecar/requirements/_base.in
+-c ./constraints.txt
 
-dask
+dask[complete]
 
 # compression
 blosc

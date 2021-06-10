@@ -1,0 +1,6 @@
+# There are incompatible versions in the resolved dependencies:
+#   click==8.0.1 (from -c requirements/_base.txt (line 74))
+#   click (from -r requirements/../../../services/sidecar/requirements/_base.in (line 25))
+#   click<8.0,>=7.0 (from celery[redis]==5.1.0->-r requirements/../../../services/sidecar/requirements/_base.in (line 24))
+
+click<8.0,>=7.0
