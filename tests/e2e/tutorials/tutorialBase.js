@@ -22,6 +22,8 @@ class TutorialBase {
     this.__interval = null;
 
     this.__failed = false;
+
+    this.startScreenshooter()
   }
 
   startScreenshooter() {
@@ -440,6 +442,7 @@ class TutorialBase {
   }
 
   async close() {
+    this.stopScreenshooter()
     await this.waitFor(2000);
     await this.__browser.close();
   }
