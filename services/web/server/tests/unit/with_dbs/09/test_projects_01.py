@@ -437,7 +437,7 @@ async def _new_project(
 
 
 async def _replace_project(
-    client, project_update: Dict, expected: web.Response
+    client, project_update: Dict, expected: Type[web.HTTPException]
 ) -> Dict:
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(
@@ -451,7 +451,9 @@ async def _replace_project(
     return data
 
 
-async def _delete_project(client, project: Dict, expected: web.Response) -> None:
+async def _delete_project(
+    client, project: Dict, expected: Type[web.HTTPException]
+) -> None:
     url = client.app.router["delete_project"].url_for(project_id=project["uuid"])
     assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
     resp = await client.delete(url)
