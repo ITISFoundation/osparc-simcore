@@ -8,7 +8,7 @@ import re
 import urllib.parse
 from collections import namedtuple
 from pathlib import Path
-from random import randint
+from random import choice
 from typing import Callable, Dict, List
 from uuid import uuid4
 
@@ -16,10 +16,10 @@ import pytest
 import respx
 from fastapi import FastAPI, status
 from models_library.services import ServiceDockerData, ServiceKeyVersion
-from simcore_service_director_v2.models.schemas.services import (
+from simcore_service_director_v2.models.schemas.dynamic_services import (
     RunningServiceDetails,
-    ServiceExtras,
 )
+from simcore_service_director_v2.models.schemas.services import ServiceExtras
 from simcore_service_director_v2.modules.director_v0 import DirectorV0Client
 
 
@@ -141,18 +141,9 @@ def fake_service_extras(random_json_from_schema: Callable) -> ServiceExtras:
 
 
 @pytest.fixture
-def fake_running_service_details(
-    random_json_from_schema: Callable,
-) -> RunningServiceDetails:
-    random_data = random_json_from_schema(RunningServiceDetails.schema_json(indent=2))
-    # fix port stuff, the randomiser does not understand positive ints
-    KEYS_TO_FIX = ["published_port", "service_port"]
-    for k in KEYS_TO_FIX:
-        if k in random_data:
-            random_data[k] = randint(1, 50000)
-    random_details = RunningServiceDetails(**random_data)
-
-    return random_details
+def fake_running_service_details() -> RunningServiceDetails:
+    sample_data = choice(RunningServiceDetails.Config.schema_extra["examples"])
+    return RunningServiceDetails(**sample_data)
 
 
 @pytest.fixture
@@ -187,7 +178,7 @@ def mocked_director_service_fcts(
             ),
             name="get_running_service_details",
         ).respond(
-            json={"data": fake_running_service_details.dict(by_alias=True)},
+            json={"data": json.loads(fake_running_service_details.json(by_alias=True))},
         )
 
         yield respx_mock

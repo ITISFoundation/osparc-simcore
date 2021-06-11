@@ -4,6 +4,7 @@ import uuid
 import pytest
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     RunningServiceDetails,
+    ServiceBootType,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.monitor.models import (
     MonitorData,
@@ -54,12 +55,14 @@ def test_running_service_details_make_status(node_uuid: str, monitor_data: Monit
     print(status)
     assert status
     assert status.dict(exclude_unset=True, by_alias=True) == {
-        "boot_type": "V2",
+        "boot_type": ServiceBootType.V2,
+        "project_id": uuid.UUID(monitor_data.project_id),
         "service_state": "running",
         "service_message": "starting...",
-        "service_uuid": node_uuid,
+        "service_uuid": uuid.UUID(node_uuid),
         "service_key": "simcore/services/dynamic/test-image",
         "service_version": "1.0.1",
         "service_host": "some service",
+        "user_id": monitor_data.user_id,
         "service_port": 3000,
     }

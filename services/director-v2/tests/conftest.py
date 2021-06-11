@@ -65,6 +65,9 @@ def project_env_devel_dict(project_slug_dir: Path) -> Dict[str, Any]:
 def project_env_devel_environment(project_env_devel_dict: Dict[str, Any], monkeypatch):
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
+    monkeypatch.setenv(
+        "DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:TEST_MOCKED_TAG_NOT_PRESENT"
+    )
 
 
 @pytest.fixture(scope="function")

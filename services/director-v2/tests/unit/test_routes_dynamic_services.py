@@ -111,7 +111,7 @@ def test_create_dynamic_services(
         assert redirect_url.path == "/v0/running_interactive_services"
         assert redirect_url.params["user_id"] == str(service["user_id"])
         assert redirect_url.params["project_id"] == service["project_id"]
-        assert redirect_url.params["service_uuid"] == service["uuid"]
+        assert redirect_url.params["service_uuid"] == service["node_uuid"]
         assert redirect_url.params["service_key"] == service["key"]
         assert redirect_url.params["service_version"] == service["version"]
         assert redirect_url.params["service_basepath"] == service["basepath"]
@@ -156,7 +156,7 @@ def test_get_service_status(
     service: Dict[str, Any],
     exp_status_code: int,
 ):
-    url = URL(f"/v2/dynamic_services/{service['uuid']}")
+    url = URL(f"/v2/dynamic_services/{service['node_uuid']}")
 
     response = client.get(str(url), allow_redirects=False)
     assert (
@@ -168,7 +168,8 @@ def test_get_service_status(
         redirect_url = URL(response.headers["location"])
         assert redirect_url.host == "director"
         assert (
-            redirect_url.path == f"/v0/running_interactive_services/{service['uuid']}"
+            redirect_url.path
+            == f"/v0/running_interactive_services/{service['node_uuid']}"
         )
         assert redirect_url.params == QueryParams("")  # empty query
 
@@ -214,7 +215,7 @@ def test_delete_service(
     exp_save_state: bool,
 ):
 
-    url = URL(f"/v2/dynamic_services/{service['uuid']}")
+    url = URL(f"/v2/dynamic_services/{service['node_uuid']}")
     if save_state is not None:
         url = url.copy_with(params={"save_state": save_state})
 
@@ -228,7 +229,8 @@ def test_delete_service(
         redirect_url = URL(response.headers["location"])
         assert redirect_url.host == "director"
         assert (
-            redirect_url.path == f"/v0/running_interactive_services/{service['uuid']}"
+            redirect_url.path
+            == f"/v0/running_interactive_services/{service['node_uuid']}"
         )
         assert redirect_url.params == QueryParams(
             save_state=exp_save_state
