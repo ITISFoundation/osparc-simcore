@@ -128,8 +128,6 @@ tenacity==6.2.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-trafaret==2.1.0
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
 typing-extensions==3.7.4.3
     # via
     #   -c requirements/_base.txt
