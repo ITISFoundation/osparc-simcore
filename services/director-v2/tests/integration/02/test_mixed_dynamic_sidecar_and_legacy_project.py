@@ -32,9 +32,9 @@ SERVICES_ARE_READY_TIMEOUT = 2 * 60
 
 @pytest.fixture(autouse=True)
 def minimal_configuration(
-    httpbin_service: Dict,
-    httpbin_dynamic_sidecar_service: Dict,
-    httpbin_dynamic_sidecar_compose_service: Dict,
+    dy_static_file_server_service: Dict,
+    dy_static_file_server_dynamic_sidecar_service: Dict,
+    dy_static_file_server_dynamic_sidecar_compose_spec_service: Dict,
     redis_service: RedisConfig,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
@@ -70,9 +70,9 @@ async def httpbins_project(
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitConfig,
-    httpbin_service: Dict,
-    httpbin_dynamic_sidecar_service: Dict,
-    httpbin_dynamic_sidecar_compose_service: Dict,
+    dy_static_file_server_service: Dict,
+    dy_static_file_server_dynamic_sidecar_service: Dict,
+    dy_static_file_server_dynamic_sidecar_compose_spec_service: Dict,
     uuid_legacy: str,
     uuid_dynamic_sidecar: str,
     uuid_dynamic_sidecar_compose: str,
@@ -80,18 +80,24 @@ async def httpbins_project(
     return project(
         workbench={
             uuid_legacy: {
-                "key": httpbin_service["image"]["name"],
-                "version": httpbin_service["image"]["tag"],
+                "key": dy_static_file_server_service["image"]["name"],
+                "version": dy_static_file_server_service["image"]["tag"],
                 "label": "legacy dynamic service",
             },
             uuid_dynamic_sidecar: {
-                "key": httpbin_dynamic_sidecar_service["image"]["name"],
-                "version": httpbin_dynamic_sidecar_service["image"]["tag"],
+                "key": dy_static_file_server_dynamic_sidecar_service["image"]["name"],
+                "version": dy_static_file_server_dynamic_sidecar_service["image"][
+                    "tag"
+                ],
                 "label": "dynamic sidecar",
             },
             uuid_dynamic_sidecar_compose: {
-                "key": httpbin_dynamic_sidecar_compose_service["image"]["name"],
-                "version": httpbin_dynamic_sidecar_compose_service["image"]["tag"],
+                "key": dy_static_file_server_dynamic_sidecar_compose_spec_service[
+                    "image"
+                ]["name"],
+                "version": dy_static_file_server_dynamic_sidecar_compose_spec_service[
+                    "image"
+                ]["tag"],
                 "label": "dynamic sidecar with docker compose spec",
             },
         }
