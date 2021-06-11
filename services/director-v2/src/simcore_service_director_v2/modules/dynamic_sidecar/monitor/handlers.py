@@ -55,23 +55,19 @@ def parse_containers_inspect(
 
 class CreateServices(MonitorEvent):
     @classmethod
-    async def will_trigger(
-        cls, app: FastAPI, previous: MonitorData, current: MonitorData
-    ) -> bool:
+    async def will_trigger(cls, app: FastAPI, monitor_data: MonitorData) -> bool:
         # the are_services_missing is expensive, if the proxy
         # was already started just skip this event
-        if current.dynamic_sidecar.were_services_created:
+        if monitor_data.dynamic_sidecar.were_services_created:
             return False
 
         return await are_services_missing(
-            node_uuid=current.node_uuid,
+            node_uuid=monitor_data.node_uuid,
             dynamic_sidecar_settings=app.state.settings.dynamic_services.dynamic_sidecar,
         )
 
     @classmethod
-    async def action(
-        cls, app: FastAPI, previous: MonitorData, current: MonitorData
-    ) -> None:
+    async def action(cls, app: FastAPI, monitor_data: MonitorData) -> None:
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.dynamic_services.dynamic_sidecar
         )
@@ -82,18 +78,18 @@ class CreateServices(MonitorEvent):
         director_v0_client: DirectorV0Client = _get_director_v0_client(app)
         settings = await merge_settings_before_use(
             director_v0_client=director_v0_client,
-            service_key=current.service_key,
-            service_tag=current.service_tag,
+            service_key=monitor_data.service_key,
+            service_tag=monitor_data.service_tag,
         )
 
         # these configuration should guarantee 245 address network
         network_config = {
-            "Name": current.dynamic_sidecar_network_name,
+            "Name": monitor_data.dynamic_sidecar_network_name,
             "Driver": "overlay",
             "Labels": {
                 "io.simcore.zone": f"{dynamic_sidecar_settings.traefik_simcore_zone}",
-                "com.simcore.description": f"interactive for node: {current.node_uuid}",
-                "uuid": f"{current.node_uuid}",  # needed for removal when project is closed
+                "com.simcore.description": f"interactive for node: {monitor_data.node_uuid}",
+                "uuid": f"{monitor_data.node_uuid}",  # needed for removal when project is closed
             },
             "Attachable": True,
             "Internal": False,
@@ -109,19 +105,19 @@ class CreateServices(MonitorEvent):
         # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model
         dynamic_sidecar_create_service_params = await dynamic_sidecar_assembly(
             dynamic_sidecar_settings=dynamic_sidecar_settings,
-            io_simcore_zone=current.simcore_traefik_zone,
-            dynamic_sidecar_network_name=current.dynamic_sidecar_network_name,
+            io_simcore_zone=monitor_data.simcore_traefik_zone,
+            dynamic_sidecar_network_name=monitor_data.dynamic_sidecar_network_name,
             dynamic_sidecar_network_id=dynamic_sidecar_network_id,
             swarm_network_id=swarm_network_id,
-            dynamic_sidecar_name=current.service_name,
-            user_id=current.user_id,
-            node_uuid=current.node_uuid,
-            service_key=current.service_key,
-            service_tag=current.service_tag,
-            paths_mapping=current.paths_mapping,
-            compose_spec=current.compose_spec,
-            container_http_entry=current.container_http_entry,
-            project_id=current.project_id,
+            dynamic_sidecar_name=monitor_data.service_name,
+            user_id=monitor_data.user_id,
+            node_uuid=monitor_data.node_uuid,
+            service_key=monitor_data.service_key,
+            service_tag=monitor_data.service_tag,
+            paths_mapping=monitor_data.paths_mapping,
+            compose_spec=monitor_data.compose_spec,
+            container_http_entry=monitor_data.container_http_entry,
+            project_id=monitor_data.project_id,
             settings=settings,
         )
         logger.debug(
@@ -140,18 +136,18 @@ class CreateServices(MonitorEvent):
         dynamic_sidecar_proxy_create_service_params = (
             await dyn_proxy_entrypoint_assembly(
                 dynamic_sidecar_settings=dynamic_sidecar_settings,
-                node_uuid=current.node_uuid,
-                io_simcore_zone=current.simcore_traefik_zone,
-                dynamic_sidecar_network_name=current.dynamic_sidecar_network_name,
+                node_uuid=monitor_data.node_uuid,
+                io_simcore_zone=monitor_data.simcore_traefik_zone,
+                dynamic_sidecar_network_name=monitor_data.dynamic_sidecar_network_name,
                 dynamic_sidecar_network_id=dynamic_sidecar_network_id,
-                service_name=current.proxy_service_name,
+                service_name=monitor_data.proxy_service_name,
                 swarm_network_id=swarm_network_id,
                 swarm_network_name=swarm_network_name,
-                user_id=current.user_id,
-                project_id=current.project_id,
+                user_id=monitor_data.user_id,
+                project_id=monitor_data.project_id,
                 dynamic_sidecar_node_id=dynamic_sidecar_node_id,
-                request_scheme=current.request_scheme,
-                request_dns=current.request_dns,
+                request_scheme=monitor_data.request_scheme,
+                request_dns=monitor_data.request_dns,
             )
         )
         logger.debug(
@@ -164,12 +160,12 @@ class CreateServices(MonitorEvent):
 
         # update service_port and assing it to the status
         # needed by RunDockerComposeUp action
-        current.service_port = extract_service_port_from_compose_start_spec(
+        monitor_data.service_port = extract_service_port_from_compose_start_spec(
             dynamic_sidecar_create_service_params
         )
 
         # finally mark services created
-        current.dynamic_sidecar.were_services_created = True
+        monitor_data.dynamic_sidecar.were_services_created = True
 
 
 class ServicesInspect(MonitorEvent):
@@ -178,33 +174,30 @@ class ServicesInspect(MonitorEvent):
     """
 
     @classmethod
-    async def will_trigger(
-        cls, app: FastAPI, previous: MonitorData, current: MonitorData
-    ) -> bool:
+    async def will_trigger(cls, app: FastAPI, monitor_data: MonitorData) -> bool:
         return (
-            current.dynamic_sidecar.overall_status.status == DynamicSidecarStatus.OK
-            and current.dynamic_sidecar.is_available == True
+            monitor_data.dynamic_sidecar.overall_status.status
+            == DynamicSidecarStatus.OK
+            and monitor_data.dynamic_sidecar.is_available == True
         )
 
     @classmethod
-    async def action(
-        cls, app: FastAPI, previous: MonitorData, current: MonitorData
-    ) -> None:
+    async def action(cls, app: FastAPI, monitor_data: MonitorData) -> None:
         api_client = get_api_client(app)
-        dynamic_sidecar_endpoint = current.dynamic_sidecar.endpoint
+        dynamic_sidecar_endpoint = monitor_data.dynamic_sidecar.endpoint
 
         containers_inspect = await api_client.containers_inspect(
             dynamic_sidecar_endpoint
         )
         if containers_inspect is None:
             # this means that the service was degrated and we need to do something?
-            current.dynamic_sidecar.overall_status.update_failing_status(
-                f"Could not get containers_inspect for {current.service_name}. "
+            monitor_data.dynamic_sidecar.overall_status.update_failing_status(
+                f"Could not get containers_inspect for {monitor_data.service_name}. "
                 "Ask and admin to check director logs for details."
             )
 
         # parse and store data from container
-        current.dynamic_sidecar.containers_inspect = parse_containers_inspect(
+        monitor_data.dynamic_sidecar.containers_inspect = parse_containers_inspect(
             containers_inspect
         )
 
@@ -213,35 +206,34 @@ class RunDockerComposeUp(MonitorEvent):
     """Runs the docker-compose up command when and composes the spec if a service requires it"""
 
     @classmethod
-    async def will_trigger(
-        cls, app: FastAPI, previous: MonitorData, current: MonitorData
-    ) -> bool:
+    async def will_trigger(cls, app: FastAPI, monitor_data: MonitorData) -> bool:
         return (
-            current.dynamic_sidecar.overall_status.status == DynamicSidecarStatus.OK
-            and current.dynamic_sidecar.is_available == True
-            and current.dynamic_sidecar.compose_spec_submitted == False
+            monitor_data.dynamic_sidecar.overall_status.status
+            == DynamicSidecarStatus.OK
+            and monitor_data.dynamic_sidecar.is_available == True
+            and monitor_data.dynamic_sidecar.compose_spec_submitted == False
         )
 
     @classmethod
-    async def action(
-        cls, app: FastAPI, previous: MonitorData, current: MonitorData
-    ) -> None:
-        logger.debug("Getting docker compose spec for service %s", current.service_name)
+    async def action(cls, app: FastAPI, monitor_data: MonitorData) -> None:
+        logger.debug(
+            "Getting docker compose spec for service %s", monitor_data.service_name
+        )
 
         api_client = get_api_client(app)
-        dynamic_sidecar_endpoint = current.dynamic_sidecar.endpoint
+        dynamic_sidecar_endpoint = monitor_data.dynamic_sidecar.endpoint
 
         # creates a docker compose spec given the service key and tag
         compose_spec = await assemble_spec(
             app=app,
-            service_key=current.service_key,
-            service_tag=current.service_tag,
-            paths_mapping=current.paths_mapping,
-            compose_spec=current.compose_spec,
-            container_http_entry=current.container_http_entry,
-            dynamic_sidecar_network_name=current.dynamic_sidecar_network_name,
-            simcore_traefik_zone=current.simcore_traefik_zone,
-            service_port=current.service_port,
+            service_key=monitor_data.service_key,
+            service_tag=monitor_data.service_tag,
+            paths_mapping=monitor_data.paths_mapping,
+            compose_spec=monitor_data.compose_spec,
+            container_http_entry=monitor_data.container_http_entry,
+            dynamic_sidecar_network_name=monitor_data.dynamic_sidecar_network_name,
+            simcore_traefik_zone=monitor_data.simcore_traefik_zone,
+            service_port=monitor_data.service_port,
         )
 
         compose_spec_accepted = await api_client.run_docker_compose_up(
@@ -250,10 +242,10 @@ class RunDockerComposeUp(MonitorEvent):
 
         # singal there is a problem with the dynamic-sidecar
         if not compose_spec_accepted:
-            current.dynamic_sidecar.overall_status.update_failing_status(
+            monitor_data.dynamic_sidecar.overall_status.update_failing_status(
                 "Could not run docker-compose up. Ask an admin to check director logs for details."
             )
-        current.dynamic_sidecar.was_compose_spec_submitted = True
+        monitor_data.dynamic_sidecar.was_compose_spec_submitted = True
 
 
 # register all handlers defined in this module here

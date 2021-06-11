@@ -168,16 +168,12 @@ def get_api_client(app: FastAPI) -> DynamicSidecarClient:
 
 
 async def update_dynamic_sidecar_health(
-    app: FastAPI, input_monitor_data: MonitorData
+    app: FastAPI, monitor_data: MonitorData
 ) -> MonitorData:
-    # make a copy of the original
-    output_monitor_data = input_monitor_data.copy(deep=True)
 
     api_client = get_api_client(app)
-    service_endpoint = input_monitor_data.dynamic_sidecar.endpoint
+    service_endpoint = monitor_data.dynamic_sidecar.endpoint
 
     # update service health
     is_healthy = await api_client.is_healthy(service_endpoint)
-    output_monitor_data.dynamic_sidecar.is_available = is_healthy
-
-    return output_monitor_data
+    monitor_data.dynamic_sidecar.is_available = is_healthy

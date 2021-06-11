@@ -9,6 +9,7 @@
 import asyncio
 import logging
 from asyncio import Lock, sleep
+from copy import deepcopy
 from typing import Deque, Dict, Optional
 
 from async_timeout import timeout
@@ -42,12 +43,8 @@ from .utils import AsyncResourceLock
 
 logger = logging.getLogger(__name__)
 
-MONITOR_KEY = f"{__name__}.DynamicSidecarsMonitor"
 
-
-async def apply_monitoring(
-    app: FastAPI, input_monitor_data: MonitorData
-) -> Optional[MonitorData]:
+async def apply_monitoring(app: FastAPI, monitor_data: MonitorData) -> None:
     """
     fetches status for service and then processes all the registered events
     and updates the status back
@@ -55,67 +52,55 @@ async def apply_monitoring(
     dynamic_services_settings: DynamicServicesSettings = (
         app.state.settings.dynamic_services
     )
-
-    output_monitor_data: MonitorData = input_monitor_data.copy(deep=True)
+    initial_overall_status = deepcopy(monitor_data.dynamic_sidecar.overall_status)
 
     # checks if service is still present, if not removes
     # self from monitor and log it as warning
-    # use a property to check that these are not here
+    # use a property to check that these are not hereDynamicSidecarsMonitor
     if (  # do not refactor, second part of and condition is skiped most times
-        input_monitor_data.dynamic_sidecar.were_services_created
+        monitor_data.dynamic_sidecar.were_services_created
         and not await are_all_services_present(
-            node_uuid=input_monitor_data.node_uuid,
+            node_uuid=monitor_data.node_uuid,
             dynamic_sidecar_settings=dynamic_services_settings.dynamic_sidecar,
         )
     ):
         monitor: DynamicSidecarsMonitor = _get_monitor(app)
         # always save the state when removing zombie services
         await monitor.remove_service_from_monitor(
-            node_uuid=input_monitor_data.node_uuid, save_state=True
+            node_uuid=monitor_data.node_uuid, save_state=True
         )
-        return output_monitor_data
+        return
 
     # if the service is not OK (for now failing) monitoring cycle will
     # be skipped. This will allow for others to debug it
-    if (
-        input_monitor_data.dynamic_sidecar.overall_status.status
-        != DynamicSidecarStatus.OK
-    ):
+    if monitor_data.dynamic_sidecar.overall_status.status != DynamicSidecarStatus.OK:
         message = (
-            f"Service {input_monitor_data.service_name} is failing. Skipping monitoring.\n"
-            f"Input monitor data\n{input_monitor_data}\n"
-            f"Output monitor data\n{output_monitor_data}\n"
+            f"Service {monitor_data.service_name} is failing. Skipping monitoring.\n"
+            f"Monitor data\n{monitor_data}"
         )
         # logging as error as this must be addressed by someone
         logger.error(message)
-        return output_monitor_data
+        return
 
     try:
         with timeout(dynamic_services_settings.monitoring.max_status_api_duration):
-            output_monitor_data = await update_dynamic_sidecar_health(
-                app, input_monitor_data
-            )
+            await update_dynamic_sidecar_health(app, monitor_data)
     except asyncio.TimeoutError:
-        output_monitor_data.dynamic_sidecar.is_available = False
+        monitor_data.dynamic_sidecar.is_available = False
 
     for event in REGISTERED_EVENTS:
-        if await event.will_trigger(app, input_monitor_data, output_monitor_data):
+        if await event.will_trigger(app, monitor_data):
             # event.action will apply changes to the output_monitor_data
-            await event.action(app, input_monitor_data, output_monitor_data)
+            await event.action(app, monitor_data)
 
     # check if the status of the services has changed from OK
-    if (
-        input_monitor_data.dynamic_sidecar.overall_status
-        != output_monitor_data.dynamic_sidecar.overall_status
-    ):
+    if initial_overall_status != monitor_data.dynamic_sidecar.overall_status:
         # TODO: push this to the UI to display to the user?
         logger.info(
             "Service %s overall status changed to %s",
-            output_monitor_data.service_name,
-            output_monitor_data.dynamic_sidecar.overall_status,
+            monitor_data.service_name,
+            monitor_data.dynamic_sidecar.overall_status,
         )
-
-    return output_monitor_data
 
 
 class DynamicSidecarsMonitor:
@@ -188,7 +173,6 @@ class DynamicSidecarsMonitor:
                 self._app.state.settings.dynamic_services.dynamic_sidecar
             )
 
-            # TODO: continue to remove all the networks and services from here!!
             _ = save_state
             # TODO: save state and others go here
 
@@ -280,10 +264,7 @@ class DynamicSidecarsMonitor:
             lock_with_monitor_data: LockWithMonitorData = self._to_monitor[service_name]
 
             try:
-                output_minitor_data: Optional[MonitorData] = await apply_monitoring(
-                    self._app, lock_with_monitor_data.monitor_data
-                )
-                self._to_monitor[service_name].monitor_data = output_minitor_data
+                await apply_monitoring(self._app, lock_with_monitor_data.monitor_data)
             except asyncio.CancelledError:
                 raise
             except Exception:  # pylint: disable=broad-except
@@ -298,6 +279,7 @@ class DynamicSidecarsMonitor:
         # a monitoring cycle
         for service_name in self._to_monitor:
             lock_with_monitor_data = self._to_monitor[service_name]
+            logger.error("lock_with_monitor_data=%s", lock_with_monitor_data)
             resource_marked_as_locked = (
                 await lock_with_monitor_data.resource_lock.mark_as_locked_if_unlocked()
             )
