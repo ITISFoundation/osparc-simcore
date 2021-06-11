@@ -160,7 +160,7 @@ async def ensure_services_stopped(start_request_data: Dict[str, Any]) -> None:
                 assert delete_result is True
 
 
-async def _patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
+async def _patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> None:
     """
     Normally director-v2 talks via docker-netwoks with the dynamic-sidecar.
     Since the director-v2 was started outside docker and is not
@@ -197,8 +197,7 @@ async def _patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
 
                 endpoint = entry.monitor_data.dynamic_sidecar.endpoint
                 assert endpoint == f"http://172.17.0.1:{port}"
-
-                return endpoint
+                break
 
 
 async def test_start(
@@ -214,9 +213,7 @@ async def test_start(
     )
     assert response.status_code == 201, response.text
 
-    local_address = await _patch_dynamic_service_url(
-        app=test_client.application, node_uuid=node_uuid
-    )
+    await _patch_dynamic_service_url(app=test_client.application, node_uuid=node_uuid)
 
     # awaiting for service to be running
     async with timeout(SERVICE_IS_READY_TIMEOUT):
@@ -231,7 +228,6 @@ async def test_start(
             data = response.json()
 
             status_is_not_running = data.get("service_state", "") != "running"
-            assert data["service_host"] in local_address
 
         # give the service some time to keep up
         await asyncio.sleep(5)
