@@ -217,7 +217,6 @@ async def test_start(
     local_address = await _patch_dynamic_service_url(
         app=test_client.application, node_uuid=node_uuid
     )
-    assert response.json()["service_host"] in local_address
 
     # awaiting for service to be running
     async with timeout(SERVICE_IS_READY_TIMEOUT):
@@ -232,6 +231,7 @@ async def test_start(
             data = response.json()
 
             status_is_not_running = data.get("service_state", "") != "running"
+            assert data["service_host"] in local_address
 
         # give the service some time to keep up
         await asyncio.sleep(5)
