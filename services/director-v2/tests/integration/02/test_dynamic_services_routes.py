@@ -163,9 +163,11 @@ async def ensure_services_stopped(start_request_data: Dict[str, Any]) -> None:
                     # hanging networks
                     delete_result = await network.delete()
                     assert delete_result is True
-                except aiodocker.exceptions.DockerError:
+                except aiodocker.exceptions.DockerError as e:
                     # if the tests succeeds the network will nto exists
-                    pass
+                    str_error = str(e)
+                    assert "network" in str_error
+                    assert "not found" in str_error
 
 
 async def _patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> None:
