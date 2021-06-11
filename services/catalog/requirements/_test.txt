@@ -214,7 +214,9 @@ toml==0.10.2
     #   pylint
     #   pytest
 typing-extensions==3.7.4.3
-    # via aiohttp
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
 urllib3==1.26.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
