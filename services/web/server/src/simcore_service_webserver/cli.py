@@ -1,30 +1,14 @@
-""" Application's command line .
-
-Why does this file exist, and why not put this in __main__?
-
-  You might be tempted to import things from __main__ later, but that will cause
-  problems: the code will get executed twice:
-
-  - When you run `python -msimcore_service_webserver` python will execute
-    ``__main__.py`` as a script. That means there won't be any
-    ``simcore_service_webserver.__main__`` in ``sys.modules``.
-  - When you import __main__ it will get executed again (as a module) because
-    there's no ``simcore_service_webserver.__main__`` in ``sys.modules``.
-
-"""
-
-
 import logging
 import os
-import sys
-from argparse import ArgumentParser
-from typing import Dict, List, Optional
+from pprint import pformat
 
-from .application import run_service
-from .application_config import CLI_DEFAULT_CONFIGFILE, app_schema
-from .cli_config import add_cli_options, config_from_options
+import typer
+from pydantic import ValidationError
+from pydantic.env_settings import BaseSettings
+
+from . import application
 from .log import setup_logging
-from .utils import search_osparc_repo_dir
+from .settings import Settings
 
 # ptsvd cause issues with ProcessPoolExecutor
 # SEE: https://github.com/microsoft/ptvsd/issues/1443
@@ -36,82 +20,92 @@ if os.environ.get("SC_BOOT_MODE") == "debug-ptvsd":
 log = logging.getLogger(__name__)
 
 
-def create_default_parser() -> ArgumentParser:
-    return ArgumentParser(description="Service to manage data webserver in simcore.")
+HEADER = "{:-^50}"
 
 
-def setup_parser(parser: ArgumentParser) -> ArgumentParser:
-    """ Adds all options to a parser"""
-    # parser.add_argument('names', metavar='NAME', nargs=argparse.ZERO_OR_MORE,
-    #                help="A name of something.")
-
-    add_cli_options(parser, CLI_DEFAULT_CONFIGFILE)
-
-    # Add here more options ....
-
-    return parser
+log = logging.getLogger(__name__)
+main = typer.Typer(name="osparc-simcore webserver service")
 
 
-def create_environ(*, skip_host_environ: bool = False) -> Dict[str, str]:
-    """Build environment with substitutable variables
+def print_as_envfile(settings_obj, *, compact, verbose):
+    for name in settings_obj.__fields__:
+        value = getattr(settings_obj, name)
+
+        if isinstance(value, BaseSettings):
+            if compact:
+                value = f"'{value.json()}'"  # flat
+            else:
+                if verbose:
+                    typer.echo(f"\n# --- {name} --- ")
+                print_as_envfile(value, compact=False, verbose=verbose)
+                continue
+
+        if verbose:
+            field_info = settings_obj.__fields__[name].field_info
+            if field_info.description:
+                typer.echo(f"# {field_info.description}")
+
+        typer.echo(f"{name}={value}")
 
 
-    :param skip_host_environ: excludes os.environ , defaults to False
-    :param skip_host_environ: bool, optional
-    :return: a dictionary of variables to replace in config file
-    :rtype: Dict[str, str]
-    """
+def print_as_json(settings_obj, *, compact=False):
+    typer.echo(settings_obj.json(indent=None if compact else 2))
 
-    # system's environment variables
-    environ = dict() if skip_host_environ else dict(os.environ)
 
-    # project-related environment variables
-    rootdir = search_osparc_repo_dir()
-    if rootdir is not None:
-        environ.update(
-            {
-                "OSPARC_SIMCORE_REPO_ROOTDIR": str(rootdir),
-            }
+@main.command()
+def settings(
+    as_json: bool = False,
+    as_json_schema: bool = False,
+    compact: bool = typer.Option(False, help="Print compact form"),
+    verbose: bool = False,
+):
+    """Resolves settings and prints envfile"""
+
+    if as_json_schema:
+        typer.echo(Settings.schema_json(indent=0 if compact else 2))
+        return
+
+    try:
+        settings_obj = Settings.create_from_env()
+
+    except ValidationError as err:
+        settings_schema = Settings.schema_json(indent=2)
+        log.error(
+            "Invalid application settings. Typically an environment variable is missing or mistyped :\n%s",
+            "\n".join(
+                [
+                    HEADER.format("detail"),
+                    str(err),
+                    HEADER.format("environment variables"),
+                    pformat(
+                        {k: v for k, v in dict(os.environ).items() if k.upper() == k}
+                    ),
+                    HEADER.format("json-schema"),
+                    settings_schema,
+                ]
+            ),
+            exc_info=False,
         )
+        raise
 
-    # DEFAULTS if not defined in environ
-    # NOTE: unfortunately, trafaret does not allow defining default directly in the config.yamla
-    # as docker-compose does: i.e. x = ${VARIABLE:default}.
-    #
-    # Instead, the variable has to be defined here ------------
-    environ.setdefault("SMTP_USERNAME", "None")
-    environ.setdefault("SMTP_PASSWORD", "None")
-    environ.setdefault("SMTP_TLS_ENABLED", "0")
-    environ.setdefault("WEBSERVER_LOGLEVEL", "WARNING")
-
-    # ----------------------------------------------------------
-
-    return environ
+    if as_json:
+        print_as_json(settings_obj, compact=compact)
+    else:
+        print_as_envfile(settings_obj, compact=compact, verbose=verbose)
 
 
-def parse(args: Optional[List], parser: ArgumentParser) -> Dict:
-    """ Parse options and returns a configuration object """
-    if args is None:
-        args = sys.argv[1:]
-
-    # ignore unknown options
-    options, _ = parser.parse_known_args(args)
-    config = config_from_options(options, app_schema, vars=create_environ())
-
-    return config
-
-
-def main(args: Optional[List] = None):
-    # parse & config file
-    parser = ArgumentParser(description="Service to manage data webserver in simcore.")
-    setup_parser(parser)
-    config = parse(args, parser)
+@main.command()
+def run():
+    """Runs application"""
+    typer.secho("Resolving settings ...", nl=False)
+    settings_obj = Settings.create_from_env()
+    typer.secho("DONE", fg=typer.colors.GREEN)
 
     # service log level
     slow_duration = float(
         os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0)
     )  # TODO: move to settings.py::ApplicationSettings
-    setup_logging(level=config["main"]["log_level"], slow_duration=slow_duration)
+    setup_logging(level=settings_obj.logging_level, slow_duration=slow_duration)
 
-    # run
-    run_service(config)
+    typer.secho("Starting app ... ")
+    application.run_service(settings_obj)
