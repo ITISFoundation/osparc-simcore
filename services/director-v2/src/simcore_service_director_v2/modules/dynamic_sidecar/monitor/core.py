@@ -73,7 +73,7 @@ async def apply_monitoring(
         await monitor.remove_service_from_monitor(
             node_uuid=input_monitor_data.node_uuid, save_state=True
         )
-        return None
+        return output_monitor_data
 
     # if the service is not OK (for now failing) monitoring cycle will
     # be skipped. This will allow for others to debug it
@@ -283,8 +283,7 @@ class DynamicSidecarsMonitor:
                 output_minitor_data: Optional[MonitorData] = await apply_monitoring(
                     self._app, lock_with_monitor_data.monitor_data
                 )
-                if output_minitor_data:
-                    self._to_monitor[service_name].monitor_data = output_minitor_data
+                self._to_monitor[service_name].monitor_data = output_minitor_data
             except asyncio.CancelledError:
                 raise
             except Exception:  # pylint: disable=broad-except
