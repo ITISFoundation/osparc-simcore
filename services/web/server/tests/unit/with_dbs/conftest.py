@@ -5,9 +5,9 @@
 
     IMPORTANT: remember that these are still unit-tests!
 """
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import json
 import os
@@ -15,7 +15,7 @@ import sys
 import textwrap
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Dict, Iterator, List, Optional
+from typing import Callable, Dict, Iterator, List
 from uuid import uuid4
 
 import aioredis
@@ -24,25 +24,23 @@ import redis
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
-import socketio
 import sqlalchemy as sa
 import trafaret_config
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pydantic import BaseSettings
-from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiopg_utils import DSN
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_config import app_schema as app_schema
+from simcore_service_webserver.constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
     create_user_group,
     delete_user_group,
     list_user_groups,
 )
-from simcore_service_webserver.constants import INDEX_RESOURCE_NAME
 from yarl import URL
 
 # current directory
@@ -170,6 +168,7 @@ def disable_static_webserver(monkeypatch) -> Callable:
     Avoids fecthing and caching index.html pages
     Mocking a response for all the services which expect it.
     """
+
     async def _mocked_index_html(request: web.Request) -> web.Response:
         """
         Emulates the reply of the '/' path when the static-webserver is disabled
