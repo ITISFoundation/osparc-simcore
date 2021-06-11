@@ -135,6 +135,7 @@ class RunningServiceDetails(ServiceDetails):
                     "internal_port": 8888,
                     "state": "running",
                     "message": "",
+                    "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 },
                 {
                     "boot_type": "V2",
@@ -147,6 +148,7 @@ class RunningServiceDetails(ServiceDetails):
                     "internal_port": 80,
                     "state": "running",
                     "message": "",
+                    "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 },
             ]
         }
