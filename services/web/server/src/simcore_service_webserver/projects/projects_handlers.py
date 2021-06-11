@@ -404,8 +404,6 @@ async def open_project(request: web.Request) -> web.Response:
                             return other_users
                         await rt.add("project_id", project_uuid)
                 except aioredlock.LockError as exc:
-                    # TODO: this lock is not a good solution for long term
-                    # maybe a project key in redis might improve spped of checking
                     raise HTTPLocked(reason="Project is locked") from exc
 
         other_users = await try_add_project()
