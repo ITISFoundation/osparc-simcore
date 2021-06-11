@@ -471,7 +471,7 @@ async def _delete_project(
     ],
 )
 async def test_list_projects(
-    client: aiohttp.test_utils.TestClient,
+    client: TestClient,
     logged_user: Dict[str, Any],
     user_project: Dict[str, Any],
     template_project: Dict[str, Any],
