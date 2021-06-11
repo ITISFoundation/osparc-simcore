@@ -23,7 +23,7 @@ import attr
 from aiohttp import web
 
 from .config import get_service_deletion_timeout
-from .redis import get_redis_lock
+from .redis import get_redis_lock_manager
 from .registry import get_registry
 
 log = logging.getLogger(__file__)
@@ -99,7 +99,7 @@ class WebsocketRegistry:
         )
 
     async def set_heartbeat(self) -> None:
-        """Extends TTL to avoid expiration of all resources under this session """
+        """Extends TTL to avoid expiration of all resources under this session"""
         registry = get_registry(self.app)
         await registry.set_key_alive(
             self._resource_key(), get_service_deletion_timeout(self.app)
@@ -169,7 +169,7 @@ class WebsocketRegistry:
             self.user_id,
             self.client_session_id,
         )
-        return await get_redis_lock(self.app).lock(__name__, lock_timeout=10)
+        return await get_redis_lock_manager(self.app).lock(__name__, lock_timeout=10)
 
 
 @contextmanager

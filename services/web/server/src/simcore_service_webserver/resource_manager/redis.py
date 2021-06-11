@@ -16,7 +16,7 @@ from .config import (
 log = logging.getLogger(__name__)
 
 THIS_SERVICE_NAME = "redis"
-DSN = "redis://{host}:{port}"
+DSN = "redis://{host}:{port}/1"
 
 retry_upon_init_policy = dict(
     stop=stop_after_attempt(4),
@@ -79,5 +79,5 @@ def get_redis_client(app: web.Application) -> aioredis.Redis:
     return app[APP_CLIENT_REDIS_CLIENT_KEY]
 
 
-def get_redis_lock(app: web.Application) -> Aioredlock:
+def get_redis_lock_manager(app: web.Application) -> Aioredlock:
     return app[APP_CLIENT_REDIS_LOCK_MANAGER_KEY]
