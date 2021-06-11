@@ -42,7 +42,6 @@ from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.users import setup_users
 from tenacity import (
-    AsyncRetrying,
     after_log,
     retry_if_exception_type,
     stop_after_attempt,
@@ -392,12 +391,18 @@ async def test_interactive_services_removed_after_logout(
     assert r.url_obj.path == logout_url.path
     await assert_status(r, web.HTTPOk)
 
+    # check result perfomed by background task
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await garbage_collector.collect_garbage(client.app)
 
     # assert dynamic service is removed
     mocked_director_api["stop_service"].assert_awaited_with(
-        client.server.app, service["service_uuid"]
+        # app=
+        client.server.app,
+        # service_uuid=
+        service["service_uuid"],
+        # save_state=
+        True,
     )
 
 
