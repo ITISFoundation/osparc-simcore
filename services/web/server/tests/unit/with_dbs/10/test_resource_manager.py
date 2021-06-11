@@ -402,7 +402,7 @@ async def test_interactive_services_removed_after_logout(
         # service_uuid=
         service["service_uuid"],
         # save_state=
-        True,
+        exp_save_state,
     )
 
 
