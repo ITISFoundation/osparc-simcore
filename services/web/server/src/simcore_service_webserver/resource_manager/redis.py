@@ -16,7 +16,7 @@ from .config import (
 log = logging.getLogger(__name__)
 
 THIS_SERVICE_NAME = "redis"
-DSN = "redis://{host}:{port}/1"
+DSN = "redis://{host}:{port}"
 
 retry_upon_init_policy = dict(
     stop=stop_after_attempt(4),
@@ -38,8 +38,8 @@ async def redis_client(app: web.Application):
             if not client:
                 raise ValueError("Expected aioredis client instance, got {client}")
 
-    # create lock manager
-    lock_manager = Aioredlock([url])
+    # create lock manager but use DB 1
+    lock_manager = Aioredlock([url + "/1"])
 
     assert client  # nosec
     app[APP_CLIENT_REDIS_CLIENT_KEY] = client
