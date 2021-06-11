@@ -535,14 +535,9 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
                 }
             )
     # expose this service on an empty port
-    if dynamic_sidecar_settings.mount_path_dev:
+    if dynamic_sidecar_settings.expose_port:
         endpint_spec["Ports"] = [
-            {
-                "Protocol": "tcp",
-                # TODO: letting it empty is enough for the swarm to generate one
-                "PublishedPort": unused_port(),
-                "TargetPort": dynamic_sidecar_settings.port,
-            }
+            {"Protocol": "tcp", "TargetPort": dynamic_sidecar_settings.port}
         ]
 
     # used for the container name to avoid collisions for started containers on the same node

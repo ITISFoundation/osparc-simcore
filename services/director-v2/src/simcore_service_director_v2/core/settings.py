@@ -102,6 +102,10 @@ class DynamicSidecarSettings(BaseSettings):
         description="optional, only used for development, mounts the source of the dynamic-sidecar",
     )
 
+    expose_port: bool = Field(
+        False, description="exposes the service on localhost for debuging and testing"
+    )
+
     simcore_services_network_name: str = Field(
         ...,
         regex=SERVICE_NETWORK_RE,
