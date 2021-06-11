@@ -869,7 +869,15 @@ async def test_delete_project(
         mocked_director_api["get_running_interactive_services"].assert_called_once()
 
         expected_calls = [
-            call(client.server.app, service["service_uuid"]) for service in fakes
+            call(
+                # app=
+                client.server.app,
+                # service_uuid=
+                service["service_uuid"],
+                # save_state=
+                True,
+            )
+            for service in fakes
         ]
         mocked_director_api["stop_service"].assert_has_calls(expected_calls)
 
