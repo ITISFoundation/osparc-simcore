@@ -279,7 +279,6 @@ class DynamicSidecarsMonitor:
         # a monitoring cycle
         for service_name in self._to_monitor:
             lock_with_monitor_data = self._to_monitor[service_name]
-            logger.error("lock_with_monitor_data=%s", lock_with_monitor_data)
             resource_marked_as_locked = (
                 await lock_with_monitor_data.resource_lock.mark_as_locked_if_unlocked()
             )
