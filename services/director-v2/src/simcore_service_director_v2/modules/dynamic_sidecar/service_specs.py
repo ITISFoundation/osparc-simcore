@@ -19,7 +19,6 @@ from models_library.services import ServiceKeyVersion
 from ...api.dependencies.director_v0 import DirectorV0Client
 from ...core.settings import DynamicSidecarSettings, ServiceType
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX, UserID
-from .utils import unused_port
 
 MATCH_SERVICE_TAG = "${SERVICE_TAG}"
 MATCH_IMAGE_START = "${REGISTRY_URL}/"
