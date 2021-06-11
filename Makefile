@@ -200,7 +200,8 @@ printf "%80s| %22s| %12s| %12s\n" Endpoint Name User Password;\
 printf "%.$${TableWidth}s\n" "$$seperator";\
 printf "$$rows" 'http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9081' 'oSparc platform';\
 printf "$$rows" 'http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18080/?pgsql=postgres&username=scu&db=simcoredb&ns=public' 'Postgres DB' $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
-printf "$$rows" 'http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9000' Portainer admin adminadmin
+printf "$$rows" 'http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9000' Portainer admin adminadmin;\
+printf "$$rows" 'http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18081' Redis
 endef
 
 show_endpoints:
