@@ -59,8 +59,9 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       label: 0,
       info: 1,
       ctrlField: 2,
-      unit: 3,
-      menu: 4
+      selectFileBtn: 3,
+      unit: 4,
+      menu: 5
     },
 
     getDisableables: function() {
@@ -121,7 +122,15 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
           column: this.self().gridPos.unit
         });
 
-        const menu = this._createMenu(item);
+        const btn = this.__createSelectFileButton(item);
+        if (btn) {
+          this._add(btn, {
+            row: this._row,
+            column: this.self().gridPos.selectFileBtn
+          });
+        }
+
+        const menu = this.__createMenu(item);
         if (menu) {
           this._add(menu, {
             row: this._row,
@@ -165,6 +174,14 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         }
       }
       return filteredData;
+    },
+
+    __getSelectFileButton: function(portId) {
+      const selectFileButton = new qx.ui.form.Button((this.tr("Select Input File")));
+      selectFileButton.addListener("execute", () => {
+        console.log(portId);
+      }, this);
+      return selectFileButton;
     },
 
     __getMenuButton: function(portId) {
@@ -282,7 +299,14 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       return unitLabel;
     },
 
-    _createMenu: function(field) {
+    __createSelectFileButton: function(field) {
+      if (["FileButton"].includes(field.widgetType)) {
+        return this.__getSelectFileButton(field.key);
+      }
+      return null;
+    },
+
+    __createMenu: function(field) {
       if (["Number", "Spinner"].includes(field.widgetType)) {
         const menuBtn = this.__getMenuButton(field.key).set({
           visibility: "excluded"
