@@ -17,7 +17,6 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import uuid4
 
 from aiohttp import web
-
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
@@ -480,22 +479,50 @@ async def trigger_connected_service_retrieve(
 async def _get_project_lock_state(
     user_id: int, project_uuid: str, app: web.Application
 ) -> ProjectLocked:
+    """returns the lock state of a project
+
+    If any other user that user_id is using the project (even disconnected before the TTL is finished) then the project is Locked.
+    If the same user is using the project with a valid socket id (meaning a tab is currently active) then the project is Locked.
+    If the same user is using the project with NO socket id (meaning there is no current tab active) then the project is Unlocked, so the user can open it again.
+    """
     with managed_resource(user_id, None, app) as rt:
         # checks who is using it
-        users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
-        usernames = [await get_user_name(app, uid) for uid in set(users_of_project)]
-        assert (
-            len(usernames) <= 1
-        )  # nosec  # currently not possible to have more than 1
+        # NOTE: We need to check for any user that might have the project opened
+        # and if it's only the current user, then if there is a current socket associated to it which would indicate another tab is opened
+        user_session_id_list: List[Tuple[int, str]] = await rt.find_users_of_resource(
+            "project_id", project_uuid
+        )
+    set_user_ids = {x for x, _ in user_session_id_list}
 
-        # based on usage, sets an state
-        is_locked: bool = len(usernames) > 0
-        if is_locked:
-            return ProjectLocked(
-                value=is_locked,
-                owner=Owner(user_id=users_of_project[0], **usernames[0]),
-            )
-        return ProjectLocked(value=is_locked)
+    assert len(set_user_ids) <= 1  # nosec  # currently not possible to have more than 1
+
+    # based on usage, sets an state
+    is_locked: bool = len(set_user_ids) > 0
+
+    if set_user_ids.issubset({user_id}):
+
+        async def user_has_another_tab_open(
+            user_session_id_list: List[Tuple[int, str]]
+        ) -> bool:
+            # only user_id has the project maybe opened. let's check if there is an active socket in use.
+            for user_id, client_session_id in user_session_id_list:
+                with managed_resource(user_id, client_session_id, app) as rt:
+                    if await rt.get_socket_id() is not None:
+                        return True
+            return False
+
+        if not await user_has_another_tab_open(user_session_id_list):
+            is_locked = False
+
+    if is_locked:
+        usernames: Dict[str, str] = [
+            await get_user_name(app, uid) for uid in set_user_ids
+        ]
+        return ProjectLocked(
+            value=is_locked,
+            owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),
+        )
+    return ProjectLocked(value=is_locked)
 
 
 async def add_project_states_for_user(

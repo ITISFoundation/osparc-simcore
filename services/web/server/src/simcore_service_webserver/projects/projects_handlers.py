@@ -5,7 +5,7 @@
 
 import json
 import logging
-from typing import Any, Coroutine, Dict, List, Optional, Set
+from typing import Any, Coroutine, Dict, List, Optional, Set, Tuple
 
 import aioredlock
 from aiohttp import web
@@ -342,9 +342,12 @@ async def delete_project(request: web.Request):
         )
         project_users: Set[int] = {}
         with managed_resource(user_id, None, request.app) as rt:
-            project_users = set(
-                await rt.find_users_of_resource("project_id", project_uuid)
-            )
+            project_users = {
+                uid
+                for uid, _ in await rt.find_users_of_resource(
+                    "project_id", project_uuid
+                )
+            }
         # that project is still in use
         if user_id in project_users:
             raise web.HTTPForbidden(
@@ -395,9 +398,12 @@ async def open_project(request: web.Request) -> web.Response:
                     # NOTE: we need to lock the access to the project so that no one else opens it
                     # at the same time.
                     async with await rt.get_registry_lock(project_uuid):
-                        other_users: Set[int] = set(
-                            await rt.find_users_of_resource("project_id", project_uuid)
-                        )
+                        other_users: Set[int] = {
+                            uid
+                            for uid, _ in await rt.find_users_of_resource(
+                                "project_id", project_uuid
+                            )
+                        }
                         if user_id in other_users:
                             other_users.remove(user_id)
                         if other_users:
@@ -455,9 +461,9 @@ async def close_project(request: web.Request) -> web.Response:
             try:
                 project_opened_by_others: bool = False
                 with managed_resource(user_id, client_session_id, request.app) as rt:
-                    project_users: List[int] = await rt.find_users_of_resource(
-                        "project_id", project_uuid
-                    )
+                    project_users: List[
+                        Tuple(int, str)
+                    ] = await rt.find_users_of_resource("project_id", project_uuid)
                     project_opened_by_others = len(project_users) > 1
 
                 if not project_opened_by_others:

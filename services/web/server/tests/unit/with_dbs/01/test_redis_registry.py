@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 import time
 from random import randint
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from uuid import uuid4
 
 import pytest
@@ -209,10 +209,10 @@ async def test_websocket_manager(loop, redis_enabled_app, redis_registry, user_i
                 # resource key shall be filled
                 assert await rt.find(res_key) == [res_value]
                 list_of_same_resource_users: List[
-                    int
+                    Tuple[int, str]
                 ] = await rt.find_users_of_resource(res_key, res_value)
                 assert list_user_ids[: (list_user_ids.index(user_id) + 1)] == sorted(
-                    set(list_of_same_resource_users)
+                    {uid for uid, _ in list_of_same_resource_users}
                 )
 
     # remove sockets

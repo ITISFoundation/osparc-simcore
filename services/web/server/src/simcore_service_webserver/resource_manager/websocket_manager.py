@@ -16,7 +16,7 @@
 
 import logging
 from contextlib import contextmanager
-from typing import Dict, Iterator, List, Optional, Union
+from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 import aioredlock
 import attr
@@ -72,7 +72,7 @@ class WebsocketRegistry:
 
     async def get_socket_id(self) -> Optional[str]:
         log.debug(
-            "user %s/tab %s removing socket from registry...",
+            "user %s/tab %s getting socket from registry...",
             self.user_id,
             self.client_session_id,
         )
@@ -150,7 +150,9 @@ class WebsocketRegistry:
         registry = get_registry(self.app)
         await registry.remove_resource(self._resource_key(), key)
 
-    async def find_users_of_resource(self, key: str, value: str) -> List[int]:
+    async def find_users_of_resource(
+        self, key: str, value: str
+    ) -> List[Tuple[int, str]]:
         log.debug(
             "user %s/tab %s finding %s:%s in registry...",
             self.user_id,
@@ -160,8 +162,10 @@ class WebsocketRegistry:
         )
         registry = get_registry(self.app)
         registry_keys = await registry.find_keys((key, value))
-        users = [int(x["user_id"]) for x in registry_keys]
-        return users
+        user_session_id_list = [
+            (int(x["user_id"]), x["client_session_id"]) for x in registry_keys
+        ]
+        return user_session_id_list
 
     async def get_registry_lock(self, resource_name: str) -> aioredlock.Lock:
         """use in a context manager:
