@@ -18,7 +18,7 @@ from ..login.cfg import get_storage
 from ..login.handlers import ACTIVE, GUEST
 from ..login.utils import get_client_ip, get_random_string
 from ..resource_manager.config import (
-    APP_CLIENT_REDIS_LOCK_KEY,
+    APP_CLIENT_REDIS_LOCK_MANAGER_KEY,
     GUEST_USER_RC_LOCK_FORMAT,
 )
 from ..security_api import authorized_userid, encrypt_password, is_anonymous, remember
@@ -52,7 +52,7 @@ async def _get_authorized_user(request: web.Request) -> Optional[Dict]:
 
 async def _create_temporary_user(request: web.Request):
     db = get_storage(request.app)
-    lock_manager: Aioredlock = request.app[APP_CLIENT_REDIS_LOCK_KEY]
+    lock_manager: Aioredlock = request.app[APP_CLIENT_REDIS_LOCK_MANAGER_KEY]
 
     # TODO: avatar is an icon of the hero!
     random_user_name = get_random_string(min_len=5)

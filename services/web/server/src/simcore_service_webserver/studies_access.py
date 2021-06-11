@@ -23,7 +23,7 @@ from servicelib.application_setup import ModuleCategory, app_module_setup
 from .constants import INDEX_RESOURCE_NAME
 from .login.decorators import login_required
 from .resource_manager.config import (
-    APP_CLIENT_REDIS_LOCK_KEY,
+    APP_CLIENT_REDIS_LOCK_MANAGER_KEY,
     GUEST_USER_RC_LOCK_FORMAT,
 )
 from .security_api import is_anonymous, remember
@@ -70,7 +70,7 @@ async def create_temporary_user(request: web.Request):
     from .security_api import encrypt_password
 
     db = get_storage(request.app)
-    lock_manager: Aioredlock = request.app[APP_CLIENT_REDIS_LOCK_KEY]
+    lock_manager: Aioredlock = request.app[APP_CLIENT_REDIS_LOCK_MANAGER_KEY]
 
     # TODO: avatar is an icon of the hero!
     random_uname = get_random_string(min_len=5)

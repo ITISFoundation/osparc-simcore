@@ -43,7 +43,7 @@ from simcore_service_webserver.users_api import (
 from simcore_service_webserver.users_to_groups_api import get_users_for_gid
 
 from .config import (
-    APP_CLIENT_REDIS_LOCK_KEY,
+    APP_CLIENT_REDIS_LOCK_MANAGER_KEY,
     GUEST_USER_RC_LOCK_FORMAT,
     get_garbage_collector_interval,
 )
@@ -147,7 +147,7 @@ async def collect_garbage(app: web.Application):
 async def remove_disconnected_user_resources(
     registry: RedisResourceRegistry, app: web.Application
 ) -> None:
-    lock_manager: Aioredlock = app[APP_CLIENT_REDIS_LOCK_KEY]
+    lock_manager: Aioredlock = app[APP_CLIENT_REDIS_LOCK_MANAGER_KEY]
 
     #
     # In redis jargon, every entry is denoted as "key"
@@ -283,7 +283,7 @@ async def remove_users_manually_marked_as_guests(
     Removes all the projects associated with GUEST users in the system.
     If the user defined a TEMPLATE, this one also gets removed.
     """
-    lock_manager: Aioredlock = app[APP_CLIENT_REDIS_LOCK_KEY]
+    lock_manager: Aioredlock = app[APP_CLIENT_REDIS_LOCK_MANAGER_KEY]
 
     # collects all users with registed sessions
     alive_keys, dead_keys = await registry.get_all_resource_keys()
