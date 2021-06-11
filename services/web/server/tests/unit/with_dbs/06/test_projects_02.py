@@ -639,9 +639,12 @@ async def test_close_project(
 
         calls = [
             call(
-                app=client.server.app,
-                service_uuid=service["service_uuid"],
-                save_state=True,
+                # app=
+                client.server.app,
+                # service_uuid=
+                service["service_uuid"],
+                # save_state=
+                True,
             )
             for service in fakes
         ]
