@@ -516,22 +516,22 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       let toolTipText = null;
       switch (status) {
         case "CLOSING":
-          toolTipText = lockedBy + this.tr(" is closing it...")
+          toolTipText = lockedBy + this.tr(" is closing it...");
           break;
         case "CLONING":
-          toolTipText = lockedBy + this.tr(" is cloning it...")
+          toolTipText = lockedBy + this.tr(" is cloning it...");
           break;
         case "EXPORTING":
-          toolTipText = lockedBy + this.tr(" is exporting it...")
+          toolTipText = lockedBy + this.tr(" is exporting it...");
           break;
         case "OPENING":
-          toolTipText = lockedBy + this.tr(" is opening it...")
+          toolTipText = lockedBy + this.tr(" is opening it...");
           break;
         case "OPENED_OTHER_USER":
-          toolTipText = lockedBy + this.tr(" is using it.")
+          toolTipText = lockedBy + this.tr(" is using it.");
           break;
         case "OPENED_OTHER_CLIENT":
-          toolTipText = this.tr("You have it opened in another tab/browser.")
+          toolTipText = this.tr("Project opened in another tab/browser.");
           break;
       }
       lock.set({
