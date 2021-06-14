@@ -385,8 +385,8 @@ async def _open_project(
     client,
     client_id: str,
     project: Dict,
-    expected: Union[web.HTTPException, List[web.HTTPException]],
-) -> Optional[Tuple[Dict, Dict]]:
+    expected: Union[Type[web.HTTPException], List[Type[web.HTTPException]]],
+) -> Tuple[Dict, Dict]:
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
     resp = await client.post(url, json=client_id)
 
@@ -396,16 +396,17 @@ async def _open_project(
                 data, error = await assert_status(resp, e)
                 return data, error
             except AssertionError:
-                # re-raies if last item
+                # re-raise if last item
                 if e == expected[-1]:
                     raise
                 continue
     else:
-        return await assert_status(resp, expected)
+        data, error = await assert_status(resp, expected)
+        return data, error
 
 
 async def _close_project(
-    client, client_id: str, project: Dict, expected: web.HTTPException
+    client, client_id: str, project: Dict, expected: Type[web.HTTPException]
 ):
     url = client.app.router["close_project"].url_for(project_id=project["uuid"])
     resp = await client.post(url, json=client_id)
@@ -415,7 +416,7 @@ async def _close_project(
 async def _state_project(
     client,
     project: Dict,
-    expected: web.HTTPException,
+    expected: Type[web.HTTPException],
     expected_project_state: ProjectState,
 ):
     url = client.app.router["state_project"].url_for(project_id=project["uuid"])
@@ -462,7 +463,9 @@ async def _assert_project_state_updated(
         handler.reset_mock()
 
 
-async def _delete_project(client, project: Dict, expected: web.HTTPException) -> None:
+async def _delete_project(
+    client, project: Dict, expected: Type[web.HTTPException]
+) -> None:
     url = client.app.router["delete_project"].url_for(project_id=project["uuid"])
     assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
     resp = await client.delete(url)
