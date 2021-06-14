@@ -772,6 +772,7 @@ async def test_project_node_lifetime(
         node_id = data["node_id"]
     else:
         mocked_director_api["start_service"].assert_not_called()
+
     # create a new NOT dynamic node...
     mocked_director_api["start_service"].reset_mock()
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])

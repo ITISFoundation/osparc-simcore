@@ -31,10 +31,10 @@ from aiohttp.test_utils import TestClient, TestServer
 from pydantic import BaseSettings
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiopg_utils import DSN
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_config import app_schema as app_schema
-from simcore_service_webserver.constants import INDEX_RESOURCE_NAME
+from simcore_service_webserver.constants import APP_DB_ENGINE_KEY, INDEX_RESOURCE_NAME
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
     create_user_group,
@@ -72,23 +72,20 @@ def default_app_cfg(osparc_simcore_root_dir):
 
 
 @pytest.fixture(scope="session")
-def docker_compose_file(default_app_cfg):
+def docker_compose_file(default_app_cfg, monkeypatch_session):
     """Overrides pytest-docker fixture"""
-    old = os.environ.copy()
 
     cfg = deepcopy(default_app_cfg["db"]["postgres"])
 
     # docker-compose reads these environs
-    os.environ["TEST_POSTGRES_DB"] = cfg["database"]
-    os.environ["TEST_POSTGRES_USER"] = cfg["user"]
-    os.environ["TEST_POSTGRES_PASSWORD"] = cfg["password"]
+    monkeypatch_session.setenv("TEST_POSTGRES_DB", cfg["database"])
+    monkeypatch_session.setenv("TEST_POSTGRES_USER", cfg["user"])
+    monkeypatch_session.setenv("TEST_POSTGRES_PASSWORD", cfg["password"])
 
     dc_path = current_dir / "docker-compose-devel.yml"
 
     assert dc_path.exists()
     yield str(dc_path)
-
-    os.environ = old
 
 
 # WEB SERVER/CLIENT FIXTURES ------------------------------------------------
@@ -133,6 +130,7 @@ def web_server(
         "Inits webserver with app_cfg",
         json.dumps(app_cfg, indent=2, cls=_BaseSettingEncoder),
     )
+
     # original APP
     app = create_application(app_cfg)
 
@@ -144,6 +142,13 @@ def web_server(
     disable_static_webserver(app)
 
     server = loop.run_until_complete(aiohttp_server(app, port=app_cfg["main"]["port"]))
+
+    assert isinstance(postgres_db, sa.engine.Engine)
+    pg_settings = dict(e.split("=") for e in app[APP_DB_ENGINE_KEY].dsn.split())
+    assert pg_settings["host"] == postgres_db.url.host
+    assert int(pg_settings["port"]) == postgres_db.url.port
+    assert pg_settings["user"] == postgres_db.url.username
+
     return server
 
 
