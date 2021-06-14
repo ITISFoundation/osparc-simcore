@@ -978,7 +978,7 @@ async def test_open_shared_project_2_users_locked(
         {SOCKET_IO_PROJECT_UPDATED_EVENT: mock_project_state_updated_handler},
     )
     expected_project_state = ProjectState(
-        locked={"value": False},
+        locked=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     )
     await _state_project(
@@ -994,6 +994,7 @@ async def test_open_shared_project_2_users_locked(
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
     )
     expected_project_state.locked.value = True
+    expected_project_state.locked.status = ProjectStatus.OPENED
     expected_project_state.locked.owner = Owner(
         user_id=logged_user["id"],
         first_name=(logged_user["name"].split(".") + [""])[0],
@@ -1031,6 +1032,7 @@ async def test_open_shared_project_2_users_locked(
         shared_project,
         expected.locked if user_role != UserRole.GUEST else HTTPLocked,
     )
+    expected_project_state.locked.status = ProjectStatus.OPENED_OTHER_USER
     await _state_project(
         client_2,
         shared_project,
@@ -1048,7 +1050,8 @@ async def test_open_shared_project_2_users_locked(
         )
 
     # we should receive an event that the project lock state changed
-    # NOTE: there are 3 calls since we are part of the primary group and the all group and user 2 is part of the all group
+    # NOTE: there are 2x3 calls since we are part of the primary group and the all group and user 2 is part of the all group
+    # first CLOSING, then CLOSED
     await _assert_project_state_updated(
         mock_project_state_updated_handler,
         shared_project,
@@ -1073,6 +1076,7 @@ async def test_open_shared_project_2_users_locked(
     )
     if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
         expected_project_state.locked.value = True
+        expected_project_state.locked.status = ProjectStatus.OPENED
         expected_project_state.locked.owner = Owner(
             user_id=user_2["id"],
             first_name=(user_2["name"].split(".") + [""])[0],
