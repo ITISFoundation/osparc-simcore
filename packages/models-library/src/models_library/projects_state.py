@@ -5,7 +5,7 @@
 from enum import Enum, unique
 from typing import Optional
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Extra, Field, validator
 
 from .projects_access import Owner
 
@@ -29,14 +29,34 @@ class DataState(str, Enum):
     OUTDATED = "OUTDATED"
 
 
+@unique
+class ProjectStatus(str, Enum):
+    CLOSED = "CLOSED"
+    CLOSING = "CLOSING"
+    CLONING = "CLONING"
+    EXPORTING = "EXPORTING"
+    OPENED = "OPENED"
+    OPENED_OTHER_USER = "OPENED_OTHER_USER"
+    OPENED_OTHER_CLIENT = "OPENED_OTHER_CLIENT"
+
+
 class ProjectLocked(BaseModel):
-    value: bool = Field(
-        ..., description="True if the project is locked by another user"
+    value: bool = Field(..., description="True if the project is locked")
+    owner: Optional[Owner] = Field(
+        None, description="If locked, the user that owns the lock"
     )
-    owner: Optional[Owner] = Field(None, description="The user that owns the lock")
+    status: ProjectStatus = Field(..., description="The status of the project")
 
     class Config:
         extra = Extra.forbid
+        use_enum_values = True
+
+    @validator("owner", pre=True, always=True)
+    @classmethod
+    def check_not_null(v, values):
+        if values["value"] is True and v is None:
+            raise ValueError("value cannot be None when project is locked")
+        return v
 
 
 class ProjectRunningState(BaseModel):

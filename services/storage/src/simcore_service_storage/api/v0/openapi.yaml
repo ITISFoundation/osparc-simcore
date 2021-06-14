@@ -845,7 +845,7 @@ components:
                 key:
                   type: string
                   description: distinctive name for the node based on the docker registry path
-                  pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                  pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                   example:
                     - simcore/services/comp/sleeper
                     - simcore/services/dynamic/3dviewer
@@ -1157,11 +1157,11 @@ components:
                       properties:
                         value:
                           title: Value
-                          description: True if the project is locked by another user
+                          description: True if the project is locked
                           type: boolean
                         owner:
                           title: Owner
-                          description: The user that owns the lock
+                          description: 'If locked, the user that owns the lock'
                           allOf:
                             - title: Owner
                               type: object
@@ -1189,6 +1189,18 @@ components:
                                 - user_id
                                 - first_name
                                 - last_name
+                        status:
+                          title: Status
+                          description: The status of the project
+                          enum:
+                            - CLOSED
+                            - CLOSING
+                            - CLONING
+                            - EXPORTING
+                            - OPENED
+                            - OPENED_OTHER_USER
+                            - OPENED_OTHER_CLIENT
+                          type: string
                       required:
                         - value
                 state:
