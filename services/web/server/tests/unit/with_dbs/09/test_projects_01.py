@@ -342,7 +342,7 @@ async def _assert_get_same_project(
 
 async def _new_project(
     client,
-    expected_response: web.Response,
+    expected_response: Type[web.HTTPException],
     logged_user: Dict[str, str],
     primary_group: Dict[str, str],
     *,
