@@ -17,12 +17,13 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import uuid4
 
 from aiohttp import web
+
 from models_library.projects_state import (
-    ProjectStatus,
     Owner,
     ProjectLocked,
     ProjectRunningState,
     ProjectState,
+    ProjectStatus,
     RunningState,
 )
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
@@ -36,7 +37,10 @@ from ..director_v2 import (
     get_computation_task,
     request_retrieve_dyn_service,
 )
-from ..resource_manager.redis import get_redis_lock_manager
+from ..resource_manager.redis import (
+    get_redis_lock_manager,
+    get_redis_lock_manager_client,
+)
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..socketio.events import (
     SOCKET_IO_NODE_UPDATED_EVENT,
@@ -52,6 +56,8 @@ from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 
 log = logging.getLogger(__name__)
+
+PROJECT_REDIS_LOCK_KEY: str = "project:{}"
 
 
 def _is_node_dynamic(node_key: str) -> bool:
@@ -189,12 +195,12 @@ async def remove_project_interactive_services(
 ) -> None:
     # Note: during the closing process, which might take awhile, the project is locked so no one opens it at the same time
     async with await get_redis_lock_manager(app).lock(
-        f"project:{project_uuid}",
+        PROJECT_REDIS_LOCK_KEY.format(project_uuid),
         lock_timeout=None,
         lock_identifier=ProjectLocked(
             value=True,
             owner=Owner(user_id=user_id, first_name="Johnny", last_name="Cash"),
-            reason=ProjectStatus.CLOSING,
+            status=ProjectStatus.CLOSING,
         ).json(),
     ):
         # save the state if the user is not a guest. if we do not know we save in any case.
@@ -493,14 +499,26 @@ async def _get_project_lock_state(
     client_session_id: Optional[str] = None,
 ) -> ProjectLocked:
     """returns the lock state of a project
-    If a client_session_id is passed, then first a check to see if the project is currently opened by the user is done.
-
-    If any other user that user_id is using the project (even disconnected before the TTL is finished) then the project is Locked and OPENED_OTHER_USER.
-    If the same user is using the project with a valid socket id (meaning a tab is currently active) then the project is Locked and OPENED_OTHER_CLIENT.
-    If the same user is using the project with NO socket id (meaning there is no current tab active) then the project is Unlocked and OPENED. which means the user can open it again.
+    1. If a project is locked for any reason, first return the project as locked and STATUS defined by lock
+    2. If a client_session_id is passed, then first check to see if the project is currently opened by this very user/tab combination, if yes returns the project as Locked and OPENED.
+    3. If any other user that user_id is using the project (even disconnected before the TTL is finished) then the project is Locked and OPENED_OTHER_USER.
+    4. If the same user is using the project with a valid socket id (meaning a tab is currently active) then the project is Locked and OPENED_OTHER_CLIENT.
+    5. If the same user is using the project with NO socket id (meaning there is no current tab active) then the project is Unlocked and OPENED. which means the user can open it again.
     """
+    if await get_redis_lock_manager(app).is_locked(
+        PROJECT_REDIS_LOCK_KEY.format(project_uuid)
+    ):
+
+        # so the project is currently locked. let's find out why
+        # NOTE: we use the client connected to the lock database here
+        project_locked: Optional[str] = await get_redis_lock_manager_client(app).get(
+            PROJECT_REDIS_LOCK_KEY.format(project_uuid)
+        )
+        if project_locked:
+            return ProjectLocked.parse_obj(project_locked)
 
     if client_session_id:
+        # if a client session id is there, then let's check if the project is already opened by this user
         with managed_resource(user_id, client_session_id, app) as rt:
             opened_project_ids = await rt.find(PROJECT_ID_KEY)
             if project_uuid in opened_project_ids:
@@ -509,11 +527,8 @@ async def _get_project_lock_state(
                     owner=Owner(user_id=user_id, **(await get_user_name(app, user_id))),
                     status=ProjectStatus.OPENED,
                 )
-
+    # let's now check if anyone has the project in use somehow
     with managed_resource(user_id, None, app) as rt:
-        # checks who is using it
-        # NOTE: We need to check for any user that might have the project opened
-        # and if it's only the current user, then if there is a current socket associated to it which would indicate another tab is opened
         user_session_id_list: List[Tuple[int, str]] = await rt.find_users_of_resource(
             "project_id", project_uuid
         )
@@ -521,7 +536,7 @@ async def _get_project_lock_state(
 
     assert (
         len(set_user_ids) <= 1
-    )  # nosec  # currently not possible to have more than 1 (a project cannot be simultaneously opened)
+    )  # nosec  # NOTE: A project can only be opened by one user in one tab at the moment
 
     if not set_user_ids:
         # no one has the project, so it is closed.
@@ -530,12 +545,13 @@ async def _get_project_lock_state(
     usernames: List[Dict[str, str]] = [
         await get_user_name(app, uid) for uid in set_user_ids
     ]
+    # let's check if the project is opened by the same user, maybe already opened or closed in a orphaned session
     if set_user_ids.issubset({user_id}):
-        # The same user has it open: either in another tab/browser or was disconnected and we might steal it
+
         async def user_has_another_client_open(
             user_session_id_list: List[Tuple[int, str]]
         ) -> bool:
-            # only user_id has the project maybe opened. let's check if there is an active socket in use.
+            # NOTE if there is an active socket in use, that means the client is active
             for user_id, client_session_id in user_session_id_list:
                 with managed_resource(user_id, client_session_id, app) as rt:
                     if await rt.get_socket_id() is not None:
@@ -549,21 +565,20 @@ async def _get_project_lock_state(
                 owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),
                 status=ProjectStatus.OPENED,
             )
+        # the project is opened in another tab or browser
         return ProjectLocked(
             value=True,
             owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),
             status=ProjectStatus.OPENED_OTHER_CLIENT,
         )
 
-    # based on usage, sets an state
-    is_locked: bool = len(set_user_ids) > 0
+    # The project is in use by another user
     owner = None
-    if is_locked:
-        owner = Owner(user_id=list(set_user_ids)[0], **usernames[0])
+    owner = Owner(user_id=list(set_user_ids)[0], **usernames[0])
     return ProjectLocked(
-        value=is_locked,
+        value=True,
         owner=owner,
-        status=ProjectStatus.OPENED_OTHER_USER if is_locked else ProjectStatus.CLOSED,
+        status=ProjectStatus.OPENED_OTHER_USER,
     )
 
 
