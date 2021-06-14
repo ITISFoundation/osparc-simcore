@@ -51,7 +51,7 @@ def setup_garbage_collector(app: web.Application):
         yield
 
         # on_cleanup
-        # controlled cancelation of the gc tas
+        # controlled cancelation of the gc task
         with suppress(asyncio.CancelledError):
             logger.info("Stopping garbage collector...")
             _gc_task.cancel()

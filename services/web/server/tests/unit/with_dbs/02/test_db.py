@@ -23,7 +23,7 @@ def test_uses_same_postgres_version(docker_compose_file, osparc_simcore_root_dir
     )
 
 
-@pytest.mark.skipif(sys.version_info >= (3, 8), reason="FIXME: py38 hangs")
+# @pytest.mark.skipif(sys.version_info >= (3, 8), reason="FIXME: py38 hangs")
 async def test_responsive(web_server):
     app = web_server.app
     assert is_service_enabled(app)
