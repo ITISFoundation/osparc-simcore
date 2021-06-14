@@ -473,7 +473,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       if (locked) {
         this.setLocked(state["locked"]["value"]);
         const owner = state["locked"]["owner"];
-        this.__setLockedBy(osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]));
+        const status = state["locked"]["status"]
+        this.__setLockedBy(osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]), status);
       } else {
         this.setLocked(false);
       }
@@ -510,10 +511,31 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       });
     },
 
-    __setLockedBy: function(lockedBy) {
+    __setLockedBy: function(lockedBy, status) {
       const lock = this.getChildControl("lock");
+      let toolTipText = null;
+      switch (status) {
+        case "CLOSING":
+          toolTipText = lockedBy + this.tr(" is closing it...")
+          break;
+        case "CLONING":
+          toolTipText = lockedBy + this.tr(" is cloning it...")
+          break;
+        case "EXPORTING":
+          toolTipText = lockedBy + this.tr(" is exporting it...")
+          break;
+        case "OPENING":
+          toolTipText = lockedBy + this.tr(" is opening it...")
+          break;
+        case "OPENED_OTHER_USER":
+          toolTipText = lockedBy + this.tr(" is using it.")
+          break;
+        case "OPENED_OTHER_CLIENT":
+          toolTipText = this.tr("You have it opened in another tab/browser.")
+          break;
+      }
       lock.set({
-        toolTipText: lockedBy ? (lockedBy + this.tr(" is using it")) : null
+        toolTipText: toolTipText
       });
     },
 
