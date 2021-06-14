@@ -18,6 +18,7 @@ from uuid import uuid4
 
 from aiohttp import web
 from models_library.projects_state import (
+    ProjectStatus,
     Owner,
     ProjectLocked,
     ProjectRunningState,
@@ -503,14 +504,20 @@ async def _get_project_lock_state(
         )
     set_user_ids = {x for x, _ in user_session_id_list}
 
-    assert len(set_user_ids) <= 1  # nosec  # currently not possible to have more than 1
+    assert (
+        len(set_user_ids) <= 1
+    )  # nosec  # currently not possible to have more than 1 (a project cannot be simultaneously opened)
 
-    # based on usage, sets an state
-    is_locked: bool = len(set_user_ids) > 0
+    if not set_user_ids:
+        # no one has the project, so it is closed.
+        return ProjectLocked(value=False, status=ProjectStatus.CLOSED)
 
+    usernames: List[Dict[str, str]] = [
+        await get_user_name(app, uid) for uid in set_user_ids
+    ]
     if set_user_ids.issubset({user_id}):
-
-        async def user_has_another_tab_open(
+        # The same user has it open: either in another tab/browser or was disconnected and we might steal it
+        async def user_has_another_client_open(
             user_session_id_list: List[Tuple[int, str]]
         ) -> bool:
             # only user_id has the project maybe opened. let's check if there is an active socket in use.
@@ -520,25 +527,36 @@ async def _get_project_lock_state(
                         return True
             return False
 
-        if not await user_has_another_tab_open(user_session_id_list):
-            is_locked = False
-
-    if is_locked:
-        usernames: Dict[str, str] = [
-            await get_user_name(app, uid) for uid in set_user_ids
-        ]
+        if not await user_has_another_client_open(user_session_id_list):
+            # in this case the project is re-openable by the same user until it gets closed
+            return ProjectLocked(
+                value=False,
+                owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),
+                status=ProjectStatus.OPENED,
+            )
         return ProjectLocked(
-            value=is_locked,
+            value=True,
             owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),
+            status=ProjectStatus.OPENED_OTHER_CLIENT,
         )
-    return ProjectLocked(value=is_locked)
+
+    # based on usage, sets an state
+    is_locked: bool = len(set_user_ids) > 0
+    owner = None
+    if is_locked:
+        owner = Owner(user_id=list(set_user_ids)[0], **usernames[0])
+    return ProjectLocked(
+        value=is_locked,
+        owner=owner,
+        status=ProjectStatus.OPENED_OTHER_USER if is_locked else ProjectStatus.CLOSED,
+    )
 
 
 async def add_project_states_for_user(
     user_id: int, project: Dict[str, Any], is_template: bool, app: web.Application
 ) -> Dict[str, Any]:
 
-    lock_state = ProjectLocked(value=False)
+    lock_state = ProjectLocked(value=False, status=ProjectStatus.CLOSED)
     running_state = RunningState.UNKNOWN
     if not is_template:
         lock_state, computation_task = await logged_gather(
