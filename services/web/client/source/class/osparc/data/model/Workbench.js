@@ -51,6 +51,7 @@ qx.Class.define("osparc.data.model.Workbench", {
   events: {
     "nNodesChanged": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
+    "openNode": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data"
   },
 
@@ -232,17 +233,35 @@ qx.Class.define("osparc.data.model.Workbench", {
         node.addListener("retrieveInputs", e => {
           this.fireDataEvent("retrieveInputs", e.getData());
         }, this);
-      }
-    },
+        node.addListener("filePickerRequested", e => {
+          const {
+            portId,
+            nodeId
+          } = e.getData();
 
-    cloneNode: function(nodeToClone) {
-      const key = nodeToClone.getKey();
-      const version = nodeToClone.getVersion();
-      const parentNode = this.getNode(nodeToClone.getParentNodeId());
-      let node = this.createNode(key, version, null, parentNode);
-      const nodeData = nodeToClone.serialize();
-      node.populateInputOutputData(nodeData);
-      return node;
+          // create File Picker
+          const fpMD = osparc.utils.Services.getFilePicker();
+          const requesterNode = this.getNode(nodeId);
+          const parentNodeId = requesterNode.getParentNodeId();
+          const parent = parentNodeId ? this.getNode(parentNodeId) : null;
+          const fp = this.createNode(fpMD["key"], fpMD["version"], null, parent);
+          const pos = requesterNode.getPosition();
+          fp.setPosition({
+            x: Math.max(0, pos.x-250),
+            y: pos.y
+          });
+
+          // create connection
+          const fpId = fp.getNodeId();
+          requesterNode.addInputNode(fpId);
+          const success = requesterNode.addPortLink(portId, fpId, "outFile");
+          if (success) {
+            this.fireDataEvent("openNode", fpId);
+          } else {
+            this.removeNode(fpId);
+          }
+        }, this);
+      }
     },
 
     addNode: function(node, parentNode) {

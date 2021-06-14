@@ -33,6 +33,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
   events: {
     "linkFieldModified": "qx.event.type.Data",
+    "filePickerRequested": "qx.event.type.Data",
     "changeChildVisibility": "qx.event.type.Event"
   },
 
@@ -95,7 +96,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __getSelectFileButton: function(portId) {
       const selectFileButton = new qx.ui.form.Button((this.tr("Select Input File")));
       selectFileButton.addListener("execute", () => {
-        console.log(portId);
+        this.fireDataEvent("filePickerRequested", portId);
       }, this);
       return selectFileButton;
     },
@@ -202,6 +203,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             qx.event.message.Bus.getInstance().dispatchByName("inputFocusout", msgDataFn);
           }
         }, this);
+
+        row++;
       }
     },
 
