@@ -188,7 +188,13 @@ async def remove_project_interactive_services(
 ) -> None:
     # Note: during the closing process, which might take awhile, the project is locked so no one opens it at the same time
     async with await get_redis_lock_manager(app).lock(
-        f"project.{project_uuid}", lock_timeout=None
+        f"project:{project_uuid}",
+        lock_timeout=None,
+        lock_identifier=ProjectLocked(
+            value=True,
+            owner=Owner(user_id=user_id, first_name="Johnny", last_name="Cash"),
+            reason=ProjectStatus.CLOSING,
+        ).json(),
     ):
         # save the state if the user is not a guest. if we do not know we save in any case.
         with suppress(director_exceptions.DirectorException):

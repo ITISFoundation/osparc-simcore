@@ -399,7 +399,7 @@ async def open_project(request: web.Request) -> web.Response:
                     # NOTE: we need to lock the access to the project so that no one else opens it
                     # at the same time.
                     async with await get_redis_lock_manager(request.app).lock(
-                        f"project.{project_uuid}", lock_timeout=None
+                        f"project:{project_uuid}", lock_timeout=None
                     ):
                         other_users: Set[int] = {
                             uid
