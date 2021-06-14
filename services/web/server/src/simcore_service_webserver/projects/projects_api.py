@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import uuid4
 
 from aiohttp import web
+import aioredlock
 
 from models_library.projects_state import (
     Owner,
@@ -190,7 +191,7 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
 ## PROJECT NODES -----------------------------------------------------
 
 
-async def remove_project_interactive_services(
+async def remove_project_interactive_services_with_notfication(
     user_id: int,
     project_uuid: str,
     app: web.Application,
@@ -225,6 +226,16 @@ async def remove_project_interactive_services(
                 project_id=project_uuid,
                 save_state=not await is_user_guest(app, user_id) if user_id else True,
             )
+
+
+async def remove_project_interactive_services(
+    user_id: int,
+    project_uuid: str,
+    app: web.Application,
+) -> None:
+    return await remove_project_interactive_services_with_notfication(
+        user_id, project_uuid, app, None
+    )
 
 
 async def delete_project_data(
@@ -505,6 +516,77 @@ async def trigger_connected_service_retrieve(
 # PROJECT STATE -------------------------------------------------------------------
 
 
+async def _user_has_another_client_open(
+    user_session_id_list: List[Tuple[int, str]], app: web.Application
+) -> bool:
+    # NOTE if there is an active socket in use, that means the client is active
+    for user_id, client_session_id in user_session_id_list:
+        with managed_resource(user_id, client_session_id, app) as rt:
+            if await rt.get_socket_id() is not None:
+                return True
+    return False
+
+
+async def _clean_user_disconnected_clients(
+    user_session_id_list: List[Tuple[int, str]], app: web.Application
+):
+    for user_id, client_session_id in user_session_id_list:
+        with managed_resource(user_id, client_session_id, app) as rt:
+            if await rt.get_socket_id() is None:
+                log.debug(
+                    "removing disconnected project of user %s/%s",
+                    user_id,
+                    client_session_id,
+                )
+                await rt.remove(PROJECT_ID_KEY)
+
+
+async def try_lock_project_for_user(
+    user_id: int, project_uuid: str, client_session_id: str, app: web.Application
+) -> bool:
+    with managed_resource(user_id, client_session_id, app) as rt:
+        try:
+            async with await get_redis_lock_manager(app).lock(
+                PROJECT_REDIS_LOCK_KEY.format(project_uuid),
+                lock_timeout=None,
+                lock_identifier=ProjectLocked(
+                    value=True,
+                    owner=Owner(user_id=user_id, **(await get_user_name(app, user_id))),
+                    status=ProjectStatus.OPENING,
+                ).json(),
+            ):
+                log.debug(
+                    "project [%s] lock acquired, now checking if project is available",
+                    project_uuid,
+                )
+                user_session_id_list: List[
+                    Tuple[int, str]
+                ] = await rt.find_users_of_resource(PROJECT_ID_KEY, project_uuid)
+
+                if not user_session_id_list:
+                    # no one has the project so we lock it
+                    await rt.add(PROJECT_ID_KEY, project_uuid)
+                    return True
+
+                set_user_ids = {uid for uid, _ in user_session_id_list}
+                if set_user_ids.issubset({user_id}):
+                    # we are the only user
+                    if not await _user_has_another_client_open(
+                        user_session_id_list, app
+                    ):
+                        # steal the project
+                        await rt.add(PROJECT_ID_KEY, project_uuid)
+                        await _clean_user_disconnected_clients(
+                            user_session_id_list, app
+                        )
+                        return True
+                return False
+
+        except aioredlock.LockError:
+            # the project is currently locked
+            return False
+
+
 async def _get_project_lock_state(
     user_id: int,
     project_uuid: str,
@@ -572,18 +654,7 @@ async def _get_project_lock_state(
     ]
     # let's check if the project is opened by the same user, maybe already opened or closed in a orphaned session
     if set_user_ids.issubset({user_id}):
-
-        async def user_has_another_client_open(
-            user_session_id_list: List[Tuple[int, str]]
-        ) -> bool:
-            # NOTE if there is an active socket in use, that means the client is active
-            for user_id, client_session_id in user_session_id_list:
-                with managed_resource(user_id, client_session_id, app) as rt:
-                    if await rt.get_socket_id() is not None:
-                        return True
-            return False
-
-        if not await user_has_another_client_open(user_session_id_list):
+        if not await _user_has_another_client_open(user_session_id_list, app):
             # in this case the project is re-openable by the same user until it gets closed
             log.debug(
                 "project [%s] is in use by the same user [%s] that is disconnected, so it is unlocked",
