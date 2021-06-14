@@ -244,6 +244,7 @@ trafaret==2.1.0
     # via -r requirements/../../../../packages/service-library/requirements/_base.in
 typing-extensions==3.10.0.0
     # via
+    #   aiohttp
     #   aiohttp-jinja2
     #   pydantic
 ujson==4.0.2
