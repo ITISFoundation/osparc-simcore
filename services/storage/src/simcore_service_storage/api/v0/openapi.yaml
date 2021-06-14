@@ -1204,6 +1204,7 @@ components:
                           type: string
                       required:
                         - value
+                        - status
                 state:
                   title: State
                   description: The project running state

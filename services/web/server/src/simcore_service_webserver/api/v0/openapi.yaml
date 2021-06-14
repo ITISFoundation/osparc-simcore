@@ -6572,6 +6572,7 @@ paths:
                                               type: string
                                           required:
                                             - value
+                                            - status
                                     state:
                                       title: State
                                       description: The project running state
@@ -7186,6 +7187,7 @@ paths:
                                   type: string
                               required:
                                 - value
+                                - status
                         state:
                           title: State
                           description: The project running state
@@ -7674,6 +7676,7 @@ paths:
                                             type: string
                                         required:
                                           - value
+                                          - status
                                   state:
                                     title: State
                                     description: The project running state
@@ -8280,6 +8283,7 @@ paths:
                                             type: string
                                         required:
                                           - value
+                                          - status
                                   state:
                                     title: State
                                     description: The project running state
@@ -8892,6 +8896,7 @@ paths:
                                             type: string
                                         required:
                                           - value
+                                          - status
                                   state:
                                     title: State
                                     description: The project running state
@@ -9495,6 +9500,7 @@ paths:
                                   type: string
                               required:
                                 - value
+                                - status
                         state:
                           title: State
                           description: The project running state
@@ -9983,6 +9989,7 @@ paths:
                                             type: string
                                         required:
                                           - value
+                                          - status
                                   state:
                                     title: State
                                     description: The project running state
@@ -10611,6 +10618,7 @@ paths:
                                             type: string
                                         required:
                                           - value
+                                          - status
                                   state:
                                     title: State
                                     description: The project running state
@@ -12372,6 +12380,7 @@ paths:
                                             type: string
                                         required:
                                           - value
+                                          - status
                                   state:
                                     title: State
                                     description: The project running state
@@ -12977,6 +12986,7 @@ paths:
                                             type: string
                                         required:
                                           - value
+                                          - status
                                   state:
                                     title: State
                                     description: The project running state
