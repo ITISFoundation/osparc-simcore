@@ -159,6 +159,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             this.__updatePipelineAndRetrieve(node, portKey);
           }, this);
 
+          workbench.addListener("openNode", e => {
+            const nodeId = e.getData();
+            this.nodeSelected(nodeId);
+          }, this);
+
           const socket = osparc.wrapper.WebSocket.getInstance();
           socket.addListener("connect", () => {
             const params = {
