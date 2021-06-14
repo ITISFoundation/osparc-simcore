@@ -90,7 +90,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __getSelectFileButton: function(portId) {
-      const selectFileButton = new qx.ui.form.Button((this.tr("Select Input File")));
+      const selectFileButton = new qx.ui.form.Button((this.tr("Select File")));
       selectFileButton.addListener("execute", () => {
         this.fireDataEvent("filePickerRequested", portId);
       }, this);
@@ -519,7 +519,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
         const fieldOpts = this._getFieldOptsChild(portId);
         if (fieldOpts) {
-          fieldOpts.child.setEnabled(false);
+          fieldOpts.child.exsetEnabled(false);
         }
 
         const linkFieldModified = {
