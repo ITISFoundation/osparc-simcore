@@ -22,6 +22,7 @@ from models_library.projects_state import (
     ProjectLocked,
     ProjectRunningState,
     ProjectState,
+    ProjectStatus,
     RunningState,
 )
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -126,6 +127,7 @@ def mocks_on_projects_api(mocker, logged_user) -> Dict:
                 first_name=nameparts[0],
                 last_name=nameparts[1],
             ),
+            status=ProjectStatus.CLOSED,
         ),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     )

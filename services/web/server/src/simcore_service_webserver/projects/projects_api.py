@@ -556,6 +556,7 @@ async def add_project_states_for_user(
     user_id: int, project: Dict[str, Any], is_template: bool, app: web.Application
 ) -> Dict[str, Any]:
 
+    # for templates: the project is never locked and never opened. also the running state is always unknown
     lock_state = ProjectLocked(value=False, status=ProjectStatus.CLOSED)
     running_state = RunningState.UNKNOWN
     if not is_template:

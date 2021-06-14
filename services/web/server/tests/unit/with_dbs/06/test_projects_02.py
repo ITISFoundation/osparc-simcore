@@ -21,6 +21,7 @@ from models_library.projects_state import (
     ProjectLocked,
     ProjectRunningState,
     ProjectState,
+    ProjectStatus,
     RunningState,
 )
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -121,6 +122,7 @@ def mocks_on_projects_api(mocker, logged_user) -> None:
                 first_name=nameparts[0],
                 last_name=nameparts[1],
             ),
+            status=ProjectStatus.OPENED_OTHER_USER,
         ),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     )
@@ -1041,7 +1043,7 @@ async def test_open_shared_project_2_users_locked(
     if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
         # Guests cannot close projects
         expected_project_state = ProjectState(
-            locked=ProjectLocked(value=False),
+            locked=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
             state=ProjectRunningState(value=RunningState.NOT_STARTED),
         )
 
