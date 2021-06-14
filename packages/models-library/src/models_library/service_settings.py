@@ -1,5 +1,4 @@
 import json
-from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -96,8 +95,8 @@ class PathsMapping(BaseModel):
     class Config(_BaseConfig):
         schema_extra = {
             "examples": {
-                "outputs_path": "/tmp/outputs",
-                "inputs_path": "/tmp/inputs",
+                "outputs_path": "/tmp/outputs",  # nosec
+                "inputs_path": "/tmp/inputs",  # nosec
             }
         }
 
@@ -145,7 +144,7 @@ class SimcoreService(BaseModel):
     @classmethod
     def auto_fill_dynamic_sidecar(cls, v, values):
         if not v:
-            return True if values.get("paths_mapping") else False
+            return values.get("paths_mapping") is not None
         return v
 
     # # TODO: fix validators
@@ -217,7 +216,9 @@ class SimcoreService(BaseModel):
                                     "runtime": "nvidia",
                                     "init": True,
                                     "environment": ["DISPLAY=${DISPLAY}"],
-                                    "volumes": ["/tmp/.X11-unix:/tmp/.X11-unix"],
+                                    "volumes": [
+                                        "/tmp/.X11-unix:/tmp/.X11-unix"
+                                    ],  # nosec
                                 },
                             },
                         }
