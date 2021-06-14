@@ -9,7 +9,7 @@
 
 # aiohttp + extensions
 ## Issue in https://github.com/ITISFoundation/osparc-simcore/issues/2008
-aiohttp==3.6.3
+aiohttp
 aiohttp_jinja2
 aiohttp_session[secure]
 aiohttp_security
