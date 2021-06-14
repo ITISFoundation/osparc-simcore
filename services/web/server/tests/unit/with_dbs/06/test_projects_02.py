@@ -7,7 +7,7 @@ import time
 import unittest.mock as mock
 from asyncio import Future
 from copy import deepcopy
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 from unittest.mock import call
 
 import pytest
@@ -245,7 +245,7 @@ def assert_replaced(current_project, update_data):
 
 async def _list_projects(
     client,
-    expected: web.Response,
+    expected: Type[web.HTTPException],
     query_parameters: Optional[Dict] = None,
 ) -> List[Dict]:
     # GET /v0/projects
@@ -260,7 +260,7 @@ async def _list_projects(
 
 
 async def _assert_get_same_project(
-    client, project: Dict, expected: web.Response
+    client, project: Dict, expected: Type[web.HTTPException]
 ) -> Dict:
     # GET /v0/projects/{project_id}
 
@@ -373,7 +373,7 @@ async def _new_project(
 
 
 async def _replace_project(
-    client, project_update: Dict, expected: web.Response
+    client, project_update: Dict, expected: Type[web.HTTPException]
 ) -> Dict:
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(
