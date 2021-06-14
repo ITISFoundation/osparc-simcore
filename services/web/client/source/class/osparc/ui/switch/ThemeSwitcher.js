@@ -21,6 +21,8 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
       return;
     }
 
+    this.setToolTipText(this.tr("Switch theme"));
+
     this.addListener("changeChecked", e => {
       let themeName = "osparc.theme.ThemeDark";
       if (e.getData()) {
