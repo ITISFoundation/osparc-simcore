@@ -1196,6 +1196,7 @@ components:
                             - CLOSED
                             - CLOSING
                             - CLONING
+                            - OPENING
                             - EXPORTING
                             - OPENED
                             - OPENED_OTHER_USER

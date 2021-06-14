@@ -6564,6 +6564,7 @@ paths:
                                                 - CLOSED
                                                 - CLOSING
                                                 - CLONING
+                                                - OPENING
                                                 - EXPORTING
                                                 - OPENED
                                                 - OPENED_OTHER_USER
@@ -7177,6 +7178,7 @@ paths:
                                     - CLOSED
                                     - CLOSING
                                     - CLONING
+                                    - OPENING
                                     - EXPORTING
                                     - OPENED
                                     - OPENED_OTHER_USER
@@ -7664,6 +7666,7 @@ paths:
                                               - CLOSED
                                               - CLOSING
                                               - CLONING
+                                              - OPENING
                                               - EXPORTING
                                               - OPENED
                                               - OPENED_OTHER_USER
@@ -8269,6 +8272,7 @@ paths:
                                               - CLOSED
                                               - CLOSING
                                               - CLONING
+                                              - OPENING
                                               - EXPORTING
                                               - OPENED
                                               - OPENED_OTHER_USER
@@ -8880,6 +8884,7 @@ paths:
                                               - CLOSED
                                               - CLOSING
                                               - CLONING
+                                              - OPENING
                                               - EXPORTING
                                               - OPENED
                                               - OPENED_OTHER_USER
@@ -9482,6 +9487,7 @@ paths:
                                     - CLOSED
                                     - CLOSING
                                     - CLONING
+                                    - OPENING
                                     - EXPORTING
                                     - OPENED
                                     - OPENED_OTHER_USER
@@ -9969,6 +9975,7 @@ paths:
                                               - CLOSED
                                               - CLOSING
                                               - CLONING
+                                              - OPENING
                                               - EXPORTING
                                               - OPENED
                                               - OPENED_OTHER_USER
@@ -10596,6 +10603,7 @@ paths:
                                               - CLOSED
                                               - CLOSING
                                               - CLONING
+                                              - OPENING
                                               - EXPORTING
                                               - OPENED
                                               - OPENED_OTHER_USER
@@ -12356,6 +12364,7 @@ paths:
                                               - CLOSED
                                               - CLOSING
                                               - CLONING
+                                              - OPENING
                                               - EXPORTING
                                               - OPENED
                                               - OPENED_OTHER_USER
@@ -12960,6 +12969,7 @@ paths:
                                               - CLOSED
                                               - CLOSING
                                               - CLONING
+                                              - OPENING
                                               - EXPORTING
                                               - OPENED
                                               - OPENED_OTHER_USER
