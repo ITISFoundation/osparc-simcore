@@ -9,7 +9,6 @@ import psycopg2
 from aiohttp import web
 from aiopg.sa.result import RowProxy
 from aioredlock import Aioredlock
-from servicelib.observer import emit
 from servicelib.utils import logged_gather
 
 from .. import users_exceptions
@@ -22,6 +21,7 @@ from ..projects.projects_api import (
     get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
     is_node_id_present_in_any_project_workbench,
+    remove_project_interactive_services,
 )
 from ..projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
 from ..projects.projects_exceptions import ProjectNotFoundError
@@ -230,11 +230,7 @@ async def remove_disconnected_user_resources(
                 if resource_name == "project_id":
                     # inform that the project can be closed on the backend side
                     #
-                    # FIXME: slot functions are "whatever" and can e.g. raise any exception or
-                    # delay or block execution here in many different ways
-                    #
-                    await emit(
-                        event="SIGNAL_PROJECT_CLOSE",
+                    await remove_project_interactive_services(
                         user_id=int(dead_key["user_id"]),
                         project_uuid=resource_value,
                         app=app,
@@ -364,7 +360,6 @@ async def remove_orphaned_services(
 
         # if the node is not present in any of the currently opened project it shall be closed
         if node_id not in currently_opened_projects_node_ids:
-            service_host = interactive_service["service_host"]
             if interactive_service.get("service_state") in [
                 "pulling",
                 "starting",
