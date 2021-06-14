@@ -70,25 +70,21 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __ctrlLinkMap: null,
     __ctrlParamMap: null,
 
-    __createSelectFileButton: function(field) {
+    __createFieldOpts: function(field) {
       if (["FileButton"].includes(field.widgetType)) {
         return this.__getSelectFileButton(field.key);
       }
-      return null;
-    },
-
-    __createMenu: function(field) {
       if (["Number", "Spinner"].includes(field.widgetType)) {
-        const menuBtn = this.__getMenuButton(field.key).set({
+        const paramsMenuBtn = this.__getParamsMenuButton(field.key).set({
           visibility: "excluded"
         });
         osparc.data.model.Sweeper.isSweeperEnabled()
           .then(isSweeperEnabled => {
-            field.bind("visibility", menuBtn, "visibility", {
+            field.bind("visibility", paramsMenuBtn, "visibility", {
               converter: visibility => (visibility === "visible" && isSweeperEnabled) ? "visible" : "excluded"
             });
           });
-        return menuBtn;
+        return paramsMenuBtn;
       }
       return null;
     },
@@ -101,8 +97,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return selectFileButton;
     },
 
-    __getMenuButton: function(portId) {
-      const menu = new qx.ui.menu.Menu().set({
+    __getParamsMenuButton: function(portId) {
+      const paramsMenu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
 
@@ -110,7 +106,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       newParamBtn.addListener("execute", () => {
         this.__createNewParameter(portId);
       }, this);
-      menu.add(newParamBtn);
+      paramsMenu.add(newParamBtn);
 
       const existingParamMenu = new qx.ui.menu.Menu();
       this.__populateExistingParamsMenu(portId, existingParamMenu);
@@ -120,12 +116,14 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }, this);
 
       const existingParamBtn = new qx.ui.menu.Button(this.tr("Set existing parameter"), null, null, existingParamMenu);
-      menu.add(existingParamBtn);
+      paramsMenu.add(existingParamBtn);
 
       const menuBtn = new qx.ui.form.MenuButton().set({
-        menu: menu,
+        menu: paramsMenu,
         icon: "@FontAwesome5Solid/ellipsis-v/14",
-        focusable: false
+        focusable: false,
+        allowGrowX: false,
+        alignX: "center"
       });
       return menuBtn;
     },
@@ -172,19 +170,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-        const btn = this.__createSelectFileButton(item);
-        if (btn) {
-          this._add(btn, {
-            row,
-            column: this.self().gridPos.selectFileBtn
-          });
-        }
 
-        const menu = this.__createMenu(item);
-        if (menu) {
-          this._add(menu, {
+        const fieldOpts = this.__createFieldOpts(item);
+        if (fieldOpts) {
+          this._add(fieldOpts, {
             row,
-            column: this.self().gridPos.menu
+            column: this.self().gridPos.fieldOptions
           });
         }
 
@@ -509,15 +500,15 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
         const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
+        hBox.add(this.getControlLink(portId), {
+          flex: 1
+        });
+
         const unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
         unlinkBtn.addListener("execute", function() {
           this.removeLink(portId);
         }, this);
         hBox.add(unlinkBtn);
-
-        hBox.add(this.getControlLink(portId), {
-          flex: 1
-        });
 
         hBox.key = portId;
 
@@ -526,10 +517,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           column: this.self().gridPos.ctrlField
         });
 
-        // disable menu button
-        const menu = this._getCtrlMenuChild(portId);
-        if (menu) {
-          menu.child.setEnabled(false);
+        const fieldOpts = this._getFieldOptsChild(portId);
+        if (fieldOpts) {
+          fieldOpts.child.setEnabled(false);
         }
 
         const linkFieldModified = {
@@ -544,10 +534,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __linkRemoved: function(portId) {
       if (this.__resetCtrlField(portId)) {
-        // enable menu button
-        const menu = this._getCtrlMenuChild(portId);
-        if (menu) {
-          menu.child.setEnabled(true);
+        // enable fieldOpts button
+        const fieldOpts = this._getFieldOptsChild(portId);
+        if (fieldOpts) {
+          fieldOpts.child.setEnabled(true);
         }
 
         const linkFieldModified = {

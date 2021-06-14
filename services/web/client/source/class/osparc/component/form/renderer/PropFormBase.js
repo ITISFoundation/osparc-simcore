@@ -59,17 +59,15 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       label: 0,
       info: 1,
       ctrlField: 2,
-      selectFileBtn: 3,
-      unit: 4,
-      menu: 5
+      unit: 3,
+      fieldOptions: 4
     },
 
     getDisableables: function() {
       return [
         this.gridPos.label,
         this.gridPos.ctrlField,
-        this.gridPos.selectFileBtn,
-        this.gridPos.menu
+        this.gridPos.fieldOptions
       ];
     }
   },
@@ -254,8 +252,9 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       return this._getLayoutChild(portId, this.self().gridPos.ctrlField);
     },
 
-    _getCtrlMenuChild: function(portId) {
-      return this._getLayoutChild(portId, this.self().gridPos.menu);
+    _getFieldOptsChild: function(portId) {
+      return null;
+      return this._getLayoutChild(portId, this.self().gridPos.fieldOptions);
     }
   }
 });
