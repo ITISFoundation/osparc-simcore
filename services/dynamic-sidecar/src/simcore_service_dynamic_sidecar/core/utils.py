@@ -13,16 +13,15 @@ import yaml
 from async_generator import asynccontextmanager
 from async_timeout import timeout
 from fastapi import HTTPException
-
-from .settings import RegistrySettings
+from models_library.settings.docker_registry import RegistrySettings
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
 logger = logging.getLogger(__name__)
 
 
-async def login_registry(settings: RegistrySettings):
-    def create_docker_config_file(settings: RegistrySettings):
+async def login_registry(settings: RegistrySettings) -> None:
+    def create_docker_config_file(settings: RegistrySettings) -> None:
         docker_config = {
             "auths": {
                 f"{settings.resolved_registry_url}": {

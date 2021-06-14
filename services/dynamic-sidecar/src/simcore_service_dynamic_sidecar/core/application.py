@@ -1,5 +1,5 @@
 import logging
-from typing import Callable
+from typing import Any, Callable, Coroutine
 
 from fastapi import FastAPI
 
@@ -65,7 +65,9 @@ def assemble_application() -> FastAPI:
     # add routing paths
     application.include_router(main_router)
 
-    def create_start_app_handler(app: FastAPI) -> Callable:
+    def create_start_app_handler(
+        app: FastAPI,
+    ) -> Callable[[], Coroutine[Any, Any, None]]:
         async def on_startup() -> None:
             await login_registry(app.state.settings.registry)
             print(WELCOME_MSG, flush=True)
