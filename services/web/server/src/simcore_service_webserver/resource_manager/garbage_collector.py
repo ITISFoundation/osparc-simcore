@@ -322,7 +322,7 @@ async def remove_orphaned_services(
 
     If the service is a dynamic service
     """
-    logger.info("Starting orphaned services removal...")
+    logger.debug("Starting orphaned services removal...")
 
     currently_opened_projects_node_ids = set()
     alive_keys, _ = await registry.get_all_resource_keys()
@@ -338,7 +338,7 @@ async def remove_orphaned_services(
     running_interactive_services: List[
         Dict[str, Any]
     ] = await get_running_interactive_services(app)
-    logger.info(
+    logger.debug(
         "Will collect the following: %s",
         [x["service_host"] for x in running_interactive_services],
     )
@@ -401,7 +401,7 @@ async def remove_orphaned_services(
             except (ServiceNotFoundError, DirectorException) as err:
                 logger.warning("Error while stopping service: %s", err)
 
-    logger.info("Finished orphaned services removal")
+    logger.debug("Finished orphaned services removal")
 
 
 async def remove_guest_user_with_all_its_resources(

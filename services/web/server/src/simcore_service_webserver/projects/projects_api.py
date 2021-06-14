@@ -191,7 +191,10 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
 
 
 async def remove_project_interactive_services(
-    user_id: int, project_uuid: str, app: web.Application
+    user_id: int,
+    project_uuid: str,
+    app: web.Application,
+    project: Dict[str, Any] = None,
 ) -> None:
     # Note: during the closing process, which might take awhile, the project is locked so no one opens it at the same time
     async with await get_redis_lock_manager(app).lock(
@@ -199,10 +202,20 @@ async def remove_project_interactive_services(
         lock_timeout=None,
         lock_identifier=ProjectLocked(
             value=True,
-            owner=Owner(user_id=user_id, first_name="Johnny", last_name="Cash"),
+            owner=Owner(user_id=user_id, **(await get_user_name(app, user_id))),
             status=ProjectStatus.CLOSING,
         ).json(),
     ):
+        if project is not None:
+            # we notify
+            project_with_states = await add_project_states_for_user(
+                user_id=user_id,
+                project=project,
+                is_template=False,
+                app=app,
+            )
+            await notify_project_state_update(app, project_with_states)
+
         # save the state if the user is not a guest. if we do not know we save in any case.
         with suppress(director_exceptions.DirectorException):
             # here director exceptions are suppressed. in case the service is not found to preserve old behavior
@@ -505,23 +518,31 @@ async def _get_project_lock_state(
     4. If the same user is using the project with a valid socket id (meaning a tab is currently active) then the project is Locked and OPENED_OTHER_CLIENT.
     5. If the same user is using the project with NO socket id (meaning there is no current tab active) then the project is Unlocked and OPENED. which means the user can open it again.
     """
+    log.debug("getting project [%s] lock state for user [%s]", project_uuid, user_id)
     if await get_redis_lock_manager(app).is_locked(
         PROJECT_REDIS_LOCK_KEY.format(project_uuid)
     ):
-
+        log.debug("project [%s] is locked, getting metadata...", project_uuid)
         # so the project is currently locked. let's find out why
         # NOTE: we use the client connected to the lock database here
         project_locked: Optional[str] = await get_redis_lock_manager_client(app).get(
             PROJECT_REDIS_LOCK_KEY.format(project_uuid)
         )
+        log.debug("project [%s] is locked, metadata: %s", project_uuid, project_locked)
         if project_locked:
-            return ProjectLocked.parse_obj(project_locked)
+            return ProjectLocked.parse_raw(project_locked)
 
+    log.debug("checking whether project [%s] is locked and how", project_uuid)
     if client_session_id:
         # if a client session id is there, then let's check if the project is already opened by this user
         with managed_resource(user_id, client_session_id, app) as rt:
             opened_project_ids = await rt.find(PROJECT_ID_KEY)
             if project_uuid in opened_project_ids:
+                log.debug(
+                    "project [%s] is locked but opened by user %s",
+                    project_uuid,
+                    user_id,
+                )
                 return ProjectLocked(
                     value=True,
                     owner=Owner(user_id=user_id, **(await get_user_name(app, user_id))),
@@ -540,8 +561,12 @@ async def _get_project_lock_state(
 
     if not set_user_ids:
         # no one has the project, so it is closed.
+        log.debug("project [%s] is not locked", project_uuid)
         return ProjectLocked(value=False, status=ProjectStatus.CLOSED)
 
+    log.debug(
+        "project [%s] might be used by the following [%s]", project_uuid, set_user_ids
+    )
     usernames: List[Dict[str, str]] = [
         await get_user_name(app, uid) for uid in set_user_ids
     ]
@@ -560,12 +585,22 @@ async def _get_project_lock_state(
 
         if not await user_has_another_client_open(user_session_id_list):
             # in this case the project is re-openable by the same user until it gets closed
+            log.debug(
+                "project [%s] is in use by the same user [%s] that is disconnected, so it is unlocked",
+                project_uuid,
+                set_user_ids,
+            )
             return ProjectLocked(
                 value=False,
                 owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),
                 status=ProjectStatus.OPENED,
             )
         # the project is opened in another tab or browser
+        log.debug(
+            "project [%s] is in use by another user [%s], so it is locked",
+            project_uuid,
+            set_user_ids,
+        )
         return ProjectLocked(
             value=True,
             owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),

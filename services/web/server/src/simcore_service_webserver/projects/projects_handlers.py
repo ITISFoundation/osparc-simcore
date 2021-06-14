@@ -463,21 +463,20 @@ async def close_project(request: web.Request) -> web.Response:
         # if we are the only user left we can safely remove the services
         async def _close_project_task(project: Dict[str, Any]) -> None:
             try:
-                project_opened_by_others: bool = False
                 with managed_resource(user_id, client_session_id, request.app) as rt:
                     project_users: List[
                         Tuple(int, str)
                     ] = await rt.find_users_of_resource("project_id", project_uuid)
-                    project_opened_by_others = len(project_users) > 1
+                project_opened_by_others = len(project_users) > 1
 
                 if not project_opened_by_others:
                     # only remove the services if no one else is using them now
                     await projects_api.remove_project_interactive_services(
-                        user_id, project_uuid, request.app
+                        user_id, project_uuid, request.app, project
                     )
             finally:
                 with managed_resource(user_id, client_session_id, request.app) as rt:
-                    # now we can remove the lock
+                    # now we can remove the resource
                     await rt.remove(PROJECT_ID_KEY)
                 # ensure we notify the user whatever happens, the GC should take care of dangling services in case of issue
                 project = await projects_api.add_project_states_for_user(
