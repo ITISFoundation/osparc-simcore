@@ -199,6 +199,20 @@ class DynamicSidecarsMonitor:
             service_name = self._inverse_search_mapping[node_uuid]
 
             monitor_data: MonitorData = self._to_monitor[service_name].monitor_data
+
+            # check if there was an error picked up by the monitor and marked this
+            # service as failing
+            if (
+                monitor_data.dynamic_sidecar.overall_status.status
+                != DynamicSidecarStatus.OK
+            ):
+                return RunningServiceDetails.from_monitoring_status(
+                    node_uuid=node_uuid,
+                    monitor_data=monitor_data,
+                    service_state=ServiceState.FAILED,
+                    service_message=monitor_data.dynamic_sidecar.overall_status.info,
+                )
+
             dynamic_sidecar_settings: DynamicSidecarSettings = (
                 self._app.state.settings.dynamic_services.dynamic_sidecar
             )
