@@ -247,7 +247,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           const fp = this.createNode(fpMD["key"], fpMD["version"], null, parent);
           const pos = requesterNode.getPosition();
           fp.setPosition({
-            x: Math.max(0, pos.x-250),
+            x: Math.max(0, pos.x-230),
             y: pos.y
           });
 
