@@ -948,7 +948,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-05:
-    timeout-minutes: 15 # if this timeout gets too small, then split the tests
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 05"
     runs-on: ${{ matrix.os }}
     strategy:
