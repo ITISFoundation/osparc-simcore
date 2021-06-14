@@ -346,6 +346,7 @@ async def remove_orphaned_services(
         "Will collect the following: %s",
         [x["service_host"] for x in running_interactive_services],
     )
+    service_host = interactive_service["service_host"]
     for interactive_service in running_interactive_services:
         # if not present in DB or not part of currently opened projects, can be removed
         node_id = interactive_service["service_uuid"]

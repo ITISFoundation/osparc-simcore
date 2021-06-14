@@ -22,9 +22,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     this.base(arguments, form, node);
 
     this.__ctrlLinkMap = {};
-    this.__addLinkCtrls();
-
     this.__ctrlParamMap = {};
+
+    this.__addLinkCtrls();
     this.__addParamCtrls();
 
     this.setDroppable(true);
@@ -67,12 +67,126 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __ctrlLinkMap: null,
+    __ctrlParamMap: null,
+
+    __createSelectFileButton: function(field) {
+      if (["FileButton"].includes(field.widgetType)) {
+        return this.__getSelectFileButton(field.key);
+      }
+      return null;
+    },
+
+    __createMenu: function(field) {
+      if (["Number", "Spinner"].includes(field.widgetType)) {
+        const menuBtn = this.__getMenuButton(field.key).set({
+          visibility: "excluded"
+        });
+        osparc.data.model.Sweeper.isSweeperEnabled()
+          .then(isSweeperEnabled => {
+            field.bind("visibility", menuBtn, "visibility", {
+              converter: visibility => (visibility === "visible" && isSweeperEnabled) ? "visible" : "excluded"
+            });
+          });
+        return menuBtn;
+      }
+      return null;
+    },
+
+    __getSelectFileButton: function(portId) {
+      const selectFileButton = new qx.ui.form.Button((this.tr("Select Input File")));
+      selectFileButton.addListener("execute", () => {
+        console.log(portId);
+      }, this);
+      return selectFileButton;
+    },
+
+    __getMenuButton: function(portId) {
+      const menu = new qx.ui.menu.Menu().set({
+        position: "bottom-right"
+      });
+
+      const newParamBtn = new qx.ui.menu.Button(this.tr("Set new parameter"));
+      newParamBtn.addListener("execute", () => {
+        this.__createNewParameter(portId);
+      }, this);
+      menu.add(newParamBtn);
+
+      const existingParamMenu = new qx.ui.menu.Menu();
+      this.__populateExistingParamsMenu(portId, existingParamMenu);
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      study.getSweeper().addListener("changeParameters", () => {
+        this.__populateExistingParamsMenu(portId, existingParamMenu);
+      }, this);
+
+      const existingParamBtn = new qx.ui.menu.Button(this.tr("Set existing parameter"), null, null, existingParamMenu);
+      menu.add(existingParamBtn);
+
+      const menuBtn = new qx.ui.form.MenuButton().set({
+        menu: menu,
+        icon: "@FontAwesome5Solid/ellipsis-v/14",
+        focusable: false
+      });
+      return menuBtn;
+    },
+
+    __createNewParameter: function(fieldKey) {
+      const title = this.tr("Create new parameter");
+      const newParamName = new osparc.component.widget.Renamer(null, null, title);
+      newParamName.addListener("labelChanged", e => {
+        const study = osparc.store.Store.getInstance().getCurrentStudy();
+        let newParameterLabel = e.getData()["newLabel"];
+        newParameterLabel = newParameterLabel.replace(/ /g, "_");
+        newParameterLabel = newParameterLabel.replace(/"/g, "'");
+        if (study.getSweeper().parameterLabelExists(newParameterLabel)) {
+          const msg = this.tr("Parameter name already exists");
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        } else {
+          const param = study.getSweeper().addNewParameter(newParameterLabel);
+          this.addParameter(fieldKey, param);
+          newParamName.close();
+        }
+      }, this);
+      newParamName.center();
+      newParamName.open();
+    },
+
+    __populateExistingParamsMenu: function(fieldKey, existingParamMenu) {
+      existingParamMenu.removeAll();
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      study.getSweeper().getParameters().forEach(param => {
+        const paramButton = new qx.ui.menu.Button(param.label);
+        paramButton.addListener("execute", () => {
+          this.addParameter(fieldKey, param);
+        }, this);
+        existingParamMenu.add(paramButton);
+      });
+    },
 
     // overridden
     addItems: function(items, names, title, itemOptions, headerOptions) {
       this.base(arguments, items, names, title, itemOptions, headerOptions);
 
-      items.forEach(item => {
+      // header
+      let row = title === null ? 0 : 1;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const btn = this.__createSelectFileButton(item);
+        if (btn) {
+          this._add(btn, {
+            row,
+            column: this.self().gridPos.selectFileBtn
+          });
+        }
+
+        const menu = this.__createMenu(item);
+        if (menu) {
+          this._add(menu, {
+            row,
+            column: this.self().gridPos.menu
+          });
+        }
+
         this.__createDropMechanism(item, item.key);
 
         // Notify focus and focus out
@@ -88,7 +202,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             qx.event.message.Bus.getInstance().dispatchByName("inputFocusout", msgDataFn);
           }
         }, this);
-      });
+      }
     },
 
     // overridden
