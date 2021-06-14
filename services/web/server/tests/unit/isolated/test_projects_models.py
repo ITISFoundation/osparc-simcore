@@ -5,6 +5,8 @@
 import datetime
 
 import pytest
+from aiohttp import web
+from simcore_service_webserver.constants import APP_DB_ENGINE_KEY
 from simcore_service_webserver.projects.projects_db import (
     ProjectDBAPI,
     _convert_to_db_names,
@@ -70,7 +72,10 @@ def mock_pg_engine(mocker):
 async def test_add_projects(fake_project, mock_pg_engine):
     engine, connection = mock_pg_engine
 
-    db = ProjectDBAPI.init_from_engine(engine)
+    app = web.Application()
+    app[APP_DB_ENGINE_KEY] = engine
+
+    db = ProjectDBAPI(app)
     assert await db.add_projects([fake_project], user_id=-1)
 
     engine.acquire.assert_called()
