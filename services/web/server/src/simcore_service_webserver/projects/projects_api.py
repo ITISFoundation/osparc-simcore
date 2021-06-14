@@ -37,7 +37,7 @@ from ..director_v2 import (
     request_retrieve_dyn_service,
 )
 from ..resource_manager.redis import get_redis_lock_manager
-from ..resource_manager.websocket_manager import managed_resource
+from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..socketio.events import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
@@ -487,14 +487,29 @@ async def trigger_connected_service_retrieve(
 
 
 async def _get_project_lock_state(
-    user_id: int, project_uuid: str, app: web.Application
+    user_id: int,
+    project_uuid: str,
+    app: web.Application,
+    client_session_id: Optional[str] = None,
 ) -> ProjectLocked:
     """returns the lock state of a project
+    If a client_session_id is passed, then first a check to see if the project is currently opened by the user is done.
 
-    If any other user that user_id is using the project (even disconnected before the TTL is finished) then the project is Locked.
-    If the same user is using the project with a valid socket id (meaning a tab is currently active) then the project is Locked.
-    If the same user is using the project with NO socket id (meaning there is no current tab active) then the project is Unlocked, so the user can open it again.
+    If any other user that user_id is using the project (even disconnected before the TTL is finished) then the project is Locked and OPENED_OTHER_USER.
+    If the same user is using the project with a valid socket id (meaning a tab is currently active) then the project is Locked and OPENED_OTHER_CLIENT.
+    If the same user is using the project with NO socket id (meaning there is no current tab active) then the project is Unlocked and OPENED. which means the user can open it again.
     """
+
+    if client_session_id:
+        with managed_resource(user_id, client_session_id, app) as rt:
+            opened_project_ids = await rt.find(PROJECT_ID_KEY)
+            if project_uuid in opened_project_ids:
+                return ProjectLocked(
+                    value=True,
+                    owner=Owner(user_id=user_id, **(await get_user_name(app, user_id))),
+                    status=ProjectStatus.OPENED,
+                )
+
     with managed_resource(user_id, None, app) as rt:
         # checks who is using it
         # NOTE: We need to check for any user that might have the project opened
@@ -553,7 +568,11 @@ async def _get_project_lock_state(
 
 
 async def add_project_states_for_user(
-    user_id: int, project: Dict[str, Any], is_template: bool, app: web.Application
+    user_id: int,
+    project: Dict[str, Any],
+    is_template: bool,
+    app: web.Application,
+    client_session_id: Optional[str] = None,
 ) -> Dict[str, Any]:
 
     # for templates: the project is never locked and never opened. also the running state is always unknown
@@ -561,7 +580,7 @@ async def add_project_states_for_user(
     running_state = RunningState.UNKNOWN
     if not is_template:
         lock_state, computation_task = await logged_gather(
-            _get_project_lock_state(user_id, project["uuid"], app),
+            _get_project_lock_state(user_id, project["uuid"], app, client_session_id),
             get_computation_task(app, user_id, project["uuid"]),
         )
 

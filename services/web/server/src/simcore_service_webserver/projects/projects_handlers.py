@@ -19,7 +19,7 @@ from .. import catalog, director_v2
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.redis import get_redis_lock_manager
-from ..resource_manager.websocket_manager import managed_resource
+from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..rest_utils import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
 from ..security_decorators import permission_required
@@ -411,7 +411,7 @@ async def open_project(request: web.Request) -> web.Response:
                             other_users.remove(user_id)
                         if other_users:
                             return other_users
-                        await rt.add("project_id", project_uuid)
+                        await rt.add(PROJECT_ID_KEY, project_uuid)
                 except aioredlock.LockError as exc:
                     raise HTTPLocked(reason="Project is locked") from exc
 
@@ -433,6 +433,7 @@ async def open_project(request: web.Request) -> web.Response:
             project=project,
             is_template=False,
             app=request.app,
+            client_session_id=client_session_id,
         )
 
         await projects_api.notify_project_state_update(request.app, project)
@@ -477,13 +478,14 @@ async def close_project(request: web.Request) -> web.Response:
             finally:
                 with managed_resource(user_id, client_session_id, request.app) as rt:
                     # now we can remove the lock
-                    await rt.remove("project_id")
+                    await rt.remove(PROJECT_ID_KEY)
                 # ensure we notify the user whatever happens, the GC should take care of dangling services in case of issue
                 project = await projects_api.add_project_states_for_user(
                     user_id=user_id,
                     project=project,
                     is_template=False,
                     app=request.app,
+                    client_session_id=client_session_id,
                 )
                 await projects_api.notify_project_state_update(request.app, project)
 

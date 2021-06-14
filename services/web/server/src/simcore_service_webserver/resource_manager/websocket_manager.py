@@ -27,6 +27,7 @@ from .registry import get_registry
 log = logging.getLogger(__file__)
 
 SOCKET_ID_KEY = "socket_id"
+PROJECT_ID_KEY = "project_id"
 
 
 @attr.s(auto_attribs=True)
