@@ -18,6 +18,7 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 from .. import catalog, director_v2
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
+from ..resource_manager.redis import get_redis_lock_manager
 from ..resource_manager.websocket_manager import managed_resource
 from ..rest_utils import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
@@ -397,7 +398,9 @@ async def open_project(request: web.Request) -> web.Response:
                 try:
                     # NOTE: we need to lock the access to the project so that no one else opens it
                     # at the same time.
-                    async with await rt.get_registry_lock(project_uuid):
+                    async with await get_redis_lock_manager(request.app).lock(
+                        f"project.{project_uuid}", lock_timeout=None
+                    ):
                         other_users: Set[int] = {
                             uid
                             for uid, _ in await rt.find_users_of_resource(

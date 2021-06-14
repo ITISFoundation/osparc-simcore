@@ -26,7 +26,6 @@ from models_library.projects_state import (
 )
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
-from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_service_webserver.director import director_exceptions
 
@@ -36,6 +35,7 @@ from ..director_v2 import (
     get_computation_task,
     request_retrieve_dyn_service,
 )
+from ..resource_manager.redis import get_redis_lock_manager
 from ..resource_manager.websocket_manager import managed_resource
 from ..socketio.events import (
     SOCKET_IO_NODE_UPDATED_EVENT,
@@ -183,19 +183,22 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
 ## PROJECT NODES -----------------------------------------------------
 
 
-@observe(event="SIGNAL_PROJECT_CLOSE")
 async def remove_project_interactive_services(
-    user_id: Optional[int], project_uuid: Optional[str], app: web.Application
+    user_id: int, project_uuid: str, app: web.Application
 ) -> None:
-    # save the state if the user is not a guest. if we do not know we save in any case.
-    with suppress(director_exceptions.DirectorException):
-        # here director exceptions are suppressed. in case the service is not found to preserve old behavior
-        await director_api.stop_services(
-            app=app,
-            user_id=user_id,
-            project_id=project_uuid,
-            save_state=not await is_user_guest(app, user_id) if user_id else True,
-        )
+    # Note: during the closing process, which might take awhile, the project is locked so no one opens it at the same time
+    async with await get_redis_lock_manager(app).lock(
+        f"project.{project_uuid}", lock_timeout=None
+    ):
+        # save the state if the user is not a guest. if we do not know we save in any case.
+        with suppress(director_exceptions.DirectorException):
+            # here director exceptions are suppressed. in case the service is not found to preserve old behavior
+            await director_api.stop_services(
+                app=app,
+                user_id=user_id,
+                project_id=project_uuid,
+                save_state=not await is_user_guest(app, user_id) if user_id else True,
+            )
 
 
 async def delete_project_data(
