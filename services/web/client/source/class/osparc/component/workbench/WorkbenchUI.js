@@ -309,7 +309,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
 
       const nodeUI = this.__createNodeUI(node.getNodeId());
-      this.__addNodeToWorkbench(nodeUI, pos);
+      this.__addNodeUIToWorkbench(nodeUI, pos);
 
       if (nodeAId !== null && portA !== null) {
         let nodeBId = nodeUI.getNodeId();
@@ -359,7 +359,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return bounds;
     },
 
-    __addNodeToWorkbench: function(nodeUI, position) {
+    __addNodeUIToWorkbench: function(nodeUI, position) {
       this.__updateWorkbenchLayoutSize(position);
 
       const node = nodeUI.getNode();
@@ -935,7 +935,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         for (const nodeUuid in nodes) {
           const node = nodes[nodeUuid];
           const nodeUI = this.__createNodeUI(nodeUuid);
-          this.__addNodeToWorkbench(nodeUI, node.getPosition());
+          this.__addNodeUIToWorkbench(nodeUI, node.getPosition());
         }
 
         for (const nodeUuid in nodes) {
