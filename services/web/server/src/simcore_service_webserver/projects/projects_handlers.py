@@ -7,9 +7,9 @@ import json
 import logging
 from typing import Any, Coroutine, Dict, List, Optional, Set, Tuple
 
-import aioredlock
 from aiohttp import web
 from jsonschema import ValidationError
+
 from models_library.projects_state import ProjectState
 from servicelib.rest_pagination_utils import PageResponseLimitOffset
 from servicelib.utils import fire_and_forget_task, logged_gather
@@ -18,7 +18,6 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 from .. import catalog, director_v2
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
-from ..resource_manager.redis import get_redis_lock_manager
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..rest_utils import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
@@ -393,41 +392,18 @@ async def open_project(request: web.Request) -> web.Response:
             include_state=True,
         )
 
-        async def try_add_project() -> Optional[Set[int]]:
-            with managed_resource(user_id, client_session_id, request.app) as rt:
-                try:
-                    # NOTE: we need to lock the access to the project so that no one else opens it
-                    # at the same time.
-                    async with await get_redis_lock_manager(request.app).lock(
-                        f"project:{project_uuid}", lock_timeout=None
-                    ):
-                        other_users: Set[int] = {
-                            uid
-                            for uid, _ in await rt.find_users_of_resource(
-                                "project_id", project_uuid
-                            )
-                        }
-                        if user_id in other_users:
-                            other_users.remove(user_id)
-                        if other_users:
-                            return other_users
-                        await rt.add(PROJECT_ID_KEY, project_uuid)
-                except aioredlock.LockError as exc:
-                    raise HTTPLocked(reason="Project is locked") from exc
-
-        other_users = await try_add_project()
-        if other_users:
-            # project is already locked
-            usernames = [
-                await projects_api.get_user_name(request.app, uid)
-                for uid in other_users
-            ]
-            raise HTTPLocked(reason=f"Project is already opened by {usernames}")
+        if not await projects_api.try_lock_project_for_user(
+            user_id,
+            project_uuid=project_uuid,
+            client_session_id=client_session_id,
+            app=request.app,
+        ):
+            raise HTTPLocked(reason="Project is locked, try later")
 
         # user id opened project uuid
         await projects_api.start_project_interactive_services(request, project, user_id)
 
-        # notify users that project is now locked
+        # notify users that project is now opened
         project = await projects_api.add_project_states_for_user(
             user_id=user_id,
             project=project,
@@ -466,12 +442,12 @@ async def close_project(request: web.Request) -> web.Response:
                 with managed_resource(user_id, client_session_id, request.app) as rt:
                     project_users: List[
                         Tuple(int, str)
-                    ] = await rt.find_users_of_resource("project_id", project_uuid)
+                    ] = await rt.find_users_of_resource(PROJECT_ID_KEY, project_uuid)
                 project_opened_by_others = len(project_users) > 1
 
                 if not project_opened_by_others:
                     # only remove the services if no one else is using them now
-                    await projects_api.remove_project_interactive_services(
+                    await projects_api.remove_project_interactive_services_with_notfication(
                         user_id, project_uuid, request.app, project
                     )
             finally:
