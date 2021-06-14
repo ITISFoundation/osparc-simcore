@@ -519,7 +519,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
         const fieldOpts = this._getFieldOptsChild(portId);
         if (fieldOpts) {
-          fieldOpts.child.exsetEnabled(false);
+          fieldOpts.child.setEnabled(false);
         }
 
         const linkFieldModified = {
