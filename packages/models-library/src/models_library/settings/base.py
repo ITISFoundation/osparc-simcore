@@ -1,0 +1,35 @@
+from contextlib import suppress
+from typing import List, Tuple
+
+from pydantic import BaseSettings, Extra, SecretStr, ValidationError
+
+
+class BaseCustomSettings(BaseSettings):
+    class Config:
+        case_sensitive = False
+        extra = Extra.forbid
+        allow_mutation = False
+        frozen = True
+        validate_all = True
+        json_encoders = {SecretStr: lambda v: v.get_secret_value()}
+
+    @classmethod
+    def set_defaults_with_default_constructors(
+        cls, default_fields: List[Tuple[str, "BaseCustomSettings"]]
+    ):
+        # This funcion can set defaults on fields that are BaseSettings as well
+        # It is used in control construction of defaults.
+        # Pydantic offers a defaults_factory but it is executed upon creation of the Settings **class**
+        # which is too early for our purpose. Instead, we want to create the defaults just
+        # before the settings instance is constructed
+
+        assert issubclass(cls, BaseCustomSettings)
+
+        # Builds defaults at this point
+        for name, default_cls in default_fields:
+            with suppress(ValidationError):
+                default = default_cls()
+                field_obj = cls.__fields__[name]
+                field_obj.default = default
+                field_obj.field_info.default = default
+                field_obj.required = False

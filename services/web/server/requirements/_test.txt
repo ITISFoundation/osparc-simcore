@@ -13,6 +13,10 @@ aioresponses==0.7.2
     # via -r requirements/_test.in
 alembic==1.6.2
     # via -r requirements/_test.in
+amqp==5.0.6
+    # via
+    #   -c requirements/_base.txt
+    #   kombu
 astroid==2.5
     # via pylint
 async-timeout==3.0.1
@@ -28,8 +32,16 @@ attrs==20.3.0
     #   pytest-docker
 bcrypt==3.2.0
     # via paramiko
+billiard==3.6.4.0
+    # via
+    #   -c requirements/_base.txt
+    #   celery
 cached-property==1.5.2
     # via docker-compose
+celery[redis]==5.0.5
+    # via
+    #   -c requirements/_base.txt
+    #   pytest-celery
 certifi==2020.12.5
     # via requests
 cffi==1.14.5
@@ -43,10 +55,26 @@ chardet==3.0.4
     #   -c requirements/_base.txt
     #   aiohttp
     #   requests
+click-didyoumean==0.0.3
+    # via
+    #   -c requirements/_base.txt
+    #   celery
+click-plugins==1.1.1
+    # via
+    #   -c requirements/_base.txt
+    #   celery
+click-repl==0.1.6
+    # via
+    #   -c requirements/_base.txt
+    #   celery
 click==7.1.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+    #   celery
+    #   click-didyoumean
+    #   click-plugins
+    #   click-repl
 codecov==2.1.11
     # via -r requirements/_test.in
 coverage[toml]==5.5
@@ -96,6 +124,7 @@ importlib-metadata==4.0.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
+    #   kombu
     #   pluggy
     #   pytest
 iniconfig==1.1.1
@@ -113,6 +142,10 @@ jsonschema==3.2.0
     #   docker-compose
     #   openapi-schema-validator
     #   openapi-spec-validator
+kombu==5.0.2
+    # via
+    #   -c requirements/_base.txt
+    #   celery
 lazy-object-proxy==1.4.3
     # via
     #   -c requirements/_base.txt
@@ -148,6 +181,10 @@ pluggy==0.13.1
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
+prompt-toolkit==3.0.18
+    # via
+    #   -c requirements/_base.txt
+    #   click-repl
 psycopg2-binary==2.8.6
     # via
     #   -c requirements/_base.txt
@@ -171,6 +208,8 @@ pyrsistent==0.17.3
     #   -c requirements/_base.txt
     #   jsonschema
 pytest-aiohttp==0.3.0
+    # via -r requirements/_test.in
+pytest-celery==0.0.0
     # via -r requirements/_test.in
 pytest-cov==2.12.0
     # via -r requirements/_test.in
@@ -206,6 +245,10 @@ python-dotenv==0.17.1
     #   docker-compose
 python-editor==1.0.4
     # via alembic
+pytz==2021.1
+    # via
+    #   -c requirements/_base.txt
+    #   celery
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../../requirements/constraints.txt
@@ -216,6 +259,7 @@ redis==3.5.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+    #   celery
 requests==2.25.1
     # via
     #   codecov
@@ -226,6 +270,7 @@ six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   bcrypt
+    #   click-repl
     #   dockerpty
     #   isodate
     #   jsonschema
@@ -267,6 +312,15 @@ urllib3==1.26.4
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   requests
+vine==5.0.0
+    # via
+    #   -c requirements/_base.txt
+    #   amqp
+    #   celery
+wcwidth==0.2.5
+    # via
+    #   -c requirements/_base.txt
+    #   prompt-toolkit
 websocket-client==0.59.0
     # via
     #   docker

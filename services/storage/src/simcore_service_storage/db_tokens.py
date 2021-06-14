@@ -7,8 +7,8 @@ from psycopg2 import Error as DbApiError
 from servicelib.aiopg_utils import PostgresRetryPolicyUponOperation
 from tenacity import retry
 
+from .constants import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from .models import tokens
-from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 
 log = logging.getLogger(__name__)
 
@@ -33,8 +33,8 @@ async def get_api_token_and_secret(app: web.Application, userid) -> Tuple[str, s
     engine = app.get(APP_DB_ENGINE_KEY, None)
 
     # defaults from config if any, othewise None
-    defaults = app[APP_CONFIG_KEY].get("test_datcore", {})
-    api_token, api_secret = defaults.get("api_token"), defaults.get("api_secret")
+    api_token = app[APP_CONFIG_KEY].BF_API_KEY
+    api_secret = app[APP_CONFIG_KEY].BF_API_SECRET
 
     if engine:
         try:
@@ -49,7 +49,7 @@ async def get_api_token_and_secret(app: web.Application, userid) -> Tuple[str, s
             )
         else:
             data = data.get("token_data", {})
-            api_token = data.get("token_key", api_token)
-            api_secret = data.get("token_secret", api_secret)
+            api_token = data.get("BF_API_KEY", api_token)
+            api_secret = data.get("BF_API_SECRET", api_secret)
 
     return api_token, api_secret

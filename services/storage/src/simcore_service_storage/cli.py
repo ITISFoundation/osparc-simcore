@@ -1,120 +1,97 @@
-""" Application's command line .
-
-Why does this file exist, and why not put this in __main__?
-
-  You might be tempted to import things from __main__ later, but that will cause
-  problems: the code will get executed twice:
-
-  - When you run `python -m simcore_service_storage` python will execute
-    ``__main__.py`` as a script. That means there won't be any
-    ``simcore_service_storage.__main__`` in ``sys.modules``.
-  - When you import __main__ it will get executed again (as a module) because
-    there's no ``simcore_service_storage.__main__`` in ``sys.modules``.
-
-"""
-import json
 import logging
 import os
-import sys
-from pathlib import Path
 from pprint import pformat
-from typing import Dict, List, Optional, Union
 
-import click
-import yaml
+import typer
 from pydantic import ValidationError
+from pydantic.env_settings import BaseSettings
 
 from . import application
-from .resources import resources
-from .settings import ApplicationSettings
+from .settings import Settings
+
+HEADER = "{:-^50}"
+
 
 log = logging.getLogger(__name__)
-
-JsonNode = Union[Dict, List]
-
-
-def prune_config(cfg: JsonNode):
-    """
-    Converts
-    {
-        max_workers: 8
-        monitoring_enabled: ${STORAGE_MONITORING_ENABLED}
-        test_datcore:
-            token_key: ${BF_API_KEY}
-            token_secret: ${BF_API_SECRET}
-    }
-        -->
-
-    {
-        max_workers: 8
-        test_datcore: {}
-    }
-
-    """
-    if isinstance(cfg, Dict):
-        for key in list(cfg.keys()):
-            value = cfg[key]
-            if isinstance(value, str) and value.startswith("${"):
-                del cfg[key]
-            elif isinstance(value, (List, Dict)):
-                prune_config(cfg[key])
-
-    elif isinstance(cfg, List):
-        for item in cfg:
-            prune_config(item)
+main = typer.Typer(name="osparc-simcore storage service")
 
 
-@click.command("Service to manage data storage in simcore.")
-@click.option(
-    "--config",
-    default=None,
-    type=click.Path(exists=False, path_type=str),
-)
-@click.option(
-    "--check-config",
-    "-C",
-    default=False,
-    is_flag=True,
-    help="Checks settings, prints and exit",
-)
-def main(config: Optional[Path] = None, check_config: bool = False):
-    config_dict = {}
+def print_as_envfile(settings_obj, *, compact, verbose):
+    for name in settings_obj.__fields__:
+        value = getattr(settings_obj, name)
+
+        if isinstance(value, BaseSettings):
+            if compact:
+                value = f"'{value.json()}'"  # flat
+            else:
+                if verbose:
+                    typer.echo(f"\n# --- {name} --- ")
+                print_as_envfile(value, compact=False, verbose=verbose)
+                continue
+
+        if verbose:
+            field_info = settings_obj.__fields__[name].field_info
+            if field_info.description:
+                typer.echo(f"# {field_info.description}")
+
+        typer.echo(f"{name}={value}")
+
+
+def print_as_json(settings_obj, *, compact=False):
+    typer.echo(settings_obj.json(indent=None if compact else 2))
+
+
+@main.command()
+def settings(
+    as_json: bool = False,
+    as_json_schema: bool = False,
+    compact: bool = typer.Option(False, help="Print compact form"),
+    verbose: bool = False,
+):
+    """Resolves settings and prints envfile"""
+
+    if as_json_schema:
+        typer.echo(Settings.schema_json(indent=0 if compact else 2))
+        return
 
     try:
-        if config:
-            # config can be a path or a resource
-            config_path = Path(config)
-            if not config_path.exists() and resources.exists(f"data/{config}"):
-                config_path = Path(resources.get_path(f"data/{config}"))
+        settings_obj = Settings.create_from_env()
 
-            with open(config_path) as fh:
-                config_dict = yaml.safe_load(fh)
-
-            prune_config(config_dict)
-            settings = ApplicationSettings(**config_dict)
-        else:
-            settings = ApplicationSettings.create_from_environ()
     except ValidationError as err:
-        HEADER = "{:-^50}"
+        settings_schema = Settings.schema_json(indent=2)
         log.error(
-            "Invalid settings. %s:\n%s\n%s\n%s\n%s",
-            err,
-            HEADER.format("config_dict"),
-            pformat(config_dict),
-            HEADER.format("environment variables"),
-            pformat(dict(os.environ)),
+            "Invalid application settings. Typically an environment variable is missing or mistyped :\n%s",
+            "\n".join(
+                [
+                    HEADER.format("detail"),
+                    str(err),
+                    HEADER.format("environment variables"),
+                    pformat(
+                        {k: v for k, v in dict(os.environ).items() if k.upper() == k}
+                    ),
+                    HEADER.format("json-schema"),
+                    settings_schema,
+                ]
+            ),
             exc_info=False,
         )
-        sys.exit(os.EX_DATAERR)
+        raise
 
-    if check_config:
-        click.echo(settings.json(indent=2))
-        sys.exit(os.EX_OK)
+    if as_json:
+        print_as_json(settings_obj, compact=compact)
+    else:
+        print_as_envfile(settings_obj, compact=compact, verbose=verbose)
 
-    log_level = settings.loglevel
-    logging.basicConfig(level=getattr(logging, log_level))
-    logging.root.setLevel(getattr(logging, log_level))
 
-    # TODO: tmp converts all fields into primitive types
-    cfg = json.loads(settings.json())
-    application.run(config=cfg)
+@main.command()
+def run():
+    """Runs application"""
+    typer.secho("Resolving settings ...", nl=False)
+    settings_obj = Settings.create_from_env()
+    typer.secho("DONE", fg=typer.colors.GREEN)
+
+    logging.basicConfig(level=settings_obj.logging_level)
+    logging.root.setLevel(settings_obj.logging_level)
+
+    typer.secho("Starting app ... ")
+    application.run(settings_obj)

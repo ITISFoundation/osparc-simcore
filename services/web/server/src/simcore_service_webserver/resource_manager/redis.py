@@ -9,7 +9,7 @@ from tenacity import AsyncRetrying, before_log, stop_after_attempt, wait_fixed
 
 from .config import (
     APP_CLIENT_REDIS_CLIENT_KEY,
-    APP_CLIENT_REDIS_LOCK_KEY,
+    APP_CLIENT_REDIS_LOCK_MANAGER_KEY,
     CONFIG_SECTION_NAME,
 )
 
@@ -38,20 +38,20 @@ async def redis_client(app: web.Application):
             if not client:
                 raise ValueError("Expected aioredis client instance, got {client}")
 
-    # create lock manager
-    lock_manager = Aioredlock([url])
+    # create lock manager but use DB 1
+    lock_manager = Aioredlock([url + "/1"])
 
     assert client  # nosec
     app[APP_CLIENT_REDIS_CLIENT_KEY] = client
 
     assert lock_manager  # nosec
-    app[APP_CLIENT_REDIS_LOCK_KEY] = lock_manager
+    app[APP_CLIENT_REDIS_LOCK_MANAGER_KEY] = lock_manager
 
     yield
 
     if client is not app[APP_CLIENT_REDIS_CLIENT_KEY]:
         log.critical("Invalid redis client in app")
-    if lock_manager is not app[APP_CLIENT_REDIS_LOCK_KEY]:
+    if lock_manager is not app[APP_CLIENT_REDIS_LOCK_MANAGER_KEY]:
         log.critical("Invalid redis lock manager in app")
 
     # close client
@@ -79,5 +79,5 @@ def get_redis_client(app: web.Application) -> aioredis.Redis:
     return app[APP_CLIENT_REDIS_CLIENT_KEY]
 
 
-def get_redis_lock(app: web.Application) -> Aioredlock:
-    return app[APP_CLIENT_REDIS_LOCK_KEY]
+def get_redis_lock_manager(app: web.Application) -> Aioredlock:
+    return app[APP_CLIENT_REDIS_LOCK_MANAGER_KEY]
