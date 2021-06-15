@@ -7,7 +7,7 @@
 #   - Can be installed with pyenv (SEE pyenv install --list )
 #
 #
-ARG PYTHON_VERSION="3.8.6"
+ARG PYTHON_VERSION="3.8.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 
 
