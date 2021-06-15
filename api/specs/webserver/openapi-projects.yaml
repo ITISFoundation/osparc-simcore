@@ -193,6 +193,12 @@ paths:
         - project
       summary: returns the state of a project
       operationId: state_project
+      parameters:
+        - name: client_session_id
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ClientSessionId"
       responses:
         "200":
           description: returns the project current state
