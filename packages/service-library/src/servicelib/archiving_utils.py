@@ -76,7 +76,7 @@ async def unarchive_dir(
     all tree leafs, which might include files or empty folders
     """
     with zipfile.ZipFile(archive_to_extract, mode="r") as zip_file_handler:
-        with ProcessPoolExecutor() as pool:
+        with ProcessPoolExecutor(max_workers=2) as pool:
             loop = asyncio.get_event_loop()
 
             # running in process poll is not ideal for concurrency issues
