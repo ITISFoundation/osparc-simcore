@@ -65,11 +65,11 @@ async def dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
 
     mounts = [
         # docker socket needed to use the docker api
-        # TODO: needs to be set as readonly
         {
             "Source": "/var/run/docker.sock",
             "Target": "/var/run/docker.sock",
             "Type": "bind",
+            "ReadOnly": True,
         }
     ]
 
