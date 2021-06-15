@@ -4,6 +4,7 @@
 import asyncio
 import logging
 from contextlib import suppress
+from typing import Any, Dict
 
 from aiohttp import ClientError, ClientSession, web
 from models_library.app_diagnostics import AppStatusCheck
@@ -73,7 +74,7 @@ async def get_app_status(request: web.Request):
 
     def _get_client_session_info():
         client: ClientSession = get_client_session(request.app)
-        info = {"instance": str(client)}
+        info: Dict[str, Any] = {"instance": str(client)}
 
         if not client.closed:
             info.update(
