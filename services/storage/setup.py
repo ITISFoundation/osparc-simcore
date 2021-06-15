@@ -43,9 +43,6 @@ setup_config = dict(
         "": [
             "api/v0/openapi.yaml",
             "api/v0/schemas/*.json",
-            "data/*.json",
-            "data/*.yml",
-            "data/*.yaml",
         ],
     },
     entry_points={

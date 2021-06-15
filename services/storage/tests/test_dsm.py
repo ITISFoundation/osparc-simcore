@@ -20,8 +20,8 @@ from shutil import copyfile
 import attr
 import pytest
 import tests.utils
+from simcore_service_storage.constants import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 from simcore_service_storage.models import FileMetaData
-from simcore_service_storage.settings import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 from tests.utils import BUCKET_NAME, USER_ID, has_datcore_tokens
 
 

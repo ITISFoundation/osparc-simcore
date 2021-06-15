@@ -23,7 +23,7 @@ import attr
 from aiohttp import web
 
 from .config import get_service_deletion_timeout
-from .redis import get_redis_lock
+from .redis import get_redis_lock_manager
 from .registry import get_registry
 
 log = logging.getLogger(__file__)
@@ -99,7 +99,7 @@ class WebsocketRegistry:
         )
 
     async def set_heartbeat(self) -> None:
-        """Extends TTL to avoid expiration of all resources under this session """
+        """Extends TTL to avoid expiration of all resources under this session"""
         registry = get_registry(self.app)
         await registry.set_key_alive(
             self._resource_key(), get_service_deletion_timeout(self.app)
@@ -163,13 +163,23 @@ class WebsocketRegistry:
         users = [int(x["user_id"]) for x in registry_keys]
         return users
 
-    async def get_registry_lock(self) -> aioredlock.Lock:
+    async def get_registry_lock(self, resource_name: str) -> aioredlock.Lock:
+        """use in a context manager:
+        ```async with rt.get_gegistry_lock(resource_name="project_uuid") as lock:
+            # do some useful stuff
+            pass
+        ```
+        """
         log.debug(
             "user %s/tab %s getting registry lock...",
             self.user_id,
             self.client_session_id,
         )
-        return await get_redis_lock(self.app).lock(__name__, lock_timeout=10)
+        # NOTE: passing a lock_timeout=None means the lock manager will auto-extend the timeout as long
+        # the context manager is on
+        return await get_redis_lock_manager(self.app).lock(
+            f"{__name__}.{resource_name}", lock_timeout=None
+        )
 
 
 @contextmanager

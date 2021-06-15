@@ -392,7 +392,9 @@ async def open_project(request: web.Request) -> web.Response:
         async def try_add_project() -> Optional[Set[int]]:
             with managed_resource(user_id, client_session_id, request.app) as rt:
                 try:
-                    async with await rt.get_registry_lock():
+                    # NOTE: we need to lock the access to the project so that no one else opens it
+                    # at the same time.
+                    async with await rt.get_registry_lock(project_uuid):
                         other_users: Set[int] = set(
                             await rt.find_users_of_resource("project_id", project_uuid)
                         )
