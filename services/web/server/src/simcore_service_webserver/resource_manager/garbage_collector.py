@@ -349,6 +349,7 @@ async def remove_orphaned_services(
     for interactive_service in running_interactive_services:
         # if not present in DB or not part of currently opened projects, can be removed
         node_id = interactive_service["service_uuid"]
+        service_host = interactive_service["service_host"]
         # if the node does not exist in any project in the db, we can safely remove it without saving any state
         if not await is_node_id_present_in_any_project_workbench(app, node_id):
             logger.info(
