@@ -53,12 +53,11 @@ def print_loop(app: web.Application):
 
 def setup_garbage_collector(app: web.Application):
     async def _setup_background_task(app: web.Application):
-        # on_startup
         # create a background task to collect garbage periodically
-
         TASK_NAME = "Garbage-Collector"
-        for task in asyncio.all_tasks(app.loop):
-            assert task.get_name() != TASK_NAME, "Should be called ONLY ONCE"  # nosec
+        assert not any(  # nosec
+            t.get_name() == TASK_NAME for t in asyncio.all_tasks(app.loop)
+        ), "Garbage collector task already running. ONLY ONE expected"  # nosec
 
         _gc_task = asyncio.create_task(
             collect_garbage_periodically(app), name=TASK_NAME
