@@ -7,6 +7,7 @@ from models_library.service_settings import ComposeSpecModel, PathsMapping
 from pydantic import PositiveInt
 
 from ...core.settings import DynamicSidecarSettings
+from .service_specs import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
 
 CONTAINER_NAME = "container"
 BASE_SERVICE_SPEC: Dict[str, Any] = {
@@ -72,17 +73,11 @@ def _assemble_from_service_key_and_tag(
 def _replace_env_vars_in_compose_spec(
     stringified_service_spec: str, resolved_registry_url: str, service_tag: str
 ) -> str:
-    """
-    There are a few special environment variables which get replaced before
-    forwarding the spec to the dynamic-sidecar:
-    - REGISTRY_URL
-    - SERVICE_TAG
-    """
     stringified_service_spec = stringified_service_spec.replace(
-        "${REGISTRY_URL}", resolved_registry_url
+        MATCH_SIMCORE_REGISTRY, resolved_registry_url
     )
     stringified_service_spec = stringified_service_spec.replace(
-        "${SERVICE_TAG}", service_tag
+        MATCH_SERVICE_VERSION, service_tag
     )
     return stringified_service_spec
 

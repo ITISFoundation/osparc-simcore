@@ -20,9 +20,17 @@ from ...api.dependencies.director_v0 import DirectorV0Client
 from ...core.settings import DynamicSidecarSettings, ServiceType
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX, UserID
 
-MATCH_SERVICE_TAG = "${SERVICE_TAG}"
-MATCH_IMAGE_START = "${REGISTRY_URL}/"
-MATCH_IMAGE_END = f":{MATCH_SERVICE_TAG}"
+# Notes on below env var names:
+# - SIMCORE_REGISTRY will be replaced by the url of the simcore docker registry
+# deployed inside the platform
+# - SERVICE_VERSION will be replaced by the version of the service
+# to which this compos spec is attached
+# Example usage in docker compose:
+#   image: ${SIMCORE_REGISTRY}/${DOCKER_IMAGE_NAME}-dynamic-sidecar-compose-spec:${SERVICE_VERSION}
+MATCH_SERVICE_VERSION = "${SERVICE_VERSION}"
+MATCH_SIMCORE_REGISTRY = "${SIMCORE_REGISTRY}"
+MATCH_IMAGE_START = f"{MATCH_SIMCORE_REGISTRY}/"
+MATCH_IMAGE_END = f":{MATCH_SERVICE_VERSION}"
 
 
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
@@ -306,7 +314,7 @@ async def _extract_osparc_involved_service_labels(
             continue
 
         # strips `${REGISTRY_URL}/`; replaces `${SERVICE_TAG}` with `service_tag`
-        osparc_image_key = image.replace(MATCH_SERVICE_TAG, service_tag).replace(
+        osparc_image_key = image.replace(MATCH_SERVICE_VERSION, service_tag).replace(
             MATCH_IMAGE_START, ""
         )
         current_service_key, current_service_tag = osparc_image_key.split(":")
@@ -315,17 +323,12 @@ async def _extract_osparc_involved_service_labels(
         )
         reverse_mapping[involved_key] = compose_service_key
 
-        # if the labels already existed no need to fetch them again
-        if involved_key in docker_image_name_by_services:
-            continue
-
-        docker_image_name_by_services[
-            involved_key
-        ] = await director_v0_client.get_service_labels(
+        simcore_service: SimcoreService = await director_v0_client.get_service_labels(
             service=ServiceKeyVersion(
                 key=current_service_key, version=current_service_tag
             )
         )
+        docker_image_name_by_services[involved_key] = simcore_service
 
     # remaps from image_name as key to compose_spec key
     compose_spec_mapped_labels = {
