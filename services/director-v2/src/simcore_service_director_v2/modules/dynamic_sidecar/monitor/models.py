@@ -116,6 +116,15 @@ class DynamicSidecar(BaseModel):
         ),
     )
 
+    @property
+    def can_save_state(self) -> bool:
+        """
+        Keeps track of the current state of the application, if it was starte successfully
+        the state of the service can be saved when stopping the service
+        """
+        # TODO: implement when adding save status hooks
+        return False
+
     # consider adding containers for healthchecks but this is more difficult and it depends on each service
 
     @property

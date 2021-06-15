@@ -6,6 +6,7 @@ import httpx
 from fastapi import FastAPI
 
 from ....core.settings import DynamicSidecarSettings
+from ..exceptions import MonitorException
 from .models import MonitorData
 
 logger = logging.getLogger(__name__)
@@ -112,44 +113,44 @@ class DynamicSidecarClient:
             log_httpx_http_error(url, "GET", traceback.format_exc())
             return None
 
-    async def run_docker_compose_up(
+    async def start_service_creation(
         self, dynamic_sidecar_endpoint: str, compose_spec: str
-    ) -> bool:
+    ) -> None:
         """returns: True if the compose up was submitted correctly"""
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
         try:
             response = await self.httpx_client.post(url, data=compose_spec)
             if response.status_code != 202:
-                logging.warning(
-                    "error during request status=%s, body=%s",
-                    response.status_code,
-                    response.text,
+                message = (
+                    f"ERROR during service creation request: "
+                    f"status={response.status_code}, body={response.text}"
                 )
-                return False
+                logging.warning(message)
+                raise MonitorException(message)
 
             # request was ok
             logger.info("Spec submit result %s", response.text)
-            return True
-        except httpx.HTTPError:
+        except httpx.HTTPError as e:
             log_httpx_http_error(url, "POST", traceback.format_exc())
-            return False
+            raise e
 
-    async def run_docker_compose_down(self, dynamic_sidecar_endpoint: str) -> None:
+    async def begin_service_destruction(self, dynamic_sidecar_endpoint: str) -> None:
         """runs docker compose down on the started spec"""
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers:down")
         try:
             response = await self.httpx_client.post(url)
             if response.status_code != 200:
-                logging.warning(
-                    "error during request status=%s, body=%s",
-                    response.status_code,
-                    response.text,
+                message = (
+                    f"ERROR during service destruction request: "
+                    f"status={response.status_code}, body={response.text}"
                 )
-                return
+                logging.warning(message)
+                raise MonitorException(message)
 
             logger.info("Compose down result %s", response.text)
-        except httpx.HTTPError:
+        except httpx.HTTPError as e:
             log_httpx_http_error(url, "POST", traceback.format_exc())
+            raise e
 
 
 async def setup_api_client(app: FastAPI) -> None:

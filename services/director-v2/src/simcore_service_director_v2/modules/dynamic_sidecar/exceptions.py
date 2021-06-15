@@ -19,3 +19,7 @@ class DynamicSidecarNotFoundError(DirectorException):
 
     def __init__(self, node_uuid: NodeID):
         super().__init__(f"node {node_uuid} not found")
+
+
+class MonitorException(DirectorException):
+    """Used to signal that something was wrong with monitoring"""

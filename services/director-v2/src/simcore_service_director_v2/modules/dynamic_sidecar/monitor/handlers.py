@@ -236,15 +236,8 @@ class RunDockerComposeUp(MonitorEvent):
             service_port=monitor_data.service_port,
         )
 
-        compose_spec_accepted = await api_client.run_docker_compose_up(
-            dynamic_sidecar_endpoint, compose_spec
-        )
+        await api_client.start_service_creation(dynamic_sidecar_endpoint, compose_spec)
 
-        # singal there is a problem with the dynamic-sidecar
-        if not compose_spec_accepted:
-            monitor_data.dynamic_sidecar.overall_status.update_failing_status(
-                "Could not run docker-compose up. Ask an admin to check director logs for details."
-            )
         monitor_data.dynamic_sidecar.was_compose_spec_submitted = True
 
 

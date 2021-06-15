@@ -56,7 +56,7 @@ async def apply_monitoring(app: FastAPI, monitor_data: MonitorData) -> None:
 
     # checks if service is still present, if not removes
     # self from monitor and log it as warning
-    # use a property to check that these are not hereDynamicSidecarsMonitor
+    # use a property to check that these are not here
     if (  # do not refactor, second part of and condition is skiped most times
         monitor_data.dynamic_sidecar.were_services_created
         and not await are_all_services_present(
@@ -65,9 +65,9 @@ async def apply_monitoring(app: FastAPI, monitor_data: MonitorData) -> None:
         )
     ):
         monitor: DynamicSidecarsMonitor = _get_monitor(app)
-        # always save the state when removing zombie services
         await monitor.remove_service_from_monitor(
-            node_uuid=monitor_data.node_uuid, save_state=True
+            node_uuid=monitor_data.node_uuid,
+            save_state=monitor_data.dynamic_sidecar.can_save_state,
         )
         return
 
@@ -165,7 +165,7 @@ class DynamicSidecarsMonitor:
 
             current: LockWithMonitorData = self._to_monitor[service_name]
             dynamic_sidecar_endpoint = current.monitor_data.dynamic_sidecar.endpoint
-            await services_sidecar_client.run_docker_compose_down(
+            await services_sidecar_client.begin_service_destruction(
                 dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
             )
 
@@ -276,14 +276,20 @@ class DynamicSidecarsMonitor:
 
         async def monitor_single_service(service_name: str) -> None:
             lock_with_monitor_data: LockWithMonitorData = self._to_monitor[service_name]
-
+            monitor_data: MonitorData = lock_with_monitor_data.monitor_data
             try:
-                await apply_monitoring(self._app, lock_with_monitor_data.monitor_data)
+                await apply_monitoring(self._app, monitor_data)
             except asyncio.CancelledError:
                 raise
             except Exception:  # pylint: disable=broad-except
-                logger.exception(
-                    "Something went wrong while monitoring service %s", service_name
+                service_name = monitor_data.service_name
+
+                message = (
+                    f"Monitoring of {service_name} failed:\n{traceback.format_exc()}"
+                )
+                logger.error(message)
+                monitor_data.dynamic_sidecar.overall_status.update_failing_status(
+                    message
                 )
             finally:
                 # when done, always unlock the resource
