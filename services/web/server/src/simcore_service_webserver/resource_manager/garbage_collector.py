@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from contextlib import suppress
 from itertools import chain
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -43,6 +42,7 @@ database_errors = (psycopg2.DatabaseError, asyncpg.exceptions.PostgresError)
 
 def print_loop(app: web.Application):
     print("-" * 50)
+    asyncio.get_event_loop().set_debug(True)
     for n, task in enumerate(asyncio.all_tasks(app.loop)):
         msg = f"{n+1}) {task}"
         if task == asyncio.current_task(app.loop):
@@ -51,35 +51,35 @@ def print_loop(app: web.Application):
     print("-" * 50)
 
 
-async def _setup_background_task(app: web.Application):
-    # on_startup
-    # create a background task to collect garbage periodically
-
-    TASK_NAME = "Garbage-Collector"
-    for task in asyncio.all_tasks(app.loop):
-        assert task.get_name() != TASK_NAME, "Should be called ONLY ONCE"  # nosec
-
-    _gc_task = asyncio.create_task(collect_garbage_periodically(app), name=TASK_NAME)
-
-    yield
-
-    # on_cleanup
-    # controlled cancelation of the gc task
-    try:
-        await asyncio.sleep(1)
-        logger.info("Stopping garbage collector...")
-        ack = _gc_task.cancel()
-
-        assert ack  # nosec
-        print_loop(app)
-
-        await _gc_task
-    except asyncio.CancelledError:
-        print_loop(app)
-        assert _gc_task.cancelled()
-
-
 def setup_garbage_collector(app: web.Application):
+    async def _setup_background_task(app: web.Application):
+        # on_startup
+        # create a background task to collect garbage periodically
+
+        TASK_NAME = "Garbage-Collector"
+        for task in asyncio.all_tasks(app.loop):
+            assert task.get_name() != TASK_NAME, "Should be called ONLY ONCE"  # nosec
+
+        _gc_task = asyncio.create_task(
+            collect_garbage_periodically(app), name=TASK_NAME
+        )
+
+        yield
+
+        # controlled cancelation of the gc task
+        try:
+            await asyncio.sleep(1)
+            logger.info("Stopping garbage collector...")
+            ack = _gc_task.cancel()
+
+            assert ack  # nosec
+            print_loop(app)
+
+            await _gc_task
+
+        except asyncio.CancelledError:
+            print_loop(app)
+            assert _gc_task.cancelled()  # nosec
 
     app.cleanup_ctx.append(_setup_background_task)
 
