@@ -227,6 +227,9 @@ def jupyter_service(docker_registry: str, node_meta_schema: Dict) -> Dict[str, s
     )
 
 
+DY_STATIC_FILE_SERVER_VERSION = "1.0.5"
+
+
 @pytest.fixture(scope="session")
 def dy_static_file_server_service(
     docker_registry: str, node_meta_schema: Dict
@@ -237,7 +240,7 @@ def dy_static_file_server_service(
     """
     return _pull_push_service(
         "itisfoundation/dy-static-file-server",
-        "1.0.0",
+        DY_STATIC_FILE_SERVER_VERSION,
         docker_registry,
         node_meta_schema,
     )
@@ -253,7 +256,7 @@ def dy_static_file_server_dynamic_sidecar_service(
     """
     return _pull_push_service(
         "itisfoundation/dy-static-file-server-dynamic-sidecar",
-        "1.0.0",
+        DY_STATIC_FILE_SERVER_VERSION,
         docker_registry,
         node_meta_schema,
     )
@@ -269,7 +272,7 @@ def dy_static_file_server_dynamic_sidecar_compose_spec_service(
     """
     return _pull_push_service(
         "itisfoundation/dy-static-file-server-dynamic-sidecar-compose-spec",
-        "1.0.0",
+        DY_STATIC_FILE_SERVER_VERSION,
         docker_registry,
         node_meta_schema,
     )
