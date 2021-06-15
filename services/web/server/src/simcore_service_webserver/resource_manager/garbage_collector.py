@@ -41,21 +41,45 @@ logger = logging.getLogger(__name__)
 database_errors = (psycopg2.DatabaseError, asyncpg.exceptions.PostgresError)
 
 
+def print_loop(app: web.Application):
+    print("-" * 50)
+    for n, task in enumerate(asyncio.all_tasks(app.loop)):
+        msg = f"{n+1}) {task}"
+        if task == asyncio.current_task(app.loop):
+            msg += "<-----------"
+        print(msg)
+    print("-" * 50)
+
+
+async def _setup_background_task(app: web.Application):
+    # on_startup
+    # create a background task to collect garbage periodically
+
+    TASK_NAME = "Garbage-Collector"
+    for task in asyncio.all_tasks(app.loop):
+        assert task.get_name() != TASK_NAME, "Should be called ONLY ONCE"  # nosec
+
+    _gc_task = asyncio.create_task(collect_garbage_periodically(app), name=TASK_NAME)
+
+    yield
+
+    # on_cleanup
+    # controlled cancelation of the gc task
+    try:
+        await asyncio.sleep(1)
+        logger.info("Stopping garbage collector...")
+        ack = _gc_task.cancel()
+
+        assert ack  # nosec
+        print_loop(app)
+
+        await _gc_task
+    except asyncio.CancelledError:
+        print_loop(app)
+        assert _gc_task.cancelled()
+
+
 def setup_garbage_collector(app: web.Application):
-    async def _setup_background_task(app: web.Application):
-        # on_startup
-        # create a background task to collect garbage periodically
-        loop = asyncio.get_event_loop()
-        _gc_task = loop.create_task(collect_garbage_periodically(app))
-
-        yield
-
-        # on_cleanup
-        # controlled cancelation of the gc task
-        with suppress(asyncio.CancelledError):
-            logger.info("Stopping garbage collector...")
-            _gc_task.cancel()
-            await _gc_task
 
     app.cleanup_ctx.append(_setup_background_task)
 
@@ -68,6 +92,7 @@ async def collect_garbage_periodically(app: web.Application):
             interval = get_garbage_collector_interval(app)
             while True:
                 await collect_garbage(app)
+                print_loop(app)
                 await asyncio.sleep(interval)
 
         except asyncio.CancelledError:
@@ -80,6 +105,9 @@ async def collect_garbage_periodically(app: web.Application):
                 "There was an error during garbage collection, restarting...",
                 exc_info=True,
             )
+
+            print_loop(app)
+
             # will wait 5 seconds to recover before restarting to avoid restart loops
             # - it might be that db/redis is down, etc
             #
@@ -415,8 +443,8 @@ async def remove_guest_user_with_all_its_resources(
             logger.debug("User is not GUEST, skipping cleanup")
             return
 
-        await remove_all_projects_for_user(app=app, user_id=user_id)
-        await remove_user(app=app, user_id=user_id)
+        # await remove_all_projects_for_user(app=app, user_id=user_id)
+        # await remove_user(app=app, user_id=user_id)
 
     except database_errors as err:
         logger.warning(
