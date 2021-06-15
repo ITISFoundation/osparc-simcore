@@ -1122,7 +1122,7 @@ async def test_open_shared_project_at_same_time(
     # create other clients
     for i in range(NUMBER_OF_ADDITIONAL_CLIENTS):
 
-        new_client = client_on_running_server_factory(client)
+        new_client = client_on_running_server_factory()
         user = await log_client_in(
             new_client,
             {"role": user_role.name},
