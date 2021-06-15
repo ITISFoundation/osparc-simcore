@@ -2,10 +2,12 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import io
-import sys
+# import sys
+# import pytest
 
-import pytest
+
+import io
+
 import yaml
 from simcore_service_webserver.db import is_service_enabled, is_service_responsive
 
