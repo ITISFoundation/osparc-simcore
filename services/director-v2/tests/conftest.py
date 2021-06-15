@@ -81,6 +81,14 @@ def dynamic_sidecar_image(monkeypatch) -> None:
     image_name = f"{registry}/dynamic-sidecar:{image_tag}".strip("/")
     logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", image_name)
+    
+    monkeypatch.setenv("REGISTRY_auth", "false")
+    monkeypatch.setenv("REGISTRY_user", "test")
+    monkeypatch.setenv("REGISTRY_PW", "test")
+    monkeypatch.setenv("REGISTRY_ssl", "false")
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
+    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
+    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
 
 
 @pytest.fixture(scope="function")
