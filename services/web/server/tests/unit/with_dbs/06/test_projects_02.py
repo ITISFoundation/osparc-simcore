@@ -1112,43 +1112,6 @@ async def test_open_shared_project_2_users_locked(
     )
 
 
-@pytest.fixture
-def client_on_running_server_factory(client: TestClient) -> Iterator[Callable]:
-    # Creates clients connected to the same server as the reference client
-    #
-    # Implemented as aihttp_client but creates a client using a running server,
-    #  i.e. avoid client.start_server
-
-    assert isinstance(client.server, TestServer)
-    loop = client.app.loop
-
-    clients = []
-
-    def go():
-        cli = TestClient(client.server, loop=loop)
-        assert client.server.started
-        # AVOIDS client.start_server
-        return cli
-
-    yield go
-
-    async def close_client_but_not_server(cli: TestClient):
-        # pylint: disable=protected-access
-        if not cli._closed:
-            for resp in cli._responses:
-                resp.close()
-            for ws in cli._websockets:
-                await ws.close()
-            await cli._session.close()
-            cli._closed = True
-
-    async def finalize():
-        while clients:
-            await close_client_but_not_server(clients.pop())
-
-    loop.run_until_complete(finalize())
-
-
 @pytest.mark.parametrize(*standard_role_response())
 async def test_open_shared_project_at_same_time(
     loop,
