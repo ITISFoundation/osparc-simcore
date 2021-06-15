@@ -497,6 +497,9 @@ async def test_interactive_services_removed_per_project(
     mocked_director_api["stop_service"].reset_mock()
 
 
+@pytest.mark.xfail(
+    reason="it is currently not permitted to open the same project from 2 different tabs"
+)
 @pytest.mark.parametrize(
     "user_role, exp_save_state",
     [
