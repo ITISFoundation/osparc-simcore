@@ -392,11 +392,11 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     client_session_id2 = client_session_id_factory()
     sio2 = await socketio_client_factory(client_session_id2)
     assert sio.sid != sio2.sid
-    # open project in second client
-    await open_project(client, empty_user_project["uuid"], client_session_id2)
     # disconnect first websocket
     await sio.disconnect()
     assert not sio.sid
+    # open project in second client
+    await open_project(client, empty_user_project["uuid"], client_session_id2)
     # ensure sufficient time is wasted here
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL)
     # assert dynamic service is still around
