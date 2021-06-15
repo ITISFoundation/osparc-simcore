@@ -8,6 +8,7 @@
 
 import asyncio
 import logging
+import traceback
 from asyncio import Lock, sleep
 from copy import deepcopy
 from typing import Deque, Dict, Optional
