@@ -1,6 +1,8 @@
+import asyncio
 import logging
 import statistics
 import time
+from asyncio import AbstractEventLoop
 from dataclasses import dataclass, field
 from typing import List, Optional
 
@@ -22,7 +24,7 @@ kSTART_SENSING_DELAY_SECS = f"{__name__}.start_sensing_delay"
 
 
 class HealthError(Exception):
-    """ Service is set as unhealty """
+    """Service is set as unhealty"""
 
 
 class IncidentsRegistry(LimitedOrderedStack[SlowCallback]):
@@ -53,6 +55,34 @@ class DelayWindowProbe:
         if self.last_delays:
             return statistics.mean(self.last_delays)
         return 0
+
+
+@dataclass
+class EnventLoopProbe:
+    # Based on https://blog.meadsteve.dev/programming/2020/02/23/monitoring-async-python/
+    _interval: float = 0.25
+
+    lag: float = 0
+    active_tasks: int = 0
+
+    def start(self):
+        loop = asyncio.get_event_loop()
+        asyncio.create_task(self._monitor_loop(loop), name=f"{self.__class__.__name__}")
+
+    async def _monitor_loop(self, loop: AbstractEventLoop):
+        """Monitors loop's health"""
+        while loop.is_running():
+            # evaluates number of active tasks in loop
+            count = 0
+            for t in asyncio.all_tasks(loop):
+                count += 1 if not t.done() else 0
+            self.active_tasks = count
+
+            # evaluate lag
+            start = loop.time()
+            await asyncio.sleep(self._interval)
+            time_slept = loop.time() - start
+            self.lag = time_slept - self._interval
 
 
 logged_once = False
