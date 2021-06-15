@@ -16,16 +16,14 @@ const templateName = "Sleepers";
 
 async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
-
+  let studyId
   try {
-    tutorial.startScreenshooter();
     await tutorial.start();
     const studyData = await tutorial.openTemplate(1000);
-    const studyId = studyData["data"]["uuid"];
+    studyId = studyData["data"]["uuid"];
     console.log("Study ID:", studyId);
 
-    // Some time for loading the workbench
-    await tutorial.waitFor(5000);
+    await tutorial.waitFor(5000, 'Some time for loading the workbench');
 
     await tutorial.runPipeline();
     await tutorial.waitForStudyDone(studyId, 60000);
@@ -34,22 +32,20 @@ async function runTutorial() {
       "logs.zip",
       "out_1"
     ];
-    await tutorial.checkNodeResults(0, outFiles);
+    await tutorial.openNodeFiles(0)
+    await tutorial.checkResults2(outFiles);
 
-    console.log('Checking results for the last sleeper:');
-    await tutorial.checkNodeResults(4, outFiles);
-
-    await tutorial.toDashboard();
-
-    await tutorial.removeStudy(studyId);
+    await tutorial.openNodeFiles(4)
+    await tutorial.checkResults2(outFiles);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
   }
   finally {
+    await tutorial.toDashboard()
+    await tutorial.removeStudy(studyId);
     await tutorial.logOut();
-    tutorial.stopScreenshooter();
     await tutorial.close();
   }
 
