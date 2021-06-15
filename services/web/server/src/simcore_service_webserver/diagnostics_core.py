@@ -3,6 +3,7 @@ import logging
 import statistics
 import time
 from asyncio import AbstractEventLoop
+from asyncio.tasks import Task
 from dataclasses import dataclass, field
 from typing import List, Optional
 
@@ -58,24 +59,39 @@ class DelayWindowProbe:
 
 
 @dataclass
-class EnventLoopProbe:
-    # Based on https://blog.meadsteve.dev/programming/2020/02/23/monitoring-async-python/
+class EventLoopProbe:
+    """Monitors loop's health
+
+    Based on https://blog.meadsteve.dev/programming/2020/02/23/monitoring-async-python/
+    """
+
+    # TODO: Show these values in /state so they could be monitored
+    # TODO: can add them in prometheus metrics
+    _background_task: Optional[Task] = None
     _interval: float = 0.25
 
     lag: float = 0
     active_tasks: int = 0
 
     def start(self):
-        loop = asyncio.get_event_loop()
-        asyncio.create_task(self._monitor_loop(loop), name=f"{self.__class__.__name__}")
+        if not self._background_task:
+            loop = asyncio.get_event_loop()
+            self._background_task = asyncio.create_task(
+                self._monitor_loop(loop), name=f"{self.__class__.__name__}"
+            )
+
+    async def stop(self):
+        if self._background_task:
+            try:
+                self._background_task.cancel()
+                await self._background_task
+            except asyncio.CancelledError:
+                self._background_task = None
 
     async def _monitor_loop(self, loop: AbstractEventLoop):
-        """Monitors loop's health"""
         while loop.is_running():
             # evaluates number of active tasks in loop
-            count = 0
-            for t in asyncio.all_tasks(loop):
-                count += 1 if not t.done() else 0
+            count = sum(not t.done() for t in asyncio.all_tasks(loop))
             self.active_tasks = count
 
             # evaluate lag
