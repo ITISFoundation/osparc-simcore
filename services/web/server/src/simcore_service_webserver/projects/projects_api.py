@@ -16,9 +16,8 @@ from pprint import pformat
 from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import uuid4
 
-from aiohttp import web
 import aioredlock
-
+from aiohttp import web
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
@@ -75,8 +74,9 @@ async def get_project_for_user(
     project_uuid: str,
     user_id: int,
     *,
-    include_templates: bool = False,
-    include_state: bool = False,
+    include_templates: Optional[bool] = False,
+    include_state: Optional[bool] = False,
+    client_session_id: Optional[str] = None,
 ) -> Dict:
     """Returns a VALID project accessible to user
 
@@ -97,7 +97,9 @@ async def get_project_for_user(
 
     # adds state if it is not a template
     if include_state:
-        project = await add_project_states_for_user(user_id, project, is_template, app)
+        project = await add_project_states_for_user(
+            user_id, project, is_template, app, client_session_id
+        )
 
     # TODO: how to handle when database has an invalid project schema???
     # Notice that db model does not include a check on project schema.
@@ -596,8 +598,8 @@ async def _get_project_lock_state(
     """returns the lock state of a project
     1. If a project is locked for any reason, first return the project as locked and STATUS defined by lock
     2. If a client_session_id is passed, then first check to see if the project is currently opened by this very user/tab combination, if yes returns the project as Locked and OPENED.
-    3. If any other user that user_id is using the project (even disconnected before the TTL is finished) then the project is Locked and OPENED_OTHER_USER.
-    4. If the same user is using the project with a valid socket id (meaning a tab is currently active) then the project is Locked and OPENED_OTHER_CLIENT.
+    3. If any other user that user_id is using the project (even disconnected before the TTL is finished) then the project is Locked and OPENED.
+    4. If the same user is using the project with a valid socket id (meaning a tab is currently active) then the project is Locked and OPENED.
     5. If the same user is using the project with NO socket id (meaning there is no current tab active) then the project is Unlocked and OPENED. which means the user can open it again.
     """
     log.debug("getting project [%s] lock state for user [%s]", project_uuid, user_id)
@@ -633,7 +635,7 @@ async def _get_project_lock_state(
     # let's now check if anyone has the project in use somehow
     with managed_resource(user_id, None, app) as rt:
         user_session_id_list: List[Tuple[int, str]] = await rt.find_users_of_resource(
-            "project_id", project_uuid
+            PROJECT_ID_KEY, project_uuid
         )
     set_user_ids = {x for x, _ in user_session_id_list}
 
@@ -675,7 +677,7 @@ async def _get_project_lock_state(
         return ProjectLocked(
             value=True,
             owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),
-            status=ProjectStatus.OPENED_OTHER_CLIENT,
+            status=ProjectStatus.OPENED,
         )
 
     # The project is in use by another user
@@ -684,7 +686,7 @@ async def _get_project_lock_state(
     return ProjectLocked(
         value=True,
         owner=owner,
-        status=ProjectStatus.OPENED_OTHER_USER,
+        status=ProjectStatus.OPENED,
     )
 
 

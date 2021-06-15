@@ -9,7 +9,6 @@ from typing import Any, Coroutine, Dict, List, Optional, Set, Tuple
 
 from aiohttp import web
 from jsonschema import ValidationError
-
 from models_library.projects_state import ProjectState
 from servicelib.rest_pagination_utils import PageResponseLimitOffset
 from servicelib.utils import fire_and_forget_task, logged_gather
@@ -474,8 +473,14 @@ async def close_project(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.read")
 async def state_project(request: web.Request) -> web.Response:
+    from servicelib.rest_utils import extract_and_validate
+
     user_id = request[RQT_USERID_KEY]
-    project_uuid = request.match_info.get("project_id")
+    path, query, _ = await extract_and_validate(request)
+
+    user_id = request[RQT_USERID_KEY]
+    project_uuid = path.get("project_id")
+    client_session_id: Optional[str] = query.get("client_session_id")
 
     # check that project exists and queries state
     validated_project = await projects_api.get_project_for_user(
@@ -484,6 +489,7 @@ async def state_project(request: web.Request) -> web.Response:
         user_id=user_id,
         include_templates=True,
         include_state=True,
+        client_session_id=client_session_id,
     )
     project_state = ProjectState(**validated_project["state"])
     return web.json_response({"data": project_state.dict()})

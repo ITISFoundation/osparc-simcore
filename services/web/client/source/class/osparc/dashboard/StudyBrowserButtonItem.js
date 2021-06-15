@@ -527,11 +527,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         case "OPENING":
           toolTipText = lockedBy + this.tr(" is opening it...");
           break;
-        case "OPENED_OTHER_USER":
+        case "OPENED":
           toolTipText = lockedBy + this.tr(" is using it.");
-          break;
-        case "OPENED_OTHER_CLIENT":
-          toolTipText = this.tr("Project opened in another tab/browser.");
           break;
       }
       lock.set({

@@ -610,9 +610,7 @@
                         "CLONING",
                         "OPENING",
                         "EXPORTING",
-                        "OPENED",
-                        "OPENED_OTHER_USER",
-                        "OPENED_OTHER_CLIENT"
+                        "OPENED"
                       ],
                       "type": "string"
                     }

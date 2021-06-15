@@ -37,8 +37,6 @@ class ProjectStatus(str, Enum):
     EXPORTING = "EXPORTING"
     OPENING = "OPENING"
     OPENED = "OPENED"
-    OPENED_OTHER_USER = "OPENED_OTHER_USER"
-    OPENED_OTHER_CLIENT = "OPENED_OTHER_CLIENT"
 
 
 class ProjectLocked(BaseModel):

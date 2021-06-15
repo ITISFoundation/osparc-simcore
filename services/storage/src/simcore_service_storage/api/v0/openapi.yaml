@@ -1199,8 +1199,6 @@ components:
                             - OPENING
                             - EXPORTING
                             - OPENED
-                            - OPENED_OTHER_USER
-                            - OPENED_OTHER_CLIENT
                           type: string
                       required:
                         - value
