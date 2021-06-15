@@ -473,7 +473,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       if (locked) {
         this.setLocked(state["locked"]["value"]);
         const owner = state["locked"]["owner"];
-        const status = state["locked"]["status"]
+        const status = state["locked"]["status"];
         this.__setLockedBy(osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]), status);
       } else {
         this.setLocked(false);
