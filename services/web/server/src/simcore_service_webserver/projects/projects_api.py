@@ -187,6 +187,13 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
 ## PROJECT NODES -----------------------------------------------------
 
 
+async def retrieve_and_notify_project_locked_state(
+    user_id: int, project_uuid: str, app: web.Application
+):
+    project = await get_project_for_user(app, project_uuid, user_id, include_state=True)
+    await notify_project_state_update(app, project)
+
+
 async def remove_project_interactive_services(
     user_id: int,
     project_uuid: str,
@@ -208,10 +215,7 @@ async def remove_project_interactive_services(
             await get_user_name(app, user_id),
         ):
             # notify
-            project = await get_project_for_user(
-                app, project_uuid, user_id, include_state=True
-            )
-            await notify_project_state_update(app, project)
+            await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
 
             # save the state if the user is not a guest. if we do not know we save in any case.
             with suppress(director_exceptions.DirectorException):
@@ -240,10 +244,7 @@ async def remove_project_interactive_services(
             )
     finally:
         # notify when done and the project is closed
-        project = await get_project_for_user(
-            app, project_uuid, user_id, include_state=True
-        )
-        await notify_project_state_update(app, project)
+        await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
 
 
 async def delete_project_data(
