@@ -3,7 +3,7 @@
 # pylint:disable=too-many-arguments
 
 import asyncio
-from typing import Callable, Dict
+from typing import Callable, Dict, Optional
 from uuid import uuid4
 
 import aiodocker
@@ -17,13 +17,12 @@ from models_library.settings.redis import RedisConfig
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
-    "director",
-    "catalog",
-    "migration"
-    "director-v2",
+    "postgres",
     "redis",
     "rabbit",
-    "postgres",
+    "catalog",
+    "director",
+    "director-v2",
 ]
 pytest_simcore_ops_services_selection = ["adminer"]
 
@@ -153,6 +152,7 @@ async def _assert_start_service(
     service_key: str,
     service_version: str,
     service_uuid: str,
+    basepath: Optional[str],
 ) -> None:
     data = dict(
         user_id=user_id,
@@ -160,6 +160,7 @@ async def _assert_start_service(
         service_key=service_key,
         service_version=service_version,
         service_uuid=service_uuid,
+        basepath=basepath,
     )
     headers = {
         "x-dynamic-sidecar-request-dns": director_v2_client.base_url.host,
@@ -171,17 +172,6 @@ async def _assert_start_service(
     )
     result = await _handle_307_if_required(director_v2_client, director_v0_url, result)
     assert result.status_code == 201, result.text
-
-
-async def _assert_stop_service(
-    director_v2_client: httpx.AsyncClient, director_v0_url: str, service_uuid: str
-) -> None:
-    result = await director_v2_client.delete(
-        f"/dynamic_services/{service_uuid}", allow_redirects=False
-    )
-    result = await _handle_307_if_required(director_v2_client, director_v0_url, result)
-    assert result.status_code == 200
-    assert result.text == ""
 
 
 async def _get_service_state(
@@ -200,6 +190,17 @@ async def _get_service_state(
     data = payload["data"] if node_data.label == "LEGACY" else payload
     print("STATUS_RESULT", node_data.label, data["service_state"])
     return data["service_state"]
+
+
+async def _assert_stop_service(
+    director_v2_client: httpx.AsyncClient, director_v0_url: str, service_uuid: str
+) -> None:
+    result = await director_v2_client.delete(
+        f"/dynamic_services/{service_uuid}", allow_redirects=False
+    )
+    result = await _handle_307_if_required(director_v2_client, director_v0_url, result)
+    assert result.status_code == 204
+    assert result.text == ""
 
 
 async def test_legacy_and_dynamic_sidecar_run(
@@ -230,6 +231,7 @@ async def test_legacy_and_dynamic_sidecar_run(
                 service_key=node.key,
                 service_version=node.version,
                 service_uuid=service_uuid,
+                basepath=f"/x/{service_uuid}" if node.label == "LEGACY" else None,
             )
         )
     await asyncio.gather(*services_to_start)
