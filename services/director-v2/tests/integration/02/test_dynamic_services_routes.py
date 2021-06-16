@@ -3,7 +3,6 @@
 
 import asyncio
 import logging
-import os
 from typing import Any, Dict
 from uuid import uuid4
 
@@ -49,29 +48,28 @@ def node_uuid() -> str:
 
 
 @pytest.fixture
-async def ensure_swarm_and_networks(
-    simcore_services_network_name: str, docker_swarm: None
-) -> None:
+def network_name() -> str:
+    return "test_swarm_network_name"
+
+
+@pytest.fixture
+async def ensure_swarm_and_networks(network_name: str, docker_swarm: None) -> None:
     """
     Make sure to always have a docker swarm network.
     If one is not present crete one. There can not be more then one.
     """
 
     async with aiodocker.Docker() as docker_client:
-        all_networks = await docker_client.networks.list()
-
-        simcore_services_network_name = os.environ["SIMCORE_SERVICES_NETWORK_NAME"]
-        networks = [
-            x
-            for x in all_networks
-            if "swarm" in x["Scope"] and simcore_services_network_name in x["Name"]
-        ]
-
-        create_and_remove_network = len(networks) == 0
+        # if network dose not exist create and remove it
+        create_and_remove_network = True
+        for network_data in await docker_client.networks.list():
+            if network_data["Name"] == network_name:
+                create_and_remove_network = False
+                break
 
         if create_and_remove_network:
             network_config = {
-                "Name": simcore_services_network_name,
+                "Name": network_name,
                 "Driver": "overlay",
                 "Attachable": True,
                 "Internal": False,
@@ -120,20 +118,23 @@ def start_request_data(
 
 @pytest.fixture
 async def test_client(
-    loop: asyncio.BaseEventLoop, dynamic_sidecar_image: None, monkeypatch
+    loop: asyncio.BaseEventLoop, dynamic_sidecar_image: None, network_name: str
 ) -> TestClient:
 
     settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
     settings.postgres.enabled = False
     settings.scheduler.enabled = False
-    settings.dynamic_services.dynamic_sidecar.expose_port = True
+
+    dynamic_sidecar_settings: DynamicSidecarSettings = (
+        settings.dynamic_services.dynamic_sidecar
+    )
+    dynamic_sidecar_settings.expose_port = True
+    dynamic_sidecar_settings.simcore_services_network_name = network_name
+    dynamic_sidecar_settings.mount_path_dev = None
+
     app = init_app(settings)
 
     async with TestClient(app) as client:
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            client.application.state.settings.dynamic_services.dynamic_sidecar
-        )
-        dynamic_sidecar_settings.mount_path_dev = None
         yield client
 
 
@@ -210,7 +211,7 @@ async def _patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> None:
                 break
 
 
-async def test_start(
+async def test_start_status_stop(
     test_client: TestClient, node_uuid: str, start_request_data: Dict[str, Any]
 ):
     # starting the service
