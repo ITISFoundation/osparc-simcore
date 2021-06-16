@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
 import asyncio
-import unittest.mock as mock
 import uuid as uuidlib
 from copy import deepcopy
 from math import ceil
@@ -12,7 +11,6 @@ from unittest.mock import call
 
 import aiohttp
 import pytest
-import socketio
 from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -68,6 +66,7 @@ def client(
     postgres_db,
     mocked_director_subsystem,
     mock_orphaned_services,
+    redis_client,
 ):
 
     # config app

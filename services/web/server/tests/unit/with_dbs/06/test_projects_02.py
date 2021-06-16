@@ -68,6 +68,7 @@ def client(
     postgres_db,
     mocked_director_subsystem,
     mock_orphaned_services,
+    redis_client,  # this ensure redis is properly cleaned
 ):
 
     # config app
@@ -935,7 +936,6 @@ async def test_open_shared_project_2_users_locked(
     expected: ExpectedResponse,
     mocker,
     disable_gc_manual_guest_users,
-    redis_client,
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
     mock_project_state_updated_handler = mocker.Mock()
