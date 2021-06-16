@@ -428,6 +428,9 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (inputOutputNodeIds) {
         inputOutputNodeIds.forEach(inputOutputNodeId => {
           const node1 = this.getNode(inputOutputNodeId);
+          if (node1 === null) {
+            return;
+          }
           const edge = new osparc.data.model.Edge(null, node1, node);
           this.addEdge(edge);
           if (isInput) {
