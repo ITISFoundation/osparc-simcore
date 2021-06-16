@@ -217,7 +217,6 @@ def _assert_sleeper_services_completed(
 
 
 # TESTS ------------------------------------------
-@pytest.mark.skipif(sys.version_info >= (3, 8), reason="FIXME: py38 hangs")
 @pytest.mark.parametrize(
     *standard_role_response(),
 )

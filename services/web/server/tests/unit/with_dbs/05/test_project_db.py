@@ -121,7 +121,6 @@ def all_permission_combinations() -> List[str]:
 
 
 @pytest.mark.parametrize("wanted_permissions", all_permission_combinations())
-@pytest.mark.skipif(sys.version_info >= (3, 8), reason="FIXME: py38 hangs")
 def test_check_project_permissions(
     user_id: int,
     group_id: int,
