@@ -40,7 +40,9 @@ SERVICE_DELETION_DELAY = 1
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, postgres_db, mock_orphaned_services):
+def client(
+    loop, aiohttp_client, app_cfg, postgres_db, mock_orphaned_services, redis_client
+):
     cfg = deepcopy(app_cfg)
 
     assert cfg["rest"]["version"] == API_VERSION
