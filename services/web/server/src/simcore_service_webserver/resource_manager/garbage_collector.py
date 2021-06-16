@@ -40,15 +40,20 @@ logger = logging.getLogger(__name__)
 database_errors = (psycopg2.DatabaseError, asyncpg.exceptions.PostgresError)
 
 
-def print_loop(app: web.Application):
-    print("-" * 50)
+def print_loop():
+    from io import StringIO
+
+    stream = StringIO()
+
+    print("-" * 50, file=stream)
     asyncio.get_event_loop().set_debug(True)
     for n, task in enumerate(asyncio.all_tasks()):
         msg = f"{n+1}) {task}"
         if task == asyncio.current_task():
             msg += "<-----------"
-        print(msg)
-    print("-" * 50)
+        print(msg, file=stream)
+    print("-" * 50, file=stream)
+    logger.debug(stream.getvalue())
 
 
 def setup_garbage_collector(app: web.Application):
@@ -71,7 +76,7 @@ def setup_garbage_collector(app: web.Application):
             ack = _gc_task.cancel()
 
             assert ack  # nosec
-            print_loop(app)
+            print_loop()
 
             await _gc_task
 
@@ -102,7 +107,7 @@ async def collect_garbage_periodically(app: web.Application):
                 exc_info=True,
             )
 
-            print_loop(app)
+            print_loop()
 
             # will wait 5 seconds to recover before restarting to avoid restart loops
             # - it might be that db/redis is down, etc
