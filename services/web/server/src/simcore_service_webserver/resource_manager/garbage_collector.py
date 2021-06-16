@@ -43,9 +43,9 @@ database_errors = (psycopg2.DatabaseError, asyncpg.exceptions.PostgresError)
 def print_loop(app: web.Application):
     print("-" * 50)
     asyncio.get_event_loop().set_debug(True)
-    for n, task in enumerate(asyncio.all_tasks(app.loop)):
+    for n, task in enumerate(asyncio.all_tasks()):
         msg = f"{n+1}) {task}"
-        if task == asyncio.current_task(app.loop):
+        if task == asyncio.current_task():
             msg += "<-----------"
         print(msg)
     print("-" * 50)
@@ -56,7 +56,7 @@ def setup_garbage_collector(app: web.Application):
         # create a background task to collect garbage periodically
         TASK_NAME = "Garbage-Collector"
         assert not any(  # nosec
-            t.get_name() == TASK_NAME for t in asyncio.all_tasks(app.loop)
+            t.get_name() == TASK_NAME for t in asyncio.all_tasks()
         ), "Garbage collector task already running. ONLY ONE expected"  # nosec
 
         _gc_task = asyncio.create_task(
