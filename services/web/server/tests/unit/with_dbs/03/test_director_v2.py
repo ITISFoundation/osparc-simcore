@@ -91,7 +91,6 @@ async def test_start_partial_pipeline(
 @pytest.mark.parametrize(
     *standard_role_response(),
 )
-@pytest.mark.skipif(sys.version_info >= (3, 8), reason="FIXME: py38 hangs")
 async def test_stop_pipeline(
     client,
     logged_user: Dict,
@@ -114,7 +113,6 @@ async def test_create_pipeline(client, user_id: PositiveInt, project_id: UUID):
     assert task_out["state"] == RunningState.NOT_STARTED
 
 
-@pytest.mark.skipif(sys.version_info >= (3, 8), reason="FIXME: py38 hangs")
 async def test_get_computation_task(
     client,
     user_id: PositiveInt,
