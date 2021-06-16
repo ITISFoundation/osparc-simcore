@@ -48,6 +48,14 @@ def test_simcore_service_labels(example: Dict, items: int):
     assert len(simcore_service.dict(exclude_unset=True)) == items
 
 
+@pytest.mark.parametrize(
+    "model_cls",
+    (
+        SimcoreServiceSetting,
+        SimcoreServiceSettings,
+        SimcoreService,
+    ),
+)
 def test_service_settings_model_examples(
     model_cls: BaseModel, model_cls_examples: Dict[str, Dict[str, Any]]
 ):
