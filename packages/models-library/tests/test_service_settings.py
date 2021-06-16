@@ -78,3 +78,11 @@ def test_correctly_detect_dynamic_sidecar_boot(
         assert model_instance.needs_dynamic_sidecar == (
             "simcore.service.paths-mapping" in example
         )
+
+
+def test_raises_error_if_http_entrypoint_is_missing():
+    data: Dict[str, Any] = SimcoreService.Config.schema_extra["examples"][2]
+    del data["simcore.service.container-http-entrypoint"]
+
+    with pytest.raises(ValueError):
+        simcore_service = SimcoreService(**data)
