@@ -149,6 +149,11 @@ def _assert_same_projects(got: Dict, expected: Dict):
 async def assert_redirected_to_study(
     resp: ClientResponse, session: ClientSession
 ) -> str:
+
+    # https://docs.aiohttp.org/en/stable/client_advanced.html#redirection-history
+    assert len(resp.history) == 1
+    assert resp.history[0].cookies.output()
+
     content = await resp.text()
     assert resp.status == web.HTTPOk.status_code, f"Got {content}"
 
@@ -389,6 +394,7 @@ async def test_guest_user_is_not_garbage_collected(
 
         # clicks link to study
         resp = await client.get(study_url)
+
         expected_prj_id = await assert_redirected_to_study(resp, client.session)
 
         # has auto logged in as guest?
