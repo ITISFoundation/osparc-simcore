@@ -18,14 +18,12 @@ async function runTutorial () {
   const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, enableDemoMode);
 
   try {
-    tutorial.startScreenshooter();
     const page = await tutorial.beforeScript();
     const studyData = await tutorial.openStudyLink();
     const studyId = studyData["data"]["uuid"];
     console.log("Study ID:", studyId);
 
-    // Some time for loading the workbench
-    await tutorial.waitFor(10000);
+    await tutorial.waitFor(10000, 'Some time for loading the workbench');
     await utils.takeScreenshot(page, screenshotPrefix + 'workbench_loaded');
 
     await tutorial.runPipeline();
@@ -36,7 +34,8 @@ async function runTutorial () {
       "logs.zip",
       "membrane-potential.csv"
     ];
-    await tutorial.checkNodeResults(0, outFiles);
+    await tutorial.openNodeFiles(0)
+    await tutorial.checkResults2(outFiles);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
@@ -44,7 +43,6 @@ async function runTutorial () {
   }
   finally {
     await tutorial.logOut();
-    tutorial.stopScreenshooter();
     await tutorial.close();
   }
 
