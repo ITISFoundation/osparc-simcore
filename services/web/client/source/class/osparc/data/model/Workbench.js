@@ -259,12 +259,14 @@ qx.Class.define("osparc.data.model.Workbench", {
       // create connection
       const fpId = fp.getNodeId();
       requesterNode.addInputNode(fpId);
-      const success = requesterNode.addPortLink(portId, fpId, "outFile");
-      if (success) {
-        this.fireDataEvent("openNode", fpId);
-      } else {
-        this.removeNode(fpId);
-      }
+      requesterNode.addPortLink(portId, fpId, "outFile")
+        .then(success => {
+          if (success) {
+            this.fireDataEvent("openNode", fpId);
+          } else {
+            this.removeNode(fpId);
+          }
+        });
     },
 
     addNode: function(node, parentNode) {
