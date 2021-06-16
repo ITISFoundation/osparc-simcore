@@ -76,5 +76,5 @@ def test_correctly_detect_dynamic_sidecar_boot(
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)
         assert model_instance.needs_dynamic_sidecar == (
-            True if "simcore.service.paths-mapping" in example else False
+            "simcore.service.paths-mapping" in example
         )
