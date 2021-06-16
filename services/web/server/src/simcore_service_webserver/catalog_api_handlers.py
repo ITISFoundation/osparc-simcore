@@ -276,7 +276,9 @@ async def get_compatible_outputs_given_target_input_handler(request: Request):
 #
 
 
-def can_connect(from_output: ServiceOutput, to_input: ServiceInput) -> bool:
+def can_connect(
+    from_output: ServiceOutput, to_input: ServiceInput, *, strict: bool = False
+) -> bool:
     # FIXME: can_connect is a very very draft version
 
     # compatible units
@@ -303,9 +305,18 @@ def can_connect(from_output: ServiceOutput, to_input: ServiceInput) -> bool:
         ok = from_output.property_type == to_input.property_type
         if not ok:
             ok = (
+                # data:  -> data:*/*
                 to_input.property_type == "data:*/*"
                 and from_output.property_type.startswith("data:")
             )
+
+            if not strict:
+                # NOTE: by default, this is allowed in the UI but not in a more strict plausibility check
+                # data:*/*  -> data:
+                ok |= (
+                    from_output.property_type == "data:*/*"
+                    and to_input.property_type.startswith("data:")
+                )
     return ok
 
 
