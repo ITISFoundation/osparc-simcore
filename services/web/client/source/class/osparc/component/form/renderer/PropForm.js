@@ -182,7 +182,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         this.__createDropMechanism(item, item.key);
 
         // Notify focus and focus out
-        const msgDataFn = (nodeId, portId) => this.__arePortsCompatible(nodeId, portId, this.getNode().getNodeId(), item.key);
+        const msgDataFn = (nodeId, portId) => {
+          if (nodeId === this.getNode().getNodeId()) {
+            return false;
+          }
+          return this.__arePortsCompatible(nodeId, portId, this.getNode().getNodeId(), item.key);
+        };
 
         item.addListener("focus", () => {
           if (this.getNode()) {
