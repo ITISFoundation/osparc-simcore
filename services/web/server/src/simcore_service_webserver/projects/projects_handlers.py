@@ -506,7 +506,7 @@ async def get_active_project(request: web.Request) -> web.Response:
         user_active_projects = []
         with managed_resource(user_id, client_session_id, request.app) as rt:
             # get user's projects
-            user_active_projects = await rt.find("project_id")
+            user_active_projects = await rt.find(PROJECT_ID_KEY)
         if user_active_projects:
 
             project = await projects_api.get_project_for_user(
