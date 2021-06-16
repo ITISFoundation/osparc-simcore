@@ -49,6 +49,20 @@ class ProjectLocked(BaseModel):
     class Config:
         extra = Extra.forbid
         use_enum_values = True
+        schema_extra = {
+            "examples": [
+                {"value": False, "status": ProjectStatus.CLOSED},
+                {
+                    "value": True,
+                    "status": ProjectStatus.OPENED,
+                    "owner": {
+                        "user_id": 123,
+                        "first_name": "Johnny",
+                        "last_name": "Cash",
+                    },
+                },
+            ]
+        }
 
     @validator("owner", pre=True, always=True)
     @classmethod
