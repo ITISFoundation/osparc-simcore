@@ -94,7 +94,7 @@ async def collect_garbage_periodically(app: web.Application):
             while True:
                 await collect_garbage(app)
 
-                if app.get(FORCE_STOP, False):
+                if app[TASK_CONFIG].get("force_stop", False):
                     raise Exception("Forced to stop garbage collection")
 
                 await asyncio.sleep(interval)
@@ -110,7 +110,7 @@ async def collect_garbage_periodically(app: web.Application):
                 exc_info=True,
             )
 
-            if app.get(FORCE_STOP, False):
+            if app[TASK_CONFIG].get("force_stop", False):
                 logger.warning("Forced to stop garbage collection")
                 break
 
