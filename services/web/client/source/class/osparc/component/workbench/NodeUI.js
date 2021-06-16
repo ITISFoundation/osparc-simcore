@@ -217,12 +217,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       });
 
       // two lines
-      const maxHeight = 28;
-      this.getChildControl("captionbar").setMaxHeight(maxHeight);
       this.getChildControl("title").set({
         rich: true,
         wrap: true,
-        maxHeight,
+        maxHeight: 28,
         minWidth: fileUIWidth-16,
         maxWidth: fileUIWidth-16
       });
