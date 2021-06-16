@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 
-from asyncio import sleep
+from asyncio import Future, sleep
 from copy import deepcopy
 from typing import Callable
 from unittest.mock import call
@@ -425,6 +425,18 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     mocked_director_api["stop_service"].assert_has_calls(calls)
 
 
+@pytest.fixture
+async def mocked_notification_system(mocker):
+    mocks = {}
+    mocked_notification_system = mocker.patch(
+        "simcore_service_webserver.projects.projects_api.retrieve_and_notify_project_locked_state",
+        return_value=Future(),
+    )
+    mocked_notification_system.return_value.set_result("")
+    mocks["mocked_notification_system"] = mocked_notification_system
+    yield mocks
+
+
 @pytest.mark.parametrize(
     "user_role, exp_save_state",
     [
@@ -440,6 +452,7 @@ async def test_interactive_services_removed_per_project(
     empty_user_project2,
     mocked_director_api,
     mocked_dynamic_service,
+    mocked_notification_system,
     socketio_client_factory: Callable,
     client_session_id_factory: Callable[[], str],
     asyncpg_storage_system_mock,
@@ -489,7 +502,7 @@ async def test_interactive_services_removed_per_project(
     # assert dynamic services are still around
     mocked_director_api["stop_service"].assert_not_called()
     # wait the defined delay
-    await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 2)
+    await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 5)
     # assert dynamic service 2,3 is removed
     calls = [
         call(client.server.app, service2["service_uuid"], exp_save_state),
