@@ -431,7 +431,7 @@ async def close_project(request: web.Request) -> web.Response:
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
-            include_templates=True,
+            include_templates=False,
             include_state=False,
         )
         await projects_api.try_close_project_for_user(

@@ -192,8 +192,14 @@ async def remove_project_interactive_services(
     project_uuid: str,
     app: web.Application,
 ) -> None:
-    # Note: during the closing process, which might take awhile, the project is locked so no one opens it at the same time
+    # NOTE: during the closing process, which might take awhile,
+    # the project is locked so no one opens it at the same time
     try:
+        log.debug(
+            "removing project interactive services for project [%s] and user [%s]",
+            project_uuid,
+            user_id,
+        )
         async with await lock_project(
             app,
             project_uuid,
@@ -202,14 +208,10 @@ async def remove_project_interactive_services(
             await get_user_name(app, user_id),
         ):
             # notify
-            prj_states: ProjectState = await get_project_states_for_user(
-                user_id, project_uuid, app
+            project = await get_project_for_user(
+                app, project_uuid, user_id, include_state=True
             )
-            reduced_prj = {
-                "uuid": f"{project_uuid}",
-                "state": prj_states.dict(by_alias=True, exclude_unset=True),
-            }
-            await notify_project_state_update(app, reduced_prj)
+            await notify_project_state_update(app, project)
 
             # save the state if the user is not a guest. if we do not know we save in any case.
             with suppress(director_exceptions.DirectorException):
@@ -236,15 +238,12 @@ async def remove_project_interactive_services(
                 project_uuid,
                 prj_states.locked.status,
             )
-    # notify again when done
-    prj_states: ProjectState = await get_project_states_for_user(
-        user_id, project_uuid, app
-    )
-    reduced_prj = {
-        "uuid": f"{project_uuid}",
-        "state": prj_states.dict(by_alias=True, exclude_unset=True),
-    }
-    await notify_project_state_update(app, reduced_prj)
+    finally:
+        # notify when done and the project is closed
+        project = await get_project_for_user(
+            app, project_uuid, user_id, include_state=True
+        )
+        await notify_project_state_update(app, project)
 
 
 async def delete_project_data(
@@ -615,9 +614,13 @@ async def try_close_project_for_user(
                 )
                 return
             # remove the project from our list of opened ones
-            rt.remove(PROJECT_ID_KEY)
+            log.debug(
+                "removing project [%s] from user [%s] resources", project_uuid, user_id
+            )
+            await rt.remove(PROJECT_ID_KEY)
         # check it is not opened by someone else
         user_to_session_ids.remove((user_id, client_session_id))
+        log.debug("remaining user_to_session_ids: %s", user_to_session_ids)
         if not user_to_session_ids:
             # NOTE: depending on the garbage collector speed, it might already be removing it
             fire_and_forget_task(
