@@ -910,14 +910,13 @@ async def test_tags_to_studies(
 
 
 @pytest.fixture
-def client_on_running_server_factory(client: TestClient) -> Iterator[Callable]:
+def client_on_running_server_factory(client: TestClient, loop) -> Iterator[Callable]:
     # Creates clients connected to the same server as the reference client
     #
     # Implemented as aihttp_client but creates a client using a running server,
     #  i.e. avoid client.start_server
 
     assert isinstance(client.server, TestServer)
-    loop = client.app.loop
 
     clients = []
 
@@ -925,6 +924,7 @@ def client_on_running_server_factory(client: TestClient) -> Iterator[Callable]:
         cli = TestClient(client.server, loop=loop)
         assert client.server.started
         # AVOIDS client.start_server
+        clients.append(cli)
         return cli
 
     yield go
@@ -964,7 +964,7 @@ async def test_open_shared_project_2_users_locked(
 
     client_1 = client
     client_id1 = client_session_id_factory()
-    client_2 = client_on_running_server_factory(client.app)
+    client_2 = client_on_running_server_factory()
     client_id2 = client_session_id_factory()
 
     # 1. user 1 opens project
