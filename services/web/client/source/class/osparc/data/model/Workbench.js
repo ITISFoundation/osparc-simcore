@@ -265,6 +265,8 @@ qx.Class.define("osparc.data.model.Workbench", {
             this.fireDataEvent("openNode", fpId);
           } else {
             this.removeNode(fpId);
+            const msg = qx.locale.Manager.tr("File couldn't be assigned");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
           }
         });
     },
