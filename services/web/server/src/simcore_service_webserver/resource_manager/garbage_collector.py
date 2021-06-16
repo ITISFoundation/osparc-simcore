@@ -54,7 +54,7 @@ def print_loop(app: web.Application):
 def setup_garbage_collector(app: web.Application):
     async def _setup_background_task(app: web.Application):
         # create a background task to collect garbage periodically
-        TASK_NAME = "Garbage-Collector"
+        TASK_NAME = f"{__name__}.collect_garbage_periodically"
         assert not any(  # nosec
             t.get_name() == TASK_NAME for t in asyncio.all_tasks()
         ), "Garbage collector task already running. ONLY ONE expected"  # nosec
@@ -67,7 +67,6 @@ def setup_garbage_collector(app: web.Application):
 
         # controlled cancelation of the gc task
         try:
-            # await asyncio.sleep(1)
             logger.info("Stopping garbage collector...")
             ack = _gc_task.cancel()
 
@@ -77,7 +76,6 @@ def setup_garbage_collector(app: web.Application):
             await _gc_task
 
         except asyncio.CancelledError:
-            print_loop(app)
             assert _gc_task.cancelled()  # nosec
 
     app.cleanup_ctx.append(_setup_background_task)
@@ -91,7 +89,6 @@ async def collect_garbage_periodically(app: web.Application):
             interval = get_garbage_collector_interval(app)
             while True:
                 await collect_garbage(app)
-                print_loop(app)
                 await asyncio.sleep(interval)
 
         except asyncio.CancelledError:
