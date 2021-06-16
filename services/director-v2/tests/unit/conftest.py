@@ -1,12 +1,9 @@
 import pytest
-from fastapi import FastAPI
 
 
 @pytest.fixture(autouse=True)
-def disable_dynamic_sidecar_monitor_in_unit_tests(
-    minimal_app: FastAPI, monkeypatch
-) -> None:
-    minimal_app.app.state.dynamic_services.enabled = False
+def disable_dynamic_sidecar_monitor_in_unit_tests(monkeypatch) -> None:
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SERVICES_enabled", "false")
     monkeypatch.setenv("REGISTRY_auth", "false")
     monkeypatch.setenv("REGISTRY_user", "test")
     monkeypatch.setenv("REGISTRY_PW", "test")
