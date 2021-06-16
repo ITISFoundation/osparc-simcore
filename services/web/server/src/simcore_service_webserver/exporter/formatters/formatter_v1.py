@@ -13,21 +13,18 @@ from aiohttp import ClientSession, ClientTimeout, web
 from models_library.projects import AccessRights, Project
 from models_library.projects_nodes_io import BaseFileLink, NodeID
 from models_library.utils.nodes import compute_node_hash, project_node_io_payload_cb
-from simcore_service_webserver.director_v2 import create_or_update_pipeline
-from simcore_service_webserver.projects.projects_api import (
-    delete_project,
-    get_project_for_user,
-)
-from simcore_service_webserver.projects.projects_db import APP_PROJECT_DBAPI
-from simcore_service_webserver.projects.projects_exceptions import ProjectsException
-from simcore_service_webserver.storage_handlers import (
+
+from ...director_v2 import create_or_update_pipeline
+from ...projects.projects_api import delete_project, get_project_for_user
+from ...projects.projects_db import APP_PROJECT_DBAPI
+from ...projects.projects_exceptions import ProjectsException
+from ...storage_handlers import (
     get_file_download_url,
     get_file_upload_url,
     get_project_files_metadata,
 )
-from simcore_service_webserver.users_api import get_user
-from simcore_service_webserver.utils import now_str
-
+from ...users_api import get_user
+from ...utils import now_str
 from ..exceptions import ExporterException
 from ..file_downloader import ParallelDownloader
 from ..utils import path_getsize
@@ -42,7 +39,7 @@ log = logging.getLogger(__name__)
 async def download_all_files_from_storage(
     app: web.Application, download_links: Deque[LinkAndPath2]
 ) -> None:
-    """ Downloads links to files in their designed storage_path_to_file """
+    """Downloads links to files in their designed storage_path_to_file"""
     parallel_downloader = ParallelDownloader()
     for link_and_path in download_links:
         log.debug(
