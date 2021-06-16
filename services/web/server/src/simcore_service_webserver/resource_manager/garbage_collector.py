@@ -40,50 +40,47 @@ logger = logging.getLogger(__name__)
 database_errors = (psycopg2.DatabaseError, asyncpg.exceptions.PostgresError)
 
 TASK_NAME = f"{__name__}.collect_garbage_periodically"
-
-
-def print_loop():
-    from io import StringIO
-
-    stream = StringIO()
-
-    print("-" * 50, file=stream)
-    asyncio.get_event_loop().set_debug(True)
-    for n, task in enumerate(asyncio.all_tasks()):
-        msg = f"{n+1}) {task}"
-        if task == asyncio.current_task():
-            msg += "<-----------"
-        print(msg, file=stream)
-    print("-" * 50, file=stream)
-    logger.debug(stream.getvalue())
+TASK_CONFIG = f"{TASK_NAME}.config"
 
 
 def setup_garbage_collector(app: web.Application):
     async def _setup_background_task(app: web.Application):
+        # SETUP ------
         # create a background task to collect garbage periodically
         assert not any(  # nosec
             t.get_name() == TASK_NAME for t in asyncio.all_tasks()
         ), "Garbage collector task already running. ONLY ONE expected"  # nosec
 
-        _gc_task = asyncio.create_task(
+        gc_bg_task = asyncio.create_task(
             collect_garbage_periodically(app), name=TASK_NAME
         )
 
+        # FIXME: added this config to overcome the state in which the
+        # task cancelation is ignored and the exceptions enter in a loop
+        # that never stops the background task. This flage is an additional
+        # mechanism to enforce stopping the background task
+        #
+        # Implemented with a mutable dict to avoid
+        #   DeprecationWarning: Changing state of started or joined application is deprecated
+        #
+        app[TASK_CONFIG] = {"force_stop": False, "name": TASK_NAME}
+
         yield
 
+        # TEAR-DOWN -----
         # controlled cancelation of the gc task
         try:
             logger.info("Stopping garbage collector...")
-            ack = _gc_task.cancel()
 
+            ack = gc_bg_task.cancel()
             assert ack  # nosec
-            print_loop()
-            app[f"{TASK_NAME}.cancel"] = True
 
-            await _gc_task
+            app[TASK_CONFIG]["force_stop"] = True
+
+            await gc_bg_task
 
         except asyncio.CancelledError:
-            assert _gc_task.cancelled()  # nosec
+            assert gc_bg_task.cancelled()  # nosec
 
     app.cleanup_ctx.append(_setup_background_task)
 
@@ -96,6 +93,10 @@ async def collect_garbage_periodically(app: web.Application):
             interval = get_garbage_collector_interval(app)
             while True:
                 await collect_garbage(app)
+
+                if app.get(FORCE_STOP, False):
+                    raise Exception("Forced to stop garbage collection")
+
                 await asyncio.sleep(interval)
 
         except asyncio.CancelledError:
@@ -109,8 +110,8 @@ async def collect_garbage_periodically(app: web.Application):
                 exc_info=True,
             )
 
-            print_loop()
-            if app.get(f"{TASK_NAME}.cancel", False):
+            if app.get(FORCE_STOP, False):
+                logger.warning("Forced to stop garbage collection")
                 break
 
             # will wait 5 seconds to recover before restarting to avoid restart loops
