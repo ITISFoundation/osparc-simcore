@@ -198,8 +198,8 @@ class SimcoreService(BaseModel):
                                     "init": True,
                                     "environment": ["DISPLAY=${DISPLAY}"],
                                     "volumes": [
-                                        "/tmp/.X11-unix:/tmp/.X11-unix"
-                                    ],  # nosec
+                                        "/tmp/.X11-unix:/tmp/.X11-unix"  # nosec
+                                    ],
                                 },
                             },
                         }
