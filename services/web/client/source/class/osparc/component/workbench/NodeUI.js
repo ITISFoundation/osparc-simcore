@@ -205,7 +205,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     turnIntoFileUI: function() {
       const outputs = this.getNode().getOutputs();
-      if (osparc.file.FilePicker.getOutput(outputs) === null) {
+      if ([null, ""].includes(osparc.file.FilePicker.getOutput(outputs))) {
         return;
       }
 
