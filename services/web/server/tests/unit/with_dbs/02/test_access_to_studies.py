@@ -301,7 +301,7 @@ async def test_access_study_by_logged_user(
     mocks_on_projects_api,
     auto_delete_projects,
 ):
-    assert not is_user_authenticated(client.session), "Is already logged-in"
+    assert is_user_authenticated(client.session), "Is already logged-in"
 
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
     resp = await client.get(study_url)
