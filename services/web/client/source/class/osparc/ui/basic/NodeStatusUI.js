@@ -165,7 +165,6 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
             if (outputLabel === "" && osparc.file.FilePicker.isOutputDownloadLink(outputs)) {
               outputLabel = osparc.file.FilePicker.extractLabelFromLink(outputs);
             }
-            this.__node.setLabel(outputLabel);
             return outputLabel;
           }
           return this.tr("Select a file");

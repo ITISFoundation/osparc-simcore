@@ -337,6 +337,10 @@ qx.Class.define("osparc.file.FilePicker", {
         };
         this.getNode().setOutputs({});
         this.getNode().setOutputs(outputs);
+        const outLabel = this.self().getOutputLabel(outputs);
+        if (outLabel) {
+          this.getNode().setLabel(label);
+        }
         this.getNode().getStatus().setProgress(100);
       }
     },
@@ -350,6 +354,10 @@ qx.Class.define("osparc.file.FilePicker", {
         };
         this.getNode().setOutputs({});
         this.getNode().setOutputs(outputs);
+        const outLabel = this.self().getOutputLabel(outputs);
+        if (outLabel) {
+          this.getNode().setLabel(label);
+        }
         this.getNode().getStatus().setProgress(100);
       }
     },
