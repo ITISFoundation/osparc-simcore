@@ -146,7 +146,7 @@ def minimal_configuration(
     simcore_services: Dict[str, URL],
     monkeypatch,
 ):
-    pass
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
 
 
 @pytest.fixture
