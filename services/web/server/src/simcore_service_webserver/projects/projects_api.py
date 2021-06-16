@@ -599,43 +599,38 @@ async def try_close_project_for_user(
     client_session_id: str,
     app: web.Application,
 ):
-    try:
-        with managed_resource(user_id, client_session_id, app) as rt:
-            user_to_session_ids: List[
-                Tuple(int, str)
-            ] = await rt.find_users_of_resource(PROJECT_ID_KEY, project_uuid)
-            # first check we have it opened now
-            if (user_id, client_session_id) not in user_to_session_ids:
-                # nothing to do the project is already closed
-                log.warning(
-                    "project [%s] is already closed for user [%s].",
-                    project_uuid,
-                    user_id,
-                )
-                return
-            # remove the project from our list of opened ones
-            log.debug(
-                "removing project [%s] from user [%s] resources", project_uuid, user_id
-            )
-            await rt.remove(PROJECT_ID_KEY)
-        # check it is not opened by someone else
-        user_to_session_ids.remove((user_id, client_session_id))
-        log.debug("remaining user_to_session_ids: %s", user_to_session_ids)
-        if not user_to_session_ids:
-            # NOTE: depending on the garbage collector speed, it might already be removing it
-            fire_and_forget_task(
-                remove_project_interactive_services(user_id, project_uuid, app)
-            )
-        else:
+    with managed_resource(user_id, client_session_id, app) as rt:
+        user_to_session_ids: List[Tuple(int, str)] = await rt.find_users_of_resource(
+            PROJECT_ID_KEY, project_uuid
+        )
+        # first check we have it opened now
+        if (user_id, client_session_id) not in user_to_session_ids:
+            # nothing to do the project is already closed
             log.warning(
-                "project [%s] is used by other users: [%s]. This should not be possible",
+                "project [%s] is already closed for user [%s].",
                 project_uuid,
-                {uid for uid, _ in user_to_session_ids},
+                user_id,
             )
-
-    except aioredlock.LockError:
-        # the project is currently locked
-        return False
+            return
+        # remove the project from our list of opened ones
+        log.debug(
+            "removing project [%s] from user [%s] resources", project_uuid, user_id
+        )
+        await rt.remove(PROJECT_ID_KEY)
+    # check it is not opened by someone else
+    user_to_session_ids.remove((user_id, client_session_id))
+    log.debug("remaining user_to_session_ids: %s", user_to_session_ids)
+    if not user_to_session_ids:
+        # NOTE: depending on the garbage collector speed, it might already be removing it
+        fire_and_forget_task(
+            remove_project_interactive_services(user_id, project_uuid, app)
+        )
+    else:
+        log.warning(
+            "project [%s] is used by other users: [%s]. This should not be possible",
+            project_uuid,
+            {uid for uid, _ in user_to_session_ids},
+        )
 
 
 async def _get_project_lock_state(
