@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 
-from asyncio import sleep
+from asyncio import sleep, Future
 from copy import deepcopy
 from typing import Callable
 from unittest.mock import call
@@ -350,8 +350,14 @@ async def test_interactive_services_removed_after_logout(
     # ensure sufficient time is wasted here
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 1)
     # assert dynamic service is removed
-    calls = [call(client.server.app, service["service_uuid"], exp_save_state)]
-    mocked_director_api["stop_service"].assert_has_calls(calls)
+    calls = [
+        call(
+            app=client.server.app,
+            save_state=exp_save_state,
+            service_uuid=service["service_uuid"],
+        )
+    ]
+    mocked_director_api["director_v2.stop_service"].assert_has_calls(calls)
 
 
 @pytest.mark.parametrize(
@@ -400,27 +406,33 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     # ensure sufficient time is wasted here
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL)
     # assert dynamic service is still around
-    mocked_director_api["stop_service"].assert_not_called()
+    mocked_director_api["director_v2.stop_service"].assert_not_called()
     # disconnect second websocket
     await sio2.disconnect()
     assert not sio2.sid
     # assert dynamic service is still around for now
-    mocked_director_api["stop_service"].assert_not_called()
+    mocked_director_api["director_v2.stop_service"].assert_not_called()
     # reconnect websocket
     sio2 = await socketio_client_factory(client_session_id2)
     # assert dynamic service is still around
-    mocked_director_api["stop_service"].assert_not_called()
+    mocked_director_api["director_v2.stop_service"].assert_not_called()
     # event after waiting some time
     await sleep(SERVICE_DELETION_DELAY + 1)
-    mocked_director_api["stop_service"].assert_not_called()
+    mocked_director_api["director_v2.stop_service"].assert_not_called()
     # now really disconnect
     await sio2.disconnect()
     assert not sio2.sid
     # we need to wait for the service deletion delay
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 1)
     # assert dynamic service is gone
-    calls = [call(client.server.app, service["service_uuid"], exp_save_state)]
-    mocked_director_api["stop_service"].assert_has_calls(calls)
+    calls = [
+        call(
+            app=client.server.app,
+            save_state=exp_save_state,
+            service_uuid=service["service_uuid"],
+        )
+    ]
+    mocked_director_api["director_v2.stop_service"].assert_has_calls(calls)
 
 
 @pytest.mark.parametrize(
@@ -473,28 +485,42 @@ async def test_interactive_services_removed_per_project(
     await sio1.disconnect()
     assert not sio1.sid
     # assert dynamic service is still around
-    mocked_director_api["stop_service"].assert_not_called()
+    mocked_director_api["director_v2.stop_service"].assert_not_called()
     # wait the defined delay
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL)
     # assert dynamic service 1 is removed
-    calls = [call(client.server.app, service["service_uuid"], exp_save_state)]
-    mocked_director_api["stop_service"].assert_has_calls(calls)
-    mocked_director_api["stop_service"].reset_mock()
+    calls = [
+        call(
+            app=client.server.app,
+            save_state=exp_save_state,
+            service_uuid=service["service_uuid"],
+        )
+    ]
+    mocked_director_api["director_v2.stop_service"].assert_has_calls(calls)
+    mocked_director_api["director_v2.stop_service"].reset_mock()
 
     # disconnect websocket2
     await sio2.disconnect()
     assert not sio2.sid
     # assert dynamic services are still around
-    mocked_director_api["stop_service"].assert_not_called()
+    mocked_director_api["director_v2.stop_service"].assert_not_called()
     # wait the defined delay
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 2)
     # assert dynamic service 2,3 is removed
     calls = [
-        call(client.server.app, service2["service_uuid"], exp_save_state),
-        call(client.server.app, service3["service_uuid"], exp_save_state),
+        call(
+            app=client.server.app,
+            save_state=exp_save_state,
+            service_uuid=service2["service_uuid"],
+        ),
+        call(
+            app=client.server.app,
+            save_state=exp_save_state,
+            service_uuid=service3["service_uuid"],
+        ),
     ]
-    mocked_director_api["stop_service"].assert_has_calls(calls)
-    mocked_director_api["stop_service"].reset_mock()
+    mocked_director_api["director_v2.stop_service"].assert_has_calls(calls)
+    mocked_director_api["director_v2.stop_service"].reset_mock()
 
 
 @pytest.mark.parametrize(
@@ -538,13 +564,19 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     # wait the defined delay
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL)
     # assert dynamic service is still around
-    mocked_director_api["stop_service"].assert_not_called()
+    mocked_director_api["director_v2.stop_service"].assert_not_called()
     # close project in tab2
     await close_project(client, empty_user_project["uuid"], client_session_id2)
     # wait the defined delay
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL)
-    mocked_director_api["stop_service"].assert_has_calls(
-        [call(client.server.app, service["service_uuid"], exp_save_state)]
+    mocked_director_api["director_v2.stop_service"].assert_has_calls(
+        [
+            call(
+                app=client.server.app,
+                save_state=exp_save_state,
+                service_uuid=service["service_uuid"],
+            )
+        ]
     )
 
 
@@ -591,8 +623,14 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 1)
 
     # assert dynamic service is removed
-    calls = [call(client.server.app, service["service_uuid"], exp_save_state)]
-    mocked_director_api["stop_service"].assert_has_calls(calls)
+    calls = [
+        call(
+            app=client.server.app,
+            save_state=exp_save_state,
+            service_uuid=service["service_uuid"],
+        )
+    ]
+    mocked_director_api["director_v2.stop_service"].assert_has_calls(calls)
 
     if expect_call:
         # make sure `delete_project_from_db` is called

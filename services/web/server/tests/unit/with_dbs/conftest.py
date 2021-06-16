@@ -274,19 +274,19 @@ def mocked_director_subsystem(mocker):
 
 @pytest.fixture
 async def mocked_director_api(loop, mocker):
-    mocks = {}
-    mocked_running_services = mocker.patch(
-        "simcore_service_webserver.director.director_api.get_running_interactive_services",
-        return_value=Future(),
-    )
-    mocked_running_services.return_value.set_result("")
-    mocks["director_v2.get_services"] = mocked_running_services
-    mocked_stop_service = mocker.patch(
-        "simcore_service_webserver.director.director_api.stop_service",
-        return_value=Future(),
-    )
-    mocked_stop_service.return_value.set_result("")
-    mocks["director_v2.stop_service"] = mocked_stop_service
+    mocks = {
+        "director_v2.get_services": mocker.patch(
+            "simcore_service_webserver.director_v2.get_services",
+            return_value=future_with_result(""),
+        ),
+        "director_v2.stop_service": mocker.patch(
+            "simcore_service_webserver.director_v2.stop_service",
+            return_value=future_with_result(""),
+        ),
+    }
+
+    reload(simcore_service_webserver.projects.projects_api)
+    reload(simcore_service_webserver.projects.projects_handlers)
 
     yield mocks
 
