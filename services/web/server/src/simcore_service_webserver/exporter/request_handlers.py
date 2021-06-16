@@ -69,10 +69,11 @@ async def export_project(request: web.Request):
     except Exception as e:
         # make sure all errors are trapped and the directory where the file is sotred is removed
         await remove_dir(temp_dir)
+        raise e
+    finally:
         await retrieve_and_notify_project_locked_state(
             user_id, project_uuid, request.app
         )
-        raise e
 
     headers = {"Content-Disposition": f'attachment; filename="{file_to_download.name}"'}
 
@@ -144,11 +145,10 @@ async def duplicate_project(request: web.Request):
                     exported_project_path=exported_project_path,
                 )
             return dict(uuid=duplicated_project_uuid)
-    except Exception:
+    finally:
         await retrieve_and_notify_project_locked_state(
             user_id, project_uuid, request.app
         )
-        raise
 
 
 rest_handler_functions = {
