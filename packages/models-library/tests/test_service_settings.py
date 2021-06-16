@@ -14,19 +14,6 @@ from models_library.service_settings import (
 from pydantic import BaseModel
 
 
-@pytest.mark.parametrize(
-    "model_cls",
-    (
-        SimcoreServiceSetting,
-        SimcoreServiceSettings,
-        SimcoreService,
-    ),
-)
-def test_service_setting(example: Dict[str, Any]):
-    service_setting_instance = SimcoreServiceSetting.parse_obj(example)
-    assert service_setting_instance
-
-
 def test_service_settings():
     service_settings_instance = SimcoreServiceSettings.parse_obj(
         SimcoreServiceSetting.Config.schema_extra["examples"]
@@ -44,7 +31,7 @@ SIMCORE_SERVICE_EXAMPLES = [
     # pylint: disable=unnecessary-comprehension
     for example, items, imdex in zip(
         SimcoreService.Config.schema_extra["examples"],
-        [1, 3, 5],
+        [1, 2, 4],
         ["legacy", "dynamic-service", "dynamic-service-with-compose-spec"],
     )
 ]
