@@ -39,6 +39,8 @@ from .registry import RedisResourceRegistry, get_registry
 logger = logging.getLogger(__name__)
 database_errors = (psycopg2.DatabaseError, asyncpg.exceptions.PostgresError)
 
+TASK_NAME = f"{__name__}.collect_garbage_periodically"
+
 
 def print_loop():
     from io import StringIO
@@ -59,7 +61,6 @@ def print_loop():
 def setup_garbage_collector(app: web.Application):
     async def _setup_background_task(app: web.Application):
         # create a background task to collect garbage periodically
-        TASK_NAME = f"{__name__}.collect_garbage_periodically"
         assert not any(  # nosec
             t.get_name() == TASK_NAME for t in asyncio.all_tasks()
         ), "Garbage collector task already running. ONLY ONE expected"  # nosec
@@ -77,6 +78,7 @@ def setup_garbage_collector(app: web.Application):
 
             assert ack  # nosec
             print_loop()
+            app[f"{TASK_NAME}.cancel"] = True
 
             await _gc_task
 
@@ -108,6 +110,8 @@ async def collect_garbage_periodically(app: web.Application):
             )
 
             print_loop()
+            if app.get(f"{TASK_NAME}.cancel", False):
+                break
 
             # will wait 5 seconds to recover before restarting to avoid restart loops
             # - it might be that db/redis is down, etc
