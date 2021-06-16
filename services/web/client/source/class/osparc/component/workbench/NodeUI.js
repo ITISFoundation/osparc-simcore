@@ -216,6 +216,17 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         minWidth: fileUIWidth
       });
 
+      // two lines
+      const maxHeight = 28;
+      this.getChildControl("captionbar").setMaxHeight(maxHeight);
+      this.getChildControl("title").set({
+        rich: true,
+        wrap: true,
+        maxHeight,
+        minWidth: fileUIWidth-16,
+        maxWidth: fileUIWidth-16
+      });
+
       const chipContainer = this.getChildControl("chips");
       chipContainer.exclude();
 
@@ -348,7 +359,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     getEdgePoint: function(port) {
       const bounds = this.getCurrentBounds();
-      const captionHeight = this.self(arguments).captionHeight();
+      const captionHeight = this.getChildControl("captionbar").getSizeHint().height;
       const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width;
       let y = bounds.top + captionHeight + this.self(arguments).PORT_HEIGHT/2 + 1;
       if (this.__thumbnail) {
