@@ -247,6 +247,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           flex: 1
         });
       }
+      this.fireEvent("nodeMoving");
     },
 
     getInputPort: function() {
