@@ -37,10 +37,6 @@ from ..director_v2 import (
     get_computation_task,
     request_retrieve_dyn_service,
 )
-from ..resource_manager.redis import (
-    get_redis_lock_manager,
-    get_redis_lock_manager_client,
-)
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..socketio.events import (
     SOCKET_IO_NODE_UPDATED_EVENT,
@@ -53,7 +49,7 @@ from ..storage_api import (
 )
 from ..users_api import get_user_name, is_user_guest
 from .config import CONFIG_SECTION_NAME
-from .project_lock import get_project_locked_state, is_project_locked, lock_project
+from .project_lock import get_project_locked_state, lock_project
 from .projects_db import APP_PROJECT_DBAPI
 
 log = logging.getLogger(__name__)
