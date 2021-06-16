@@ -67,7 +67,7 @@ def setup_garbage_collector(app: web.Application):
 
         # controlled cancelation of the gc task
         try:
-            await asyncio.sleep(1)
+            # await asyncio.sleep(1)
             logger.info("Stopping garbage collector...")
             ack = _gc_task.cancel()
 
@@ -442,8 +442,8 @@ async def remove_guest_user_with_all_its_resources(
             logger.debug("User is not GUEST, skipping cleanup")
             return
 
-        # await remove_all_projects_for_user(app=app, user_id=user_id)
-        # await remove_user(app=app, user_id=user_id)
+        await remove_all_projects_for_user(app=app, user_id=user_id)
+        await remove_user(app=app, user_id=user_id)
 
     except database_errors as err:
         logger.warning(
