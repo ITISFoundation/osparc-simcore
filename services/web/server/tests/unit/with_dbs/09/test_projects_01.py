@@ -858,20 +858,18 @@ async def test_delete_project(
 
     fakes = fake_services(5)
     mocked_director_subsystem[
-        "get_running_interactive_services"
+        "director_v2.get_services"
     ].return_value = future_with_result(fakes)
 
     await _delete_project(client, user_project, expected)
     await asyncio.sleep(2)  # let some time fly for the background tasks to run
 
     if expected == web.HTTPNoContent:
-        mocked_director_subsystem[
-            "get_running_interactive_services"
-        ].assert_called_once()
+        mocked_director_subsystem["director_v2.get_services"].assert_called_once()
         calls = [
             call(client.server.app, service["service_uuid"], True) for service in fakes
         ]
-        mocked_director_subsystem["stop_service"].has_calls(calls)
+        mocked_director_subsystem["director_v2.stop_service"].has_calls(calls)
 
         # wait for the fire&forget to run
         await asyncio.sleep(2)

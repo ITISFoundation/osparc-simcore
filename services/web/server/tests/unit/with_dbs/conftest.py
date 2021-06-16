@@ -16,8 +16,9 @@ import textwrap
 from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Dict, Iterator, List, Optional
+from typing import Dict, Iterator, List
 from uuid import uuid4
+from importlib import reload
 
 import aioredis
 import pytest
@@ -25,13 +26,11 @@ import redis
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
-import socketio
 import sqlalchemy as sa
 import trafaret_config
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pydantic import BaseSettings
-from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
 from pytest_simcore.helpers.utils_mock import future_with_result
 from servicelib.aiopg_utils import DSN
@@ -172,6 +171,7 @@ def disable_static_webserver(monkeypatch) -> None:
     Avoids fecthing and caching index.html pages
     Mocking a response for all the services which expect it.
     """
+
     async def _mocked_index_html(request: web.Request) -> web.Response:
         """
         Emulates the reply of the '/' path when the static-webserver is disabled
@@ -248,19 +248,27 @@ def asyncpg_storage_system_mock(mocker):
 @pytest.fixture
 def mocked_director_subsystem(mocker):
     mock_director_api = {
-        "get_running_interactive_services": mocker.patch(
-            "simcore_service_webserver.director.director_api.get_running_interactive_services",
+        "director_v2.get_service_state": mocker.patch(
+            "simcore_service_webserver.director_v2.get_service_state",
+            return_value=future_with_result({}),
+        ),
+        "director_v2.get_services": mocker.patch(
+            "simcore_service_webserver.director_v2.get_services",
             return_value=future_with_result(""),
         ),
-        "start_service": mocker.patch(
-            "simcore_service_webserver.director.director_api.start_service",
+        "director_v2.start_service": mocker.patch(
+            "simcore_service_webserver.director_v2.start_service",
             return_value=future_with_result(""),
         ),
-        "stop_service": mocker.patch(
-            "simcore_service_webserver.director.director_api.stop_service",
+        "director_v2.stop_service": mocker.patch(
+            "simcore_service_webserver.director_v2.stop_service",
             return_value=future_with_result(""),
         ),
     }
+
+    reload(simcore_service_webserver.projects.projects_api)
+    reload(simcore_service_webserver.projects.projects_handlers)
+
     return mock_director_api
 
 
@@ -272,13 +280,13 @@ async def mocked_director_api(loop, mocker):
         return_value=Future(),
     )
     mocked_running_services.return_value.set_result("")
-    mocks["get_running_interactive_services"] = mocked_running_services
+    mocks["director_v2.get_services"] = mocked_running_services
     mocked_stop_service = mocker.patch(
         "simcore_service_webserver.director.director_api.stop_service",
         return_value=Future(),
     )
     mocked_stop_service.return_value.set_result("")
-    mocks["stop_service"] = mocked_stop_service
+    mocks["director_v2.stop_service"] = mocked_stop_service
 
     yield mocks
 
@@ -310,8 +318,8 @@ async def mocked_dynamic_service(loop, client, mocked_director_api):
 
         services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
-        mocked_director_api["get_running_interactive_services"].return_value = Future()
-        mocked_director_api["get_running_interactive_services"].return_value.set_result(
+        mocked_director_api["director_v2.get_services"].return_value = Future()
+        mocked_director_api["director_v2.get_services"].return_value.set_result(
             services
         )
         return running_service_dict
@@ -480,7 +488,7 @@ def _path_mail(monkeypatch):
 
 
 def _is_postgres_responsive(url):
-    """Check if something responds to ``url`` """
+    """Check if something responds to ``url``"""
     try:
         engine = sa.create_engine(url)
         conn = engine.connect()
