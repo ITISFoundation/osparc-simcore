@@ -344,7 +344,7 @@ async def delete_project(request: web.Request):
             project_users = {
                 uid
                 for uid, _ in await rt.find_users_of_resource(
-                    "project_id", project_uuid
+                    PROJECT_ID_KEY, project_uuid
                 )
             }
         # that project is still in use

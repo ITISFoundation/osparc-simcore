@@ -178,7 +178,9 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
     await delete_project_from_db(app, project_uuid, user_id)
 
     async def remove_services_and_data():
-        await remove_project_interactive_services(user_id, project_uuid, app)
+        await remove_project_interactive_services(
+            user_id, project_uuid, app, notify_users=False
+        )
         await delete_project_data(app, project_uuid, user_id)
 
     fire_and_forget_task(remove_services_and_data())
@@ -195,9 +197,7 @@ async def retrieve_and_notify_project_locked_state(
 
 
 async def remove_project_interactive_services(
-    user_id: int,
-    project_uuid: str,
-    app: web.Application,
+    user_id: int, project_uuid: str, app: web.Application, notify_users: bool = True
 ) -> None:
     # NOTE: during the closing process, which might take awhile,
     # the project is locked so no one opens it at the same time
@@ -214,8 +214,10 @@ async def remove_project_interactive_services(
             user_id,
             await get_user_name(app, user_id),
         ):
-            # notify
-            await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
+            if notify_users:
+                await retrieve_and_notify_project_locked_state(
+                    user_id, project_uuid, app
+                )
 
             # save the state if the user is not a guest. if we do not know we save in any case.
             with suppress(director_exceptions.DirectorException):
@@ -244,7 +246,8 @@ async def remove_project_interactive_services(
             )
     finally:
         # notify when done and the project is closed
-        await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
+        if notify_users:
+            await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
 
 
 async def delete_project_data(
