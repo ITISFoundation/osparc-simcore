@@ -5,11 +5,7 @@ from typing import Type
 import aiofiles
 from aiohttp import web
 from aiohttp.web_request import FileField
-from models_library.projects_state import ProjectStatus
 
-from ..projects.project_lock import lock_project
-from ..projects.projects_api import retrieve_and_notify_project_locked_state
-from ..users_api import get_user_name
 from .archiving import unzip_folder, validate_osparc_import_name, zip_folder
 from .async_hashing import checksum
 from .exceptions import ExporterException
@@ -33,25 +29,18 @@ async def study_export(
 
     returns: directory if archive is True else a compressed archive is returned
     """
-    async with await lock_project(
-        app,
-        project_id,
-        ProjectStatus.EXPORTING,
-        user_id,
-        await get_user_name(app, user_id),
-    ):
-        await retrieve_and_notify_project_locked_state(user_id, project_id, app)
-        # storage area for the project data
-        base_temp_dir = Path(tmp_dir)
-        destination = base_temp_dir / project_id
-        destination.mkdir(parents=True, exist_ok=True)
 
-        # The formatter will always be chosen to be the highest availabel version
-        formatter = formatter_class(root_folder=destination)
-        await formatter.format_export_directory(
-            app=app, project_id=project_id, user_id=user_id, product_name=product_name
-        )
-    await retrieve_and_notify_project_locked_state(user_id, project_id, app)
+    # storage area for the project data
+    base_temp_dir = Path(tmp_dir)
+    destination = base_temp_dir / project_id
+    destination.mkdir(parents=True, exist_ok=True)
+
+    # The formatter will always be chosen to be the highest availabel version
+    formatter = formatter_class(root_folder=destination)
+    await formatter.format_export_directory(
+        app=app, project_id=project_id, user_id=user_id, product_name=product_name
+    )
+
     if archive is False:
         # returns the path to the temporary directory containing the study data
         return destination
