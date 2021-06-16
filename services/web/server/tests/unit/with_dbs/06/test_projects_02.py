@@ -415,16 +415,12 @@ async def _close_project(
 
 async def _state_project(
     client,
-    client_id: str,
     project: Dict,
     expected: web.HTTPException,
     expected_project_state: ProjectState,
 ):
     url = client.app.router["state_project"].url_for(project_id=project["uuid"])
-    params = {}
-    if client_id is not None:
-        params = {"client_session_id": client_id}
-    resp = await client.get(url, params=params)
+    resp = await client.get(url)
     data, error = await assert_status(resp, expected)
     if not error:
         # the project is locked
@@ -961,7 +957,6 @@ async def test_open_shared_project_2_users_locked(
     for client_id in [client_id1, None]:
         await _state_project(
             client_1,
-            client_id1,
             shared_project,
             expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
             expected_project_state_client_1,
@@ -988,23 +983,8 @@ async def test_open_shared_project_2_users_locked(
         [expected_project_state_client_1]
         * (0 if user_role == UserRole.ANONYMOUS else 2),
     )
-    # NOTE: depending if we pass the client sesssion id, the project is either OPENED
     await _state_project(
         client_1,
-        None,
-        shared_project,
-        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
-        expected_project_state_client_1.copy(
-            update={
-                "locked": ProjectLocked(
-                    value=True, status=ProjectStatus.OPENED, owner=owner1
-                )
-            }
-        ),
-    )
-    await _state_project(
-        client_1,
-        client_id1,
         shared_project,
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
         expected_project_state_client_1,
@@ -1032,7 +1012,6 @@ async def test_open_shared_project_2_users_locked(
 
     await _state_project(
         client_2,
-        client_id2,
         shared_project,
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
         expected_project_state_client_2,
@@ -1076,7 +1055,6 @@ async def test_open_shared_project_2_users_locked(
     )
     await _state_project(
         client_1,
-        client_id1,
         shared_project,
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
         expected_project_state_client_1,
@@ -1114,7 +1092,6 @@ async def test_open_shared_project_2_users_locked(
     )
     await _state_project(
         client_1,
-        client_id1,
         shared_project,
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
         expected_project_state_client_1,

@@ -10758,13 +10758,6 @@ paths:
         - project
       summary: returns the state of a project
       operationId: state_project
-      parameters:
-        - name: client_session_id
-          in: query
-          required: false
-          schema:
-            type: string
-            example: 5ac57685-c40f-448f-8711-70be1936fd63
       responses:
         '200':
           description: returns the project current state

@@ -408,7 +408,6 @@ async def open_project(request: web.Request) -> web.Response:
             project=project,
             is_template=False,
             app=request.app,
-            client_session_id=client_session_id,
         )
 
         await projects_api.notify_project_state_update(request.app, project)
@@ -459,7 +458,6 @@ async def close_project(request: web.Request) -> web.Response:
                     project=project,
                     is_template=False,
                     app=request.app,
-                    client_session_id=client_session_id,
                 )
                 await projects_api.notify_project_state_update(request.app, project)
 
@@ -476,11 +474,10 @@ async def state_project(request: web.Request) -> web.Response:
     from servicelib.rest_utils import extract_and_validate
 
     user_id = request[RQT_USERID_KEY]
-    path, query, _ = await extract_and_validate(request)
+    path, _, _ = await extract_and_validate(request)
 
     user_id = request[RQT_USERID_KEY]
     project_uuid = path.get("project_id")
-    client_session_id: Optional[str] = query.get("client_session_id")
 
     # check that project exists and queries state
     validated_project = await projects_api.get_project_for_user(
@@ -489,7 +486,6 @@ async def state_project(request: web.Request) -> web.Response:
         user_id=user_id,
         include_templates=True,
         include_state=True,
-        client_session_id=client_session_id,
     )
     project_state = ProjectState(**validated_project["state"])
     return web.json_response({"data": project_state.dict()})
