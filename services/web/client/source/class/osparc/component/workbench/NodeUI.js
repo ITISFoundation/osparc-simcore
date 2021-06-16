@@ -359,7 +359,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     getEdgePoint: function(port) {
       const bounds = this.getCurrentBounds();
-      const captionHeight = this.getChildControl("captionbar").getSizeHint().height;
+      const captionHeight = Math.max(this.getChildControl("captionbar").getSizeHint().height, this.self().captionHeight());
       const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width;
       let y = bounds.top + captionHeight + this.self(arguments).PORT_HEIGHT/2 + 1;
       if (this.__thumbnail) {
