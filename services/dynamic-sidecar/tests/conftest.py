@@ -28,6 +28,10 @@ def app() -> FastAPI:
         {
             "SC_BOOT_MODE": "production",
             "DYNAMIC_SIDECAR_compose_namespace": "test-space",
+            "REGISTRY_auth": "false",
+            "REGISTRY_user": "test",
+            "REGISTRY_PW": "test",
+            "REGISTRY_SSL": "false",
         },
     ):
         return assemble_application()
