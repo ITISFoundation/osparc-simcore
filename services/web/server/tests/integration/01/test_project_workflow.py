@@ -1,13 +1,15 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 """
     TODO: move to system testing: shall test different workflows on framework studies (=project)
         e.g. run, pull, push ,... pipelines
         This one here is too similar to unit/with_postgres/test_projects.py
 """
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+
+import asyncio
 import json
-from asyncio import Task, wait_for
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
@@ -266,13 +268,13 @@ async def test_workflow(
     await _request_delete(client, pid)
 
     # wait for delete tasks to finish
-    tasks = Task.all_tasks()
+    tasks = asyncio.all_tasks()
     for task in tasks:
         # TODO: 'async_generator_asend' has no __name__ attr. Python 3.8 gets coros names
         # Expects "delete_project" coros to have __name__ attrs
         # pylint: disable=protected-access
         if "delete_project" in getattr(task._coro, "__name__", ""):
-            await wait_for(task, timeout=60.0)
+            await asyncio.wait_for(task, timeout=60.0)
 
     # list empty
     projects = await _request_list(client)
