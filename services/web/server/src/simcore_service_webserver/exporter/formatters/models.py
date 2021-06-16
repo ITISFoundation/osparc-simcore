@@ -5,6 +5,7 @@ from typing import Callable, Dict, List, Union
 
 import aiofiles
 from models_library.projects import Project
+from models_library.projects_state import ProjectStatus
 from pydantic import BaseModel, DirectoryPath, Field, validator
 
 from ..utils import makedirs
@@ -131,3 +132,20 @@ class ProjectFile(BaseLoadingModel, Project):
         new_obj.storage_path = self.storage_path
 
         return new_obj
+
+    # migration validators
+    @validator("state", pre=True, always=True)
+    @classmethod
+    def project_state_add_locked_status(cls, v):
+        """required ProjectStatus added to Project["state"]["locked"]"""
+
+        # ProjectStatus is optional
+        if v is not None:
+            # get locked. old is {"locked": {"value": bool}}
+            locked = v.get("locked")
+            if not locked:
+                raise ValueError(f"missing locked field in {v}")
+            if not locked.get("status"):
+                locked["status"] = ProjectStatus.CLOSED.value
+
+        return v
