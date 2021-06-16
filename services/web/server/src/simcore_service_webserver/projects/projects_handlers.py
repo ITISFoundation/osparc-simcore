@@ -387,11 +387,11 @@ async def open_project(request: web.Request) -> web.Response:
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
-            include_templates=True,
+            include_templates=False,
             include_state=True,
         )
 
-        if not await projects_api.try_lock_project_for_user(
+        if not await projects_api.try_open_project_for_user(
             user_id,
             project_uuid=project_uuid,
             client_session_id=client_session_id,
@@ -427,42 +427,16 @@ async def close_project(request: web.Request) -> web.Response:
 
     try:
         # ensure the project exists
-        project = await projects_api.get_project_for_user(
+        await projects_api.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True,
             include_state=False,
         )
-        # if we are the only user left we can safely remove the services
-        async def _close_project_task(project: Dict[str, Any]) -> None:
-            try:
-                with managed_resource(user_id, client_session_id, request.app) as rt:
-                    project_users: List[
-                        Tuple(int, str)
-                    ] = await rt.find_users_of_resource(PROJECT_ID_KEY, project_uuid)
-                project_opened_by_others = len(project_users) > 1
-
-                if not project_opened_by_others:
-                    # only remove the services if no one else is using them now
-                    await projects_api.remove_project_interactive_services_with_notfication(
-                        user_id, project_uuid, request.app, project
-                    )
-            finally:
-                with managed_resource(user_id, client_session_id, request.app) as rt:
-                    # now we can remove the resource
-                    await rt.remove(PROJECT_ID_KEY)
-                # ensure we notify the user whatever happens, the GC should take care of dangling services in case of issue
-                project = await projects_api.add_project_states_for_user(
-                    user_id=user_id,
-                    project=project,
-                    is_template=False,
-                    app=request.app,
-                )
-                await projects_api.notify_project_state_update(request.app, project)
-
-        fire_and_forget_task(_close_project_task(project))
-
+        await projects_api.try_close_project_for_user(
+            user_id, project_uuid, client_session_id, request.app
+        )
         raise web.HTTPNoContent(content_type="application/json")
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
