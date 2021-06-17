@@ -2,7 +2,7 @@
 
 """
 from pprint import pformat
-from typing import Optional, Tuple, Type
+from typing import Dict, Optional, Tuple, Type
 
 from aiohttp import ClientResponse
 from aiohttp.web import HTTPError, HTTPException, HTTPInternalServerError, HTTPNoContent
@@ -16,7 +16,7 @@ async def assert_status(
     expected_error_code: Optional[str] = None,
     include_meta: Optional[bool] = False,
     include_links: Optional[bool] = False,
-) -> Tuple:
+) -> Tuple[Dict, ...]:
     """
     Asserts for enveloped responses
     """
