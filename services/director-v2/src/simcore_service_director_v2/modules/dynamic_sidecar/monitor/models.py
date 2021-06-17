@@ -57,7 +57,6 @@ class DockerStatus(str, Enum):
 
 
 class DockerContainerInspect(BaseModel):
-    # TODO: add other information which makes sense to store
     status: DockerStatus = Field(
         ...,
         scription="status of the underlying container",
