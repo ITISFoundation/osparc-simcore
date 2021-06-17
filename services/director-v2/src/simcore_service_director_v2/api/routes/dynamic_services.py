@@ -170,8 +170,6 @@ async def create_dynamic_service(
     )
     await monitor.add_service_to_monitor(monitor_data)
 
-    # TODO: return fake status? what happens at next iteration
-    # before monitoring goes though?
     return await monitor.get_stack_status(str(service.node_uuid))
 
 
