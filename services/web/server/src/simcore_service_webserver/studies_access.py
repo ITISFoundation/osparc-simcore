@@ -16,6 +16,7 @@ from functools import lru_cache
 from typing import Dict
 
 from aiohttp import web
+from aiohttp_session import get_session
 from aioredlock import Aioredlock
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
@@ -271,9 +272,14 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     if is_anonymous_user:
         log.debug("Auto login for anonymous user %s", user["name"])
         identity = user["email"]
-        await remember(request, response, identity)
 
-    raise response
+        await remember(request, response, identity)
+        assert (await get_session(request))["AIOHTTP_SECURITY"] == identity
+        # NOTE: session is encrypted and stored in a cookie in the session middleware
+
+    # WARNING: do NOT raise this response. From aiohttp 3.7.X, response is rebuild and cookie ignore.
+    # TODO: PC: security with SessionIdentityPolicy, session with EncryptedCookieStorage -> remember() and raise response.
+    return response
 
 
 @app_module_setup(__name__, ModuleCategory.ADDON, logger=log)
