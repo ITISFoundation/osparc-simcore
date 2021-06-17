@@ -188,7 +188,9 @@ else
 endif
 
 define _show_endpoints
-# The following endpoints are available
+# The following endpoints are available:
+  ⚠️ if a DNS is not used (as displayed below), the interarctive services started via dynamic-sidecar 
+  ⚠️ will not be shown. They are accesed via uuid.services.YOUR_IP.nip.io:9081 by the frontend.
 echo "http://$(get_my_ip).nip.io:9081							- oSparc platform"
 echo "http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username=scu&db=simcoredb&ns=public	- Postgres DB"
 echo "http://$(get_my_ip).nip.io:9000							- Portainer"
