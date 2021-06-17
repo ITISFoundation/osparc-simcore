@@ -289,12 +289,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const posY = Math.min(winPos.y, maxHeight);
       srvCat.moveTo(posX + this.__getSidePanelWidth(), posY + this.self().TOP_OFFSET);
       srvCat.addListener("addService", e => {
-        this.__addServiceFromCatalog(e.getData(), srvPos);
+        this.__addService(e.getData(), srvPos);
       }, this);
       return srvCat;
     },
 
-    __addServiceFromCatalog: function(data, pos) {
+    __addService: function(data, pos) {
       const service = data.service;
       let nodeAId = "contextNodeId" in data ? data.contextNodeId : null;
       let portA = "contextPort" in data ? data.contextPort : null;
@@ -309,7 +309,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
 
       const nodeUI = this.__createNodeUI(node.getNodeId());
-      this.__addNodeToWorkbench(nodeUI, pos);
+      this.__addNodeUIToWorkbench(nodeUI, pos);
 
       if (nodeAId !== null && portA !== null) {
         let nodeBId = nodeUI.getNodeId();
@@ -359,7 +359,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return bounds;
     },
 
-    __addNodeToWorkbench: function(nodeUI, position) {
+    __addNodeUIToWorkbench: function(nodeUI, position) {
       this.__updateWorkbenchLayoutSize(position);
 
       const node = nodeUI.getNode();
@@ -935,7 +935,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         for (const nodeUuid in nodes) {
           const node = nodes[nodeUuid];
           const nodeUI = this.__createNodeUI(nodeUuid);
-          this.__addNodeToWorkbench(nodeUI, node.getPosition());
+          this.__addNodeUIToWorkbench(nodeUI, node.getPosition());
         }
 
         for (const nodeUuid in nodes) {
@@ -1209,7 +1209,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           const data = {
             service: qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker())
           };
-          const nodeUI = this.__addServiceFromCatalog(data, pos);
+          const nodeUI = this.__addService(data, pos);
           const filePicker = new osparc.file.FilePicker(nodeUI.getNode());
           filePicker.buildLayout();
           filePicker.uploadPendingFiles(fileList);
