@@ -520,11 +520,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           column: this.self().gridPos.ctrlField
         });
 
-        const fieldOpts = this._getFieldOptsChild(portId);
-        if (fieldOpts) {
-          fieldOpts.child.setEnabled(false);
-        }
-
         const linkFieldModified = {
           portId,
           fromNodeId,
