@@ -14,6 +14,9 @@ aiohttp_session[secure]
 aiohttp_security
 aiohttp-swagger[performance]
 
+# SEE services/web/server/tests/unit/isolated/test_utils.py::test_yarl_url_compose_changed_with_latest_release
+yarl<1.6
+
 # web-sockets
 # From 5.0.0, https://github.com/miguelgrinberg/python-socketio/blob/main/CHANGES.md
 # test_resource_manager.py::test_websocket_resource_management fails because
