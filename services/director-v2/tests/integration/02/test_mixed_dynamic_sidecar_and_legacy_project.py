@@ -26,7 +26,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 HTTPX_CLIENT_TIMOUT = 10
-SERVICES_ARE_READY_TIMEOUT = 4 * 60
+SERVICES_ARE_READY_TIMEOUT = 5 * 60
 
 
 @pytest.fixture(autouse=True)
