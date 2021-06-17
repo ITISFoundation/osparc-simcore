@@ -2,14 +2,10 @@ import json
 import logging
 import os
 from collections import deque
-from typing import Any, Deque, Dict, List, Optional
-from uuid import UUID
+from typing import Any, Deque, Dict, List
 
-from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings import (
-    ComposeSpecModel,
-    PathsMapping,
     SimcoreService,
     SimcoreServiceSetting,
     SimcoreServiceSettings,
@@ -18,7 +14,8 @@ from models_library.services import ServiceKeyVersion
 
 from ...api.dependencies.director_v0 import DirectorV0Client
 from ...core.settings import DynamicSidecarSettings, ServiceType
-from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX, UserID
+from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
+from ...modules.dynamic_sidecar.monitor.models import MonitorData
 
 # Notes on below env var names:
 # - SIMCORE_REGISTRY will be replaced by the url of the simcore docker registry
@@ -54,20 +51,13 @@ def extract_service_port_from_compose_start_spec(
     return create_service_params["labels"]["service_port"]
 
 
-async def dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
+async def dyn_proxy_entrypoint_assembly(
+    monitor_data: MonitorData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
-    node_uuid: UUID,
-    io_simcore_zone: str,
-    dynamic_sidecar_network_name: str,
     dynamic_sidecar_network_id: str,
-    service_name: str,
     swarm_network_id: str,
     swarm_network_name: str,
-    user_id: UserID,
-    project_id: ProjectID,
     dynamic_sidecar_node_id: str,
-    request_scheme: str,
-    request_dns: str,
 ) -> Dict[str, Any]:
     """This is the entrypoint to the network and needs to be configured properly"""
 
@@ -88,23 +78,23 @@ async def dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
             "swarm_stack_name": dynamic_sidecar_settings.swarm_stack_name,
             "traefik.docker.network": swarm_network_name,
             "traefik.enable": "true",
-            f"traefik.http.middlewares.{service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {request_dns}",
-            f"traefik.http.middlewares.{service_name}-security-headers.headers.accesscontrolallowmethods": "GET,OPTIONS,PUT,POST,DELETE,PATCH,HEAD",
-            f"traefik.http.middlewares.{service_name}-security-headers.headers.accessControlAllowOriginList": f"{request_scheme}://{request_dns}",
-            f"traefik.http.middlewares.{service_name}-security-headers.headers.accesscontrolmaxage": "100",
-            f"traefik.http.middlewares.{service_name}-security-headers.headers.addvaryheader": "true",
-            f"traefik.http.services.{service_name}.loadbalancer.server.port": "80",
-            f"traefik.http.routers.{service_name}.entrypoints": "http",
-            f"traefik.http.routers.{service_name}.priority": "10",
-            f"traefik.http.routers.{service_name}.rule": f"hostregexp(`{node_uuid}.services.{{host:.+}}`)",
-            f"traefik.http.routers.{service_name}.middlewares": f"{dynamic_sidecar_settings.swarm_stack_name}_gzip@docker, {service_name}-security-headers",
+            f"traefik.http.middlewares.{monitor_data.service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {monitor_data.request_dns}",
+            f"traefik.http.middlewares.{monitor_data.service_name}-security-headers.headers.accesscontrolallowmethods": "GET,OPTIONS,PUT,POST,DELETE,PATCH,HEAD",
+            f"traefik.http.middlewares.{monitor_data.service_name}-security-headers.headers.accessControlAllowOriginList": f"{monitor_data.request_scheme}://{monitor_data.request_dns}",
+            f"traefik.http.middlewares.{monitor_data.service_name}-security-headers.headers.accesscontrolmaxage": "100",
+            f"traefik.http.middlewares.{monitor_data.service_name}-security-headers.headers.addvaryheader": "true",
+            f"traefik.http.services.{monitor_data.service_name}.loadbalancer.server.port": "80",
+            f"traefik.http.routers.{monitor_data.service_name}.entrypoints": "http",
+            f"traefik.http.routers.{monitor_data.service_name}.priority": "10",
+            f"traefik.http.routers.{monitor_data.service_name}.rule": f"hostregexp(`{monitor_data.node_uuid}.services.{{host:.+}}`)",
+            f"traefik.http.routers.{monitor_data.service_name}.middlewares": f"{dynamic_sidecar_settings.swarm_stack_name}_gzip@docker, {monitor_data.service_name}-security-headers",
             "type": ServiceType.DEPENDENCY.value,
             "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
-            "study_id": f"{project_id}",
-            "user_id": f"{user_id}",
-            "uuid": f"{node_uuid}",  # needed for removal when project is closed
+            "study_id": f"{monitor_data.project_id}",
+            "user_id": f"{monitor_data.user_id}",
+            "uuid": f"{monitor_data.node_uuid}",  # needed for removal when project is closed
         },
-        "name": service_name,
+        "name": monitor_data.service_name,
         "networks": [swarm_network_id, dynamic_sidecar_network_id],
         "task_template": {
             "ContainerSpec": {
@@ -120,9 +110,9 @@ async def dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
                     "--entryPoints.http.address=:80",
                     "--entryPoints.http.forwardedHeaders.insecure",
                     "--providers.docker.endpoint=unix:///var/run/docker.sock",
-                    f"--providers.docker.network={dynamic_sidecar_network_name}",
+                    f"--providers.docker.network={monitor_data.dynamic_sidecar_network_name}",
                     "--providers.docker.exposedByDefault=false",
-                    f"--providers.docker.constraints=Label(`io.simcore.zone`, `{io_simcore_zone}`)",
+                    f"--providers.docker.constraints=Label(`io.simcore.zone`, `{monitor_data.io_simcore_zone}`)",
                     # inject basic auth https://doc.traefik.io/traefik/v2.0/middlewares/basicauth/
                     # TODO: attach new auth_url to the service and make it available in the monitor
                 ],
@@ -480,21 +470,11 @@ async def merge_settings_before_use(
     return SimcoreServiceSettings.parse_obj(settings)
 
 
-async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
+async def dynamic_sidecar_assembly(
+    monitor_data: MonitorData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
-    io_simcore_zone: str,
-    dynamic_sidecar_network_name: str,
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
-    dynamic_sidecar_name: str,
-    user_id: UserID,
-    node_uuid: UUID,
-    service_key: str,
-    service_tag: str,
-    paths_mapping: PathsMapping,
-    compose_spec: ComposeSpecModel,
-    container_http_entry: Optional[str],
-    project_id: ProjectID,
     settings: SimcoreServiceSettings,
 ) -> Dict[str, Any]:
     """This service contains the dynamic-sidecar which will spawn the dynamic service itself"""
@@ -543,7 +523,7 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
         ]
 
     # used for the container name to avoid collisions for started containers on the same node
-    compose_namespace = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{node_uuid}"
+    compose_namespace = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{monitor_data.node_uuid}"
 
     create_service_params = {
         # TODO: we might want to have the dynamic-sidecar in the internal registry instead of dockerhub?
@@ -551,32 +531,32 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
         "endpoint_spec": endpint_spec,
         "labels": {
             # TODO: let's use a pydantic model with descriptions
-            "io.simcore.zone": io_simcore_zone,
+            "io.simcore.zone": monitor_data.io_simcore_zone,
             "port": f"{dynamic_sidecar_settings.port}",
-            "study_id": f"{project_id}",
-            "traefik.docker.network": dynamic_sidecar_network_name,  # also used for monitoring
+            "study_id": f"{monitor_data.project_id}",
+            "traefik.docker.network": monitor_data.dynamic_sidecar_network_name,  # also used for monitoring
             "traefik.enable": "true",
-            f"traefik.http.routers.{dynamic_sidecar_name}.entrypoints": "http",
-            f"traefik.http.routers.{dynamic_sidecar_name}.priority": "10",
-            f"traefik.http.routers.{dynamic_sidecar_name}.rule": "PathPrefix(`/`)",
-            f"traefik.http.services.{dynamic_sidecar_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.port}",
+            f"traefik.http.routers.{monitor_data.dynamic_sidecar_name}.entrypoints": "http",
+            f"traefik.http.routers.{monitor_data.dynamic_sidecar_name}.priority": "10",
+            f"traefik.http.routers.{monitor_data.dynamic_sidecar_name}.rule": "PathPrefix(`/`)",
+            f"traefik.http.services.{monitor_data.dynamic_sidecar_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.port}",
             "type": ServiceType.MAIN.value,  # required to be listed as an interactive service and be properly cleaned up
-            "user_id": f"{user_id}",
+            "user_id": f"{monitor_data.user_id}",
             # the following are used for monitoring
-            "uuid": f"{node_uuid}",  # also needed for removal when project is closed
+            "uuid": f"{monitor_data.node_uuid}",  # also needed for removal when project is closed
             "swarm_stack_name": dynamic_sidecar_settings.swarm_stack_name,
-            "service_key": service_key,
-            "service_tag": service_tag,
-            "paths_mapping": paths_mapping.json(),
-            "compose_spec": json.dumps(compose_spec),
-            "container_http_entry": container_http_entry,
+            "service_key": monitor_data.service_key,
+            "service_tag": monitor_data.service_tag,
+            "paths_mapping": monitor_data.paths_mapping.json(),
+            "compose_spec": json.dumps(monitor_data.compose_spec),
+            "container_http_entry": monitor_data.container_http_entry,
         },
-        "name": dynamic_sidecar_name,
+        "name": monitor_data.dynamic_sidecar_name,
         "networks": [swarm_network_id, dynamic_sidecar_network_id],
         "task_template": {
             "ContainerSpec": {
                 "Env": {
-                    "SIMCORE_HOST_NAME": dynamic_sidecar_name,
+                    "SIMCORE_HOST_NAME": monitor_data.dynamic_sidecar_name,
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
                     **{
                         e: v

@@ -102,22 +102,11 @@ class CreateServices(MonitorEvent):
         swarm_network_name = swarm_network["Name"]
 
         # start dynamic-sidecar and run the proxy on the same node
-        # TODO: DYNAMIC-SIDECAR: ANE refactor to actual model
         dynamic_sidecar_create_service_params = await dynamic_sidecar_assembly(
+            monitor_data=monitor_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
-            io_simcore_zone=monitor_data.simcore_traefik_zone,
-            dynamic_sidecar_network_name=monitor_data.dynamic_sidecar_network_name,
             dynamic_sidecar_network_id=dynamic_sidecar_network_id,
             swarm_network_id=swarm_network_id,
-            dynamic_sidecar_name=monitor_data.service_name,
-            user_id=monitor_data.user_id,
-            node_uuid=monitor_data.node_uuid,
-            service_key=monitor_data.service_key,
-            service_tag=monitor_data.service_tag,
-            paths_mapping=monitor_data.paths_mapping,
-            compose_spec=monitor_data.compose_spec,
-            container_http_entry=monitor_data.container_http_entry,
-            project_id=monitor_data.project_id,
             settings=settings,
         )
         logger.debug(
@@ -135,19 +124,12 @@ class CreateServices(MonitorEvent):
 
         dynamic_sidecar_proxy_create_service_params = (
             await dyn_proxy_entrypoint_assembly(
+                monitor_data=monitor_data,
                 dynamic_sidecar_settings=dynamic_sidecar_settings,
-                node_uuid=monitor_data.node_uuid,
-                io_simcore_zone=monitor_data.simcore_traefik_zone,
-                dynamic_sidecar_network_name=monitor_data.dynamic_sidecar_network_name,
                 dynamic_sidecar_network_id=dynamic_sidecar_network_id,
-                service_name=monitor_data.proxy_service_name,
                 swarm_network_id=swarm_network_id,
                 swarm_network_name=swarm_network_name,
-                user_id=monitor_data.user_id,
-                project_id=monitor_data.project_id,
                 dynamic_sidecar_node_id=dynamic_sidecar_node_id,
-                request_scheme=monitor_data.request_scheme,
-                request_dns=monitor_data.request_dns,
             )
         )
         logger.debug(
