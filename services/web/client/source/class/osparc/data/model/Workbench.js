@@ -244,7 +244,8 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __filePickerRequested: function(nodeId, portId) {
-      // create File Picker
+      // Create/Reuse File Picker. Reuse it if a File Picker is already
+      // connecteted and this is not used anywhere else
       const fpMD = osparc.utils.Services.getFilePicker();
       const requesterNode = this.getNode(nodeId);
       const parentNodeId = requesterNode.getParentNodeId();
