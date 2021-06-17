@@ -51,6 +51,7 @@ qx.Class.define("osparc.data.model.Workbench", {
   events: {
     "nNodesChanged": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
+    "openNode": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data"
   },
 
@@ -232,17 +233,97 @@ qx.Class.define("osparc.data.model.Workbench", {
         node.addListener("retrieveInputs", e => {
           this.fireDataEvent("retrieveInputs", e.getData());
         }, this);
+        node.addListener("filePickerRequested", e => {
+          const {
+            portId,
+            nodeId
+          } = e.getData();
+          this.__filePickerRequested(nodeId, portId);
+        }, this);
       }
     },
 
-    cloneNode: function(nodeToClone) {
-      const key = nodeToClone.getKey();
-      const version = nodeToClone.getVersion();
-      const parentNode = this.getNode(nodeToClone.getParentNodeId());
-      let node = this.createNode(key, version, null, parentNode);
-      const nodeData = nodeToClone.serialize();
-      node.populateInputOutputData(nodeData);
-      return node;
+    __filePickerRequested: function(nodeId, portId) {
+      // Create/Reuse File Picker. Reuse it if a File Picker is already
+      // connecteted and it is not used anywhere else
+      const requesterNode = this.getNode(nodeId);
+      const link = requesterNode.getPropsForm().getLink(portId);
+      let isUsed = false;
+      if (link) {
+        const connectedFPID = link["nodeUuid"];
+        // check if it's used by another port
+        const links1 = requesterNode.getPropsForm().getLinks();
+        const matches = links1.filter(link1 => link1["nodeUuid"] === connectedFPID);
+        isUsed = matches.length > 1;
+
+        // check if it's used by other nodes
+        const allNodes = this.getNodes(true);
+        const nodeIds = Object.keys(allNodes);
+        for (let i=0; i<nodeIds.length && !isUsed; i++) {
+          const nodeId2 = nodeIds[i];
+          if (nodeId === nodeId2) {
+            continue;
+          }
+          const node = allNodes[nodeId2];
+          const links2 = node.getPropsForm() ? node.getPropsForm().getLinks() : [];
+          isUsed = links2.some(link2 => link2["nodeUuid"] === connectedFPID);
+        }
+      }
+
+      if (link === null || isUsed) {
+        // do not overlap the new FP with other nodes
+        const pos = requesterNode.getPosition();
+        const nodeWidth = osparc.component.workbench.NodeUI.NODE_WIDTH;
+        const nodeHeight = osparc.component.workbench.NodeUI.NODE_HEIGHT;
+        const xPos = Math.max(0, pos.x-nodeWidth-30);
+        let posY = pos.y;
+        const allNodes = this.getNodes();
+        const avoidY = [];
+        for (const nId in allNodes) {
+          const node = allNodes[nId];
+          if (node.getPosition().x >= xPos-nodeWidth && node.getPosition().x <= (xPos+nodeWidth)) {
+            avoidY.push(node.getPosition().y);
+          }
+        }
+        avoidY.sort((a, b) => a - b); // For ascending sort
+        avoidY.forEach(y => {
+          if (posY >= y-nodeHeight && posY <= (y+nodeHeight)) {
+            posY = y+nodeHeight+20;
+          }
+        });
+
+        // create a new FP
+        const fpMD = osparc.utils.Services.getFilePicker();
+        const parentNodeId = requesterNode.getParentNodeId();
+        const parent = parentNodeId ? this.getNode(parentNodeId) : null;
+        const fp = this.createNode(fpMD["key"], fpMD["version"], null, parent);
+        fp.setPosition({
+          x: xPos,
+          y: posY
+        });
+
+        // remove old connection if any
+        if (link !== null) {
+          requesterNode.getPropsForm().removeLink(portId);
+        }
+
+        // create connection
+        const fpId = fp.getNodeId();
+        requesterNode.addInputNode(fpId);
+        requesterNode.addPortLink(portId, fpId, "outFile")
+          .then(success => {
+            if (success) {
+              this.fireDataEvent("openNode", fpId);
+            } else {
+              this.removeNode(fpId);
+              const msg = qx.locale.Manager.tr("File couldn't be assigned");
+              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            }
+          });
+      } else {
+        const connectedFPID = link["nodeUuid"];
+        this.fireDataEvent("openNode", connectedFPID);
+      }
     },
 
     addNode: function(node, parentNode) {
@@ -406,6 +487,9 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (inputOutputNodeIds) {
         inputOutputNodeIds.forEach(inputOutputNodeId => {
           const node1 = this.getNode(inputOutputNodeId);
+          if (node1 === null) {
+            return;
+          }
           const edge = new osparc.data.model.Edge(null, node1, node);
           this.addEdge(edge);
           if (isInput) {
@@ -581,10 +665,10 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
       let workbenchUI = {};
       const nodes = this.getNodes(true);
-      for (const nodeUuid in nodes) {
-        const node = nodes[nodeUuid];
-        workbenchUI[nodeUuid] = {};
-        workbenchUI[nodeUuid]["position"] = node.getPosition();
+      for (const nodeId in nodes) {
+        const node = nodes[nodeId];
+        workbenchUI[nodeId] = {};
+        workbenchUI[nodeId]["position"] = node.getPosition();
       }
       return workbenchUI;
     }

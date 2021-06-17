@@ -223,8 +223,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
             }
             minStudyData["ui"]["workbench"][newUuid] = {
               "position": {
-                "x": 50,
-                "y": 50
+                "x": 250,
+                "y": 100
               }
             };
             store.getInaccessibleServices(minStudyData)

@@ -16,16 +16,15 @@ from functools import lru_cache
 from typing import Dict
 
 from aiohttp import web
+from aiohttp_session import get_session
 from aioredlock import Aioredlock
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .constants import INDEX_RESOURCE_NAME
 from .login.decorators import login_required
-from .resource_manager.config import (
-    APP_CLIENT_REDIS_LOCK_KEY,
-    GUEST_USER_RC_LOCK_FORMAT,
-)
+from .resource_manager.config import GUEST_USER_RC_LOCK_FORMAT
+from .resource_manager.redis import get_redis_lock_manager
 from .security_api import is_anonymous, remember
 from .storage_api import copy_data_folders_from_project
 from .utils import compose_error_msg
@@ -70,7 +69,7 @@ async def create_temporary_user(request: web.Request):
     from .security_api import encrypt_password
 
     db = get_storage(request.app)
-    lock_manager: Aioredlock = request.app[APP_CLIENT_REDIS_LOCK_KEY]
+    lock_manager: Aioredlock = get_redis_lock_manager(request.app)
 
     # TODO: avatar is an icon of the hero!
     random_uname = get_random_string(min_len=5)
@@ -273,9 +272,14 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     if is_anonymous_user:
         log.debug("Auto login for anonymous user %s", user["name"])
         identity = user["email"]
-        await remember(request, response, identity)
 
-    raise response
+        await remember(request, response, identity)
+        assert (await get_session(request))["AIOHTTP_SECURITY"] == identity
+        # NOTE: session is encrypted and stored in a cookie in the session middleware
+
+    # WARNING: do NOT raise this response. From aiohttp 3.7.X, response is rebuild and cookie ignore.
+    # TODO: PC: security with SessionIdentityPolicy, session with EncryptedCookieStorage -> remember() and raise response.
+    return response
 
 
 @app_module_setup(__name__, ModuleCategory.ADDON, logger=log)

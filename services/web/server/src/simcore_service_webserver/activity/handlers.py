@@ -2,6 +2,7 @@ import asyncio
 from collections import defaultdict
 
 import aiohttp
+import aiohttp.web
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.client_session import get_client_session
 from servicelib.request_keys import RQT_USERID_KEY
