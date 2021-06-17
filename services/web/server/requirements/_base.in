@@ -8,7 +8,6 @@
 -r ../../../../packages/service-library/requirements/_base.in
 
 # aiohttp + extensions
-## Issue in https://github.com/ITISFoundation/osparc-simcore/issues/2008
 aiohttp
 aiohttp_jinja2
 aiohttp_session[secure]
