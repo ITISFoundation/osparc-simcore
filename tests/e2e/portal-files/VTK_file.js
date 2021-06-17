@@ -32,7 +32,6 @@ async function runTutorial () {
   const tutorial = new tutorialBase.TutorialBase(url.toString(), screenshotPrefix, null, null, null, enableDemoMode);
 
   try {
-    tutorial.startScreenshooter();
     const page = await tutorial.beforeScript();
     const studyData = await tutorial.openStudyLink();
     const studyId = studyData["data"]["uuid"];
@@ -73,7 +72,6 @@ async function runTutorial () {
     console.log('Tutorial error: ' + err);
   }
   finally {
-    tutorial.stopScreenshooter();
     await tutorial.close();
   }
 
