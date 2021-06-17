@@ -24,7 +24,6 @@ pytest_simcore_core_services_selection = [
     "director",
     "director-v2",
 ]
-pytest_simcore_ops_services_selection = ["adminer"]
 
 HTTPX_CLIENT_TIMOUT = 10
 SERVICES_ARE_READY_TIMEOUT = 4 * 60
