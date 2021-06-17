@@ -7,7 +7,7 @@ import time
 import unittest.mock as mock
 from asyncio import Future
 from copy import deepcopy
-from typing import Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Callable, Dict, Iterator, List, Optional, Tuple, Type, Union
 from unittest.mock import call
 
 import pytest
@@ -105,7 +105,7 @@ def client(
 
 
 @pytest.fixture
-def mocks_on_projects_api(mocker, logged_user) -> Dict:
+def mocks_on_projects_api(mocker, logged_user) -> None:
     """
     All projects in this module are UNLOCKED
 
