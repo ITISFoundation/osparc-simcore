@@ -277,6 +277,8 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         assert (await get_session(request))["AIOHTTP_SECURITY"] == identity
         # NOTE: session is encrypted and stored in a cookie in the session middleware
 
+    # WARNING: do NOT raise this response. From aiohttp 3.7.X, response is rebuild and cookie ignore.
+    # TODO: PC: security with SessionIdentityPolicy, session with EncryptedCookieStorage -> remember() and raise response.
     return response
 
 
