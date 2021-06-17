@@ -67,8 +67,6 @@ attrs==20.3.0
     #   openapi-core
 billiard==3.6.4.0
     # via celery
-cached-property==1.5.2
-    # via kombu
 celery[redis]==5.1.0
     # via -r requirements/_base.in
 cffi==1.14.5

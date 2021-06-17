@@ -36,11 +36,6 @@ billiard==3.6.4.0
     # via
     #   -c requirements/_base.txt
     #   celery
-cached-property==1.5.2
-    # via
-    #   -c requirements/_base.txt
-    #   docker-compose
-    #   kombu
 celery[redis]==5.1.0
     # via
     #   -c requirements/_base.txt
@@ -290,6 +285,11 @@ toml==0.10.2
     # via
     #   pylint
     #   pytest
+    #   pytest-cov
+typing-extensions==3.10.0.0
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
 urllib3==1.26.5
     # via
     #   -c requirements/../../../../requirements/constraints.txt
