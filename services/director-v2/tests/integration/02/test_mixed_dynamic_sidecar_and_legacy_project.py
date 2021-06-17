@@ -177,7 +177,7 @@ async def _get_service_state(
     director_v2_client: httpx.AsyncClient,
     director_v0_url: str,
     service_uuid: str,
-    node_data: Dict[str, str],  # TODO: this type is wrong
+    node_data: str,
 ) -> str:
     result = await director_v2_client.get(
         f"/dynamic_services/{service_uuid}", allow_redirects=False
