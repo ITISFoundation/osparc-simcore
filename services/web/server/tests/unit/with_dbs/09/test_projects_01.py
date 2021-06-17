@@ -7,7 +7,7 @@ import unittest.mock as mock
 import uuid as uuidlib
 from copy import deepcopy
 from math import ceil
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 from unittest.mock import call
 
 import aiohttp
@@ -250,7 +250,7 @@ def assert_replaced(current_project, update_data):
 
 async def _list_projects(
     client,
-    expected: web.Response,
+    expected: Type[web.HTTPException],
     query_parameters: Optional[Dict] = None,
     expected_error_msg: Optional[str] = None,
     expected_error_code: Optional[str] = None,
@@ -321,7 +321,9 @@ async def _list_projects(
 
 
 async def _assert_get_same_project(
-    client, project: Dict, expected: web.Response
+    client,
+    project: Dict,
+    expected: Type[web.HTTPException],
 ) -> Dict:
     # GET /v0/projects/{project_id}
 
@@ -340,7 +342,7 @@ async def _assert_get_same_project(
 
 async def _new_project(
     client,
-    expected_response: web.Response,
+    expected_response: Type[web.HTTPException],
     logged_user: Dict[str, str],
     primary_group: Dict[str, str],
     *,
@@ -470,7 +472,7 @@ async def test_list_projects(
     logged_user: Dict[str, Any],
     user_project: Dict[str, Any],
     template_project: Dict[str, Any],
-    expected: aiohttp.web.HTTPException,
+    expected: Type[web.HTTPException],
     catalog_subsystem_mock: Callable[[Optional[Union[List[Dict], Dict]]], None],
     director_v2_service_mock: aioresponses,
 ):

@@ -1,9 +1,9 @@
 import logging
 import statistics
 import time
+from dataclasses import dataclass, field
 from typing import List, Optional
 
-import attr
 from aiohttp import web
 from servicelib.incidents import LimitedOrderedStack, SlowCallback
 
@@ -30,16 +30,16 @@ class IncidentsRegistry(LimitedOrderedStack[SlowCallback]):
         return self.max_item.delay_secs if self else 0
 
 
-@attr.s(auto_attribs=True)
+@dataclass
 class DelayWindowProbe:
     """
     Collects a window of delay samples that satisfy
     some conditions (see observe code)
     """
 
-    min_threshold_secs: int = 0.3
+    min_threshold_secs: float = 0.3
     max_window: int = 100
-    last_delays: List = attr.ib(factory=list)
+    last_delays: List = field(default_factory=list)
 
     def observe(self, delay: float):
         # Mean latency of the last N request slower than min_threshold_secs sec

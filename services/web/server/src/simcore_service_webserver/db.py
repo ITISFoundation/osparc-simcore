@@ -71,7 +71,9 @@ async def pg_engine(app: web.Application):
 async def _create_pg_engine(
     dsn: DataSourceName, min_size: int, max_size: int
 ) -> Engine:
+
     log.info("Creating pg engine for %s", dsn)
+
     async for attempt in AsyncRetrying(
         **PostgresRetryPolicyUponInitialization(log).kwargs
     ):
@@ -79,8 +81,7 @@ async def _create_pg_engine(
             engine = await create_pg_engine(dsn, minsize=min_size, maxsize=max_size)
             await raise_if_not_responsive(engine)
 
-    assert engine  # nosec
-    return engine
+    return engine  # type: ignore # tenacity rules guarantee exit with exc
 
 
 async def pg_engines(app: web.Application) -> None:
@@ -94,7 +95,7 @@ async def pg_engines(app: web.Application) -> None:
         password=pg_cfg["password"],
         host=pg_cfg["host"],
         port=pg_cfg["port"],
-    )
+    )  # type: ignore
     normal_engine = await _create_pg_engine(dsn, pg_cfg["minsize"], pg_cfg["maxsize"])
     app[APP_DB_ENGINE_KEY] = normal_engine
 
