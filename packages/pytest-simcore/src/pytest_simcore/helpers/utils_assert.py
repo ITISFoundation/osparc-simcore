@@ -2,7 +2,7 @@
 
 """
 from pprint import pformat
-from typing import Optional, Tuple, Type
+from typing import Dict, Optional, Tuple, Type
 
 from aiohttp import ClientResponse
 from aiohttp.web import HTTPError, HTTPException, HTTPInternalServerError, HTTPNoContent
