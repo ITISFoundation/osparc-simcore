@@ -26,8 +26,8 @@ pytest_simcore_core_services_selection = [
 ]
 pytest_simcore_ops_services_selection = ["adminer"]
 
-HTTPX_CLIENT_TIMOUT = 2 * 60
-SERVICES_ARE_READY_TIMEOUT = 2 * 60
+HTTPX_CLIENT_TIMOUT = 10
+SERVICES_ARE_READY_TIMEOUT = 4 * 60
 
 
 @pytest.fixture(autouse=True)
