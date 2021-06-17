@@ -2,9 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-# import sys
-# import pytest
-
 
 import io
 
