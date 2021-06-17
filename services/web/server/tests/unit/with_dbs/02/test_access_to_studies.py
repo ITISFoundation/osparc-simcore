@@ -146,9 +146,17 @@ def _assert_same_projects(got: Dict, expected: Dict):
             assert got[key] == expected[key], "Failed in %s" % key
 
 
+def is_user_authenticated(session: ClientSession) -> bool:
+    return "osparc.WEBAPI_SESSION" in [c.key for c in session.cookie_jar]
+
+
 async def assert_redirected_to_study(
     resp: ClientResponse, session: ClientSession
 ) -> str:
+
+    # https://docs.aiohttp.org/en/stable/client_advanced.html#redirection-history
+    assert len(resp.history) == 1, "Is a re-direction"
+
     content = await resp.text()
     assert resp.status == web.HTTPOk.status_code, f"Got {content}"
 
@@ -159,7 +167,7 @@ async def assert_redirected_to_study(
     ), "Expected front-end rendering workbench's study, got %s" % str(content)
 
     # Expects auth cookie for current user
-    assert "osparc.WEBAPI_SESSION" in [c.key for c in session.cookie_jar]
+    assert is_user_authenticated(session)
 
     # Expects fragment to indicate client where to find newly created project
     m = re.match(r"/study/([\d\w-]+)", resp.real_url.fragment)
@@ -249,6 +257,7 @@ async def test_access_study_anonymously(
     catalog_subsystem_mock,
     mocks_on_projects_api,
 ):
+    assert not is_user_authenticated(client.session), "Is anonymous"
 
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
 
@@ -282,7 +291,7 @@ async def auto_delete_projects(client) -> None:
     await delete_all_projects(client.app)
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER])
 async def test_access_study_by_logged_user(
     client,
     logged_user,
@@ -292,6 +301,8 @@ async def test_access_study_by_logged_user(
     mocks_on_projects_api,
     auto_delete_projects,
 ):
+    assert is_user_authenticated(client.session), "Is already logged-in"
+
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
     resp = await client.get(study_url)
     await assert_redirected_to_study(resp, client.session)
@@ -389,6 +400,7 @@ async def test_guest_user_is_not_garbage_collected(
 
         # clicks link to study
         resp = await client.get(study_url)
+
         expected_prj_id = await assert_redirected_to_study(resp, client.session)
 
         # has auto logged in as guest?
