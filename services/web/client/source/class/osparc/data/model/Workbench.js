@@ -265,12 +265,12 @@ qx.Class.define("osparc.data.model.Workbench", {
             continue;
           }
           const node = allNodes[nodeId2];
-          const links2 = node.getPropsForm().getLinks();
+          const links2 = node.getPropsForm() ? node.getPropsForm().getLinks() : [];
           isUsed = links2.some(link2 => link2["nodeUuid"] === connectedFPID);
         }
       }
 
-      if (isUsed || link !== null) {
+      if (link === null || isUsed) {
         // create a new FP
         const fpMD = osparc.utils.Services.getFilePicker();
         const parentNodeId = requesterNode.getParentNodeId();
@@ -282,6 +282,11 @@ qx.Class.define("osparc.data.model.Workbench", {
           x: Math.max(0, pos.x-230),
           y: pos.y
         });
+
+        // remove old connection if any
+        if (link !== null) {
+          requesterNode.getPropsForm().removeLink(portId);
+        }
 
         // create connection
         const fpId = fp.getNodeId();
