@@ -16,7 +16,7 @@ async def assert_status(
     expected_error_code: Optional[str] = None,
     include_meta: Optional[bool] = False,
     include_links: Optional[bool] = False,
-) -> Tuple:
+) -> Tuple[Dict, ...]:
     """
     Asserts for enveloped responses
     """

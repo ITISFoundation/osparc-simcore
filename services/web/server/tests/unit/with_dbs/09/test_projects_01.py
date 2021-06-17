@@ -250,7 +250,7 @@ def assert_replaced(current_project, update_data):
 
 async def _list_projects(
     client,
-    expected: web.Response,
+    expected: Type[web.HTTPException],
     query_parameters: Optional[Dict] = None,
     expected_error_msg: Optional[str] = None,
     expected_error_code: Optional[str] = None,
