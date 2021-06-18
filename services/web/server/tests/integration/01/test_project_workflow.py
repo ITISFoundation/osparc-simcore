@@ -273,7 +273,7 @@ async def test_workflow(
         # TODO: 'async_generator_asend' has no __name__ attr. Python 3.8 gets coros names
         # Expects "delete_project" coros to have __name__ attrs
         # pylint: disable=protected-access
-        if "delete_project" in getattr(task._coro, "__name__", ""):
+        if "delete_project" in getattr(task.get_coro(), "__name__", ""):
             await asyncio.wait_for(task, timeout=60.0)
 
     # list empty
