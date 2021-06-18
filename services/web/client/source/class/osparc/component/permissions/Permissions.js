@@ -74,8 +74,11 @@ qx.Class.define("osparc.component.permissions.Permissions", {
         flex: 1
       });
 
-      const studyLinkSection = this.__createStudyLinkSection();
-      this._add(studyLinkSection);
+      // for now, only for studies
+      if ("uuid" in this.__serializedData) {
+        const studyLinkSection = this.__createStudyLinkSection();
+        this._add(studyLinkSection);
+      }
     },
 
     __createAddCollaboratorSection: function() {
