@@ -19,6 +19,18 @@ async def lock_project(
     user_id: int,
     user_name: Dict[str, str],
 ) -> aioredlock.Lock:
+    """returns a distributed redis lock on the project defined by its UUID.
+    NOTE: can be used as a context manager
+
+    try:
+        async with await lock_project(app, project_uuid, ProjectStatus.CLOSING, user_id, user_name):
+            close_project(project_uuid) # do something with the project that requires the project to be locked
+
+
+    except aioredlock.LockError:
+        pass # the lock could not be acquired
+
+    """
     return await get_redis_lock_manager(app).lock(
         PROJECT_REDIS_LOCK_KEY.format(project_uuid),
         lock_timeout=None,
