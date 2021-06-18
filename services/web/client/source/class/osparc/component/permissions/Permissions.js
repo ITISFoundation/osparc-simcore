@@ -25,7 +25,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
   construct: function(serializedData, initCollabs = []) {
     this.base(arguments);
 
-    this.__serializedData = serializedData;
+    this._serializedData = serializedData;
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
@@ -35,7 +35,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     initCollabs.forEach(initCollab => {
       this.__collaborators[initCollab["gid"]] = initCollab;
     });
-    this.__getCollaborators();
+    this.getCollaborators();
   },
 
   statics: {
@@ -59,7 +59,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
   },
 
   members: {
-    __serializedData: null,
+    _serializedData: null,
     __organizationsAndMembers: null,
     __collaboratorsModel: null,
     __collaborators: null,
@@ -75,7 +75,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       });
 
       // for now, only for studies
-      if ("uuid" in this.__serializedData) {
+      if ("uuid" in this._serializedData) {
         const studyLinkSection = this.__createStudyLinkSection();
         this._add(studyLinkSection);
       }
@@ -193,7 +193,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
         flex: 1
       });
 
-      const link = window.location.href + "#/study/" + this.__serializedData["uuid"];
+      const link = window.location.href + "#/study/" + this._serializedData["uuid"];
       const linkField = new qx.ui.form.TextField(link);
       hBox.add(linkField, {
         flex: 1
@@ -210,7 +210,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       return vBox;
     },
 
-    __getCollaborators: function() {
+    getCollaborators: function() {
       const store = osparc.store.Store.getInstance();
       const promises = [];
       promises.push(store.getGroupsOrganizations());
@@ -298,7 +298,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     },
 
     __getAccessRights: function() {
-      return this.__serializedData["accessRights"] || this.__serializedData["access_rights"];
+      return this._serializedData["accessRights"] || this._serializedData["access_rights"];
     },
 
     _isUserOwner: function() {

@@ -31,10 +31,10 @@ qx.Class.define("osparc.component.permissions.Service", {
     * @param serviceData {Object} Object containing the Service Data
     */
   construct: function(serviceData) {
-    this.__serviceData = osparc.utils.Utils.deepCloneObject(serviceData);
+    const serializedData = osparc.utils.Utils.deepCloneObject(serviceData);
 
     const initCollabs = this.self().getEveryoneObj();
-    this.base(arguments, this.__serviceData, [initCollabs]);
+    this.base(arguments, serializedData, [initCollabs]);
 
     // add a dropdown menu for selection the service version
     const versionSelectionSection = this.__createVersionSelectionSection();
@@ -84,7 +84,6 @@ qx.Class.define("osparc.component.permissions.Service", {
   },
 
   members: {
-    __serviceData: null,
     __versionsBox: null,
 
     __createVersionSelectionSection: function() {
@@ -94,10 +93,26 @@ qx.Class.define("osparc.component.permissions.Service", {
 
       const versionLabel = new qx.ui.basic.Label(this.tr("Service Version"));
       hBox.add(versionLabel);
-      const selectBox = this.__versionsBox = new osparc.ui.toolbar.SelectBox();
-      hBox.add(selectBox);
+      const versionsBox = this.__versionsBox = new osparc.ui.toolbar.SelectBox();
+      hBox.add(versionsBox);
 
       this.__populateVersions();
+
+      versionsBox.addListener("changeSelection", () => {
+        const selection = versionsBox.getSelection();
+        if (selection && selection.length) {
+          const serviceVersion = selection[0].getLabel();
+          if (serviceVersion !== this._serializedData["version"]) {
+            const store = osparc.store.Store.getInstance();
+            store.getServicesDAGs(false)
+              .then(services => {
+                const serviceData = osparc.utils.Services.getFromObject(services, this._serializedData["key"], serviceVersion);
+                this._serializedData = osparc.utils.Utils.deepCloneObject(serviceData);
+                this.getCollaborators();
+              });
+          }
+        }
+      }, this);
 
       return hBox;
     },
@@ -106,14 +121,14 @@ qx.Class.define("osparc.component.permissions.Service", {
       const store = osparc.store.Store.getInstance();
       store.getServicesDAGs(false)
         .then(services => {
-          const versions = osparc.utils.Services.getVersions(services, this.__serviceData["key"]);
+          const versions = osparc.utils.Services.getVersions(services, this._serializedData["key"]);
           const selectBox = this.__versionsBox;
           versions.reverse();
           let item = null;
           versions.forEach(version => {
             item = new qx.ui.form.ListItem(version);
             selectBox.add(item);
-            if (this.__serviceData["version"] === version) {
+            if (this._serializedData["version"] === version) {
               selectBox.setSelection([item]);
             }
           });
@@ -132,7 +147,7 @@ qx.Class.define("osparc.component.permissions.Service", {
 
     _isUserOwner: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const aceessRights = this.__serviceData["access_rights"];
+      const aceessRights = this._serializedData["access_rights"];
       if (myGid in aceessRights) {
         return aceessRights[myGid]["write_access"];
       }
@@ -145,14 +160,14 @@ qx.Class.define("osparc.component.permissions.Service", {
         return;
       }
       gids.forEach(gid => {
-        this.__serviceData["access_rights"][gid] = this.self().getCollaboratorAccessRight();
+        this._serializedData["access_rights"][gid] = this.self().getCollaboratorAccessRight();
       });
       const params = {
         url: osparc.data.Resources.getServiceUrl(
-          this.__serviceData["key"],
-          this.__serviceData["version"]
+          this._serializedData["key"],
+          this._serializedData["version"]
         ),
-        data: this.__serviceData
+        data: this._serializedData
       };
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
@@ -168,17 +183,17 @@ qx.Class.define("osparc.component.permissions.Service", {
     },
 
     _deleteCollaborator: function(collaborator) {
-      const success = this.self().removeCollaborator(this.__serviceData, collaborator["gid"]);
+      const success = this.self().removeCollaborator(this._serializedData, collaborator["gid"]);
       if (!success) {
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
       }
 
       const params = {
         url: osparc.data.Resources.getServiceUrl(
-          this.__serviceData["key"],
-          this.__serviceData["version"]
+          this._serializedData["key"],
+          this._serializedData["version"]
         ),
-        data: this.__serviceData
+        data: this._serializedData
       };
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
@@ -194,13 +209,13 @@ qx.Class.define("osparc.component.permissions.Service", {
     },
 
     _makeOwner: function(collaborator) {
-      this.__serviceData["access_rights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
+      this._serializedData["access_rights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
       const params = {
         url: osparc.data.Resources.getServiceUrl(
-          this.__serviceData["key"],
-          this.__serviceData["version"]
+          this._serializedData["key"],
+          this._serializedData["version"]
         ),
-        data: this.__serviceData
+        data: this._serializedData
       };
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
