@@ -8,7 +8,6 @@ import sys
 from pathlib import Path
 from typing import List, Tuple, Callable
 
-
 import pytest
 
 PIP_INSTALL_UPGRADE_PATTERN = re.compile(
@@ -18,13 +17,11 @@ PIP_INSTALL_UPGRADE_PATTERN = re.compile(
 PYTHON_VERSION_DOCKER_PATTERN = re.compile(r"ARG PYTHON_VERSION=\"([\d\.]+)\"")
 
 # TODO: enhance version comparison with from packaging.version from setuptools
-
-
-def to_version(version: str) -> Tuple[int]:
+def to_version(version: str) -> Tuple[int, ...]:
     return tuple(int(v) for v in version.split("."))
 
 
-def to_str(version: Tuple[int]) -> str:
+def to_str(version) -> str:
     return ".".join(map(str, version))
 
 
@@ -41,7 +38,19 @@ def make_versions_comparable(*versions) -> List[Tuple[int]]:
 
 
 @pytest.fixture(scope="session")
+def expected_python_version(osparc_simcore_root_dir: Path) -> Tuple[int, ...]:
+    py_version: str = (
+        (osparc_simcore_root_dir / "requirements" / "PYTHON_VERSION")
+        .read_text()
+        .strip()
+    )
+    print("Expected python", py_version)
+    return to_version(py_version)
+
+
+@pytest.fixture(scope="session")
 def expected_pip_version(osparc_simcore_root_dir: Path) -> str:
+    version = None
     ref_script = osparc_simcore_root_dir / "ci/helpers/ensure_python_pip.bash"
     found = re.search(r"PIP_VERSION=([\d\.]+)", ref_script.read_text())
     if found:
@@ -53,12 +62,8 @@ def expected_pip_version(osparc_simcore_root_dir: Path) -> str:
         version,
     )
     assert found and version
+
     return version
-
-
-@pytest.fixture(scope="session")
-def expected_python_version() -> Tuple[int, int]:
-    return (3, 6)
 
 
 @pytest.fixture(scope="session")

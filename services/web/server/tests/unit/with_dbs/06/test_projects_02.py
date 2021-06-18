@@ -7,13 +7,14 @@ import time
 import unittest.mock as mock
 from asyncio import Future
 from copy import deepcopy
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, Iterator, List, Optional, Tuple, Type, Union
 from unittest.mock import call
 
 import pytest
 import socketio
 from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
 from aiohttp import web
+from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
 from models_library.projects_access import Owner
 from models_library.projects_state import (
@@ -104,7 +105,7 @@ def client(
 
 
 @pytest.fixture
-def mocks_on_projects_api(mocker, logged_user) -> Dict:
+def mocks_on_projects_api(mocker, logged_user) -> None:
     """
     All projects in this module are UNLOCKED
 
@@ -244,7 +245,7 @@ def assert_replaced(current_project, update_data):
 
 async def _list_projects(
     client,
-    expected: web.Response,
+    expected: Type[web.HTTPException],
     query_parameters: Optional[Dict] = None,
 ) -> List[Dict]:
     # GET /v0/projects
@@ -259,7 +260,7 @@ async def _list_projects(
 
 
 async def _assert_get_same_project(
-    client, project: Dict, expected: web.Response
+    client, project: Dict, expected: Type[web.HTTPException]
 ) -> Dict:
     # GET /v0/projects/{project_id}
 
@@ -372,7 +373,7 @@ async def _new_project(
 
 
 async def _replace_project(
-    client, project_update: Dict, expected: web.Response
+    client, project_update: Dict, expected: Type[web.HTTPException]
 ) -> Dict:
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(
@@ -917,16 +918,53 @@ async def test_tags_to_studies(
     await assert_status(resp, web.HTTPNoContent)
 
 
+@pytest.fixture
+def client_on_running_server_factory(client: TestClient, loop) -> Iterator[Callable]:
+    # Creates clients connected to the same server as the reference client
+    #
+    # Implemented as aihttp_client but creates a client using a running server,
+    #  i.e. avoid client.start_server
+
+    assert isinstance(client.server, TestServer)
+
+    clients = []
+
+    def go():
+        cli = TestClient(client.server, loop=loop)
+        assert client.server.started
+        # AVOIDS client.start_server
+        clients.append(cli)
+        return cli
+
+    yield go
+
+    async def close_client_but_not_server(cli: TestClient):
+        # pylint: disable=protected-access
+        if not cli._closed:
+            for resp in cli._responses:
+                resp.close()
+            for ws in cli._websockets:
+                await ws.close()
+            await cli._session.close()
+            cli._closed = True
+
+    async def finalize():
+        while clients:
+            await close_client_but_not_server(clients.pop())
+
+    loop.run_until_complete(finalize())
+
+
 @pytest.mark.parametrize(*standard_role_response())
 async def test_open_shared_project_2_users_locked(
-    client,
+    client: TestClient,
+    client_on_running_server_factory: Callable,
     logged_user: Dict,
     shared_project: Dict,
     socketio_client_factory: Callable,
     client_session_id_factory: Callable,
     user_role: UserRole,
     expected: ExpectedResponse,
-    aiohttp_client,
     mocker,
     disable_gc_manual_guest_users,
 ):
@@ -935,7 +973,7 @@ async def test_open_shared_project_2_users_locked(
 
     client_1 = client
     client_id1 = client_session_id_factory()
-    client_2 = await aiohttp_client(client.app)
+    client_2 = client_on_running_server_factory()
     client_id2 = client_session_id_factory()
 
     # 1. user 1 opens project
@@ -1067,14 +1105,14 @@ async def test_open_shared_project_2_users_locked(
 @pytest.mark.parametrize(*standard_role_response())
 async def test_open_shared_project_at_same_time(
     loop,
-    client,
+    client: TestClient,
+    client_on_running_server_factory: Callable,
     logged_user: Dict,
     shared_project: Dict,
     socketio_client_factory: Callable,
     client_session_id_factory: Callable,
     user_role: UserRole,
     expected: ExpectedResponse,
-    aiohttp_client,
     disable_gc_manual_guest_users,
 ):
     NUMBER_OF_ADDITIONAL_CLIENTS = 20
@@ -1092,9 +1130,10 @@ async def test_open_shared_project_at_same_time(
     ]
     # create other clients
     for i in range(NUMBER_OF_ADDITIONAL_CLIENTS):
-        client = await aiohttp_client(client.app)
+
+        new_client = client_on_running_server_factory()
         user = await log_client_in(
-            client,
+            new_client,
             {"role": user_role.name},
             enable_check=user_role != UserRole.ANONYMOUS,
         )
@@ -1102,11 +1141,11 @@ async def test_open_shared_project_at_same_time(
         sio = await _connect_websocket(
             socketio_client_factory,
             user_role != UserRole.ANONYMOUS,
-            client,
+            new_client,
             client_id,
         )
         clients.append(
-            {"client": client, "user": user, "client_id": client_id, "sio": sio}
+            {"client": new_client, "user": user, "client_id": client_id, "sio": sio}
         )
 
     # try opening projects at same time (more or less)

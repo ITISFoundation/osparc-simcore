@@ -282,15 +282,17 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const inputNodes = this.getNode().getInputNodes();
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       for (let i=0; i<inputNodes.length; i++) {
-        let inputNode = study.getWorkbench().getNode(inputNodes[i]);
-        if (inputNode.isContainer()) {
-          const exposedInnerNodes = inputNode.getExposedInnerNodes();
-          for (const exposedInnerNodeId in exposedInnerNodes) {
-            const exposedInnerNode = exposedInnerNodes[exposedInnerNodeId];
-            this.__createInputPortsUI(exposedInnerNode);
+        const inputNode = study.getWorkbench().getNode(inputNodes[i]);
+        if (inputNode) {
+          if (inputNode.isContainer()) {
+            const exposedInnerNodes = inputNode.getExposedInnerNodes();
+            for (const exposedInnerNodeId in exposedInnerNodes) {
+              const exposedInnerNode = exposedInnerNodes[exposedInnerNodeId];
+              this.__createInputPortsUI(exposedInnerNode);
+            }
+          } else {
+            this.__createInputPortsUI(inputNode);
           }
-        } else {
-          this.__createInputPortsUI(inputNode);
         }
       }
     },

@@ -22,6 +22,10 @@
 qx.Class.define("osparc.component.node.FilePickerNodeView", {
   extend: osparc.component.node.BaseNodeView,
 
+  events: {
+    "itemSelected": "qx.event.type.Event"
+  },
+
   members: {
     __filePicker: null,
 
@@ -52,7 +56,6 @@ qx.Class.define("osparc.component.node.FilePickerNodeView", {
       }
       this.base(arguments, node);
     },
-
     __buildMyLayout: function() {
       const node = this.getNode();
       if (!node) {
@@ -62,6 +65,7 @@ qx.Class.define("osparc.component.node.FilePickerNodeView", {
       const filePicker = this.__filePicker = new osparc.file.FilePicker(node);
       filePicker.buildLayout();
       filePicker.init();
+      filePicker.addListener("itemSelected", () => this.fireEvent("itemSelected"));
 
       this._mainView.add(filePicker, {
         flex: 1
