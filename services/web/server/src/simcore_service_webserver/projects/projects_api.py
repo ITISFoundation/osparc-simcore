@@ -8,6 +8,7 @@
 """
 # pylint: disable=too-many-arguments
 
+import contextlib
 import json
 import logging
 from collections import defaultdict
@@ -195,33 +196,32 @@ async def retrieve_and_notify_project_locked_state(
     await notify_project_state_update(app, project)
 
 
-# TODO: Once python 3.8 is in use this
-# @contextlib.asynccontextmanager
-# async def lock_with_notification(
-#     app: web.Application,
-#     project_uuid: str,
-#     status: ProjectStatus,
-#     user_id: int,
-#     user_name: Dict[str, str],
-#     notify_users: bool = True,
-# ):
-#     try:
-#         async with await lock_project(
-#             app,
-#             project_uuid,
-#             status,
-#             user_id,
-#             user_name,
-#         ):
-#             if notify_users:
-#                 await retrieve_and_notify_project_locked_state(
-#                     user_id, project_uuid, app
-#                 )
-#             yield
+@contextlib.asynccontextmanager
+async def lock_with_notification(
+    app: web.Application,
+    project_uuid: str,
+    status: ProjectStatus,
+    user_id: int,
+    user_name: Dict[str, str],
+    notify_users: bool = True,
+):
+    try:
+        async with await lock_project(
+            app,
+            project_uuid,
+            status,
+            user_id,
+            user_name,
+        ):
+            if notify_users:
+                await retrieve_and_notify_project_locked_state(
+                    user_id, project_uuid, app
+                )
+            yield
 
-#     finally:
-#         if notify_users:
-#             await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
+    finally:
+        if notify_users:
+            await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
 
 
 async def remove_project_interactive_services(
