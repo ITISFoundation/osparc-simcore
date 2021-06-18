@@ -189,10 +189,23 @@ endif
 
 define _show_endpoints
 # The following endpoints are available
-echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9081                                                                 - oSparc platform"
-echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18080/?pgsql=postgres&username=scu&db=simcoredb&ns=public  - Postgres DB"
-echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9000                                                                 - Portainer"
+set -o allexport; \
+source $(CURDIR)/.env; \
+set +o allexport; \
+separator=------------------------------------------;\
+separator=$${separator}$${separator}$${separator};\
+rows="%-80s| %22s| %12s| %12s\n";\
+TableWidth=140;\
+printf "%80s| %22s| %12s| %12s\n" Endpoint Name User Password;\
+printf "%.$${TableWidth}s\n" "$$separator";\
+printf "$$rows" 'http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9081' 'oSparc platform';\
+printf "$$rows" 'http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18080/?pgsql=postgres&username=$${POSTGRES_USER}&db=$${POSTGRES_DB}&ns=public' 'Postgres DB' $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
+printf "$$rows" 'http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9000' Portainer admin adminadmin;\
+printf "$$rows" 'http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18081' Redis
 endef
+
+show-endpoints:
+	@$(_show_endpoints)
 
 up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Start compile+watch front-end container [front-end]

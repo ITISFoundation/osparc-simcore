@@ -158,6 +158,8 @@ async def get_user_name(app: web.Application, user_id: int) -> Dict[str, str]:
         user_name = await conn.scalar(
             sa.select([users.c.name]).where(users.c.id == user_id)
         )
+        if not user_name:
+            raise UserNotFoundError(uid=user_id)
         parts = user_name.split(".") + [""]
         return dict(first_name=parts[0], last_name=parts[1])
 

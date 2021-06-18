@@ -17,17 +17,16 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import uuid4
 
 from aiohttp import web
-
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
     ProjectRunningState,
     ProjectState,
+    ProjectStatus,
     RunningState,
 )
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
-from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_service_webserver.director import director_exceptions
 
@@ -37,7 +36,7 @@ from ..director_v2 import (
     get_computation_task,
     request_retrieve_dyn_service,
 )
-from ..resource_manager.websocket_manager import managed_resource
+from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..socketio.events import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
@@ -49,9 +48,12 @@ from ..storage_api import (
 )
 from ..users_api import get_user_name, is_user_guest
 from .config import CONFIG_SECTION_NAME
+from .project_lock import ProjectLockError, get_project_locked_state, lock_project
 from .projects_db import APP_PROJECT_DBAPI
 
 log = logging.getLogger(__name__)
+
+PROJECT_REDIS_LOCK_KEY: str = "project:{}"
 
 
 def _is_node_dynamic(node_key: str) -> bool:
@@ -68,8 +70,8 @@ async def get_project_for_user(
     project_uuid: str,
     user_id: int,
     *,
-    include_templates: bool = False,
-    include_state: bool = False,
+    include_templates: Optional[bool] = False,
+    include_state: Optional[bool] = False,
 ) -> Dict:
     """Returns a VALID project accessible to user
 
@@ -175,7 +177,9 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
     await delete_project_from_db(app, project_uuid, user_id)
 
     async def remove_services_and_data():
-        await remove_project_interactive_services(user_id, project_uuid, app)
+        await remove_project_interactive_services(
+            user_id, project_uuid, app, notify_users=False
+        )
         await delete_project_data(app, project_uuid, user_id)
 
     fire_and_forget_task(remove_services_and_data())
@@ -184,19 +188,94 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
 ## PROJECT NODES -----------------------------------------------------
 
 
-@observe(event="SIGNAL_PROJECT_CLOSE")
+async def retrieve_and_notify_project_locked_state(
+    user_id: int, project_uuid: str, app: web.Application
+):
+    project = await get_project_for_user(app, project_uuid, user_id, include_state=True)
+    await notify_project_state_update(app, project)
+
+
+# TODO: Once python 3.8 is in use this
+# @contextlib.asynccontextmanager
+# async def lock_with_notification(
+#     app: web.Application,
+#     project_uuid: str,
+#     status: ProjectStatus,
+#     user_id: int,
+#     user_name: Dict[str, str],
+#     notify_users: bool = True,
+# ):
+#     try:
+#         async with await lock_project(
+#             app,
+#             project_uuid,
+#             status,
+#             user_id,
+#             user_name,
+#         ):
+#             if notify_users:
+#                 await retrieve_and_notify_project_locked_state(
+#                     user_id, project_uuid, app
+#                 )
+#             yield
+
+#     finally:
+#         if notify_users:
+#             await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
+
+
 async def remove_project_interactive_services(
-    user_id: Optional[int], project_uuid: Optional[str], app: web.Application
+    user_id: int, project_uuid: str, app: web.Application, notify_users: bool = True
 ) -> None:
-    # save the state if the user is not a guest. if we do not know we save in any case.
-    with suppress(director_exceptions.DirectorException):
-        # here director exceptions are suppressed. in case the service is not found to preserve old behavior
-        await director_api.stop_services(
-            app=app,
-            user_id=user_id,
-            project_id=project_uuid,
-            save_state=not await is_user_guest(app, user_id) if user_id else True,
+    # NOTE: during the closing process, which might take awhile,
+    # the project is locked so no one opens it at the same time
+    try:
+        log.debug(
+            "removing project interactive services for project [%s] and user [%s]",
+            project_uuid,
+            user_id,
         )
+        async with await lock_project(
+            app,
+            project_uuid,
+            ProjectStatus.CLOSING,
+            user_id,
+            await get_user_name(app, user_id),
+        ):
+            if notify_users:
+                await retrieve_and_notify_project_locked_state(
+                    user_id, project_uuid, app
+                )
+
+            # save the state if the user is not a guest. if we do not know we save in any case.
+            with suppress(director_exceptions.DirectorException):
+                # here director exceptions are suppressed. in case the service is not found to preserve old behavior
+                await director_api.stop_services(
+                    app=app,
+                    user_id=user_id,
+                    project_id=project_uuid,
+                    save_state=not await is_user_guest(app, user_id)
+                    if user_id
+                    else True,
+                )
+    except ProjectLockError:
+        # maybe the someone else is already closing
+        prj_states: ProjectState = await get_project_states_for_user(
+            user_id, project_uuid, app
+        )
+        if prj_states.locked.status not in [
+            ProjectStatus.CLOSED,
+            ProjectStatus.CLOSING,
+        ]:
+            log.error(
+                "lock for project [%s] was already taken, current state is %s. project could not be closed please check.",
+                project_uuid,
+                prj_states.locked.status,
+            )
+    finally:
+        # notify when done and the project is closed
+        if notify_users:
+            await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
 
 
 async def delete_project_data(
@@ -477,32 +556,213 @@ async def trigger_connected_service_retrieve(
 # PROJECT STATE -------------------------------------------------------------------
 
 
-async def _get_project_lock_state(
-    user_id: int, project_uuid: str, app: web.Application
-) -> ProjectLocked:
-    with managed_resource(user_id, None, app) as rt:
-        # checks who is using it
-        users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
-        usernames = [await get_user_name(app, uid) for uid in set(users_of_project)]
-        assert (
-            len(usernames) <= 1
-        )  # nosec  # currently not possible to have more than 1
+async def _user_has_another_client_open(
+    user_session_id_list: List[Tuple[int, str]], app: web.Application
+) -> bool:
+    # NOTE if there is an active socket in use, that means the client is active
+    for user_id, client_session_id in user_session_id_list:
+        with managed_resource(user_id, client_session_id, app) as rt:
+            if await rt.get_socket_id() is not None:
+                return True
+    return False
 
-        # based on usage, sets an state
-        is_locked: bool = len(usernames) > 0
-        if is_locked:
-            return ProjectLocked(
-                value=is_locked,
-                owner=Owner(user_id=users_of_project[0], **usernames[0]),
+
+async def _clean_user_disconnected_clients(
+    user_session_id_list: List[Tuple[int, str]], app: web.Application
+):
+    for user_id, client_session_id in user_session_id_list:
+        with managed_resource(user_id, client_session_id, app) as rt:
+            if await rt.get_socket_id() is None:
+                log.debug(
+                    "removing disconnected project of user %s/%s",
+                    user_id,
+                    client_session_id,
+                )
+                await rt.remove(PROJECT_ID_KEY)
+
+
+async def try_open_project_for_user(
+    user_id: int, project_uuid: str, client_session_id: str, app: web.Application
+) -> bool:
+    try:
+        async with await lock_project(
+            app,
+            project_uuid,
+            ProjectStatus.OPENING,
+            user_id,
+            await get_user_name(app, user_id),
+        ):
+            log.debug(
+                "project [%s] lock acquired, now checking if project is available",
+                project_uuid,
             )
-        return ProjectLocked(value=is_locked)
+            with managed_resource(user_id, client_session_id, app) as rt:
+                user_session_id_list: List[
+                    Tuple[int, str]
+                ] = await rt.find_users_of_resource(PROJECT_ID_KEY, project_uuid)
+
+                if not user_session_id_list:
+                    # no one has the project so we lock it
+                    await rt.add(PROJECT_ID_KEY, project_uuid)
+                    return True
+
+                set_user_ids = {uid for uid, _ in user_session_id_list}
+                if set_user_ids.issubset({user_id}):
+                    # we are the only user
+                    if not await _user_has_another_client_open(
+                        user_session_id_list, app
+                    ):
+                        # steal the project
+                        await rt.add(PROJECT_ID_KEY, project_uuid)
+                        await _clean_user_disconnected_clients(
+                            user_session_id_list, app
+                        )
+                        return True
+            return False
+
+    except ProjectLockError:
+        # the project is currently locked
+        return False
+
+
+async def try_close_project_for_user(
+    user_id: int,
+    project_uuid: str,
+    client_session_id: str,
+    app: web.Application,
+):
+    with managed_resource(user_id, client_session_id, app) as rt:
+        user_to_session_ids: List[Tuple(int, str)] = await rt.find_users_of_resource(
+            PROJECT_ID_KEY, project_uuid
+        )
+        # first check we have it opened now
+        if (user_id, client_session_id) not in user_to_session_ids:
+            # nothing to do the project is already closed
+            log.warning(
+                "project [%s] is already closed for user [%s].",
+                project_uuid,
+                user_id,
+            )
+            return
+        # remove the project from our list of opened ones
+        log.debug(
+            "removing project [%s] from user [%s] resources", project_uuid, user_id
+        )
+        await rt.remove(PROJECT_ID_KEY)
+    # check it is not opened by someone else
+    user_to_session_ids.remove((user_id, client_session_id))
+    log.debug("remaining user_to_session_ids: %s", user_to_session_ids)
+    if not user_to_session_ids:
+        # NOTE: depending on the garbage collector speed, it might already be removing it
+        fire_and_forget_task(
+            remove_project_interactive_services(user_id, project_uuid, app)
+        )
+    else:
+        log.warning(
+            "project [%s] is used by other users: [%s]. This should not be possible",
+            project_uuid,
+            {uid for uid, _ in user_to_session_ids},
+        )
+
+
+async def _get_project_lock_state(
+    user_id: int,
+    project_uuid: str,
+    app: web.Application,
+) -> ProjectLocked:
+    """returns the lock state of a project
+    1. If a project is locked for any reason, first return the project as locked and STATUS defined by lock
+    2. If a client_session_id is passed, then first check to see if the project is currently opened by this very user/tab combination, if yes returns the project as Locked and OPENED.
+    3. If any other user that user_id is using the project (even disconnected before the TTL is finished) then the project is Locked and OPENED.
+    4. If the same user is using the project with a valid socket id (meaning a tab is currently active) then the project is Locked and OPENED.
+    5. If the same user is using the project with NO socket id (meaning there is no current tab active) then the project is Unlocked and OPENED. which means the user can open it again.
+    """
+    log.debug("getting project [%s] lock state for user [%s]...", project_uuid, user_id)
+    prj_locked_state: Optional[ProjectLocked] = await get_project_locked_state(
+        app, project_uuid
+    )
+    if prj_locked_state:
+        return prj_locked_state
+
+    # let's now check if anyone has the project in use somehow
+    with managed_resource(user_id, None, app) as rt:
+        user_session_id_list: List[Tuple[int, str]] = await rt.find_users_of_resource(
+            PROJECT_ID_KEY, project_uuid
+        )
+    set_user_ids = {x for x, _ in user_session_id_list}
+
+    assert (
+        len(set_user_ids) <= 1
+    )  # nosec  # NOTE: A project can only be opened by one user in one tab at the moment
+
+    if not set_user_ids:
+        # no one has the project, so it is unlocked and closed.
+        log.debug("project [%s] is not in use", project_uuid)
+        return ProjectLocked(value=False, status=ProjectStatus.CLOSED)
+
+    log.debug(
+        "project [%s] might be used by the following users: [%s]",
+        project_uuid,
+        set_user_ids,
+    )
+    usernames: List[Dict[str, str]] = [
+        await get_user_name(app, uid) for uid in set_user_ids
+    ]
+    # let's check if the project is opened by the same user, maybe already opened or closed in a orphaned session
+    if set_user_ids.issubset({user_id}):
+        if not await _user_has_another_client_open(user_session_id_list, app):
+            # in this case the project is re-openable by the same user until it gets closed
+            log.debug(
+                "project [%s] is in use by the same user [%s] that is currently disconnected, so it is unlocked for this specific user and opened",
+                project_uuid,
+                set_user_ids,
+            )
+            return ProjectLocked(
+                value=False,
+                owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),
+                status=ProjectStatus.OPENED,
+            )
+    # the project is opened in another tab or browser, or by another user, both case resolves to the project being locked, and opened
+    log.debug(
+        "project [%s] is in use by another user [%s], so it is locked",
+        project_uuid,
+        set_user_ids,
+    )
+    return ProjectLocked(
+        value=True,
+        owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),
+        status=ProjectStatus.OPENED,
+    )
+
+
+async def get_project_states_for_user(
+    user_id: int, project_uuid: str, app: web.Application
+) -> ProjectState:
+    # for templates: the project is never locked and never opened. also the running state is always unknown
+    lock_state = ProjectLocked(value=False, status=ProjectStatus.CLOSED)
+    running_state = RunningState.UNKNOWN
+    lock_state, computation_task = await logged_gather(
+        _get_project_lock_state(user_id, project_uuid, app),
+        get_computation_task(app, user_id, project_uuid),
+    )
+    if computation_task:
+        # get the running state
+        running_state = computation_task.state
+
+    return ProjectState(
+        locked=lock_state, state=ProjectRunningState(value=running_state)
+    )
 
 
 async def add_project_states_for_user(
-    user_id: int, project: Dict[str, Any], is_template: bool, app: web.Application
+    user_id: int,
+    project: Dict[str, Any],
+    is_template: bool,
+    app: web.Application,
 ) -> Dict[str, Any]:
 
-    lock_state = ProjectLocked(value=False)
+    # for templates: the project is never locked and never opened. also the running state is always unknown
+    lock_state = ProjectLocked(value=False, status=ProjectStatus.CLOSED)
     running_state = RunningState.UNKNOWN
     if not is_template:
         lock_state, computation_task = await logged_gather(

@@ -173,7 +173,13 @@ def test_create_job_from_project():
             },
             "quality": {},
             "tags": [],
-            "state": {"locked": {"value": False}, "state": {"value": "SUCCESS"}},
+            "state": {
+                "locked": {
+                    "value": False,
+                    "status": "CLOSED",
+                },
+                "state": {"value": "SUCCESS"},
+            },
         },
     )
 

@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
 import asyncio
-import unittest.mock as mock
 import uuid as uuidlib
 from copy import deepcopy
 from math import ceil
@@ -12,7 +11,6 @@ from unittest.mock import call
 
 import aiohttp
 import pytest
-import socketio
 from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -22,6 +20,7 @@ from models_library.projects_state import (
     ProjectLocked,
     ProjectRunningState,
     ProjectState,
+    ProjectStatus,
     RunningState,
 )
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -67,6 +66,7 @@ def client(
     postgres_db,
     mocked_director_subsystem,
     mock_orphaned_services,
+    redis_client,
 ):
 
     # config app
@@ -126,6 +126,7 @@ def mocks_on_projects_api(mocker, logged_user) -> Dict:
                 first_name=nameparts[0],
                 last_name=nameparts[1],
             ),
+            status=ProjectStatus.CLOSED,
         ),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     )
