@@ -16,6 +16,7 @@ from ...api.dependencies.director_v0 import DirectorV0Client
 from ...core.settings import DynamicSidecarSettings, ServiceType
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 from ...modules.dynamic_sidecar.monitor.models import MonitorData
+from .exceptions import DynamicSidecarError
 
 # Notes on below env var names:
 # - SIMCORE_REGISTRY will be replaced by the url of the simcore docker registry
@@ -294,8 +295,8 @@ async def _extract_osparc_involved_service_labels(
             continue
 
         # if image dose not have this format skip:
-        # - `${REGISTRY_URL}/**SOME_SERVICE_NAME**:${SERVICE_TAG}`
-        # - `${REGISTRY_URL}/**SOME_SERVICE_NAME**:1.2.3` a hardcoded tag
+        # - `${SIMCORE_REGISTRY}/**SOME_SERVICE_NAME**:${SERVICE_VERSION}`
+        # - `${SIMCORE_REGISTRY}/**SOME_SERVICE_NAME**:1.2.3` a hardcoded tag
         if not image.startswith(MATCH_IMAGE_START) or ":" not in image:
             continue
         if not image.startswith(MATCH_IMAGE_START) or not image.endswith(
@@ -319,6 +320,15 @@ async def _extract_osparc_involved_service_labels(
             )
         )
         docker_image_name_by_services[involved_key] = simcore_service
+
+    if len(reverse_mapping) != len(docker_image_name_by_services):
+        message = (
+            f"Extracting labels for services in '{image}' could not fill "
+            f"reverse_mapping={reverse_mapping}; "
+            f"docker_image_name_by_services={docker_image_name_by_services}"
+        )
+        log.error(message)
+        raise DynamicSidecarError(message)
 
     # remaps from image_name as key to compose_spec key
     compose_spec_mapped_labels = {
