@@ -76,7 +76,7 @@ def run_docker_compose_config(
     """
     # FIXME: use instead packages/pytest-simcore/src/pytest_simcore/helpers/utils_docker.py
 
-    if not isinstance(docker_compose_paths, List):
+    if not isinstance(docker_compose_paths, list):
         docker_compose_paths = [
             docker_compose_paths,
         ]

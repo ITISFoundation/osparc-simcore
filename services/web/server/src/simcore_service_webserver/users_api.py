@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Tuple
 
 import sqlalchemy as sa
 from aiohttp import web
+from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.users import UserRole
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 async def get_user_profile(app: web.Application, user_id: int) -> Dict[str, Any]:
-    engine = app[APP_DB_ENGINE_KEY]
+    engine: Engine = app[APP_DB_ENGINE_KEY]
     user_profile: Dict[str, Any] = {}
     user_primary_group = all_group = {}
     user_standard_groups = []

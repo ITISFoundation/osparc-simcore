@@ -65,8 +65,6 @@ click==7.1.2
     # via typer
 configparser==5.0.2
     # via blackfynn
-dataclasses==0.8
-    # via pydantic
 deprecated==1.2.12
     # via blackfynn
 dnspython==2.1.0
@@ -79,19 +77,14 @@ email-validator==1.1.2
     # via pydantic
 future==0.18.2
     # via blackfynn
-idna-ssl==1.1.0
-    # via aiohttp
 idna==2.10
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   email-validator
-    #   idna-ssl
     #   requests
     #   yarl
-importlib-metadata==4.0.1
-    # via jsonschema
 isodate==0.6.0
     # via
     #   openapi-core
@@ -214,9 +207,7 @@ typing-extensions==3.10.0.0
     # via
     #   aiohttp
     #   aioitertools
-    #   importlib-metadata
     #   pydantic
-    #   yarl
 ujson==4.0.2
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -239,8 +230,6 @@ yarl==1.6.3
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiohttp
-zipp==3.4.1
-    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

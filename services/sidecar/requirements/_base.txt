@@ -48,8 +48,6 @@ chardet==3.0.4
     # via aiohttp
 click==7.1.2
     # via -r requirements/_base.in
-dataclasses==0.7
-    # via pydantic
 decorator==4.4.2
     # via networkx
 dnspython==2.0.0
@@ -58,18 +56,13 @@ email-validator==1.1.1
     # via pydantic
 hiredis==1.1.0
     # via aioredis
-idna-ssl==1.1.0
-    # via aiohttp
 idna==2.10
     # via
     #   -c requirements/../../../packages/models-library/requirements/_base.in
     #   -c requirements/../../../packages/postgres-database/requirements/_base.in
     #   -c requirements/../../../packages/service-library/requirements/_base.in
     #   email-validator
-    #   idna-ssl
     #   yarl
-importlib-metadata==2.0.0
-    # via kombu
 kombu==4.6.11
     # via celery
 multidict==4.7.6
@@ -143,5 +136,3 @@ yarl==1.5.1
     #   aio-pika
     #   aiohttp
     #   aiormq
-zipp==3.2.0
-    # via importlib-metadata

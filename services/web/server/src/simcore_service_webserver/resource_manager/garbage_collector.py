@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from contextlib import suppress
 from itertools import chain
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -40,22 +39,48 @@ from .registry import RedisResourceRegistry, get_registry
 logger = logging.getLogger(__name__)
 database_errors = (psycopg2.DatabaseError, asyncpg.exceptions.PostgresError)
 
+TASK_NAME = f"{__name__}.collect_garbage_periodically"
+TASK_CONFIG = f"{TASK_NAME}.config"
+
 
 def setup_garbage_collector(app: web.Application):
     async def _setup_background_task(app: web.Application):
-        # on_startup
+        # SETUP ------
         # create a background task to collect garbage periodically
-        loop = asyncio.get_event_loop()
-        cgp_task = loop.create_task(collect_garbage_periodically(app))
+        assert not any(  # nosec
+            t.get_name() == TASK_NAME for t in asyncio.all_tasks()
+        ), "Garbage collector task already running. ONLY ONE expected"  # nosec
+
+        gc_bg_task = asyncio.create_task(
+            collect_garbage_periodically(app), name=TASK_NAME
+        )
+
+        # FIXME: added this config to overcome the state in which the
+        # task cancelation is ignored and the exceptions enter in a loop
+        # that never stops the background task. This flag is an additional
+        # mechanism to enforce stopping the background task
+        #
+        # Implemented with a mutable dict to avoid
+        #   DeprecationWarning: Changing state of started or joined application is deprecated
+        #
+        app[TASK_CONFIG] = {"force_stop": False, "name": TASK_NAME}
 
         yield
 
-        # on_cleanup
-        # controlled cancelation of the gc tas
-        with suppress(asyncio.CancelledError):
+        # TEAR-DOWN -----
+        # controlled cancelation of the gc task
+        try:
             logger.info("Stopping garbage collector...")
-            cgp_task.cancel()
-            await cgp_task
+
+            ack = gc_bg_task.cancel()
+            assert ack  # nosec
+
+            app[TASK_CONFIG]["force_stop"] = True
+
+            await gc_bg_task
+
+        except asyncio.CancelledError:
+            assert gc_bg_task.cancelled()  # nosec
 
     app.cleanup_ctx.append(_setup_background_task)
 
@@ -68,6 +93,10 @@ async def collect_garbage_periodically(app: web.Application):
             interval = get_garbage_collector_interval(app)
             while True:
                 await collect_garbage(app)
+
+                if app[TASK_CONFIG].get("force_stop", False):
+                    raise Exception("Forced to stop garbage collection")
+
                 await asyncio.sleep(interval)
 
         except asyncio.CancelledError:
@@ -80,6 +109,11 @@ async def collect_garbage_periodically(app: web.Application):
                 "There was an error during garbage collection, restarting...",
                 exc_info=True,
             )
+
+            if app[TASK_CONFIG].get("force_stop", False):
+                logger.warning("Forced to stop garbage collection")
+                break
+
             # will wait 5 seconds to recover before restarting to avoid restart loops
             # - it might be that db/redis is down, etc
             #
@@ -448,7 +482,6 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
             user_id,
         )
         return
-
     user_primary_gid = int(project_owner["primary_gid"])
 
     # fetch all projects for the user

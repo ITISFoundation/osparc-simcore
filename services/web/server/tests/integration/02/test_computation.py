@@ -11,7 +11,6 @@ import pytest
 import sqlalchemy as sa
 from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
-from aiohttp.web_exceptions import HTTPCreated
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from pytest_simcore.helpers.utils_assert import assert_status

@@ -3,7 +3,7 @@
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Iterator, Optional
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -38,7 +38,7 @@ async def pg_engine(app: web.Application):
         password=pg_cfg["password"],
         host=pg_cfg["host"],
         port=pg_cfg["port"],
-    )
+    )  # type: ignore
 
     log.info("Creating pg engine for %s", dsn)
     async for attempt in AsyncRetrying(
@@ -84,7 +84,7 @@ async def _create_pg_engine(
     return engine  # type: ignore # tenacity rules guarantee exit with exc
 
 
-async def pg_engines(app: web.Application) -> None:
+async def pg_engines(app: web.Application) -> Iterator[None]:
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     pg_cfg = cfg["postgres"]
 
@@ -147,7 +147,6 @@ def setup(app: web.Application):
     app[APP_DB_ENGINE_KEY] = None
 
     # async connection to db
-    # app.on_startup.append(_init_db) # TODO: review how is this disposed
     app.cleanup_ctx.append(pg_engines)
 
 

@@ -38,10 +38,6 @@ chardet==3.0.4
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-dataclasses==0.7
-    # via
-    #   -c requirements/_base.txt
-    #   pydantic
 dnspython==2.0.0
     # via
     #   -c requirements/_base.txt
@@ -50,10 +46,6 @@ email-validator==1.1.1
     # via
     #   -c requirements/_base.txt
     #   pydantic
-idna-ssl==1.1.0
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
 idna==2.10
     # via
     #   -c requirements/_base.txt
@@ -61,12 +53,7 @@ idna==2.10
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   email-validator
-    #   idna-ssl
     #   yarl
-importlib-metadata==2.0.0
-    # via
-    #   -c requirements/_base.txt
-    #   jsonschema
 isodate==0.6.0
     # via openapi-core
 jsonschema==3.2.0
@@ -158,10 +145,6 @@ yarl==1.5.1
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiohttp
-zipp==3.2.0
-    # via
-    #   -c requirements/_base.txt
-    #   importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

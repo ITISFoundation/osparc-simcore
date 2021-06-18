@@ -189,12 +189,6 @@ class ProjectDBAPI:
         self._app = app
         self._engine = app.get(APP_DB_ENGINE_KEY)
 
-    @classmethod
-    def init_from_engine(cls, engine: Engine):
-        db_api = ProjectDBAPI({})
-        db_api._engine = engine  # pylint: disable=protected-access
-        return db_api
-
     def _init_engine(self):
         # Delays creation of engine because it setup_db does it on_startup
         self._engine = self._app.get(APP_DB_ENGINE_KEY)

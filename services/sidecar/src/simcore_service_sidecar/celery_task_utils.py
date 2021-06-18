@@ -42,7 +42,7 @@ def on_task_success_handler(
 
 
 def cancel_task(function: Callable) -> None:
-    tasks = asyncio.Task.all_tasks()
+    tasks = asyncio.all_tasks()
     for task in tasks:
         # pylint: disable=protected-access
         if task._coro.__name__ == function.__name__:

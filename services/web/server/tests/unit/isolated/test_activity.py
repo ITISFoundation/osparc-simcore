@@ -11,7 +11,6 @@ from aiohttp import web
 from aiohttp.client_exceptions import ClientConnectionError
 from celery import Celery
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_mock import future_with_result
 from servicelib.application import create_safe_application
 from simcore_service_webserver.activity import handlers, setup_activity
 from simcore_service_webserver.computation_config import ComputationSettings
@@ -43,26 +42,26 @@ def mocked_monitoring(loop, mocker, activity_data):
     cpu_ret = prometheus_data.get("cpu_return")
     mocker.patch(
         "simcore_service_webserver.activity.handlers.get_cpu_usage",
-        return_value=future_with_result(cpu_ret),
+        return_value=cpu_ret,
     )
 
     mem_ret = prometheus_data.get("memory_return")
     mocker.patch(
         "simcore_service_webserver.activity.handlers.get_memory_usage",
-        return_value=future_with_result(mem_ret),
+        return_value=mem_ret,
     )
 
     labels_ret = prometheus_data.get("labels_return")
     mocker.patch(
         "simcore_service_webserver.activity.handlers.get_container_metric_for_labels",
-        return_value=future_with_result(labels_ret),
+        return_value=labels_ret,
     )
 
     celery_data = activity_data.get("celery")
     celery_ret = celery_data.get("celery_return")
     mocker.patch(
         "simcore_service_webserver.activity.handlers.get_celery_reserved",
-        return_value=future_with_result(celery_ret),
+        return_value=celery_ret,
     )
 
 

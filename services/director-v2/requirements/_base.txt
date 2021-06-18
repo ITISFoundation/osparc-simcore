@@ -16,15 +16,10 @@ amqp==5.0.2
     # via kombu
 aniso8601==7.0.0
     # via graphene
-async-exit-stack==1.0.1 ; python_version < "3.7"
-    # via
-    #   -r requirements/_base.in
-    #   fastapi
-async-generator==1.10 ; python_version < "3.7"
-    # via
-    #   -r requirements/_base.in
-    #   fastapi
-    #   httpx
+async-exit-stack==1.0.1
+    # via fastapi
+async-generator==1.10
+    # via fastapi
 async-timeout==3.0.1
     # via
     #   aiohttp
@@ -53,12 +48,6 @@ click==7.1.2
     #   click-didyoumean
     #   click-repl
     #   uvicorn
-contextvars==2.4
-    # via sniffio
-dataclasses==0.7 ; python_version < "3.7"
-    # via
-    #   -r requirements/_base.in
-    #   pydantic
 decorator==4.4.2
     # via networkx
 dnspython==2.0.0
@@ -85,19 +74,12 @@ httptools==0.1.1
     # via uvicorn
 httpx==0.18.1
     # via -r requirements/_base.in
-idna-ssl==1.1.0
-    # via aiohttp
 idna==2.10
     # via
     #   email-validator
-    #   idna-ssl
     #   requests
     #   rfc3986
     #   yarl
-immutables==0.14
-    # via contextvars
-importlib-metadata==2.0.0
-    # via kombu
 itsdangerous==1.1.0
     # via fastapi
 jinja2==2.11.3
@@ -188,10 +170,8 @@ urllib3==1.26.4
     #   requests
 uvicorn[standard]==0.13.4
     # via fastapi
-uvloop==0.14.0 ; python_version < "3.7"
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   uvicorn
+uvloop==0.14.0
+    # via uvicorn
 vine==5.0.0
     # via
     #   amqp
@@ -204,5 +184,3 @@ websockets==8.1
     # via uvicorn
 yarl==1.6.2
     # via aiohttp
-zipp==3.4.0
-    # via importlib-metadata

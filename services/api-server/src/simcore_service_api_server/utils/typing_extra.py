@@ -1,15 +1,17 @@
-import sys
-from typing import Tuple
+from typing import Dict, Tuple, Union, get_args, get_origin
 
 
-def get_args(annotation) -> Tuple:
-    assert (  # nosec
-        sys.version_info.major == 3 and sys.version_info.minor < 8  # nosec
-    ), "TODO: py3.8 replace __args__ with typings.get_args"
+def get_types(annotation) -> Tuple:
+    # WARNING: use for testing ONLY
 
-    try:
-        annotated_types = annotation.__args__  # works for unions
-    except AttributeError:
+    assert get_origin(Dict[str, int]) is dict  # nosec
+    assert get_args(Dict[int, str]) == (int, str)  # nosec
+    assert get_origin(Union[int, str]) is Union  # nosec
+    assert get_args(Union[int, str]) == (int, str)  # nosec
+
+    if get_origin(annotation) is Union:
+        annotated_types = get_args(annotation)
+    else:
         annotated_types = (annotation,)
 
     def _transform(annotated_type):
