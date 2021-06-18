@@ -11,6 +11,9 @@ from simcore_service_webserver.resource_manager.redis import (
 
 PROJECT_REDIS_LOCK_KEY: str = "project:{}"
 
+ProjectLock = aioredlock.Lock
+ProjectLockError = aioredlock.LockError
+
 
 async def lock_project(
     app: web.Application,
@@ -18,7 +21,7 @@ async def lock_project(
     status: ProjectStatus,
     user_id: int,
     user_name: Dict[str, str],
-) -> aioredlock.Lock:
+) -> ProjectLock:
     """returns a distributed redis lock on the project defined by its UUID.
     NOTE: can be used as a context manager
 

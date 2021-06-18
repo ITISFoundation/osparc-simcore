@@ -16,7 +16,6 @@ from pprint import pformat
 from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import uuid4
 
-import aioredlock
 from aiohttp import web
 from models_library.projects_state import (
     Owner,
@@ -49,7 +48,7 @@ from ..storage_api import (
 )
 from ..users_api import get_user_name, is_user_guest
 from .config import CONFIG_SECTION_NAME
-from .project_lock import get_project_locked_state, lock_project
+from .project_lock import ProjectLockError, get_project_locked_state, lock_project
 from .projects_db import APP_PROJECT_DBAPI
 
 log = logging.getLogger(__name__)
@@ -196,6 +195,35 @@ async def retrieve_and_notify_project_locked_state(
     await notify_project_state_update(app, project)
 
 
+# TODO: Once python 3.8 is in use this
+# @contextlib.asynccontextmanager
+# async def lock_with_notification(
+#     app: web.Application,
+#     project_uuid: str,
+#     status: ProjectStatus,
+#     user_id: int,
+#     user_name: Dict[str, str],
+#     notify_users: bool = True,
+# ):
+#     try:
+#         async with await lock_project(
+#             app,
+#             project_uuid,
+#             status,
+#             user_id,
+#             user_name,
+#         ):
+#             if notify_users:
+#                 await retrieve_and_notify_project_locked_state(
+#                     user_id, project_uuid, app
+#                 )
+#             yield
+
+#     finally:
+#         if notify_users:
+#             await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
+
+
 async def remove_project_interactive_services(
     user_id: int, project_uuid: str, app: web.Application, notify_users: bool = True
 ) -> None:
@@ -230,7 +258,7 @@ async def remove_project_interactive_services(
                     if user_id
                     else True,
                 )
-    except aioredlock.LockError:
+    except ProjectLockError:
         # maybe the someone else is already closing
         prj_states: ProjectState = await get_project_states_for_user(
             user_id, project_uuid, app
@@ -592,7 +620,7 @@ async def try_open_project_for_user(
                         return True
             return False
 
-    except aioredlock.LockError:
+    except ProjectLockError:
         # the project is currently locked
         return False
 
