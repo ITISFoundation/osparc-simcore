@@ -71,6 +71,19 @@ class ProjectLocked(BaseModel):
             raise ValueError("value cannot be None when project is locked")
         return v
 
+    @validator("status", always=True)
+    @classmethod
+    def check_status_compatible(v, values):
+        if values["value"] is False and v not in ["CLOSED", "OPENED"]:
+            raise ValueError(
+                f"status is set to {v} and lock is set to {values['value']}!"
+            )
+        if values["value"] is True and v == "CLOSED":
+            raise ValueError(
+                f"status is set to {v} and lock is set to {values['value']}!"
+            )
+        return v
+
 
 class ProjectRunningState(BaseModel):
     value: RunningState = Field(
