@@ -15,8 +15,9 @@
 """
 
 import logging
+from collections import namedtuple
 from contextlib import contextmanager
-from typing import Dict, Iterator, List, Optional, Tuple, Union
+from typing import Dict, Iterator, List, Optional, Union
 
 import attr
 from aiohttp import web
@@ -28,6 +29,9 @@ log = logging.getLogger(__file__)
 
 SOCKET_ID_KEY = "socket_id"
 PROJECT_ID_KEY = "project_id"
+
+
+UserSessionID = namedtuple("UserSessionID", "user_id client_session_id")
 
 
 @attr.s(auto_attribs=True)
@@ -149,9 +153,7 @@ class WebsocketRegistry:
         registry = get_registry(self.app)
         await registry.remove_resource(self._resource_key(), key)
 
-    async def find_users_of_resource(
-        self, key: str, value: str
-    ) -> List[Tuple[int, str]]:
+    async def find_users_of_resource(self, key: str, value: str) -> List[UserSessionID]:
         log.debug(
             "user %s/tab %s finding %s:%s in registry...",
             self.user_id,
