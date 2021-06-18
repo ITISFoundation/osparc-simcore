@@ -464,7 +464,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
     __getPermissionsMenuButton: function(studyData) {
       const isCurrentUserOwner = this.__isUserOwner(studyData);
-      if (!isCurrentUserOwner) {
+      if (!isCurrentUserOwner && osparc.utils.Resources.isTemplate(studyData)) {
         return null;
       }
 
