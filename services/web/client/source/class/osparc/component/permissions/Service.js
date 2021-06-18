@@ -35,6 +35,10 @@ qx.Class.define("osparc.component.permissions.Service", {
 
     const initCollabs = this.self().getEveryoneObj();
     this.base(arguments, this.__serviceData, [initCollabs]);
+
+    // add a dropdown menu for selection the service version
+    const versionSelectionSection = this.__createVersionSelectionSection();
+    this._addAt(versionSelectionSection, 0);
   },
 
   events: {
@@ -81,6 +85,50 @@ qx.Class.define("osparc.component.permissions.Service", {
 
   members: {
     __serviceData: null,
+    __versionsBox: null,
+
+    __createVersionSelectionSection: function() {
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+        alignY: "middle"
+      }));
+
+      const versionLabel = new qx.ui.basic.Label(this.tr("Service Version"));
+      hBox.add(versionLabel);
+      const selectBox = this.__versionsBox = new osparc.ui.toolbar.SelectBox();
+      hBox.add(selectBox);
+
+      this.__populateVersions();
+
+      return hBox;
+    },
+
+    __populateVersions: function() {
+      const store = osparc.store.Store.getInstance();
+      store.getServicesDAGs(false)
+        .then(services => {
+          const versions = osparc.utils.Services.getVersions(services, this.__serviceData["key"]);
+          const selectBox = this.__versionsBox;
+          versions.reverse();
+          let item = null;
+          versions.forEach(version => {
+            item = new qx.ui.form.ListItem(version);
+            selectBox.add(item);
+            if (this.__serviceData["version"] === version) {
+              selectBox.setSelection([item]);
+            }
+          });
+        });
+    },
+
+    __getSelectedService: function() {
+      const selected = this.__serviceBrowser.getSelected();
+      const key = selected.getKey();
+      let version = this.__versionsBox.getSelection()[0].getLabel().toString();
+      if (version == this.self(arguments).LATEST.toString()) {
+        version = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
+      }
+      return osparc.utils.Services.getFromArray(this.__allServicesList, key, version);
+    },
 
     _isUserOwner: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();

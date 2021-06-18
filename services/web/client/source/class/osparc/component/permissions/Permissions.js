@@ -27,7 +27,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
 
     this.__serializedData = serializedData;
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox(5));
 
     this.__buildLayout();
 
