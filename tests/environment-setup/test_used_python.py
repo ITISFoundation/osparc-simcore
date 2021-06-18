@@ -111,17 +111,17 @@ def test_all_images_have_the_same_python_version(
     python_in_dockerfiles, expected_python_version
 ):
     for dockerfile, python_version in python_in_dockerfiles:
-        if dockerfile.parent.name in FROZEN_SERVICES:
-            print(
-                "Skipping check on {dockefile} since this service/package development was froozen "
-            )
-        else:
+        if dockerfile.parent.name not in FROZEN_SERVICES:
             current_version, expected_version = make_versions_comparable(
                 python_version, expected_python_version
             )
             assert (
                 current_version == expected_version
             ), f"Expected python {expected_python_version} in {dockerfile}, got {python_version}"
+        else:
+            print(
+                f"Skipping check on {dockerfile} since this service/package development was froozen "
+            )
 
 
 def test_running_python_version(expected_python_version):

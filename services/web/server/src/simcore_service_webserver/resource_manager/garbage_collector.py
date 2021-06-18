@@ -57,7 +57,7 @@ def setup_garbage_collector(app: web.Application):
 
         # FIXME: added this config to overcome the state in which the
         # task cancelation is ignored and the exceptions enter in a loop
-        # that never stops the background task. This flage is an additional
+        # that never stops the background task. This flag is an additional
         # mechanism to enforce stopping the background task
         #
         # Implemented with a mutable dict to avoid
