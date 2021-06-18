@@ -18,7 +18,7 @@ def test_projects_state_model_examples(model_cls, model_cls_examples):
 def test_project_locked_with_missing_owner_raises():
     with pytest.raises(ValueError):
         ProjectLocked(**{"value": True, "status": ProjectStatus.OPENED})
-    ProjectLocked(**{"value": False, "status": ProjectStatus.OPENED})
+    ProjectLocked.parse_obj({"value": False, "status": ProjectStatus.OPENED})
 
 
 @pytest.mark.parametrize(
@@ -32,4 +32,4 @@ def test_project_locked_with_missing_owner_raises():
 )
 def test_project_locked_with_allowed_values(lock: bool, status: ProjectStatus):
     with pytest.raises(ValueError):
-        ProjectLocked(**{"value": lock, "status": status})
+        ProjectLocked.parse_obj({"value": lock, "status": status})
