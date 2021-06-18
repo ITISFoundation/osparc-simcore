@@ -98,9 +98,6 @@ class ManifestFile(BaseLoadingModel):
         return str(v)
 
 
-_MIGRATION_FLAGS = dict(pre=True, always=True)
-
-
 class ProjectFile(BaseLoadingModel, Project):
     _RELATIVE_STORAGE_PATH: str = "project.json"
 
@@ -139,6 +136,8 @@ class ProjectFile(BaseLoadingModel, Project):
     # migration validators --------------------------------
     # NOTE: these migration validator are necessary when the base Project class is modified
     # this allows importing an older project to the newest state
+    _MIGRATION_FLAGS = dict(pre=True, always=True)
+
     @validator("state", **_MIGRATION_FLAGS)
     @classmethod
     def optional_project_state_added_locked_status(cls, v):
