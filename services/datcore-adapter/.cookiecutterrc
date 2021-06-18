@@ -1,0 +1,19 @@
+# This file exists so you can easily regenerate your project.
+#
+#  cookiecutter --overwrite-if-exists --config-file=.cookiecutterrc /home/anderegg/dev/github/cookiecutter-simcore-py-fastapi
+#
+
+default_context:
+
+    _extensions:               ['jinja2_time.TimeExtension']
+    _template:                 '/home/anderegg/dev/github/cookiecutter-simcore-py-fastapi'
+    detailed_doc:              'n'
+    distribution_name:         'simcore-service-datcore-adapter'
+    full_name:                 'Sylvain Anderegg'
+    github_username:           'sanderegg'
+    package_name:              'simcore_service_datcore_adapter'
+    project_name:              'datcore-adapter'
+    project_short_description: 'Interfaces with datcore storage'
+    project_slug:              'datcore-adapter'
+    version:                   '0.1.0-alpha'
+    year:                      '2021'

@@ -1,0 +1,10 @@
+#
+# Specifies third-party dependencies for 'services/datcore-adapter/src'
+#
+# NOTE: ALL version constraints MUST be commented
+-c ../../../requirements/constraints.txt
+
+fastapi
+uvicorn[standard]
+
+pydantic

@@ -1,0 +1,24 @@
+#
+# Specifies dependencies required to run 'services/datcore-adapter/test' both for unit and integration tests!!
+#
+-c ../../../requirements/constraints.txt
+
+# frozen specs
+-r _base.txt
+
+
+# testing
+pytest
+
+# fixtures
+faker
+respx
+
+# linter tool
+pylint
+
+# code coverage
+codecov
+coverage
+coveralls
+pytest-cov
