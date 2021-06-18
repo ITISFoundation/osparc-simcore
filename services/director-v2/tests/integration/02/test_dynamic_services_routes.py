@@ -155,7 +155,6 @@ async def ensure_services_stopped(start_request_data: Dict[str, Any]) -> None:
         network_names = {x["Name"] for x in await docker_client.networks.list()}
 
         for network_name in network_names:
-            logger.error("network_names=%s", network_names)
             if project_id in network_name:
                 network = await docker_client.networks.get(network_name)
                 try:
