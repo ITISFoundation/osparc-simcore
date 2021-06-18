@@ -125,7 +125,7 @@ async def test_listen_comp_tasks_task(
         # tests whether listener gets hooked calls executed
         for call_name, mocked_call in mock_project_subsystem.items():
             if call_name in expected_calls:
-                for attempt in _retry_if_fails():
+                async for attempt in _async_retry_if_fails():
                     with attempt:
                         mocked_call.assert_awaited()
 
@@ -133,9 +133,9 @@ async def test_listen_comp_tasks_task(
                 mocked_call.assert_not_called()
 
 
-def _retry_if_fails():
-    # Helper that retries to acount for some uncontrolled delays
-    return tenacity.Retrying(
+def _async_retry_if_fails():
+    # Helper that retries to account for some uncontrolled delays
+    return tenacity.AsyncRetrying(
         wait=tenacity.wait_fixed(1),
         stop=tenacity.stop_after_delay(10),
         retry=tenacity.retry_if_exception_type(AssertionError),
