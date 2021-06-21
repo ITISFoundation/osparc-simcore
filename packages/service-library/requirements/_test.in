@@ -10,7 +10,6 @@
 -c _base_fastapi.txt
 
 # testing
-asgi_lifespan
 coverage
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
@@ -20,7 +19,6 @@ pytest-runner
 pytest-docker
 pytest-mock
 pytest-sugar
-respx
 
 # tools
 pylint  # NOTE: The version in pylint at _text.txt is used as a reference for ci/helpers/install_pylint.bash
