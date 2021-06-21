@@ -215,7 +215,7 @@ def fake_files_factory(tmpdir_factory) -> Callable:
 
 @pytest.fixture(scope="function")
 def fake_file(fake_files_factory: Callable) -> Path:
-    """ Creates fake file and returns path """
+    """Creates fake file and returns path"""
     file_path = Path(fake_files_factory(count=1)[0])
     assert file_path.exists()
     return file_path
@@ -422,7 +422,9 @@ async def datcore_structured_testbucket(
         filename3 = os.path.normpath(fake_files[2])
         collection_id2 = await dcw.create_collection(collection_id1, "level2")
         file_id3 = await dcw.upload_file_to_id(collection_id2, filename3)
-        assert file_id3, f"Could not upload {filename3} to the {bucket_name}/level1/level2"
+        assert (
+            file_id3
+        ), f"Could not upload {filename3} to the {bucket_name}/level1/level2"
 
         yield {
             "dataset_id": dataset_id,

@@ -70,7 +70,7 @@ class AccessRights:
 
 
 class AccessLayerError(Exception):
-    """ Base class for access-layer related errors """
+    """Base class for access-layer related errors"""
 
 
 class InvalidFileIdentifier(AccessLayerError):
@@ -282,6 +282,6 @@ async def get_file_access_rights(
 
 
 async def get_readable_project_ids(conn: SAConnection, user_id: int) -> List[ProjectID]:
-    """ Returns a list of projects where user has granted read-access """
+    """Returns a list of projects where user has granted read-access"""
     projects_access_rights = await list_projects_access_rights(conn, int(user_id))
     return [pid for pid, access in projects_access_rights.items() if access.read]
