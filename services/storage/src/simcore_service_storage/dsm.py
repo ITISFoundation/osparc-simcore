@@ -1,8 +1,3 @@
-# pylint: disable=no-value-for-parameter
-# FIXME: E1120:No value for argument 'dml' in method call
-# pylint: disable=protected-access
-# FIXME: Access to a protected member _result_proxy of a client class
-
 import asyncio
 import logging
 import os
@@ -10,6 +5,7 @@ import re
 import tempfile
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -69,7 +65,6 @@ def setup_dsm(app: web.Application):
             dsm = DataStorageManager(
                 s3_client=app.get(APP_S3_KEY),
                 engine=app.get(APP_DB_ENGINE_KEY),
-                loop=asyncio.get_event_loop(),
                 pool=executor,
                 simcore_bucket_name=cfg.STORAGE_S3.S3_BUCKET_NAME,
                 has_project_db=not cfg.STORAGE_TESTING,
@@ -99,16 +94,7 @@ def to_meta_data_extended(row: RowProxy) -> FileMetaDataEx:
     return meta_extended
 
 
-@attr.s(auto_attribs=True)
-class DatCoreApiToken:
-    api_token: Optional[str] = None
-    api_secret: Optional[str] = None
-
-    def to_tuple(self):
-        return (self.api_token, self.api_secret)
-
-
-@attr.s(auto_attribs=True)
+@dataclass
 class DataStorageManager:
     """Data storage manager
 
@@ -143,12 +129,10 @@ class DataStorageManager:
 
     s3_client: MinioClientWrapper
     engine: Engine
-    loop: object
     pool: ThreadPoolExecutor
     simcore_bucket_name: str
     has_project_db: bool
     session: AioSession = attr.Factory(aiobotocore.get_session)
-    datcore_tokens: Dict[str, DatCoreApiToken] = attr.Factory(dict)
     app: Optional[web.Application] = None
 
     def _create_client_context(self) -> ClientCreatorContext:
@@ -160,12 +144,6 @@ class DataStorageManager:
             aws_access_key_id=self.s3_client.access_key,
             aws_secret_access_key=self.s3_client.secret_key,
         )
-
-    def _get_datcore_tokens(self, user_id: str) -> Tuple[str, str]:
-        # pylint: disable=no-member
-        assert hasattr(self.datcore_tokens, "get")  # nosec
-        token = self.datcore_tokens.get(user_id, DatCoreApiToken())
-        return token.to_tuple()
 
     async def locations(self, user_id: str):
         locs = []
@@ -187,9 +165,6 @@ class DataStorageManager:
 
     # LIST/GET ---------------------------
 
-    # pylint: disable=too-many-arguments
-    # pylint: disable=too-many-branches
-    # pylint: disable=too-many-statements
     async def list_files(
         self,
         user_id: Union[str, int],
@@ -204,75 +179,71 @@ class DataStorageManager:
         - Can filter upon regular expression (for now only on key: value pairs of the FileMetaData)
         """
         data = deque()
-        if location == SIMCORE_S3_STR:
-            accesible_projects_ids = []
-            async with self.engine.acquire() as conn, conn.begin():
-                accesible_projects_ids = await get_readable_project_ids(
-                    conn, int(user_id)
+        assert location == SIMCORE_S3_STR
+
+        accesible_projects_ids = []
+        async with self.engine.acquire() as conn, conn.begin():
+            accesible_projects_ids = await get_readable_project_ids(conn, int(user_id))
+            has_read_access = (
+                file_meta_data.c.user_id == str(user_id)
+            ) | file_meta_data.c.project_id.in_(accesible_projects_ids)
+
+            query = sa.select([file_meta_data]).where(has_read_access)
+
+            async for row in conn.execute(query):
+                d = FileMetaData(**dict(row))
+                dex = FileMetaDataEx(fmd=d, parent_id=str(Path(d.object_name).parent))
+                data.append(dex)
+
+        if self.has_project_db:
+            uuid_name_dict = {}
+            # now parse the project to search for node/project names
+            try:
+                async with self.engine.acquire() as conn, conn.begin():
+                    query = sa.select([projects]).where(
+                        projects.c.uuid.in_(accesible_projects_ids)
+                    )
+
+                    async for row in conn.execute(query):
+                        proj_data = dict(row.items())
+
+                        uuid_name_dict[proj_data["uuid"]] = proj_data["name"]
+                        wb = proj_data["workbench"]
+                        for node in wb.keys():
+                            uuid_name_dict[node] = wb[node]["label"]
+            except DBAPIError as _err:
+                logger.exception("Error querying database for project names")
+
+            if not uuid_name_dict:
+                # there seems to be no project whatsoever for user_id
+                return []
+
+            # only keep files from non-deleted project
+            clean_data = deque()
+            for dx in data:
+                d = dx.fmd
+                if d.project_id not in uuid_name_dict:
+                    continue
+                #
+                # FIXME: artifically fills ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
+                #        with information from the projects table!
+
+                d.project_name = uuid_name_dict[d.project_id]
+                if d.node_id in uuid_name_dict:
+                    d.node_name = uuid_name_dict[d.node_id]
+
+                d.raw_file_path = str(
+                    Path(d.project_id) / Path(d.node_id) / Path(d.file_name)
                 )
-                has_read_access = (
-                    file_meta_data.c.user_id == str(user_id)
-                ) | file_meta_data.c.project_id.in_(accesible_projects_ids)
-
-                query = sa.select([file_meta_data]).where(has_read_access)
-
-                async for row in conn.execute(query):
-                    d = FileMetaData(**dict(row))
-                    dex = FileMetaDataEx(
-                        fmd=d, parent_id=str(Path(d.object_name).parent)
+                d.display_file_path = d.raw_file_path
+                d.file_id = d.file_uuid
+                if d.node_name and d.project_name:
+                    d.display_file_path = str(
+                        Path(d.project_name) / Path(d.node_name) / Path(d.file_name)
                     )
-                    data.append(dex)
-
-            if self.has_project_db:
-                uuid_name_dict = {}
-                # now parse the project to search for node/project names
-                try:
-                    async with self.engine.acquire() as conn, conn.begin():
-                        query = sa.select([projects]).where(
-                            projects.c.uuid.in_(accesible_projects_ids)
-                        )
-
-                        async for row in conn.execute(query):
-                            proj_data = dict(row.items())
-
-                            uuid_name_dict[proj_data["uuid"]] = proj_data["name"]
-                            wb = proj_data["workbench"]
-                            for node in wb.keys():
-                                uuid_name_dict[node] = wb[node]["label"]
-                except DBAPIError as _err:
-                    logger.exception("Error querying database for project names")
-
-                if not uuid_name_dict:
-                    # there seems to be no project whatsoever for user_id
-                    return []
-
-                # only keep files from non-deleted project
-                clean_data = deque()
-                for dx in data:
-                    d = dx.fmd
-                    if d.project_id not in uuid_name_dict:
-                        continue
-                    #
-                    # FIXME: artifically fills ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
-                    #        with information from the projects table!
-
-                    d.project_name = uuid_name_dict[d.project_id]
-                    if d.node_id in uuid_name_dict:
-                        d.node_name = uuid_name_dict[d.node_id]
-
-                    d.raw_file_path = str(
-                        Path(d.project_id) / Path(d.node_id) / Path(d.file_name)
-                    )
-                    d.display_file_path = d.raw_file_path
-                    d.file_id = d.file_uuid
-                    if d.node_name and d.project_name:
-                        d.display_file_path = str(
-                            Path(d.project_name) / Path(d.node_name) / Path(d.file_name)
-                        )
-                        # once the data was sync to postgres metadata table at this point
-                        clean_data.append(dx)
-
-                data = clean_data
+                    # once the data was sync to postgres metadata table at this point
+                    clean_data.append(dx)
+            data = clean_data
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
@@ -318,7 +289,7 @@ class DataStorageManager:
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
             # lists all the files inside the dataset
-            return await datcore_adapter.list_all_files_metadatas_in_dataset(
+            data: List[FileMetaDataEx] = await datcore_adapter.list_all_files_metadatas_in_dataset(
                 self.app, api_token, api_secret, dataset_id
             )
 
@@ -331,7 +302,6 @@ class DataStorageManager:
 
         """
         data = []
-
         if location == SIMCORE_S3_STR:
             if self.has_project_db:
                 try:
@@ -345,6 +315,7 @@ class DataStorageManager:
                         query = sa.select([projects.c.uuid, projects.c.name]).where(
                             has_read_access
                         )
+
                         async for row in conn.execute(query):
                             dmd = DatasetMetaData(
                                 dataset_id=row.uuid,
@@ -355,6 +326,7 @@ class DataStorageManager:
                     logger.exception("Error querying database for project names")
 
         elif location == DATCORE_STR:
+
             api_token, api_secret = self._get_datcore_tokens(user_id)
             return await datcore_adapter.list_datasets(self.app, api_token, api_secret)
 
@@ -883,16 +855,12 @@ class DataStorageManager:
                 ).where(file_meta_data.c.file_uuid == file_uuid)
 
                 async for row in conn.execute(query):
-                    if self.s3_client.remove_objects(
-                        row.bucket_name, [row.object_name]
-                    ):
+                    if self.s3_client.remove_objects(row.bucket_name, [row.object_name]):
                         to_delete.append(file_uuid)
 
                 await conn.execute(
-                    file_meta_data.delete().where(
-                        file_meta_data.c.file_uuid.in_(to_delete)
+                    file_meta_data.delete().where(file_meta_data.c.file_uuid.in_(to_delete))
                     )
-                )
 
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies

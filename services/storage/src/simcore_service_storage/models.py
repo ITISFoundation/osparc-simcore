@@ -2,8 +2,9 @@
 
 """
 import datetime
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Union
 from uuid import UUID
 
 import attr
@@ -19,25 +20,8 @@ from simcore_postgres_database.storage_models import (
 
 from .constants import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 
-# FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
-# from sqlalchemy.dialects.postgresql import UUID
-
-# FIXME: R0902: Too many instance attributes (11/7) (too-many-instance-attributes)
-# pylint: disable=R0902
-
-
 _LOCATION_ID_TO_TAG_MAP = {0: SIMCORE_S3_STR, 1: DATCORE_STR}
 UNDEFINED_LOCATION_TAG: str = "undefined"
-
-
-def _parse_datcore(file_uuid: str) -> Tuple[str, str]:
-    # we should have 12/123123123/111.txt and return (12/123123123, 111.txt)
-
-    file_path = Path(file_uuid)
-    destination = str(file_path.parent)
-    file_name = str(file_path.name)
-
-    return destination, file_name
 
 
 def get_location_from_id(location_id: Union[str, int]) -> str:
@@ -155,7 +139,7 @@ attr.s(
 )(FileMetaData)
 
 
-@attr.s(auto_attribs=True)
+@dataclass
 class FileMetaDataEx:
     """Extend the base type by some additional attributes that shall not end up in the db"""
 
