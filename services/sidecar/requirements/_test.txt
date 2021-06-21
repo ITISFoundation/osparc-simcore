@@ -16,7 +16,10 @@ aiopg[sa]==1.2.1
     #   -c requirements/_packages.txt
     #   -r requirements/_test.in
 alembic==1.6.5
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
+    #   -r requirements/_test.in
 astroid==2.5.6
     # via pylint
 async-timeout==3.0.1
@@ -33,6 +36,8 @@ attrs==20.2.0
     #   pytest
 certifi==2021.5.30
     # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   minio
     #   requests
 chardet==3.0.4
@@ -49,7 +54,10 @@ coverage==5.5
 coveralls==3.1.0
     # via -r requirements/_test.in
 docker==5.0.0
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
+    #   -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
 faker==8.8.1
@@ -68,17 +76,24 @@ isort==5.9.0
     # via pylint
 lazy-object-proxy==1.4.3
     # via
+    #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   astroid
 mako==1.1.4
-    # via alembic
+    # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
+    #   alembic
 markupsafe==2.0.1
-    # via mako
+    # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
+    #   mako
 mccabe==0.6.1
     # via pylint
 minio==7.0.4
     # via -r requirements/_test.in
-multidict==4.7.6
+multidict==5.1.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
@@ -87,13 +102,14 @@ multidict==4.7.6
 packaging==20.4
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   pytest
     #   pytest-sugar
 pluggy==0.13.1
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-psycopg2-binary==2.8.6
+psycopg2-binary==2.9.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
@@ -108,6 +124,7 @@ pylint==2.8.3
 pyparsing==2.4.7
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   packaging
 pytest-aiohttp==0.3.0
     # via -r requirements/_test.in
@@ -135,14 +152,21 @@ pytest==6.2.4
     #   pytest-sugar
 python-dateutil==2.8.1
     # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   alembic
     #   faker
 python-dotenv==0.18.0
     # via -r requirements/_test.in
 python-editor==1.0.4
-    # via alembic
+    # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
+    #   alembic
 requests==2.25.1
     # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   coveralls
     #   docker
 six==1.15.0
@@ -151,7 +175,8 @@ six==1.15.0
     #   -c requirements/_packages.txt
     #   packaging
     #   python-dateutil
-sqlalchemy[postgresql_psycopg2binary]==1.3.19
+    #   websocket-client
+sqlalchemy[postgresql_psycopg2binary]==1.3.24
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -176,13 +201,17 @@ urllib3==1.26.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   minio
     #   requests
-websocket-client==1.1.0
-    # via docker
+websocket-client==0.59.0
+    # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
+    #   docker
 wrapt==1.12.1
     # via astroid
-yarl==1.5.1
+yarl==1.6.3
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
