@@ -162,7 +162,6 @@ toml==0.10.2
 typing-extensions==3.10.0.0
     # via
     #   -c requirements/_base.txt
-    #   -c requirements/_base_fastapi.txt
     #   aiohttp
 urllib3==1.26.5
     # via

@@ -8,7 +8,6 @@
 
 # installs base + tests + tools requirements
 -r _base.txt
--r _base_fastapi.txt
 -r _test.txt
 -r _tools.txt
 

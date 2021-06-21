@@ -1,8 +1,0 @@
-#
-# Specifies third-party dependencies for 'service-library'
-#
--c ../../../requirements/constraints.txt
-
--c _base.txt
-
-fastapi
