@@ -1,6 +1,6 @@
 from typing import Optional
 
-from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel, PortInt
+from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
 from models_library.settings.base import BaseCustomSettings
 from pydantic import Field
 from pydantic.networks import AnyUrl
@@ -9,8 +9,7 @@ from pydantic.networks import AnyUrl
 class PennsieveSettings(BaseCustomSettings):
     ENABLED: bool = True
 
-    HOST: AnyUrl = "https://api.pennsieve.io"
-    PORT: PortInt = 80
+    URL: AnyUrl = "https://api.pennsieve.io"
 
 
 class Settings(BaseCustomSettings):
