@@ -16,11 +16,6 @@ aiofiles
 aiopg[sa]
 
 tenacity
-semantic_version
 typer
 minio
 urllib3
-
-#
-# FIXME: pip copiling these requirements wil fail due to incompatible contraints on urllib3 (ongoing in weekely mainteinance)
-#
