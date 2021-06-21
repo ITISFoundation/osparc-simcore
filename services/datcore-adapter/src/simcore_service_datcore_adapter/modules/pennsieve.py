@@ -9,7 +9,7 @@ from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 logger = logging.getLogger(__name__)
 
 
-class PennsieveApi(BaseServiceClientApi):
+class PennsieveApiClient(BaseServiceClientApi):
     async def ping(self) -> bool:
         pennsieve = Pennsieve(api_token=None, api_secret=None)
         profile = pennsieve.profile
@@ -20,7 +20,7 @@ class PennsieveApi(BaseServiceClientApi):
 def setup(app: FastAPI, settings: PennsieveSettings) -> None:
     setup_client_instance(
         app,
-        PennsieveApi,
+        PennsieveApiClient,
         api_baseurl=f"http://{settings.HOST}:{settings.PORT}",
         service_name="pennsieve.io",
     )

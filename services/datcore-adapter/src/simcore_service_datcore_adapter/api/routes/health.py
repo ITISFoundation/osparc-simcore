@@ -1,7 +1,12 @@
 import logging
 from datetime import datetime
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from pydantic.main import BaseModel
+from simcore_service_datcore_adapter.api.dependencies.pennsieve import (
+    get_pennsieve_api_client,
+)
+from simcore_service_datcore_adapter.modules.pennsieve import PennsieveApiClient
 from starlette import status
 from starlette.responses import PlainTextResponse
 
@@ -10,35 +15,22 @@ log = logging.getLogger(__file__)
 
 
 @router.get(
-    "/health",
+    "/live",
     summary="return service health",
     response_class=PlainTextResponse,
     status_code=status.HTTP_200_OK,
 )
-async def get_service_status():
+async def get_service_alive():
     return f"{__name__}@{datetime.utcnow().isoformat()}"
 
 
-# @router.get("/state")
-# async def get_service_state(
-#     datcore_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-#     url_for: Callable = Depends(get_reverse_url_mapper),
-# ):
-#     apis = (catalog_client, director2_api, storage_client, webserver_client)
-#     heaths: Tuple[bool] = await asyncio.gather(*[api.is_responsive() for api in apis])
+class AppReady(BaseModel):
+    pennsieve_responsive: bool
 
-#     current_status = AppStatusCheck(
-#         app_name=project_name,
-#         version=api_version,
-#         services={
-#             api.service_name: {
-#                 "healthy": is_healty,
-#                 "url": str(api.client.base_url) + api.health_check_path.lstrip("/"),
-#             }
-#             for api, is_healty in zip(apis, heaths)
-#         },
-#         url=url_for("get_service_state"),
-#     )
-#     resp = current_status.dict(exclude_unset=True)
-#     resp.update(docs_dev_url=url_for("swagger_ui_html"))
-#     return resp
+
+@router.get("/ready", status_code=status.HTTP_200_OK, response_model=AppReady)
+async def get_service_ready(
+    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
+):
+    pennsieve_pinged = await pennsieve_client.ping()
+    return AppReady(pennsieve_responsive=pennsieve_pinged)
