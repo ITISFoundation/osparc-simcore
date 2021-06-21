@@ -16,6 +16,7 @@ cfgv==3.3.0
     # via pre-commit
 click==8.0.1
     # via
+    #   -c requirements/_base.txt
     #   black
     #   pip-tools
 distlib==0.3.2
