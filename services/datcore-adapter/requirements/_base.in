@@ -7,4 +7,5 @@
 fastapi
 uvicorn[standard]
 
+pennsieve
 pydantic

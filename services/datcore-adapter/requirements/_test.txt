@@ -14,18 +14,34 @@ astroid==2.5.6
     # via pylint
 attrs==21.2.0
     # via pytest
+boto3==1.17.97
+    # via
+    #   -r requirements/_base.txt
+    #   pennsieve
+botocore==1.20.97
+    # via
+    #   -r requirements/_base.txt
+    #   boto3
+    #   s3transfer
 certifi==2021.5.30
     # via
+    #   -r requirements/_base.txt
     #   httpx
     #   requests
 chardet==4.0.0
-    # via requests
+    # via
+    #   -r requirements/_base.txt
+    #   requests
 click==8.0.1
     # via
     #   -r requirements/_base.txt
     #   uvicorn
 codecov==2.1.11
     # via -r requirements/_test.in
+configparser==5.0.2
+    # via
+    #   -r requirements/_base.txt
+    #   pennsieve
 coverage==5.5
     # via
     #   -r requirements/_test.in
@@ -34,12 +50,31 @@ coverage==5.5
     #   pytest-cov
 coveralls==3.1.0
     # via -r requirements/_test.in
+deprecated==1.2.12
+    # via
+    #   -r requirements/_base.txt
+    #   pennsieve
 docopt==0.6.2
-    # via coveralls
+    # via
+    #   -r requirements/_base.txt
+    #   coveralls
+    #   pennsieve
+ecdsa==0.14.1
+    # via
+    #   -r requirements/_base.txt
+    #   python-jose
 faker==8.8.1
     # via -r requirements/_test.in
 fastapi==0.65.2
     # via -r requirements/_base.txt
+future==0.18.2
+    # via
+    #   -r requirements/_base.txt
+    #   pennsieve
+futures==3.1.1
+    # via
+    #   -r requirements/_base.txt
+    #   pennsieve
 h11==0.12.0
     # via
     #   -r requirements/_base.txt
@@ -55,6 +90,7 @@ httpx==0.18.2
     # via respx
 idna==2.10
     # via
+    #   -r requirements/_base.txt
     #   anyio
     #   requests
     #   rfc3986
@@ -62,16 +98,36 @@ iniconfig==1.1.1
     # via pytest
 isort==5.9.0
     # via pylint
+jmespath==0.10.0
+    # via
+    #   -r requirements/_base.txt
+    #   boto3
+    #   botocore
 lazy-object-proxy==1.6.0
     # via astroid
 mccabe==0.6.1
     # via pylint
 packaging==20.9
     # via pytest
+pennsieve==6.1.2
+    # via -r requirements/_base.txt
 pluggy==0.13.1
     # via pytest
+protobuf==3.17.3
+    # via
+    #   -r requirements/_base.txt
+    #   pennsieve
+psutil==5.8.0
+    # via
+    #   -r requirements/_base.txt
+    #   pennsieve
 py==1.10.0
     # via pytest
+pyasn1==0.4.8
+    # via
+    #   -r requirements/_base.txt
+    #   python-jose
+    #   rsa
 pydantic==1.8.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -88,11 +144,23 @@ pytest==6.2.4
     #   -r requirements/_test.in
     #   pytest-cov
 python-dateutil==2.8.1
-    # via faker
+    # via
+    #   -r requirements/_base.txt
+    #   botocore
+    #   faker
+    #   pennsieve
 python-dotenv==0.18.0
     # via
     #   -r requirements/_base.txt
     #   uvicorn
+python-jose==3.2.0
+    # via
+    #   -r requirements/_base.txt
+    #   pennsieve
+pytz==2021.1
+    # via
+    #   -r requirements/_base.txt
+    #   pennsieve
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -100,14 +168,34 @@ pyyaml==5.4.1
     #   uvicorn
 requests==2.25.1
     # via
+    #   -r requirements/_base.txt
     #   codecov
     #   coveralls
+    #   pennsieve
 respx==0.17.0
     # via -r requirements/_test.in
 rfc3986[idna2008]==1.5.0
     # via httpx
+rsa==4.0
+    # via
+    #   -r requirements/_base.txt
+    #   pennsieve
+    #   python-jose
+s3transfer==0.4.2
+    # via
+    #   -r requirements/_base.txt
+    #   boto3
+semver==2.13.0
+    # via
+    #   -r requirements/_base.txt
+    #   pennsieve
 six==1.16.0
-    # via python-dateutil
+    # via
+    #   -r requirements/_base.txt
+    #   ecdsa
+    #   protobuf
+    #   python-dateutil
+    #   python-jose
 sniffio==1.2.0
     # via
     #   anyio
@@ -131,6 +219,8 @@ typing-extensions==3.10.0.0
 urllib3==1.26.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.txt
+    #   botocore
     #   requests
 uvicorn[standard]==0.14.0
     # via -r requirements/_base.txt
@@ -142,9 +232,16 @@ watchgod==0.7
     # via
     #   -r requirements/_base.txt
     #   uvicorn
+websocket-client==1.1.0
+    # via
+    #   -r requirements/_base.txt
+    #   pennsieve
 websockets==9.1
     # via
     #   -r requirements/_base.txt
     #   uvicorn
 wrapt==1.12.1
-    # via astroid
+    # via
+    #   -r requirements/_base.txt
+    #   astroid
+    #   deprecated
