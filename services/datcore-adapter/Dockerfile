@@ -47,6 +47,12 @@ ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 EXPOSE 8000
 EXPOSE 3000
 
+# install Pennsieve agent [ref](https://docs.pennsieve.io/docs/the-pennsieve-agent)
+RUN wget https://github.com/Pennsieve/agent/releases/download/0.3.5/pennsieve_0.3.5_amd64.deb . \
+  && dpkg --install pennsieve_0.3.5_amd64.deb \
+  && rm --force pennsieve_0.3.5_amd64.deb
+ENV PATH="/usr/local/opt/pennsieve/bin:$PATH"
+
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
 #
