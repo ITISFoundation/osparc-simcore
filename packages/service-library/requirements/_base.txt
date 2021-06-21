@@ -8,6 +8,7 @@ aiodebug==1.1.2
     # via -r requirements/_base.in
 aiohttp==3.7.4.post0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   aiozipkin
 aiopg[sa]==1.2.1
@@ -55,9 +56,9 @@ openapi-schema-validator==0.1.5
     # via openapi-spec-validator
 openapi-spec-validator==0.3.1
     # via openapi-core
-prometheus-client==0.10.1
+prometheus-client==0.11.0
     # via -r requirements/_base.in
-psycopg2-binary==2.8.6
+psycopg2-binary==2.9.1
     # via
     #   -r requirements/_base.in
     #   aiopg
@@ -102,7 +103,7 @@ typing-extensions==3.10.0.0
     #   pydantic
 ujson==4.0.2
     # via -r requirements/_base.in
-werkzeug==2.0.0
+werkzeug==2.0.1
     # via -r requirements/_base.in
 yarl==1.6.3
     # via aiohttp
