@@ -2,6 +2,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import json
+from typing import Callable, Dict
+
+from models_library.projects_nodes import Node
 from simcore_service_workflows.utils.function_factory import (
     _create_function_v1,
     _create_function_v2,
@@ -56,5 +60,27 @@ def test_create_function_v2():
     # TypeError: myfunc() takes exactly 3 arguments (4 given)
 
 
-if __name__ == "__main__":
-    main()
+def test_project_to_workflow():
+
+    with open("data/project.json") as fp:
+        project = json.load(fp)
+
+    workbench = project["workbench"]
+
+    nouts = {}
+
+    def get_val(v):
+        if isinstance(v, dict):
+            return nouts[v["nodeUuid"]][v["output"]]
+        return v
+
+    def create_callable(node: Node) -> Callable:
+        # node.inputs
+        # node.outputs
+        pass
+
+    for nid, node in workbench.items():
+        node = Node.parse_obj(node)
+        nins = {name: get_val(value) for name, value in node.inputs.items()}
+
+        nouts[nid] = (create_callable(node), nins)
