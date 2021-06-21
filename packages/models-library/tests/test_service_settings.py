@@ -27,9 +27,9 @@ def test_service_settings():
 
 
 SIMCORE_SERVICE_EXAMPLES = [
-    (example, items, imdex)
+    (example, items, index)
     # pylint: disable=unnecessary-comprehension
-    for example, items, imdex in zip(
+    for example, items, index in zip(
         SimcoreService.Config.schema_extra["examples"],
         [1, 2, 4],
         ["legacy", "dynamic-service", "dynamic-service-with-compose-spec"],
