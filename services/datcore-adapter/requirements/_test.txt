@@ -145,6 +145,8 @@ pylint==2.8.3
     # via -r requirements/_test.in
 pyparsing==2.4.7
     # via packaging
+pytest-asyncio==0.15.1
+    # via -r requirements/_test.in
 pytest-cov==2.12.1
     # via -r requirements/_test.in
 pytest-icdiff==0.5
@@ -160,6 +162,7 @@ pytest-sugar==0.9.4
 pytest==6.2.4
     # via
     #   -r requirements/_test.in
+    #   pytest-asyncio
     #   pytest-cov
     #   pytest-icdiff
     #   pytest-instafail

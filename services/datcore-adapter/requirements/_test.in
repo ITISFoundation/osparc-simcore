@@ -10,6 +10,7 @@
 # testing
 asgi_lifespan
 pytest
+pytest-asyncio
 pytest-icdiff
 pytest-instafail
 pytest-mock
