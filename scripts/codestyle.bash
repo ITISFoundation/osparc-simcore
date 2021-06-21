@@ -9,8 +9,6 @@ SRC_DIRECTORY_NAME=${2}
 BASE_PATH_DIR=${3-MISSING_DIR}
 
 
-CACHE_DIR=$(dirname "$(mktemp -u)")
-
 # global config for entire repo
 PYLINT_CONFIG="$(git rev-parse --show-toplevel)/.pylintrc"
 MYPY_CONFIG="$(git rev-parse --show-toplevel)/mypy.ini"
@@ -26,8 +24,6 @@ development() {
   echo "pylint"
   pylint --rcfile="$PYLINT_CONFIG" src/"$SRC_DIRECTORY_NAME" tests/
   echo "mypy"
-  mkdir --parents "$CACHE_DIR"
-  mypy --install-types
   mypy --ignore-missing-imports --config-file "$MYPY_CONFIG" src/"$SRC_DIRECTORY_NAME" tests/
 }
 
@@ -38,12 +34,11 @@ ci() {
   isort --check setup.py "$BASE_PATH_DIR"/src/"$SRC_DIRECTORY_NAME" "$BASE_PATH_DIR"/tests
   echo "black"
   black --check "$BASE_PATH_DIR"/src/"$SRC_DIRECTORY_NAME" "$BASE_PATH_DIR"/tests
-  echo "pylint"
+  echo "pylint ..."
   pylint --rcfile="$PYLINT_CONFIG" "$BASE_PATH_DIR"/src/"$SRC_DIRECTORY_NAME" "$BASE_PATH_DIR"/tests
-  echo "mypy"
+  echo "mypy ..."
   # installing all missing stub packages (e.g. types-PyYAML, types-aiofiles, etc)
-  mkdir --parents "$CACHE_DIR"
-  mypy --config-file "$MYPY_CONFIG" --cache-dir="$CACHE_DIR" --install-types
+  python3 -m pip install types-aiofiles types-PyYAML types-ujson
   # runs mypy
   mypy --config-file "$MYPY_CONFIG" --ignore-missing-imports "$BASE_PATH_DIR"/src/"$SRC_DIRECTORY_NAME" "$BASE_PATH_DIR"/tests
 }
