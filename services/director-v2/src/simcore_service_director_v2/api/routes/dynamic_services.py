@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from uuid import UUID
 
 import httpx
@@ -74,7 +74,7 @@ async def list_running_dynamic_services(
             dynamic_services_settings.dynamic_sidecar, user_id, project_id
         )
     ]
-    modern_running_services: List[Dict[str, str]] = [
+    modern_running_services: List[Dict[str, Any]] = [
         x.dict(exclude_unset=True)
         for x in await asyncio.gather(*get_stack_statuse_tasks)
     ]
