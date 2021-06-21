@@ -8,7 +8,13 @@
 
 
 # testing
+asgi_lifespan
 pytest
+pytest-icdiff
+pytest-instafail
+pytest-mock
+pytest-runner
+pytest-sugar
 
 # fixtures
 faker
