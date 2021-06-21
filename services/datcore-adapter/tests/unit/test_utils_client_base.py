@@ -17,18 +17,7 @@ from simcore_service_datcore_adapter.utils.client_base import (
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture
-def the_service():
-    with respx.mock(
-        base_url="http://the_service",
-        assert_all_mocked=True,
-    ) as respx_mock:
-        respx_mock.get("/health", name="health_check").respond(200, content="healthy")
-
-        yield respx_mock
-
-
-async def test_setup_client_instance(the_service):
+async def test_setup_client_instance():
     @dataclass
     class TheClientApi(BaseServiceClientApi):
         x: int = 33
@@ -54,11 +43,22 @@ async def test_setup_client_instance(the_service):
         assert TheClientApi.get_instance(app)
         api_obj = TheClientApi.get_instance(app)
 
-        assert await api_obj.is_responsive()
-        assert the_service["health_check"].called
+        # test responsivity
+        assert await api_obj.is_responsive() == False
+
+        # now start the server
+        with respx.mock(
+            base_url="http://the_service",
+            assert_all_mocked=True,
+        ) as respx_mock:
+            respx_mock.get("/health", name="health_check").respond(
+                200, content="healthy"
+            )
+            # test responsitivity
+            assert await api_obj.is_responsive()
+            assert respx_mock["health_check"].called
+
+            assert respx_mock["health_check"].call_count == 1
 
     # check shutdown
     assert not TheClientApi.get_instance(app), "Expected automatically cleaned"
-    # assert not await api_obj.is_responsive(), "Expected already closed"
-
-    assert the_service["health_check"].call_count == 1
