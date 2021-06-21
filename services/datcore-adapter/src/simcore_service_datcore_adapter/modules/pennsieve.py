@@ -21,6 +21,6 @@ def setup(app: FastAPI, settings: PennsieveSettings) -> None:
     setup_client_instance(
         app,
         PennsieveApi,
-        api_baseurl=f"http://{settings.host}:{settings.port}",
+        api_baseurl=f"http://{settings.HOST}:{settings.PORT}",
         service_name="pennsieve.io",
     )

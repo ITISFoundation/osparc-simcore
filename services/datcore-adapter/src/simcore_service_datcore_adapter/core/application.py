@@ -2,6 +2,7 @@ import logging
 from typing import Optional
 
 from fastapi import FastAPI
+from models_library.basic_types import BootModeEnum
 
 from ..api.module_setup import setup_api
 from ..meta import api_version, api_vtag
@@ -15,11 +16,14 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
     if settings is None:
         settings = Settings.create_from_envs()
 
-    logging.basicConfig(level=settings.log_level)
-    logging.root.setLevel(settings.log_level)
+    logging.basicConfig(level=settings.DATCORE_ADAPTER_LOG_LEVEL.value)
+    logging.root.setLevel(settings.DATCORE_ADAPTER_LOG_LEVEL.value)
 
     app = FastAPI(
-        debug=settings.debug,
+        debug=bool(
+            settings.SC_BOOT_MODE
+            in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL]
+        ),
         title="Components Catalog Service",
         description="Manages and maintains a **catalog** of all published components (e.g. macro-algorithms, scripts, etc)",
         version=api_version,
@@ -33,7 +37,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
 
     setup_api(app)
 
-    if settings.DATCORE_ADAPTER_PENNSIEVE.enabled:
+    if settings.DATCORE_ADAPTER_PENNSIEVE.ENABLED:
         pennsieve.setup(app, settings.DATCORE_ADAPTER_PENNSIEVE)
 
     return app

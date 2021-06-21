@@ -12,7 +12,7 @@ log = logging.getLogger(__file__)
 @router.get(
     "/health",
     summary="return service health",
-    response_model=PlainTextResponse,
+    response_class=PlainTextResponse,
     status_code=status.HTTP_200_OK,
 )
 async def get_service_status():
