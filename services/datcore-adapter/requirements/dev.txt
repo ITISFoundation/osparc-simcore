@@ -12,6 +12,7 @@
 -r _tools.txt
 
 # installs this repo's packages
+-e ../../packages/service-library[fastapi]
 -e ../../packages/pytest-simcore
 
 # installs current package

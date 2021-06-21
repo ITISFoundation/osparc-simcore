@@ -11,6 +11,7 @@
 -r _test.txt
 
 # installs this repo's packages
+../../packages/service-library[fastapi]
 ../../packages/pytest-simcore
 
 # installs current package
