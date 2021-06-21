@@ -8,6 +8,7 @@
 
 # installs base + tests requirements
 -r _base.txt
+-r _base_fastapi.txt
 -r _test.txt
 
 # installs this repo's packages

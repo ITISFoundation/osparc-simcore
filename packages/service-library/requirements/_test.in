@@ -7,6 +7,7 @@
 #  - Resulting _text.txt is a frozen list of EXTRA packages for testing, besides _base.txt
 #
 -c _base.txt
+-c _base_fastapi.txt
 
 # testing
 asgi_lifespan

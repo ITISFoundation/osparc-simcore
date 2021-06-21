@@ -21,7 +21,7 @@ pydantic
 sqlalchemy
 psycopg2-binary
 pyyaml
-fastapi
+
 
 # used for monitoring of slow callbacks
 pyinstrument
