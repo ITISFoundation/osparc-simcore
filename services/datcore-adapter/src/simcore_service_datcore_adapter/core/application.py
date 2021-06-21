@@ -5,6 +5,7 @@ from fastapi import FastAPI
 
 from ..api.module_setup import setup_api
 from ..meta import api_version, api_vtag
+from ..modules import pennsieve
 from .settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -31,5 +32,8 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
     app.state.settings = settings
 
     setup_api(app)
+
+    if settings.DATCORE_ADAPTER_PENNSIEVE.enabled:
+        pennsieve.setup(app, settings.DATCORE_ADAPTER_PENNSIEVE)
 
     return app
