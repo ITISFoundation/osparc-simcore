@@ -31,6 +31,9 @@ ci() {
   echo "pylint"
   pylint --rcfile=.pylintrc "$BASE_PATH_DIR"/src/"$SRC_DIRECTORY_NAME" "$BASE_PATH_DIR"/tests
   echo "mypy"
+  # installing all missing stub packages (e.g. types-PyYAML, types-aiofiles, etc)
+  mypy --install-types
+  # runs mypy
   mypy --config-file mypy.ini --ignore-missing-imports "$BASE_PATH_DIR"/src/"$SRC_DIRECTORY_NAME" "$BASE_PATH_DIR"/tests
 }
 
