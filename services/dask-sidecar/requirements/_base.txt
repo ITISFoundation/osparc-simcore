@@ -97,7 +97,7 @@ cloudpickle==1.6.0
     #   distributed
 cytoolz==0.11.0
     # via -r requirements/_base.in
-dask[complete]==2021.06.1
+dask==2021.06.1
     # via
     #   -r requirements/_base.in
     #   distributed
@@ -259,7 +259,7 @@ partd==1.2.0
     # via dask
 pillow==8.2.0
     # via bokeh
-prometheus_client==0.11.0
+prometheus-client==0.11.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.in
     #   -c requirements/../../../services/sidecar/requirements/_base.txt
