@@ -22,7 +22,6 @@ sqlalchemy
 psycopg2-binary
 pyyaml
 
-
 # used for monitoring of slow callbacks
 pyinstrument
 
