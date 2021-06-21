@@ -10,7 +10,7 @@ appdirs==1.4.4
     #   virtualenv
 argh==0.26.2
     # via watchdog
-black==21.5b1
+black==21.6b0
     # via -r requirements/../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
@@ -24,13 +24,13 @@ click==7.1.2
     #   -c requirements/_test.txt
     #   black
     #   pip-tools
-distlib==0.3.1
+distlib==0.3.2
     # via virtualenv
 filelock==3.0.12
     # via virtualenv
-identify==2.2.4
+identify==2.2.10
     # via pre-commit
-isort==5.8.0
+isort==5.9.0
     # via
     #   -c requirements/_test.txt
     #   -r requirements/../../../requirements/devenv.txt
@@ -54,7 +54,7 @@ pep517==0.10.0
     # via pip-tools
 pip-tools==6.1.0
     # via -r requirements/../../../requirements/devenv.txt
-pre-commit==2.12.1
+pre-commit==2.13.0
     # via -r requirements/../../../requirements/devenv.txt
 ptvsd==4.3.2
     # via -r requirements/_tools.in
@@ -78,7 +78,7 @@ toml==0.10.2
     #   black
     #   pep517
     #   pre-commit
-virtualenv==20.4.6
+virtualenv==20.4.7
     # via pre-commit
 watchdog[watchmedo]==2.1.2
     # via -r requirements/_tools.in
