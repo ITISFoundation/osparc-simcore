@@ -4,14 +4,14 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
+anyio==3.2.0
+    # via httpcore
 asgiref==3.3.4
     # via
     #   -r requirements/_base.txt
     #   uvicorn
 astroid==2.5.6
     # via pylint
-async-generator==1.10
-    # via httpx
 attrs==21.2.0
     # via pytest
 certifi==2021.5.30
@@ -26,8 +26,6 @@ click==8.0.1
     #   uvicorn
 codecov==2.1.11
     # via -r requirements/_test.in
-contextvars==2.4
-    # via sniffio
 coverage==5.5
     # via
     #   -r requirements/_test.in
@@ -36,44 +34,33 @@ coverage==5.5
     #   pytest-cov
 coveralls==3.1.0
     # via -r requirements/_test.in
-dataclasses==0.8
-    # via
-    #   -r requirements/_base.txt
-    #   pydantic
 docopt==0.6.2
     # via coveralls
-faker==8.5.0
+faker==8.8.1
     # via -r requirements/_test.in
-fastapi==0.65.1
+fastapi==0.65.2
     # via -r requirements/_base.txt
 h11==0.12.0
     # via
     #   -r requirements/_base.txt
     #   httpcore
     #   uvicorn
-httpcore==0.13.3
+httpcore==0.13.6
     # via httpx
 httptools==0.2.0
     # via
     #   -r requirements/_base.txt
     #   uvicorn
-httpx==0.18.1
+httpx==0.18.2
     # via respx
 idna==2.10
     # via
+    #   anyio
     #   requests
     #   rfc3986
-immutables==0.15
-    # via contextvars
-importlib-metadata==4.4.0
-    # via
-    #   -r requirements/_base.txt
-    #   click
-    #   pluggy
-    #   pytest
 iniconfig==1.1.1
     # via pytest
-isort==5.8.0
+isort==5.9.1
     # via pylint
 lazy-object-proxy==1.6.0
     # via astroid
@@ -102,7 +89,7 @@ pytest==6.2.4
     #   pytest-cov
 python-dateutil==2.8.1
     # via faker
-python-dotenv==0.17.1
+python-dotenv==0.18.0
     # via
     #   -r requirements/_base.txt
     #   uvicorn
@@ -123,6 +110,7 @@ six==1.16.0
     # via python-dateutil
 sniffio==1.2.0
     # via
+    #   anyio
     #   httpcore
     #   httpx
 starlette==0.14.2
@@ -136,24 +124,18 @@ toml==0.10.2
     #   pylint
     #   pytest
     #   pytest-cov
-typed-ast==1.4.3
-    # via astroid
 typing-extensions==3.10.0.0
     # via
     #   -r requirements/_base.txt
-    #   asgiref
-    #   importlib-metadata
     #   pydantic
-    #   uvicorn
 urllib3==1.26.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
 uvicorn[standard]==0.14.0
     # via -r requirements/_base.txt
-uvloop==0.14.0 ; python_version < "3.7"
+uvloop==0.15.2
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.txt
     #   uvicorn
 watchgod==0.7
@@ -166,7 +148,3 @@ websockets==9.1
     #   uvicorn
 wrapt==1.12.1
     # via astroid
-zipp==3.4.1
-    # via
-    #   -r requirements/_base.txt
-    #   importlib-metadata
