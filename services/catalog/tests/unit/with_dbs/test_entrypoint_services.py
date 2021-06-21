@@ -161,10 +161,10 @@ async def test_director_mockup(
 @pytest.mark.skip(
     reason="Not ready, depency injection does not work, using monkeypatch. still issue with setting up database"
 )
-def test_list_services(
+async def test_list_services(
     director_mockup, db_mockup, app: FastAPI, client: TestClient, user_id: int
 ):
-    asyncio.sleep(10)
+    await asyncio.sleep(10)
 
     url = URL("/v0/services").with_query(user_id=user_id)
     response = client.get(str(url))

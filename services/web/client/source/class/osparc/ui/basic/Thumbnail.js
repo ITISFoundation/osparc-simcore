@@ -22,7 +22,7 @@
  * |flex Spacer|   Image   |flex Spacer|
  * |_____x_____|flex Spacer|_____x_____|
  */
-qx.Class.define("osparc.component.widget.Thumbnail", {
+qx.Class.define("osparc.ui.basic.Thumbnail", {
   extend: qx.ui.core.Widget,
 
   /**

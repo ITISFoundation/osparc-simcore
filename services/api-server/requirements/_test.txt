@@ -4,20 +4,12 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-alembic==1.6.2
+alembic==1.6.5
     # via -r requirements/_test.in
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
 astroid==2.5.6
     # via pylint
-async-exit-stack==1.0.1
-    # via
-    #   -c requirements/_base.txt
-    #   asgi-lifespan
-async-generator==1.10
-    # via
-    #   -c requirements/_base.txt
-    #   httpx
 attrs==20.3.0
     # via
     #   -c requirements/_base.txt
@@ -28,8 +20,6 @@ bcrypt==3.2.0
     # via
     #   paramiko
     #   passlib
-cached-property==1.5.2
-    # via docker-compose
 certifi==2020.12.5
     # via
     #   -c requirements/_base.txt
@@ -51,16 +41,12 @@ click==7.1.2
     #   -r requirements/_test.in
 codecov==2.1.11
     # via -r requirements/_test.in
-contextvars==2.4
-    # via
-    #   -c requirements/_base.txt
-    #   sniffio
-coverage[toml]==5.5
+coverage==5.5
     # via
     #   codecov
     #   coveralls
     #   pytest-cov
-coveralls==3.0.1
+coveralls==3.1.0
     # via -r requirements/_test.in
 cryptography==3.4.7
     # via
@@ -85,7 +71,7 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==8.2.0
+faker==8.8.1
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -106,19 +92,9 @@ idna==2.10
     #   requests
     #   rfc3986
     #   yarl
-immutables==0.15
-    # via
-    #   -c requirements/_base.txt
-    #   contextvars
-importlib-metadata==4.0.1
-    # via
-    #   -c requirements/_base.txt
-    #   jsonschema
-    #   pluggy
-    #   pytest
 iniconfig==1.1.1
     # via pytest
-isort==5.8.0
+isort==5.9.0
     # via pylint
 jsonschema==3.2.0
     # via
@@ -160,7 +136,7 @@ pycparser==2.20
     # via
     #   -c requirements/_base.txt
     #   cffi
-pylint==2.8.2
+pylint==2.8.3
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
@@ -174,9 +150,9 @@ pyrsistent==0.17.3
     #   jsonschema
 pytest-asyncio==0.15.1
     # via -r requirements/_test.in
-pytest-cov==2.12.0
+pytest-cov==2.12.1
     # via -r requirements/_test.in
-pytest-docker==0.10.1
+pytest-docker==0.10.3
     # via -r requirements/_test.in
 pytest-mock==3.6.1
     # via -r requirements/_test.in
@@ -251,17 +227,10 @@ texttable==1.6.3
     # via docker-compose
 toml==0.10.2
     # via
-    #   coverage
     #   pylint
     #   pytest
-typed-ast==1.4.3
-    # via astroid
-typing-extensions==3.10.0.0
-    # via
-    #   -c requirements/_base.txt
-    #   importlib-metadata
-    #   yarl
-urllib3==1.26.4
+    #   pytest-cov
+urllib3==1.26.5
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -277,10 +246,6 @@ yarl==1.6.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
-zipp==3.4.1
-    # via
-    #   -c requirements/_base.txt
-    #   importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

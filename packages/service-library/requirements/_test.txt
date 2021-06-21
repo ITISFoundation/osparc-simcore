@@ -6,6 +6,7 @@
 #
 aiohttp==3.7.4.post0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   pytest-aiohttp
 astroid==2.5.6
@@ -23,9 +24,7 @@ attrs==20.3.0
     #   pytest-docker
 bcrypt==3.2.0
     # via paramiko
-cached-property==1.5.2
-    # via docker-compose
-certifi==2020.12.5
+certifi==2021.5.30
     # via requests
 cffi==1.14.5
     # via
@@ -42,7 +41,7 @@ coverage==5.5
     #   -r requirements/_test.in
     #   coveralls
     #   pytest-cov
-coveralls==3.0.1
+coveralls==3.1.0
     # via -r requirements/_test.in
 cryptography==3.4.7
     # via
@@ -62,25 +61,14 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-idna-ssl==1.1.0
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
 idna==2.10
     # via
     #   -c requirements/_base.txt
-    #   idna-ssl
     #   requests
     #   yarl
-importlib-metadata==4.0.1
-    # via
-    #   -c requirements/_base.txt
-    #   jsonschema
-    #   pluggy
-    #   pytest
 iniconfig==1.1.1
     # via pytest
-isort==5.8.0
+isort==5.9.0
     # via pylint
 jsonschema==3.2.0
     # via
@@ -109,7 +97,7 @@ py==1.10.0
     # via pytest
 pycparser==2.20
     # via cffi
-pylint==2.8.2
+pylint==2.8.3
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
@@ -121,15 +109,15 @@ pyrsistent==0.17.3
     #   jsonschema
 pytest-aiohttp==0.3.0
     # via -r requirements/_test.in
-pytest-cov==2.11.1
+pytest-cov==2.12.1
     # via -r requirements/_test.in
-pytest-docker==0.10.1
+pytest-docker==0.10.3
     # via -r requirements/_test.in
 pytest-instafail==0.4.2
     # via -r requirements/_test.in
 pytest-mock==3.6.1
     # via -r requirements/_test.in
-pytest-runner==5.3.0
+pytest-runner==5.3.1
     # via -r requirements/_test.in
 pytest-sugar==0.9.4
     # via -r requirements/_test.in
@@ -142,7 +130,7 @@ pytest==6.2.4
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-python-dotenv==0.17.1
+python-dotenv==0.18.0
     # via docker-compose
 pyyaml==5.4.1
     # via
@@ -170,15 +158,12 @@ toml==0.10.2
     # via
     #   pylint
     #   pytest
-typed-ast==1.4.3
-    # via astroid
+    #   pytest-cov
 typing-extensions==3.10.0.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-    #   importlib-metadata
-    #   yarl
-urllib3==1.26.4
+urllib3==1.26.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
@@ -192,10 +177,6 @@ yarl==1.6.3
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-zipp==3.4.1
-    # via
-    #   -c requirements/_base.txt
-    #   importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

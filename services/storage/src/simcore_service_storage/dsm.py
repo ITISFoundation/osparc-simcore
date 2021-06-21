@@ -34,18 +34,7 @@ from .access_layer import (
     get_project_access_rights,
     get_readable_project_ids,
 )
-from .datcore_wrapper import DatcoreWrapper
-from .models import (
-    DatasetMetaData,
-    FileMetaData,
-    FileMetaDataEx,
-    file_meta_data,
-    get_location_from_id,
-    projects,
-)
-from .s3 import get_config_s3
-from .s3wrapper.s3_client import MinioClientWrapper
-from .settings import (
+from .constants import (
     APP_CONFIG_KEY,
     APP_DB_ENGINE_KEY,
     APP_DSM_KEY,
@@ -55,6 +44,17 @@ from .settings import (
     SIMCORE_S3_ID,
     SIMCORE_S3_STR,
 )
+from .datcore_wrapper import DatcoreWrapper
+from .models import (
+    DatasetMetaData,
+    FileMetaData,
+    FileMetaDataEx,
+    file_meta_data,
+    get_location_from_id,
+    projects,
+)
+from .s3wrapper.s3_client import MinioClientWrapper
+from .settings import Settings
 from .utils import download_to_file_or_raise, expo
 
 logger = logging.getLogger(__name__)
@@ -64,17 +64,16 @@ postgres_service_retry_policy_kwargs = PostgresRetryPolicyUponOperation(logger).
 
 def setup_dsm(app: web.Application):
     async def _cleanup_context(app: web.Application):
-        main_cfg = app[APP_CONFIG_KEY]
-        s3_cfg = get_config_s3(app)
+        cfg: Settings = app[APP_CONFIG_KEY]
 
-        with ThreadPoolExecutor(max_workers=main_cfg["max_workers"]) as executor:
+        with ThreadPoolExecutor(max_workers=cfg.STORAGE_MAX_WORKERS) as executor:
             dsm = DataStorageManager(
                 s3_client=app.get(APP_S3_KEY),
                 engine=app.get(APP_DB_ENGINE_KEY),
                 loop=asyncio.get_event_loop(),
                 pool=executor,
-                simcore_bucket_name=s3_cfg["bucket_name"],
-                has_project_db=not main_cfg.get("testing", False),
+                simcore_bucket_name=cfg.STORAGE_S3.bucket_name,
+                has_project_db=not cfg.STORAGE_TESTING,
                 app=app,
             )  # type: ignore
 
@@ -436,7 +435,7 @@ class DataStorageManager:
             continue_loop = True
             sleep_generator = expo()
             update_succeeded = False
-            
+
             while continue_loop:
                 result = await client.list_objects_v2(
                     Bucket=bucket_name, Prefix=object_name
@@ -571,8 +570,10 @@ class DataStorageManager:
         link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
         return link
 
-    async def download_link_datcore(self, user_id: str, file_id: str) -> Dict[str, str]:
-        link = ""
+    async def download_link_datcore(
+        self, user_id: str, file_id: str
+    ) -> Tuple[str, str]:
+        link, filename = "", ""
         api_token, api_secret = self._get_datcore_tokens(user_id)
         dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
         link, filename = await dcw.download_link_by_id(file_id)

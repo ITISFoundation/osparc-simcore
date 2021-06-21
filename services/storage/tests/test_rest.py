@@ -1,11 +1,10 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import json
 import os
 import sys
-from asyncio import Future
 from pathlib import Path
 from typing import Any, Dict
 from urllib.parse import quote
@@ -16,12 +15,13 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from simcore_service_storage.access_layer import AccessRights
 from simcore_service_storage.app_handlers import HealthCheck
+from simcore_service_storage.constants import APP_CONFIG_KEY, SIMCORE_S3_ID
 from simcore_service_storage.db import setup_db
 from simcore_service_storage.dsm import APP_DSM_KEY, DataStorageManager, setup_dsm
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.s3 import setup_s3
-from simcore_service_storage.settings import APP_CONFIG_KEY, SIMCORE_S3_ID
+from simcore_service_storage.settings import Settings
 from tests.helpers.utils_assert import assert_status
 from tests.helpers.utils_project import clone_project_data
 from tests.utils import BUCKET_NAME, USER_ID, has_datcore_tokens
@@ -51,40 +51,37 @@ def client(
     postgres_service,
     minio_service,
     osparc_api_specs_dir,
+    monkeypatch,
 ):
     app = web.Application()
 
-    api_token = os.environ.get("BF_API_KEY", "none")
-    api_secret = os.environ.get("BF_API_SECRET", "none")
+    # FIXME: postgres_service fixture environs different from project_env_devel_environment. Do it after https://github.com/ITISFoundation/osparc-simcore/pull/2276 resolved
+    pg_config = postgres_service.copy()
+    pg_config.pop("database")
 
-    main_cfg = {
-        "port": aiohttp_unused_port(),
-        "host": "localhost",
-        "max_workers": 4,
-        "testing": True,
-        "test_datcore": {"api_token": api_token, "api_secret": api_secret},
-    }
-    rest_cfg = {
-        "oas_repo": str(osparc_api_specs_dir),
-    }
-    postgres_cfg = postgres_service
-    s3_cfg = minio_service
+    monkeypatch.setenv("STORAGE_POSTGRES", json.dumps(pg_config))
+    monkeypatch.setenv("STORAGE_S3", json.dumps(minio_service))
+    monkeypatch.setenv("STORAGE_PORT", str(aiohttp_unused_port()))
+    monkeypatch.setenv("STORAGE_LOG_LEVEL", "DEBUG")
+    monkeypatch.setenv("STORAGE_TESTING", "1")
 
-    # fake config
-    app_cfg = {
-        "postgres": postgres_cfg,
-        "s3": s3_cfg,
-        "rest": rest_cfg,
-    }
-    app_cfg.update(main_cfg)
-    app[APP_CONFIG_KEY] = app_cfg
+    monkeypatch.setenv("SC_BOOT_MODE", "local-development")
+
+    settings = Settings.create_from_env()
+    print(settings.json(indent=2))
+
+    app[APP_CONFIG_KEY] = settings
 
     setup_db(app)
     setup_rest(app)
     setup_dsm(app)
     setup_s3(app)
 
-    cli = loop.run_until_complete(aiohttp_client(app, server_kwargs=main_cfg))
+    cli = loop.run_until_complete(
+        aiohttp_client(
+            app, server_kwargs={"port": settings.STORAGE_PORT, "host": "localhost"}
+        )
+    )
     return cli
 
 
@@ -315,9 +312,10 @@ def mock_datcore_download(mocker, client):
     assert dsm
     assert isinstance(dsm, DataStorageManager)
 
-    mock = mocker.patch.object(dsm, "download_link_datcore")
-    mock.return_value = Future()
-    mock.return_value.set_result(("https://httpbin.org/image", "foo.txt"))
+    async def mock_download_link_datcore(*args, **kwargs):
+        return ["https://httpbin.org/image", "foo.txt"]
+
+    mocker.patch.object(dsm, "download_link_datcore", mock_download_link_datcore)
 
 
 @pytest.fixture
@@ -327,7 +325,6 @@ def mock_get_project_access_rights(mocker) -> None:
         mock = mocker.patch(
             f"simcore_service_storage.{module}.get_project_access_rights"
         )
-        mock.return_value = Future()
         mock.return_value.set_result(AccessRights.all())
 
 

@@ -5,7 +5,9 @@
 #    pip-compile --output-file=requirements/requirements.txt requirements/requirements.in
 #
 aiohttp==3.7.4.post0
-    # via pytest-aiohttp
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   pytest-aiohttp
 async-timeout==3.0.1
     # via aiohttp
 attrs==21.2.0
@@ -14,16 +16,8 @@ attrs==21.2.0
     #   pytest
 chardet==4.0.0
     # via aiohttp
-idna-ssl==1.1.0
-    # via aiohttp
-idna==3.1
-    # via
-    #   idna-ssl
-    #   yarl
-importlib-metadata==4.0.1
-    # via
-    #   pluggy
-    #   pytest
+idna==3.2
+    # via yarl
 iniconfig==1.1.1
     # via pytest
 multidict==5.1.0
@@ -44,7 +38,7 @@ pytest-aiohttp==0.3.0
     # via -r requirements/requirements.in
 pytest-instafail==0.4.2
     # via -r requirements/requirements.in
-pytest-runner==5.3.0
+pytest-runner==5.3.1
     # via -r requirements/requirements.in
 pytest-sugar==0.9.4
     # via -r requirements/requirements.in
@@ -63,11 +57,6 @@ termcolor==1.1.0
 toml==0.10.2
     # via pytest
 typing-extensions==3.10.0.0
-    # via
-    #   aiohttp
-    #   importlib-metadata
-    #   yarl
+    # via aiohttp
 yarl==1.6.3
     # via aiohttp
-zipp==3.4.1
-    # via importlib-metadata

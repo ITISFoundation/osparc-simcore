@@ -55,6 +55,10 @@ qx.Class.define("osparc.file.FilePicker", {
     }
   },
 
+  events: {
+    "itemSelected": "qx.event.type.Event"
+  },
+
   statics: {
     getOutput: function(outputs) {
       if ("outFile" in outputs && "value" in outputs["outFile"]) {
@@ -313,6 +317,7 @@ qx.Class.define("osparc.file.FilePicker", {
       const selectedItem = this.__selectedFileLayout.getItemSelected();
       if (selectedItem && osparc.file.FilesTree.isFile(selectedItem)) {
         this.__setOutputValueFromStore(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
+        this.fireEvent("itemSelected");
       }
     },
 
@@ -332,6 +337,10 @@ qx.Class.define("osparc.file.FilePicker", {
         };
         this.getNode().setOutputs({});
         this.getNode().setOutputs(outputs);
+        const outLabel = this.self().getOutputLabel(outputs);
+        if (outLabel) {
+          this.getNode().setLabel(label);
+        }
         this.getNode().getStatus().setProgress(100);
       }
     },
@@ -345,6 +354,10 @@ qx.Class.define("osparc.file.FilePicker", {
         };
         this.getNode().setOutputs({});
         this.getNode().setOutputs(outputs);
+        const outLabel = this.self().getOutputLabel(outputs);
+        if (outLabel) {
+          this.getNode().setLabel(label);
+        }
         this.getNode().getStatus().setProgress(100);
       }
     },

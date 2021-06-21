@@ -205,7 +205,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
         });
         this.__iframe.set({
           width: (divSize.width),
-          height: (divSize.height)
+          height: divSize.height - 25
         });
         this.__restartButton.setLayoutProperties({
           top: (divPos.top - iframeParentPos.top),

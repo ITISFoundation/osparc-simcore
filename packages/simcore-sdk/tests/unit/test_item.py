@@ -11,7 +11,6 @@ from simcore_sdk.node_ports import config, data_items_utils, exceptions, fileman
 from simcore_sdk.node_ports._data_item import DataItem
 from simcore_sdk.node_ports._item import DataItemValue, Item, ItemConcreteValue
 from simcore_sdk.node_ports._schema_item import SchemaItem
-from utils_futures import future_with_result
 
 
 @pytest.fixture
@@ -225,8 +224,8 @@ async def test_set_new_value(
     item_value_to_set: ItemConcreteValue,
     expected_value: ItemConcreteValue,
     mocker,
-):  # pylint: disable=W0613
-    mock_method = mocker.Mock(return_value=future_with_result(""))
+):
+    mock_method = mocker.AsyncMock(return_value="")
     item = create_item(item_type, None)
     item.new_data_cb = mock_method
     assert await item.get() is None

@@ -13,10 +13,16 @@ import pytest
 import sqlalchemy as sa
 from aiohttp import ClientResponse, ClientSession, web
 from aioresponses import aioresponses
-from models_library.projects_state import ProjectLocked
+from models_library.projects_state import ProjectLocked, ProjectStatus
+from models_library.projects_state import (
+    Owner,
+    ProjectLocked,
+    ProjectRunningState,
+    ProjectState,
+    RunningState,
+)
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserRole
-from pytest_simcore.helpers.utils_mock import future_with_result
 from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
@@ -290,7 +296,7 @@ def mocks_on_projects_api(mocker):
     """
     mocker.patch(
         "simcore_service_webserver.projects.projects_api._get_project_lock_state",
-        return_value=future_with_result(ProjectLocked(value=False)),
+        return_value=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
     )
 
 
@@ -340,7 +346,7 @@ async def test_dispatch_viewer_anonymously(
 ):
     mock_client_director_v2_func = mocker.patch(
         "simcore_service_webserver.director_v2.create_or_update_pipeline",
-        return_value=future_with_result(result=None),
+        return_value=None,
     )
 
     redirect_url = (

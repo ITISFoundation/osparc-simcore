@@ -7,18 +7,17 @@ import json
 import logging
 from typing import Any, Coroutine, Dict, List, Optional, Set
 
-import aioredlock
 from aiohttp import web
 from jsonschema import ValidationError
 from models_library.projects_state import ProjectState
 from servicelib.rest_pagination_utils import PageResponseLimitOffset
-from servicelib.utils import fire_and_forget_task, logged_gather
+from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from .. import catalog, director_v2
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
-from ..resource_manager.websocket_manager import managed_resource
+from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..rest_utils import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
 from ..security_decorators import permission_required
@@ -342,9 +341,12 @@ async def delete_project(request: web.Request):
         )
         project_users: Set[int] = {}
         with managed_resource(user_id, None, request.app) as rt:
-            project_users = set(
-                await rt.find_users_of_resource("project_id", project_uuid)
-            )
+            project_users = {
+                uid
+                for uid, _ in await rt.find_users_of_resource(
+                    PROJECT_ID_KEY, project_uuid
+                )
+            }
         # that project is still in use
         if user_id in project_users:
             raise web.HTTPForbidden(
@@ -385,40 +387,22 @@ async def open_project(request: web.Request) -> web.Response:
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
-            include_templates=True,
+            include_templates=False,
             include_state=True,
         )
 
-        async def try_add_project() -> Optional[Set[int]]:
-            with managed_resource(user_id, client_session_id, request.app) as rt:
-                try:
-                    async with await rt.get_registry_lock():
-                        other_users: Set[int] = set(
-                            await rt.find_users_of_resource("project_id", project_uuid)
-                        )
-                        if user_id in other_users:
-                            other_users.remove(user_id)
-                        if other_users:
-                            return other_users
-                        await rt.add("project_id", project_uuid)
-                except aioredlock.LockError as exc:
-                    # TODO: this lock is not a good solution for long term
-                    # maybe a project key in redis might improve spped of checking
-                    raise HTTPLocked(reason="Project is locked") from exc
-
-        other_users = await try_add_project()
-        if other_users:
-            # project is already locked
-            usernames = [
-                await projects_api.get_user_name(request.app, uid)
-                for uid in other_users
-            ]
-            raise HTTPLocked(reason=f"Project is already opened by {usernames}")
+        if not await projects_api.try_open_project_for_user(
+            user_id,
+            project_uuid=project_uuid,
+            client_session_id=client_session_id,
+            app=request.app,
+        ):
+            raise HTTPLocked(reason="Project is locked, try later")
 
         # user id opened project uuid
         await projects_api.start_project_interactive_services(request, project, user_id)
 
-        # notify users that project is now locked
+        # notify users that project is now opened
         project = await projects_api.add_project_states_for_user(
             user_id=user_id,
             project=project,
@@ -443,43 +427,16 @@ async def close_project(request: web.Request) -> web.Response:
 
     try:
         # ensure the project exists
-        project = await projects_api.get_project_for_user(
+        await projects_api.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
-            include_templates=True,
+            include_templates=False,
             include_state=False,
         )
-        # if we are the only user left we can safely remove the services
-        async def _close_project_task(project: Dict[str, Any]) -> None:
-            try:
-                project_opened_by_others: bool = False
-                with managed_resource(user_id, client_session_id, request.app) as rt:
-                    project_users: List[int] = await rt.find_users_of_resource(
-                        "project_id", project_uuid
-                    )
-                    project_opened_by_others = len(project_users) > 1
-
-                if not project_opened_by_others:
-                    # only remove the services if no one else is using them now
-                    await projects_api.remove_project_interactive_services(
-                        user_id, project_uuid, request.app
-                    )
-            finally:
-                with managed_resource(user_id, client_session_id, request.app) as rt:
-                    # now we can remove the lock
-                    await rt.remove("project_id")
-                # ensure we notify the user whatever happens, the GC should take care of dangling services in case of issue
-                project = await projects_api.add_project_states_for_user(
-                    user_id=user_id,
-                    project=project,
-                    is_template=False,
-                    app=request.app,
-                )
-                await projects_api.notify_project_state_update(request.app, project)
-
-        fire_and_forget_task(_close_project_task(project))
-
+        await projects_api.try_close_project_for_user(
+            user_id, project_uuid, client_session_id, request.app
+        )
         raise web.HTTPNoContent(content_type="application/json")
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
@@ -488,8 +445,13 @@ async def close_project(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.read")
 async def state_project(request: web.Request) -> web.Response:
+    from servicelib.rest_utils import extract_and_validate
+
     user_id = request[RQT_USERID_KEY]
-    project_uuid = request.match_info.get("project_id")
+    path, _, _ = await extract_and_validate(request)
+
+    user_id = request[RQT_USERID_KEY]
+    project_uuid = path.get("project_id")
 
     # check that project exists and queries state
     validated_project = await projects_api.get_project_for_user(
@@ -514,7 +476,7 @@ async def get_active_project(request: web.Request) -> web.Response:
         user_active_projects = []
         with managed_resource(user_id, client_session_id, request.app) as rt:
             # get user's projects
-            user_active_projects = await rt.find("project_id")
+            user_active_projects = await rt.find(PROJECT_ID_KEY)
         if user_active_projects:
 
             project = await projects_api.get_project_for_user(

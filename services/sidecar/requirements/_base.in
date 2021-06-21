@@ -12,7 +12,7 @@
 -c ../../../packages/models-library/requirements/_base.in
 -c ../../../packages/postgres-database/requirements/_base.in
 -c ../../../packages/service-library/requirements/_base.in
-
+-c ../../../packages/simcore-sdk/requirements/_base.in
 
 aio-pika
 aiodocker
