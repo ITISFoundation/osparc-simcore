@@ -14,6 +14,14 @@ aiofiles==0.5.0
     #   fastapi
 aiohttp==3.7.4.post0
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
@@ -41,10 +49,7 @@ aniso8601==7.0.0
 async-exit-stack==1.0.1
     # via fastapi
 async-generator==1.10
-    # via
-    #   -r requirements/_base.in
-    #   fastapi
-    #   httpx
+    # via fastapi
 async-timeout==3.0.1
     # via
     #   aiohttp
@@ -70,10 +75,6 @@ chardet==4.0.0
     #   requests
 click==7.1.2
     # via uvicorn
-contextvars==2.4
-    # via sniffio
-configparser==5.0.2
-    # via minio
 cryptography==3.4.7
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -113,8 +114,6 @@ httptools==0.1.2
     # via uvicorn
 httpx==0.18.1
     # via -r requirements/_base.in
-idna-ssl==1.1.0
-    # via aiohttp
 idna==2.10
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -127,18 +126,13 @@ idna==2.10
     #   requests
     #   rfc3986
     #   yarl
-immutables==0.15
-    # via contextvars
 importlib-resources==5.1.3 ; python_version < "3.9"
-    # via -r requirements/_base.in
-isodate==0.6.0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -318,16 +312,13 @@ trafaret==2.1.0
 typing-extensions==3.10.0.0
     # via
     #   aiohttp
-    #   importlib-metadata
     #   pydantic
-    #   uvicorn
-    #   yarl
 ujson==4.0.2
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   fastapi
-urllib3==1.26.4
+urllib3==1.26.5
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -340,17 +331,8 @@ urllib3==1.26.4
     #   requests
 uvicorn[standard]==0.13.4
     # via fastapi
-uvloop==0.14.0 ; python_version < "3.7"
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   uvicorn
+uvloop==0.14.0
+    # via uvicorn
 watchgod==0.7
     # via uvicorn
 websockets==8.1

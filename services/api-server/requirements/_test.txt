@@ -230,7 +230,7 @@ toml==0.10.2
     #   pylint
     #   pytest
     #   pytest-cov
-urllib3==1.26.4
+urllib3==1.26.5
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt

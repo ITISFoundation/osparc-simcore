@@ -12,9 +12,13 @@ aiofile==3.1.0
     # via -r requirements/_base.in
 aiofiles==0.5.0
     # via -r requirements/_base.in
-aiohttp==3.7.3
+aiohttp==3.7.4.post0
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/_base.in
+    #   -c requirements/../../../requirements/constraints.txt
     #   aiodocker
 aiopg[sa]==1.2.1
     # via
@@ -118,8 +122,7 @@ typing-extensions==3.7.4.3
     #   aiodocker
     #   aiohttp
     #   pydantic
-    #   yarl
-urllib3==1.26.4
+urllib3==1.26.5
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt

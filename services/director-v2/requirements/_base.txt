@@ -8,8 +8,10 @@ aiodocker==0.19.1
     # via -r requirements/_base.in
 aiofiles==0.5.0
     # via fastapi
-aiohttp==3.7.3
-    # via aiodocker
+aiohttp==3.7.4.post0
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   aiodocker
 aiopg[sa]==1.2.1
     # via -r requirements/_base.in
 amqp==5.0.2
@@ -112,6 +114,7 @@ psycopg2-binary==2.8.6
     #   sqlalchemy
 pydantic[dotenv]==1.8.2
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   fastapi
 python-dotenv==0.15.0
@@ -160,11 +163,9 @@ typing-extensions==3.7.4.3
     #   aiodocker
     #   aiohttp
     #   pydantic
-    #   uvicorn
-    #   yarl
 ujson==4.0.2
     # via fastapi
-urllib3==1.26.4
+urllib3==1.26.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests

@@ -9,7 +9,11 @@ aiodocker==0.19.1
 aiofiles==0.6.0
     # via -r requirements/_base.in
 aiohttp==3.7.4.post0
-    # via aiodocker
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   aiodocker
 async-generator==1.10
     # via -r requirements/_base.in
 async-timeout==3.0.1
@@ -84,6 +88,9 @@ pycparser==2.20
     # via cffi
 pydantic[email]==1.8.2
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/_base.in
     #   fastapi
@@ -126,7 +133,7 @@ typing-extensions==3.7.4.3
     #   aiodocker
     #   aiohttp
     #   pydantic
-urllib3==1.26.4
+urllib3==1.26.5
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
