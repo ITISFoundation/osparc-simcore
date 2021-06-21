@@ -48,9 +48,14 @@ EXPOSE 8000
 EXPOSE 3000
 
 # install Pennsieve agent [ref](https://docs.pennsieve.io/docs/the-pennsieve-agent)
-RUN wget https://github.com/Pennsieve/agent/releases/download/0.3.5/pennsieve_0.3.5_amd64.deb . \
-  && dpkg --install pennsieve_0.3.5_amd64.deb \
-  && rm --force pennsieve_0.3.5_amd64.deb
+RUN set -eux; \
+  apt-get update; \
+  apt-get install -y --no-install-recommends wget sudo; \
+  rm -rf /var/lib/apt/lists/*; \
+  wget https://github.com/Pennsieve/agent/releases/download/0.3.5/pennsieve_0.3.5_amd64.deb; \
+  apt-get install ./pennsieve_0.3.5_amd64.deb; \
+  apt-get remove -y wget; \
+  rm --force pennsieve_0.3.5_amd64.deb;
 ENV PATH="/usr/local/opt/pennsieve/bin:$PATH"
 
 # -------------------------- Build stage -------------------
