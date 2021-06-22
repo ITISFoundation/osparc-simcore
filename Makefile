@@ -203,7 +203,7 @@ printf "$$rows" 'http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username=$${PO
 printf "$$rows" 'http://$(get_my_ip).nip.io:9000' Portainer admin adminadmin;\
 printf "$$rows" 'http://$(get_my_ip).nip.io:18081' Redis
 echo "⚠️ if a DNS is not used (as displayed above), the interactive services started via dynamic-sidecar"
-echo "⚠️ will not be shown. The frontend accesses them via http://uuid.services.YOUR_IP.nip.io:9081"
+echo "⚠️ will not be shown. The frontend accesses them via the uuid.services.YOUR_IP.nip.io:9081"
 endef
 
 show-endpoints:

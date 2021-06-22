@@ -397,12 +397,9 @@ async def test_interactive_services_removed_after_logout(
 
     # assert dynamic service is removed
     mocked_director_api["director_v2.stop_service"].assert_awaited_with(
-        # app=
-        client.server.app,
-        # service_uuid=
-        service["service_uuid"],
-        # save_state=
-        exp_save_state,
+        app=client.server.app,
+        service_uuid=service["service_uuid"],
+        save_state=exp_save_state,
     )
 
 
