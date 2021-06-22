@@ -2,6 +2,8 @@ from contextlib import contextmanager
 from concurrent.futures import ProcessPoolExecutor
 
 
+# because there is no shared fastapi library, this is a
+# duplicate of servicelib.pools.non_blocking_process_pool_executor
 @contextmanager
 def non_blocking_process_pool_executor(**kwargs) -> ProcessPoolExecutor:
     """
