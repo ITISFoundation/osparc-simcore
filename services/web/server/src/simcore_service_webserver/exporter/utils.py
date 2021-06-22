@@ -1,6 +1,8 @@
 import asyncio
 import os
 import tempfile
+from contextlib import contextmanager
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Optional, Union
 
@@ -63,3 +65,14 @@ class CleanupFileResponse(FileResponse):  # pylint: disable=too-many-ancestors
             return await super().prepare(request=request)
         finally:
             await asyncio.get_event_loop().create_task(remove_dir(self._temp_dir))
+
+
+@contextmanager
+def non_blocking_process_pool_executor(**kwargs) -> ProcessPoolExecutor:
+    """
+    Avoids default context manger behavior which calls
+    shutdown with wait=True an blocks.
+    """
+    pool = ProcessPoolExecutor(**kwargs)  # pylint: disable=consider-using-with
+    yield pool
+    pool.shutdown(wait=False)
