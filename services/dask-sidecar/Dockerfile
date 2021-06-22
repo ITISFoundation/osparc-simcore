@@ -12,7 +12,9 @@ LABEL maintainer=pcrespov
 
 RUN set -eux; \
   apt-get update; \
-  apt-get install -y --no-install-recommends gosu; \
+  apt-get install -y --no-install-recommends \
+  iputils-ping=3:20180629-2+deb10u2\
+  gosu=1.10-1+b23; \
   rm -rf /var/lib/apt/lists/*; \
   # verify that the binary works
   gosu nobody true
@@ -116,11 +118,11 @@ COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/dask-sidecar/docker services/dask-sidecar/docker
 
 # we use the celery API
-HEALTHCHECK --interval=60s \
-  --timeout=60s \
-  --start-period=30s \
-  --retries=3 \
-  CMD celery inspect ping -b amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT} -d dask-sidecar."$(cat ${SIDECAR_HOST_HOSTNAME_PATH})"@${HOSTNAME}
+# HEALTHCHECK --interval=60s \
+#   --timeout=60s \
+#   --start-period=30s \
+#   --retries=3 \
+#   CMD celery inspect ping -b amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT} -d dask-sidecar."$(cat ${SIDECAR_HOST_HOSTNAME_PATH})"@${HOSTNAME}
 
 ENTRYPOINT [ "/bin/sh", "services/dask-sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/dask-sidecar/docker/boot.sh"]
@@ -142,11 +144,11 @@ WORKDIR /devel
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
 # we use the celery API
-HEALTHCHECK --interval=60s \
-  --timeout=60s \
-  --start-period=120s \
-  --retries=3 \
-  CMD celery inspect ping -b amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT} -d dask-sidecar."$(cat ${SIDECAR_HOST_HOSTNAME_PATH})"@${HOSTNAME}
+# HEALTHCHECK --interval=60s \
+#   --timeout=60s \
+#   --start-period=120s \
+#   --retries=3 \
+#   CMD celery inspect ping -b amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT} -d dask-sidecar."$(cat ${SIDECAR_HOST_HOSTNAME_PATH})"@${HOSTNAME}
 
 ENTRYPOINT [ "/bin/sh", "services/dask-sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/dask-sidecar/docker/boot.sh"]

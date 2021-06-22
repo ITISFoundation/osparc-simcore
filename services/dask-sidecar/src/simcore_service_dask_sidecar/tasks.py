@@ -6,8 +6,12 @@ from simcore_service_sidecar.utils import wrap_async_call
 from .settings import Settings
 
 
+def test(x):
+    return x + 1
+
+
 def get_settings():
-    return Settings.create_from_envs()
+    return Settings.create_from_envs().json()
 
 
 def run_task_in_service(job_id: int, user_id: int, project_id: UUID, node_id: UUID):
