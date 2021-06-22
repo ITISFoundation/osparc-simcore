@@ -137,6 +137,8 @@ def non_blocking_process_pool_executor(**kwargs) -> ProcessPoolExecutor:
     Avoids default context manger behavior which calls
     shutdown with wait=True an blocks.
     """
-    pool = ProcessPoolExecutor(**kwargs)  # pylint: disable=consider-using-with
-    yield pool
-    pool.shutdown(wait=False)
+    pool = ProcessPoolExecutor(**kwargs)
+    try:
+        yield pool
+    finally:
+        pool.shutdown(wait=False)
