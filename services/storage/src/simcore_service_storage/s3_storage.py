@@ -18,22 +18,14 @@ from servicelib.utils import fire_and_forget_task
 from sqlalchemy.sql.expression import literal_column
 from tenacity import retry
 
+from .abc_storage import DataStorageInterface
 from .access_layer import (
     AccessRights,
     get_file_access_rights,
     get_project_access_rights,
     get_readable_project_ids,
 )
-from .constants import (
-    APP_CONFIG_KEY,
-    APP_DB_ENGINE_KEY,
-    APP_DSM_KEY,
-    APP_S3_KEY,
-    DATCORE_ID,
-    DATCORE_STR,
-    SIMCORE_S3_ID,
-    SIMCORE_S3_STR,
-)
+from .constants import SIMCORE_S3_ID, SIMCORE_S3_STR
 from .models import (
     DatasetMetaData,
     FileMetaData,
@@ -43,8 +35,7 @@ from .models import (
     projects,
 )
 from .s3wrapper.s3_client import MinioClientWrapper
-from .settings import Settings
-from .utils import download_to_file_or_raise, expo
+from .utils import expo
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +53,7 @@ def to_meta_data_extended(row: RowProxy) -> FileMetaDataEx:
 
 
 @dataclass
-class S3DataStorage:
+class S3DataStorage(DataStorageInterface):
     # TODO: perhaps can be used a cache? add a lifetime?
 
     s3_client: MinioClientWrapper
@@ -94,7 +85,6 @@ class S3DataStorage:
     async def list_files(
         self,
         user_id: Union[str, int],
-        location: str,
         uuid_filter: str = "",
         regex: str = "",
     ) -> List[FileMetaDataEx]:
@@ -105,7 +95,6 @@ class S3DataStorage:
         - Can filter upon regular expression (for now only on key: value pairs of the FileMetaData)
         """
         data = deque()
-        assert location == SIMCORE_S3_STR
 
         accesible_projects_ids = []
         async with self.engine.acquire() as conn, conn.begin():
@@ -162,7 +151,7 @@ class S3DataStorage:
                     Path(d.project_id) / Path(d.node_id) / Path(d.file_name)
                 )
                 d.display_file_path = d.raw_file_path
-                d.file_id = d.file_uuid
+                d.file_id = d.file_id
                 if d.node_name and d.project_name:
                     d.display_file_path = str(
                         Path(d.project_name) / Path(d.node_name) / Path(d.file_name)
@@ -178,7 +167,7 @@ class S3DataStorage:
             filtered_data = deque()
             for dx in data:
                 d = dx.fmd
-                if _query.search(d.file_uuid):
+                if _query.search(d.file_id):
                     filtered_data.append(dx)
 
             return list(filtered_data)
@@ -197,19 +186,18 @@ class S3DataStorage:
 
         return list(data)
 
-    async def list_files_dataset(
-        self, user_id: str, location: str, dataset_id: str
+    async def get_dataset(
+        self, user_id: str, dataset_id: str
     ) -> Union[List[FileMetaData], List[FileMetaDataEx]]:
         # this is a cheap shot, needs fixing once storage/db is in sync
         data = []
-        assert location == SIMCORE_S3_STR
 
         data: List[FileMetaDataEx] = await self.list_files(
             user_id, location, uuid_filter=dataset_id + "/"
         )
         return data
 
-    async def list_datasets(self, user_id: str, location: str) -> List[DatasetMetaData]:
+    async def list_datasets(self, user_id: str) -> List[DatasetMetaData]:
         """Returns a list of top level datasets
 
         Works for simcore.s3 and datcore
@@ -217,7 +205,6 @@ class S3DataStorage:
         """
         data = []
 
-        assert location == SIMCORE_S3_STR
         if self.has_project_db:
             try:
                 async with self.engine.acquire() as conn, conn.begin():
@@ -241,32 +228,28 @@ class S3DataStorage:
 
         return data
 
-    async def list_file(
-        self, user_id: str, location: str, file_uuid: str
-    ) -> Optional[FileMetaDataEx]:
-
-        assert location == SIMCORE_S3_STR
+    async def list_file(self, user_id: str, file_id: str) -> Optional[FileMetaDataEx]:
 
         async with self.engine.acquire() as conn, conn.begin():
             can: Optional[AccessRights] = await get_file_access_rights(
-                conn, int(user_id), file_uuid
+                conn, int(user_id), file_id
             )
             if can.read:
                 query = sa.select([file_meta_data]).where(
-                    file_meta_data.c.file_uuid == file_uuid
+                    file_meta_data.c.file_id == file_id
                 )
                 result = await conn.execute(query)
                 row = await result.first()
                 return to_meta_data_extended(row) if row else None
             # FIXME: returns None in both cases: file does not exist or use has no access
-            logger.debug("User %s cannot read file %s", user_id, file_uuid)
+            logger.debug("User %s cannot read file %s", user_id, file_id)
             return None
 
     # UPLOAD/DOWNLOAD LINKS ---------------------------
 
     async def _metadata_file_updater(
         self,
-        file_uuid: str,
+        file_id: str,
         bucket_name: str,
         object_name: str,
         file_size: int,
@@ -321,7 +304,7 @@ class S3DataStorage:
                 async with self.engine.acquire() as conn:
                     query = (
                         file_meta_data.update()
-                        .where(file_meta_data.c.file_uuid == file_uuid)
+                        .where(file_meta_data.c.file_id == file_id)
                         .values(
                             file_size=new_file_size,
                             last_modified=new_last_modified,
@@ -331,9 +314,9 @@ class S3DataStorage:
                     await conn.execute(query)
                     update_succeeded = True
             if not update_succeeded:
-                logger.error("Could not update file metadata for '%s'", file_uuid)
+                logger.error("Could not update file metadata for '%s'", file_id)
 
-    async def upload_link(self, user_id: str, file_uuid: str):
+    async def upload_link(self, user_id: str, file_id: str):
         """
         Creates pre-signed upload link and updates metadata table when
         link is used and upload is successfuly completed
@@ -343,25 +326,25 @@ class S3DataStorage:
 
         async with self.engine.acquire() as conn:
             can: Optional[AccessRights] = await get_file_access_rights(
-                conn, int(user_id), file_uuid
+                conn, int(user_id), file_id
             )
             if not can.write:
                 logger.debug(
-                    "User %s was not allowed to upload file %s", user_id, file_uuid
+                    "User %s was not allowed to upload file %s", user_id, file_id
                 )
                 raise web.HTTPForbidden(
-                    reason=f"User does not have enough access rights to upload file {file_uuid}"
+                    reason=f"User does not have enough access rights to upload file {file_id}"
                 )
 
         @retry(**postgres_service_retry_policy_kwargs)
         async def _init_metadata() -> Tuple[int, str]:
             async with self.engine.acquire() as conn:
                 fmd = FileMetaData()
-                fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
+                fmd.simcore_from_uuid(file_id, self.simcore_bucket_name)
                 fmd.user_id = user_id  # NOTE: takes ownership of uploaded data
 
                 query = sa.select([file_meta_data]).where(
-                    file_meta_data.c.file_uuid == file_uuid
+                    file_meta_data.c.file_id == file_id
                 )
                 # if file already exists, we might want to update a time-stamp
                 exists = await (await conn.execute(query)).scalar()
@@ -373,13 +356,13 @@ class S3DataStorage:
         file_size, last_modified = await _init_metadata()
 
         bucket_name = self.simcore_bucket_name
-        object_name = file_uuid
+        object_name = file_id
 
         # a parallel task is tarted which will update the metadata of the updated file
         # once the update has finished.
         fire_and_forget_task(
             self._metadata_file_updater(
-                file_uuid=file_uuid,
+                file_id=file_id,
                 bucket_name=bucket_name,
                 object_name=object_name,
                 file_size=file_size,
@@ -388,12 +371,12 @@ class S3DataStorage:
         )
         return self.s3_client.create_presigned_put_url(bucket_name, object_name)
 
-    async def download_link_s3(self, file_uuid: str, user_id: int) -> str:
+    async def download_link_s3(self, file_id: str, user_id: int) -> str:
 
         # access layer
         async with self.engine.acquire() as conn:
             can: Optional[AccessRights] = await get_file_access_rights(
-                conn, int(user_id), file_uuid
+                conn, int(user_id), file_id
             )
             if not can.read:
                 # NOTE: this is tricky. A user with read access can download and data!
@@ -401,22 +384,22 @@ class S3DataStorage:
                 # recover data in nodes (e.g. jupyter cannot pull work data)
                 #
                 logger.debug(
-                    "User %s was not allowed to download file %s", user_id, file_uuid
+                    "User %s was not allowed to download file %s", user_id, file_id
                 )
                 raise web.HTTPForbidden(
-                    reason=f"User does not have enough rights to download {file_uuid}"
+                    reason=f"User does not have enough rights to download {file_id}"
                 )
 
         bucket_name = self.simcore_bucket_name
         async with self.engine.acquire() as conn:
             stmt = sa.select([file_meta_data.c.object_name]).where(
-                file_meta_data.c.file_uuid == file_uuid
+                file_meta_data.c.file_id == file_id
             )
             object_name: str = await conn.scalar(stmt)
 
             if object_name is None:
                 raise web.HTTPNotFound(
-                    reason=f"File '{file_uuid}' does not exists in storage."
+                    reason=f"File '{file_id}' does not exists in storage."
                 )
 
         link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
@@ -447,7 +430,7 @@ class S3DataStorage:
 
     # DELETE -------------------------------------
 
-    async def delete_file(self, user_id: str, location: str, file_uuid: str):
+    async def delete_file(self, user_id: str, file_id: str):
         """Deletes a file given its fmd and location
 
         Additionally requires a user_id for 3rd party auth
@@ -458,34 +441,33 @@ class S3DataStorage:
         For simcore.s3 we can use the file_name
         For datcore we need the full path
         """
-        assert location == SIMCORE_S3_STR
         # FIXME: operation MUST be atomic, transaction??
 
         to_delete = []
         async with self.engine.acquire() as conn, conn.begin():
             can: Optional[AccessRights] = await get_file_access_rights(
-                conn, int(user_id), file_uuid
+                conn, int(user_id), file_id
             )
             if not can.delete:
                 logger.debug(
                     "User %s was not allowed to delete file %s",
                     user_id,
-                    file_uuid,
+                    file_id,
                 )
                 raise web.HTTPForbidden(
-                    reason=f"User '{user_id}' does not have enough access rights to delete file {file_uuid}"
+                    reason=f"User '{user_id}' does not have enough access rights to delete file {file_id}"
                 )
 
             query = sa.select(
                 [file_meta_data.c.bucket_name, file_meta_data.c.object_name]
-            ).where(file_meta_data.c.file_uuid == file_uuid)
+            ).where(file_meta_data.c.file_id == file_id)
 
             async for row in conn.execute(query):
                 if self.s3_client.remove_objects(row.bucket_name, [row.object_name]):
-                    to_delete.append(file_uuid)
+                    to_delete.append(file_id)
 
             await conn.execute(
-                file_meta_data.delete().where(file_meta_data.c.file_uuid.in_(to_delete))
+                file_meta_data.delete().where(file_meta_data.c.file_id.in_(to_delete))
             )
 
     async def delete_project(
@@ -555,7 +537,7 @@ class S3DataStorage:
             ) | file_meta_data.c.project_id.in_(can_read_projects_ids)
 
             stmt = sa.select([file_meta_data]).where(
-                file_meta_data.c.file_uuid.startswith(prefix) & has_read_access
+                file_meta_data.c.file_id.startswith(prefix) & has_read_access
             )
 
             async for row in conn.execute(stmt):
@@ -570,10 +552,10 @@ class S3DataStorage:
 
         # validate link_uuid
         async with self.engine.acquire() as conn:
-            # TODO: select exists(select 1 from file_metadat where file_uuid=12)
+            # TODO: select exists(select 1 from file_metadat where file_id=12)
             found = await conn.scalar(
-                sa.select([file_meta_data.c.file_uuid]).where(
-                    file_meta_data.c.file_uuid == link_uuid
+                sa.select([file_meta_data.c.file_id]).where(
+                    file_meta_data.c.file_id == link_uuid
                 )
             )
             if found:
@@ -587,7 +569,7 @@ class S3DataStorage:
             )
 
         # duplicate target and change the following columns:
-        target.fmd.file_uuid = link_uuid
+        target.fmd.file_id = link_uuid
         target.fmd.file_id = link_uuid  # NOTE: api-server relies on this id
         target.fmd.is_soft_link = True
 

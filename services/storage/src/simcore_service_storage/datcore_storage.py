@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Tuple, Union
 from blackfynn.base import UnauthorizedException
 from servicelib.aiopg_utils import PostgresRetryPolicyUponOperation
 
+from .abc_storage import DataStorageInterface
 from .constants import DATCORE_ID, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 from .datcore_wrapper import DatcoreWrapper
 from .models import DatasetMetaData, FileMetaData, FileMetaDataEx
@@ -28,7 +29,8 @@ class DatCoreApiToken:
 
 
 @dataclass
-class DatCoreStorage:
+class DatCoreStorage(DataStorageInterface):
+    """ Access to DAT-CORE storage """
 
     # TODO: perhaps can be used a cache? add a lifetime?
     datcore_tokens: Dict[str, DatCoreApiToken]
