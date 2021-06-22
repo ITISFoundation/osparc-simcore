@@ -4,6 +4,7 @@ from aiohttp import web
 
 from .application_keys import APP_CONFIG_KEY
 from .client_session import persistent_client_session
+from .pools import persistent_thread_pool
 
 
 async def startup_info(app: web.Application):
@@ -27,5 +28,7 @@ def create_safe_application(config: Optional[Dict] = None) -> web.Application:
     # NOTE: Ensures client session context is run first,
     # then any further get_client_sesions will be correctly closed
     app.cleanup_ctx.append(persistent_client_session)
+    
+    app.cleanup_ctx.append(persistent_thread_pool)
 
     return app

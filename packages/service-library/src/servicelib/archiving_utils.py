@@ -4,7 +4,7 @@ import zipfile
 from pathlib import Path
 from typing import Iterator, List, Set
 
-from .utils import non_blocking_process_pool_executor
+from servicelib.pools import non_blocking_process_pool_executor
 
 MAX_UNARCHIVING_WORKER_COUNT = 2
 

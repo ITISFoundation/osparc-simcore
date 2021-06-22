@@ -7,8 +7,7 @@ IMPORTANT: lowest level module
 import asyncio
 import logging
 import os
-from concurrent.futures import ProcessPoolExecutor
-from contextlib import contextmanager
+
 from pathlib import Path
 from typing import Any, Awaitable, Coroutine, List, Optional, Union
 
@@ -129,16 +128,3 @@ async def logged_gather(
         raise error
 
     return results
-
-
-@contextmanager
-def non_blocking_process_pool_executor(**kwargs) -> ProcessPoolExecutor:
-    """
-    Avoids default context manger behavior which calls
-    shutdown with wait=True an blocks.
-    """
-    pool = ProcessPoolExecutor(**kwargs)  # pylint: disable=consider-using-with
-    try:
-        yield pool
-    finally:
-        pool.shutdown(wait=False)

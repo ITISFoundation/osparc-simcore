@@ -26,6 +26,8 @@ APP_DB_ENGINE_KEY = f"{__name__ }.db_engine"
 
 APP_CLIENT_SESSION_KEY = f"{__name__ }.session"
 
+APP_SHARED_THREAD_POOL_KEY = f"{__name__ }.shared.thread.pool"
+
 #
 # web.Response keys, i.e. app[RSP_*_KEY]
 #
