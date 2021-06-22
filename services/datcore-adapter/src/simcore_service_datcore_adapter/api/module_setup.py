@@ -4,11 +4,12 @@
 from fastapi import APIRouter, FastAPI
 
 from ..meta import api_vtag
-from .routes import health
+from .routes import datasets, health
 
 
 def setup_api(app: FastAPI):
     router = APIRouter()
 
     app.include_router(router, prefix=f"/{api_vtag}")
-    app.include_router(health.router, tags=["healthcheck"])
+    app.include_router(health.router, tags=["healthcheck"], prefix=f"/{api_vtag}")
+    app.include_router(datasets.router, tags=["datasets"], prefix=f"/{api_vtag}")
