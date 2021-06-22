@@ -3,6 +3,12 @@ from uuid import UUID
 from simcore_service_sidecar.cli import run_sidecar
 from simcore_service_sidecar.utils import wrap_async_call
 
+from .settings import Settings
+
+
+def get_settings():
+    return Settings.create_from_envs()
+
 
 def run_task_in_service(job_id: int, user_id: int, project_id: UUID, node_id: UUID):
     """
