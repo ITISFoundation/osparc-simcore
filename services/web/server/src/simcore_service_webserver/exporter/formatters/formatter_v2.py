@@ -9,9 +9,9 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from aiopg.sa.engine import SAConnection
 
 from simcore_postgres_database.models.scicrunch_resources import scicrunch_resources
+from servicelib.pools import non_blocking_process_pool_executor
 
 from ..exceptions import ExporterException
-from ..utils import non_blocking_process_pool_executor
 from .formatter_v1 import FormatterV1
 from .base_formatter import BaseFormatter
 from .sds import write_sds_directory_content

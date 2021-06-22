@@ -65,16 +65,3 @@ class CleanupFileResponse(FileResponse):  # pylint: disable=too-many-ancestors
             return await super().prepare(request=request)
         finally:
             await asyncio.get_event_loop().create_task(remove_dir(self._temp_dir))
-
-
-@contextmanager
-def non_blocking_process_pool_executor(**kwargs) -> ProcessPoolExecutor:
-    """
-    Avoids default context manger behavior which calls
-    shutdown with wait=True an blocks.
-    """
-    pool = ProcessPoolExecutor(**kwargs)  # pylint: disable=consider-using-with
-    try:
-        yield pool
-    finally:
-        pool.shutdown(wait=False)

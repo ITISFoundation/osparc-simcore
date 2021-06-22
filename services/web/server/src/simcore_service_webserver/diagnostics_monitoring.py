@@ -1,7 +1,6 @@
 """ Enables monitoring of some quantities needed for diagnostics
 
 """
-from concurrent.futures import ThreadPoolExecutor
 import logging
 import time
 from typing import Callable, Coroutine
@@ -11,6 +10,7 @@ from aiohttp import web
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram
 from prometheus_client.registry import CollectorRegistry
 from servicelib.monitor_services import add_instrumentation
+from servicelib.pools import get_shared_thread_pool
 
 from .diagnostics_core import DelayWindowProbe, is_sensing_enabled, kLATENCY_PROBE
 
@@ -23,21 +23,10 @@ kREQUEST_COUNT = f"{__name__}.request_count"
 kCANCEL_COUNT = f"{__name__}.cancel_count"
 
 kCOLLECTOR_REGISTRY = f"{__name__}.collector_registry"
-kTHREAD_POOL_EXECUTOR = f"{__name__}.thread_pool_executor"
 
 
 def get_collector_registry(app: web.Application) -> CollectorRegistry:
     return app[kCOLLECTOR_REGISTRY]
-
-
-async def setup_thread_pool(app: web.Application):
-    with ThreadPoolExecutor() as pool:
-        app[kTHREAD_POOL_EXECUTOR] = pool
-        yield
-
-
-def _get_thread_pool_executor(app: web.Application) -> ThreadPoolExecutor:
-    return app[kTHREAD_POOL_EXECUTOR]
 
 
 async def metrics_handler(request: web.Request):
@@ -45,7 +34,7 @@ async def metrics_handler(request: web.Request):
 
     # NOTE: Cannot use ProcessPoolExecutor because registry is not pickable
     result = await request.loop.run_in_executor(
-        _get_thread_pool_executor(request.app),
+        get_shared_thread_pool(request.app),
         prometheus_client.generate_latest,
         registry,
     )
@@ -143,9 +132,6 @@ def middleware_factory(app_name: str) -> Coroutine:
 def setup_monitoring(app: web.Application):
     # app-scope registry
     app[kCOLLECTOR_REGISTRY] = reg = CollectorRegistry(auto_describe=True)
-    # creating the pool at setup
-
-    app.cleanup_ctx.append(setup_thread_pool)
 
     # Total number of requests processed
     app[kREQUEST_COUNT] = Counter(
