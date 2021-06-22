@@ -1,5 +1,9 @@
+from typing import List
+
 import httpx
 import pytest
+from pydantic import parse_obj_as
+from simcore_service_datcore_adapter.models.schemas.datasets import DatasetMetaData
 from starlette import status
 
 
@@ -13,3 +17,6 @@ async def test_list_datasets_entrypoint(async_client: httpx.AsyncClient):
         },
     )
     assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data
+    parse_obj_as(List[DatasetMetaData], data)
