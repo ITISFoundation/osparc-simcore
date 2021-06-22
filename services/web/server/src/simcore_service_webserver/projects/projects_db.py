@@ -5,7 +5,7 @@
 
 """
 import asyncio
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import textwrap
 import uuid as uuidlib
@@ -188,6 +188,7 @@ class ProjectDBAPI:
         # TODO: shall be a weak pointer since it is also contained by app??
         self._app = app
         self._engine = app.get(APP_DB_ENGINE_KEY)
+        self._thread_pool = ThreadPoolExecutor()  # pylint: disable=consider-using-with
 
     def _init_engine(self):
         # Delays creation of engine because it setup_db does it on_startup
@@ -397,10 +398,9 @@ class ProjectDBAPI:
                 continue
             try:
 
-                with concurrent.futures.ThreadPoolExecutor() as pool:
-                    await asyncio.get_event_loop().run_in_executor(
-                        pool, ProjectAtDB.from_orm, row
-                    )
+                await asyncio.get_event_loop().run_in_executor(
+                    self._thread_pool, ProjectAtDB.from_orm, row
+                )
             except ValidationError as exc:
                 log.warning(
                     "project in db with uuid [%s] failed validation, please check. error: %s",
