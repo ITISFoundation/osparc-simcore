@@ -280,7 +280,7 @@ class DynamicSidecarsMonitor:
             monitor_data: MonitorData = lock_with_monitor_data.monitor_data
             try:
                 await apply_monitoring(self._app, monitor_data)
-            except asyncio.CancelledError:
+            except asyncio.CancelledError:  # pylint: disable=try-except-raise
                 raise
             except Exception:  # pylint: disable=broad-except
                 service_name = monitor_data.service_name
