@@ -30,6 +30,12 @@ def get_collector_registry(app: web.Application) -> CollectorRegistry:
     return app[kCOLLECTOR_REGISTRY]
 
 
+async def setup_thread_pool(app: web.Application):
+    with ThreadPoolExecutor(...) as pool:
+        app[kTHREAD_POOL_EXECUTOR] = pool
+        yield
+
+
 def _get_thread_pool_executor(app: web.Application) -> ThreadPoolExecutor:
     return app[kTHREAD_POOL_EXECUTOR]
 
@@ -139,9 +145,7 @@ def setup_monitoring(app: web.Application):
     app[kCOLLECTOR_REGISTRY] = reg = CollectorRegistry(auto_describe=True)
     # creating the pool at setup
 
-    app[  # pylint: disable=consider-using-with
-        kTHREAD_POOL_EXECUTOR
-    ] = ThreadPoolExecutor()
+    app.cleanup_ctx.append(setup_thread_pool)
 
     # Total number of requests processed
     app[kREQUEST_COUNT] = Counter(
