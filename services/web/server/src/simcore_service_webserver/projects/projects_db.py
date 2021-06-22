@@ -176,6 +176,11 @@ def _find_changed_dict_keys(
     return changed_keys
 
 
+async def _setup_thread_pool() -> ThreadPoolExecutor:
+    with ThreadPoolExecutor() as pool:
+        yield pool
+
+
 # TODO: test all function return schema-compatible data
 # TODO: is user_id str or int?
 # TODO: systemaic user_id, project
@@ -188,7 +193,7 @@ class ProjectDBAPI:
         # TODO: shall be a weak pointer since it is also contained by app??
         self._app = app
         self._engine = app.get(APP_DB_ENGINE_KEY)
-        self._thread_pool = ThreadPoolExecutor()  # pylint: disable=consider-using-with
+        self._thread_pool = _setup_thread_pool()
 
     def _init_engine(self):
         # Delays creation of engine because it setup_db does it on_startup
