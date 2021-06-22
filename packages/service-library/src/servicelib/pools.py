@@ -29,7 +29,7 @@ async def persistent_thread_pool(app: web.Application):
     try:
         yield
     finally:
-        pool.shutdown(wait=False)
+        pool.shutdown()
 
 
 @contextmanager
