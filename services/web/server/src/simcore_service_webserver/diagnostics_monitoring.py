@@ -31,7 +31,7 @@ def get_collector_registry(app: web.Application) -> CollectorRegistry:
 
 
 async def setup_thread_pool(app: web.Application):
-    with ThreadPoolExecutor(...) as pool:
+    with ThreadPoolExecutor() as pool:
         app[kTHREAD_POOL_EXECUTOR] = pool
         yield
 
