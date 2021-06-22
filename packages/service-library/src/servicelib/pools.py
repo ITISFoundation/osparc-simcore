@@ -16,7 +16,7 @@ def get_shared_thread_pool(app: web.Application) -> ThreadPoolExecutor:
     return pool
 
 
-def persistent_thread_pool(app: web.Application):
+async def persistent_thread_pool(app: web.Application):
     """Ensures a single shared process pool is presnet of application
 
     IMPORTANT: Use this function ONLY in cleanup context , i.e.
