@@ -6525,11 +6525,11 @@ paths:
                                           properties:
                                             value:
                                               title: Value
-                                              description: True if the project is locked by another user
+                                              description: True if the project is locked
                                               type: boolean
                                             owner:
                                               title: Owner
-                                              description: The user that owns the lock
+                                              description: 'If locked, the user that owns the lock'
                                               allOf:
                                                 - title: Owner
                                                   type: object
@@ -6557,8 +6557,20 @@ paths:
                                                     - user_id
                                                     - first_name
                                                     - last_name
+                                            status:
+                                              title: Status
+                                              description: The status of the project
+                                              enum:
+                                                - CLOSED
+                                                - CLOSING
+                                                - CLONING
+                                                - OPENING
+                                                - EXPORTING
+                                                - OPENED
+                                              type: string
                                           required:
                                             - value
+                                            - status
                                     state:
                                       title: State
                                       description: The project running state
@@ -7126,11 +7138,11 @@ paths:
                               properties:
                                 value:
                                   title: Value
-                                  description: True if the project is locked by another user
+                                  description: True if the project is locked
                                   type: boolean
                                 owner:
                                   title: Owner
-                                  description: The user that owns the lock
+                                  description: 'If locked, the user that owns the lock'
                                   allOf:
                                     - title: Owner
                                       type: object
@@ -7158,8 +7170,20 @@ paths:
                                         - user_id
                                         - first_name
                                         - last_name
+                                status:
+                                  title: Status
+                                  description: The status of the project
+                                  enum:
+                                    - CLOSED
+                                    - CLOSING
+                                    - CLONING
+                                    - OPENING
+                                    - EXPORTING
+                                    - OPENED
+                                  type: string
                               required:
                                 - value
+                                - status
                         state:
                           title: State
                           description: The project running state
@@ -7601,11 +7625,11 @@ paths:
                                         properties:
                                           value:
                                             title: Value
-                                            description: True if the project is locked by another user
+                                            description: True if the project is locked
                                             type: boolean
                                           owner:
                                             title: Owner
-                                            description: The user that owns the lock
+                                            description: 'If locked, the user that owns the lock'
                                             allOf:
                                               - title: Owner
                                                 type: object
@@ -7633,8 +7657,20 @@ paths:
                                                   - user_id
                                                   - first_name
                                                   - last_name
+                                          status:
+                                            title: Status
+                                            description: The status of the project
+                                            enum:
+                                              - CLOSED
+                                              - CLOSING
+                                              - CLONING
+                                              - OPENING
+                                              - EXPORTING
+                                              - OPENED
+                                            type: string
                                         required:
                                           - value
+                                          - status
                                   state:
                                     title: State
                                     description: The project running state
@@ -8194,11 +8230,11 @@ paths:
                                         properties:
                                           value:
                                             title: Value
-                                            description: True if the project is locked by another user
+                                            description: True if the project is locked
                                             type: boolean
                                           owner:
                                             title: Owner
-                                            description: The user that owns the lock
+                                            description: 'If locked, the user that owns the lock'
                                             allOf:
                                               - title: Owner
                                                 type: object
@@ -8226,8 +8262,20 @@ paths:
                                                   - user_id
                                                   - first_name
                                                   - last_name
+                                          status:
+                                            title: Status
+                                            description: The status of the project
+                                            enum:
+                                              - CLOSED
+                                              - CLOSING
+                                              - CLONING
+                                              - OPENING
+                                              - EXPORTING
+                                              - OPENED
+                                            type: string
                                         required:
                                           - value
+                                          - status
                                   state:
                                     title: State
                                     description: The project running state
@@ -8793,11 +8841,11 @@ paths:
                                         properties:
                                           value:
                                             title: Value
-                                            description: True if the project is locked by another user
+                                            description: True if the project is locked
                                             type: boolean
                                           owner:
                                             title: Owner
-                                            description: The user that owns the lock
+                                            description: 'If locked, the user that owns the lock'
                                             allOf:
                                               - title: Owner
                                                 type: object
@@ -8825,8 +8873,20 @@ paths:
                                                   - user_id
                                                   - first_name
                                                   - last_name
+                                          status:
+                                            title: Status
+                                            description: The status of the project
+                                            enum:
+                                              - CLOSED
+                                              - CLOSING
+                                              - CLONING
+                                              - OPENING
+                                              - EXPORTING
+                                              - OPENED
+                                            type: string
                                         required:
                                           - value
+                                          - status
                                   state:
                                     title: State
                                     description: The project running state
@@ -9383,11 +9443,11 @@ paths:
                               properties:
                                 value:
                                   title: Value
-                                  description: True if the project is locked by another user
+                                  description: True if the project is locked
                                   type: boolean
                                 owner:
                                   title: Owner
-                                  description: The user that owns the lock
+                                  description: 'If locked, the user that owns the lock'
                                   allOf:
                                     - title: Owner
                                       type: object
@@ -9415,8 +9475,20 @@ paths:
                                         - user_id
                                         - first_name
                                         - last_name
+                                status:
+                                  title: Status
+                                  description: The status of the project
+                                  enum:
+                                    - CLOSED
+                                    - CLOSING
+                                    - CLONING
+                                    - OPENING
+                                    - EXPORTING
+                                    - OPENED
+                                  type: string
                               required:
                                 - value
+                                - status
                         state:
                           title: State
                           description: The project running state
@@ -9858,11 +9930,11 @@ paths:
                                         properties:
                                           value:
                                             title: Value
-                                            description: True if the project is locked by another user
+                                            description: True if the project is locked
                                             type: boolean
                                           owner:
                                             title: Owner
-                                            description: The user that owns the lock
+                                            description: 'If locked, the user that owns the lock'
                                             allOf:
                                               - title: Owner
                                                 type: object
@@ -9890,8 +9962,20 @@ paths:
                                                   - user_id
                                                   - first_name
                                                   - last_name
+                                          status:
+                                            title: Status
+                                            description: The status of the project
+                                            enum:
+                                              - CLOSED
+                                              - CLOSING
+                                              - CLONING
+                                              - OPENING
+                                              - EXPORTING
+                                              - OPENED
+                                            type: string
                                         required:
                                           - value
+                                          - status
                                   state:
                                     title: State
                                     description: The project running state
@@ -10473,11 +10557,11 @@ paths:
                                         properties:
                                           value:
                                             title: Value
-                                            description: True if the project is locked by another user
+                                            description: True if the project is locked
                                             type: boolean
                                           owner:
                                             title: Owner
-                                            description: The user that owns the lock
+                                            description: 'If locked, the user that owns the lock'
                                             allOf:
                                               - title: Owner
                                                 type: object
@@ -10505,8 +10589,20 @@ paths:
                                                   - user_id
                                                   - first_name
                                                   - last_name
+                                          status:
+                                            title: Status
+                                            description: The status of the project
+                                            enum:
+                                              - CLOSED
+                                              - CLOSING
+                                              - CLONING
+                                              - OPENING
+                                              - EXPORTING
+                                              - OPENED
+                                            type: string
                                         required:
                                           - value
+                                          - status
                                   state:
                                     title: State
                                     description: The project running state
@@ -12221,11 +12317,11 @@ paths:
                                         properties:
                                           value:
                                             title: Value
-                                            description: True if the project is locked by another user
+                                            description: True if the project is locked
                                             type: boolean
                                           owner:
                                             title: Owner
-                                            description: The user that owns the lock
+                                            description: 'If locked, the user that owns the lock'
                                             allOf:
                                               - title: Owner
                                                 type: object
@@ -12253,8 +12349,20 @@ paths:
                                                   - user_id
                                                   - first_name
                                                   - last_name
+                                          status:
+                                            title: Status
+                                            description: The status of the project
+                                            enum:
+                                              - CLOSED
+                                              - CLOSING
+                                              - CLONING
+                                              - OPENING
+                                              - EXPORTING
+                                              - OPENED
+                                            type: string
                                         required:
                                           - value
+                                          - status
                                   state:
                                     title: State
                                     description: The project running state
@@ -12813,11 +12921,11 @@ paths:
                                         properties:
                                           value:
                                             title: Value
-                                            description: True if the project is locked by another user
+                                            description: True if the project is locked
                                             type: boolean
                                           owner:
                                             title: Owner
-                                            description: The user that owns the lock
+                                            description: 'If locked, the user that owns the lock'
                                             allOf:
                                               - title: Owner
                                                 type: object
@@ -12845,8 +12953,20 @@ paths:
                                                   - user_id
                                                   - first_name
                                                   - last_name
+                                          status:
+                                            title: Status
+                                            description: The status of the project
+                                            enum:
+                                              - CLOSED
+                                              - CLOSING
+                                              - CLONING
+                                              - OPENING
+                                              - EXPORTING
+                                              - OPENED
+                                            type: string
                                         required:
                                           - value
+                                          - status
                                   state:
                                     title: State
                                     description: The project running state

@@ -10,9 +10,9 @@ from copy import deepcopy
 from pathlib import Path
 
 import aiopg.sa
-import psycopg2
 import pytest
 import sqlalchemy as sa
+import sqlalchemy.exc as sa_exceptions
 from aiohttp import web
 from servicelib.aiopg_utils import (
     DatabaseError,
@@ -64,6 +64,7 @@ async def postgres_service_with_fake_data(
 
 def test_dsn_uri_with_query(postgres_service_with_fake_data):
     uri = postgres_service_with_fake_data.to_uri(with_query=True)
+    sa_engine = None
     try:
         sa_engine = sa.create_engine(uri, echo=True, echo_pool=True)
         assert sa_engine.name == "postgresql"
@@ -73,10 +74,12 @@ def test_dsn_uri_with_query(postgres_service_with_fake_data):
         metadata.create_all(sa_engine)
         metadata.drop_all(sa_engine)
 
-    except sa.exc.SQLAlchemyError as ee:
+    except sa_exceptions.SQLAlchemyError as ee:
         pytest.fail(f"Cannot connect with {uri}: {ee}")
+
     finally:
-        sa_engine.dispose()
+        if sa_engine:
+            sa_engine.dispose()
 
 
 async def test_create_pg_engine(postgres_service_with_fake_data):
@@ -130,21 +133,9 @@ async def test_engine_when_idle_for_some_time():
 
     # by default docker swarm kills connections that are idle for more than 15 minutes
     await asyncio.sleep(901)
-    # import pdb; pdb.set_trace()
 
     async with engine.acquire() as conn:
         await conn.execute(tbl.insert().values(val="third"))
-
-    # import pdb; pdb.set_trace()
-
-
-async def test_engine_when_pg_not_reachable(loop):
-    dsn = DataSourceName(
-        database="db", user="foo", password="foo", host="127.0.0.1", port=123
-    )
-
-    with pytest.raises(psycopg2.OperationalError):
-        await create_pg_engine(dsn)
 
 
 def test_init_tables(postgres_service_with_fake_data):

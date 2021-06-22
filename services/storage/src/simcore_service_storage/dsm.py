@@ -570,8 +570,10 @@ class DataStorageManager:
         link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
         return link
 
-    async def download_link_datcore(self, user_id: str, file_id: str) -> Dict[str, str]:
-        link = ""
+    async def download_link_datcore(
+        self, user_id: str, file_id: str
+    ) -> Tuple[str, str]:
+        link, filename = "", ""
         api_token, api_secret = self._get_datcore_tokens(user_id)
         dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
         link, filename = await dcw.download_link_by_id(file_id)

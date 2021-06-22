@@ -188,13 +188,26 @@ else
 endif
 
 define _show_endpoints
-# The following endpoints are available:
-echo "⚠️ if a DNS is not used (as displayed below), the interactive services started via dynamic-sidecar"
-echo "⚠️ will not be shown. They are accesed via uuid.services.YOUR_IP.nip.io:9081 by the frontend."
-echo "http://$(get_my_ip).nip.io:9081							- oSparc platform"
-echo "http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username=scu&db=simcoredb&ns=public	- Postgres DB"
-echo "http://$(get_my_ip).nip.io:9000							- Portainer"
+# The following endpoints are available
+set -o allexport; \
+source $(CURDIR)/.env; \
+set +o allexport; \
+separator=------------------------------------------;\
+separator=$${separator}$${separator}$${separator};\
+rows="%-80s| %22s| %12s| %12s\n";\
+TableWidth=140;\
+printf "%80s| %22s| %12s| %12s\n" Endpoint Name User Password;\
+printf "%.$${TableWidth}s\n" "$$separator";\
+printf "$$rows" 'http://$(get_my_ip).nip.io:9081' 'oSparc platform';\
+printf "$$rows" 'http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username=$${POSTGRES_USER}&db=$${POSTGRES_DB}&ns=public' 'Postgres DB' $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
+printf "$$rows" 'http://$(get_my_ip).nip.io:9000' Portainer admin adminadmin;\
+printf "$$rows" 'http://$(get_my_ip).nip.io:18081' Redis
+echo "⚠️ if a DNS is not used (as displayed above), the interactive services started via dynamic-sidecar"
+echo "⚠️ will not be shown. The frontend accesses them via http://uuid.services.YOUR_IP.nip.io:9081"
 endef
+
+show-endpoints:
+	@$(_show_endpoints)
 
 up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Start compile+watch front-end container [front-end]

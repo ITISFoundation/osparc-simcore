@@ -1,18 +1,16 @@
 # pylint:disable=redefined-outer-name,unused-argument
 
+import asyncio
+import hashlib
 import os
-import sys
+import random
+import secrets
+import string
 import tempfile
 import uuid
-import hashlib
-import random
-from pathlib import Path
-import asyncio
-from typing import Set, List, Dict, Iterator
 from concurrent.futures import ProcessPoolExecutor
-import string
-import secrets
-
+from pathlib import Path
+from typing import Dict, Iterator, List, Set, Tuple
 
 import pytest
 from simcore_service_webserver.exporter.archiving import (
@@ -25,46 +23,13 @@ from simcore_service_webserver.exporter.exceptions import ExporterException
 
 
 @pytest.fixture
-async def monkey_patch_asyncio_subporcess(loop, mocker):
-    # TODO: The below bug is not allowing me to fully test,
-    # mocking and waiting for an update
-    # https://bugs.python.org/issue35621
-    # this issue was patched in 3.8, no need
-    if sys.version_info.major == 3 and sys.version_info.minor >= 8:
-        raise RuntimeError(
-            "Issue no longer present in this version of python, "
-            "please remote this mock on python >= 3.8"
-        )
-
-    import subprocess
-
-    async def create_subprocess_exec(*command, **extra_params):
-        class MockResponse:
-            def __init__(self, command, **kwargs):
-                self.proc = subprocess.Popen(command, **extra_params)
-
-            async def communicate(self):
-                return self.proc.communicate()
-
-            @property
-            def returncode(self):
-                return self.proc.returncode
-
-        mock_response = MockResponse(command, **extra_params)
-
-        return mock_response
-
-    mocker.patch("asyncio.create_subprocess_exec", side_effect=create_subprocess_exec)
-
-
-@pytest.fixture
 def temp_dir(tmpdir) -> Path:
     # cast to Path object
-    yield Path(tmpdir)
+    return Path(tmpdir)
 
 
 @pytest.fixture
-def temp_dir2() -> Path:
+def temp_dir2() -> Iterator[Path]:
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_dir_path = Path(temp_dir)
         extract_dir_path = temp_dir_path / "extract_dir"
@@ -73,7 +38,7 @@ def temp_dir2() -> Path:
 
 
 @pytest.fixture
-def temp_file() -> Path:
+def temp_file() -> Iterator[Path]:
     file_path = Path("/") / f"tmp/{next(tempfile._get_candidate_names())}"
     file_path.write_text("test_data")
     yield file_path
@@ -83,6 +48,62 @@ def temp_file() -> Path:
 @pytest.fixture
 def project_uuid():
     return str(uuid.uuid4())
+
+
+@pytest.fixture
+def dir_with_random_content() -> Iterator[Path]:
+    def random_string(length: int) -> str:
+        return "".join(secrets.choice(string.ascii_letters) for i in range(length))
+
+    def make_files_in_dir(dir_path: Path, file_count: int) -> None:
+        for _ in range(file_count):
+            (dir_path / f"{random_string(8)}.bin").write_bytes(
+                os.urandom(random.randint(1, 10))
+            )
+
+    def ensure_dir(path_to_ensure: Path) -> Path:
+        path_to_ensure.mkdir(parents=True, exist_ok=True)
+        return path_to_ensure
+
+    def make_subdirectory_with_content(subdir_name: Path, max_file_count: int) -> None:
+        subdir_name = ensure_dir(subdir_name)
+        make_files_in_dir(
+            dir_path=subdir_name,
+            file_count=random.randint(1, max_file_count),
+        )
+
+    def make_subdirectories_with_content(
+        subdir_name: Path, max_subdirectories_count: int, max_file_count: int
+    ) -> None:
+        subdirectories_count = random.randint(1, max_subdirectories_count)
+        for _ in range(subdirectories_count):
+            make_subdirectory_with_content(
+                subdir_name=subdir_name / f"{random_string(4)}",
+                max_file_count=max_file_count,
+            )
+
+    def get_dirs_and_subdris_in_path(path_to_scan: Path) -> List[Path]:
+        return [path for path in path_to_scan.rglob("*") if path.is_dir()]
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir_path = Path(temp_dir)
+        data_container = ensure_dir(temp_dir_path / "study_data")
+
+        make_subdirectories_with_content(
+            subdir_name=data_container, max_subdirectories_count=5, max_file_count=5
+        )
+        make_files_in_dir(dir_path=data_container, file_count=5)
+
+        # creates a good amount of files
+        for _ in range(4):
+            for subdirectory_path in get_dirs_and_subdris_in_path(data_container):
+                make_subdirectories_with_content(
+                    subdir_name=subdirectory_path,
+                    max_subdirectories_count=3,
+                    max_file_count=3,
+                )
+
+        yield temp_dir_path
 
 
 def temp_dir_with_existing_archive(temp_dir, project_uui) -> Path:
@@ -116,8 +137,8 @@ def temp_dir_to_compress_with_too_many_targets(temp_dir, project_uuid) -> Path:
 
 
 def strip_directory_from_path(input_path: Path, to_strip: Path) -> Path:
-    to_strip = f"{str(to_strip)}/"
-    return Path(str(input_path).replace(to_strip, ""))
+    _to_strip = f"{str(to_strip)}/"
+    return Path(str(input_path).replace(_to_strip, ""))
 
 
 def get_all_files_in_dir(dir_path: Path) -> Set[Path]:
@@ -128,7 +149,7 @@ def get_all_files_in_dir(dir_path: Path) -> Set[Path]:
     }
 
 
-def _compute_hash(file_path: Path) -> str:
+def _compute_hash(file_path: Path) -> Tuple[Path, str]:
     with open(file_path, "rb") as file_to_hash:
         file_hash = hashlib.md5()
         chunk = file_to_hash.read(8192)
@@ -187,9 +208,6 @@ async def assert_same_directory_content(
     # that the compress/decompress worked correctly
     for key in dir_to_compress_hashes:
         assert dir_to_compress_hashes[key] == output_dir_hashes[key]
-
-
-# end utils
 
 
 def test_validate_osparc_file_name_ok():
@@ -270,9 +288,7 @@ async def test_archive_already_exists(loop, temp_dir, project_uuid):
     )
 
 
-async def test_unzip_found_too_many_project_targets(
-    loop, temp_dir, project_uuid, monkey_patch_asyncio_subporcess
-):
+async def test_unzip_found_too_many_project_targets(loop, temp_dir, project_uuid):
     tmp_dir_to_compress = temp_dir_to_compress_with_too_many_targets(
         temp_dir, project_uuid
     )

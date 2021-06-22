@@ -116,7 +116,7 @@
             "key": {
               "type": "string",
               "description": "distinctive name for the node based on the docker registry path",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
+              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
               "examples": [
                 "simcore/services/comp/sleeper",
                 "simcore/services/dynamic/3dviewer",
@@ -556,12 +556,12 @@
                   "properties": {
                     "value": {
                       "title": "Value",
-                      "description": "True if the project is locked by another user",
+                      "description": "True if the project is locked",
                       "type": "boolean"
                     },
                     "owner": {
                       "title": "Owner",
-                      "description": "The user that owns the lock",
+                      "description": "If locked, the user that owns the lock",
                       "allOf": [
                         {
                           "title": "Owner",
@@ -600,10 +600,24 @@
                           ]
                         }
                       ]
+                    },
+                    "status": {
+                      "title": "Status",
+                      "description": "The status of the project",
+                      "enum": [
+                        "CLOSED",
+                        "CLOSING",
+                        "CLONING",
+                        "OPENING",
+                        "EXPORTING",
+                        "OPENED"
+                      ],
+                      "type": "string"
                     }
                   },
                   "required": [
-                    "value"
+                    "value",
+                    "status"
                   ]
                 }
               ]

@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
-from asyncio import Future
 from filecmp import cmpfiles
 from pathlib import Path
 from shutil import copy, make_archive, unpack_archive
@@ -52,8 +51,7 @@ async def test_push_folder(
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
-    mock_filemanager.upload_file.return_value = Future()
-    mock_filemanager.upload_file.return_value.set_result("")
+    mock_filemanager.upload_file.return_value = ""
     mock_config = mocker.patch("simcore_sdk.node_data.data_manager.config", spec=True)
     mock_config.PROJECT_ID = "some funky ID"
     mock_config.NODE_UUID = "another funky ID"
@@ -103,8 +101,7 @@ async def test_push_file(
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
-    mock_filemanager.upload_file.return_value = Future()
-    mock_filemanager.upload_file.return_value.set_result("")
+    mock_filemanager.upload_file.return_value = ""
     mock_config = mocker.patch("simcore_sdk.node_data.data_manager.config", spec=True)
     mock_config.PROJECT_ID = "some funky ID"
     mock_config.NODE_UUID = "another funky ID"
@@ -162,8 +159,7 @@ async def test_pull_folder(
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
-    mock_filemanager.download_file_from_s3.return_value = Future()
-    mock_filemanager.download_file_from_s3.return_value.set_result(fake_zipped_folder)
+    mock_filemanager.download_file_from_s3.return_value = fake_zipped_folder
     mock_config = mocker.patch("simcore_sdk.node_data.data_manager.config", spec=True)
     mock_config.PROJECT_ID = "some funky ID"
     mock_config.NODE_UUID = "another funky ID"
@@ -209,8 +205,7 @@ async def test_pull_file(
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
-    mock_filemanager.download_file_from_s3.return_value = Future()
-    mock_filemanager.download_file_from_s3.return_value.set_result(fake_downloaded_file)
+    mock_filemanager.download_file_from_s3.return_value = fake_downloaded_file
     mock_config = mocker.patch("simcore_sdk.node_data.data_manager.config", spec=True)
     mock_config.PROJECT_ID = "some funky ID"
     mock_config.NODE_UUID = "another funky ID"
