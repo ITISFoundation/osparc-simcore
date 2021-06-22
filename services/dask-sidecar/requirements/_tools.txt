@@ -40,7 +40,7 @@ pathspec==0.8.1
     # via black
 pep517==0.10.0
     # via pip-tools
-pip-tools==6.1.0
+pip-tools==6.2.0
     # via -r requirements/../../../requirements/devenv.txt
 pre-commit==2.13.0
     # via -r requirements/../../../requirements/devenv.txt
@@ -69,6 +69,9 @@ virtualenv==20.4.7
     # via pre-commit
 watchdog[watchmedo]==2.1.2
     # via -r requirements/_tools.in
+wheel==0.36.2
+    # via pip-tools
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
+# setuptools

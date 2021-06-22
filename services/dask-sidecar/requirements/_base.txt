@@ -88,7 +88,6 @@ chardet==3.0.4
 click==7.1.2
     # via
     #   -c requirements/../../../services/sidecar/requirements/_base.txt
-    #   -c requirements/./constraints.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_migration.in
     #   distributed
 cloudpickle==1.6.0
@@ -97,7 +96,7 @@ cloudpickle==1.6.0
     #   distributed
 cytoolz==0.11.0
     # via -r requirements/_base.in
-dask==2021.06.1
+dask[complete]==2021.06.1
     # via
     #   -r requirements/_base.in
     #   distributed
@@ -357,7 +356,7 @@ requests==2.25.1
     # via
     #   -c requirements/../../../services/sidecar/requirements/_base.txt
     #   docker
-send2trash==1.5.0
+send2trash==1.7.1
     # via jupyter-server
 simpervisor==0.4
     # via jupyter-server-proxy
