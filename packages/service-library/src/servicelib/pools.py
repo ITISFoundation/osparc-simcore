@@ -8,7 +8,7 @@ from .application_keys import APP_SHARED_THREAD_POOL_KEY
 
 def get_shared_thread_pool(app: web.Application) -> ThreadPoolExecutor:
     """Ensures unique pool in the application"""
-    pool = app(APP_SHARED_THREAD_POOL_KEY)
+    pool = app.get(APP_SHARED_THREAD_POOL_KEY)
     if pool is None:
         pool = ThreadPoolExecutor()  # pylint: disable=consider-using-with
         app[APP_SHARED_THREAD_POOL_KEY] = pool
