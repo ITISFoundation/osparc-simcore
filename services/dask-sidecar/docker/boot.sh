@@ -25,12 +25,22 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   pip list | sed 's/^/    /'
 fi
 
+
 # RUNNING application ----------------------------------------
+if [ "${DASK_SCHEDULER_ADDRESS}" ]; then
+  echo "$INFO" "Starting as a worker -> ${DASK_SCHEDULER_ADDRESS} ..."
+  CMD=dask-worker "${DASK_SCHEDULER_ADDRESS}"
+else
+  echo "$INFO" "Starting as a scheduler ..."
+  CMD=dask-scheduler
+fi
+
+echo "$INFO" "Executing: ${CMD}"
 
 if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
   # NOTE: in this case, remote debugging is only available in development mode!
   exec watchmedo auto-restart --recursive --pattern="*.py" -- \
-    dask-worker "${DASK_SCHEDULER_ADDRESS}"
+    ${CMD}
 else
-  exec dask-worker "${DASK_SCHEDULER_ADDRESS}"
+  exec ${CMD}
 fi
