@@ -14,7 +14,7 @@ from copy import deepcopy
 from datetime import datetime
 from enum import Enum
 from pprint import pformat
-from typing import Any, Dict, List, Mapping, Optional, Set, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Set, Tuple, Generator
 
 import psycopg2.errors
 import sqlalchemy as sa
@@ -176,7 +176,7 @@ def _find_changed_dict_keys(
     return changed_keys
 
 
-async def _setup_thread_pool() -> ThreadPoolExecutor:
+def _setup_thread_pool() -> Generator[ThreadPoolExecutor, None, None]:
     with ThreadPoolExecutor() as pool:
         yield pool
 
@@ -193,7 +193,7 @@ class ProjectDBAPI:
         # TODO: shall be a weak pointer since it is also contained by app??
         self._app = app
         self._engine = app.get(APP_DB_ENGINE_KEY)
-        self._thread_pool = _setup_thread_pool()
+        self._thread_pool = next(_setup_thread_pool())
 
     def _init_engine(self):
         # Delays creation of engine because it setup_db does it on_startup
