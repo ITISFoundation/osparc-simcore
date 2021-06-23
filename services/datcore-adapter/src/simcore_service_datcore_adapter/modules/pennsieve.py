@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 import pennsieve
 from fastapi.applications import FastAPI
 from pennsieve import Pennsieve
+from starlette.datastructures import URL
 
 from ..core.settings import PennsieveSettings
 from ..models.schemas.datasets import DatasetMetaData, FileMetaData
@@ -86,6 +87,16 @@ class PennsieveApiClient(BaseServiceClientApi):
 
         dataset_files = await _parse_dataset_items(ds, Path(ds.name))
         return dataset_files
+
+    async def get_presigned_download_link(
+        self, api_key: str, api_secret: str, file_id: str
+    ) -> URL:
+        ps = Pennsieve(api_token=api_key, api_secret=api_secret)
+        dp: pennsieve.models.DataPackage = ps.get(file_id)
+        assert len(dp.files) == 1  # nosec
+        file: pennsieve.models.File = dp.files[0]
+
+        return URL(file.url)
 
 
 def setup(app: FastAPI, settings: PennsieveSettings) -> None:
