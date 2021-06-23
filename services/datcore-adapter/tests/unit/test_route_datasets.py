@@ -75,7 +75,7 @@ async def test_list_dataset_files_entrypoint(
     pennsieve_api_key: str,
     pennsieve_api_secret: str,
 ):
-    dataset_id = "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4"
+    dataset_id = "N:dataset:6b29ddff-86fc-4dc3-bb78-8e572a788a85"
     response = await async_client.get(
         f"v0/datasets/{dataset_id}/files",
         headers={
