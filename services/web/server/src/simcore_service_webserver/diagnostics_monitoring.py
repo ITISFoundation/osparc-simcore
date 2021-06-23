@@ -10,7 +10,6 @@ from aiohttp import web
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram
 from prometheus_client.registry import CollectorRegistry
 from servicelib.monitor_services import add_instrumentation
-from servicelib.pools import get_shared_thread_pool
 
 from .diagnostics_core import DelayWindowProbe, is_sensing_enabled, kLATENCY_PROBE
 
@@ -34,9 +33,7 @@ async def metrics_handler(request: web.Request):
 
     # NOTE: Cannot use ProcessPoolExecutor because registry is not pickable
     result = await request.loop.run_in_executor(
-        get_shared_thread_pool(request.app),
-        prometheus_client.generate_latest,
-        registry,
+        None, prometheus_client.generate_latest, registry
     )
     response = web.Response(body=result)
     response.content_type = CONTENT_TYPE_LATEST

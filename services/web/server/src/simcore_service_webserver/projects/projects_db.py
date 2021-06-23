@@ -27,7 +27,6 @@ from models_library.projects import ProjectAtDB
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.application_keys import APP_DB_ENGINE_KEY
-from servicelib.pools import get_shared_thread_pool
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy import desc, literal_column
 from sqlalchemy.sql import and_, select
@@ -189,7 +188,6 @@ class ProjectDBAPI:
         # TODO: shall be a weak pointer since it is also contained by app??
         self._app = app
         self._engine = app.get(APP_DB_ENGINE_KEY)
-        self._thread_pool = get_shared_thread_pool(app)
 
     def _init_engine(self):
         # Delays creation of engine because it setup_db does it on_startup
@@ -400,7 +398,7 @@ class ProjectDBAPI:
             try:
 
                 await asyncio.get_event_loop().run_in_executor(
-                    self._thread_pool, ProjectAtDB.from_orm, row
+                    None, ProjectAtDB.from_orm, row
                 )
             except ValidationError as exc:
                 log.warning(
