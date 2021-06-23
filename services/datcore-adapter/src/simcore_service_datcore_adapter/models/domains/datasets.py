@@ -1,9 +1,9 @@
-from ..schemas.datasets import DatasetMetaData
+from ..schemas.datasets import DatasetMetaData, FileMetaData
 
 
 class DatasetsOut(DatasetMetaData):
     pass
 
 
-class DatasetFilesOut:
+class FileMetaDataOut(FileMetaData):
     pass

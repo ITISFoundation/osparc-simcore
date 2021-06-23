@@ -4,7 +4,7 @@ from typing import List
 from fastapi import APIRouter, Depends, Header
 from starlette import status
 
-from ...models.domains.datasets import DatasetsOut
+from ...models.domains.datasets import DatasetsOut, FileMetaDataOut
 from ...models.schemas.datasets import DatasetMetaData
 from ...modules.pennsieve import PennsieveApiClient
 from ..dependencies.pennsieve import get_pennsieve_api_client
@@ -34,7 +34,7 @@ async def list_datasets(
     "/datasets/{dataset_id}/files",
     summary="list files in dataset",
     status_code=status.HTTP_200_OK,
-    response_model=List[DatasetsOut],
+    response_model=List[FileMetaDataOut],
 )
 async def list_dataset_files(
     dataset_id: str,
@@ -42,8 +42,9 @@ async def list_dataset_files(
     x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
     pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
 ):
-    await pennsieve_client.list_dataset_files(
+    file_metas = await pennsieve_client.list_dataset_files(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
         dataset_id=dataset_id,
     )
+    return file_metas

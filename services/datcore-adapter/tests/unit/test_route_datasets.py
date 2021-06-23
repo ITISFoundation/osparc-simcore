@@ -10,7 +10,10 @@ from uuid import uuid4
 import httpx
 import pytest
 from pydantic import parse_obj_as
-from simcore_service_datcore_adapter.models.schemas.datasets import DatasetMetaData
+from simcore_service_datcore_adapter.models.schemas.datasets import (
+    DatasetMetaData,
+    FileMetaData,
+)
 from starlette import status
 
 
@@ -85,3 +88,5 @@ async def test_list_dataset_files_entrypoint(
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
+    assert data
+    parse_obj_as(List[FileMetaData], data)
