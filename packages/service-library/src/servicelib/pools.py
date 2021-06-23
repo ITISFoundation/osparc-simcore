@@ -3,17 +3,19 @@ from contextlib import contextmanager
 
 # only gets created on use and is guaranteed to be the s
 # ame for the entire lifetime of the application
-__shared_process_pool_executor = None
+__shared_process_pool_executor = {}
 
 
 def get_shared_process_pool_executor(**kwargs) -> ProcessPoolExecutor:
-    global __shared_process_pool_executor  # pylint: disable=global-statement
+    # sometimes a pool requires a specific configuration
+    # the key helps to distinguish between them in the same application
+    key = "".join(sorted(["_".join((k, str(v))) for k, v in kwargs.items()]))
 
-    if __shared_process_pool_executor is None:
+    if key not in __shared_process_pool_executor:
         # pylint: disable=consider-using-with
-        __shared_process_pool_executor = ProcessPoolExecutor(**kwargs)
+        __shared_process_pool_executor[key] = ProcessPoolExecutor(**kwargs)
 
-    return __shared_process_pool_executor
+    return __shared_process_pool_executor[key]
 
 
 @contextmanager
