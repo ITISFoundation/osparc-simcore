@@ -31,7 +31,7 @@ async def get_service_ready(
     pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    pennsieve_health_ok = await pennsieve_client.ping()
+    pennsieve_health_ok = await pennsieve_client.is_responsive()
     return AppStatusCheck(
         app_name=project_name,
         version=api_version,

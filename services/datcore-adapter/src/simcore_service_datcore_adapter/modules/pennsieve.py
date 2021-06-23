@@ -14,9 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class PennsieveApiClient(BaseServiceClientApi):
-    async def ping(self) -> bool:
-        return await self.is_responsive()
-
     async def get_datasets(
         self, api_key: str, api_secret: str
     ) -> List[DatasetMetaData]:
