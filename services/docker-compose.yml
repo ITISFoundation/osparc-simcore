@@ -463,7 +463,7 @@ networks:
   default:
     attachable: true
   storage_subnet:
-    attachble: true
+    attachable: true
   interactive_services_subnet:
     driver: overlay
     attachable: true
