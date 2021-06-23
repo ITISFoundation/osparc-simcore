@@ -11,24 +11,24 @@ def return_int_one() -> int:
 
 
 async def _assert_works_with_executor(
-    event_loop: BaseEventLoop, executor: Executor = None
+    loop: BaseEventLoop, executor: Executor = None
 ) -> None:
-    result = await event_loop.run_in_executor(executor, return_int_one)
+    result = await loop.run_in_executor(executor, return_int_one)
     assert result == 1
 
 
 @pytest.mark.asyncio
-async def test_default_thread_pool_executor(event_loop: BaseEventLoop) -> None:
-    await _assert_works_with_executor(event_loop)
+async def test_default_thread_pool_executor(loop: BaseEventLoop) -> None:
+    await _assert_works_with_executor(loop)
 
 
 @pytest.mark.asyncio
-async def test_blocking_process_pool_executor(event_loop: BaseEventLoop) -> None:
+async def test_blocking_process_pool_executor(loop: BaseEventLoop) -> None:
     with ProcessPoolExecutor() as executor:
-        await _assert_works_with_executor(event_loop, executor)
+        await _assert_works_with_executor(loop, executor)
 
 
 @pytest.mark.asyncio
-async def test_non_blocking_process_pool_executor(event_loop: BaseEventLoop) -> None:
+async def test_non_blocking_process_pool_executor(loop: BaseEventLoop) -> None:
     with non_blocking_process_pool_executor() as executor:
-        await _assert_works_with_executor(event_loop, executor)
+        await _assert_works_with_executor(loop, executor)
