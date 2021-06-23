@@ -13,8 +13,9 @@ LABEL maintainer=pcrespov
 RUN set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
-  iputils-ping=3:20180629-2+deb10u2 \
-  gosu=1.10-1+b23 \
+  iputils-ping \
+  curl \
+  gosu \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* \
   # verify that the binary works
@@ -48,11 +49,12 @@ ENV SWARM_STACK_NAME="" \
   SIDECAR_LOG_FOLDER=/home/scu/log
 
 
-HEALTHCHECK --interval=60s \
-  --timeout=60s \
-  --start-period=30s \
-  --retries=3 \
-  CMD ["curl", "-Lf", "http://scheduler:8787/health"]
+#
+# HEALTHCHECK --interval=60s \
+#   --timeout=60s \
+#   --start-period=30s \
+#   --retries=3 \
+#   CMD ["curl", "-Lf", "http://scheduler:8787/health"]
 
 EXPOSE 8080
 EXPOSE 8786
