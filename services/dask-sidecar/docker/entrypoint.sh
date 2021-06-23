@@ -73,36 +73,46 @@ then
 fi
 
 
-# Appends docker group if socket is mounted
-DOCKER_MOUNT=/var/run/docker.sock
-if stat $DOCKER_MOUNT > /dev/null 2>&1
-then
-    echo "$INFO detected docker socket is mounted, adding user to group..."
-    GROUPID=$(stat --format=%g $DOCKER_MOUNT)
-    GROUPNAME=scdocker
+if [ -z ${DASK_SCHEDULER_ADDRESS+x} ]; then
 
-    if ! addgroup --gid "$GROUPID" $GROUPNAME > /dev/null 2>&1
-    then
-        echo "$WARNING docker group with $GROUPID already exists, getting group name..."
-        # if group already exists in container, then reuse name
-        GROUPNAME=$(getent group "${GROUPID}" | cut --delimiter=: --fields=1)
-        echo "$WARNING docker group with $GROUPID has name $GROUPNAME"
-    fi
-    adduser "$SC_USER_NAME" "$GROUPNAME"
+  echo "$INFO Starting $* as SCHEDULER..."
+  echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
+  echo "  local dir : $(ls -al)"
+
+
+else
+
+  # Appends docker group if socket is mounted
+  DOCKER_MOUNT=/var/run/docker.sock
+  if stat $DOCKER_MOUNT > /dev/null 2>&1
+  then
+      echo "$INFO detected docker socket is mounted, adding user to group..."
+      GROUPID=$(stat --format=%g $DOCKER_MOUNT)
+      GROUPNAME=scdocker
+
+      if ! addgroup --gid "$GROUPID" $GROUPNAME > /dev/null 2>&1
+      then
+          echo "$WARNING docker group with $GROUPID already exists, getting group name..."
+          # if group already exists in container, then reuse name
+          GROUPNAME=$(getent group "${GROUPID}" | cut --delimiter=: --fields=1)
+          echo "$WARNING docker group with $GROUPID has name $GROUPNAME"
+      fi
+      adduser "$SC_USER_NAME" "$GROUPNAME"
+  fi
+
+  echo "$INFO ensuring write rights on folders ..."
+  mkdir --parents "${SIDECAR_INPUT_FOLDER}" "${SIDECAR_OUTPUT_FOLDER}" "${SIDECAR_LOG_FOLDER}"
+  chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_INPUT_FOLDER}"
+  chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_OUTPUT_FOLDER}"
+  chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_LOG_FOLDER}"
+
+
+  echo "$INFO Starting $* as WORKER..."
+  echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
+  echo "  local dir : $(ls -al)"
+  echo "  input dir : $(ls -al "${SIDECAR_INPUT_FOLDER}")"
+  echo "  output dir : $(ls -al "${SIDECAR_OUTPUT_FOLDER}")"
+  echo "  log dir : $(ls -al "${SIDECAR_LOG_FOLDER}")"
 fi
-
-echo "$INFO ensuring write rights on folders ..."
-mkdir --parents "${SIDECAR_INPUT_FOLDER}" "${SIDECAR_OUTPUT_FOLDER}" "${SIDECAR_LOG_FOLDER}"
-chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_INPUT_FOLDER}"
-chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_OUTPUT_FOLDER}"
-chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_LOG_FOLDER}"
-
-
-echo "$INFO Starting $* ..."
-echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
-echo "  local dir : $(ls -al)"
-echo "  input dir : $(ls -al "${SIDECAR_INPUT_FOLDER}")"
-echo "  output dir : $(ls -al "${SIDECAR_OUTPUT_FOLDER}")"
-echo "  log dir : $(ls -al "${SIDECAR_LOG_FOLDER}")"
 
 exec gosu "$SC_USER_NAME" "$@"
