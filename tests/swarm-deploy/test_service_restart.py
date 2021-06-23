@@ -82,6 +82,7 @@ SERVICES_AND_EXIT_CODES = [
     ("api-server", 0),
     ("catalog", 0),
     ("dask-sidecar", 0),
+    ("datcore-adapter", 0),
     ("director-v2", 0),
     ("migration", 143),
     ("static-webserver", 15),
