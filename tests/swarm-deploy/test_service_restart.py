@@ -84,6 +84,8 @@ SERVICES_AND_EXIT_CODES = [
     ("director-v2", 0),
     ("api-server", 0),
     ("migration", 143),
+    ("dask-sidecar", 0),
+    ("dask-scheduler", 0),
 ]
 
 
