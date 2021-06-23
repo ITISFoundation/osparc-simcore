@@ -52,7 +52,7 @@ class Settings(BaseCustomSettings):
         return self.DASK_SCHEDULER_ADDRESS is None
 
     def as_worker(self) -> bool:
-        return not self.is_scheduler()
+        return not self.as_scheduler()
 
     @classmethod
     def create_from_envs(cls) -> "Settings":

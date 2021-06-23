@@ -5,7 +5,6 @@
 from uuid import UUID, uuid4
 
 import pytest
-from pytest_simcore.helpers.utils_mock import future_with_result
 
 
 # TODO: real db tables
@@ -33,7 +32,7 @@ def test_run_task_in_service(
     job_id: int, user_id: int, project_id: UUID, node_id: UUID, mocker
 ):
     run_sidecar_mock = mocker.patch(
-        "simcore_service_sidecar.cli.run_sidecar", return_value=future_with_result(None)
+        "simcore_service_sidecar.cli.run_sidecar", return_value=None
     )
 
     from simcore_service_dask_sidecar.tasks import run_task_in_service
