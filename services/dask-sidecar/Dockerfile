@@ -10,14 +10,16 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=pcrespov
 
-RUN set -eux; \
-  apt-get update; \
-  apt-get install -y --no-install-recommends \
-  iputils-ping=3:20180629-2+deb10u2\
-  gosu=1.10-1+b23; \
-  rm -rf /var/lib/apt/lists/*; \
+RUN set -eux \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  iputils-ping=3:20180629-2+deb10u2 \
+  gosu=1.10-1+b23 \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* \
   # verify that the binary works
-  gosu nobody true
+  && gosu nobody true
+
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
@@ -33,22 +35,29 @@ RUN adduser \
   --home /home/${SC_USER_NAME} \
   ${SC_USER_NAME}
 
-# Sets utf-8 encoding for Python et al
-ENV LANG=C.UTF-8
-# Turns off writing .pyc files; superfluous on an ephemeral container.
-ENV PYTHONDONTWRITEBYTECODE=1 \
+
+ENV LANG=C.UTF-8 \
+  PYTHONDONTWRITEBYTECODE=1 \
   VIRTUAL_ENV=/home/scu/.venv
-# Ensures that the python and pip executables used
-# in the image will be those from our virtualenv.
+
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
-# environment variables
-ENV SWARM_STACK_NAME=""\
+ENV SWARM_STACK_NAME="" \
   SIDECAR_INPUT_FOLDER=/home/scu/input \
   SIDECAR_OUTPUT_FOLDER=/home/scu/output \
   SIDECAR_LOG_FOLDER=/home/scu/log
 
+
+HEALTHCHECK --interval=60s \
+  --timeout=60s \
+  --start-period=30s \
+  --retries=3 \
+  CMD ["curl", "-Lf", "http://scheduler:8787/health"]
+
 EXPOSE 8080
+EXPOSE 8786
+EXPOSE 8787
+
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
@@ -68,7 +77,6 @@ RUN apt-get update \
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
-
 RUN pip --no-cache-dir install --upgrade \
   pip~=21.0.1  \
   wheel \
@@ -117,12 +125,6 @@ COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/dask-sidecar/docker services/dask-sidecar/docker
 
-# we use the celery API
-# HEALTHCHECK --interval=60s \
-#   --timeout=60s \
-#   --start-period=30s \
-#   --retries=3 \
-#   CMD celery inspect ping -b amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT} -d dask-sidecar."$(cat ${SIDECAR_HOST_HOSTNAME_PATH})"@${HOSTNAME}
 
 ENTRYPOINT [ "/bin/sh", "services/dask-sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/dask-sidecar/docker/boot.sh"]
@@ -143,12 +145,6 @@ ENV SC_BUILD_TARGET=development
 WORKDIR /devel
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
-# we use the celery API
-# HEALTHCHECK --interval=60s \
-#   --timeout=60s \
-#   --start-period=120s \
-#   --retries=3 \
-#   CMD celery inspect ping -b amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT} -d dask-sidecar."$(cat ${SIDECAR_HOST_HOSTNAME_PATH})"@${HOSTNAME}
 
 ENTRYPOINT [ "/bin/sh", "services/dask-sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/dask-sidecar/docker/boot.sh"]
