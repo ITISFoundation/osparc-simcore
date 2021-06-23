@@ -10,7 +10,7 @@ class _BaseConfig:
     extra = Extra.ignore
 
 
-class SimcoreServiceSetting(BaseModel):
+class SimcoreServiceSettingLabelEntry(BaseModel):
     _destination_container: str = PrivateAttr()
     name: str = Field(..., description="The name of the service setting")
     setting_type: str = Field(
@@ -66,8 +66,8 @@ class SimcoreServiceSetting(BaseModel):
         }
 
 
-class SimcoreServiceSettings(BaseModel):
-    __root__: List[SimcoreServiceSetting]
+class SimcoreServiceSettingsLabel(BaseModel):
+    __root__: List[SimcoreServiceSettingLabelEntry]
 
     def __iter__(self):
         return iter(self.__root__)
@@ -76,7 +76,7 @@ class SimcoreServiceSettings(BaseModel):
         return self.__root__[item]
 
 
-class PathsMapping(BaseModel):
+class PathsMappingLabel(BaseModel):
     inputs_path: Path = Field(
         ..., description="path where the service expects all the inputs folder"
     )
@@ -102,13 +102,13 @@ class PathsMapping(BaseModel):
         }
 
 
-ComposeSpecModel = Optional[Dict[str, Any]]
+ComposeSpecLabel = Optional[Dict[str, Any]]
 
 
-class SimcoreService(BaseModel):
+class SimcoreServiceLabels(BaseModel):
     """Validate all the simcores.services.* labels on a service"""
 
-    settings: Json[SimcoreServiceSettings] = Field(
+    settings: Json[SimcoreServiceSettingsLabel] = Field(
         ...,
         alias="simcore.service.settings",
         description=(
@@ -117,13 +117,13 @@ class SimcoreService(BaseModel):
         ),
     )
 
-    paths_mapping: Json[Optional[PathsMapping]] = Field(
+    paths_mapping: Json[Optional[PathsMappingLabel]] = Field(
         None,
         alias="simcore.service.paths-mapping",
         description="json encoded, determines where the outputs and inputs directories are",
     )
 
-    compose_spec: Json[ComposeSpecModel] = Field(
+    compose_spec: Json[ComposeSpecLabel] = Field(
         None,
         alias="simcore.service.compose-spec",
         description="json encoded docker-compose spec",
@@ -163,25 +163,25 @@ class SimcoreService(BaseModel):
                 # legacy service
                 {
                     "simcore.service.settings": json.dumps(
-                        SimcoreServiceSetting.Config.schema_extra["examples"]
+                        SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     )
                 },
                 # dynamic-service
                 {
                     "simcore.service.settings": json.dumps(
-                        SimcoreServiceSetting.Config.schema_extra["examples"]
+                        SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
                     "simcore.service.paths-mapping": json.dumps(
-                        PathsMapping.Config.schema_extra["examples"]
+                        PathsMappingLabel.Config.schema_extra["examples"]
                     ),
                 },
                 # dynamic-service with compose spec
                 {
                     "simcore.service.settings": json.dumps(
-                        SimcoreServiceSetting.Config.schema_extra["examples"]
+                        SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
                     "simcore.service.paths-mapping": json.dumps(
-                        PathsMapping.Config.schema_extra["examples"]
+                        PathsMappingLabel.Config.schema_extra["examples"]
                     ),
                     "simcore.service.compose-spec": json.dumps(
                         {

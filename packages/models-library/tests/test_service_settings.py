@@ -7,16 +7,16 @@ from typing import Any, Dict
 
 import pytest
 from models_library.service_settings import (
-    SimcoreService,
-    SimcoreServiceSetting,
-    SimcoreServiceSettings,
+    SimcoreServiceLabels,
+    SimcoreServiceSettingLabelEntry,
+    SimcoreServiceSettingsLabel,
 )
 from pydantic import BaseModel
 
 
 def test_service_settings():
-    service_settings_instance = SimcoreServiceSettings.parse_obj(
-        SimcoreServiceSetting.Config.schema_extra["examples"]
+    service_settings_instance = SimcoreServiceSettingsLabel.parse_obj(
+        SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
     )
     assert service_settings_instance
 
@@ -30,7 +30,7 @@ SIMCORE_SERVICE_EXAMPLES = [
     (example, items, index)
     # pylint: disable=unnecessary-comprehension
     for example, items, index in zip(
-        SimcoreService.Config.schema_extra["examples"],
+        SimcoreServiceLabels.Config.schema_extra["examples"],
         [1, 2, 4],
         ["legacy", "dynamic-service", "dynamic-service-with-compose-spec"],
     )
@@ -43,7 +43,7 @@ SIMCORE_SERVICE_EXAMPLES = [
     ids=[i for _, _, i in SIMCORE_SERVICE_EXAMPLES],
 )
 def test_simcore_service_labels(example: Dict, items: int):
-    simcore_service = SimcoreService.parse_obj(example)
+    simcore_service = SimcoreServiceLabels.parse_obj(example)
     assert simcore_service
     assert len(simcore_service.dict(exclude_unset=True)) == items
 
@@ -51,9 +51,9 @@ def test_simcore_service_labels(example: Dict, items: int):
 @pytest.mark.parametrize(
     "model_cls",
     (
-        SimcoreServiceSetting,
-        SimcoreServiceSettings,
-        SimcoreService,
+        SimcoreServiceSettingLabelEntry,
+        SimcoreServiceSettingsLabel,
+        SimcoreServiceLabels,
     ),
 )
 def test_service_settings_model_examples(
@@ -67,7 +67,7 @@ def test_service_settings_model_examples(
 
 @pytest.mark.parametrize(
     "model_cls",
-    (SimcoreService,),
+    (SimcoreServiceLabels,),
 )
 def test_correctly_detect_dynamic_sidecar_boot(
     model_cls: BaseModel, model_cls_examples: Dict[str, Dict[str, Any]]
@@ -81,8 +81,8 @@ def test_correctly_detect_dynamic_sidecar_boot(
 
 
 def test_raises_error_if_http_entrypoint_is_missing():
-    data: Dict[str, Any] = SimcoreService.Config.schema_extra["examples"][2]
+    data: Dict[str, Any] = SimcoreServiceLabels.Config.schema_extra["examples"][2]
     del data["simcore.service.container-http-entrypoint"]
 
     with pytest.raises(ValueError):
-        simcore_service = SimcoreService(**data)
+        simcore_service = SimcoreServiceLabels(**data)

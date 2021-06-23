@@ -8,7 +8,7 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.monitor.models import (
     MonitorData,
-    PathsMapping,
+    PathsMappingLabel,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.parse_docker_status import (
     ServiceState,
@@ -21,12 +21,12 @@ def node_uuid() -> str:
 
 
 @pytest.fixture
-def paths_mapping() -> PathsMapping:
-    return PathsMapping(**PathsMapping.Config.schema_extra["examples"])
+def paths_mapping() -> PathsMappingLabel:
+    return PathsMappingLabel(**PathsMappingLabel.Config.schema_extra["examples"])
 
 
 @pytest.fixture
-def monitor_data(node_uuid: str, paths_mapping: PathsMapping) -> MonitorData:
+def monitor_data(node_uuid: str, paths_mapping: PathsMappingLabel) -> MonitorData:
     return MonitorData.assemble(
         service_name="some service",
         node_uuid=node_uuid,

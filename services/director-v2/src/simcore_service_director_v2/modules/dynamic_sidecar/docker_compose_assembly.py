@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 
 import yaml
 from fastapi.applications import FastAPI
-from models_library.service_settings import ComposeSpecModel, PathsMapping
+from models_library.service_settings import ComposeSpecLabel, PathsMappingLabel
 from pydantic import PositiveInt
 
 from ...core.settings import DynamicSidecarSettings
@@ -87,8 +87,8 @@ async def assemble_spec(
     app: FastAPI,
     service_key: str,
     service_tag: str,
-    paths_mapping: PathsMapping,  # pylint: disable=unused-argument
-    compose_spec: ComposeSpecModel,
+    paths_mapping: PathsMappingLabel,  # pylint: disable=unused-argument
+    compose_spec: ComposeSpecLabel,
     container_http_entry: Optional[str],
     dynamic_sidecar_network_name: str,
     simcore_traefik_zone: str,

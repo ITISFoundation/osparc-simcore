@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from models_library.basic_regex import VERSION_RE
 from models_library.projects import ProjectID
-from models_library.service_settings import ComposeSpecModel, PathsMapping
+from models_library.service_settings import ComposeSpecLabel, PathsMappingLabel
 from models_library.services import SERVICE_KEY_RE
 from pydantic import BaseModel, Field, PositiveInt, validator
 
@@ -170,14 +170,14 @@ class MonitorData(BaseModel):
         regex=VERSION_RE,
         description="together with the key used to compose the docker-compose spec for the service",
     )
-    paths_mapping: PathsMapping = Field(
+    paths_mapping: PathsMappingLabel = Field(
         ...,
         description=(
             "the service explicitly requests where to mount all paths "
             "which will be handeled by the dynamic-sidecar"
         ),
     )
-    compose_spec: ComposeSpecModel = Field(
+    compose_spec: ComposeSpecLabel = Field(
         ...,
         description=(
             "if the user provides a compose_spec, it will be used instead "
@@ -236,8 +236,8 @@ class MonitorData(BaseModel):
         port: Optional[int],
         service_key: str,
         service_tag: str,
-        paths_mapping: PathsMapping,
-        compose_spec: ComposeSpecModel,
+        paths_mapping: PathsMappingLabel,
+        compose_spec: ComposeSpecLabel,
         container_http_entry: Optional[str],
         dynamic_sidecar_network_name: str,
         simcore_traefik_zone: str,

@@ -12,7 +12,7 @@ import yarl
 from fastapi import FastAPI, HTTPException, Request, Response
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
-from models_library.service_settings import SimcoreService
+from models_library.service_settings import SimcoreServiceLabels
 from models_library.services import ServiceDockerData, ServiceKeyVersion
 
 # Module's business logic ---------------------------------------------
@@ -137,14 +137,16 @@ class DirectorV0Client:
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)
-    async def get_service_labels(self, service: ServiceKeyVersion) -> SimcoreService:
+    async def get_service_labels(
+        self, service: ServiceKeyVersion
+    ) -> SimcoreServiceLabels:
         resp = await self.request(
             "GET",
             f"services/{urllib.parse.quote_plus(service.key)}/{service.version}:labels",
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            return SimcoreService.parse_obj(unenvelope_or_raise_error(resp))
+            return SimcoreServiceLabels.parse_obj(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)

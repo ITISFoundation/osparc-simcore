@@ -1,13 +1,13 @@
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 from uuid import UUID
 
 import httpx
 from fastapi import APIRouter, Depends, Header
 from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID
-from models_library.service_settings import SimcoreService
+from models_library.service_settings import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from simcore_service_director_v2.models.schemas.constants import UserID
 from starlette import status
@@ -98,7 +98,7 @@ async def create_dynamic_service(
     dynamic_services_settings: DynamicServicesSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
 ) -> DynamicServiceOut:
-    simcore_service: SimcoreService = await director_v0_client.get_service_labels(
+    simcore_service: SimcoreServiceLabels = await director_v0_client.get_service_labels(
         service=ServiceKeyVersion(key=service.key, version=service.version)
     )
     if not simcore_service.needs_dynamic_sidecar:

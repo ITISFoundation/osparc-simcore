@@ -14,7 +14,7 @@ import attr
 from aiodocker import Docker
 from aiodocker.containers import DockerContainer
 from aiodocker.exceptions import DockerContainerError, DockerError
-from models_library.service_settings import SimcoreServiceSettings
+from models_library.service_settings import SimcoreServiceSettingsLabel
 from packaging import version
 from pydantic import BaseModel
 from servicelib.logging_utils import log_decorator
@@ -90,7 +90,7 @@ class Executor:
     stack_name: str = config.SWARM_STACK_NAME
     shared_folders: TaskSharedVolumes = None
     integration_version: version.Version = version.parse("0.0.0")
-    service_settings: SimcoreServiceSettings = []
+    service_settings: SimcoreServiceSettingsLabel = []
     sidecar_mode: BootMode = BootMode.CPU
 
     @log_decorator(logger=log)
@@ -242,7 +242,7 @@ class Executor:
                     )["integration-version"]
                 )
             # get service settings
-            self.service_settings = SimcoreServiceSettings.parse_raw(
+            self.service_settings = SimcoreServiceSettingsLabel.parse_raw(
                 image_cfg["Config"]["Labels"].get("simcore.service.settings", "[]")
             )
             log.debug(

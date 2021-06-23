@@ -9,7 +9,7 @@ from typing import Any, Deque, Dict, List, Optional, Set, Tuple
 import aiodocker
 from asyncio_extras import async_contextmanager
 from models_library.projects import ProjectID
-from models_library.service_settings import ComposeSpecModel, PathsMapping
+from models_library.service_settings import ComposeSpecLabel, PathsMappingLabel
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
     UserID,
@@ -31,8 +31,8 @@ ServiceLabelsStoredData = Tuple[
     str,
     str,
     str,
-    PathsMapping,
-    ComposeSpecModel,
+    PathsMappingLabel,
+    ComposeSpecLabel,
     Optional[str],
     str,
     str,
@@ -142,7 +142,7 @@ async def get_dynamic_sidecars_to_monitor(
         node_uuid = service["Spec"]["Labels"]["uuid"]
         service_key = service["Spec"]["Labels"]["service_key"]
         service_tag = service["Spec"]["Labels"]["service_tag"]
-        paths_mapping = PathsMapping.parse_raw(
+        paths_mapping = PathsMappingLabel.parse_raw(
             service["Spec"]["Labels"]["paths_mapping"]
         )
         compose_spec = json.loads(service["Spec"]["Labels"]["compose_spec"])
