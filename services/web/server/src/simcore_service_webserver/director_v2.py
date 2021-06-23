@@ -343,7 +343,7 @@ async def stop_service(
 @log_decorator(logger=log)
 async def list_running_dynamic_services(
     app: web.Application, user_id: str, project_id: str
-) -> None:
+) -> List[Dict[str, str]]:
     """
     Retruns the running dynamic services from director-v0 and director-v2
     """
