@@ -34,5 +34,6 @@ def non_blocking_process_pool_executor(**kwargs) -> ProcessPoolExecutor:
         # bypassing shutdown and using a shared pool
         # remove call to get_shared_process_pool_executor and replace with
         # a new instance when the issue is fixed
+        # FIXME: uncomment below line when the issue is fixed
         # executor.shutdown(wait=False)
         pass
