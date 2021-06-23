@@ -5,7 +5,6 @@
 
 """
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 import logging
 import textwrap
 import uuid as uuidlib
@@ -14,7 +13,7 @@ from copy import deepcopy
 from datetime import datetime
 from enum import Enum
 from pprint import pformat
-from typing import Any, Dict, List, Mapping, Optional, Set, Tuple, Generator
+from typing import Any, Dict, List, Mapping, Optional, Set, Tuple
 
 import psycopg2.errors
 import sqlalchemy as sa
