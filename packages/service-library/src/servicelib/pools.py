@@ -1,19 +1,20 @@
 from concurrent.futures import ProcessPoolExecutor
 from contextlib import contextmanager
 
-# because
-_shared_process_pool_executor = None
+# only gets created on use and is guaranteed to be the s
+# ame for the entire lifetime of the application
+__shared_process_pool_executor = None
 
 
 def get_shared_process_pool_executor(**kwargs) -> ProcessPoolExecutor:
-    global _shared_process_pool_executor  # pylint: disable=global-statement
+    global __shared_process_pool_executor  # pylint: disable=global-statement
 
-    if _shared_process_pool_executor is None:
-        _shared_process_pool_executor = ProcessPoolExecutor(
+    if __shared_process_pool_executor is None:
+        __shared_process_pool_executor = ProcessPoolExecutor(
             **kwargs
         )  # pylint: disable=consider-using-with
 
-    return _shared_process_pool_executor
+    return __shared_process_pool_executor
 
 
 @contextmanager
