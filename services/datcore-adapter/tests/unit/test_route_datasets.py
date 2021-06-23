@@ -67,7 +67,7 @@ async def test_list_datasets_entrypoint(
 
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    # assert data
+    assert data
     parse_obj_as(List[DatasetMetaData], data)
 
 
