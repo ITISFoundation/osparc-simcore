@@ -1,7 +1,8 @@
 #
-# Specifies third-party dependencies for 'sidecar'
+# Specifies third-party dependencies for the 'dask-sidecar'
 #
-
+# TIP: Use _base.txt to create a pure-dask installation compatible with the dask-sidecar
+#
 -c ../../../requirements/constraints.txt
 
 # intra-repo packages CONSTRAINTS

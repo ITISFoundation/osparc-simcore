@@ -242,7 +242,6 @@ services:
         reservations:
           cpus: "0.10"
           memory: "100M"
-    command: ["dask-worker", "tcp://dask-scheduler:8786"]
     volumes: *sidecar-volumes
     environment:
       <<: *sidecar-environment
@@ -254,7 +253,6 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: dask-scheduler
-    command: ["dask-scheduler"]
     healthcheck:
       test: ["CMD", "curl", "-Lf", "http://dask-scheduler:8787/health"]
       interval: 10s
@@ -375,7 +373,7 @@ services:
         "-c",
         "max_connections=413",
         "-c",
-        "shared_buffers=256MB"
+        "shared_buffers=256MB",
       ]
 
   redis:

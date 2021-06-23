@@ -206,7 +206,6 @@ services:
         org.label-schema.vcs-ref: "${VCS_REF}"
         io.osparc.api-version: "${STORAGE_API_VERSION}"
 
-
   workflows:
     image: local/workflows:${BUILD_TARGET:?build_target_required}
     build:

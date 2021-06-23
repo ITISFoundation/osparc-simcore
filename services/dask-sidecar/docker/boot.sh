@@ -18,7 +18,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   echo "$INFO" "Python :"
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
-  cd services/sidecar || exit 1
+  cd services/dask-sidecar || exit 1
   pip install --no-cache-dir -r requirements/dev.txt
   cd - || exit 1
   echo "$INFO" "PIP :"
@@ -27,20 +27,41 @@ fi
 
 
 # RUNNING application ----------------------------------------
-if [ "${DASK_SCHEDULER_ADDRESS}" ]; then
-  echo "$INFO" "Starting as a worker -> ${DASK_SCHEDULER_ADDRESS} ..."
-  CMD=dask-worker "${DASK_SCHEDULER_ADDRESS}"
-else
-  echo "$INFO" "Starting as a scheduler ..."
-  CMD=dask-scheduler
-fi
+#
+# - If DASK_SCHEDULER_ADDRESS is DEFINED, it starts as a worker, otherwise as a scheduler
+# - SEE https://docs.dask.org/en/latest/setup/cli.html
+# - SEE https://stackoverflow.com/questions/3601515/how-to-check-if-a-variable-is-set-in-bash
+# - FIXME: create command prefix: https://unix.stackexchange.com/questions/444946/how-can-we-run-a-command-stored-in-a-variable
+#
 
-echo "$INFO" "Executing: ${CMD}"
+if [ -z ${DASK_SCHEDULER_ADDRESS+x} ]; then
+  SCHEDULER_VERSION=$(dask-scheduler --version)
 
-if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
-  # NOTE: in this case, remote debugging is only available in development mode!
-  exec watchmedo auto-restart --recursive --pattern="*.py" -- \
-    ${CMD}
+  echo "$INFO" "Starting as ${SCHEDULER_VERSION}..."
+  if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
+
+    exec watchmedo auto-restart --recursive --pattern="*.py" -- \
+      dask-scheduler
+  else
+
+    exec dask-scheduler
+  fi
 else
-  exec ${CMD}
+  WORKER_VERSION=$(dask-worker --version)
+
+  echo "$INFO" "Starting as a ${WORKER_VERSION} -> ${DASK_SCHEDULER_ADDRESS} ..."
+  if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
+
+    exec watchmedo auto-restart --recursive --pattern="*.py" -- \
+      dask-worker "${DASK_SCHEDULER_ADDRESS}" \
+        --local-directory /tmp/dask-sidecar \
+        --preload simcore_service_dask_sidecar.tasks \
+        --reconnect
+  else
+
+    exec dask-worker "${DASK_SCHEDULER_ADDRESS}" \
+        --local-directory /tmp/dask-sidecar \
+        --preload simcore_service_dask_sidecar.tasks \
+        --reconnect
+  fi
 fi
