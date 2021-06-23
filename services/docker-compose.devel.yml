@@ -87,7 +87,6 @@ services:
       <<: *dev-sidecar-environment
     ports:
       - "3000"
-      - "8786"
     deploy: *dev-sidecar-deploy
 
   dask-scheduler:
@@ -101,7 +100,6 @@ services:
     volumes: *dev-dask-sidecar-volumes
     ports:
       - "3000"
-      - "8786"
     deploy: *dev-sidecar-deploy
 
   # adding a separate worker to handling GPU mode for development
