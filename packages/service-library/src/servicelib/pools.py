@@ -10,9 +10,8 @@ def get_shared_process_pool_executor(**kwargs) -> ProcessPoolExecutor:
     global __shared_process_pool_executor  # pylint: disable=global-statement
 
     if __shared_process_pool_executor is None:
-        __shared_process_pool_executor = ProcessPoolExecutor(
-            **kwargs
-        )  # pylint: disable=consider-using-with
+        # pylint: disable=consider-using-with
+        __shared_process_pool_executor = ProcessPoolExecutor(**kwargs)
 
     return __shared_process_pool_executor
 
