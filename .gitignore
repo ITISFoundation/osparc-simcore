@@ -163,5 +163,5 @@ services/**/.codeclimate.yml
 # pytest-fixture-tools output
 artifacts
 
-# new pip install artifact
-*-space/
+# dask artifacts in devel mode
+dask*-space/
