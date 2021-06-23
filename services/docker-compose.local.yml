@@ -55,6 +55,18 @@ services:
       - "8080"
       - "3001:3000"
 
+  dask-sidecar:
+    environment:
+      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+
+
+  dask-scheduler:
+    environment:
+      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+    ports:
+      - "3000"
+      - "8786:8786"
+
   postgres:
     ports:
       - "5432:5432"
