@@ -228,7 +228,7 @@ services:
       SIDECAR_HOST_HOSTNAME_PATH: ${SIDECAR_HOST_HOSTNAME_PATH:-/home/scu/hostname}
       START_AS_MODE_CPU: ${SIDECAR_FORCE_CPU_NODE:-0}
 
-    networks: &sidecar-networks
+    networks:
       - computational_services_subnet
 
   dask-sidecar:
@@ -247,7 +247,8 @@ services:
       <<: *sidecar-environment
       DASK_SCHEDULER_ADDRESS: "tcp://dask-scheduler:8786"
 
-    networks: *sidecar-networks
+    networks:
+      - computational_services_subnet
 
   dask-scheduler:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -260,7 +261,9 @@ services:
       retries: 5
       start_period: 10s
     environment: *sidecar-environment
-    networks: *sidecar-networks
+    networks:
+      - interactive_services_subnet
+      - computational_services_subnet
 
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
