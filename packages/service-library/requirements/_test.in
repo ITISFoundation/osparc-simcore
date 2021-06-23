@@ -18,7 +18,6 @@ pytest-runner
 pytest-docker
 pytest-mock
 pytest-sugar
-pytest-asyncio
 
 # tools
 pylint  # NOTE: The version in pylint at _text.txt is used as a reference for ci/helpers/install_pylint.bash
