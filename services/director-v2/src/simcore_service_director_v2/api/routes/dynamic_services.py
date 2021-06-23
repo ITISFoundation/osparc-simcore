@@ -64,9 +64,10 @@ async def list_running_dynamic_services(
     dynamic_services_settings: DynamicServicesSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
 ) -> List[Dict[str, str]]:
-    legacy_running_services: List[
-        DynamicServiceOut
-    ] = await director_v0_client.get_running_services(user_id, project_id)
+    legacy_running_services: List[Dict[str, str]] = [
+        x.dict(exclude_unset=True)
+        for x in await director_v0_client.get_running_services(user_id, project_id)
+    ]
 
     get_stack_statuse_tasks: List[DynamicServiceOut] = [
         monitor.get_stack_status(service["Spec"]["Labels"]["uuid"])
@@ -74,7 +75,7 @@ async def list_running_dynamic_services(
             dynamic_services_settings.dynamic_sidecar, user_id, project_id
         )
     ]
-    modern_running_services: List[Dict[str, Any]] = [
+    modern_running_services: List[Dict[str, str]] = [
         x.dict(exclude_unset=True)
         for x in await asyncio.gather(*get_stack_statuse_tasks)
     ]
