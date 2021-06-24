@@ -30,14 +30,15 @@ $(if $(IS_WIN),$(error Windows is not supported in all recipes. Use WSL instead.
 SERVICES_LIST := \
 	api-server \
 	catalog \
+	dask-sidecar \
 	director \
 	director-v2 \
 	dynamic-sidecar \
 	migration \
 	sidecar \
+	static-webserver \
 	storage \
-	webserver \
-	static-webserver
+	webserver
 
 CLIENT_WEB_OUTPUT       := $(CURDIR)/services/web/client/source-output
 

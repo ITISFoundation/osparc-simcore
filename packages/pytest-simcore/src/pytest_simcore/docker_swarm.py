@@ -83,7 +83,7 @@ def _wait_for_services(docker_client: docker.client.DockerClient) -> None:
                 if not task_state == "RUNNING":
                     raise ValueError(
                         f"service {service.name} not running [{task_state=} instead]. "
-                        f"Details: \n{json.dumps(task)}"
+                        f"Details: \n{json.dumps(task, indent=2)}"
                     )
 
 
