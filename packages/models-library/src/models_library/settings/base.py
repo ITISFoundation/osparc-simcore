@@ -36,6 +36,11 @@ class BaseCustomSettings(BaseSettings):
 
     @classmethod
     def create_from_envs(cls):
-        raise NotImplementedError(
-            "Implement in subclass. Use set_defaults_with_default_constructors to set sub-settings defaults"
-        )
+        obj = cls()
+
+        # TODO: perform this check on FieldInfo upon class construction
+        if any(isinstance(field, BaseSettings) for field in obj.__fields__):
+            raise NotImplementedError(
+                "Override in subclass and use set_defaults_with_default_constructors to set sub-settings defaults"
+            )
+        return obj
