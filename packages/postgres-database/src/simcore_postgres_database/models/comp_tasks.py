@@ -58,7 +58,7 @@ comp_tasks = sa.Table(
         doc="Current state in the task lifecicle",
     ),
     # utc timestamps for submission/start/end
-    sa.Column("submit", sa.DateTime, doc="UTC timestamp for submission"),
+    sa.Column("submit", sa.DateTime, doc="UTC timestamp for task submission"),
     sa.Column("start", sa.DateTime, doc="UTC timestamp when task started"),
     sa.Column("end", sa.DateTime, doc="UTC timestamp for completion"),
     sa.UniqueConstraint("project_id", "node_id", name="project_node_uniqueness"),
