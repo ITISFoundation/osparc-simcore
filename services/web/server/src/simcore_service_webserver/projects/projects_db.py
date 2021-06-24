@@ -5,7 +5,6 @@
 
 """
 import asyncio
-import concurrent.futures
 import logging
 import textwrap
 import uuid as uuidlib
@@ -397,10 +396,9 @@ class ProjectDBAPI:
                 continue
             try:
 
-                with concurrent.futures.ThreadPoolExecutor() as pool:
-                    await asyncio.get_event_loop().run_in_executor(
-                        pool, ProjectAtDB.from_orm, row
-                    )
+                await asyncio.get_event_loop().run_in_executor(
+                    None, ProjectAtDB.from_orm, row
+                )
             except ValidationError as exc:
                 log.warning(
                     "project in db with uuid [%s] failed validation, please check. error: %s",

@@ -5,7 +5,6 @@
 import operator
 
 import attr
-
 from servicelib.incidents import BaseIncident, LimitedOrderedStack
 
 
