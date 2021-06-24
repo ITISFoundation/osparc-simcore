@@ -6,6 +6,7 @@ from uuid import UUID
 from aiohttp import ClientError, ClientTimeout, web
 from models_library.projects_pipeline import ComputationTask
 from models_library.settings.services_common import ServicesCommonSettings
+from models_library.projects import ProjectID
 from pydantic.types import PositiveInt
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import log_decorator
@@ -342,7 +343,7 @@ async def stop_service(
 
 @log_decorator(logger=log)
 async def list_running_dynamic_services(
-    app: web.Application, user_id: str, project_id: str
+    app: web.Application, user_id: PositiveInt, project_id: ProjectID
 ) -> List[Dict[str, str]]:
     """
     Retruns the running dynamic services from director-v0 and director-v2

@@ -66,6 +66,7 @@ async def apply_monitoring(app: FastAPI, monitor_data: MonitorData) -> None:
         )
     ):
         monitor: DynamicSidecarsMonitor = _get_monitor(app)
+        logger.warning("Removing service %s from monitoring", monitor_data.service_name)
         await monitor.remove_service_from_monitor(
             node_uuid=monitor_data.node_uuid,
             save_state=monitor_data.dynamic_sidecar.can_save_state,
@@ -129,6 +130,9 @@ class DynamicSidecarsMonitor:
         """
         async with self._lock:
             if monitor_data.service_name in self._to_monitor:
+                logger.warning(
+                    "Service %s is already being monitored", monitor_data.service_name
+                )
                 return
             if monitor_data.node_uuid in self._inverse_search_mapping:
                 raise DynamicSidecarError(
@@ -150,7 +154,7 @@ class DynamicSidecarsMonitor:
             logger.debug("Added service '%s' to monitor", monitor_data.service_name)
 
     async def remove_service_from_monitor(
-        self, node_uuid: str, save_state: Optional[bool]
+        self, node_uuid: NodeID, save_state: Optional[bool]
     ) -> None:
         """Handles the removal cycle of the services, saving states etc..."""
         async with self._lock:

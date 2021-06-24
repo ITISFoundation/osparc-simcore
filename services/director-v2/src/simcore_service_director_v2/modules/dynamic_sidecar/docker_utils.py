@@ -3,13 +3,14 @@ import asyncio
 import json
 import logging
 import time
-from contextlib import suppress
+import traceback
+from contextlib import asynccontextmanager, suppress
 from typing import Any, Deque, Dict, List, Optional, Set, Tuple
 from uuid import UUID
 
 import aiodocker
-from asyncio_extras import async_contextmanager
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
     PathsMappingLabel,
@@ -22,6 +23,7 @@ from simcore_service_director_v2.models.schemas.constants import (
 )
 
 from ...core.settings import DynamicSidecarSettings, ServiceType
+from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 from .exceptions import DynamicSidecarError, GenericDockerError
 from .parse_docker_status import (
     TASK_STATES_ALL,
@@ -35,7 +37,7 @@ log = logging.getLogger(__name__)
 
 class ServiceLabelsStoredData(BaseModel):
     service_name: str
-    node_uuid: str
+    node_uuid: NodeID
     service_key: str
     service_tag: str
     paths_mapping: PathsMappingLabel
@@ -72,14 +74,14 @@ class ServiceLabelsStoredData(BaseModel):
         }
 
 
-@async_contextmanager
+@asynccontextmanager
 async def docker_client() -> aiodocker.docker.Docker:
     try:
         client = aiodocker.Docker()
         yield client
     except aiodocker.exceptions.DockerError as e:
         message = "Unexpected error from docker client"
-        log_message = f"{message} {e.message}"
+        log_message = f"{message} {e.message}\n{traceback.format_exc()}"
         log.warning(log_message)
         raise GenericDockerError(message, e) from e
     finally:
@@ -169,7 +171,7 @@ async def get_dynamic_sidecars_to_monitor(
             continue
 
         # push found data to list
-        node_uuid = service["Spec"]["Labels"]["uuid"]
+        node_uuid = NodeID(service["Spec"]["Labels"]["uuid"])
         service_key = service["Spec"]["Labels"]["service_key"]
         service_tag = service["Spec"]["Labels"]["service_tag"]
         paths_mapping = PathsMappingLabel.parse_raw(
@@ -229,7 +231,9 @@ async def _extract_task_data_from_service_for_state(
         started = time.time()
 
         while service_state not in target_statuses:
-            running_services = await client.tasks.list(filters={"service": service_id})
+            running_services = await client.tasks.list(
+                filters={"service": f"{service_id}"}
+            )
 
             service_container_count = len(running_services)
 
@@ -300,23 +304,30 @@ async def get_dynamic_sidecar_state(
 
 
 async def are_services_missing(
-    node_uuid: str, dynamic_sidecar_settings: DynamicSidecarSettings
+    node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> bool:
     """Used to check if the service should be created"""
-    async with docker_client() as client:  # pylint: disable=not-async-context-manager
-        stack_services = await client.services.list(
-            filters={
-                "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}",
-                    f"uuid={node_uuid}",
-                ]
-            }
+    try:
+        filters = {
+            "label": [
+                f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}",
+                f"uuid={node_uuid}",
+            ]
+        }
+        async with docker_client() as client:  # pylint: disable=not-async-context-manager
+            stack_services = await client.services.list(filters=filters)
+            return len(stack_services) == 0
+    except GenericDockerError as e:
+        service_name = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{node_uuid}"
+        original_exception_message = e.original_exception.message
+        was_service_not_found = (
+            original_exception_message == f"service {service_name} not found"
         )
-        return len(stack_services) == 0
+        return was_service_not_found
 
 
 async def are_all_services_present(
-    node_uuid: str, dynamic_sidecar_settings: DynamicSidecarSettings
+    node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> bool:
     """
     The dynamic-sidecar stack always expects to have 2 running services
@@ -338,7 +349,7 @@ async def are_all_services_present(
 
 
 async def remove_dynamic_sidecar_stack(
-    node_uuid: str, dynamic_sidecar_settings: DynamicSidecarSettings
+    node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> None:
     """Removes all services from the stack, in theory there should only be 2 services"""
     async with docker_client() as client:  # pylint: disable=not-async-context-manager
@@ -384,7 +395,7 @@ async def list_dynamic_sidecar_services(
 
 
 async def is_dynamic_service_running(
-    dynamic_sidecar_settings: DynamicSidecarSettings, node_uuid: str
+    dynamic_sidecar_settings: DynamicSidecarSettings, node_uuid: NodeID
 ) -> Optional[Tuple[str, str]]:
     async with docker_client() as client:  # pylint: disable=not-async-context-manager
         dynamic_sidecar_services = await client.services.list(

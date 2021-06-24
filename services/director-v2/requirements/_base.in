@@ -28,6 +28,3 @@ orjson
 
 # clients
 httpx
-
-# other
-asyncio_extras

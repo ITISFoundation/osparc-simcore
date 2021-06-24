@@ -170,7 +170,7 @@ def get_api_client(app: FastAPI) -> DynamicSidecarClient:
 
 async def update_dynamic_sidecar_health(
     app: FastAPI, monitor_data: MonitorData
-) -> MonitorData:
+) -> None:
 
     api_client = get_api_client(app)
     service_endpoint = monitor_data.dynamic_sidecar.endpoint

@@ -5,6 +5,7 @@ from typing import List, Optional
 
 from models_library.basic_regex import VERSION_RE
 from models_library.projects import ProjectID
+from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
     PathsMappingLabel,
@@ -151,7 +152,7 @@ class MonitorData(BaseModel):
         ..., description="Name of the current dynamic-sidecar being monitored"
     )
 
-    node_uuid: str = Field(
+    node_uuid: NodeID = Field(
         ..., description="the node_id of the service as defined in the workbench"
     )
 
@@ -249,7 +250,7 @@ class MonitorData(BaseModel):
         return cls.parse_obj(
             dict(
                 service_name=service_name,
-                node_uuid=str(service.node_uuid),
+                node_uuid=service.node_uuid,
                 project_id=service.project_id,
                 user_id=service.user_id,
                 service_key=service.key,
@@ -282,7 +283,7 @@ class MonitorData(BaseModel):
         return cls.parse_obj(
             dict(
                 service_name=service_labels_stored_data.service_name,
-                node_uuid=str(service_labels_stored_data.node_uuid),
+                node_uuid=service_labels_stored_data.node_uuid,
                 project_id=service_labels_stored_data.project_id,
                 user_id=service_labels_stored_data.user_id,
                 service_key=service_labels_stored_data.service_key,

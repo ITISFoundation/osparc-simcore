@@ -70,7 +70,7 @@ async def list_running_dynamic_services(
     ]
 
     get_stack_statuse_tasks: List[DynamicServiceOut] = [
-        monitor.get_stack_status(service["Spec"]["Labels"]["uuid"])
+        monitor.get_stack_status(UUID(service["Spec"]["Labels"]["uuid"]))
         for service in await list_dynamic_sidecar_services(
             dynamic_services_settings.dynamic_sidecar, user_id, project_id
         )
@@ -123,7 +123,7 @@ async def create_dynamic_service(
     if await is_dynamic_service_running(
         dynamic_services_settings.dynamic_sidecar, service.node_uuid
     ):
-        return await monitor.get_stack_status(str(service.node_uuid))
+        return await monitor.get_stack_status(service.node_uuid)
 
     # Service naming schema:
     # NOTE: name is max 63 characters
@@ -167,7 +167,7 @@ async def create_dynamic_service(
     )
     await monitor.add_service_to_monitor(monitor_data)
 
-    return await monitor.get_stack_status(str(service.node_uuid))
+    return await monitor.get_stack_status(service.node_uuid)
 
 
 @router.get(
@@ -182,7 +182,7 @@ async def dynamic_sidecar_status(
 ) -> DynamicServiceOut:
 
     try:
-        return await monitor.get_stack_status(str(node_uuid))
+        return await monitor.get_stack_status(node_uuid)
     except DynamicSidecarNotFoundError:
         # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0
@@ -207,7 +207,7 @@ async def stop_dynamic_service(
 ) -> None:
 
     try:
-        await monitor.remove_service_from_monitor(str(node_uuid), save_state)
+        await monitor.remove_service_from_monitor(node_uuid, save_state)
     except DynamicSidecarNotFoundError:
         # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0
