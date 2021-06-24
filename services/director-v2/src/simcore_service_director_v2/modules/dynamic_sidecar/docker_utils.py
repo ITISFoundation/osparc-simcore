@@ -9,7 +9,7 @@ from typing import Any, Deque, Dict, List, Optional, Set, Tuple
 import aiodocker
 from asyncio_extras import async_contextmanager
 from models_library.projects import ProjectID
-from models_library.service_settings import ComposeSpecLabel, PathsMappingLabel
+from models_library.service_settings_labels import ComposeSpecLabel, PathsMappingLabel
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
     UserID,

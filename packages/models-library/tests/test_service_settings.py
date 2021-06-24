@@ -6,7 +6,7 @@ from pprint import pformat
 from typing import Any, Dict
 
 import pytest
-from models_library.service_settings import (
+from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
@@ -15,13 +15,13 @@ from pydantic import BaseModel
 
 
 def test_service_settings():
-    service_settings_instance = SimcoreServiceSettingsLabel.parse_obj(
+    simcore_settings_settings_label = SimcoreServiceSettingsLabel.parse_obj(
         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
     )
-    assert service_settings_instance
+    assert simcore_settings_settings_label
 
     # ensure private attribute assignment
-    for service_setting in service_settings_instance:
+    for service_setting in simcore_settings_settings_label:
         # pylint: disable=protected-access
         service_setting._destination_container = "random_value"
 
@@ -43,9 +43,9 @@ SIMCORE_SERVICE_EXAMPLES = [
     ids=[i for _, _, i in SIMCORE_SERVICE_EXAMPLES],
 )
 def test_simcore_service_labels(example: Dict, items: int):
-    simcore_service = SimcoreServiceLabels.parse_obj(example)
-    assert simcore_service
-    assert len(simcore_service.dict(exclude_unset=True)) == items
+    simcore_service_labels = SimcoreServiceLabels.parse_obj(example)
+    assert simcore_service_labels
+    assert len(simcore_service_labels.dict(exclude_unset=True)) == items
 
 
 @pytest.mark.parametrize(
@@ -81,8 +81,10 @@ def test_correctly_detect_dynamic_sidecar_boot(
 
 
 def test_raises_error_if_http_entrypoint_is_missing():
-    data: Dict[str, Any] = SimcoreServiceLabels.Config.schema_extra["examples"][2]
-    del data["simcore.service.container-http-entrypoint"]
+    simcore_service_labels: Dict[str, Any] = SimcoreServiceLabels.Config.schema_extra[
+        "examples"
+    ][2]
+    del simcore_service_labels["simcore.service.container-http-entrypoint"]
 
     with pytest.raises(ValueError):
-        simcore_service = SimcoreServiceLabels(**data)
+        simcore_service = SimcoreServiceLabels(**simcore_service_labels)

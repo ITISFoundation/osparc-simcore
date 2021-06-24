@@ -12,7 +12,7 @@ import yarl
 from fastapi import FastAPI, HTTPException, Request, Response
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
-from models_library.service_settings import SimcoreServiceLabels
+from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceDockerData, ServiceKeyVersion
 
 # Module's business logic ---------------------------------------------

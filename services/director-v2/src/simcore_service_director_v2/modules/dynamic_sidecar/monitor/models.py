@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from models_library.basic_regex import VERSION_RE
 from models_library.projects import ProjectID
-from models_library.service_settings import ComposeSpecLabel, PathsMappingLabel
+from models_library.service_settings_labels import ComposeSpecLabel, PathsMappingLabel
 from models_library.services import SERVICE_KEY_RE
 from pydantic import BaseModel, Field, PositiveInt, validator
 

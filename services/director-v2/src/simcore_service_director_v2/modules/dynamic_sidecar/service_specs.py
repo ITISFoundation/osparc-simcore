@@ -5,7 +5,7 @@ from collections import deque
 from typing import Any, Deque, Dict, List
 
 from models_library.projects_nodes import NodeID
-from models_library.service_settings import (
+from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
@@ -314,14 +314,14 @@ async def _extract_osparc_involved_service_labels(
         )
         reverse_mapping[involved_key] = compose_service_key
 
-        simcore_service: SimcoreServiceLabels = (
+        simcore_service_labels: SimcoreServiceLabels = (
             await director_v0_client.get_service_labels(
                 service=ServiceKeyVersion(
                     key=current_service_key, version=current_service_tag
                 )
             )
         )
-        docker_image_name_by_services[involved_key] = simcore_service
+        docker_image_name_by_services[involved_key] = simcore_service_labels
 
     if len(reverse_mapping) != len(docker_image_name_by_services):
         message = (
@@ -448,10 +448,10 @@ async def merge_settings_before_use(
     director_v0_client: DirectorV0Client, service_key: str, service_tag: str
 ) -> SimcoreServiceSettingsLabel:
 
-    simcore_service: SimcoreServiceLabels = await director_v0_client.get_service_labels(
+    simcore_service_labels: SimcoreServiceLabels = await director_v0_client.get_service_labels(
         service=ServiceKeyVersion(key=service_key, version=service_tag)
     )
-    log.info("image=%s, tag=%s, labels=%s", service_key, service_tag, simcore_service)
+    log.info("image=%s, tag=%s, labels=%s", service_key, service_tag, simcore_service_labels)
 
     # paths_mapping express how to map dynamic-sidecar paths to the compose-spec volumes
     # where the service expects to find its certain folders
@@ -462,7 +462,7 @@ async def merge_settings_before_use(
         director_v0_client=director_v0_client,
         service_key=service_key,
         service_tag=service_tag,
-        service_labels=simcore_service,
+        service_labels=simcore_service_labels,
     )
     logging.info("labels_for_involved_services=%s", labels_for_involved_services)
 

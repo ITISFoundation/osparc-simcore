@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 
 import yaml
 from fastapi.applications import FastAPI
-from models_library.service_settings import ComposeSpecLabel, PathsMappingLabel
+from models_library.service_settings_labels import ComposeSpecLabel, PathsMappingLabel
 from pydantic import PositiveInt
 
 from ...core.settings import DynamicSidecarSettings

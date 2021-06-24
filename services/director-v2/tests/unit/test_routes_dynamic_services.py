@@ -11,7 +11,7 @@ import pytest
 import respx
 from fastapi import FastAPI
 from httpx import URL, QueryParams
-from models_library.service_settings import SimcoreServiceLabels
+from models_library.service_settings_labels import SimcoreServiceLabels
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
 )

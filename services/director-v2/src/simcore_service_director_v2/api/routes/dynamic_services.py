@@ -7,7 +7,7 @@ import httpx
 from fastapi import APIRouter, Depends, Header
 from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID
-from models_library.service_settings import SimcoreServiceLabels
+from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from simcore_service_director_v2.models.schemas.constants import UserID
 from starlette import status
@@ -98,10 +98,12 @@ async def create_dynamic_service(
     dynamic_services_settings: DynamicServicesSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
 ) -> DynamicServiceOut:
-    simcore_service: SimcoreServiceLabels = await director_v0_client.get_service_labels(
-        service=ServiceKeyVersion(key=service.key, version=service.version)
+    simcore_service_labels: SimcoreServiceLabels = (
+        await director_v0_client.get_service_labels(
+            service=ServiceKeyVersion(key=service.key, version=service.version)
+        )
     )
-    if not simcore_service.needs_dynamic_sidecar:
+    if not simcore_service_labels.needs_dynamic_sidecar:
         # forward to director-v0
         redirect_url_with_query = director_v0_client.client.base_url.copy_with(
             path="/v0/running_interactive_services",
@@ -159,9 +161,9 @@ async def create_dynamic_service(
         port=dynamic_services_settings.dynamic_sidecar.port,
         service_key=service.key,
         service_tag=service.version,
-        paths_mapping=simcore_service.paths_mapping,
-        compose_spec=simcore_service.compose_spec,
-        container_http_entry=simcore_service.container_http_entry,
+        paths_mapping=simcore_service_labels.paths_mapping,
+        compose_spec=simcore_service_labels.compose_spec,
+        container_http_entry=simcore_service_labels.container_http_entry,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
         simcore_traefik_zone=io_simcore_zone,
         service_port=TEMPORARY_PORT_NUMBER,
