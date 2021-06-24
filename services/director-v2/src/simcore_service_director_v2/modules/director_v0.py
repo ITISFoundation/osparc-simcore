@@ -117,17 +117,6 @@ class DirectorV0Client:
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)
-    async def get_service_settings(self, service: ServiceKeyVersion) -> ServiceSettings:
-        # TODO: DYNAMIC-SIDECAR: refactor to use endpoint defined by ANE
-        resp = await self.request(
-            "GET",
-            f"service_labels/{urllib.parse.quote_plus(service.key)}/{service.version}",
-        )
-        if resp.status_code == status.HTTP_200_OK:
-            return ServiceSettings.parse_obj(unenvelope_or_raise_error(resp))
-        raise HTTPException(status_code=resp.status_code, detail=resp.content)
-
-    @log_decorator(logger=logger)
     async def get_running_service_details(
         self, service_uuid: NodeID
     ) -> RunningServiceDetails:

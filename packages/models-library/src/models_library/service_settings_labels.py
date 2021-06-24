@@ -83,12 +83,12 @@ class PathsMappingLabel(BaseModel):
     outputs_path: Path = Field(
         ..., description="path where the service expects all the outputs folder"
     )
-    other_paths: List[Path] = Field(
+    state_paths: List[Path] = Field(
         [],
         description="optional list of path which contents need to be saved and restored",
     )
 
-    @validator("other_paths", always=True)
+    @validator("state_paths", always=True)
     @classmethod
     def convert_none_to_empty_list(cls, v):
         return [] if v is None else v
