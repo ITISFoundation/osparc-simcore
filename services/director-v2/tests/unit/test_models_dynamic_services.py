@@ -21,11 +21,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.monitor.models import (
 
 
 @pytest.fixture
-def node_uuid() -> str:
-    return str(uuid.uuid4())
-
-
-@pytest.fixture
 def port() -> int:
     return 1222
 
@@ -115,7 +110,7 @@ def test_running_service_details_make_status(
         "project_id": uuid.UUID(monitor_data.project_id),
         "service_state": service_state,
         "service_message": service_message,
-        "service_uuid": uuid.UUID(monitor_data.node_uuid),
+        "service_uuid": monitor_data.node_uuid,
         "service_key": monitor_data.service_key,
         "service_version": monitor_data.service_tag,
         "service_host": monitor_data.service_name,
