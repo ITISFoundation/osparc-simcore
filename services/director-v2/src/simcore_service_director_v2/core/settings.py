@@ -77,7 +77,7 @@ class DirectorV0Settings(ApiServiceSettings):
 
 
 _DYNAMIC_SIDECAR_DOCKER_IMAGE_RE = (
-    r"(^(local|itisfoundation)/)?(dynamic-sidecar):([\w]*)"
+    r"(^(local|itisfoundation)/)?(dynamic-sidecar):([\w]+)"
 )
 
 
