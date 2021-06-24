@@ -4,9 +4,10 @@
 
 import os
 from collections import namedtuple
-from typing import Any, List
+from typing import Any, List, Tuple, Type
 from uuid import uuid4
 
+import faker
 import httpx
 import pytest
 from pydantic import parse_obj_as
@@ -41,19 +42,23 @@ def pennsieve_client_mock(
     )
 
 
+fake = faker.Faker()
+
+ps_dataset = namedtuple("ps_dataset", "id,name")
+
+
 @pytest.fixture()
-def pennsieve_fake_dataset(pennsieve_client_mock: Any) -> Any:
-    ps_dataset = namedtuple("ps_dataset", "id,name")
-    pennsieve_client_mock.return_value.datasets.return_value = [
-        ps_dataset("data_id", "data_name")
-    ]
-    yield pennsieve_client_mock
+def pennsieve_fake_datasets(pennsieve_client_mock: Any) -> List[Type[Tuple]]:
+    datasets = [ps_dataset(f"N:dataset:{uuid4()}", fake.text()) for _ in range(10)]
+    pennsieve_client_mock.return_value.datasets.return_value = datasets
+
+    return datasets
 
 
 @pytest.mark.asyncio
 async def test_list_datasets_entrypoint(
     async_client: httpx.AsyncClient,
-    pennsieve_fake_dataset: Any,
+    pennsieve_fake_datasets: List[Type[Tuple]],
     pennsieve_api_key: str,
     pennsieve_api_secret: str,
 ):
@@ -68,7 +73,10 @@ async def test_list_datasets_entrypoint(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data
-    parse_obj_as(List[DatasetMetaData], data)
+    parsed_objects = parse_obj_as(List[DatasetMetaData], data)
+    for parsed_object, ps_dataset in zip(parsed_objects, pennsieve_fake_datasets):
+        assert parsed_object.id == ps_dataset.id
+        assert parsed_object.display_name == ps_dataset.name
 
 
 @pytest.mark.asyncio
