@@ -27,4 +27,5 @@ def test_settings(mock_service_envs, monkeypatch):
     assert settings.as_worker()
 
     monkeypatch.delenv("DASK_SCHEDULER_ADDRESS")
+    settings = Settings.create_from_envs()
     assert settings.as_scheduler()
