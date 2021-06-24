@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import json
 import logging
 import subprocess
 import time
@@ -77,9 +78,13 @@ def _wait_for_services(docker_client: docker.client.DockerClient) -> None:
         if service.tasks():
             sorted_tasks = sorted(service.tasks(), key=by_task_update)
             task = sorted_tasks[-1]
-            if task["Status"]["State"].upper() not in pre_states:
-                if not task["Status"]["State"].upper() == "RUNNING":
-                    raise Exception(f"service {service.name} not running")
+            task_state = task["Status"]["State"].upper()
+            if task_state not in pre_states:
+                if not task_state == "RUNNING":
+                    raise ValueError(
+                        f"service {service.name} not running [{task_state=} instead]. "
+                        f"Details: \n{json.dumps(task)}"
+                    )
 
 
 def _print_services(docker_client: docker.client.DockerClient, msg: str) -> None:
