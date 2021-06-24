@@ -4,7 +4,7 @@
 
 import os
 from collections import namedtuple
-from typing import Any, List, Tuple, Type
+from typing import Any, Callable, List, Tuple, Type
 from uuid import uuid4
 
 import faker
@@ -47,21 +47,39 @@ fake = faker.Faker()
 ps_dataset = namedtuple("ps_dataset", "id,name")
 
 
-@pytest.fixture()
-def pennsieve_fake_datasets(pennsieve_client_mock: Any) -> List[Type[Tuple]]:
-    datasets = [ps_dataset(f"N:dataset:{uuid4()}", fake.text()) for _ in range(10)]
-    pennsieve_client_mock.return_value.datasets.return_value = datasets
+@pytest.fixture(scope="session")
+def pennsieve_dataset_id() -> Callable:
+    def creator() -> str:
+        return f"N:dataset:{uuid4()}"
 
+    return creator
+
+
+@pytest.fixture()
+def pennsieve_random_fake_datasets(
+    pennsieve_client_mock: Any, pennsieve_dataset_id: Callable
+) -> List[Type[Tuple]]:
+    datasets = [ps_dataset(pennsieve_dataset_id(), fake.text()) for _ in range(10)]
     return datasets
+
+
+@pytest.fixture()
+def pennsieve_get_datasets_mock(pennsieve_client_mock: Any) -> Callable:
+    def mock_datasets(fake_ps_datasets: List[Tuple]):
+        pennsieve_client_mock.return_value.datasets.return_value = fake_ps_datasets
+
+    return mock_datasets
 
 
 @pytest.mark.asyncio
 async def test_list_datasets_entrypoint(
     async_client: httpx.AsyncClient,
-    pennsieve_fake_datasets: List[Type[Tuple]],
+    pennsieve_get_datasets_mock: Callable,
+    pennsieve_random_fake_datasets: List[Type[Tuple]],
     pennsieve_api_key: str,
     pennsieve_api_secret: str,
 ):
+    _ = pennsieve_get_datasets_mock(pennsieve_random_fake_datasets)
     response = await async_client.get(
         "v0/datasets",
         headers={
@@ -74,7 +92,9 @@ async def test_list_datasets_entrypoint(
     data = response.json()
     assert data
     parsed_objects = parse_obj_as(List[DatasetMetaData], data)
-    for parsed_object, ps_dataset in zip(parsed_objects, pennsieve_fake_datasets):
+    for parsed_object, ps_dataset in zip(
+        parsed_objects, pennsieve_random_fake_datasets
+    ):
         assert parsed_object.id == ps_dataset.id
         assert parsed_object.display_name == ps_dataset.name
 
@@ -82,7 +102,7 @@ async def test_list_datasets_entrypoint(
 @pytest.mark.asyncio
 async def test_list_dataset_files_entrypoint(
     async_client: httpx.AsyncClient,
-    # pennsieve_fake_dataset: Any,
+    # pennsieve_get_datasets_mock: Callable,
     pennsieve_api_key: str,
     pennsieve_api_secret: str,
 ):
