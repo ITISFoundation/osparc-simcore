@@ -12,7 +12,7 @@ from .base import metadata
 class StateType(enum.Enum):
     """Discrete states in a task lifecycle
 
-    SEE RunningState for a project's execution state
+    NOTE: these states are the exact same ones as the models-library (RunningState for a project's execution state)
     """
 
     # TODO: how they map to celery.states?
