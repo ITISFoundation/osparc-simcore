@@ -7,6 +7,7 @@ import httpx
 from fastapi import APIRouter, Depends, Header
 from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID
+from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from simcore_service_director_v2.models.schemas.constants import UserID
@@ -176,7 +177,7 @@ async def create_dynamic_service(
     response_model=DynamicServiceOut,
 )
 async def dynamic_sidecar_status(
-    node_uuid: UUID,
+    node_uuid: NodeID,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
 ) -> DynamicServiceOut:
@@ -200,7 +201,7 @@ async def dynamic_sidecar_status(
     summary="stops previously spawned dynamic-sidecar",
 )
 async def stop_dynamic_service(
-    node_uuid: UUID,
+    node_uuid: NodeID,
     save_state: Optional[bool] = True,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
