@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 
+import json
 import urllib
 from collections import namedtuple
 from typing import Any, Dict, Optional
@@ -11,12 +12,22 @@ import pytest
 import respx
 from fastapi import FastAPI
 from httpx import URL, QueryParams
+from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
+from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
 )
+from simcore_service_director_v2.models.schemas.dynamic_services import (
+    RunningServiceDetails,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.exceptions import (
+    DynamicSidecarNotFoundError,
+)
 from starlette import status
 from starlette.testclient import TestClient
+
+ServiceParams = namedtuple("ServiceParams", "service, service_labels, exp_status_code")
 
 
 @pytest.fixture(autouse=True)
@@ -52,14 +63,47 @@ def mocked_director_v0_service_api(
             name="service labels",
         ).respond(json={"data": service_labels})
 
+        respx_mock.get(
+            f"/v0/running_interactive_services/{service['node_uuid']}",
+            name="running interactive service",
+        ).respond(json={"data": {}})
+
         yield respx_mock
 
 
-ServiceParams = namedtuple("ServiceParams", "service, service_labels, exp_status_code")
+@pytest.fixture
+def mocked_director_v2_monitor(mocker: MockerFixture, exp_status_code: int) -> None:
+    """because the monitor is disabled some functionality needs to be mocked"""
+
+    # MOCKING get_stack_status
+    def get_stack_status(node_uuid: NodeID) -> RunningServiceDetails:
+        if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
+            raise DynamicSidecarNotFoundError(node_uuid)
+
+        return RunningServiceDetails.parse_obj(
+            RunningServiceDetails.Config.schema_extra["examples"][0]
+        )
+
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.monitor.core.DynamicSidecarsMonitor.get_stack_status",
+        side_effect=get_stack_status,
+    )
+
+    # MOCKING remove_service_from_monitor
+    def remove_service_from_monitor(
+        node_uuid: NodeID, save_state: Optional[bool]
+    ) -> None:
+        if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
+            raise DynamicSidecarNotFoundError(node_uuid)
+
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.monitor.core.DynamicSidecarsMonitor.remove_service_from_monitor",
+        side_effect=remove_service_from_monitor,
+    )
 
 
 @pytest.mark.parametrize(
-    "service,service_labels, exp_status_code",
+    "service, service_labels, exp_status_code",
     [
         pytest.param(
             *ServiceParams(
@@ -69,22 +113,22 @@ ServiceParams = namedtuple("ServiceParams", "service, service_labels, exp_status
             ),
             id="legacy service",
         ),
-        # pytest.param(
-        #     *ServiceParams(
-        #         service=DynamicServiceCreate.Config.schema_extra["example"],
-        #         service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][1],
-        #         exp_status_code=status.HTTP_201_CREATED,
-        #     ),
-        #     id="dynamic sidecar service",
-        # ),
-        # pytest.param(
-        #     *ServiceParams(
-        #         service=DynamicServiceCreate.Config.schema_extra["example"],
-        #         service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][2],
-        #         exp_status_code=status.HTTP_201_CREATED,
-        #     ),
-        #     id="dynamic sidecar service with compose spec",
-        # ),
+        pytest.param(
+            *ServiceParams(
+                service=DynamicServiceCreate.Config.schema_extra["example"],
+                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][1],
+                exp_status_code=status.HTTP_201_CREATED,
+            ),
+            id="dynamic sidecar service",
+        ),
+        pytest.param(
+            *ServiceParams(
+                service=DynamicServiceCreate.Config.schema_extra["example"],
+                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][2],
+                exp_status_code=status.HTTP_201_CREATED,
+            ),
+            id="dynamic sidecar service with compose spec",
+        ),
     ],
 )
 def test_create_dynamic_services(
@@ -94,11 +138,14 @@ def test_create_dynamic_services(
     service: Dict[str, Any],
     exp_status_code: int,
 ):
-    url = URL("/v2/dynamic_services")
 
-    body = DynamicServiceCreate(**service)
+    post_data = DynamicServiceCreate(**service)
 
-    response = client.post(str(url), headers=dynamic_sidecar_headers, data=body.json())
+    response = client.post(
+        "/v2/dynamic_services",
+        headers=dynamic_sidecar_headers,
+        json=json.loads(post_data.json()),
+    )
     assert (
         response.status_code == exp_status_code
     ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
@@ -122,7 +169,7 @@ def test_create_dynamic_services(
 
 
 @pytest.mark.parametrize(
-    "service,service_labels, exp_status_code",
+    "service, service_labels, exp_status_code",
     [
         pytest.param(
             *ServiceParams(
@@ -132,26 +179,27 @@ def test_create_dynamic_services(
             ),
             id="legacy service",
         ),
-        # pytest.param(
-        #     *ServiceParams(
-        #         service=DynamicServiceCreate.Config.schema_extra["example"],
-        #         service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][1],
-        #         exp_status_code=status.HTTP_201_CREATED,
-        #     ),
-        #     id="dynamic sidecar service",
-        # ),
-        # pytest.param(
-        #     *ServiceParams(
-        #         service=DynamicServiceCreate.Config.schema_extra["example"],
-        #         service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][2],
-        #         exp_status_code=status.HTTP_201_CREATED,
-        #     ),
-        #     id="dynamic sidecar service with compose spec",
-        # ),
+        pytest.param(
+            *ServiceParams(
+                service=DynamicServiceCreate.Config.schema_extra["example"],
+                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][1],
+                exp_status_code=status.HTTP_200_OK,
+            ),
+            id="dynamic sidecar service",
+        ),
+        pytest.param(
+            *ServiceParams(
+                service=DynamicServiceCreate.Config.schema_extra["example"],
+                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][2],
+                exp_status_code=status.HTTP_200_OK,
+            ),
+            id="dynamic sidecar service with compose spec",
+        ),
     ],
 )
 def test_get_service_status(
     mocked_director_v0_service_api,
+    mocked_director_v2_monitor: None,
     client: TestClient,
     service: Dict[str, Any],
     exp_status_code: int,
@@ -175,7 +223,7 @@ def test_get_service_status(
 
 
 @pytest.mark.parametrize(
-    "service,service_labels, exp_status_code",
+    "service, service_labels, exp_status_code",
     [
         pytest.param(
             *ServiceParams(
@@ -185,29 +233,30 @@ def test_get_service_status(
             ),
             id="legacy service",
         ),
-        # pytest.param(
-        #     *ServiceParams(
-        #         service=DynamicServiceCreate.Config.schema_extra["example"],
-        #         service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][1],
-        #         exp_status_code=status.HTTP_201_CREATED,
-        #     ),
-        #     id="dynamic sidecar service",
-        # ),
-        # pytest.param(
-        #     *ServiceParams(
-        #         service=DynamicServiceCreate.Config.schema_extra["example"],
-        #         service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][2],
-        #         exp_status_code=status.HTTP_201_CREATED,
-        #     ),
-        #     id="dynamic sidecar service with compose spec",
-        # ),
+        pytest.param(
+            *ServiceParams(
+                service=DynamicServiceCreate.Config.schema_extra["example"],
+                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][1],
+                exp_status_code=status.HTTP_204_NO_CONTENT,
+            ),
+            id="dynamic sidecar service",
+        ),
+        pytest.param(
+            *ServiceParams(
+                service=DynamicServiceCreate.Config.schema_extra["example"],
+                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][2],
+                exp_status_code=status.HTTP_204_NO_CONTENT,
+            ),
+            id="dynamic sidecar service with compose spec",
+        ),
     ],
 )
 @pytest.mark.parametrize(
-    "save_state,exp_save_state", [(None, True), (True, True), (False, False)]
+    "save_state, exp_save_state", [(None, True), (True, True), (False, False)]
 )
 def test_delete_service(
     mocked_director_v0_service_api,
+    mocked_director_v2_monitor: None,
     client: TestClient,
     service: Dict[str, Any],
     exp_status_code: int,
@@ -232,6 +281,4 @@ def test_delete_service(
             redirect_url.path
             == f"/v0/running_interactive_services/{service['node_uuid']}"
         )
-        assert redirect_url.params == QueryParams(
-            save_state=exp_save_state
-        )  # default save_state to True
+        assert redirect_url.params == QueryParams(save_state=exp_save_state)
