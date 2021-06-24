@@ -6,7 +6,6 @@ import asyncio
 import time
 
 import pytest
-
 from servicelib import monitor_slow_callbacks
 from servicelib.aiopg_utils import (
     DatabaseError,

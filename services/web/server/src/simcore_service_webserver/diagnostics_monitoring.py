@@ -1,7 +1,6 @@
 """ Enables monitoring of some quantities needed for diagnostics
 
 """
-import concurrent.futures
 import logging
 import time
 from typing import Callable, Coroutine
@@ -32,14 +31,13 @@ def get_collector_registry(app: web.Application) -> CollectorRegistry:
 async def metrics_handler(request: web.Request):
     registry = get_collector_registry(request.app)
 
-    with concurrent.futures.ThreadPoolExecutor() as pool:
-        # NOTE: Cannot use ProcessPoolExecutor because registry is not pickable
-        result = await request.loop.run_in_executor(
-            pool, prometheus_client.generate_latest, registry
-        )
-        response = web.Response(body=result)
-        response.content_type = CONTENT_TYPE_LATEST
-        return response
+    # NOTE: Cannot use ProcessPoolExecutor because registry is not pickable
+    result = await request.loop.run_in_executor(
+        None, prometheus_client.generate_latest, registry
+    )
+    response = web.Response(body=result)
+    response.content_type = CONTENT_TYPE_LATEST
+    return response
 
 
 def middleware_factory(app_name: str) -> Coroutine:
