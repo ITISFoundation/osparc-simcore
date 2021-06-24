@@ -72,7 +72,7 @@ services:
       SIDECAR_LOGLEVEL: DEBUG
     ports:
       - "3002:3000"
-    deploy: &dev-sidecar-deploy # NOTE: Allows 3002 to be exposed for ptvsd
+    deploy: &dev-sidecar-deploy
       endpoint_mode: vip
       replicas: 1
 
