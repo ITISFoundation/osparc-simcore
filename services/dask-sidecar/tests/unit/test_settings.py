@@ -23,18 +23,10 @@ def mock_service_envs(mock_env_devel_environment, monkeypatch):
     monkeypatch.setenv("START_AS_MODE_CPU", "0")
 
 
-def test_cli_start_dask_worker(mock_service_envs):
+def test_settings(mock_service_envs, monkeypatch):
 
     settings = Settings.create_from_envs()
     assert settings.as_worker()
 
-    subprocess.run(["dask-worker", "--version"], check=True)
-
-
-def test_start_dask_scheduler(mock_service_envs, monkeypatch):
     monkeypatch.delenv("DASK_SCHEDULER_ADDRESS")
-
-    settings = Settings.create_from_envs()
     assert settings.as_scheduler()
-
-    subprocess.run(["dask-scheduler", "--version"], check=True)
