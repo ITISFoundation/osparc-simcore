@@ -142,7 +142,7 @@ class DirectorV0Client:
     ) -> SimcoreServiceLabels:
         resp = await self.request(
             "GET",
-            f"services/{urllib.parse.quote_plus(service.key)}/{service.version}:labels",
+            f"services/{urllib.parse.quote_plus(service.key)}/{service.version}/labels",
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:

@@ -128,7 +128,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnveloped"
 
-  /services/{service_key}/{service_version}:labels:
+  /services/{service_key}/{service_version}/labels:
     get:
       tags:
         - users

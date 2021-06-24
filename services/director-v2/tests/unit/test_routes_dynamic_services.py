@@ -59,7 +59,7 @@ def mocked_director_v0_service_api(
     ) as respx_mock:
         # get services labels
         respx_mock.get(
-            f"/v0/services/{urllib.parse.quote_plus(service['key'])}/{service['version']}:labels",
+            f"/v0/services/{urllib.parse.quote_plus(service['key'])}/{service['version']}/labels",
             name="service labels",
         ).respond(json={"data": service_labels})
 

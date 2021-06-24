@@ -918,7 +918,7 @@ paths:
                         description: Error code
                         type: integer
                         example: 404
-  '/services/{service_key}/{service_version}:labels':
+  '/services/{service_key}/{service_version}/labels':
     get:
       tags:
         - users
@@ -978,7 +978,7 @@ paths:
                         key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                           example: simcore/services/comp/itis/sleeper
                         integration-version:
                           type: string
