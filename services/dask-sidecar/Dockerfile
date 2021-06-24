@@ -121,7 +121,10 @@ COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/dask-sidecar/docker services/dask-sidecar/docker
 
 
-# SEE https://distributed.dask.org/en/latest/http_services.html#http-endpoints
+# WARNING: This image is used for dask-scheduler and dask-worker.
+# In order to have the same healty entrypoint port
+# make sure dask worker is started as ``dask-worker --dashboard-address 8787``.
+# Otherwise the worker will take random ports to serve the /health entrypoint.
 HEALTHCHECK \
   --interval=60s \
   --timeout=60s \

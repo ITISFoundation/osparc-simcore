@@ -56,12 +56,14 @@ else
       dask-worker "${DASK_SCHEDULER_ADDRESS}" \
         --local-directory /tmp/dask-sidecar \
         --preload simcore_service_dask_sidecar.tasks \
-        --reconnect
+        --reconnect \
+        --dashboard-address 8787
   else
 
     exec dask-worker "${DASK_SCHEDULER_ADDRESS}" \
         --local-directory /tmp/dask-sidecar \
         --preload simcore_service_dask_sidecar.tasks \
-        --reconnect
+        --reconnect \
+        --dashboard-address 8787
   fi
 fi
