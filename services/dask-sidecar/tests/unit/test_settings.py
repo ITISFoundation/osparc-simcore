@@ -2,8 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import subprocess
-
 import pytest
 from simcore_service_dask_sidecar.settings import Settings
 
