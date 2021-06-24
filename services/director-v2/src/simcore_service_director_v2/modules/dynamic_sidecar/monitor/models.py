@@ -5,11 +5,17 @@ from typing import List, Optional
 
 from models_library.basic_regex import VERSION_RE
 from models_library.projects import ProjectID
-from models_library.service_settings_labels import ComposeSpecLabel, PathsMappingLabel
+from models_library.service_settings_labels import (
+    ComposeSpecLabel,
+    PathsMappingLabel,
+    SimcoreServiceLabels,
+)
 from models_library.services import SERVICE_KEY_RE
 from pydantic import BaseModel, Field, PositiveInt, validator
 
+from ....models.domains.dynamic_services import DynamicServiceCreate
 from ....models.schemas.constants import UserID
+from ..docker_utils import ServiceLabelsStoredData
 from .utils import AsyncResourceLock
 
 logger = logging.getLogger()
@@ -225,49 +231,77 @@ class MonitorData(BaseModel):
         return str(v)
 
     @classmethod
-    def assemble(
+    def make_from_http_request(
         # pylint: disable=too-many-arguments
         cls,
         service_name: str,
-        node_uuid: str,
-        project_id: ProjectID,
-        user_id: UserID,
-        hostname: str,
-        port: Optional[int],
-        service_key: str,
-        service_tag: str,
-        paths_mapping: PathsMappingLabel,
-        compose_spec: ComposeSpecLabel,
-        container_http_entry: Optional[str],
+        service: DynamicServiceCreate,
+        simcore_service_labels: SimcoreServiceLabels,
         dynamic_sidecar_network_name: str,
         simcore_traefik_zone: str,
         service_port: int,
+        hostname: str,
+        port: Optional[int],
         request_dns: str = None,
         request_scheme: str = None,
         proxy_service_name: str = None,
     ) -> "MonitorData":
-        payload = dict(
-            service_name=service_name,
-            node_uuid=node_uuid,
-            project_id=project_id,
-            user_id=user_id,
-            service_key=service_key,
-            service_tag=service_tag,
-            paths_mapping=paths_mapping,
-            compose_spec=compose_spec,
-            container_http_entry=container_http_entry,
-            dynamic_sidecar_network_name=dynamic_sidecar_network_name,
-            simcore_traefik_zone=simcore_traefik_zone,
-            service_port=service_port,
-            request_dns=request_dns,
-            request_scheme=request_scheme,
-            proxy_service_name=proxy_service_name,
-            dynamic_sidecar=dict(
-                hostname=hostname,
-                port=port,
-            ),
+        return cls.parse_obj(
+            dict(
+                service_name=service_name,
+                node_uuid=str(service.node_uuid),
+                project_id=service.project_id,
+                user_id=service.user_id,
+                service_key=service.key,
+                service_tag=service.version,
+                paths_mapping=simcore_service_labels.paths_mapping,
+                compose_spec=simcore_service_labels.compose_spec,
+                container_http_entry=simcore_service_labels.container_http_entry,
+                dynamic_sidecar_network_name=dynamic_sidecar_network_name,
+                simcore_traefik_zone=simcore_traefik_zone,
+                service_port=service_port,
+                request_dns=request_dns,
+                request_scheme=request_scheme,
+                proxy_service_name=proxy_service_name,
+                dynamic_sidecar=dict(
+                    hostname=hostname,
+                    port=port,
+                ),
+            )
         )
-        return cls.parse_obj(payload)
+
+    @classmethod
+    def make_from_service_labels_stored_data(
+        cls,
+        service_labels_stored_data: ServiceLabelsStoredData,
+        port: Optional[int],
+        request_dns: str = None,
+        request_scheme: str = None,
+        proxy_service_name: str = None,
+    ) -> "MonitorData":
+        return cls.parse_obj(
+            dict(
+                service_name=service_labels_stored_data.service_name,
+                node_uuid=str(service_labels_stored_data.node_uuid),
+                project_id=service_labels_stored_data.project_id,
+                user_id=service_labels_stored_data.user_id,
+                service_key=service_labels_stored_data.service_key,
+                service_tag=service_labels_stored_data.service_tag,
+                paths_mapping=service_labels_stored_data.paths_mapping,
+                compose_spec=service_labels_stored_data.compose_spec,
+                container_http_entry=service_labels_stored_data.container_http_entry,
+                dynamic_sidecar_network_name=service_labels_stored_data.dynamic_sidecar_network_name,
+                simcore_traefik_zone=service_labels_stored_data.simcore_traefik_zone,
+                service_port=service_labels_stored_data.service_port,
+                request_dns=request_dns,
+                request_scheme=request_scheme,
+                proxy_service_name=proxy_service_name,
+                dynamic_sidecar=dict(
+                    hostname=service_labels_stored_data.service_name,
+                    port=port,
+                ),
+            )
+        )
 
 
 class LockWithMonitorData(BaseModel):

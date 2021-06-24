@@ -152,21 +152,15 @@ async def create_dynamic_service(
     )
 
     # services where successfully started and they can be monitored
-    monitor_data = MonitorData.assemble(
+    monitor_data = MonitorData.make_from_http_request(
         service_name=service_name_dynamic_sidecar,
-        node_uuid=str(service.node_uuid),
-        project_id=service.project_id,
-        user_id=service.user_id,
-        hostname=service_name_dynamic_sidecar,
-        port=dynamic_services_settings.dynamic_sidecar.port,
-        service_key=service.key,
-        service_tag=service.version,
-        paths_mapping=simcore_service_labels.paths_mapping,
-        compose_spec=simcore_service_labels.compose_spec,
-        container_http_entry=simcore_service_labels.container_http_entry,
+        service=service,
+        simcore_service_labels=simcore_service_labels,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
         simcore_traefik_zone=io_simcore_zone,
         service_port=TEMPORARY_PORT_NUMBER,
+        hostname=service_name_dynamic_sidecar,
+        port=dynamic_services_settings.dynamic_sidecar.port,
         request_dns=x_dynamic_sidecar_request_dns,
         request_scheme=x_dynamic_sidecar_request_scheme,
         proxy_service_name=proxy_service_name,

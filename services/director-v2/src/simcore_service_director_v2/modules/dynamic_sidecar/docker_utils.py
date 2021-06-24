@@ -5,11 +5,17 @@ import logging
 import time
 from contextlib import suppress
 from typing import Any, Deque, Dict, List, Optional, Set, Tuple
+from uuid import UUID
 
 import aiodocker
 from asyncio_extras import async_contextmanager
 from models_library.projects import ProjectID
-from models_library.service_settings_labels import ComposeSpecLabel, PathsMappingLabel
+from models_library.service_settings_labels import (
+    ComposeSpecLabel,
+    PathsMappingLabel,
+    SimcoreServiceLabels,
+)
+from pydantic import BaseModel
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
     UserID,
@@ -27,19 +33,43 @@ from .parse_docker_status import (
 log = logging.getLogger(__name__)
 
 
-ServiceLabelsStoredData = Tuple[
-    str,
-    str,
-    str,
-    PathsMappingLabel,
-    ComposeSpecLabel,
-    Optional[str],
-    str,
-    str,
-    int,
-    ProjectID,
-    int,
-]
+class ServiceLabelsStoredData(BaseModel):
+    service_name: str
+    node_uuid: str
+    service_key: str
+    service_tag: str
+    paths_mapping: PathsMappingLabel
+    compose_spec: ComposeSpecLabel
+    container_http_entry: Optional[str]
+    dynamic_sidecar_network_name: str
+    simcore_traefik_zone: str
+    service_port: int
+    project_id: ProjectID
+    user_id: UserID
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "service_name": "some service",
+                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                "service_key": "simcore/services/dynamic/3dviewer",
+                "service_tag": "2.4.5",
+                "paths_mapping": PathsMappingLabel.parse_obj(
+                    PathsMappingLabel.Config.schema_extra["examples"]
+                ),
+                "compose_spec": json.loads(
+                    SimcoreServiceLabels.Config.schema_extra["examples"][2][
+                        "simcore.service.compose-spec"
+                    ]
+                ),
+                "container_http_entry": "some-entrypoint",
+                "dynamic_sidecar_network_name": "some_network_name",
+                "simcore_traefik_zone": "main",
+                "service_port": 300,
+                "project_id": UUID("dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe"),
+                "user_id": 234,
+            }
+        }
 
 
 @async_contextmanager
@@ -156,21 +186,21 @@ async def get_dynamic_sidecars_to_monitor(
         project_id = ProjectID(service["Spec"]["Labels"]["study_id"])
         user_id = int(service["Spec"]["Labels"]["user_id"])
 
-        entry: ServiceLabelsStoredData = (
-            service_name,
-            node_uuid,
-            service_key,
-            service_tag,
-            paths_mapping,
-            compose_spec,
-            container_http_entry,
-            dynamic_sidecar_network_name,
-            simcore_traefik_zone,
-            service_port,
-            project_id,
-            user_id,
+        service_labels_stored_data = ServiceLabelsStoredData(
+            service_name=service_name,
+            node_uuid=node_uuid,
+            service_key=service_key,
+            service_tag=service_tag,
+            paths_mapping=paths_mapping,
+            compose_spec=compose_spec,
+            container_http_entry=container_http_entry,
+            dynamic_sidecar_network_name=dynamic_sidecar_network_name,
+            simcore_traefik_zone=simcore_traefik_zone,
+            service_port=service_port,
+            project_id=project_id,
+            user_id=user_id,
         )
-        dynamic_sidecar_services.append(entry)
+        dynamic_sidecar_services.append(service_labels_stored_data)
 
     return dynamic_sidecar_services
 

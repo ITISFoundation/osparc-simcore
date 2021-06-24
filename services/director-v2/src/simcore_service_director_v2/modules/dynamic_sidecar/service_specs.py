@@ -448,10 +448,14 @@ async def merge_settings_before_use(
     director_v0_client: DirectorV0Client, service_key: str, service_tag: str
 ) -> SimcoreServiceSettingsLabel:
 
-    simcore_service_labels: SimcoreServiceLabels = await director_v0_client.get_service_labels(
-        service=ServiceKeyVersion(key=service_key, version=service_tag)
+    simcore_service_labels: SimcoreServiceLabels = (
+        await director_v0_client.get_service_labels(
+            service=ServiceKeyVersion(key=service_key, version=service_tag)
+        )
     )
-    log.info("image=%s, tag=%s, labels=%s", service_key, service_tag, simcore_service_labels)
+    log.info(
+        "image=%s, tag=%s, labels=%s", service_key, service_tag, simcore_service_labels
+    )
 
     # paths_mapping express how to map dynamic-sidecar paths to the compose-spec volumes
     # where the service expects to find its certain folders

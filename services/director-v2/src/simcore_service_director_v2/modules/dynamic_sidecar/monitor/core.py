@@ -345,36 +345,9 @@ class DynamicSidecarsMonitor:
         )
 
         for service_to_monitor in services_to_monitor:
-            (
-                service_name,
-                node_uuid,
-                service_key,
-                service_tag,
-                paths_mapping,
-                compose_spec,
-                container_http_entry,
-                dynamic_sidecar_network_name,
-                simcore_traefik_zone,
-                service_port,
-                project_id,
-                user_id,
-            ) = service_to_monitor
-
-            monitor_data = MonitorData.assemble(
-                service_name=service_name,
-                node_uuid=node_uuid,
-                project_id=project_id,
-                user_id=user_id,
-                hostname=service_name,
+            monitor_data = MonitorData.make_from_service_labels_stored_data(
+                service_labels_stored_data=service_to_monitor,
                 port=dynamic_sidecar_settings.port,
-                service_key=service_key,
-                service_tag=service_tag,
-                paths_mapping=paths_mapping,
-                compose_spec=compose_spec,
-                container_http_entry=container_http_entry,
-                dynamic_sidecar_network_name=dynamic_sidecar_network_name,
-                simcore_traefik_zone=simcore_traefik_zone,
-                service_port=service_port,
             )
             await self.add_service_to_monitor(monitor_data)
 
