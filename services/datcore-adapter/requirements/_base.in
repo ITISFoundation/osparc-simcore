@@ -5,6 +5,7 @@
 -c ../../../requirements/constraints.txt
 
 fastapi
+httpx
 uvicorn[standard]
 
 pennsieve
