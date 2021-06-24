@@ -49,13 +49,6 @@ ENV SWARM_STACK_NAME="" \
   SIDECAR_LOG_FOLDER=/home/scu/log
 
 
-#
-# HEALTHCHECK --interval=60s \
-#   --timeout=60s \
-#   --start-period=30s \
-#   --retries=3 \
-#   CMD ["curl", "-Lf", "http://scheduler:8787/health"]
-
 EXPOSE 8080
 EXPOSE 8786
 EXPOSE 8787
@@ -128,6 +121,14 @@ COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/dask-sidecar/docker services/dask-sidecar/docker
 
 
+# SEE https://distributed.dask.org/en/latest/http_services.html#http-endpoints
+HEALTHCHECK \
+  --interval=60s \
+  --timeout=60s \
+  --start-period=10s \
+  --retries=3 \
+  CMD ["curl", "-Lf", "http://127.0.0.1:8787/health"]
+
 ENTRYPOINT [ "/bin/sh", "services/dask-sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/dask-sidecar/docker/boot.sh"]
 
@@ -147,6 +148,13 @@ ENV SC_BUILD_TARGET=development
 WORKDIR /devel
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
+
+HEALTHCHECK \
+  --interval=60s \
+  --timeout=60s \
+  --start-period=10s \
+  --retries=3 \
+  CMD ["echo", , "Fake healthcheck because it takes very long to boot in devel mode"]
 
 ENTRYPOINT [ "/bin/sh", "services/dask-sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/dask-sidecar/docker/boot.sh"]

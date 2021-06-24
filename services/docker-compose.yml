@@ -254,12 +254,6 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: dask-scheduler
-    healthcheck:
-      test: ["CMD", "curl", "-Lf", "http://dask-scheduler:8787/health"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 10s
     environment: *sidecar-environment
     networks:
       - interactive_services_subnet

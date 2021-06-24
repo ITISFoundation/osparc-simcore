@@ -90,13 +90,6 @@ services:
     deploy: *dev-sidecar-deploy
 
   dask-scheduler:
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "echo",
-          "Fake healthcheck because it takes very long to boot in devel mode",
-        ]
     volumes: *dev-dask-sidecar-volumes
     ports:
       - "3000"
