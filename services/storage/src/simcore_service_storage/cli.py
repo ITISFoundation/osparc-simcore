@@ -55,7 +55,7 @@ def settings(
         return
 
     try:
-        settings_obj = Settings.create_from_env()
+        settings_obj = Settings.create_from_envs()
 
     except ValidationError as err:
         settings_schema = Settings.schema_json(indent=2)
@@ -87,7 +87,7 @@ def settings(
 def run():
     """Runs application"""
     typer.secho("Resolving settings ...", nl=False)
-    settings_obj = Settings.create_from_env()
+    settings_obj = Settings.create_from_envs()
     typer.secho("DONE", fg=typer.colors.GREEN)
 
     logging.basicConfig(level=settings_obj.logging_level)
