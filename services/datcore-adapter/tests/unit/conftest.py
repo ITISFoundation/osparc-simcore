@@ -33,6 +33,13 @@ def installed_package_dir() -> Path:
     return dirpath
 
 
+@pytest.fixture(scope="session")
+def mocks_dir(project_slug_dir: Path) -> Path:
+    mocks = project_slug_dir / "tests" / "mocks"
+    assert mocks.exists()
+    return mocks
+
+
 @pytest.fixture()
 def minimal_app() -> FastAPI:
     from simcore_service_datcore_adapter.main import the_app

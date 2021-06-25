@@ -71,7 +71,7 @@ class PennsieveApiClient(BaseServiceClientApi):
 
                 file_meta_data.append(
                     FileMetaData(
-                        dataset_id=ds.id,
+                        dataset_id=package["content"]["datasetNodeId"],
                         package_id=package["content"]["nodeId"],
                         id=package_id,
                         name=file_path.name,
