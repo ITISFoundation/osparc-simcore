@@ -59,10 +59,7 @@ async def apply_monitoring(app: FastAPI, monitor_data: MonitorData) -> None:
     )
     initial_overall_status = deepcopy(monitor_data.dynamic_sidecar.overall_status)
 
-    # checks if service is still present, if not removes
-    # self from monitor and log it as warning
-    # use a property to check that these are not here
-    if (  # do not refactor, second part of and condition is skiped most times
+    if (  # do not refactor, second part of "and condition" is skiped most times
         monitor_data.dynamic_sidecar.were_services_created
         and not await are_all_services_present(
             node_uuid=monitor_data.node_uuid,
@@ -101,7 +98,6 @@ async def apply_monitoring(app: FastAPI, monitor_data: MonitorData) -> None:
 
     # check if the status of the services has changed from OK
     if initial_overall_status != monitor_data.dynamic_sidecar.overall_status:
-        # TODO: push this to the UI to display to the user?
         logger.info(
             "Service %s overall status changed to %s",
             monitor_data.service_name,
