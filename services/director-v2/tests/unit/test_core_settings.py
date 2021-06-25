@@ -41,7 +41,11 @@ def test_dynamic_sidecar_settings(image: str) -> None:
         traefik_simcore_zone="",
         swarm_stack_name="",
         registry=RegistrySettings(
-            url="http://te.st", auth=True, user="test", password="test", ssl=False
+            REGISTRY_URL="http://te.st",
+            REGISTRY_AUTH=True,
+            REGISTRY_USER="test",
+            REGISTRY_PW="test",
+            REGISTRY_SSL=False,
         ),
     )
     required_kwards["image"] = image
