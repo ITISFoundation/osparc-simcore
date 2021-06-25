@@ -137,6 +137,7 @@ def test_create_dynamic_services(
     dynamic_sidecar_headers: Dict[str, str],
     service: Dict[str, Any],
     exp_status_code: int,
+    docker_swarm: None,
 ):
 
     post_data = DynamicServiceCreate(**service)
