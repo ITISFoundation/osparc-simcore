@@ -19,7 +19,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         self, api_key: str, api_secret: str
     ) -> List[DatasetMetaData]:
         ps = Pennsieve(api_token=api_key, api_secret=api_secret)
-        pennsieve_datasets = ps.datasets()
+        pennsieve_datasets: pennsieve.models.Dataset = ps.datasets()
         return [
             DatasetMetaData(id=d.id, display_name=d.name) for d in pennsieve_datasets
         ]
