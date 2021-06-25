@@ -1,6 +1,7 @@
 import logging
+from itertools import islice
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import pennsieve
 from fastapi.applications import FastAPI
@@ -8,7 +9,7 @@ from pennsieve import Pennsieve
 from starlette.datastructures import URL
 
 from ..core.settings import PennsieveSettings
-from ..models.schemas.datasets import DatasetMetaData, FileMetaData
+from ..models.schemas.datasets import DatasetMetaData, DataType, FileMetaData
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 logger = logging.getLogger(__name__)
@@ -24,13 +25,29 @@ class PennsieveApiClient(BaseServiceClientApi):
             DatasetMetaData(id=d.id, display_name=d.name) for d in pennsieve_datasets
         ]
 
-    async def get_dataset(
-        self, api_key: str, api_secret: str, dataset_id: str, _limit: int, _offset: int
-    ) -> List[FileMetaData]:
+    async def get_dataset_files(
+        self,
+        api_key: str,
+        api_secret: str,
+        dataset_id: str,
+        limit: int,
+        offset: int,
+        collection_id: Optional[str] = None,
+    ) -> Tuple[Sequence, int]:
         ps = Pennsieve(api_token=api_key, api_secret=api_secret)
-        _ = ps.get_dataset(dataset_id)
+        ds: pennsieve.models.BaseCollection = ps.get_dataset(dataset_id)
+        if collection_id:
+            ds = ps.get(collection_id)
+        import pdb
 
-        return []
+        pdb.set_trace()
+        return (
+            [
+                FileMetaData.from_pennsieve_package(ps, package)
+                for package in islice(ds, offset, offset + limit)
+            ],
+            len(ds.items),
+        )
 
     async def list_dataset_files(
         self, api_key: str, api_secret: str, dataset_id: str
@@ -88,6 +105,7 @@ class PennsieveApiClient(BaseServiceClientApi):
                         size=-1,  # no size available in this mode
                         created_at=package["content"]["createdAt"],
                         last_modified_at=package["content"]["updatedAt"],
+                        data_type=DataType.FILE,
                     )
                 )
 

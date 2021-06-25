@@ -99,3 +99,12 @@ async def test_list_dataset_files_entrypoint(
     data = response.json()
     assert data
     parse_obj_as(Page[FileMetaData], data)
+
+    response = await async_client.get(
+        f"v0/datasets/{dataset_id}/files/N:collection:422df90c-bec1-47db-9151-d06bf510db21",
+        headers=pennsieve_api_headers,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data
+    parse_obj_as(Page[FileMetaData], data)
