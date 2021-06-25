@@ -119,12 +119,13 @@ class DynamicSidecarSettings(BaseSettings):
             "design, all requests should answer quite quickly, in theory a few seconds or less"
         ),
     )
-    # TODO: this should not work with a one only request right?
     timeout_fetch_dynamic_sidecar_node_id: PositiveFloat = Field(
         60,
         description=(
-            "when starting the dynamic-sidecar proxy, the NodeID of the dynamic-sidecar container "
-            "is required; If something goes wrong timeout and do not wait forever in a loop"
+            "When starting the dynamic-sidecar proxy, the NodeID of the dynamic-sidecar container "
+            "is required. If something goes wrong timeout and do not wait forever in a loop. "
+            "This is used to monitor the status of the service via aiodocker and not http requests "
+            "twards the dynamic-sidecar, as is the case with the above timeout field."
         ),
     )
 
