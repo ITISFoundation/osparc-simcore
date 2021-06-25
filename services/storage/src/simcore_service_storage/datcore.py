@@ -115,9 +115,7 @@ class DatcoreClient(object):
         api = self._bf._api.datasets
 
         dataset = self._bf.get_dataset(dataset_id)
-        import pdb
 
-        pdb.set_trace()
         if dataset is not None:
             while True:
                 resp = api._get(
