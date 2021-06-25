@@ -1,7 +1,9 @@
 import datetime
 import logging
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+from uuid import UUID
+import json
 
 from models_library.basic_regex import VERSION_RE
 from models_library.projects import ProjectID
@@ -16,7 +18,6 @@ from pydantic import BaseModel, Field, PositiveInt, validator
 
 from ....models.domains.dynamic_services import DynamicServiceCreate
 from ....models.schemas.constants import UserID
-from ..docker_utils import ServiceLabelsStoredData
 from .utils import AsyncResourceLock
 
 logger = logging.getLogger()
@@ -145,6 +146,66 @@ class DynamicSidecar(BaseModel):
             docker_container_inspect.status == DockerStatus.RUNNING
             for docker_container_inspect in self.containers_inspect
         )
+
+
+class ServiceLabelsStoredData(BaseModel):
+    service_name: str
+    node_uuid: NodeID
+    service_key: str
+    service_tag: str
+    paths_mapping: PathsMappingLabel
+    compose_spec: ComposeSpecLabel
+    container_http_entry: Optional[str]
+    dynamic_sidecar_network_name: str
+    simcore_traefik_zone: str
+    service_port: int
+    project_id: ProjectID
+    user_id: UserID
+
+    @classmethod
+    def from_service(cls, service: Dict[str, Any]) -> "ServiceLabelsStoredData":
+        return cls(
+            service_name=service["Spec"]["Name"],
+            node_uuid=NodeID(service["Spec"]["Labels"]["uuid"]),
+            service_key=service["Spec"]["Labels"]["service_key"],
+            service_tag=service["Spec"]["Labels"]["service_tag"],
+            paths_mapping=PathsMappingLabel.parse_raw(
+                service["Spec"]["Labels"]["paths_mapping"]
+            ),
+            compose_spec=json.loads(service["Spec"]["Labels"]["compose_spec"]),
+            container_http_entry=service["Spec"]["Labels"]["container_http_entry"],
+            dynamic_sidecar_network_name=service["Spec"]["Labels"][
+                "traefik.docker.network"
+            ],
+            simcore_traefik_zone=service["Spec"]["Labels"]["io.simcore.zone"],
+            service_port=service["Spec"]["Labels"]["service_port"],
+            project_id=ProjectID(service["Spec"]["Labels"]["study_id"]),
+            user_id=int(service["Spec"]["Labels"]["user_id"]),
+        )
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "service_name": "some service",
+                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                "service_key": "simcore/services/dynamic/3dviewer",
+                "service_tag": "2.4.5",
+                "paths_mapping": PathsMappingLabel.parse_obj(
+                    PathsMappingLabel.Config.schema_extra["examples"]
+                ),
+                "compose_spec": json.loads(
+                    SimcoreServiceLabels.Config.schema_extra["examples"][2][
+                        "simcore.service.compose-spec"
+                    ]
+                ),
+                "container_http_entry": "some-entrypoint",
+                "dynamic_sidecar_network_name": "some_network_name",
+                "simcore_traefik_zone": "main",
+                "service_port": 300,
+                "project_id": UUID("dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe"),
+                "user_id": 234,
+            }
+        }
 
 
 class MonitorData(BaseModel):

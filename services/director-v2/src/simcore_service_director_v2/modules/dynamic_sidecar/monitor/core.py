@@ -24,7 +24,6 @@ from ....core.settings import (
 )
 from ....models.schemas.dynamic_services import RunningDynamicServiceDetails
 from ..docker_utils import (
-    ServiceLabelsStoredData,
     are_all_services_present,
     get_dynamic_sidecar_state,
     get_dynamic_sidecars_to_monitor,
@@ -39,7 +38,12 @@ from .dynamic_sidecar_api import (
     update_dynamic_sidecar_health,
 )
 from .handlers import REGISTERED_EVENTS
-from .models import DynamicSidecarStatus, LockWithMonitorData, MonitorData
+from .models import (
+    DynamicSidecarStatus,
+    LockWithMonitorData,
+    MonitorData,
+    ServiceLabelsStoredData,
+)
 from .utils import AsyncResourceLock
 
 logger = logging.getLogger(__name__)

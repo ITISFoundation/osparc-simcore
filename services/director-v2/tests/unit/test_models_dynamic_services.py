@@ -12,7 +12,7 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     ServiceDetails,
     ServiceState,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.docker_utils import (
+from simcore_service_director_v2.modules.dynamic_sidecar.monitor.models import (
     ServiceLabelsStoredData,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.monitor.models import (
