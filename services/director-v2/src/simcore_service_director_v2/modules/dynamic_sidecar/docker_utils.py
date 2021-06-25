@@ -155,20 +155,19 @@ async def get_dynamic_sidecars_to_monitor(
 ) -> Deque[ServiceLabelsStoredData]:
     """called when monitor is started to discover new services to monitor"""
     async with docker_client() as client:  # pylint: disable=not-async-context-manager
-        running_services = await client.services.list(
+        running_dynamic_sidecar_services = await client.services.list(
             filters={
                 "label": [
                     f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}"
-                ]
+                ],
+                "name": [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"],
             }
         )
 
     dynamic_sidecar_services: Deque[Tuple[str, str]] = Deque()
 
-    for service in running_services:
+    for service in running_dynamic_sidecar_services:
         service_name: str = service["Spec"]["Name"]
-        if not service_name.startswith(DYNAMIC_SIDECAR_SERVICE_PREFIX):
-            continue
 
         # push found data to list
         node_uuid = NodeID(service["Spec"]["Labels"]["uuid"])
