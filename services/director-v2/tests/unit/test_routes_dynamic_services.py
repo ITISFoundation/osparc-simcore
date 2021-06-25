@@ -85,7 +85,7 @@ def mocked_director_v2_monitor(mocker: MockerFixture, exp_status_code: int) -> N
         )
 
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.monitor.core.DynamicSidecarsMonitor.get_stack_status",
+        "simcore_service_director_v2.modules.dynamic_sidecar.monitor.monitor_task.DynamicSidecarsMonitor.get_stack_status",
         side_effect=get_stack_status,
     )
 
@@ -97,7 +97,7 @@ def mocked_director_v2_monitor(mocker: MockerFixture, exp_status_code: int) -> N
             raise DynamicSidecarNotFoundError(node_uuid)
 
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.monitor.core.DynamicSidecarsMonitor.remove_service_from_monitor",
+        "simcore_service_director_v2.modules.dynamic_sidecar.monitor.monitor_task.DynamicSidecarsMonitor.remove_service_from_monitor",
         side_effect=remove_service_from_monitor,
     )
 
