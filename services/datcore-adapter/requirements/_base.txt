@@ -31,6 +31,10 @@ docopt==0.6.2
 ecdsa==0.14.1
     # via python-jose
 fastapi==0.65.2
+    # via
+    #   -r requirements/_base.in
+    #   fastapi-pagination
+fastapi-pagination==0.7.4
     # via -r requirements/_base.in
 future==0.18.2
     # via pennsieve
@@ -70,6 +74,7 @@ pydantic==1.8.2
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   fastapi
+    #   fastapi-pagination
 python-dateutil==2.8.1
     # via
     #   botocore
@@ -110,8 +115,10 @@ sniffio==1.2.0
 starlette==0.14.2
     # via fastapi
 typing-extensions==3.10.0.0
-    # via pydantic
-urllib3==1.26.5
+    # via
+    #   fastapi-pagination
+    #   pydantic
+urllib3==1.26.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   botocore

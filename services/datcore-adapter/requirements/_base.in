@@ -5,6 +5,7 @@
 -c ../../../requirements/constraints.txt
 
 fastapi
+fastapi-pagination
 httpx
 uvicorn[standard]
 

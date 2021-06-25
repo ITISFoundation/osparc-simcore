@@ -72,6 +72,10 @@ execnet==1.9.0
 faker==8.8.2
     # via -r requirements/_test.in
 fastapi==0.65.2
+    # via
+    #   -r requirements/_base.txt
+    #   fastapi-pagination
+fastapi-pagination==0.7.4
     # via -r requirements/_base.txt
 future==0.18.2
     # via
@@ -151,6 +155,7 @@ pydantic==1.8.2
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.txt
     #   fastapi
+    #   fastapi-pagination
 pylint==2.8.3
     # via -r requirements/_test.in
 pyparsing==2.4.7
@@ -262,8 +267,9 @@ toml==0.10.2
 typing-extensions==3.10.0.0
     # via
     #   -r requirements/_base.txt
+    #   fastapi-pagination
     #   pydantic
-urllib3==1.26.5
+urllib3==1.26.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.txt
