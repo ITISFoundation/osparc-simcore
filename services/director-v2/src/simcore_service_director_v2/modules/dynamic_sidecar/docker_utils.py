@@ -25,6 +25,12 @@ from .parse_docker_status import (
     extract_task_state,
 )
 
+NO_PENDING_OVERWRITE = {
+    ServiceState.FAILED,
+    ServiceState.COMPLETE,
+    ServiceState.RUNNING,
+}
+
 log = logging.getLogger(__name__)
 
 
@@ -223,8 +229,8 @@ async def get_dynamic_sidecar_state(
 
     # to avoid creating confusion for the user, always return the status
     # as pending while the dynamic-sidecar is starting, with
-    # FAILED and COMPLETED being the only exceptions
-    if service_state not in {ServiceState.FAILED, ServiceState.COMPLETE}:
+    # FAILED and COMPLETED and RUNNING being the only exceptions
+    if service_state not in NO_PENDING_OVERWRITE:
         return ServiceState.PENDING, message
 
     return extract_task_state(task_status=task_status)
