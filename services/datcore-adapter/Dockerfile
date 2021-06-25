@@ -138,7 +138,7 @@ HEALTHCHECK --interval=30s \
   --timeout=20s \
   --start-period=30s \
   --retries=3 \
-  CMD ["python3", "services/datcore-adapter/docker/healthcheck.py", "http://localhost:8000/"]
+  CMD ["python3", "services/datcore-adapter/docker/healthcheck.py", "http://localhost:8000/live"]
 
 ENTRYPOINT [ "/bin/sh", "services/datcore-adapter/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/datcore-adapter/docker/boot.sh"]
