@@ -1,11 +1,3 @@
-# here services can be registered to be monitored for their
-# current status. Events are triggered base on what happens
-# Monitoring for:
-# - servie available
-#
-#
-# Handlers to subscribe to this thing
-
 import asyncio
 import logging
 import traceback
