@@ -2,11 +2,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import json
 from collections import namedtuple
-from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple, Type
-from uuid import uuid4
 
 import faker
 import httpx
@@ -18,32 +15,9 @@ from simcore_service_datcore_adapter.models.schemas.datasets import (
 )
 from starlette import status
 
-
-@pytest.fixture()
-def pennsieve_client_mock(
-    mocker, pennsieve_api_key: str, pennsieve_api_secret: str
-) -> Any:
-    ps_mock = mocker.patch(
-        "simcore_service_datcore_adapter.modules.pennsieve.Pennsieve", autospec=True
-    )
-    yield ps_mock
-
-    ps_mock.assert_any_call(
-        api_secret=pennsieve_api_secret, api_token=pennsieve_api_key
-    )
-
-
 fake = faker.Faker()
 
 ps_dataset = namedtuple("ps_dataset", "id,name")
-
-
-@pytest.fixture(scope="session")
-def pennsieve_fake_dataset_id() -> Callable:
-    def creator() -> str:
-        return f"N:dataset:{uuid4()}"
-
-    return creator
 
 
 @pytest.fixture()
@@ -79,13 +53,6 @@ async def test_list_datasets_entrypoint(
     data = response.json()
     assert data
     parse_obj_as(List[DatasetMetaData], data)
-
-
-@pytest.fixture(scope="session")
-def pennsieve_mock_dataset_packages(mocks_dir: Path) -> Dict[str, Any]:
-    ps_packages_file = mocks_dir / "ps_packages.json"
-    assert ps_packages_file.exists()
-    return json.loads(ps_packages_file.read_text())
 
 
 @pytest.mark.asyncio

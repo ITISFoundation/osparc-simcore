@@ -4,7 +4,7 @@
 
 import json
 from pathlib import Path
-from typing import Dict, Iterator
+from typing import Any, Callable, Dict, Iterator
 from uuid import uuid4
 
 import httpx
@@ -40,6 +40,13 @@ def mocks_dir(project_slug_dir: Path) -> Path:
     return mocks
 
 
+@pytest.fixture(scope="session")
+def pennsieve_mock_dataset_packages(mocks_dir: Path) -> Dict[str, Any]:
+    ps_packages_file = mocks_dir / "ps_packages.json"
+    assert ps_packages_file.exists()
+    return json.loads(ps_packages_file.read_text())
+
+
 @pytest.fixture()
 def minimal_app() -> FastAPI:
     from simcore_service_datcore_adapter.main import the_app
@@ -68,6 +75,9 @@ async def async_client(initialized_app: FastAPI) -> httpx.AsyncClient:
         headers={"Content-Type": "application/json"},
     ) as client:
         yield client
+
+
+# --------------------- PENNSIEVE RELATED Fixtures
 
 
 def pytest_addoption(parser):
@@ -114,3 +124,25 @@ def pennsieve_api_headers(
         "x-datcore-api-key": pennsieve_api_key,
         "x-datcore-api-secret": pennsieve_api_secret,
     }
+
+
+@pytest.fixture()
+def pennsieve_client_mock(
+    mocker, pennsieve_api_key: str, pennsieve_api_secret: str
+) -> Any:
+    ps_mock = mocker.patch(
+        "simcore_service_datcore_adapter.modules.pennsieve.Pennsieve", autospec=True
+    )
+    yield ps_mock
+
+    ps_mock.assert_any_call(
+        api_secret=pennsieve_api_secret, api_token=pennsieve_api_key
+    )
+
+
+@pytest.fixture(scope="session")
+def pennsieve_fake_dataset_id() -> Callable:
+    def creator() -> str:
+        return f"N:dataset:{uuid4()}"
+
+    return creator
