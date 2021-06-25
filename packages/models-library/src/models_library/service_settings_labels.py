@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, Field, Json, validator, PrivateAttr
+from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
 
 
 class _BaseConfig:
