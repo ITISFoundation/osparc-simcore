@@ -219,6 +219,14 @@ async def get_dynamic_sidecar_state(
         return extract_task_state(task_status=pending_task_state)
 
     task_status = last_task["Status"]
+    service_state, message = extract_task_state(task_status=task_status)
+
+    # to avoid creating confusion for the user, always return the status
+    # as pending while the dynamic-sidecar is starting, with
+    # FAILED and COMPLETED being the only exceptions
+    if service_state not in {ServiceState.FAILED, ServiceState.COMPLETE}:
+        return ServiceState.PENDING, message
+
     return extract_task_state(task_status=task_status)
 
 
