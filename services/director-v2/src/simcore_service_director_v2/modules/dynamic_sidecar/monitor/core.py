@@ -22,7 +22,7 @@ from ....core.settings import (
     DynamicServicesSettings,
     DynamicSidecarSettings,
 )
-from ....models.schemas.dynamic_services import RunningServiceDetails
+from ....models.schemas.dynamic_services import RunningDynamicServiceDetails
 from ..docker_utils import (
     ServiceLabelsStoredData,
     are_all_services_present,
@@ -196,7 +196,7 @@ class DynamicSidecarsMonitor:
             del self._inverse_search_mapping[node_uuid]
             logger.debug("Removed service '%s' from monitoring", service_name)
 
-    async def get_stack_status(self, node_uuid: NodeID) -> RunningServiceDetails:
+    async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
         async with self._lock:
             if node_uuid not in self._inverse_search_mapping:
                 raise DynamicSidecarNotFoundError(node_uuid)
@@ -211,7 +211,7 @@ class DynamicSidecarsMonitor:
                 monitor_data.dynamic_sidecar.overall_status.status
                 != DynamicSidecarStatus.OK
             ):
-                return RunningServiceDetails.from_monitoring_status(
+                return RunningDynamicServiceDetails.from_monitoring_status(
                     node_uuid=node_uuid,
                     monitor_data=monitor_data,
                     service_state=ServiceState.FAILED,
@@ -232,7 +232,7 @@ class DynamicSidecarsMonitor:
 
             # while the dynamic-sidecar state is not RUNNING report it's state
             if service_state != ServiceState.RUNNING:
-                return RunningServiceDetails.from_monitoring_status(
+                return RunningDynamicServiceDetails.from_monitoring_status(
                     node_uuid=node_uuid,
                     monitor_data=monitor_data,
                     service_state=service_state,
@@ -247,7 +247,7 @@ class DynamicSidecarsMonitor:
 
             # error fetching docker_statues, probably someone should check
             if docker_statuses is None:
-                return RunningServiceDetails.from_monitoring_status(
+                return RunningDynamicServiceDetails.from_monitoring_status(
                     node_uuid=node_uuid,
                     monitor_data=monitor_data,
                     service_state=ServiceState.STARTING,
@@ -257,7 +257,7 @@ class DynamicSidecarsMonitor:
             # wait for containers to start
             if len(docker_statuses) == 0:
                 # marks status as waiting for containers
-                return RunningServiceDetails.from_monitoring_status(
+                return RunningDynamicServiceDetails.from_monitoring_status(
                     node_uuid=node_uuid,
                     monitor_data=monitor_data,
                     service_state=ServiceState.STARTING,
@@ -268,7 +268,7 @@ class DynamicSidecarsMonitor:
             container_state, container_message = extract_containers_minimim_statuses(
                 docker_statuses
             )
-            return RunningServiceDetails.from_monitoring_status(
+            return RunningDynamicServiceDetails.from_monitoring_status(
                 node_uuid=node_uuid,
                 monitor_data=monitor_data,
                 service_state=container_state,

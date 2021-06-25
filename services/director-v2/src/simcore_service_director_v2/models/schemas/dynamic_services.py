@@ -69,7 +69,7 @@ class ServiceBootType(str, Enum):
     V2 = "V2"
 
 
-class RunningServiceDetails(ServiceDetails):
+class RunningDynamicServiceDetails(ServiceDetails):
     boot_type: ServiceBootType = Field(
         ...,
         description="describes how the dynamic services was started (legacy=V0, modern=V2)",

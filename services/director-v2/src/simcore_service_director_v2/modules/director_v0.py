@@ -21,7 +21,10 @@ from starlette.datastructures import URL
 
 from ..core.settings import DirectorV0Settings
 from ..models.schemas.constants import UserID
-from ..models.schemas.dynamic_services import RunningServiceDetails, ServiceBootType
+from ..models.schemas.dynamic_services import (
+    RunningDynamicServiceDetails,
+    ServiceBootType,
+)
 from ..models.schemas.services import ServiceExtras
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
@@ -119,10 +122,12 @@ class DirectorV0Client:
     @log_decorator(logger=logger)
     async def get_running_service_details(
         self, service_uuid: NodeID
-    ) -> RunningServiceDetails:
+    ) -> RunningDynamicServiceDetails:
         resp = await self.request("GET", f"running_interactive_services/{service_uuid}")
         if resp.status_code == status.HTTP_200_OK:
-            return RunningServiceDetails.parse_obj(unenvelope_or_raise_error(resp))
+            return RunningDynamicServiceDetails.parse_obj(
+                unenvelope_or_raise_error(resp)
+            )
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)
@@ -141,7 +146,7 @@ class DirectorV0Client:
     @log_decorator(logger=logger)
     async def get_running_services(
         self, user_id: Optional[UserID] = None, project_id: Optional[ProjectID] = None
-    ) -> List[RunningServiceDetails]:
+    ) -> List[RunningDynamicServiceDetails]:
         query_params = {}
         if user_id is not None:
             query_params["user_id"] = f"{user_id}"
@@ -154,7 +159,7 @@ class DirectorV0Client:
 
         if resp.status_code == status.HTTP_200_OK:
             return [
-                RunningServiceDetails(**x, boot_type=ServiceBootType.V0)
+                RunningDynamicServiceDetails(**x, boot_type=ServiceBootType.V0)
                 for x in unenvelope_or_raise_error(resp)
             ]
         raise HTTPException(status_code=resp.status_code, detail=resp.content)

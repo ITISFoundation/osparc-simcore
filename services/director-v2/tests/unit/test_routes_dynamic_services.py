@@ -19,7 +19,7 @@ from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
 )
 from simcore_service_director_v2.models.schemas.dynamic_services import (
-    RunningServiceDetails,
+    RunningDynamicServiceDetails,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.exceptions import (
     DynamicSidecarNotFoundError,
@@ -76,12 +76,12 @@ def mocked_director_v2_monitor(mocker: MockerFixture, exp_status_code: int) -> N
     """because the monitor is disabled some functionality needs to be mocked"""
 
     # MOCKING get_stack_status
-    def get_stack_status(node_uuid: NodeID) -> RunningServiceDetails:
+    def get_stack_status(node_uuid: NodeID) -> RunningDynamicServiceDetails:
         if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
             raise DynamicSidecarNotFoundError(node_uuid)
 
-        return RunningServiceDetails.parse_obj(
-            RunningServiceDetails.Config.schema_extra["examples"][0]
+        return RunningDynamicServiceDetails.parse_obj(
+            RunningDynamicServiceDetails.Config.schema_extra["examples"][0]
         )
 
     mocker.patch(

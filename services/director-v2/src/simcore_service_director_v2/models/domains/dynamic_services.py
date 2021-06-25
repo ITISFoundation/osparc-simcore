@@ -3,7 +3,7 @@ from typing import List
 from models_library.services import PropertyName
 from pydantic import BaseModel, Field
 
-from ..schemas.dynamic_services import RunningServiceDetails, ServiceDetails
+from ..schemas.dynamic_services import RunningDynamicServiceDetails, ServiceDetails
 
 
 class RetrieveDataIn(BaseModel):
@@ -26,5 +26,5 @@ class DynamicServiceCreate(ServiceDetails):
     pass
 
 
-class DynamicServiceOut(RunningServiceDetails):
+class DynamicServiceOut(RunningDynamicServiceDetails):
     pass

@@ -7,7 +7,7 @@ from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
 )
 from simcore_service_director_v2.models.schemas.dynamic_services import (
-    RunningServiceDetails,
+    RunningDynamicServiceDetails,
     ServiceBootType,
     ServiceDetails,
     ServiceState,
@@ -92,7 +92,7 @@ def from_service_labels_stored_data(
 def test_running_service_details_make_status(
     monitor_data: MonitorData, service_message: str, service_state: ServiceState
 ):
-    running_service_details = RunningServiceDetails.from_monitoring_status(
+    running_service_details = RunningDynamicServiceDetails.from_monitoring_status(
         node_uuid=monitor_data.node_uuid,
         monitor_data=monitor_data,
         service_state=service_state,

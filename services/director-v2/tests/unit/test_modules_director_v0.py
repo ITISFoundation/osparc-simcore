@@ -17,7 +17,7 @@ import respx
 from fastapi import FastAPI, status
 from models_library.services import ServiceDockerData, ServiceKeyVersion
 from simcore_service_director_v2.models.schemas.dynamic_services import (
-    RunningServiceDetails,
+    RunningDynamicServiceDetails,
 )
 from simcore_service_director_v2.models.schemas.services import ServiceExtras
 from simcore_service_director_v2.modules.director_v0 import DirectorV0Client
@@ -141,9 +141,9 @@ def fake_service_extras(random_json_from_schema: Callable) -> ServiceExtras:
 
 
 @pytest.fixture
-def fake_running_service_details() -> RunningServiceDetails:
-    sample_data = choice(RunningServiceDetails.Config.schema_extra["examples"])
-    return RunningServiceDetails(**sample_data)
+def fake_running_service_details() -> RunningDynamicServiceDetails:
+    sample_data = choice(RunningDynamicServiceDetails.Config.schema_extra["examples"])
+    return RunningDynamicServiceDetails(**sample_data)
 
 
 @pytest.fixture
@@ -151,7 +151,7 @@ def mocked_director_service_fcts(
     minimal_app: FastAPI,
     fake_service_details: ServiceDockerData,
     fake_service_extras: ServiceExtras,
-    fake_running_service_details: RunningServiceDetails,
+    fake_running_service_details: RunningDynamicServiceDetails,
 ):
     with respx.mock(
         base_url=minimal_app.state.settings.director_v0.base_url(include_tag=False),
@@ -217,12 +217,12 @@ async def test_get_service_extras(
 async def test_get_running_service_details(
     minimal_app: FastAPI,
     mocked_director_service_fcts,
-    fake_running_service_details: RunningServiceDetails,
+    fake_running_service_details: RunningDynamicServiceDetails,
 ):
 
     director_client: DirectorV0Client = minimal_app.state.director_v0_client
 
-    service_details: RunningServiceDetails = (
+    service_details: RunningDynamicServiceDetails = (
         await director_client.get_running_service_details(str(uuid4()))
     )
     assert mocked_director_service_fcts["get_running_service_details"].called
