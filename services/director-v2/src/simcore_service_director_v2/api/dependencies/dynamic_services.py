@@ -7,6 +7,7 @@ from starlette.datastructures import URL
 from ...core.settings import DynamicServicesSettings
 from ...models.schemas.services import RunningServiceDetails
 from ...modules.dynamic_services import ServicesClient
+from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor
 from ...utils.logging_utils import log_decorator
 from .director_v0 import DirectorV0Client, get_director_v0_client
 
@@ -41,3 +42,7 @@ def get_services_client(
 
 def get_settings(request: Request) -> DynamicServicesSettings:
     return request.app.state.settings.dynamic_services
+
+
+def get_monitor(request: Request) -> DynamicSidecarsMonitor:
+    return request.app.state.dynamic_sidecar_monitor

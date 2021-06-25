@@ -6,7 +6,7 @@ from copy import deepcopy
 from typing import Deque, Dict, Optional
 
 from async_timeout import timeout
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 
 from ....core.settings import (
@@ -356,10 +356,6 @@ class DynamicSidecarsMonitor:
 
 def _get_monitor(app: FastAPI) -> DynamicSidecarsMonitor:
     return app.state.dynamic_sidecar_monitor
-
-
-def get_monitor(request: Request) -> DynamicSidecarsMonitor:
-    return _get_monitor(request.app)
 
 
 async def setup_monitor(app: FastAPI):

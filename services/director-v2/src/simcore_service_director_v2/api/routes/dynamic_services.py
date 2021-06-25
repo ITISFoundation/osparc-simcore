@@ -31,16 +31,13 @@ from ...modules.dynamic_sidecar.docker_utils import (
     list_dynamic_sidecar_services,
 )
 from ...modules.dynamic_sidecar.exceptions import DynamicSidecarNotFoundError
-from ...modules.dynamic_sidecar.monitor import (
-    DynamicSidecarsMonitor,
-    MonitorData,
-    get_monitor,
-)
+from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor, MonitorData
 from ...modules.dynamic_sidecar.service_specs import assemble_service_name
 from ...utils.logging_utils import log_decorator
 from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
 from ..dependencies.dynamic_services import (
     ServicesClient,
+    get_monitor,
     get_service_base_url,
     get_services_client,
     get_settings,
