@@ -26,7 +26,6 @@ from .dynamic_sidecar_api import get_api_client
 from .handlers_base import MonitorEvent
 from .models import (
     DockerContainerInspect,
-    DockerStatus,
     DynamicSidecarStatus,
     MonitorData,
 )
@@ -44,12 +43,7 @@ def parse_containers_inspect(
 
     for container_id in containers_inspect:
         container_inspect_data = containers_inspect[container_id]
-        docker_container_inspect = DockerContainerInspect(
-            status=DockerStatus(container_inspect_data["State"]["Status"]),
-            name=container_inspect_data["Name"],
-            id=container_inspect_data["Id"],
-        )
-        results.append(docker_container_inspect)
+        results.append(DockerContainerInspect.from_container(container_inspect_data))
     return list(results)
 
 

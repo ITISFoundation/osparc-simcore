@@ -77,6 +77,14 @@ class DockerContainerInspect(BaseModel):
         description="time of the update in UTC",
     )
 
+    @classmethod
+    def from_container(cls, container: Dict[str, Any]) -> "DockerContainerInspect":
+        return cls(
+            status=DockerStatus(container["State"]["Status"]),
+            name=container["Name"],
+            id=container["Id"],
+        )
+
 
 class DynamicSidecar(BaseModel):
     overall_status: OverallStatus = Field(
