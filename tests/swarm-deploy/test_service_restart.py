@@ -74,18 +74,16 @@ def deployed_simcore_stack(
 
 
 SERVICES_AND_EXIT_CODES = [
-    ("webserver", 0),
+    ("api-server", 0),
+    ("catalog", 0),
+    ("dask-sidecar", 0),
+    ("director-v2", 0),
+    # FIXME: https://github.com/ITISFoundation/osparc-simcore/issues/1466
+    ("director", 1),
+    ("migration", 143),
     ("static-webserver", 15),
     ("storage", 0),
-    ("catalog", 0),
-    # director exit code never fixed,
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1466
-    ("director", 1),
-    ("director-v2", 0),
-    ("api-server", 0),
-    ("migration", 143),
-    ("dask-sidecar", 0),
-    ("dask-scheduler", 0),
+    ("webserver", 0),
 ]
 
 
