@@ -97,3 +97,13 @@ def pennsieve_api_key(with_pennsieve: Dict[str, str]) -> str:
 @pytest.fixture(scope="session")
 def pennsieve_api_secret(with_pennsieve: Dict[str, str]) -> str:
     return with_pennsieve.get("api_secret", str(uuid4()))
+
+
+@pytest.fixture(scope="session")
+def pennsieve_api_headers(
+    pennsieve_api_key: str, pennsieve_api_secret: str
+) -> Dict[str, str]:
+    return {
+        "x-datcore-api-key": pennsieve_api_key,
+        "x-datcore-api-secret": pennsieve_api_secret,
+    }

@@ -4,7 +4,7 @@
 
 import os
 from collections import namedtuple
-from typing import Any
+from typing import Any, Dict
 from uuid import uuid4
 
 import httpx
@@ -51,16 +51,12 @@ def pennsieve_fake_dataset(pennsieve_client_mock: Any) -> Any:
 async def test_download_file_entrypoint(
     async_client: httpx.AsyncClient,
     # pennsieve_fake_dataset: Any,
-    pennsieve_api_key: str,
-    pennsieve_api_secret: str,
+    pennsieve_api_headers: Dict[str, str],
 ):
     file_id = "N:package:09c142c4-d013-4431-b266-aa1c563105b0"
     response = await async_client.get(
         f"v0/files/{file_id}",
-        headers={
-            "x-datcore-api-key": pennsieve_api_key,
-            "x-datcore-api-secret": pennsieve_api_secret,
-        },
+        headers=pennsieve_api_headers,
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()

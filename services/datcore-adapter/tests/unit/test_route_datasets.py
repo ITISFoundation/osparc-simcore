@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 from collections import namedtuple
-from typing import Any, Callable, List, Tuple, Type
+from typing import Any, Callable, Dict, List, Tuple, Type
 from uuid import uuid4
 
 import faker
@@ -65,16 +65,12 @@ async def test_list_datasets_entrypoint(
     async_client: httpx.AsyncClient,
     pennsieve_get_datasets_mock: Callable,
     pennsieve_random_fake_datasets: List[Type[Tuple]],
-    pennsieve_api_key: str,
-    pennsieve_api_secret: str,
+    pennsieve_api_headers: Dict[str, str],
 ):
     pennsieve_get_datasets_mock(pennsieve_random_fake_datasets)
     response = await async_client.get(
         "v0/datasets",
-        headers={
-            "x-datcore-api-key": pennsieve_api_key,
-            "x-datcore-api-secret": pennsieve_api_secret,
-        },
+        headers=pennsieve_api_headers,
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -93,17 +89,13 @@ async def test_list_dataset_files_entrypoint(
     async_client: httpx.AsyncClient,
     pennsieve_dataset_id: Callable,
     # pennsieve_get_datasets_mock: Callable,
-    pennsieve_api_key: str,
-    pennsieve_api_secret: str,
+    pennsieve_api_headers: Dict[str, str],
 ):
     dataset_id = "N:dataset:6b29ddff-86fc-4dc3-bb78-8e572a788a85"
     dataset_id = "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4"
     response = await async_client.get(
         f"v0/datasets/{dataset_id}/files",
-        headers={
-            "x-datcore-api-key": pennsieve_api_key,
-            "x-datcore-api-secret": pennsieve_api_secret,
-        },
+        headers=pennsieve_api_headers,
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
