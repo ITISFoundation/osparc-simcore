@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 import faker
 import httpx
 import pytest
+from fastapi_pagination import Page
 from pydantic import parse_obj_as
 from simcore_service_datcore_adapter.models.schemas.datasets import (
     DatasetMetaData,
@@ -47,11 +48,11 @@ async def test_list_datasets_entrypoint(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data
-    parse_obj_as(List[DatasetMetaData], data)
+    parse_obj_as(Page[DatasetMetaData], data)
 
 
 @pytest.mark.asyncio
-async def test_list_dataset_files_entrypoint(
+async def test_list_dataset_files_legacy_entrypoint(
     async_client: httpx.AsyncClient,
     pennsieve_dataset_id: str,
     pennsieve_client_mock: Optional[Any],
@@ -66,7 +67,7 @@ async def test_list_dataset_files_entrypoint(
         )
 
     response = await async_client.get(
-        f"v0/datasets/{dataset_id}/files",
+        f"v0/datasets/{dataset_id}/files_legacy",
         headers=pennsieve_api_headers,
     )
     assert response.status_code == status.HTTP_200_OK

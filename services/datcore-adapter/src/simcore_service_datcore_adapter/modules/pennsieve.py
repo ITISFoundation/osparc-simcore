@@ -24,6 +24,14 @@ class PennsieveApiClient(BaseServiceClientApi):
             DatasetMetaData(id=d.id, display_name=d.name) for d in pennsieve_datasets
         ]
 
+    async def get_dataset(
+        self, api_key: str, api_secret: str, dataset_id: str, _limit: int, _offset: int
+    ) -> List[FileMetaData]:
+        ps = Pennsieve(api_token=api_key, api_secret=api_secret)
+        _ = ps.get_dataset(dataset_id)
+
+        return []
+
     async def list_dataset_files(
         self, api_key: str, api_secret: str, dataset_id: str
     ) -> List:
