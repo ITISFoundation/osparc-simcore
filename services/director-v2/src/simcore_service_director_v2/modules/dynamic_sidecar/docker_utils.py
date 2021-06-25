@@ -1,17 +1,14 @@
 # wraps all calls to underlying docker engine
 import asyncio
-
 import logging
 import time
 import traceback
 from contextlib import asynccontextmanager, suppress
 from typing import Any, Deque, Dict, List, Optional, Set, Tuple
 
-
 import aiodocker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
     UserID,
@@ -20,13 +17,13 @@ from simcore_service_director_v2.models.schemas.constants import (
 from ...core.settings import DynamicSidecarSettings, ServiceType
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 from .exceptions import DynamicSidecarError, GenericDockerError
+from .monitor import ServiceLabelsStoredData
 from .parse_docker_status import (
     TASK_STATES_ALL,
     TASK_STATES_RUNNING,
     ServiceState,
     extract_task_state,
 )
-from .monitor.models import ServiceLabelsStoredData
 
 log = logging.getLogger(__name__)
 

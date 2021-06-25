@@ -1,9 +1,9 @@
 import datetime
+import json
 import logging
 from enum import Enum
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 from uuid import UUID
-import json
 
 from models_library.basic_regex import VERSION_RE
 from models_library.projects import ProjectID

@@ -24,11 +24,7 @@ from ..service_specs import (
 )
 from .dynamic_sidecar_api import get_api_client
 from .handlers_base import MonitorEvent
-from .models import (
-    DockerContainerInspect,
-    DynamicSidecarStatus,
-    MonitorData,
-)
+from .models import DockerContainerInspect, DynamicSidecarStatus, MonitorData
 
 logger = logging.getLogger(__name__)
 

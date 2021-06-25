@@ -22,7 +22,7 @@ from simcore_service_director_v2.core.settings import (
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.monitor.core import (
+from simcore_service_director_v2.modules.dynamic_sidecar.monitor import (
     DynamicSidecarsMonitor,
 )
 
