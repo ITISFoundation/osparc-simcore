@@ -5,6 +5,7 @@
 import json
 from pathlib import Path
 from typing import Dict, Iterator
+from uuid import uuid4
 
 import httpx
 import pytest
@@ -86,3 +87,13 @@ def with_pennsieve(request) -> Dict[str, str]:
 
     print("mocking pennsieve interface")
     return dict()
+
+
+@pytest.fixture(scope="session")
+def pennsieve_api_key(with_pennsieve: Dict[str, str]) -> str:
+    return with_pennsieve.get("api_key", str(uuid4()))
+
+
+@pytest.fixture(scope="session")
+def pennsieve_api_secret(with_pennsieve: Dict[str, str]) -> str:
+    return with_pennsieve.get("api_secret", str(uuid4()))

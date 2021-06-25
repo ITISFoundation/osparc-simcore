@@ -2,10 +2,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import json
-import os
 from collections import namedtuple
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+from typing import Any, Callable, List, Tuple, Type
 from uuid import uuid4
 
 import faker
@@ -17,16 +15,6 @@ from simcore_service_datcore_adapter.models.schemas.datasets import (
     FileMetaData,
 )
 from starlette import status
-
-
-@pytest.fixture(scope="session")
-def pennsieve_api_key(with_pennsieve: Dict[str, str]) -> str:
-    return with_pennsieve.get("api_key", str(uuid4()))
-
-
-@pytest.fixture(scope="session")
-def pennsieve_api_secret(with_pennsieve: Dict[str, str]) -> str:
-    return with_pennsieve.get("api_secret", str(uuid4()))
 
 
 @pytest.fixture()
