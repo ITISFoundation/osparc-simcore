@@ -2,8 +2,9 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import json
 from pathlib import Path
-from typing import Iterator
+from typing import Dict, Iterator
 
 import httpx
 import pytest
@@ -59,3 +60,29 @@ async def async_client(initialized_app: FastAPI) -> httpx.AsyncClient:
         headers={"Content-Type": "application/json"},
     ) as client:
         yield client
+
+
+def pytest_addoption(parser):
+    group = parser.getgroup("simcore")
+    # this option will allow to connect directly to pennsieve interface for real testing
+    group.addoption(
+        "--with-pennsieve",
+        action="store",
+        default={},
+        help="--with-pennsieve: {api_key=MYKEY, api_secret=MYSECRET}",
+    )
+
+
+@pytest.fixture(scope="session")
+def with_pennsieve(request) -> Dict[str, str]:
+    ps_apis = request.config.getoption("--with-pennsieve")
+
+    if ps_apis:
+        ps_apis_config = json.loads(ps_apis)
+        assert "api_key" in ps_apis_config
+        assert "api_secret" in ps_apis_config
+        print("Using pennsieve with following api token:", ps_apis_config)
+        return ps_apis_config
+
+    print("mocking pennsieve interface")
+    return dict()

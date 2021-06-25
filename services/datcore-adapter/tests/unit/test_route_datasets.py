@@ -2,9 +2,10 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import json
 import os
 from collections import namedtuple
-from typing import Any, Callable, List, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 from uuid import uuid4
 
 import faker
@@ -18,14 +19,14 @@ from simcore_service_datcore_adapter.models.schemas.datasets import (
 from starlette import status
 
 
-@pytest.fixture()
-def pennsieve_api_key() -> str:
-    return os.environ.get("TEST_PENNSIEVE_API_KEY") or str(uuid4())
+@pytest.fixture(scope="session")
+def pennsieve_api_key(with_pennsieve: Dict[str, str]) -> str:
+    return with_pennsieve.get("api_key", str(uuid4()))
 
 
-@pytest.fixture()
-def pennsieve_api_secret() -> str:
-    return os.environ.get("TEST_PENNSIEVE_API_SECRET") or str(uuid4())
+@pytest.fixture(scope="session")
+def pennsieve_api_secret(with_pennsieve: Dict[str, str]) -> str:
+    return with_pennsieve.get("api_secret", str(uuid4()))
 
 
 @pytest.fixture()
@@ -79,7 +80,7 @@ async def test_list_datasets_entrypoint(
     pennsieve_api_key: str,
     pennsieve_api_secret: str,
 ):
-    _ = pennsieve_get_datasets_mock(pennsieve_random_fake_datasets)
+    pennsieve_get_datasets_mock(pennsieve_random_fake_datasets)
     response = await async_client.get(
         "v0/datasets",
         headers={
@@ -102,11 +103,13 @@ async def test_list_datasets_entrypoint(
 @pytest.mark.asyncio
 async def test_list_dataset_files_entrypoint(
     async_client: httpx.AsyncClient,
+    pennsieve_dataset_id: Callable,
     # pennsieve_get_datasets_mock: Callable,
     pennsieve_api_key: str,
     pennsieve_api_secret: str,
 ):
     dataset_id = "N:dataset:6b29ddff-86fc-4dc3-bb78-8e572a788a85"
+    dataset_id = "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4"
     response = await async_client.get(
         f"v0/datasets/{dataset_id}/files",
         headers={
