@@ -111,7 +111,7 @@ def mocked_director_v2_monitor(mocker: MockerFixture, exp_status_code: int) -> N
                 service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][0],
                 exp_status_code=status.HTTP_307_TEMPORARY_REDIRECT,
             ),
-            id="legacy service",
+            id="LEGACY",
         ),
         pytest.param(
             *ServiceParams(
@@ -119,7 +119,7 @@ def mocked_director_v2_monitor(mocker: MockerFixture, exp_status_code: int) -> N
                 service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][1],
                 exp_status_code=status.HTTP_201_CREATED,
             ),
-            id="dynamic sidecar service",
+            id="DYNAMIC",
         ),
         pytest.param(
             *ServiceParams(
@@ -127,17 +127,17 @@ def mocked_director_v2_monitor(mocker: MockerFixture, exp_status_code: int) -> N
                 service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][2],
                 exp_status_code=status.HTTP_201_CREATED,
             ),
-            id="dynamic sidecar service with compose spec",
+            id="DYNAMIC_COMPOSE",
         ),
     ],
 )
 def test_create_dynamic_services(
     mocked_director_v0_service_api,
+    docker_swarm: None,
     client: TestClient,
     dynamic_sidecar_headers: Dict[str, str],
     service: Dict[str, Any],
     exp_status_code: int,
-    docker_swarm: None,
 ):
 
     post_data = DynamicServiceCreate(**service)
@@ -178,7 +178,7 @@ def test_create_dynamic_services(
                 service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][0],
                 exp_status_code=status.HTTP_307_TEMPORARY_REDIRECT,
             ),
-            id="legacy service",
+            id="LEGACY",
         ),
         pytest.param(
             *ServiceParams(
@@ -186,7 +186,7 @@ def test_create_dynamic_services(
                 service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][1],
                 exp_status_code=status.HTTP_200_OK,
             ),
-            id="dynamic sidecar service",
+            id="DYNAMIC",
         ),
         pytest.param(
             *ServiceParams(
@@ -194,7 +194,7 @@ def test_create_dynamic_services(
                 service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][2],
                 exp_status_code=status.HTTP_200_OK,
             ),
-            id="dynamic sidecar service with compose spec",
+            id="DYNAMIC_COMPOSE",
         ),
     ],
 )
@@ -232,7 +232,7 @@ def test_get_service_status(
                 service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][0],
                 exp_status_code=status.HTTP_307_TEMPORARY_REDIRECT,
             ),
-            id="legacy service",
+            id="LEGACY",
         ),
         pytest.param(
             *ServiceParams(
@@ -240,7 +240,7 @@ def test_get_service_status(
                 service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][1],
                 exp_status_code=status.HTTP_204_NO_CONTENT,
             ),
-            id="dynamic sidecar service",
+            id="DYNAMIC",
         ),
         pytest.param(
             *ServiceParams(
@@ -248,7 +248,7 @@ def test_get_service_status(
                 service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][2],
                 exp_status_code=status.HTTP_204_NO_CONTENT,
             ),
-            id="dynamic sidecar service with compose spec",
+            id="DYNAMIC_COMPOSE",
         ),
     ],
 )
