@@ -27,3 +27,22 @@ def test_cached_property_dsn(mock_environment: Dict):
     assert settings.dsn
 
     assert "dsn" in settings.dict().keys()
+
+
+def test_dsn_with_query(mock_environment: Dict, monkeypatch):
+
+    settings = PostgresSettings()
+
+    assert not settings.POSTGRES_APPNAME
+    assert settings.dsn == "postgresql://foo:secret@localhost:5432/foodb"
+
+    # now with app
+    monkeypatch.setenv("POSTGRES_APPNAME", "Some &43 funky name")
+
+    settings_with_app = PostgresSettings()
+
+    assert settings_with_app.POSTGRES_APPNAME
+    assert (
+        settings_with_app.dsn
+        == "postgresql://foo:secret@localhost:5432/foodb?application_name=Some+%2643+funky+name"
+    )

@@ -1,4 +1,6 @@
+import urllib.parse
 from functools import cached_property
+from typing import Optional
 
 from pydantic import Field, PostgresDsn, SecretStr, conint, validator
 
@@ -28,6 +30,10 @@ class PostgresSettings(BaseCustomSettings):
         50, description="Minimum number of connections in the pool"
     )
 
+    POSTGRES_APPNAME: Optional[str] = Field(
+        None, description="Name of the application connecting the postgres database"
+    )
+
     @validator("POSTGRES_MAXSIZE")
     @classmethod
     def _check_size(cls, v, values):
@@ -39,7 +45,7 @@ class PostgresSettings(BaseCustomSettings):
 
     @cached_property
     def dsn(self) -> str:
-        return PostgresDsn.build(
+        dsn: str = PostgresDsn.build(
             scheme="postgresql",
             user=self.POSTGRES_USER,
             password=self.POSTGRES_PASSWORD.get_secret_value(),
@@ -47,3 +53,8 @@ class PostgresSettings(BaseCustomSettings):
             port=f"{self.POSTGRES_PORT}",
             path=f"/{self.POSTGRES_DB}",
         )
+        if self.POSTGRES_APPNAME:
+            dsn += "?" + urllib.parse.urlencode(
+                {"application_name": self.POSTGRES_APPNAME}
+            )
+        return dsn
