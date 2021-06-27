@@ -1,9 +1,6 @@
 import logging
-from typing import Optional
 
 from pydantic import validator
-
-from .basic_types import BootModeEnum
 
 
 class MixinLoggingSettings:
@@ -21,6 +18,6 @@ class MixinLoggingSettings:
 
     @property
     def log_level(self) -> int:
-        """ Can be used in logging.setLogLevel() """
+        """Can be used in logging.setLogLevel()"""
         assert issubclass(self.__class__, MixinLoggingSettings)  # nosec
         return getattr(logging, getattr(self, "LOG_LEVEL"))  # pylint: disable=no-member

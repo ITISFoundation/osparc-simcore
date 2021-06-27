@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import Field
 from settings_library.base import BaseCustomSettings
-from settings_library.basic_enums import BootModeEnum
+from settings_library.basic_types import BootModeEnum
 from settings_library.logging_utils import MixinLoggingSettings
 
 
