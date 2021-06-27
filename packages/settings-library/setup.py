@@ -26,11 +26,11 @@ readme = Path(here / "README.md").read_text()
 setup(
     name="simcore-settings-library",
     version="0.1.0",
-    author="Sylvain Anderegg (sanderegg), Pedro Crespo-Valero (pcrespov)",
+    author="Pedro Crespo-Valero (pcrespov), Sylvain Anderegg (sanderegg)",
     description="Library with common pydantic settings",
     # SEE https://pypi.org/classifiers/
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
