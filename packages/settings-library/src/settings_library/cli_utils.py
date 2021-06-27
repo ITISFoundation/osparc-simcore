@@ -38,7 +38,7 @@ def print_as_json(settings_obj, *, compact=False):
 
 
 def create_settings_command(
-    settings_cls: Type[BaseCustomSettings], log: Optional[logging.Logger] = None
+    settings_cls: Type[BaseCustomSettings], logger: Optional[logging.Logger] = None
 ) -> Callable:
     """Creates typer command function"""
 
@@ -47,8 +47,8 @@ def create_settings_command(
         and settings_cls != BaseCustomSettings
     )  # nosec
 
-    if log is None:
-        log = logging.getLogger(__name__)
+    if logger is None:
+        logger = logging.getLogger(__name__)
 
     def settings(
         as_json: bool = False,
@@ -68,8 +68,8 @@ def create_settings_command(
         except ValidationError as err:
             settings_schema = settings_cls.schema_json(indent=2)
 
-            assert log is not None  # nosec
-            log.error(
+            assert logger is not None  # nosec
+            logger.error(
                 "Invalid application settings. Typically an environment variable is missing or mistyped :\n%s",
                 "\n".join(
                     [
