@@ -26,7 +26,7 @@ class BaseCustomSettings(BaseSettings):
         # which is too early for our purpose. Instead, we want to create the defaults just
         # before the settings instance is constructed
 
-        assert issubclass(cls, BaseCustomSettings)
+        assert issubclass(cls, BaseCustomSettings)  # nosec
 
         # Builds defaults at this point
         for name, default_cls in default_fields:

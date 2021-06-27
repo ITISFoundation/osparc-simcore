@@ -1,9 +1,9 @@
 from typing import List, Optional
 
-from models_library.basic_types import LogLevel, PortInt
 from pydantic import Field, PositiveInt, validator
 from servicelib.tracing import TracingSettings
 from settings_library.base import BaseCustomSettings
+from settings_library.basic_types import LogLevel, PortInt
 from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.s3 import S3Config

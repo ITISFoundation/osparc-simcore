@@ -28,6 +28,7 @@ setup(
     version="0.1.0",
     author="Sylvain Anderegg (sanderegg), Pedro Crespo-Valero (pcrespov)",
     description="Library with common pydantic settings",
+    # SEE https://pypi.org/classifiers/
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",

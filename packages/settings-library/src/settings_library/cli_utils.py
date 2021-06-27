@@ -40,12 +40,10 @@ def print_as_json(settings_obj, *, compact=False):
 def create_settings_command(
     settings_cls: Type[BaseCustomSettings], logger: Optional[logging.Logger] = None
 ) -> Callable:
-    """Creates typer command function"""
+    """Creates typer command function for settings"""
 
-    assert (
-        issubclass(settings_cls, BaseCustomSettings)
-        and settings_cls != BaseCustomSettings
-    )  # nosec
+    assert issubclass(settings_cls, BaseCustomSettings)  # nosec
+    assert settings_cls != BaseCustomSettings  # nosec
 
     if logger is None:
         logger = logging.getLogger(__name__)
