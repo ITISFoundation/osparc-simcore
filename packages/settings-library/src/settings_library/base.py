@@ -17,7 +17,7 @@ class BaseCustomSettings(BaseSettings):
         keep_untouched = (cached_property,)
 
     @classmethod
-    def set_defaults_with_default_constructors(
+    def _set_defaults_with_default_constructors(
         cls, default_fields: List[Tuple[str, Type["BaseCustomSettings"]]]
     ):
         # This function can set defaults on fields that are BaseSettings as well
@@ -50,7 +50,7 @@ class BaseCustomSettings(BaseSettings):
                 raise ValueError(
                     f"{name} field class {field.type_} must inherit from BaseCustomSettings"
                 )
-        cls.set_defaults_with_default_constructors(default_fields)
+        cls._set_defaults_with_default_constructors(default_fields)
 
         # builds instance
         obj = cls()

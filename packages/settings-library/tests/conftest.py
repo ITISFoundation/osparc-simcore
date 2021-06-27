@@ -15,6 +15,7 @@ from settings_library.basic_types import PortInt
 from settings_library.postgres import PostgresSettings
 
 pytest_plugins = [
+    "pytest_simcore.cli_runner",
     "pytest_simcore.repository_paths",
     "pytest_simcore.pydantic_models",
 ]

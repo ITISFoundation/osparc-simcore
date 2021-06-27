@@ -5,7 +5,6 @@
 import json
 import logging
 from io import StringIO
-from textwrap import dedent
 from typing import Dict, Type
 
 import pytest
@@ -13,11 +12,8 @@ import typer
 from dotenv import dotenv_values
 from settings_library.base import BaseCustomSettings
 from settings_library.cli_utils import create_settings_command
-from typer.testing import CliRunner
 
 log = logging.getLogger(__name__)
-
-runner = CliRunner()
 
 
 @pytest.fixture
@@ -38,18 +34,18 @@ def cli(settings_cls: Type[BaseCustomSettings]):
     return main
 
 
-def test_compose_commands(cli):
-    result = runner.invoke(cli, ["--help"])
+def test_compose_commands(cli, cli_runner):
+    result = cli_runner.invoke(cli, ["--help"])
     print(result.stdout)
     assert result.exit_code == 0
 
     # first command
-    result = runner.invoke(cli, ["run", "--help"])
+    result = cli_runner.invoke(cli, ["run", "--help"])
     print(result.stdout)
     assert result.exit_code == 0
 
     # settings command
-    result = runner.invoke(cli, ["settings", "--help"])
+    result = cli_runner.invoke(cli, ["settings", "--help"])
     print(result.stdout)
 
     assert "--compact" in result.stdout
@@ -77,9 +73,9 @@ HELP = """
 """
 
 
-def test_settings_as_json(cli, settings_cls, mock_environment):
+def test_settings_as_json(cli, settings_cls, mock_environment, cli_runner):
 
-    result = runner.invoke(cli, ["settings", "--as-json"])
+    result = cli_runner.invoke(cli, ["settings", "--as-json"])
     print(result.stdout)
 
     # reuse resulting json to build settings
@@ -87,8 +83,8 @@ def test_settings_as_json(cli, settings_cls, mock_environment):
     assert settings_cls.parse_obj(settings)
 
 
-def test_settings_as_env_file(cli, settings_cls, mock_environment):
-    result = runner.invoke(cli, ["settings", "--compact"])
+def test_settings_as_env_file(cli, settings_cls, mock_environment, cli_runner):
+    result = cli_runner.invoke(cli, ["settings", "--compact"])
     print(result.stdout)
 
     # reuse resulting env_file to build settings
