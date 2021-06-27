@@ -7,7 +7,7 @@ from . import application
 from .settings import Settings
 
 log = logging.getLogger(__name__)
-main = typer.Typer(name="osparc-simcore storage service")
+main = typer.Typer(name="simcore-service-storage service")
 
 
 main.command()(create_settings_command(settings_cls=Settings, logger=log))

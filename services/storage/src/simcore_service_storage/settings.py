@@ -1,12 +1,17 @@
 from typing import List, Optional
 
-from pydantic import Field, PositiveInt, validator
-from servicelib.tracing import TracingSettings
+from pydantic import AnyHttpUrl, Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import LogLevel, PortInt
 from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
-from settings_library.s3 import S3Config
+from settings_library.s3 import S3Settings
+
+
+class TracingSettings(BaseCustomSettings):
+    # FIXME: upgrade to new setup
+    enabled: Optional[bool] = True
+    zipkin_endpoint: AnyHttpUrl = "http://jaeger:9411"
 
 
 class Settings(BaseCustomSettings, MixinLoggingSettings):
@@ -39,7 +44,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
 
     STORAGE_POSTGRES: PostgresSettings
 
-    STORAGE_S3: S3Config
+    STORAGE_S3: S3Settings
 
     STORAGE_TRACING: TracingSettings
 

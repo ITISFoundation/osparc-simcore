@@ -39,6 +39,7 @@ from tests.utils import (
 )
 
 pytest_plugins = [
+    "pytest_simcore.cli_runner",
     "pytest_simcore.repository_paths",
     "tests.fixtures.data_models",
 ]
