@@ -12,7 +12,7 @@ class LogLevel(str, Enum):
     ERROR = "ERROR"
 
 
-class BootModeEnum(str, Enum):
+class BootMode(str, Enum):
     """
     Values taken by SC_BOOT_MODE environment variable
     set in Dockerfile and used during docker/boot.sh

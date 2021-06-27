@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import Field, validator
 from settings_library.base import BaseCustomSettings
-from settings_library.basic_types import BootModeEnum
+from settings_library.basic_types import BootMode
 from settings_library.logging_utils import MixinLoggingSettings
 
 
@@ -15,7 +15,7 @@ def test_mixin_logging(monkeypatch):
 
     class Settings(BaseCustomSettings, MixinLoggingSettings):
         # DOCKER
-        SC_BOOT_MODE: Optional[BootModeEnum]
+        SC_BOOT_MODE: Optional[BootMode]
 
         # LOGGING
         LOG_LEVEL: str = Field(
