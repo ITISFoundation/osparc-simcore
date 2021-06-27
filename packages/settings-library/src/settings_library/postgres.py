@@ -5,6 +5,8 @@ from pydantic import Field, PostgresDsn, SecretStr, conint, validator
 from .base import BaseCustomSettings
 from .basic_types import PortInt
 
+IntGe1 = conint(ge=1)
+
 
 class PostgresSettings(BaseCustomSettings):
     # entrypoint
@@ -19,10 +21,10 @@ class PostgresSettings(BaseCustomSettings):
     POSTGRES_DB: str = Field(..., description="Database name")
 
     # pool connection limits
-    POSTGRES_MINSIZE: conint(ge=1) = Field(
+    POSTGRES_MINSIZE: IntGe1 = Field(
         1, description="Maximum number of connections in the pool"
     )
-    POSTGRES_MAXSIZE: conint(ge=1) = Field(
+    POSTGRES_MAXSIZE: IntGe1 = Field(
         50, description="Minimum number of connections in the pool"
     )
 
