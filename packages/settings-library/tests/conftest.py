@@ -4,11 +4,15 @@
 
 import sys
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, Type, Union
 
 import pytest
 import settings_library
 from dotenv import dotenv_values
+from pydantic import Field
+from settings_library.base import BaseCustomSettings
+from settings_library.basic_types import PortInt
+from settings_library.postgres import PostgresSettings
 
 pytest_plugins = [
     "pytest_simcore.repository_paths",
@@ -40,9 +44,15 @@ def mocks_folder(project_tests_dir: Path) -> Path:
     return dir_path
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
+def env_file():
+    """Name of env file under tests/mocks folder. Override to change default"""
+    return ".env-compact"
+
+
+@pytest.fixture
 def mock_environment(
-    env_file: str, mocks_folder: Path, monkeypatch
+    mocks_folder: Path, monkeypatch, env_file: str
 ) -> Dict[str, Union[str, None]]:
     env_file_path = mocks_folder / env_file
     assert env_file_path.exists()
@@ -52,3 +62,33 @@ def mock_environment(
         monkeypatch.setenv(name, value)
 
     return envs
+
+
+@pytest.fixture
+def settings_cls() -> Type[BaseCustomSettings]:
+    """Creates a fake Settings class
+
+    NOTE: Add mock_environment fixture before instanciating this class
+    """
+
+    class MyModuleSettings(BaseCustomSettings):
+        """Settings for Module 1"""
+
+        MYMODULE_VALUE: int = Field(..., description="Some value for module 1")
+
+    class AnotherModuleSettings(BaseCustomSettings):
+        """Settings for Module 2"""
+
+        MYMODULE2_SOME_OTHER_VALUE: int
+
+    class Settings(BaseCustomSettings):
+        """The App Settings"""
+
+        APP_HOST: str
+        APP_PORT: PortInt = 3
+
+        APP_POSTGRES: PostgresSettings
+        APP_MODULE_1: MyModuleSettings = Field(..., description="Some Module Example")
+        APP_MODULE_2: AnotherModuleSettings
+
+    return Settings
