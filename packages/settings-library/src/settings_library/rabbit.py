@@ -1,46 +1,38 @@
-from typing import Dict, Optional
+from functools import cached_property
+from typing import Dict
 
-from pydantic import BaseSettings, Extra, validator
 from pydantic.networks import AnyUrl
-from pydantic.types import PositiveInt, SecretStr
+from pydantic.types import SecretStr
+
+from .base import BaseCustomSettings
+from .basic_types import PortInt
 
 
 class RabbitDsn(AnyUrl):
     allowed_schemes = {"amqp"}
 
 
-class RabbitConfig(BaseSettings):
+class RabbitConfig(BaseCustomSettings):
     # host
-    host: str = "rabbit"
-    port: PositiveInt = 5672
+    RABBIT_HOST: str = "rabbit"
+    RABBIT_PORT: PortInt = 5672
 
     # auth
-    user: str = "simcore"
-    password: SecretStr = SecretStr("simcore")
-
-    dsn: Optional[RabbitDsn] = None
+    RABBIT_USER: str = "simcore"
+    RABBIT_PASSWORD: SecretStr = SecretStr("simcore")
 
     # channels
-    channels: Dict[str, str] = {
+    RABBIT_CHANNELS: Dict[str, str] = {
         "log": "comp.backend.channels.log",
         "instrumentation": "comp.backend.channels.instrumentation",
     }
 
-    @validator("dsn", pre=True)
-    @classmethod
-    def autofill_dsn(cls, v, values):
-        if not v and all(
-            key in values for key in cls.__fields__ if key not in ["dsn", "channels"]
-        ):
-            return RabbitDsn.build(
-                scheme="amqp",
-                user=values["user"],
-                password=values["password"].get_secret_value(),
-                host=values["host"],
-                port=f"{values['port']}",
-            )
-        return v
-
-    class Config:
-        env_prefix = "RABBIT_"
-        extra = Extra.forbid
+    @cached_property
+    def dsn(self) -> str:
+        return RabbitDsn.build(
+            scheme="amqp",
+            user=self.RABBIT_USER,
+            password=self.RABBIT_PASSWORD.get_secret_value(),
+            host=self.RABBIT_HOST,
+            port=f"{self.RABBIT_PORT}",
+        )

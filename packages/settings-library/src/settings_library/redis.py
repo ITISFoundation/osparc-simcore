@@ -1,39 +1,34 @@
+from functools import cached_property
 from typing import Optional
 
-from pydantic import BaseSettings, PositiveInt, validator
 from pydantic.networks import RedisDsn
 from pydantic.types import SecretStr
 
+from .base import BaseCustomSettings
+from .basic_types import PortInt
 
-class RedisConfig(BaseSettings):
+
+class RedisConfig(BaseCustomSettings):
     # host
-    host: str = "redis"
-    port: PositiveInt = 6789
+    REDIS_HOST: str = "redis"
+    REDIS_PORT: PortInt = 6789
 
     # auth
-    user: Optional[str] = None
-    password: Optional[SecretStr] = None
+    REDIS_USER: Optional[str] = None
+    REDIS_PASSWORD: Optional[SecretStr] = None
 
     # db
-    db: Optional[str] = "0"
+    REDIS_DB: Optional[str] = "0"
 
-    dsn: Optional[RedisDsn] = None
-
-    @validator("dsn", pre=True)
-    @classmethod
-    def autofill_dsn(cls, v, values):
-        if not v and all(key in values for key in cls.__fields__ if key != "dsn"):
-            return RedisDsn.build(
-                scheme="redis",
-                user=values["user"] or None,
-                password=values["password"].get_secret_value()
-                if values["password"]
-                else None,
-                host=values["host"],
-                port=f"{values['port']}",
-                path=f"/{values['db']}",
-            )
-        return v
-
-    class Config:
-        env_prefix = "REDIS_"
+    @cached_property
+    def dsn(self) -> str:
+        return RedisDsn.build(
+            scheme="redis",
+            user=self.REDIS_USER or None,
+            password=self.REDIS_PASSWORD.get_secret_value()
+            if self.REDIS_PASSWORD
+            else None,
+            host=self.REDIS_HOST,
+            port=f"{self.REDIS_PORT}",
+            path=f"/{self.REDIS_DB}",
+        )

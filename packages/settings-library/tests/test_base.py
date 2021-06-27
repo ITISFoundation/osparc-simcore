@@ -86,5 +86,8 @@ def _get_all_settings_classes():
     "settings_cls", _get_all_settings_classes(), ids=lambda cls: cls.__name__
 )
 def test_settings_class_policies(settings_cls):
+    # must inherit
     assert issubclass(settings_cls, BaseCustomSettings)
+
+    # all fields UPPER
     assert all(key == key.upper() for key in settings_cls.__fields__.keys())
