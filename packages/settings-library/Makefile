@@ -19,5 +19,5 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 tests: ## runs unit tests
 	# running unit tests
 	@pytest -vv --color=yes --exitfirst --failed-first --durations=10 \
-	--cov-config=../../.coveragerc --cov=models_library --cov-report=term-missing \
+	--cov-config=../../.coveragerc --cov=settings_library --cov-report=term-missing \
 	--pdb $(CURDIR)/tests
