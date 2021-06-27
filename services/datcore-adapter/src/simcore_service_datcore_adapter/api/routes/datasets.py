@@ -36,11 +36,11 @@ async def list_datasets(
 
 @router.get(
     "/datasets/{dataset_id}/files",
-    summary="list all file meta data in dataset",
+    summary="list top level files/folders in a dataset",
     status_code=status.HTTP_200_OK,
     response_model=Page[FileMetaDataOut],
 )
-async def list_dataset_files(
+async def list_dataset_top_level_files(
     dataset_id: str,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
     x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
@@ -61,11 +61,11 @@ async def list_dataset_files(
 
 @router.get(
     "/datasets/{dataset_id}/files/{collection_id}",
-    summary="list all file meta data in dataset",
+    summary="list top level files/folders in a collection in a dataset",
     status_code=status.HTTP_200_OK,
     response_model=Page[FileMetaDataOut],
 )
-async def list_dataset_files(
+async def list_dataset_collection_files(
     dataset_id: str,
     collection_id: str,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),

@@ -25,7 +25,7 @@ def compute_full_path(
     def _get_full_path(pck: pennsieve.models.BaseDataNode) -> Path:
         path = Path(pck.name)
         if pck.type != "Collection":
-            path = Path(pck.s3_key).name
+            path = Path(pck.files[0].s3_key).name
         if pck.parent:
             path = _get_full_path(ps.get(pck.parent)) / path
         return path

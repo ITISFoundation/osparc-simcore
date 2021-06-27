@@ -38,9 +38,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         ds: pennsieve.models.BaseCollection = ps.get_dataset(dataset_id)
         if collection_id:
             ds = ps.get(collection_id)
-        import pdb
 
-        pdb.set_trace()
         return (
             [
                 FileMetaData.from_pennsieve_package(ps, package)

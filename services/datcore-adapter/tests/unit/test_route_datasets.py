@@ -77,7 +77,7 @@ async def test_list_dataset_files_legacy_entrypoint(
 
 
 @pytest.mark.asyncio
-async def test_list_dataset_files_entrypoint(
+async def test_list_dataset_top_level_files_entrypoint(
     async_client: httpx.AsyncClient,
     pennsieve_dataset_id: str,
     pennsieve_client_mock: Optional[Any],
@@ -100,8 +100,25 @@ async def test_list_dataset_files_entrypoint(
     assert data
     parse_obj_as(Page[FileMetaData], data)
 
+
+@pytest.mark.asyncio
+async def test_list_dataset_collection_files_entrypoint(
+    async_client: httpx.AsyncClient,
+    pennsieve_dataset_id: str,
+    pennsieve_collection_id: str,
+    pennsieve_client_mock: Optional[Any],
+    pennsieve_mock_dataset_packages: Dict[str, Any],
+    pennsieve_api_headers: Dict[str, str],
+):
+    dataset_id = pennsieve_dataset_id
+    collection_id = pennsieve_collection_id
+    if pennsieve_client_mock:
+        # pylint: disable=protected-access
+        pennsieve_client_mock.return_value.get_dataset.return_value._api.datasets._get.return_value = (
+            pennsieve_mock_dataset_packages
+        )
     response = await async_client.get(
-        f"v0/datasets/{dataset_id}/files/N:collection:422df90c-bec1-47db-9151-d06bf510db21",
+        f"v0/datasets/{dataset_id}/files/{collection_id}",
         headers=pennsieve_api_headers,
     )
     assert response.status_code == status.HTTP_200_OK

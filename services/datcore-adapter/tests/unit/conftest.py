@@ -102,6 +102,12 @@ def pytest_addoption(parser):
         help="set some valid pennsieve dataset ID N:dataset:6b29ddff-86fc-4dc3-bb78-8e572a788a85",
     )
     group.addoption(
+        "--collection",
+        action="store",
+        default=None,
+        help="set some valid pennsieve collection ID N:package:6b29ddff-86fc-4dc3-bb78-8e572a788a85",
+    )
+    group.addoption(
         "--file",
         action="store",
         default=None,
@@ -151,6 +157,15 @@ def pennsieve_dataset_id(request, pennsieve_fake_dataset_id) -> str:
 
 
 @pytest.fixture(scope="session")
+def pennsieve_collection_id(request, pennsieve_fake_package_id) -> str:
+    package_id = request.config.getoption("--collection")
+
+    if package_id:
+        print("Provided pennsieve collection package id:", package_id)
+    return package_id or pennsieve_fake_package_id()
+
+
+@pytest.fixture(scope="session")
 def pennsieve_file_id(request, pennsieve_fake_package_id) -> str:
     package_id = request.config.getoption("--file")
 
@@ -184,7 +199,7 @@ def pennsieve_client_mock(
     pennsieve_api_secret: str,
 ) -> Optional[Any]:
     if use_real_pennsieve_interface:
-        yield
+        yield None
     else:
         ps_mock = mocker.patch(
             "simcore_service_datcore_adapter.modules.pennsieve.Pennsieve", autospec=True
@@ -197,30 +212,39 @@ def pennsieve_client_mock(
 
 
 @pytest.fixture()
-def pennsieve_dataset_package_mock(mocker, use_real_pennsieve_interface: bool) -> Any:
+def pennsieve_dataset_package_mock(
+    mocker, use_real_pennsieve_interface: bool
+) -> Optional[Any]:
     if not use_real_pennsieve_interface:
         data_package_mock = mocker.patch(
             "simcore_service_datcore_adapter.modules.pennsieve.pennsieve.models.DataSet",
             autospec=True,
         )
         return data_package_mock
+    return None
 
 
 @pytest.fixture()
-def pennsieve_data_package_mock(mocker, use_real_pennsieve_interface: bool) -> Any:
+def pennsieve_data_package_mock(
+    mocker, use_real_pennsieve_interface: bool
+) -> Optional[Any]:
     if not use_real_pennsieve_interface:
         data_package_mock = mocker.patch(
             "simcore_service_datcore_adapter.modules.pennsieve.pennsieve.models.DataPackage",
             autospec=True,
         )
         return data_package_mock
+    return None
 
 
 @pytest.fixture()
-def pennsieve_file_package_mock(mocker, use_real_pennsieve_interface: bool) -> Any:
+def pennsieve_file_package_mock(
+    mocker, use_real_pennsieve_interface: bool
+) -> Optional[Any]:
     if not use_real_pennsieve_interface:
         file_mock = mocker.patch(
             "simcore_service_datcore_adapter.modules.pennsieve.pennsieve.models.File",
             autospec=True,
         )
         return file_mock
+    return None
