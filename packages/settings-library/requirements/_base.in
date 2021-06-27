@@ -4,3 +4,7 @@
 -c ../../../requirements/constraints.txt
 
 pydantic
+
+
+# extra
+typer
