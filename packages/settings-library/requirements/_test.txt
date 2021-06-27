@@ -60,6 +60,8 @@ pytest-runner==5.3.1
     # via -r requirements/_test.in
 pytest-sugar==0.9.4
     # via -r requirements/_test.in
+python-dotenv==0.18.0
+    # via -r requirements/_test.in
 requests==2.25.1
     # via coveralls
 termcolor==1.1.0

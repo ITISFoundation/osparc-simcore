@@ -18,5 +18,6 @@ pytest-mock
 pytest-sugar
 
 # tools
+python-dotenv
 pylint  # NOTE: The version in pylint at _text.txt is used as a reference for ci/helpers/install_pylint.bash
 coveralls
