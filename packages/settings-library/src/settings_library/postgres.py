@@ -37,8 +37,6 @@ class PostgresSettings(BaseCustomSettings):
             )
         return v
 
-    # HELPERS ---
-
     @cached_property
     def dsn(self) -> str:
         return PostgresDsn.build(

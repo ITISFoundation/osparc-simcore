@@ -8,7 +8,7 @@ from .base import BaseCustomSettings
 from .basic_types import PortInt
 
 
-class RedisConfig(BaseCustomSettings):
+class RedisSettings(BaseCustomSettings):
     # host
     REDIS_HOST: str = "redis"
     REDIS_PORT: PortInt = 6789

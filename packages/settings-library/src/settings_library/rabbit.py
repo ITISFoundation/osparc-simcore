@@ -12,7 +12,7 @@ class RabbitDsn(AnyUrl):
     allowed_schemes = {"amqp"}
 
 
-class RabbitConfig(BaseCustomSettings):
+class RabbitSettings(BaseCustomSettings):
     # host
     RABBIT_HOST: str = "rabbit"
     RABBIT_PORT: PortInt = 5672
