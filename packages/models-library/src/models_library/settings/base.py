@@ -1,5 +1,5 @@
 from contextlib import suppress
-from typing import List, Tuple
+from typing import List, Tuple, Type
 
 from pydantic import BaseSettings, Extra, SecretStr, ValidationError
 
@@ -15,7 +15,7 @@ class BaseCustomSettings(BaseSettings):
 
     @classmethod
     def set_defaults_with_default_constructors(
-        cls, default_fields: List[Tuple[str, "BaseCustomSettings"]]
+        cls, default_fields: List[Tuple[str, Type["BaseCustomSettings"]]]
     ):
         # This funcion can set defaults on fields that are BaseSettings as well
         # It is used in control construction of defaults.
@@ -33,3 +33,14 @@ class BaseCustomSettings(BaseSettings):
                 field_obj.default = default
                 field_obj.field_info.default = default
                 field_obj.required = False
+
+    @classmethod
+    def create_from_envs(cls):
+        obj = cls()
+
+        # TODO: perform this check on FieldInfo upon class construction
+        if any(isinstance(field, BaseSettings) for field in obj.__fields__):
+            raise NotImplementedError(
+                "Override in subclass and use set_defaults_with_default_constructors to set sub-settings defaults"
+            )
+        return obj

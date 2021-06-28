@@ -9,7 +9,7 @@ from simcore_service_storage.settings import Settings
 
 
 def test_loading_env_devel_in_settings(project_env_devel_environment):
-    settings = Settings.create_from_env()
+    settings = Settings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))
 
     assert settings.logging_level == logging.INFO
