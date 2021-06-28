@@ -5,7 +5,6 @@ from typing import Any, Dict, List
 
 from fastapi import FastAPI
 
-from ....api.dependencies.director_v0 import _get_director_v0_client
 from ....core.settings import DynamicSidecarSettings
 from ....modules.director_v0 import DirectorV0Client
 from ..docker_compose_assembly import assemble_spec
@@ -27,6 +26,11 @@ from .handlers_base import MonitorEvent
 from .models import DockerContainerInspect, DynamicSidecarStatus, MonitorData
 
 logger = logging.getLogger(__name__)
+
+
+def _get_director_v0_client(app: FastAPI) -> DirectorV0Client:
+    client = DirectorV0Client.instance(app)
+    return client
 
 
 def parse_containers_inspect(

@@ -1,11 +1,6 @@
-from fastapi import Depends, FastAPI, Request, Response
+from fastapi import Depends, Request, Response
 
 from ...modules.director_v0 import DirectorV0Client
-
-
-def _get_director_v0_client(app: FastAPI) -> DirectorV0Client:
-    client = DirectorV0Client.instance(app)
-    return client
 
 
 def get_director_v0_client(request: Request) -> DirectorV0Client:
