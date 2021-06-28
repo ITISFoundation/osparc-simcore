@@ -88,7 +88,7 @@ properties:
           key:
             type: string
             description: distinctive name for the node based on the docker registry path
-            pattern: ^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$
+            pattern: ^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$
             example:
               - simcore/services/comp/sleeper
               - simcore/services/dynamic/3dviewer
@@ -134,8 +134,12 @@ properties:
             patternProperties:
               ^[-_a-zA-Z0-9]+$:
                 oneOf:
-                  - $ref: '#/definitions/nodeIODataTypes/basic'
-                  - $ref: '#/definitions/nodeIODataTypes/basicArray'
+                  - type:
+                      - integer
+                      - boolean
+                      - string
+                      - number
+                      - 'null'
                   - type: object
                     additionalProperties: false
                     required:
@@ -148,9 +152,36 @@ properties:
                       output:
                         type: string
                         pattern: ^[-_a-zA-Z0-9]+$
-                  - $ref: '#/definitions/nodeIODataTypes/filePath'
-                  - $ref: '#/definitions/nodeIODataTypes/filePathArray'
-                  - $ref: '#/definitions/nodeIODataTypes/downloadLink'
+                  - type: object
+                    additionalProperties: false
+                    required:
+                      - store
+                      - path
+                    properties:
+                      store:
+                        type:
+                          - string
+                          - integer
+                      dataset:
+                        type: string
+                      path:
+                        type: string
+                      label:
+                        type: string
+                      eTag:
+                        type: string
+                  - type: object
+                    additionalProperties: false
+                    required:
+                      - downloadLink
+                    properties:
+                      downloadLink:
+                        minLength: 1
+                        maxLength: 65536
+                        type: string
+                        format: uri
+                      label:
+                        type: string
           inputAccess:
             description: map with key - access level pairs
             type: object
@@ -179,9 +210,42 @@ properties:
             patternProperties:
               ^[-_a-zA-Z0-9]+$:
                 oneOf:
-                  - $ref: '#/definitions/nodeIODataTypes/basic'
-                  - $ref: '#/definitions/nodeIODataTypes/filePath'
-                  - $ref: '#/definitions/nodeIODataTypes/downloadLink'
+                  - type:
+                      - integer
+                      - boolean
+                      - string
+                      - number
+                      - 'null'
+                  - type: object
+                    additionalProperties: false
+                    required:
+                      - store
+                      - path
+                    properties:
+                      store:
+                        type:
+                          - string
+                          - integer
+                      dataset:
+                        type: string
+                      path:
+                        type: string
+                      label:
+                        type: string
+                      eTag:
+                        type: string
+                  - type: object
+                    additionalProperties: false
+                    required:
+                      - downloadLink
+                    properties:
+                      downloadLink:
+                        minLength: 1
+                        maxLength: 65536
+                        type: string
+                        format: uri
+                      label:
+                        type: string
           outputNode:
             type: boolean
             deprecated: true
@@ -420,52 +484,3 @@ properties:
     type: object
     title: Quality
     description: Object containing Quality Assessment related data
-definitions:
-  nodeIODataTypes:
-    basic:
-      type:
-        - integer
-        - boolean
-        - string
-        - number
-        - 'null'
-    basicArray:
-      type: array
-      items:
-        $ref: '#/definitions/nodeIODataTypes/basic'
-    filePath:
-      type: object
-      additionalProperties: false
-      required:
-        - store
-        - path
-      properties:
-        store:
-          type:
-            - string
-            - integer
-        dataset:
-          type: string
-        path:
-          type: string
-        label:
-          type: string
-        eTag:
-          type: string
-    filePathArray:
-      type: array
-      items:
-        $ref: '#/definitions/nodeIODataTypes/filePath'
-    downloadLink:
-      type: object
-      additionalProperties: false
-      required:
-        - downloadLink
-      properties:
-        downloadLink:
-          minLength: 1
-          maxLength: 65536
-          type: string
-          format: uri
-        label:
-          type: string
