@@ -124,7 +124,7 @@ class SimcoreServiceLabels(BaseModel):
         description="json encoded, determines where the outputs and inputs directories are",
     )
 
-    compose_spec: Json[ComposeSpecLabel] = Field(
+    compose_spec: Optional[Json[ComposeSpecLabel]] = Field(
         None,
         alias="simcore.service.compose-spec",
         description="json encoded docker-compose spec",
