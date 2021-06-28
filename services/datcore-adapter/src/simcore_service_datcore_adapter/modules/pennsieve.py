@@ -119,7 +119,16 @@ class PennsieveApiClient(BaseServiceClientApi):
                 f"/datasets/{dataset_id}/packageTypeCounts", headers=headers
             )
             response.raise_for_status()
-            num_packages = sum([v for v in response.json().values()])
+            num_packages = sum(response.json().values())
+
+            response = await self.client.get(
+                f"/datasets/{dataset_id}",
+                headers=headers,
+                params={"includePublishedDataset": False},
+            )
+            response.raise_for_status()
+            dataset_details = response.json()
+            base_path = Path(dataset_details["content"]["name"])
 
             all_packages: Dict[str, Dict[str, Any]] = {}
 
@@ -149,7 +158,7 @@ class PennsieveApiClient(BaseServiceClientApi):
                 if package["content"]["packageType"] == "Collection":
                     continue
 
-                file_path = _compute_file_path(all_packages, package)
+                file_path = base_path / _compute_file_path(all_packages, package)
 
                 file_meta_data.append(
                     FileMetaData(
