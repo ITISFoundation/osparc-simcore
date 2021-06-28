@@ -179,6 +179,7 @@
                         "number",
                         "null"
                       ]
+                    },
                     {
                       "type": "object",
                       "additionalProperties": false,
