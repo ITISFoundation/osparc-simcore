@@ -30,14 +30,14 @@ class DynamicSidecarStatus(str, Enum):
     FAILING = "failing"  # requests to the sidecar API are failing service should be cosnidered as unavailable
 
 
-class OverallStatus(BaseModel):
+class Status(BaseModel):
     """Generated from data from docker container inspect API"""
 
-    status: DynamicSidecarStatus = Field(..., description="status of the service")
+    current: DynamicSidecarStatus = Field(..., description="status of the service")
     info: str = Field(..., description="additional information for the user")
 
     def _update(self, new_status: DynamicSidecarStatus, new_info: str) -> None:
-        self.status = new_status
+        self.current = new_status
         self.info = new_info
 
     def update_ok_status(self, info: str) -> None:
@@ -46,13 +46,13 @@ class OverallStatus(BaseModel):
     def update_failing_status(self, info: str) -> None:
         self._update(DynamicSidecarStatus.FAILING, info)
 
-    def __eq__(self, other: "OverallStatus") -> bool:
-        return self.status == other.status and self.info == other.info
+    def __eq__(self, other: "Status") -> bool:
+        return self.current == other.current and self.info == other.info
 
     @classmethod
-    def make_initially_ok(cls) -> "OverallStatus":
+    def make_initially_ok(cls) -> "Status":
         # the service is initially ok when started
-        initial_state = cls(status=DynamicSidecarStatus.OK, info="")
+        initial_state = cls(current=DynamicSidecarStatus.OK, info="")
         return initial_state
 
 
@@ -89,8 +89,8 @@ class DockerContainerInspect(BaseModel):
 
 
 class DynamicSidecar(BaseModel):
-    overall_status: OverallStatus = Field(
-        OverallStatus.make_initially_ok(),
+    status: Status = Field(
+        Status.make_initially_ok(),
         description="status of the service sidecar also with additional information",
     )
 

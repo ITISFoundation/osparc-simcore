@@ -152,8 +152,7 @@ class ServicesInspect(MonitorEvent):
     @classmethod
     async def will_trigger(cls, app: FastAPI, monitor_data: MonitorData) -> bool:
         return (
-            monitor_data.dynamic_sidecar.overall_status.status
-            == DynamicSidecarStatus.OK
+            monitor_data.dynamic_sidecar.status.current == DynamicSidecarStatus.OK
             and monitor_data.dynamic_sidecar.is_available == True
         )
 
@@ -167,7 +166,7 @@ class ServicesInspect(MonitorEvent):
         )
         if containers_inspect is None:
             # this means that the service was degrated and we need to do something?
-            monitor_data.dynamic_sidecar.overall_status.update_failing_status(
+            monitor_data.dynamic_sidecar.status.update_failing_status(
                 f"Could not get containers_inspect for {monitor_data.service_name}. "
                 "Ask and admin to check director logs for details."
             )
@@ -184,8 +183,7 @@ class RunDockerComposeUp(MonitorEvent):
     @classmethod
     async def will_trigger(cls, app: FastAPI, monitor_data: MonitorData) -> bool:
         return (
-            monitor_data.dynamic_sidecar.overall_status.status
-            == DynamicSidecarStatus.OK
+            monitor_data.dynamic_sidecar.status.current == DynamicSidecarStatus.OK
             and monitor_data.dynamic_sidecar.is_available == True
             and monitor_data.dynamic_sidecar.compose_spec_submitted == False
         )

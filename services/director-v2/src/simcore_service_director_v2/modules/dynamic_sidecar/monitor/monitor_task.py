@@ -49,7 +49,7 @@ async def apply_monitoring(app: FastAPI, monitor_data: MonitorData) -> None:
     dynamic_services_settings: DynamicServicesSettings = (
         app.state.settings.dynamic_services
     )
-    initial_overall_status = deepcopy(monitor_data.dynamic_sidecar.overall_status)
+    initial_status = deepcopy(monitor_data.dynamic_sidecar.status)
 
     if (  # do not refactor, second part of "and condition" is skiped most times
         monitor_data.dynamic_sidecar.were_services_created
@@ -68,7 +68,7 @@ async def apply_monitoring(app: FastAPI, monitor_data: MonitorData) -> None:
 
     # if the service is not OK (for now failing) monitoring cycle will
     # be skipped. This will allow for others to debug it
-    if monitor_data.dynamic_sidecar.overall_status.status != DynamicSidecarStatus.OK:
+    if monitor_data.dynamic_sidecar.status.current != DynamicSidecarStatus.OK:
         message = (
             f"Service {monitor_data.service_name} is failing. Skipping monitoring.\n"
             f"Monitor data\n{monitor_data}"
@@ -89,11 +89,11 @@ async def apply_monitoring(app: FastAPI, monitor_data: MonitorData) -> None:
             await event.action(app, monitor_data)
 
     # check if the status of the services has changed from OK
-    if initial_overall_status != monitor_data.dynamic_sidecar.overall_status:
+    if initial_status != monitor_data.dynamic_sidecar.status:
         logger.info(
             "Service %s overall status changed to %s",
             monitor_data.service_name,
-            monitor_data.dynamic_sidecar.overall_status,
+            monitor_data.dynamic_sidecar.status,
         )
 
 
@@ -199,15 +199,12 @@ class DynamicSidecarsMonitor:
 
             # check if there was an error picked up by the monitor and marked this
             # service as failing
-            if (
-                monitor_data.dynamic_sidecar.overall_status.status
-                != DynamicSidecarStatus.OK
-            ):
+            if monitor_data.dynamic_sidecar.status.current != DynamicSidecarStatus.OK:
                 return RunningDynamicServiceDetails.from_monitoring_status(
                     node_uuid=node_uuid,
                     monitor_data=monitor_data,
                     service_state=ServiceState.FAILED,
-                    service_message=monitor_data.dynamic_sidecar.overall_status.info,
+                    service_message=monitor_data.dynamic_sidecar.status.info,
                 )
 
             dynamic_sidecar_settings: DynamicSidecarSettings = (
@@ -285,9 +282,7 @@ class DynamicSidecarsMonitor:
                     f"Monitoring of {service_name} failed:\n{traceback.format_exc()}"
                 )
                 logger.error(message)
-                monitor_data.dynamic_sidecar.overall_status.update_failing_status(
-                    message
-                )
+                monitor_data.dynamic_sidecar.status.update_failing_status(message)
             finally:
                 # when done, always unlock the resource
                 await lock_with_monitor_data.resource_lock.unlock_resource()
