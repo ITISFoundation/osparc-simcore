@@ -193,7 +193,7 @@ async def comp_tasks_listening_task(app: web.Application) -> None:
 
 
 async def setup_comp_tasks_listening_task(app: web.Application):
-    task = asyncio.get_event_loop().create_task(comp_tasks_listening_task(app))
+    task = asyncio.create_task(comp_tasks_listening_task(app))
     yield
     task.cancel()
     await task

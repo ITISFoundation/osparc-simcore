@@ -1,11 +1,11 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+
 import asyncio
 import json
 import time
 import unittest.mock as mock
-from asyncio import Future
 from copy import deepcopy
 from typing import Callable, Dict, Iterator, List, Optional, Tuple, Type, Union
 from unittest.mock import call
@@ -21,11 +21,11 @@ from models_library.projects_state import (
     ProjectLocked,
     ProjectRunningState,
     ProjectState,
+    ProjectStatus,
     RunningState,
 )
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import log_client_in
-from pytest_simcore.helpers.utils_mock import future_with_result
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib import async_utils
 from servicelib.application import create_safe_application
@@ -65,8 +65,9 @@ def client(
     aiohttp_client,
     app_cfg,
     postgres_db,
-    mocked_director_subsystem,
+    mocked_director_api,
     mock_orphaned_services,
+    redis_client,  # this ensure redis is properly cleaned
 ):
 
     # config app
@@ -102,32 +103,6 @@ def client(
     )
 
     # teardown here ...
-
-
-@pytest.fixture
-def mocks_on_projects_api(mocker, logged_user) -> None:
-    """
-    All projects in this module are UNLOCKED
-
-    Emulates that it found logged_user as the SOLE user of this project
-    and returns the  ProjectState indicating his as owner
-    """
-    nameparts = logged_user["name"].split(".") + [""]
-    state = ProjectState(
-        locked=ProjectLocked(
-            value=False,
-            owner=Owner(
-                user_id=logged_user["id"],
-                first_name=nameparts[0],
-                last_name=nameparts[1],
-            ),
-        ),
-        state=ProjectRunningState(value=RunningState.NOT_STARTED),
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects.projects_api._get_project_lock_state",
-        return_value=future_with_result(state),
-    )
 
 
 @pytest.fixture
@@ -279,7 +254,7 @@ async def _assert_get_same_project(
 
 async def _new_project(
     client,
-    expected_response: web.Response,
+    expected_response: web.HTTPException,
     logged_user: Dict[str, str],
     primary_group: Dict[str, str],
     *,
@@ -410,8 +385,8 @@ async def _open_project(
     client,
     client_id: str,
     project: Dict,
-    expected: Union[web.HTTPException, List[web.HTTPException]],
-) -> Optional[Tuple[Dict, Dict]]:
+    expected: Union[Type[web.HTTPException], List[Type[web.HTTPException]]],
+) -> Tuple[Dict, Dict]:
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
     resp = await client.post(url, json=client_id)
 
@@ -421,16 +396,17 @@ async def _open_project(
                 data, error = await assert_status(resp, e)
                 return data, error
             except AssertionError:
-                # re-raies if last item
+                # re-raise if last item
                 if e == expected[-1]:
                     raise
                 continue
     else:
-        return await assert_status(resp, expected)
+        data, error = await assert_status(resp, expected)
+        return data, error
 
 
 async def _close_project(
-    client, client_id: str, project: Dict, expected: web.HTTPException
+    client, client_id: str, project: Dict, expected: Type[web.HTTPException]
 ):
     url = client.app.router["close_project"].url_for(project_id=project["uuid"])
     resp = await client.post(url, json=client_id)
@@ -440,7 +416,7 @@ async def _close_project(
 async def _state_project(
     client,
     project: Dict,
-    expected: web.HTTPException,
+    expected: Type[web.HTTPException],
     expected_project_state: ProjectState,
 ):
     url = client.app.router["state_project"].url_for(project_id=project["uuid"])
@@ -455,10 +431,9 @@ async def _state_project(
 async def _assert_project_state_updated(
     handler: mock.Mock,
     shared_project: Dict,
-    expected_project_state: ProjectState,
-    num_calls: int,
+    expected_project_state_updates: List[ProjectState],
 ) -> None:
-    if num_calls == 0:
+    if not expected_project_state_updates:
         handler.assert_not_called()
     else:
         # wait for the calls
@@ -466,11 +441,11 @@ async def _assert_project_state_updated(
         MAX_WAITING_TIME = 15
         while time.monotonic() - now < MAX_WAITING_TIME:
             await asyncio.sleep(1)
-            if handler.call_count == num_calls:
+            if handler.call_count == len(expected_project_state_updates):
                 break
         if time.monotonic() - now > MAX_WAITING_TIME:
             pytest.fail(
-                f"waited more than {MAX_WAITING_TIME}s and got only {handler.call_count}/{num_calls} calls"
+                f"waited more than {MAX_WAITING_TIME}s and got only {handler.call_count}/{len(expected_project_state_updates)} calls"
             )
 
         calls = [
@@ -478,18 +453,19 @@ async def _assert_project_state_updated(
                 json.dumps(
                     {
                         "project_uuid": shared_project["uuid"],
-                        "data": expected_project_state.dict(
-                            by_alias=True, exclude_unset=True
-                        ),
+                        "data": p_state.dict(by_alias=True, exclude_unset=True),
                     }
                 )
             )
-        ] * num_calls
+            for p_state in expected_project_state_updates
+        ]
         handler.assert_has_calls(calls)
         handler.reset_mock()
 
 
-async def _delete_project(client, project: Dict, expected: web.Response) -> None:
+async def _delete_project(
+    client, project: Dict, expected: Type[web.HTTPException]
+) -> None:
     url = client.app.router["delete_project"].url_for(project_id=project["uuid"])
     assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
     resp = await client.delete(url)
@@ -516,7 +492,7 @@ async def test_share_project(
     user_role: UserRole,
     expected: ExpectedResponse,
     storage_subsystem_mock,
-    mocked_director_subsystem,
+    mocked_director_api,
     catalog_subsystem_mock,
     share_rights: Dict,
     project_db_cleaner,
@@ -590,7 +566,7 @@ async def test_open_project(
     user_project,
     client_session_id_factory: Callable,
     expected,
-    mocked_director_subsystem,
+    mocked_director_api,
 ):
     # POST /v0/projects/{project_id}:open
     # open project
@@ -616,7 +592,7 @@ async def test_open_project(
                     user_id=logged_user["id"],
                 )
             )
-        mocked_director_subsystem["start_service"].assert_has_calls(calls)
+        mocked_director_api["start_service"].assert_has_calls(calls)
 
 
 @pytest.mark.parametrize(*standard_role_response())
@@ -626,15 +602,13 @@ async def test_close_project(
     user_project,
     client_session_id_factory: Callable,
     expected,
-    mocked_director_subsystem,
+    mocked_director_api,
     fake_services,
 ):
     # POST /v0/projects/{project_id}:close
     fakes = fake_services(5)
     assert len(fakes) == 5
-    mocked_director_subsystem[
-        "get_running_interactive_services"
-    ].return_value = future_with_result(fakes)
+    mocked_director_api["get_running_interactive_services"].return_value = fakes
 
     # open project
     client_id = client_session_id_factory()
@@ -642,24 +616,42 @@ async def test_close_project(
     resp = await client.post(url, json=client_id)
 
     if resp.status == web.HTTPOk.status_code:
-        calls = [
-            call(client.server.app, user_project["uuid"], logged_user["id"]),
-        ]
-        mocked_director_subsystem["get_running_interactive_services"].has_calls(calls)
-        mocked_director_subsystem["get_running_interactive_services"].reset_mock()
+        mocked_director_api["get_running_interactive_services"].assert_any_call(
+            client.server.app, logged_user["id"], user_project["uuid"]
+        )
+        mocked_director_api["get_running_interactive_services"].reset_mock()
 
     # close project
     url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
     await assert_status(resp, expected.no_content)
+
     if resp.status == web.HTTPNoContent.status_code:
+        # These checks are after a fire&forget, so we wait a moment
+        await asyncio.sleep(2)
+
         calls = [
-            call(client.server.app, user_project["uuid"], None),
-            call(client.server.app, user_project["uuid"], logged_user["id"]),
+            # call(client.server.app, user_id=None, project_id=user_project["uuid"]), <-- FIXME: SAN?? I had to comment this. Still valid? Looking at project_handler.py: _close_project_task, it does not seem the case.
+            call(
+                client.server.app,
+                user_id=logged_user["id"],
+                project_id=user_project["uuid"],
+            ),
         ]
-        mocked_director_subsystem["get_running_interactive_services"].has_calls(calls)
-        calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
-        mocked_director_subsystem["stop_service"].has_calls(calls)
+        mocked_director_api["get_running_interactive_services"].assert_has_calls(calls)
+
+        calls = [
+            call(
+                # app=
+                client.server.app,
+                # service_uuid=
+                service["service_uuid"],
+                # save_state=
+                True,
+            )
+            for service in fakes
+        ]
+        mocked_director_api["stop_service"].assert_has_calls(calls)
 
 
 @pytest.mark.parametrize(
@@ -678,7 +670,7 @@ async def test_get_active_project(
     client_session_id_factory: Callable,
     expected,
     socketio_client_factory: Callable,
-    mocked_director_subsystem,
+    mocked_director_api,
 ):
     # login with socket using client session id
     client_id1 = client_session_id_factory()
@@ -758,16 +750,15 @@ async def test_project_node_lifetime(
     create_exp,
     get_exp,
     deletion_exp,
-    mocked_director_subsystem,
+    mocked_director_api,
     storage_subsystem_mock,
     mocker,
 ):
 
     mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
         "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project_node",
-        return_value=Future(),
+        return_value="",
     )
-    mock_storage_api_delete_data_folders_of_project_node.return_value.set_result("")
 
     # create a new dynamic node...
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
@@ -776,31 +767,30 @@ async def test_project_node_lifetime(
     data, errors = await assert_status(resp, create_exp)
     node_id = "wrong_node_id"
     if resp.status == web.HTTPCreated.status_code:
-        mocked_director_subsystem["start_service"].assert_called_once()
+        mocked_director_api["start_service"].assert_called_once()
         assert "node_id" in data
         node_id = data["node_id"]
     else:
-        mocked_director_subsystem["start_service"].assert_not_called()
+        mocked_director_api["start_service"].assert_not_called()
+
     # create a new NOT dynamic node...
-    mocked_director_subsystem["start_service"].reset_mock()
+    mocked_director_api["start_service"].reset_mock()
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {"service_key": "some/notdynamic/key", "service_version": "1.3.4"}
     resp = await client.post(url, json=body)
     data, errors = await assert_status(resp, create_exp)
     node_id_2 = "wrong_node_id"
     if resp.status == web.HTTPCreated.status_code:
-        mocked_director_subsystem["start_service"].assert_not_called()
+        mocked_director_api["start_service"].assert_not_called()
         assert "node_id" in data
         node_id_2 = data["node_id"]
     else:
-        mocked_director_subsystem["start_service"].assert_not_called()
+        mocked_director_api["start_service"].assert_not_called()
 
     # get the node state
-    mocked_director_subsystem[
-        "get_running_interactive_services"
-    ].return_value = future_with_result(
-        [{"service_uuid": node_id, "service_state": "running"}]
-    )
+    mocked_director_api["get_running_interactive_services"].return_value = [
+        {"service_uuid": node_id, "service_state": "running"}
+    ]
     url = client.app.router["get_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
@@ -811,9 +801,7 @@ async def test_project_node_lifetime(
         assert data["service_state"] == "running"
 
     # get the NOT dynamic node state
-    mocked_director_subsystem[
-        "get_running_interactive_services"
-    ].return_value = future_with_result("")
+    mocked_director_api["get_running_interactive_services"].return_value = []
 
     url = client.app.router["get_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id_2
@@ -825,23 +813,23 @@ async def test_project_node_lifetime(
         assert data["service_state"] == "idle"
 
     # delete the node
-    mocked_director_subsystem[
-        "get_running_interactive_services"
-    ].return_value = future_with_result([{"service_uuid": node_id}])
+    mocked_director_api["get_running_interactive_services"].return_value = [
+        {"service_uuid": node_id}
+    ]
     url = client.app.router["delete_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
     resp = await client.delete(url)
     data, errors = await assert_status(resp, deletion_exp)
     if resp.status == web.HTTPNoContent.status_code:
-        mocked_director_subsystem["stop_service"].assert_called_once()
+        mocked_director_api["stop_service"].assert_called_once()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
     else:
-        mocked_director_subsystem["stop_service"].assert_not_called()
+        mocked_director_api["stop_service"].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
 
     # delete the NOT dynamic node
-    mocked_director_subsystem["stop_service"].reset_mock()
+    mocked_director_api["stop_service"].reset_mock()
     mock_storage_api_delete_data_folders_of_project_node.reset_mock()
     # mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id}])
     url = client.app.router["delete_node"].url_for(
@@ -850,10 +838,10 @@ async def test_project_node_lifetime(
     resp = await client.delete(url)
     data, errors = await assert_status(resp, deletion_exp)
     if resp.status == web.HTTPNoContent.status_code:
-        mocked_director_subsystem["stop_service"].assert_not_called()
+        mocked_director_api["stop_service"].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
     else:
-        mocked_director_subsystem["stop_service"].assert_not_called()
+        mocked_director_api["stop_service"].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
 
 
@@ -975,41 +963,45 @@ async def test_open_shared_project_2_users_locked(
         client_id1,
         {SOCKET_IO_PROJECT_UPDATED_EVENT: mock_project_state_updated_handler},
     )
-    expected_project_state = ProjectState(
-        locked={"value": False},
+    # expected is that the project is closed and unlocked
+    expected_project_state_client_1 = ProjectState(
+        locked=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     )
-    await _state_project(
-        client_1,
-        shared_project,
-        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
-        expected_project_state,
-    )
+    for client_id in [client_id1, None]:
+        await _state_project(
+            client_1,
+            shared_project,
+            expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+            expected_project_state_client_1,
+        )
     await _open_project(
         client_1,
         client_id1,
         shared_project,
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
     )
-    expected_project_state.locked.value = True
-    expected_project_state.locked.owner = Owner(
+    # now the expected result is that the project is locked and opened by client 1
+    owner1 = Owner(
         user_id=logged_user["id"],
         first_name=(logged_user["name"].split(".") + [""])[0],
         last_name=(logged_user["name"].split(".") + [""])[1],
     )
+    expected_project_state_client_1.locked.value = True
+    expected_project_state_client_1.locked.status = ProjectStatus.OPENED
+    expected_project_state_client_1.locked.owner = owner1
     # NOTE: there are 2 calls since we are part of the primary group and the all group
     await _assert_project_state_updated(
         mock_project_state_updated_handler,
         shared_project,
-        expected_project_state,
-        0 if user_role == UserRole.ANONYMOUS else 2,
+        [expected_project_state_client_1]
+        * (0 if user_role == UserRole.ANONYMOUS else 2),
     )
-
     await _state_project(
         client_1,
         shared_project,
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
-        expected_project_state,
+        expected_project_state_client_1,
     )
 
     # 2. create a separate client now and log in user2, try to open the same shared project
@@ -1029,37 +1021,57 @@ async def test_open_shared_project_2_users_locked(
         shared_project,
         expected.locked if user_role != UserRole.GUEST else HTTPLocked,
     )
+    expected_project_state_client_2 = deepcopy(expected_project_state_client_1)
+    expected_project_state_client_2.locked.status = ProjectStatus.OPENED
+
     await _state_project(
         client_2,
         shared_project,
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
-        expected_project_state,
+        expected_project_state_client_2,
     )
 
     # 3. user 1 closes the project
     await _close_project(client_1, client_id1, shared_project, expected.no_content)
     if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
         # Guests cannot close projects
-        expected_project_state = ProjectState(
-            locked=ProjectLocked(value=False),
+        expected_project_state_client_1 = ProjectState(
+            locked=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
             state=ProjectRunningState(value=RunningState.NOT_STARTED),
         )
 
     # we should receive an event that the project lock state changed
-    # NOTE: there are 3 calls since we are part of the primary group and the all group and user 2 is part of the all group
+    # NOTE: there are 2x3 calls since we are part of the primary group and the all group and user 2 is part of the all group
+    # first CLOSING, then CLOSED
     await _assert_project_state_updated(
         mock_project_state_updated_handler,
         shared_project,
-        expected_project_state,
-        0
-        if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
-        else 3,
+        [
+            expected_project_state_client_1.copy(
+                update={
+                    "locked": ProjectLocked(
+                        value=True, status=ProjectStatus.CLOSING, owner=owner1
+                    )
+                }
+            )
+        ]
+        * (
+            0
+            if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
+            else 3
+        )
+        + [expected_project_state_client_1]
+        * (
+            0
+            if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
+            else 3
+        ),
     )
     await _state_project(
         client_1,
         shared_project,
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
-        expected_project_state,
+        expected_project_state_client_1,
     )
 
     # 4. user 2 now should be able to open the project
@@ -1070,26 +1082,33 @@ async def test_open_shared_project_2_users_locked(
         expected.ok if user_role != UserRole.GUEST else HTTPLocked,
     )
     if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
-        expected_project_state.locked.value = True
-        expected_project_state.locked.owner = Owner(
+        expected_project_state_client_2.locked.value = True
+        expected_project_state_client_2.locked.status = ProjectStatus.OPENED
+        owner2 = Owner(
             user_id=user_2["id"],
             first_name=(user_2["name"].split(".") + [""])[0],
             last_name=(user_2["name"].split(".") + [""])[1],
         )
+        expected_project_state_client_2.locked.owner = owner2
+        expected_project_state_client_1.locked.value = True
+        expected_project_state_client_1.locked.status = ProjectStatus.OPENED
+        expected_project_state_client_1.locked.owner = owner2
     # NOTE: there are 3 calls since we are part of the primary group and the all group
     await _assert_project_state_updated(
         mock_project_state_updated_handler,
         shared_project,
-        expected_project_state,
-        0
-        if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
-        else 3,
+        [expected_project_state_client_1]
+        * (
+            0
+            if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
+            else 3
+        ),
     )
     await _state_project(
         client_1,
         shared_project,
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
-        expected_project_state,
+        expected_project_state_client_1,
     )
 
 

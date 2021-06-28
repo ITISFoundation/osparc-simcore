@@ -1,12 +1,22 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import re
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import pytest
-from aioresponses import aioresponses
+from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
 from models_library.projects_state import RunningState
 from yarl import URL
+
+# WARNING: any request done through the client will go through aioresponses. It is
+# unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
+# Other than that it seems to behave nicely
+PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1", "ws://"]
+
 
 # The adjacency list is defined as a dictionary with the key to the node and its list of successors
 FULL_PROJECT_PIPELINE_ADJACENCY: Dict[str, List[str]] = {
@@ -21,7 +31,7 @@ FULL_PROJECT_PIPELINE_ADJACENCY: Dict[str, List[str]] = {
     "e83a359a-1efe-41d3-83aa-a285afbfaf12": [],
 }
 
-FULL_PROJECT_NODE_STATES: Dict[str, Dict[str, str]] = {
+FULL_PROJECT_NODE_STATES: Dict[str, Dict[str, Any]] = {
     "62bca361-8594-48c8-875e-b8577e868aec": {"modified": True, "dependencies": []},
     "e0d7a1a5-0700-42c7-b033-97f72ac4a5cd": {
         "modified": True,
@@ -44,6 +54,25 @@ FULL_PROJECT_NODE_STATES: Dict[str, Dict[str, str]] = {
         ],
     },
 }
+
+
+@pytest.fixture
+def aioresponses_mocker() -> AioResponsesMock:
+    """Generick aioresponses mock
+
+    SEE https://github.com/pnuckowski/aioresponses
+
+    Usage
+
+        async def test_this(aioresponses_mocker):
+            aioresponses_mocker.get("https://foo.io")
+
+            async with aiohttp.ClientSession() as session:
+                async with session.get("https://foo.aio") as response:
+                    assert response.status == 200
+    """
+    with AioResponsesMock(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
+        yield mock
 
 
 def creation_cb(url, **kwargs) -> CallbackResult:
@@ -113,14 +142,10 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
 
 
 @pytest.fixture
-async def director_v2_service_mock() -> aioresponses:
-
-    """uses aioresponses to mock all calls of an aiohttpclient
-    WARNING: any request done through the client will go through aioresponses. It is
-    unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
-    Other than that it seems to behave nicely
-    """
-    PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1", "ws://"]
+async def director_v2_service_mock(
+    aioresponses_mocker: AioResponsesMock,
+) -> AioResponsesMock:
+    """mocks responses of director-v2"""
     create_computation_pattern = re.compile(
         r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations$"
     )
@@ -132,37 +157,33 @@ async def director_v2_service_mock() -> aioresponses:
         r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations/.*:stop$"
     )
     delete_computation_pattern = get_computation_pattern
-    with aioresponses(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
-        mock.post(
-            create_computation_pattern,
-            callback=creation_cb,
-            repeat=True,
-        )
-        mock.post(
-            stop_computation_pattern,
-            status=204,
-            repeat=True,
-        )
-        mock.get(
-            get_computation_pattern,
-            status=202,
-            callback=get_computation_cb,
-            repeat=True,
-        )
-        mock.delete(delete_computation_pattern, status=204, repeat=True)
 
-        yield mock
+    aioresponses_mocker.post(
+        create_computation_pattern,
+        callback=creation_cb,
+        repeat=True,
+    )
+    aioresponses_mocker.post(
+        stop_computation_pattern,
+        status=204,
+        repeat=True,
+    )
+    aioresponses_mocker.get(
+        get_computation_pattern,
+        status=202,
+        callback=get_computation_cb,
+        repeat=True,
+    )
+    aioresponses_mocker.delete(delete_computation_pattern, status=204, repeat=True)
+
+    return aioresponses_mocker
 
 
 @pytest.fixture
-async def storage_v0_service_mock() -> aioresponses:
-
-    """uses aioresponses to mock all calls of an aiohttpclient
-    WARNING: any request done through the client will go through aioresponses. It is
-    unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
-    Other than that it seems to behave nicely
-    """
-    PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1", "ws://"]
+async def storage_v0_service_mock(
+    aioresponses_mocker: AioResponsesMock,
+) -> AioResponsesMock:
+    """mocks responses of storage API"""
 
     def get_download_link_cb(url: URL, **kwargs) -> CallbackResult:
         file_id = url.path.rsplit("/files/")[1]
@@ -179,11 +200,12 @@ async def storage_v0_service_mock() -> aioresponses:
         r"^http://[a-z\-_]*storage:[0-9]+/v0/locations.*$"
     )
 
-    with aioresponses(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
-        mock.get(get_download_link_pattern, callback=get_download_link_cb, repeat=True)
-        mock.get(
-            get_locations_link_pattern,
-            status=200,
-            payload={"data": [{"name": "simcore.s3", "id": "0"}]},
-        )
-        yield mock
+    aioresponses_mocker.get(
+        get_download_link_pattern, callback=get_download_link_cb, repeat=True
+    )
+    aioresponses_mocker.get(
+        get_locations_link_pattern,
+        status=200,
+        payload={"data": [{"name": "simcore.s3", "id": "0"}]},
+    )
+    return aioresponses_mocker

@@ -97,7 +97,8 @@ def run_docker_compose_config(
     - All environments are interpolated from a custom env-file at 'env_file_path'
     - Saves resolved output config to 'destination_path' (if given)
     """
-    if not isinstance(docker_compose_paths, List):
+
+    if not isinstance(docker_compose_paths, list):
         docker_compose_paths = [
             docker_compose_paths,
         ]

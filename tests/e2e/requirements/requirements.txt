@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
-certifi==2020.12.5
+certifi==2021.5.30
     # via requests
 chardet==4.0.0
     # via requests
@@ -19,14 +19,12 @@ pyyaml==5.4.1
 requests==2.25.1
     # via docker
 six==1.16.0
-    # via
-    #   tenacity
-    #   websocket-client
+    # via tenacity
 tenacity==7.0.0
     # via -r requirements.in
-urllib3==1.26.4
+urllib3==1.26.5
     # via
     #   -c ../../../requirements/constraints.txt
     #   requests
-websocket-client==0.59.0
+websocket-client==1.1.0
     # via docker

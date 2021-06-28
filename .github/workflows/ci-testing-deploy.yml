@@ -39,7 +39,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -73,7 +73,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -120,7 +120,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -173,6 +173,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        # KEEP 3.6 Development of this service is frozen
         python: [3.6]
         os: [ubuntu-20.04]
       fail-fast: false
@@ -220,7 +221,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -271,7 +272,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -313,12 +314,59 @@ jobs:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
+  unit-test-dask-sidecar:
+    name: "[unit] dask-sidecar"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-dask-sidecar-${{ hashFiles('services/dask-sidecar/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-dask-sidecar-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install
+        run: ./ci/github/unit-testing/dask-sidecar.bash install
+      - name: test
+        run: ./ci/github/unit-testing/dask-sidecar.bash test
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
   unit-test-dynamic-sidecar:
     name: "[unit] dynamic-sidecar"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -395,7 +443,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8, 3.9]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -429,7 +477,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -477,7 +525,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -524,7 +572,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -571,7 +619,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -618,7 +666,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -665,7 +713,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -712,7 +760,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -760,7 +808,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -808,7 +856,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -856,7 +904,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -904,7 +952,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -947,12 +995,12 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-05:
-    timeout-minutes: 15 # if this timeout gets too small, then split the tests
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 05"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1000,7 +1048,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1048,7 +1096,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1096,7 +1144,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1144,7 +1192,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1192,7 +1240,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1269,7 +1317,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1333,7 +1381,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1397,7 +1445,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1461,7 +1509,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1525,7 +1573,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1589,7 +1637,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1634,7 +1682,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1679,7 +1727,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         node: [14]
         os: [ubuntu-20.04]
       fail-fast: false
@@ -1756,7 +1804,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1802,6 +1850,7 @@ jobs:
         unit-test-director-v2,
         unit-test-sidecar,
         unit-test-dynamic-sidecar,
+        unit-test-dask-sidecar,
         unit-test-service-integration,
         unit-test-service-library,
         unit-test-models-library,
@@ -1857,6 +1906,7 @@ jobs:
         unit-test-director-v2,
         unit-test-sidecar,
         unit-test-dynamic-sidecar,
+        unit-test-dask-sidecar,
         unit-test-frontend,
         unit-test-python-linting,
         unit-test-service-integration,

@@ -49,7 +49,7 @@ async def redis_service(redis_config: RedisConfig, monkeypatch) -> RedisConfig:
     return redis_config
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 async def redis_client(loop, redis_config: RedisConfig) -> Iterator[aioredis.Redis]:
     client = await aioredis.create_redis_pool(redis_config.dsn, encoding="utf-8")
 

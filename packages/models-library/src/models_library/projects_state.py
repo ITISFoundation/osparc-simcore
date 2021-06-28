@@ -5,13 +5,18 @@
 from enum import Enum, unique
 from typing import Optional
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Extra, Field, validator
 
 from .projects_access import Owner
 
 
 @unique
 class RunningState(str, Enum):
+    """State of execution of a project's computational workflow
+
+    SEE StateType for task state
+    """
+
     UNKNOWN = "UNKNOWN"
     PUBLISHED = "PUBLISHED"
     NOT_STARTED = "NOT_STARTED"
@@ -29,14 +34,60 @@ class DataState(str, Enum):
     OUTDATED = "OUTDATED"
 
 
+@unique
+class ProjectStatus(str, Enum):
+    CLOSED = "CLOSED"
+    CLOSING = "CLOSING"
+    CLONING = "CLONING"
+    EXPORTING = "EXPORTING"
+    OPENING = "OPENING"
+    OPENED = "OPENED"
+
+
 class ProjectLocked(BaseModel):
-    value: bool = Field(
-        ..., description="True if the project is locked by another user"
+    value: bool = Field(..., description="True if the project is locked")
+    owner: Optional[Owner] = Field(
+        None, description="If locked, the user that owns the lock"
     )
-    owner: Optional[Owner] = Field(None, description="The user that owns the lock")
+    status: ProjectStatus = Field(..., description="The status of the project")
 
     class Config:
         extra = Extra.forbid
+        use_enum_values = True
+        schema_extra = {
+            "examples": [
+                {"value": False, "status": ProjectStatus.CLOSED},
+                {
+                    "value": True,
+                    "status": ProjectStatus.OPENED,
+                    "owner": {
+                        "user_id": 123,
+                        "first_name": "Johnny",
+                        "last_name": "Cash",
+                    },
+                },
+            ]
+        }
+
+    @validator("owner", pre=True, always=True)
+    @classmethod
+    def check_not_null(v, values):
+        if values["value"] is True and v is None:
+            raise ValueError("value cannot be None when project is locked")
+        return v
+
+    @validator("status", always=True)
+    @classmethod
+    def check_status_compatible(v, values):
+        if values["value"] is False and v not in ["CLOSED", "OPENED"]:
+            raise ValueError(
+                f"status is set to {v} and lock is set to {values['value']}!"
+            )
+        if values["value"] is True and v == "CLOSED":
+            raise ValueError(
+                f"status is set to {v} and lock is set to {values['value']}!"
+            )
+        return v
 
 
 class ProjectRunningState(BaseModel):

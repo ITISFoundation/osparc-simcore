@@ -46,7 +46,7 @@ class Settings(BaseCustomSettings):
     # ----
 
     @classmethod
-    def create_from_env(cls) -> "Settings":
+    def create_from_envs(cls) -> "Settings":
         cls.set_defaults_with_default_constructors(
             [
                 ("STORAGE_POSTGRES", PostgresSettings),

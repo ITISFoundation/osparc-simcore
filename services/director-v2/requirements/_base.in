@@ -4,10 +4,6 @@
 # NOTE: ALL version constraints MUST be commented
 -c ../../../requirements/constraints.txt
 
-async-exit-stack; python_version < '3.7'
-async-generator ; python_version < '3.7'
-dataclasses ; python_version < '3.7'
-
 # fastapi and extensions
 fastapi[all]
 

@@ -1,16 +1,18 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=no-value-for-parameter
-# pylint:disable=redefined-outer-name
+# pylint: disable=no-value-for-parameter
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import asyncio
 import datetime
 import json
 import re
+import sys
 from copy import deepcopy
 from itertools import combinations
 from random import randint
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID, uuid5
 
 import pytest
@@ -118,12 +120,10 @@ def all_permission_combinations() -> List[str]:
     return res
 
 
-@pytest.mark.parametrize("project_access_rights", [e for e in ProjectAccessRights])
 @pytest.mark.parametrize("wanted_permissions", all_permission_combinations())
 def test_check_project_permissions(
     user_id: int,
     group_id: int,
-    project_access_rights: ProjectAccessRights,
     wanted_permissions: str,
 ):
     project = {"access_rights": {}}
@@ -139,7 +139,7 @@ def test_check_project_permissions(
 
     def _project_access_rights_from_permissions(
         permissions: str, invert: bool = False
-    ) -> ProjectAccessRights:
+    ) -> Dict[str, bool]:
         access_rights = {}
         for p in ["read", "write", "delete"]:
             access_rights[p] = (
@@ -240,7 +240,8 @@ def _create_project_db(client: TestClient) -> ProjectDBAPI:
     assert APP_PROJECT_DBAPI in client.app
     db_api = client.app[APP_PROJECT_DBAPI]
     assert db_api
-    # pylint:disable=protected-access
+    assert isinstance(db_api, ProjectDBAPI)
+
     assert db_api._app == client.app
     assert db_api._engine
     return db_api
@@ -250,16 +251,10 @@ async def test_setup_projects_db(client: TestClient):
     _create_project_db(client)
 
 
-def test_project_db_engine_creation(postgres_db: sa.engine.Engine):
-    db_api = ProjectDBAPI.init_from_engine(postgres_db)
-    # pylint:disable=protected-access
-    assert db_api._app == {}
-    assert db_api._engine == postgres_db
-
-
 @pytest.fixture()
-async def db_api(client: TestClient, postgres_db: sa.engine.Engine) -> ProjectDBAPI:
+def db_api(client: TestClient, postgres_db: sa.engine.Engine) -> ProjectDBAPI:
     db_api = _create_project_db(client)
+
     yield db_api
 
     # clean the projects
@@ -294,7 +289,7 @@ def _assert_added_project(
 def _assert_project_db_row(
     postgres_db: sa.engine.Engine, project: Dict[str, Any], **kwargs
 ):
-    row: RowProxy = postgres_db.execute(
+    row: Optional[RowProxy] = postgres_db.execute(
         f"SELECT * FROM projects WHERE \"uuid\"='{project['uuid']}'"
     ).fetchone()
 
@@ -532,6 +527,7 @@ async def test_patch_user_project_workbench_concurrently(
     _NUMBER_OF_NODES = number_of_nodes
     BASE_UUID = UUID("ccc0839f-93b8-4387-ab16-197281060927")
     node_uuids = [str(uuid5(BASE_UUID, f"{n}")) for n in range(_NUMBER_OF_NODES)]
+
     # create a project with a lot of nodes
     fake_project["workbench"] = {
         node_uuids[n]: {
@@ -541,7 +537,7 @@ async def test_patch_user_project_workbench_concurrently(
         }
         for n in range(_NUMBER_OF_NODES)
     }
-    exp_project = deepcopy(fake_project)
+    expected_project = deepcopy(fake_project)
 
     # add the project
     original_project = deepcopy(fake_project)
@@ -571,8 +567,9 @@ async def test_patch_user_project_workbench_concurrently(
         for n in range(_NUMBER_OF_NODES)
     ]
     for n in range(_NUMBER_OF_NODES):
-        exp_project["workbench"][node_uuids[n]].update(randomly_created_outputs[n])
-    patched_projects: List[
+        expected_project["workbench"][node_uuids[n]].update(randomly_created_outputs[n])
+
+    patched_projects: Tuple[
         Tuple[Dict[str, Any], Dict[str, Any]]
     ] = await asyncio.gather(
         *[
@@ -602,7 +599,7 @@ async def test_patch_user_project_workbench_concurrently(
     # check the nodes are completely patched as expected
     _assert_project_db_row(
         postgres_db,
-        exp_project,
+        expected_project,
         prj_owner=logged_user["id"],
         access_rights={
             str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
@@ -613,10 +610,9 @@ async def test_patch_user_project_workbench_concurrently(
 
     # now concurrently remove the outputs
     for n in range(_NUMBER_OF_NODES):
-        exp_project["workbench"][node_uuids[n]]["outputs"] = {}
-    patched_projects: List[
-        Tuple[Dict[str, Any], Dict[str, Any]]
-    ] = await asyncio.gather(
+        expected_project["workbench"][node_uuids[n]]["outputs"] = {}
+
+    patched_projects = await asyncio.gather(
         *[
             db_api.patch_user_project_workbench(
                 {node_uuids[n]: {"outputs": {}}},
@@ -635,7 +631,7 @@ async def test_patch_user_project_workbench_concurrently(
     # check the nodes are completely patched as expected
     _assert_project_db_row(
         postgres_db,
-        exp_project,
+        expected_project,
         prj_owner=logged_user["id"],
         access_rights={
             str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
@@ -646,10 +642,9 @@ async def test_patch_user_project_workbench_concurrently(
 
     # now concurrently remove the outputs
     for n in range(_NUMBER_OF_NODES):
-        exp_project["workbench"][node_uuids[n]]["outputs"] = {}
-    patched_projects: List[
-        Tuple[Dict[str, Any], Dict[str, Any]]
-    ] = await asyncio.gather(
+        expected_project["workbench"][node_uuids[n]]["outputs"] = {}
+
+    patched_projects = await asyncio.gather(
         *[
             db_api.patch_user_project_workbench(
                 {node_uuids[n]: {"outputs": {}}},
@@ -668,7 +663,7 @@ async def test_patch_user_project_workbench_concurrently(
     # check the nodes are completely patched as expected
     _assert_project_db_row(
         postgres_db,
-        exp_project,
+        expected_project,
         prj_owner=logged_user["id"],
         access_rights={
             str(primary_group["gid"]): {"read": True, "write": True, "delete": True}

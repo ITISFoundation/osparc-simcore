@@ -66,16 +66,34 @@ services:
       - ../packages:/devel/packages
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment:
-      # force to start as cpu mode otherwise it will boot in gpu mode in development
-      - START_AS_MODE_CPU=1
-      - SC_BOOT_MODE=debug-ptvsd
-      - SIDECAR_LOGLEVEL=DEBUG
+      &dev-sidecar-environment # force to start as cpu mode otherwise it will boot in gpu mode in development
+      START_AS_MODE_CPU: 1
+      SC_BOOT_MODE: debug-ptvsd
+      SIDECAR_LOGLEVEL: DEBUG
     ports:
       - "3002:3000"
-    deploy:
-      # NOTE: Allows 3002 to be exposed for ptvsd
+    deploy: &dev-sidecar-deploy
       endpoint_mode: vip
       replicas: 1
+
+  dask-sidecar:
+    volumes: &dev-dask-sidecar-volumes
+      - ./dask-sidecar:/devel/services/dask-sidecar
+      - ./sidecar:/devel/services/sidecar
+      - ./storage/client-sdk:/devel/services/storage/client-sdk
+      - ../packages:/devel/packages
+      - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
+    environment:
+      <<: *dev-sidecar-environment
+    ports:
+      - "3000"
+    deploy: *dev-sidecar-deploy
+
+  dask-scheduler:
+    volumes: *dev-dask-sidecar-volumes
+    ports:
+      - "3000"
+    deploy: *dev-sidecar-deploy
 
   # adding a separate worker to handling GPU mode for development
   # in production the sidecar autodetects its hardware and start either in MPI, CPU or GPU mode
