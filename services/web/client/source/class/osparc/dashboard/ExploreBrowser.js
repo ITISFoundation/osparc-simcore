@@ -463,7 +463,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __getPermissionsMenuButton: function(studyData) {
-      const isCurrentUserOwner = this.__isUserOwner(studyData);
+      const isCurrentUserOwner = this.__isUserAnyServiceVersionOwner(studyData);
       if (!isCurrentUserOwner && osparc.utils.Resources.isTemplate(studyData)) {
         return null;
       }
@@ -511,7 +511,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __getDeleteTemplateMenuButton: function(studyData) {
-      const isCurrentUserOwner = this.__isUserOwner(studyData);
+      const isCurrentUserOwner = this.__isUserTemplateOwner(studyData);
       if (!isCurrentUserOwner) {
         return null;
       }
@@ -693,10 +693,15 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       return new osparc.ui.window.Confirmation(msg);
     },
 
-    __isUserOwner: function(studyData) {
+    __isUserTemplateOwner: function(studyData) {
       if (osparc.utils.Resources.isTemplate(studyData)) {
         return osparc.data.model.Study.isOwner(studyData);
-      } else if (osparc.utils.Resources.isService(studyData)) {
+      }
+      return false;
+    },
+
+    __isUserAnyServiceVersionOwner: function(studyData) {
+      if (osparc.utils.Resources.isService(studyData)) {
         const myEmail = osparc.auth.Data.getInstance().getEmail();
         return studyData.owner === myEmail;
       }
