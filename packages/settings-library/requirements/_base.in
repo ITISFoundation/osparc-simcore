@@ -1,0 +1,10 @@
+#
+# Specifies third-party dependencies for 'models-library'
+#
+-c ../../../requirements/constraints.txt
+
+pydantic
+
+
+# extra
+typer
