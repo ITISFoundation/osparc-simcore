@@ -96,7 +96,7 @@ qx.Class.define("osparc.component.permissions.Service", {
       const versionsBox = this.__versionsBox = new osparc.ui.toolbar.SelectBox();
       hBox.add(versionsBox);
 
-      this.__populateVersions();
+      this.__populateOwnedVersions();
 
       // disable access giving options for non owners
       this.setEnabled(this._isUserOwner());
@@ -125,11 +125,12 @@ qx.Class.define("osparc.component.permissions.Service", {
       return hBox;
     },
 
-    __populateVersions: function() {
+    __populateOwnedVersions: function() {
       const store = osparc.store.Store.getInstance();
       store.getServicesDAGs(false)
         .then(services => {
-          const versions = osparc.utils.Services.getVersions(services, this._serializedData["key"]);
+          const myEmail = osparc.auth.Data.getInstance().getEmail();
+          const versions = osparc.utils.Services.getOwnedServices(services, this._serializedData["key"], myEmail);
           const selectBox = this.__versionsBox;
           versions.reverse();
           let item = null;

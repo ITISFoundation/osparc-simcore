@@ -28,6 +28,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
   members: {
     __servicesContainer: null,
     __templates: null,
+    __servicesAll: null,
     __servicesLatestList: null,
 
     /**
@@ -94,6 +95,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const store = osparc.store.Store.getInstance();
       store.getServicesDAGs()
         .then(services => {
+          this.__servicesAll = services;
           const servicesList = [];
           for (const key in services) {
             const latestService = osparc.utils.Services.getLatest(services, key);
@@ -111,6 +113,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this._showLoadingPage(this.tr("Starting..."));
 
       this.__templates = [];
+      this.__servicesAll = {};
       this.__servicesLatestList = [];
       const resourcePromises = [];
       const store = osparc.store.Store.getInstance();
@@ -358,13 +361,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
     _resetServiceItem: function(serviceData) {
       const servicesList = this.__servicesLatestList;
-      const index = servicesList.findIndex(service => service["key"] === serviceData["key"]);
-      if (index === -1) {
-        servicesList.push(serviceData);
-      } else {
+      const index = servicesList.findIndex(service => service["key"] === serviceData["key"] && service["version"] === serviceData["version"]);
+      if (index !== -1) {
         servicesList[index] = serviceData;
+        this.__resetServicesList(servicesList);
       }
-      this.__resetServicesList(servicesList);
     },
 
     __resetServicesList: function(servicesList) {
@@ -463,8 +464,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __getPermissionsMenuButton: function(studyData) {
-      const isCurrentUserOwner = this.__isUserAnyServiceVersionOwner(studyData);
-      if (!isCurrentUserOwner && osparc.utils.Resources.isTemplate(studyData)) {
+      if (osparc.utils.Resources.isTemplate(studyData) && !this.__isUserTemplateOwner(studyData)) {
+        return null;
+      }
+
+      if (osparc.utils.Resources.isService(studyData) && !this.__isUserAnyServiceVersionOwner(studyData)) {
         return null;
       }
 
@@ -703,7 +707,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __isUserAnyServiceVersionOwner: function(studyData) {
       if (osparc.utils.Resources.isService(studyData)) {
         const myEmail = osparc.auth.Data.getInstance().getEmail();
-        return studyData.owner === myEmail;
+        const ownedServices = osparc.utils.Services.getOwnedServices(this.__servicesAll, studyData["key"], myEmail);
+        return ownedServices.length;
       }
       return false;
     },
