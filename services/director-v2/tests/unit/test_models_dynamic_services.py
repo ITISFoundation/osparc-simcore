@@ -64,7 +64,6 @@ def from_http_request(
         simcore_service_labels=simcore_service_labels,
         dynamic_sidecar_network_name="some_network_name",
         simcore_traefik_zone="main",
-        service_port=3000,
         hostname="some host",
         port=port,
     )

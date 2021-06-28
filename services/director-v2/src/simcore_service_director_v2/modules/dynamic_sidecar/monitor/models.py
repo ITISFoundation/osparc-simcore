@@ -22,6 +22,8 @@ from .utils import AsyncResourceLock
 
 logger = logging.getLogger()
 
+TEMPORARY_PORT_NUMBER = 65_534
+
 
 class DynamicSidecarStatus(str, Enum):
     OK = "ok"  # running as expected
@@ -276,10 +278,11 @@ class MonitorData(BaseModel):
     )
 
     service_port: PositiveInt = Field(
-        ...,
+        TEMPORARY_PORT_NUMBER,
         description=(
             "port where the service is exposed defined by the service; "
-            "NOTE: optional because it will be added once the service is started"
+            "NOTE: temporary default because it will be changed once the service "
+            "is started, this value is fetched from the service start spec"
         ),
     )
     # Below values are used only once and then are nto required, thus optional
@@ -309,7 +312,6 @@ class MonitorData(BaseModel):
         simcore_service_labels: SimcoreServiceLabels,
         dynamic_sidecar_network_name: str,
         simcore_traefik_zone: str,
-        service_port: int,
         hostname: str,
         port: Optional[int],
         request_dns: str = None,
@@ -329,7 +331,6 @@ class MonitorData(BaseModel):
                 container_http_entry=simcore_service_labels.container_http_entry,
                 dynamic_sidecar_network_name=dynamic_sidecar_network_name,
                 simcore_traefik_zone=simcore_traefik_zone,
-                service_port=service_port,
                 request_dns=request_dns,
                 request_scheme=request_scheme,
                 proxy_service_name=proxy_service_name,
