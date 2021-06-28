@@ -28,7 +28,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
   members: {
     __servicesContainer: null,
     __templates: null,
-    __services: null,
+    __servicesLatestList: null,
 
     /**
      * Function that resets the selected item
@@ -111,7 +111,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this._showLoadingPage(this.tr("Starting..."));
 
       this.__templates = [];
-      this.__services = [];
+      this.__servicesLatestList = [];
       const resourcePromises = [];
       const store = osparc.store.Store.getInstance();
       resourcePromises.push(store.getServicesDAGs(true));
@@ -357,7 +357,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     _resetServiceItem: function(serviceData) {
-      const servicesList = this.__services;
+      const servicesList = this.__servicesLatestList;
       const index = servicesList.findIndex(service => service["key"] === serviceData["key"]);
       if (index === -1) {
         servicesList.push(serviceData);
@@ -368,7 +368,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __resetServicesList: function(servicesList) {
-      this.__services = servicesList;
+      this.__servicesLatestList = servicesList;
       this.__servicesContainer.removeAll();
       servicesList.forEach(service => {
         service["resourceType"] = "service";
