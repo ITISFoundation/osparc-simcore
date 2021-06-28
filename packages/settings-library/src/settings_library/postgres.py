@@ -24,13 +24,13 @@ class PostgresSettings(BaseCustomSettings):
 
     # pool connection limits
     POSTGRES_MINSIZE: IntGe1 = Field(
-        1, description="Maximum number of connections in the pool"
+        1, description="Minimum number of connections in the pool"
     )
     POSTGRES_MAXSIZE: IntGe1 = Field(
-        50, description="Minimum number of connections in the pool"
+        50, description="Maximum number of connections in the pool"
     )
 
-    POSTGRES_APPNAME: Optional[str] = Field(
+    POSTGRES_CLIENT_NAME: Optional[str] = Field(
         None, description="Name of the application connecting the postgres database"
     )
 
@@ -53,8 +53,8 @@ class PostgresSettings(BaseCustomSettings):
             port=f"{self.POSTGRES_PORT}",
             path=f"/{self.POSTGRES_DB}",
         )
-        if self.POSTGRES_APPNAME:
+        if self.POSTGRES_CLIENT_NAME:
             dsn += "?" + urllib.parse.urlencode(
-                {"application_name": self.POSTGRES_APPNAME}
+                {"application_name": self.POSTGRES_CLIENT_NAME}
             )
         return dsn
