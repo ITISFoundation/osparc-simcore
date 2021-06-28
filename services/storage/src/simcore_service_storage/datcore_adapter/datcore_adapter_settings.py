@@ -1,6 +1,5 @@
 from typing import Optional
 
-from aiohttp import web
 from models_library.basic_types import PortInt, VersionTag
 from pydantic import AnyHttpUrl, BaseSettings, Field, validator
 
@@ -10,7 +9,7 @@ class DatcoreAdapterSettings(BaseSettings):
     HOST: str = "datcore-adapter"
     PORT: PortInt = 8000
     VTAG: VersionTag = Field(
-        "v2", alias="version", description="Datcore-adapter service API's version tag"
+        "v0", alias="version", description="Datcore-adapter service API's version tag"
     )
 
     endpoint: Optional[AnyHttpUrl] = None
@@ -29,14 +28,3 @@ class DatcoreAdapterSettings(BaseSettings):
 
     class Config:
         env_prefix = "DATCORE_ADAPTER_"
-
-
-def create_settings(app: web.Application) -> DatcoreAdapterSettings:
-    settings = DatcoreAdapterSettings()
-    # NOTE: we are saving it in a separate item to config
-    app[f"{__name__}.DatcoreAdapterSettings"] = settings
-    return settings
-
-
-def get_settings(app: web.Application) -> DatcoreAdapterSettings:
-    return app[f"{__name__}.DatcoreAdapterSettings"]
