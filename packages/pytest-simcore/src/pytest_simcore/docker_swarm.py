@@ -165,9 +165,23 @@ def docker_stack(
     # make down
     # NOTE: remove them in reverse order since stacks share common networks
     WAIT_BEFORE_RETRY_SECS = 1
+
+    HEADER = "{:-^20}"
     stacks.reverse()
     for _, stack, _ in stacks:
-        subprocess.run(f"docker stack remove {stack}", shell=True, check=True)
+
+        try:
+            subprocess.run(f"docker stack remove {stack}", shell=True, check=True)
+        except subprocess.CalledProcessError as err:
+            log.warning(
+                "Ignoring failure while executing '%s' (returned code %d):\n%s\n%s\n%s\n%s\n",
+                err.cmd,
+                err.returncode,
+                HEADER.format("stdout"),
+                err.stdout,
+                HEADER.format("stderr"),
+                err.stderr,
+            )
 
         while docker_client.services.list(
             filters={"label": f"com.docker.stack.namespace={stack}"}
