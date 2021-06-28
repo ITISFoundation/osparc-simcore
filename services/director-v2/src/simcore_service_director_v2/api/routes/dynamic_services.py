@@ -83,7 +83,7 @@ async def list_running_dynamic_services(
 
 @router.post(
     "",
-    summary="create & start the dynamic service",
+    summary="creates & starts the dynamic service",
     status_code=status.HTTP_201_CREATED,
     response_model=DynamicServiceOut,
 )
