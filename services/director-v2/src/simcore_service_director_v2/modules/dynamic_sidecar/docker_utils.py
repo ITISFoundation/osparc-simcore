@@ -3,7 +3,7 @@ import asyncio
 import logging
 import time
 import traceback
-from contextlib import asynccontextmanager, suppress
+from contextlib import asynccontextmanager
 from typing import Any, Deque, Dict, List, Optional, Set, Tuple
 
 import aiodocker
@@ -301,10 +301,17 @@ async def remove_dynamic_sidecar_stack(
 
 
 async def remove_dynamic_sidecar_network(network_name: str):
-    with suppress(aiodocker.exceptions.DockerError):
+    try:
         async with docker_client() as client:  # pylint: disable=not-async-context-manager
             network = await client.networks.get(network_name)
             await network.delete()
+    except aiodocker.exceptions.DockerError as e:
+        message = (
+            f"{str(e)}\nThe above error may occur when trying tor remove the network.\n"
+            "Docker takes some time to establish that the network has no more "
+            "containers attaced to it."
+        )
+        log.warning(message)
 
 
 async def list_dynamic_sidecar_services(
