@@ -106,7 +106,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
         monitor_data: "MonitorData",
         service_state: ServiceState,
         service_message: str,
-    ) -> "RunningServiceDetails":
+    ) -> "RunningDynamicServiceDetails":
         return cls(
             boot_type=ServiceBootType.V2,
             user_id=monitor_data.user_id,
