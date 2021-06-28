@@ -101,7 +101,7 @@ async def dyn_proxy_entrypoint_assembly(
             "ContainerSpec": {
                 "Env": {},
                 "Hosts": [],
-                "Image": "traefik:v2.2.1",
+                "Image": f"traefik:{dynamic_sidecar_settings.traefik_version}",
                 "Init": True,
                 "Labels": {},
                 "Command": [

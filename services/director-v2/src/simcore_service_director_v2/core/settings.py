@@ -135,6 +135,11 @@ class DynamicSidecarSettings(BaseSettings):
         env="TRAEFIK_SIMCORE_ZONE",
     )
 
+    traefik_version: str = Field(
+        "v2.2.1",
+        description="current version of the Treafik image to be pulled and used from dockerhub",
+    )
+
     swarm_stack_name: str = Field(
         ...,
         description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
