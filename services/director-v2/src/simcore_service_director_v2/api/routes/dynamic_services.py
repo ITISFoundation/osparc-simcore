@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Coroutine, Dict, List, Optional
 from uuid import UUID
 
 import httpx
@@ -46,13 +46,12 @@ from ..dependencies.dynamic_services import (
 router = APIRouter()
 log = logging.getLogger(__file__)
 
-TEMPORARY_PORT_NUMBER = 65_534
-
 
 @router.get(
     "",
     status_code=status.HTTP_200_OK,
     response_model=List[DynamicServiceOut],
+    response_model_exclude_unset=True,
     summary=(
         "returns a list of running interactive services filtered by user_id and/or project_id"
         "both legacy (director-v0) and modern (director-v2)"
@@ -64,24 +63,22 @@ async def list_running_dynamic_services(
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_services_settings: DynamicServicesSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> List[Dict[str, str]]:
-    legacy_running_services: List[Dict[str, str]] = [
-        x.dict(exclude_unset=True)
-        for x in await director_v0_client.get_running_services(user_id, project_id)
-    ]
+) -> List[Dict[str, Any]]:
+    legacy_running_services: List[
+        DynamicServiceOut
+    ] = await director_v0_client.get_running_services(user_id, project_id)
 
-    get_stack_statuse_tasks: List[DynamicServiceOut] = [
+    get_stack_statuse_tasks: List[Coroutine] = [
         monitor.get_stack_status(UUID(service["Spec"]["Labels"]["uuid"]))
         for service in await list_dynamic_sidecar_services(
             dynamic_services_settings.dynamic_sidecar, user_id, project_id
         )
     ]
-    modern_running_services: List[Dict[str, str]] = [
-        x.dict(exclude_unset=True)
-        for x in await asyncio.gather(*get_stack_statuse_tasks)
-    ]
+    dynamic_sidecar_running_services: List[DynamicServiceOut] = await asyncio.gather(
+        *get_stack_statuse_tasks
+    )
 
-    return legacy_running_services + modern_running_services
+    return legacy_running_services + dynamic_sidecar_running_services
 
 
 @router.post(
@@ -159,7 +156,6 @@ async def create_dynamic_service(
         simcore_service_labels=simcore_service_labels,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
         simcore_traefik_zone=io_simcore_zone,
-        service_port=TEMPORARY_PORT_NUMBER,
         hostname=service_name_dynamic_sidecar,
         port=dynamic_services_settings.dynamic_sidecar.port,
         request_dns=x_dynamic_sidecar_request_dns,
