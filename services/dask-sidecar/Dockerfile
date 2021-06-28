@@ -151,13 +151,6 @@ ENV SC_BUILD_TARGET=development
 WORKDIR /devel
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
-
-HEALTHCHECK \
-  --interval=60s \
-  --timeout=60s \
-  --start-period=10s \
-  --retries=3 \
-  CMD ["echo", , "Fake healthcheck because it takes very long to boot in devel mode"]
-
+# NOTE: devel mode does NOT have HEALTHCHECK
 ENTRYPOINT [ "/bin/sh", "services/dask-sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/dask-sidecar/docker/boot.sh"]
