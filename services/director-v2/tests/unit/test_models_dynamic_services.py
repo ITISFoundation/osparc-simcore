@@ -59,12 +59,8 @@ def from_http_request(
     port: int,
 ) -> MonitorData:
     return MonitorData.make_from_http_request(
-        service_name="some service",
         service=dynamic_service_create,
         simcore_service_labels=simcore_service_labels,
-        dynamic_sidecar_network_name="some_network_name",
-        simcore_traefik_zone="main",
-        hostname="some host",
         port=port,
     )
 

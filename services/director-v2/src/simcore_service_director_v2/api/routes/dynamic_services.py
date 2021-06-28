@@ -10,7 +10,6 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
-from simcore_service_director_v2.models.schemas.constants import UserID
 from starlette import status
 from starlette.datastructures import URL
 
@@ -21,18 +20,13 @@ from ...models.domains.dynamic_services import (
     RetrieveDataIn,
     RetrieveDataOutEnveloped,
 )
-from ...models.schemas.constants import (
-    DYNAMIC_PROXY_SERVICE_PREFIX,
-    DYNAMIC_SIDECAR_SERVICE_PREFIX,
-    UserID,
-)
+from ...models.schemas.constants import UserID
 from ...modules.dynamic_sidecar.docker_utils import (
     is_dynamic_service_running,
     list_dynamic_sidecar_services,
 )
 from ...modules.dynamic_sidecar.exceptions import DynamicSidecarNotFoundError
 from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor, MonitorData
-from ...modules.dynamic_sidecar.service_specs import assemble_service_name
 from ...utils.logging_utils import log_decorator
 from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
 from ..dependencies.dynamic_services import (
@@ -123,44 +117,13 @@ async def create_dynamic_service(
     ):
         return await monitor.get_stack_status(service.node_uuid)
 
-    # Service naming schema:
-    # NOTE: name is max 63 characters
-    # dy-sidecar_4dde07ea-73be-4c44-845a-89479d1556cf
-    # dy-revproxy_4dde07ea-73be-4c44-845a-89479d1556cf
-
-    # dynamic sidecar structure
-    # 0. a network is created: dy-sidecar_4dde07ea-73be-4c44-845a-89479d1556cf
-    # 1. a dynamic-sidecar is started: dy-sidecar_4dde07ea-73be-4c44-845a-89479d1556cf
-    # a traefik instance: dy-proxy_4dde07ea-73be-4c44-845a-89479d1556cf
-    #
-
-    service_name_dynamic_sidecar = assemble_service_name(
-        DYNAMIC_SIDECAR_SERVICE_PREFIX, service.node_uuid
-    )
-    proxy_service_name = assemble_service_name(
-        DYNAMIC_PROXY_SERVICE_PREFIX, service.node_uuid
-    )
-
-    # unique name for the traefik constraints
-    io_simcore_zone = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{service.node_uuid}"
-
-    # based on the node_id and project_id
-    dynamic_sidecar_network_name = (
-        f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{service.node_uuid}"
-    )
-
     # services where successfully started and they can be monitored
     monitor_data = MonitorData.make_from_http_request(
-        service_name=service_name_dynamic_sidecar,
         service=service,
         simcore_service_labels=simcore_service_labels,
-        dynamic_sidecar_network_name=dynamic_sidecar_network_name,
-        simcore_traefik_zone=io_simcore_zone,
-        hostname=service_name_dynamic_sidecar,
         port=dynamic_services_settings.dynamic_sidecar.port,
         request_dns=x_dynamic_sidecar_request_dns,
         request_scheme=x_dynamic_sidecar_request_scheme,
-        proxy_service_name=proxy_service_name,
     )
     await monitor.add_service_to_monitor(monitor_data)
 

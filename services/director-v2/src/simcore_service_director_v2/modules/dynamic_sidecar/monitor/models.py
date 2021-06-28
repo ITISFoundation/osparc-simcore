@@ -17,12 +17,23 @@ from models_library.services import SERVICE_KEY_RE
 from pydantic import BaseModel, Field, PositiveInt, validator
 
 from ....models.domains.dynamic_services import DynamicServiceCreate
-from ....models.schemas.constants import UserID
+from ....models.schemas.constants import (
+    DYNAMIC_PROXY_SERVICE_PREFIX,
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
+    UserID,
+)
+from ....modules.dynamic_sidecar.utils import (
+    MAX_ALLOWED_SERVICE_NAME_LENGTH,
+    assemble_service_name,
+)
 from .utils import AsyncResourceLock
 
 logger = logging.getLogger()
 
 TEMPORARY_PORT_NUMBER = 65_534
+
+REGEX_DY_SERVICE_SIDECAR = fr"^{DYNAMIC_SIDECAR_SERVICE_PREFIX}_[a-zA-Z0-9-_]*"
+REGEX_DY_SERVICE_PROXY = fr"^{DYNAMIC_PROXY_SERVICE_PREFIX}_[a-zA-Z0-9-_]*"
 
 
 class DynamicSidecarStatus(str, Enum):
@@ -218,6 +229,57 @@ class ServiceLabelsStoredData(BaseModel):
         }
 
 
+class DynamicSidecarNames(BaseModel):
+    """
+    Service naming schema:
+    NOTE: name is max 63 characters
+    dy-sidecar_4dde07ea-73be-4c44-845a-89479d1556cf
+    dy-proxy_4dde07ea-73be-4c44-845a-89479d1556cf
+
+    dynamic sidecar structure
+    0. a network is created: dy-sidecar_4dde07ea-73be-4c44-845a-89479d1556cf
+    1. a dynamic-sidecar is started: dy-sidecar_4dde07ea-73be-4c44-845a-89479d1556cf
+    a traefik instance: dy-proxy_4dde07ea-73be-4c44-845a-89479d1556cf
+    """
+
+    service_name_dynamic_sidecar: str = Field(
+        ...,
+        regex=REGEX_DY_SERVICE_SIDECAR,
+        max_length=MAX_ALLOWED_SERVICE_NAME_LENGTH,
+        description="unique name of the dynamic-sidecar service",
+    )
+    proxy_service_name: str = Field(
+        ...,
+        regex=REGEX_DY_SERVICE_PROXY,
+        max_length=MAX_ALLOWED_SERVICE_NAME_LENGTH,
+        description="name of the proxy for the dynamic-sidecar",
+    )
+
+    simcore_traefik_zone: str = Field(
+        ...,
+        regex=REGEX_DY_SERVICE_SIDECAR,
+        description="unique name for the traefik constraints",
+    )
+    dynamic_sidecar_network_name: str = Field(
+        ...,
+        regex=REGEX_DY_SERVICE_SIDECAR,
+        description="based on the node_id and project_id",
+    )
+
+    @classmethod
+    def make(cls, node_uuid: UUID) -> "DynamicSidecarNames":
+        return cls(
+            service_name_dynamic_sidecar=assemble_service_name(
+                DYNAMIC_SIDECAR_SERVICE_PREFIX, node_uuid
+            ),
+            proxy_service_name=assemble_service_name(
+                DYNAMIC_PROXY_SERVICE_PREFIX, node_uuid
+            ),
+            simcore_traefik_zone=f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{node_uuid}",
+            dynamic_sidecar_network_name=f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{node_uuid}",
+        )
+
+
 class MonitorData(BaseModel):
     service_name: str = Field(
         ..., description="Name of the current dynamic-sidecar being monitored"
@@ -307,20 +369,16 @@ class MonitorData(BaseModel):
     def make_from_http_request(
         # pylint: disable=too-many-arguments
         cls,
-        service_name: str,
         service: DynamicServiceCreate,
         simcore_service_labels: SimcoreServiceLabels,
-        dynamic_sidecar_network_name: str,
-        simcore_traefik_zone: str,
-        hostname: str,
         port: Optional[int],
         request_dns: str = None,
         request_scheme: str = None,
-        proxy_service_name: str = None,
     ) -> "MonitorData":
+        dynamic_sidecar_names = DynamicSidecarNames.make(service.node_uuid)
         return cls.parse_obj(
             dict(
-                service_name=service_name,
+                service_name=dynamic_sidecar_names.service_name_dynamic_sidecar,
                 node_uuid=service.node_uuid,
                 project_id=service.project_id,
                 user_id=service.user_id,
@@ -329,13 +387,13 @@ class MonitorData(BaseModel):
                 paths_mapping=simcore_service_labels.paths_mapping,
                 compose_spec=simcore_service_labels.compose_spec,
                 container_http_entry=simcore_service_labels.container_http_entry,
-                dynamic_sidecar_network_name=dynamic_sidecar_network_name,
-                simcore_traefik_zone=simcore_traefik_zone,
+                dynamic_sidecar_network_name=dynamic_sidecar_names.dynamic_sidecar_network_name,
+                simcore_traefik_zone=dynamic_sidecar_names.simcore_traefik_zone,
                 request_dns=request_dns,
                 request_scheme=request_scheme,
-                proxy_service_name=proxy_service_name,
+                proxy_service_name=dynamic_sidecar_names.proxy_service_name,
                 dynamic_sidecar=dict(
-                    hostname=hostname,
+                    hostname=dynamic_sidecar_names.service_name_dynamic_sidecar,
                     port=port,
                 ),
             )

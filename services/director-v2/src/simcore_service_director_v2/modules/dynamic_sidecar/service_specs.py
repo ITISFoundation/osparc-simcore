@@ -4,7 +4,6 @@ import os
 from collections import deque
 from typing import Any, Deque, Dict, List
 
-from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
@@ -31,19 +30,7 @@ MATCH_IMAGE_START = f"{MATCH_SIMCORE_REGISTRY}/"
 MATCH_IMAGE_END = f":{MATCH_SERVICE_VERSION}"
 
 
-MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
-
-
 log = logging.getLogger(__name__)
-
-
-def _strip_service_name(service_name: str) -> str:
-    """returns: the maximum allowed service name in docker swarm"""
-    return service_name[:MAX_ALLOWED_SERVICE_NAME_LENGTH]
-
-
-def assemble_service_name(service_prefix: str, node_uuid: NodeID) -> str:
-    return _strip_service_name("_".join([service_prefix, str(node_uuid)]))
 
 
 def extract_service_port_from_compose_start_spec(
