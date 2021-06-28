@@ -144,13 +144,13 @@ async def list_all_files_metadatas_in_dataset(
     return [
         FileMetaDataEx(
             fmd=FileMetaData(
-                file_uuid=d["package_id"],
+                file_uuid=d["path"],
                 location_id=DATCORE_ID,
                 location=DATCORE_STR,
                 bucket_name=d["dataset_id"],
                 object_name=d["path"],
                 file_name=d["name"],
-                file_id=d["id"],
+                file_id=d["package_id"],
                 created_at=d["created_at"],
                 last_modified=d["last_modified_at"],
                 display_file_path=d["name"],
