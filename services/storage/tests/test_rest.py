@@ -67,7 +67,7 @@ def client(
 
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
 
-    settings = Settings.create_from_env()
+    settings = Settings.create_from_envs()
     print(settings.json(indent=2))
 
     app[APP_CONFIG_KEY] = settings

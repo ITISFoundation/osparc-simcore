@@ -18,31 +18,49 @@ class NodeClass(enum.Enum):
 comp_tasks = sa.Table(
     "comp_tasks",
     metadata,
-    # this task db id
-    sa.Column("task_id", sa.Integer, primary_key=True),
-    sa.Column("project_id", sa.String, sa.ForeignKey("comp_pipeline.project_id")),
-    # dag node id and class
-    sa.Column("node_id", sa.String),
-    sa.Column("node_class", sa.Enum(NodeClass)),
-    # celery task id
-    sa.Column("job_id", sa.String),
-    # internal id (better for debugging, nodes from 1 to N)
-    sa.Column("internal_id", sa.Integer),
-    sa.Column("schema", sa.JSON),
-    sa.Column("inputs", sa.JSON),
-    sa.Column("outputs", sa.JSON),
-    sa.Column("run_hash", sa.String, nullable=True),
-    sa.Column("image", sa.JSON),
+    sa.Column(
+        "task_id",
+        sa.Integer,
+        primary_key=True,
+        doc="Primary key, identifies the task in this table",
+    ),
+    sa.Column(
+        "project_id",
+        sa.String,
+        sa.ForeignKey("comp_pipeline.project_id"),
+        doc="Project that contains the node associated to this task",
+    ),
+    sa.Column("node_id", sa.String, doc="Node associated to this task"),
+    sa.Column(
+        "node_class",
+        sa.Enum(NodeClass),
+        doc="Classification of the node associated to this task",
+    ),
+    sa.Column("job_id", sa.String, doc="Celery ID for this task"),
+    sa.Column("internal_id", sa.Integer, doc="DEV: only for development. From 1 to N"),
+    sa.Column("schema", sa.JSON, doc="Schema for inputs and outputs"),
+    sa.Column("inputs", sa.JSON, doc="Input values"),
+    sa.Column("outputs", sa.JSON, doc="Output values"),
+    sa.Column(
+        "run_hash",
+        sa.String,
+        nullable=True,
+        doc="Hashes inputs before run. Used to detect changes in inputs.",
+    ),
+    sa.Column(
+        "image", sa.JSON, doc="Metadata about service image associated to this node"
+    ),
     sa.Column(
         "state",
         sa.Enum(StateType),
         nullable=False,
         server_default=StateType.NOT_STARTED.value,
+        doc="Current state in the task lifecicle",
     ),
     # utc timestamps for submission/start/end
-    sa.Column("submit", sa.DateTime),
-    sa.Column("start", sa.DateTime),
-    sa.Column("end", sa.DateTime),
+    sa.Column("submit", sa.DateTime, doc="UTC timestamp for task submission"),
+    sa.Column("start", sa.DateTime, doc="UTC timestamp when task started"),
+    sa.Column("end", sa.DateTime, doc="UTC timestamp for task completion"),
     sa.UniqueConstraint("project_id", "node_id", name="project_node_uniqueness"),
 )
 

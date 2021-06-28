@@ -81,6 +81,8 @@ def test_all_services_up(
     [
         "api-server",
         "catalog",
+        "dask-scheduler",
+        "dask-sidecar",
         "director-v2",
         "director",
         "migration",
