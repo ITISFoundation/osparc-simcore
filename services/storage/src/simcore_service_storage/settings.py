@@ -1,20 +1,25 @@
-import logging
 from typing import List, Optional
 
-from models_library.basic_types import LogLevel, PortInt
-from models_library.settings.base import BaseCustomSettings
-from models_library.settings.postgres import PostgresSettings
-from models_library.settings.s3 import S3Config
-from pydantic import Field, PositiveInt
-from servicelib.tracing import TracingSettings
+from pydantic import AnyHttpUrl, Field, PositiveInt, validator
+from settings_library.base import BaseCustomSettings
+from settings_library.basic_types import LogLevel, PortInt
+from settings_library.logging_utils import MixinLoggingSettings
+from settings_library.postgres import PostgresSettings
+from settings_library.s3 import S3Settings
 
 
-class Settings(BaseCustomSettings):
+class TracingSettings(BaseCustomSettings):
+    # FIXME: upgrade to new setup
+    enabled: Optional[bool] = True
+    zipkin_endpoint: AnyHttpUrl = "http://jaeger:9411"
+
+
+class Settings(BaseCustomSettings, MixinLoggingSettings):
 
     STORAGE_HOST: str = "0.0.0.0"  # nosec
     STORAGE_PORT: PortInt = 8080
 
-    STORAGE_LOG_LEVEL: LogLevel = Field(
+    LOG_LEVEL: LogLevel = Field(
         "INFO", env=["STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
 
@@ -39,23 +44,11 @@ class Settings(BaseCustomSettings):
 
     STORAGE_POSTGRES: PostgresSettings
 
-    STORAGE_S3: S3Config
+    STORAGE_S3: S3Settings
 
     STORAGE_TRACING: TracingSettings
 
-    # ----
-
+    @validator("LOG_LEVEL")
     @classmethod
-    def create_from_envs(cls) -> "Settings":
-        cls.set_defaults_with_default_constructors(
-            [
-                ("STORAGE_POSTGRES", PostgresSettings),
-                ("STORAGE_S3", S3Config),
-                ("STORAGE_TRACING", TracingSettings),
-            ]
-        )
-        return cls()
-
-    @property
-    def logging_level(self) -> int:
-        return getattr(logging, self.STORAGE_LOG_LEVEL)
+    def _validate_loglevel(cls, value) -> str:
+        return cls.validate_log_level(value)
