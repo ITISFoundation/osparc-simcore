@@ -1,4 +1,6 @@
+import asyncio
 import logging
+from functools import lru_cache
 from itertools import islice
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
@@ -15,10 +17,23 @@ from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 logger = logging.getLogger(__name__)
 
+# NOTE: each pennsieve client seems to be about 8MB. so let's keep max 32
+@lru_cache(maxsize=32)
+def create_pennsieve_client(api_key: str, api_secret: str) -> Pennsieve:
+    return Pennsieve(api_token=api_key, api_secret=api_secret)
+
+
+
 
 class PennsieveApiClient(BaseServiceClientApi):
+    async def _get_client(self, api_key: str, api_secret: str) -> Pennsieve:
+        return await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: create_pennsieve_client(api_key=api_key, api_secret=api_secret),
+        )
+
     async def get_user_profile(self, api_key: str, api_secret: str) -> Profile:
-        ps = Pennsieve(api_token=api_key, api_secret=api_secret)
+        ps: Pennsieve = await self._get_client(api_key=api_key, api_secret=api_secret)
         return Profile(id=ps.profile.id)
 
     async def get_datasets(
