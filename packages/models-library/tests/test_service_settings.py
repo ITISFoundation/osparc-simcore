@@ -27,25 +27,30 @@ def test_service_settings():
 
 
 SIMCORE_SERVICE_EXAMPLES = [
-    (example, items, index)
+    (example, items, uses_dynamic_sidecar, index)
     # pylint: disable=unnecessary-comprehension
-    for example, items, index in zip(
+    for example, items, uses_dynamic_sidecar, index in zip(
         SimcoreServiceLabels.Config.schema_extra["examples"],
         [1, 2, 4],
+        [False, True, True],
         ["legacy", "dynamic-service", "dynamic-service-with-compose-spec"],
     )
 ]
 
 
 @pytest.mark.parametrize(
-    "example, items",
-    [(example, items) for example, items, _ in SIMCORE_SERVICE_EXAMPLES],
-    ids=[i for _, _, i in SIMCORE_SERVICE_EXAMPLES],
+    "example, items, uses_dynamic_sidecar",
+    [
+        (example, items, uses_dynamic_sidecar)
+        for example, items, uses_dynamic_sidecar, _ in SIMCORE_SERVICE_EXAMPLES
+    ],
+    ids=[i for _, _, _, i in SIMCORE_SERVICE_EXAMPLES],
 )
-def test_simcore_service_labels(example: Dict, items: int):
+def test_simcore_service_labels(example: Dict, items: int, uses_dynamic_sidecar: bool):
     simcore_service_labels = SimcoreServiceLabels.parse_obj(example)
     assert simcore_service_labels
     assert len(simcore_service_labels.dict(exclude_unset=True)) == items
+    assert simcore_service_labels.needs_dynamic_sidecar == uses_dynamic_sidecar
 
 
 @pytest.mark.parametrize(

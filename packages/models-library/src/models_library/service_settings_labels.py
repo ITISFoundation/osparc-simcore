@@ -107,7 +107,20 @@ ComposeSpecLabel = Optional[Dict[str, Any]]
 
 
 class SimcoreServiceLabels(BaseModel):
-    """Validate all the simcores.services.* labels on a service"""
+    """
+    Validate all the simcores.services.* labels on a service.
+
+    When no other fields expect `settings` are present
+    the service will be started as legacy by director-v0.
+
+    If `paths_mapping` is present the service will be started
+    via dynamic-sidecar by director-v2.
+
+    When starting via dynamic-sidecar, if `compose_spec` is
+    present, also `container_http_entry` must be present.
+    When both of these fields are missing a docker-compose
+    spec will be generated before starting the service.
+    """
 
     settings: Json[SimcoreServiceSettingsLabel] = Field(
         ...,
@@ -138,16 +151,10 @@ class SimcoreServiceLabels(BaseModel):
         ),
     )
 
-    needs_dynamic_sidecar: Optional[bool] = Field(
-        None, description="true if dynamic sidecar is needed to start that service"
-    )
-
-    @validator("needs_dynamic_sidecar", pre=True, always=True)
-    @classmethod
-    def auto_fill_dynamic_sidecar(cls, v, values):
-        if not v:
-            return values.get("paths_mapping") is not None
-        return v
+    @property
+    def needs_dynamic_sidecar(self) -> bool:
+        """if paths mapping is present the service needs to be ran via dynamic-sidecar"""
+        return self.paths_mapping is not None
 
     @validator("container_http_entry", always=True)
     @classmethod
