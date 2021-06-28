@@ -250,6 +250,7 @@ paths:
                               description: all the input configurable for this service
                               additionalProperties: false
                               required:
+                                - displayOrder
                                 - label
                                 - description
                                 - type
@@ -370,6 +371,7 @@ paths:
                               description: all the output produced by this node
                               additionalProperties: false
                               required:
+                                - displayOrder
                                 - label
                                 - description
                                 - type
@@ -641,6 +643,7 @@ paths:
                               description: all the input configurable for this service
                               additionalProperties: false
                               required:
+                                - displayOrder
                                 - label
                                 - description
                                 - type
@@ -761,6 +764,7 @@ paths:
                               description: all the output produced by this node
                               additionalProperties: false
                               required:
+                                - displayOrder
                                 - label
                                 - description
                                 - type
@@ -2286,6 +2290,7 @@ components:
                     description: all the input configurable for this service
                     additionalProperties: false
                     required:
+                      - displayOrder
                       - label
                       - description
                       - type
@@ -2406,6 +2411,7 @@ components:
                     description: all the output produced by this node
                     additionalProperties: false
                     required:
+                      - displayOrder
                       - label
                       - description
                       - type
