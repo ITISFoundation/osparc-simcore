@@ -53,6 +53,14 @@ qx.Class.define("osparc.component.permissions.Service", {
       return false;
     },
 
+    canAnyGroupWrite: function(accessRights, GIDs) {
+      let canWrite = false;
+      for (let i=0; i<GIDs.length && !canWrite; i++) {
+        canWrite = this.self().canGroupWrite(accessRights, GIDs[i]);
+      }
+      return canWrite;
+    },
+
     getCollaboratorAccessRight: function() {
       return {
         "execute_access": true,
@@ -98,10 +106,6 @@ qx.Class.define("osparc.component.permissions.Service", {
 
       this.__populateOwnedVersions();
 
-      // disable access giving options for non owners
-      this.setEnabled(this._isUserOwner());
-      hBox.setEnabled(true);
-
       versionsBox.addListener("changeSelection", () => {
         const selection = versionsBox.getSelection();
         if (selection && selection.length) {
@@ -113,10 +117,6 @@ qx.Class.define("osparc.component.permissions.Service", {
                 const serviceData = osparc.utils.Services.getFromObject(services, this._serializedData["key"], serviceVersion);
                 this._serializedData = osparc.utils.Utils.deepCloneObject(serviceData);
                 this.getCollaborators();
-
-                // disable access giving options for non owners
-                this.setEnabled(this._isUserOwner());
-                hBox.setEnabled(true);
               });
           }
         }
