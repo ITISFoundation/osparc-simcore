@@ -9,6 +9,7 @@ from pennsieve import Pennsieve
 from starlette.datastructures import URL
 
 from ..core.settings import PennsieveSettings
+from ..models.domains.user import Profile
 from ..models.schemas.datasets import DatasetMetaData, DataType, FileMetaData
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
@@ -16,6 +17,10 @@ logger = logging.getLogger(__name__)
 
 
 class PennsieveApiClient(BaseServiceClientApi):
+    async def get_user_profile(self, api_key: str, api_secret: str) -> Profile:
+        ps = Pennsieve(api_token=api_key, api_secret=api_secret)
+        return Profile(id=ps.profile.id)
+
     async def get_datasets(
         self, api_key: str, api_secret: str
     ) -> List[DatasetMetaData]:
