@@ -464,19 +464,20 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __getPermissionsMenuButton: function(studyData) {
-      if (osparc.utils.Resources.isTemplate(studyData) && !this.__isUserTemplateOwner(studyData)) {
-        return null;
-      }
-
-      if (osparc.utils.Resources.isService(studyData) && !this.__isUserAnyServiceVersionOwner(studyData)) {
-        return null;
-      }
-
       const permissionsButton = new qx.ui.menu.Button(this.tr("Sharing"));
       permissionsButton.addListener("execute", () => {
         this.__openPermissions(studyData);
       }, this);
-      return permissionsButton;
+
+      if (osparc.utils.Resources.isTemplate(studyData) && this.__isUserTemplateOwner(studyData)) {
+        return permissionsButton;
+      }
+
+      if (osparc.utils.Resources.isService(studyData) && this.__isUserAnyServiceVersionOwner(studyData)) {
+        return permissionsButton;
+      }
+
+      return null;
     },
 
     __getClassifiersMenuButton: function(studyData) {
