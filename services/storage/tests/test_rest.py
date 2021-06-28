@@ -59,8 +59,18 @@ def client(
     pg_config = postgres_service.copy()
     pg_config.pop("database")
 
-    monkeypatch.setenv("STORAGE_POSTGRES", json.dumps(pg_config))
-    monkeypatch.setenv("STORAGE_S3", json.dumps(minio_service))
+    monkeypatch.setenv(
+        "STORAGE_POSTGRES",
+        json.dumps(
+            {f"POSTGRES_{key.upper()}": value for key, value in pg_config.items()}
+        ),
+    )
+    monkeypatch.setenv(
+        "STORAGE_S3",
+        json.dumps(
+            {f"S3_{key.upper()}": value for key, value in minio_service.items()}
+        ),
+    )
     monkeypatch.setenv("STORAGE_PORT", str(aiohttp_unused_port()))
     monkeypatch.setenv("STORAGE_LOG_LEVEL", "DEBUG")
     monkeypatch.setenv("STORAGE_TESTING", "1")

@@ -10,9 +10,10 @@
 -r _base.txt
 
 # installs this repo's packages
-../../packages/postgres-database/
 ../../packages/models-library/
+../../packages/postgres-database/
 ../../packages/service-library
+../../packages/settings-library/
 
 # installs current package
 .

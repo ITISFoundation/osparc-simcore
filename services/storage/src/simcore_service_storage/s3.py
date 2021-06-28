@@ -30,7 +30,7 @@ async def _setup_s3_bucket(app):
     )
     async def do_create_bucket():
         log.debug("Creating bucket: %s", cfg.STORAGE_S3.json(indent=2))
-        s3_client.create_bucket(cfg.STORAGE_S3.bucket_name)
+        s3_client.create_bucket(cfg.STORAGE_S3.S3_BUCKET_NAME)
 
     try:
         await do_create_bucket()
@@ -67,10 +67,10 @@ def setup_s3(app: web.Application):
     cfg = app[APP_CONFIG_KEY]
 
     s3_client = MinioClientWrapper(
-        cfg.STORAGE_S3.endpoint,
-        cfg.STORAGE_S3.access_key,
-        cfg.STORAGE_S3.secret_key,
-        secure=cfg.STORAGE_S3.secure == 1,
+        cfg.STORAGE_S3.S3_ENDPOINT,
+        cfg.STORAGE_S3.S3_ACCESS_KEY,
+        cfg.STORAGE_S3.S3_SECRET_KEY,
+        secure=cfg.STORAGE_S3.S3_SECURE,
     )
     app[APP_S3_KEY] = s3_client
 

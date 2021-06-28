@@ -12,10 +12,11 @@
 -r _tools.txt
 
 # installs this repo's packages
--e ../../packages/postgres-database/
--e ../../packages/service-library
 -e ../../packages/models-library
+-e ../../packages/postgres-database/
 -e ../../packages/pytest-simcore/
+-e ../../packages/service-library
+-e ../../packages/settings-library/
 
 # installs current package
 -e .
