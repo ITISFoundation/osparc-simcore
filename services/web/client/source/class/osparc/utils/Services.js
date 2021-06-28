@@ -130,6 +130,19 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
+    getOwnedServices: function(services, key, email) {
+      const ownedVersions = [];
+      if (key in services) {
+        this.getVersions(services, key).forEach(version => {
+          if (services[key][version]["owner"] === email) {
+            ownedVersions.push(version);
+          }
+        });
+        ownedVersions.sort(osparc.utils.Utils.compareVersionNumbers);
+      }
+      return ownedVersions;
+    },
+
     /**
      * Compatibility check:
      * - compIOFields of src inputs need to be in dest inputs
