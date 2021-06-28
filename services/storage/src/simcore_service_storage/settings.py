@@ -7,6 +7,8 @@ from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.s3 import S3Settings
 
+from .datcore_adapter.datcore_adapter_settings import DatcoreAdapterSettings
+
 
 class TracingSettings(BaseCustomSettings):
     # FIXME: upgrade to new setup
@@ -47,6 +49,8 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     STORAGE_S3: S3Settings
 
     STORAGE_TRACING: TracingSettings
+
+    DATCORE_ADAPTER: DatcoreAdapterSettings
 
     @validator("LOG_LEVEL")
     @classmethod
