@@ -152,5 +152,6 @@ WORKDIR /devel
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
 # NOTE: devel mode does NOT have HEALTHCHECK
+
 ENTRYPOINT [ "/bin/sh", "services/dask-sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/dask-sidecar/docker/boot.sh"]
