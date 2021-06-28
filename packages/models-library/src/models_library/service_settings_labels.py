@@ -118,7 +118,7 @@ class SimcoreServiceLabels(BaseModel):
         ),
     )
 
-    paths_mapping: Json[Optional[PathsMappingLabel]] = Field(
+    paths_mapping: Optional[Json[PathsMappingLabel]] = Field(
         None,
         alias="simcore.service.paths-mapping",
         description="json encoded, determines where the outputs and inputs directories are",
