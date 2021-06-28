@@ -1,15 +1,15 @@
 # simcore service integration library
 
 
-This package is intended to be installed as an external library to help integrating services in osparc-simcore. Here "integration" means
-that the resulting service can be reliably deployed and run as a part of a node in the study pipeline. This library defines requirements
+This package is intended to be installed as an external library **to help** (notice that it is NOT required) integrating services in osparc-simcore.
+Here "integration" means that the resulting service can be reliably deployed and run as a part of a node in the study pipeline. This library defines requirements
 on this services as well as tools to assist for their development and validation.
 
 
 ```cmd
 
-pip install git+https://github.com/ITISFoundation/osparc-simcore.git@master#egg=simcore-models-library&subdirectory=packages/models-library
-pip install git+https://github.com/ITISFoundation/osparc-simcore.git@master#egg=simcore-service-integration&subdirectory=packages/service-integration
+pip install "git+https://github.com/ITISFoundation/osparc-simcore.git@master#egg=simcore-models-library&subdirectory=packages/models-library"
+pip install "git+https://github.com/ITISFoundation/osparc-simcore.git@master#egg=simcore-service-integration&subdirectory=packages/service-integration"
 
 ```
 

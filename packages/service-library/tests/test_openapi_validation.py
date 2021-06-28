@@ -9,7 +9,6 @@
 
 import pytest
 from aiohttp import web
-
 from servicelib import openapi
 from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.rest_middlewares import (
@@ -53,7 +52,16 @@ def client(loop, aiohttp_client, specs):
 
 
 @pytest.mark.parametrize(
-    "path", ["/health", "/dict", "/envelope", "/list", "/attobj", "/string", "/number",]
+    "path",
+    [
+        "/health",
+        "/dict",
+        "/envelope",
+        "/list",
+        "/attobj",
+        "/string",
+        "/number",
+    ],
 )
 async def test_validate_handlers(path, client, specs):
     base = openapi.get_base_path(specs)

@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION="3.6.10"
+ARG PYTHON_VERSION="3.8.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=sanderegg

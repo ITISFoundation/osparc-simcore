@@ -19,7 +19,7 @@
     "key": {
       "type": "string",
       "description": "distinctive name for the node based on the docker registry path",
-      "pattern": "^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$",
+      "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
       "examples": [
         "simcore/services/comp/itis/sleeper",
         "simcore/services/dynamic/3dviewer"

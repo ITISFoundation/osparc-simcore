@@ -9,10 +9,9 @@ Consider prefix your PR message with an emoticon
   🏗️ maintenance
   📚 documentation
 
-and append (⚠️ devops) if changes in devops configuration required before deploying
+or get your emoji from https://gitmoji.dev/
 
-  SEE https://github.com/dannyfritz/commit-message-emoji
-  SEE https://emojipedia.org
+and append (⚠️ devops) if changes in devops configuration required before deploying
 -->
 
 ## What do these changes do?

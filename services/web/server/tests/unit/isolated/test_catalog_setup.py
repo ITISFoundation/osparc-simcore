@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from asyncio import Future
 
 import pytest
 from servicelib.application import create_safe_application
@@ -43,10 +42,7 @@ def mock_api_calls_to_catalog(client, mocker):
             # Mocks aiohttp.ClientResponse
             # https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse
             resp = mocker.Mock()
-
-            f = Future()
-            f.set_result({})
-            resp.json.return_value = f
+            resp.json.return_value = {}
 
             resp.status = 200
             return resp

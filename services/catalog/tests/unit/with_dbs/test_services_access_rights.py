@@ -7,7 +7,6 @@ from typing import Callable, List
 from aiopg.sa.engine import Engine
 from fastapi import FastAPI
 from models_library.services import ServiceAccessRightsAtDB, ServiceDockerData
-from pytest_simcore.helpers.utils_mock import future_with_result
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.domain.group import GroupAtDB
 from simcore_service_catalog.services.access_rights import (
@@ -93,18 +92,18 @@ async def test_auto_upgrade_policy(
     # Avoids calls to director API
     mocker.patch(
         "simcore_service_catalog.services.access_rights._is_old_service",
-        return_value=future_with_result(False),
+        return_value=False,
     )
     # Avoids creating a users + user_to_group table
     data = GroupAtDB.Config.schema_extra["example"]
     data["gid"] = everyone_gid
     mocker.patch(
         "simcore_service_catalog.services.access_rights.GroupsRepository.get_everyone_group",
-        return_value=future_with_result(GroupAtDB.parse_obj(data)),
+        return_value=GroupAtDB.parse_obj(data),
     )
     mocker.patch(
         "simcore_service_catalog.services.access_rights.GroupsRepository.get_user_gid_from_email",
-        return_value=future_with_result(user_gid),
+        return_value=user_gid,
     )
 
     # SETUP ---

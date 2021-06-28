@@ -1,7 +1,7 @@
 import json
 import logging
 import socket
-from asyncio.futures import CancelledError
+from asyncio import CancelledError
 from typing import Any, Dict, List, Optional, Union
 
 import aio_pika

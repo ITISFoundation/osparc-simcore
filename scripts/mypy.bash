@@ -10,7 +10,7 @@ image_name="$(basename $0):latest"
 
 
 docker build --tag "$image_name" -<<EOF
-FROM python:3.8.7-slim-buster
+FROM python:3.8.10-slim-buster
 RUN pip install --upgrade pip && pip install mypy pydantic[email]
 ENTRYPOINT ["mypy"]
 EOF

@@ -177,7 +177,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.setThumbnail(node.getThumbnail());
       }
       this.__inputOutputLayout = this.getChildControl("inputOutput");
-      this.__chipContainer = this.getChildControl("chips");
+      const chipContainer = this.getChildControl("chips");
       if (node.isDataIterator()) {
         this.set({
           width: this.self().NODE_WIDTH - 50,
@@ -189,7 +189,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
 
       const nodeStatus = new osparc.ui.basic.NodeStatusUI(node);
-      this.__chipContainer.add(nodeStatus);
+      chipContainer.add(nodeStatus);
     },
 
     populateNodeLayout: function() {
@@ -210,6 +210,56 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         converter: state => osparc.utils.StatusUI.getBorderDecorator(state)
       });
       */
+      if (node.isFilePicker()) {
+        this.turnIntoFileUI();
+      }
+    },
+
+    turnIntoFileUI: function() {
+      const outputs = this.getNode().getOutputs();
+      if ([null, ""].includes(osparc.file.FilePicker.getOutput(outputs))) {
+        return;
+      }
+
+      const fileUIWidth = 120;
+      this.set({
+        width: fileUIWidth,
+        maxWidth: fileUIWidth,
+        minWidth: fileUIWidth
+      });
+
+      // two lines
+      this.getChildControl("title").set({
+        rich: true,
+        wrap: true,
+        maxHeight: 28,
+        minWidth: fileUIWidth-16,
+        maxWidth: fileUIWidth-16
+      });
+
+      const chipContainer = this.getChildControl("chips");
+      chipContainer.exclude();
+
+      if (this.__progressBar) {
+        this.__progressBar.exclude();
+      }
+
+      let imageSrc = null;
+      if (osparc.file.FilePicker.isOutputFromStore(outputs)) {
+        imageSrc = "@FontAwesome5Solid/file-alt/34";
+      }
+      if (osparc.file.FilePicker.isOutputDownloadLink(outputs)) {
+        imageSrc = "@FontAwesome5Solid/link/34";
+      }
+      if (imageSrc) {
+        const fileImage = new osparc.ui.basic.Thumbnail(imageSrc).set({
+          padding: 12
+        });
+        this.__inputOutputLayout.addAt(fileImage, 1, {
+          flex: 1
+        });
+      }
+      this.fireEvent("nodeMoving");
     },
 
     getInputPort: function() {
@@ -260,13 +310,13 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (isInput) {
         this.__inputLayout = label;
         this.__inputOutputLayout.addAt(label.ui, 0, {
-          width: "20%"
+          flex: 1
         });
       } else {
         this.__outputLayout = label;
         const nElements = this.__inputOutputLayout.getChildren().length;
         this.__inputOutputLayout.addAt(label.ui, nElements, {
-          width: "20%"
+          flex: 1
         });
         label.ui.addListener("tap", e => {
           this.__openNodeDataManager();
@@ -320,7 +370,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     getEdgePoint: function(port) {
       const bounds = this.getCurrentBounds();
-      const captionHeight = this.self().captionHeight();
+      const captionHeight = Math.max(this.getChildControl("captionbar").getSizeHint().height, this.self().captionHeight());
       const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width;
       let y = bounds.top + captionHeight + this.self().PORT_HEIGHT/2 + 1;
       if (this.__thumbnail) {

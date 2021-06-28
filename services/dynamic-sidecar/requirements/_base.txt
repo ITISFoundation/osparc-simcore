@@ -9,7 +9,11 @@ aiodocker==0.19.1
 aiofiles==0.6.0
     # via -r requirements/_base.in
 aiohttp==3.7.4.post0
-    # via aiodocker
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   aiodocker
 async-generator==1.10
     # via -r requirements/_base.in
 async-timeout==3.0.1
@@ -22,8 +26,6 @@ attrs==20.3.0
     #   jsonschema
 bcrypt==3.2.0
     # via paramiko
-cached-property==1.5.2
-    # via docker-compose
 certifi==2020.12.5
     # via requests
 cffi==1.14.5
@@ -43,8 +45,6 @@ cryptography==3.4.7
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   paramiko
-dataclasses==0.8
-    # via pydantic
 distro==1.5.0
     # via docker-compose
 dnspython==2.1.0
@@ -67,18 +67,13 @@ fastapi==0.63.0
     # via -r requirements/_base.in
 h11==0.12.0
     # via uvicorn
-idna-ssl==1.1.0
-    # via aiohttp
 idna==2.10
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   email-validator
-    #   idna-ssl
     #   requests
     #   yarl
-importlib-metadata==4.0.1
-    # via jsonschema
 jsonschema==3.2.0
     # via docker-compose
 multidict==5.1.0
@@ -93,6 +88,9 @@ pycparser==2.20
     # via cffi
 pydantic[email]==1.8.2
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/_base.in
     #   fastapi
@@ -134,11 +132,8 @@ typing-extensions==3.7.4.3
     # via
     #   aiodocker
     #   aiohttp
-    #   importlib-metadata
     #   pydantic
-    #   uvicorn
-    #   yarl
-urllib3==1.26.4
+urllib3==1.26.5
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -154,8 +149,6 @@ yarl==1.6.3
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiohttp
-zipp==3.4.1
-    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

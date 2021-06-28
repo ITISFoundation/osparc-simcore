@@ -371,8 +371,6 @@ async function takeScreenshot(page, captureName = "") {
   filename = filename.split(":").join("-")
   filename = filename + ".jpg";
   const path = pathLib.join(__dirname, SCREENSHOTS_DIR, filename);
-  console.log(path);
-
   try {
     await page.screenshot({
       fullPage: true,
@@ -380,6 +378,7 @@ async function takeScreenshot(page, captureName = "") {
       type: 'jpeg',
       quality: 15
     })
+    console.log('screenshot taken', path);
   }
   catch (err) {
     console.error("Error taking screenshot", err);

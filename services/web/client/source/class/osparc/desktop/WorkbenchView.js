@@ -105,6 +105,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (this.__groupNodeView) {
         this.__groupNodeView.restoreIFrame();
       }
+      const prevNodeId = this.__currentNodeId;
       this.__currentNodeId = nodeId;
       this.getStudy().getUi().setCurrentNodeId(nodeId);
 
@@ -124,6 +125,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         nodeView.setNode(node);
         this.__showInMainView(nodeView, nodeId);
         nodeView.populateLayout();
+        nodeView.addListener("itemSelected", () => {
+          this.nodeSelected(prevNodeId);
+        }, this);
       } else {
         this.__nodeView.setNode(node);
         this.__showInMainView(this.__nodeView, nodeId);

@@ -163,9 +163,9 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       this.__node.bind("outputs", this.__label, "value", {
         converter: outputs => {
           if (osparc.file.FilePicker.getOutput(outputs)) {
-            const outputLabel = osparc.file.FilePicker.getOutputLabel(outputs);
+            let outputLabel = osparc.file.FilePicker.getOutputLabel(outputs);
             if (outputLabel === "" && osparc.file.FilePicker.isOutputDownloadLink(outputs)) {
-              return osparc.file.FilePicker.extractLabelFromLink(outputs);
+              outputLabel = osparc.file.FilePicker.extractLabelFromLink(outputs);
             }
             return outputLabel;
           }

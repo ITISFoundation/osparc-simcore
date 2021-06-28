@@ -6,9 +6,7 @@
 import asyncio
 import json
 import logging
-from asyncio import Future
 from typing import Any, Dict, List
-from unittest.mock import MagicMock
 
 import aiopg.sa
 import pytest
@@ -22,11 +20,7 @@ from simcore_service_webserver.computation_comp_tasks_listening_task import (
 )
 from sqlalchemy.sql.elements import literal_column
 
-
-def future_with_result(result: Any) -> asyncio.Future:
-    f = Future()
-    f.set_result(result)
-    return f
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
@@ -34,30 +28,30 @@ async def mock_project_subsystem(mocker) -> Dict:
     mocked_project_calls = {
         "_get_project_owner": mocker.patch(
             "simcore_service_webserver.computation_comp_tasks_listening_task._get_project_owner",
-            return_value=future_with_result(""),
+            return_value="",
         ),
         "_update_project_state": mocker.patch(
             "simcore_service_webserver.computation_comp_tasks_listening_task._update_project_state",
-            return_value=future_with_result(""),
+            return_value="",
         ),
         "_update_project_outputs": mocker.patch(
             "simcore_service_webserver.computation_comp_tasks_listening_task._update_project_outputs",
-            return_value=future_with_result(""),
+            return_value="",
         ),
     }
     yield mocked_project_calls
 
 
-async def test_mock_project_api(loop, mock_project_subsystem: Dict):
+async def test_mock_project_api(loop, mock_project_subsystem: Dict, mocker):
     from simcore_service_webserver.computation_comp_tasks_listening_task import (
         _get_project_owner,
         _update_project_outputs,
         _update_project_state,
     )
 
-    assert isinstance(_get_project_owner, MagicMock)
-    assert isinstance(_update_project_state, MagicMock)
-    assert isinstance(_update_project_outputs, MagicMock)
+    assert isinstance(_get_project_owner, mocker.AsyncMock)
+    assert isinstance(_update_project_state, mocker.AsyncMock)
+    assert isinstance(_update_project_outputs, mocker.AsyncMock)
 
 
 @pytest.fixture
@@ -65,32 +59,18 @@ async def comp_task_listening_task(
     loop, mock_project_subsystem: Dict, client
 ) -> asyncio.Task:
     listening_task = loop.create_task(comp_tasks_listening_task(client.app))
+
     yield listening_task
 
     listening_task.cancel()
     await listening_task
 
 
-MAX_TIMEOUT_S = 10
-logger = logging.getLogger(__name__)
-
-
-@tenacity.retry(
-    wait=tenacity.wait_fixed(1),
-    stop=tenacity.stop_after_delay(MAX_TIMEOUT_S),
-    retry=tenacity.retry_if_exception_type(AssertionError),
-    before=tenacity.before_log(logger, logging.INFO),
-    reraise=True,
-)
-async def _wait_for_call(mock_fct):
-    mock_fct.assert_called()
-
-
 @pytest.mark.parametrize(
     "task_class", [NodeClass.COMPUTATIONAL, NodeClass.INTERACTIVE, NodeClass.FRONTEND]
 )
 @pytest.mark.parametrize(
-    "upd_value, exp_calls",
+    "update_values, expected_calls",
     [
         pytest.param(
             {
@@ -120,8 +100,8 @@ async def test_listen_comp_tasks_task(
     mock_project_subsystem: Dict,
     comp_task_listening_task: asyncio.Task,
     client,
-    upd_value: Dict[str, Any],
-    exp_calls: List[str],
+    update_values: Dict[str, Any],
+    expected_calls: List[str],
     task_class: NodeClass,
 ):
     db_engine: aiopg.sa.Engine = client.app[APP_DB_ENGINE_KEY]
@@ -138,11 +118,27 @@ async def test_listen_comp_tasks_task(
         # let's update some values
         await conn.execute(
             comp_tasks.update()
-            .values(**upd_value)
+            .values(**update_values)
             .where(comp_tasks.c.task_id == task["task_id"])
         )
-        for key, mock_fct in mock_project_subsystem.items():
-            if key in exp_calls:
-                await _wait_for_call(mock_fct)
+
+        # tests whether listener gets hooked calls executed
+        for call_name, mocked_call in mock_project_subsystem.items():
+            if call_name in expected_calls:
+                async for attempt in _async_retry_if_fails():
+                    with attempt:
+                        mocked_call.assert_awaited()
+
             else:
-                mock_fct.assert_not_called()
+                mocked_call.assert_not_called()
+
+
+def _async_retry_if_fails():
+    # Helper that retries to account for some uncontrolled delays
+    return tenacity.AsyncRetrying(
+        wait=tenacity.wait_fixed(1),
+        stop=tenacity.stop_after_delay(10),
+        retry=tenacity.retry_if_exception_type(AssertionError),
+        before=tenacity.before_log(logger, logging.INFO),
+        reraise=True,
+    )

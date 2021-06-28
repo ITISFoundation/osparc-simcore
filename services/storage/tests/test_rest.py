@@ -5,7 +5,6 @@
 import json
 import os
 import sys
-from asyncio import Future
 from pathlib import Path
 from typing import Any, Dict
 from urllib.parse import quote
@@ -68,7 +67,7 @@ def client(
 
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
 
-    settings = Settings.create_from_env()
+    settings = Settings.create_from_envs()
     print(settings.json(indent=2))
 
     app[APP_CONFIG_KEY] = settings
@@ -313,9 +312,10 @@ def mock_datcore_download(mocker, client):
     assert dsm
     assert isinstance(dsm, DataStorageManager)
 
-    mock = mocker.patch.object(dsm, "download_link_datcore")
-    mock.return_value = Future()
-    mock.return_value.set_result(("https://httpbin.org/image", "foo.txt"))
+    async def mock_download_link_datcore(*args, **kwargs):
+        return ["https://httpbin.org/image", "foo.txt"]
+
+    mocker.patch.object(dsm, "download_link_datcore", mock_download_link_datcore)
 
 
 @pytest.fixture
@@ -325,7 +325,6 @@ def mock_get_project_access_rights(mocker) -> None:
         mock = mocker.patch(
             f"simcore_service_storage.{module}.get_project_access_rights"
         )
-        mock.return_value = Future()
         mock.return_value.set_result(AccessRights.all())
 
 

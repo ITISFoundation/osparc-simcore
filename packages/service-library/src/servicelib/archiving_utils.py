@@ -1,9 +1,12 @@
 import asyncio
 import logging
 import zipfile
-from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Iterator, List, Set
+
+from servicelib.pools import non_blocking_process_pool_executor
+
+MAX_UNARCHIVING_WORKER_COUNT = 2
 
 log = logging.getLogger(__name__)
 
@@ -67,7 +70,10 @@ def ensure_destination_subdirectories_exist(
 
 
 async def unarchive_dir(
-    archive_to_extract: Path, destination_folder: Path
+    archive_to_extract: Path,
+    destination_folder: Path,
+    *,
+    max_workers: int = MAX_UNARCHIVING_WORKER_COUNT,
 ) -> Set[Path]:
     """Extracts zipped file archive_to_extract to destination_folder,
     preserving all relative files and folders inside the archive
@@ -76,7 +82,7 @@ async def unarchive_dir(
     all tree leafs, which might include files or empty folders
     """
     with zipfile.ZipFile(archive_to_extract, mode="r") as zip_file_handler:
-        with ProcessPoolExecutor() as pool:
+        with non_blocking_process_pool_executor(max_workers=max_workers) as pool:
             loop = asyncio.get_event_loop()
 
             # running in process poll is not ideal for concurrency issues
@@ -135,8 +141,8 @@ def _serial_add_to_archive(
 async def archive_dir(
     dir_to_compress: Path, destination: Path, compress: bool, store_relative_path: bool
 ) -> bool:
-    """ Returns True if successuly archived """
-    with ProcessPoolExecutor(max_workers=1) as pool:
+    """Returns True if successuly archived"""
+    with non_blocking_process_pool_executor(max_workers=1) as pool:
         return await asyncio.get_event_loop().run_in_executor(
             pool,
             _serial_add_to_archive,

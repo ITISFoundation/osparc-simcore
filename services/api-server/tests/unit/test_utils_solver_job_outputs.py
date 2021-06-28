@@ -8,15 +8,15 @@ from simcore_service_api_server.utils.solver_job_outputs import (
     BaseFileLink,
     ResultsTypes,
 )
-from simcore_service_api_server.utils.typing_extra import get_args
+from simcore_service_api_server.utils.typing_extra import get_types
 
 
 def test_result_type_mapped():
     # I/O types returned by node-ports must be one-to-one mapped
     # with those returned as output results
 
-    api_arg_types = list(get_args(ArgumentType))
-    output_arg_types = list(get_args(ResultsTypes))
+    api_arg_types = list(get_types(ArgumentType))
+    output_arg_types = list(get_types(ResultsTypes))
 
     assert File in api_arg_types
     assert BaseFileLink in output_arg_types

@@ -181,6 +181,7 @@ qx.Class.define("osparc.data.model.Node", {
 
   events: {
     "retrieveInputs": "qx.event.type.Data",
+    "filePickerRequested": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data",
     "outputListChanged": "qx.event.type.Event"
   },
@@ -526,6 +527,14 @@ qx.Class.define("osparc.data.model.Node", {
 
         this.callRetrieveInputs(portId);
       }, this);
+
+      propsForm.addListener("filePickerRequested", e => {
+        const portId = e.getData();
+        this.fireDataEvent("filePickerRequested", {
+          portId,
+          nodeId: this.getNodeId()
+        });
+      }, this);
     },
 
     __addSettingsEditor: function(inputs) {
@@ -683,12 +692,9 @@ qx.Class.define("osparc.data.model.Node", {
       const inPorts = node2.getInputs();
       for (const outPort in outPorts) {
         for (const inPort in inPorts) {
-          const compatible = await osparc.utils.Ports.arePortsCompatible(node1, outPort, node2, inPort);
-          if (compatible) {
-            if (node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
-              autoConnections++;
-              break;
-            }
+          if (await node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
+            autoConnections++;
+            break;
           }
         }
       }
@@ -699,7 +705,16 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     addPortLink: function(toPortId, fromNodeId, fromPortId) {
-      return this.getPropsForm().addLink(toPortId, fromNodeId, fromPortId);
+      return new Promise(resolve => {
+        const fromNode = this.getWorkbench().getNode(fromNodeId);
+        osparc.utils.Ports.arePortsCompatible(fromNode, fromPortId, this, toPortId)
+          .then(compatible => {
+            if (compatible) {
+              resolve(this.getPropsForm().addLink(toPortId, fromNodeId, fromPortId));
+            }
+            resolve(false);
+          });
+      });
     },
 
     // ----- Input Nodes -----

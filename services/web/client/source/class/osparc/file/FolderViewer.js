@@ -308,13 +308,6 @@ qx.Class.define("osparc.file.FolderViewer", {
       this.fireDataEvent("itemSelected", item);
       if (osparc.file.FilesTree.isDir(item)) {
         this.setFolder(item);
-      } else if (osparc.file.FilesTree.isFile(item)) {
-        osparc.store.Data.getInstance().getPresignedLink(true, item.getLocation(), item.getFileId())
-          .then(presignedLinkData => {
-            if ("presignedLink" in presignedLinkData) {
-              window.open(presignedLinkData.presignedLink.link);
-            }
-          });
       }
     },
 
