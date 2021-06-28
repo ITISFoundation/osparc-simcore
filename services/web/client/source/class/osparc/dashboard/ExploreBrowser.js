@@ -707,8 +707,10 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
     __isUserAnyServiceVersionOwner: function(studyData) {
       if (osparc.utils.Resources.isService(studyData)) {
-        const myEmail = osparc.auth.Data.getInstance().getEmail();
-        const ownedServices = osparc.utils.Services.getOwnedServices(this.__servicesAll, studyData["key"], myEmail);
+        const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+        orgIDs.push(osparc.auth.Data.getInstance().getGroupId());
+
+        const ownedServices = osparc.utils.Services.getOwnedServices(this.__servicesAll, studyData["key"]);
         return ownedServices.length;
       }
       return false;

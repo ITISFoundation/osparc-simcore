@@ -130,11 +130,13 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
-    getOwnedServices: function(services, key, email) {
+    getOwnedServices: function(services, key) {
+      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      orgIDs.push(osparc.auth.Data.getInstance().getGroupId());
       const ownedVersions = [];
       if (key in services) {
         this.getVersions(services, key).forEach(version => {
-          if (services[key][version]["owner"] === email) {
+          if (osparc.component.permissions.Service.canAnyGroupWrite(services[key][version]["access_rights"], orgIDs)) {
             ownedVersions.push(version);
           }
         });
