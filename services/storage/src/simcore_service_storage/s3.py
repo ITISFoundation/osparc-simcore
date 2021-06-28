@@ -30,7 +30,7 @@ async def _setup_s3_bucket(app):
     )
     async def do_create_bucket():
         log.debug("Creating bucket: %s", cfg.STORAGE_S3.json(indent=2))
-        s3_client.create_bucket(cfg.STORAGE_S3.bucket_name)
+        s3_client.create_bucket(cfg.STORAGE_S3.S3_BUCKET_NAME)
 
     try:
         await do_create_bucket()
