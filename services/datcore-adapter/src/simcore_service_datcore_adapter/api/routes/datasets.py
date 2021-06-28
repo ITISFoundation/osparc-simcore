@@ -28,10 +28,14 @@ async def list_datasets(
     pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
     params: Params = Depends(),
 ) -> Page[DatasetsOut]:
-    datasets: List[DatasetMetaData] = await pennsieve_client.get_datasets(
-        api_key=x_datcore_api_key, api_secret=x_datcore_api_secret
+    raw_params: RawParams = resolve_params(params).to_raw_params()
+    datasets, total = await pennsieve_client.get_datasets(
+        api_key=x_datcore_api_key,
+        api_secret=x_datcore_api_secret,
+        limit=raw_params.limit,
+        offset=raw_params.offset,
     )
-    return paginate(datasets, params)
+    return create_page(items=datasets, total=total, params=params)
 
 
 @router.get(
