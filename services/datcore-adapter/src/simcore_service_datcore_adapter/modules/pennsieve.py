@@ -92,6 +92,18 @@ class PennsieveApiClient(BaseServiceClientApi):
         offset: int,
         collection_id: Optional[str] = None,
     ) -> Tuple[Sequence, int]:
+        headers = await self._get_authorization_bearer_header(api_key, api_secret)
+        # get dataset details
+        response = await self.client.get(
+            f"/datasets/{dataset_id}",
+            headers=headers,
+            params={"includePublishedDataset": False},
+        )
+        response.raise_for_status()
+        dataset_details = response.json()
+        dataset_details["children"]
+        logger.warning(dataset_details["children"])
+
         ps: Pennsieve = await self._get_client(api_key=api_key, api_secret=api_secret)
         ds: pennsieve.models.BaseCollection = ps.get_dataset(dataset_id)
         if collection_id:
@@ -115,12 +127,14 @@ class PennsieveApiClient(BaseServiceClientApi):
             cursor = ""
             page_size = 1000
 
+            # get number of packages
             response = await self.client.get(
                 f"/datasets/{dataset_id}/packageTypeCounts", headers=headers
             )
             response.raise_for_status()
             num_packages = sum(response.json().values())
 
+            # get dataset details
             response = await self.client.get(
                 f"/datasets/{dataset_id}",
                 headers=headers,
@@ -130,8 +144,8 @@ class PennsieveApiClient(BaseServiceClientApi):
             dataset_details = response.json()
             base_path = Path(dataset_details["content"]["name"])
 
+            # get all data packages inside the dataset
             all_packages: Dict[str, Dict[str, Any]] = {}
-
             while resp := await self.client.get(
                 f"/datasets/{dataset_id}/packages",
                 params={
@@ -154,6 +168,7 @@ class PennsieveApiClient(BaseServiceClientApi):
                     # the whole collection is there now
                     break
 
+            # get the information about the files
             for package_id, package in all_packages.items():
                 if package["content"]["packageType"] == "Collection":
                     continue
