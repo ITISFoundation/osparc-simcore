@@ -1,7 +1,7 @@
 import logging
 from collections import deque
 from pprint import pformat
-from typing import Any, Dict, List
+from typing import Any, Deque, Dict, List, Optional, Type
 
 from fastapi import FastAPI
 
@@ -34,9 +34,9 @@ def _get_director_v0_client(app: FastAPI) -> DirectorV0Client:
 
 
 def parse_containers_inspect(
-    containers_inspect: Dict[str, Any]
+    containers_inspect: Optional[Dict[str, Any]]
 ) -> List[DockerContainerInspect]:
-    results = deque()
+    results: Deque[DockerContainerInspect] = deque()
 
     if containers_inspect is None:
         return []
@@ -91,9 +91,11 @@ class CreateServices(MonitorEvent):
         dynamic_sidecar_network_id = await create_network(network_config)
 
         # attach the service to the swarm network dedicated to services
-        swarm_network = await get_swarm_network(dynamic_sidecar_settings)
-        swarm_network_id = swarm_network["Id"]
-        swarm_network_name = swarm_network["Name"]
+        swarm_network: Dict[str, Any] = await get_swarm_network(
+            dynamic_sidecar_settings
+        )
+        swarm_network_id: str = swarm_network["Id"]
+        swarm_network_name: str = swarm_network["Name"]
 
         # start dynamic-sidecar and run the proxy on the same node
         dynamic_sidecar_create_service_params = await dynamic_sidecar_assembly(
@@ -161,9 +163,9 @@ class ServicesInspect(MonitorEvent):
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = monitor_data.dynamic_sidecar.endpoint
 
-        containers_inspect = await dynamic_sidecar_client.containers_inspect(
-            dynamic_sidecar_endpoint
-        )
+        containers_inspect: Optional[
+            Dict[str, Any]
+        ] = await dynamic_sidecar_client.containers_inspect(dynamic_sidecar_endpoint)
         if containers_inspect is None:
             # this means that the service was degrated and we need to do something?
             monitor_data.dynamic_sidecar.status.update_failing_status(
@@ -219,7 +221,7 @@ class RunDockerComposeUp(MonitorEvent):
 
 # register all handlers defined in this module here
 # A list is essential to guarantee execution order
-REGISTERED_EVENTS: List[MonitorEvent] = [
+REGISTERED_EVENTS: List[Type[MonitorEvent]] = [
     CreateServices,
     ServicesInspect,
     RunDockerComposeUp,
