@@ -14,7 +14,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_states import (
 def mock_containers_statuses() -> Dict[str, Dict[str, str]]:
     return {
         "container_id_1": {"Status": "pulling"},
-        "container_id_2": {"Status": "removing", "Error": "something"},
+        "container_id_2": {"Status": "failed", "Error": "something"},
         "container_id_3": {"Status": "pending"},
     }
 
