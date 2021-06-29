@@ -40,10 +40,14 @@ def deployed_simcore_stack(
             with attempt:
                 for service in docker_client.services.list():
                     for task in service.tasks():
-                        assert task["Status"]["State"] == task["DesiredState"], (
-                            f"{service.name} still not ready ("
-                            f"desired_state[{task['DesiredState']}] != "
-                            f"status_state[{task['Status']['State']}]):"
+                        # NOTE: Could have been restarted from latest test parameter, accept as well complete
+                        assert task["Status"]["State"] in (
+                            task["DesiredState"],
+                            "complete",
+                        ), (
+                            f"{service.name} still not ready or complete. Expected "
+                            f"desired_state[{task['DesiredState']}] but got "
+                            f"status_state[{task['Status']['State']}]). Details:"
                             f"\n{pformat(task)}"
                         )
 
@@ -79,8 +83,6 @@ SERVICES_AND_EXIT_CODES = [
     ("catalog", 0),
     ("dask-sidecar", 0),
     ("director-v2", 0),
-    # FIXME: https://github.com/ITISFoundation/osparc-simcore/issues/1466
-    ("director", 1),
     ("migration", 143),
     ("static-webserver", 15),
     ("storage", 0),
@@ -88,9 +90,7 @@ SERVICES_AND_EXIT_CODES = [
 ]
 
 
-@pytest.mark.skip(
-    reason="UNDER INVESTIGATION: Runs locally but not online. This tests is not critical."
-)
+# TODO: https://github.com/ITISFoundation/osparc-simcore/issues/2407
 @pytest.mark.parametrize(
     "docker_compose_service_key,exit_code",
     SERVICES_AND_EXIT_CODES,
