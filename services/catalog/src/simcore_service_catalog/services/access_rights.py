@@ -13,6 +13,8 @@ from models_library.services import ServiceAccessRightsAtDB, ServiceDockerData
 from packaging.version import Version
 from pydantic.types import PositiveInt
 
+from .frontend_services import FRONTEND_SERVICE_KEY_PREFIX
+
 from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.services import ServicesRepository
@@ -24,7 +26,7 @@ OLD_SERVICES_DATE: datetime = datetime(2020, 8, 19)
 
 
 def _is_frontend_service(service: ServiceDockerData) -> bool:
-    return "/frontend/" in service.key
+    return FRONTEND_SERVICE_KEY_PREFIX in service.key
 
 
 async def _is_old_service(app: FastAPI, service: ServiceDockerData) -> bool:
