@@ -220,7 +220,7 @@ qx.Class.define("osparc.data.model.Study", {
       }
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const aceessRights = studyData["accessRights"];
-      return osparc.component.permissions.Study.canGroupExecute(aceessRights, myGid);
+      return osparc.component.permissions.Study.canGroupDelete(aceessRights, myGid);
     },
 
     hasSlideshow: function(studyData) {
