@@ -111,21 +111,18 @@ async def create_dynamic_service(
         log.debug("Redirecting %s", redirect_url_with_query)
         return RedirectResponse(redirect_url_with_query)
 
-    # if service is already running return the status
-    if await is_dynamic_service_running(
+    if not await is_dynamic_service_running(
         dynamic_services_settings.dynamic_sidecar, service.node_uuid
     ):
-        return await monitor.get_stack_status(service.node_uuid)
-
-    # services where successfully started and they can be monitored
-    monitor_data = MonitorData.make_from_http_request(
-        service=service,
-        simcore_service_labels=simcore_service_labels,
-        port=dynamic_services_settings.dynamic_sidecar.DYNAMIC_SIDECAR_PORT,
-        request_dns=x_dynamic_sidecar_request_dns,
-        request_scheme=x_dynamic_sidecar_request_scheme,
-    )
-    await monitor.add_service_to_monitor(monitor_data)
+        # services where successfully started and they can be monitored
+        monitor_data = MonitorData.make_from_http_request(
+            service=service,
+            simcore_service_labels=simcore_service_labels,
+            port=dynamic_services_settings.dynamic_sidecar.DYNAMIC_SIDECAR_PORT,
+            request_dns=x_dynamic_sidecar_request_dns,
+            request_scheme=x_dynamic_sidecar_request_scheme,
+        )
+        await monitor.add_service_to_monitor(monitor_data)
 
     return await monitor.get_stack_status(service.node_uuid)
 
