@@ -144,6 +144,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         )
 
     async def get_user_profile(self, api_key: str, api_secret: str) -> Profile:
+        """returns the user profile id"""
         ps: Pennsieve = await _get_pennsieve_client(
             api_key=api_key, api_secret=api_secret
         )
@@ -152,6 +153,7 @@ class PennsieveApiClient(BaseServiceClientApi):
     async def get_datasets(
         self, api_key: str, api_secret: str, limit: int, offset: int
     ) -> Tuple[Sequence, int]:
+        """returns all the datasets a user has access to"""
         dataset_page = cast(
             Dict[str, Any],
             await self._request(
@@ -219,6 +221,8 @@ class PennsieveApiClient(BaseServiceClientApi):
     async def list_dataset_files(
         self, api_key: str, api_secret: str, dataset_id: str
     ) -> List:
+        """returns ALL the files belonging to the dataset, can be slow if there are a lot of files"""
+
         async def _parse_dataset_items() -> List[FileMetaData]:
             file_meta_data = []
             cursor = ""
@@ -279,6 +283,7 @@ class PennsieveApiClient(BaseServiceClientApi):
     async def get_presigned_download_link(
         self, api_key: str, api_secret: str, package_id: str
     ) -> URL:
+        """returns the presigned download link of the first file in the package"""
         files = await self._get_package_files(api_key, api_secret, package_id)
 
         # NOTE: this was done like this in the original dsm. we might encounter a problem when there are more than one files
