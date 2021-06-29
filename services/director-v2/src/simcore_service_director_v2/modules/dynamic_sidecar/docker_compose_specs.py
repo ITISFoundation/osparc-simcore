@@ -98,12 +98,12 @@ async def assemble_spec(
     returns a docker-compose spec used by
     the dynamic-sidecar to start the service
     """
-
-    container_name = container_http_entry
-    service_spec = compose_spec
     settings: DynamicSidecarSettings = (
         app.state.settings.dynamic_services.dynamic_sidecar
     )
+
+    container_name = container_http_entry
+    service_spec = compose_spec
 
     # when no compose yaml file was provided
     if service_spec is None:
@@ -118,6 +118,8 @@ async def assemble_spec(
         # - inject paths mapping
         # - remove above # pylint: disable=unused-argument
         pass
+
+    assert container_name is not None  # nosec
 
     _inject_traefik_configuration(
         service_spec,
