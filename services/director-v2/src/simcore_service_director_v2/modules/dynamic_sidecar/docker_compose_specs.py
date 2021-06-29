@@ -7,7 +7,7 @@ from models_library.service_settings_labels import ComposeSpecLabel, PathsMappin
 from pydantic import PositiveInt
 
 from ...core.settings import DynamicSidecarSettings
-from .service_specs import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
+from .docker_service_specs import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
 
 CONTAINER_NAME = "container"
 BASE_SERVICE_SPEC: Dict[str, Any] = {

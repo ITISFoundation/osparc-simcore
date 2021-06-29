@@ -16,7 +16,7 @@ from ..docker_api import (
     get_swarm_network,
 )
 from ..docker_compose_specs import assemble_spec
-from ..service_specs import (
+from ..docker_service_specs import (
     dyn_proxy_entrypoint_assembly,
     dynamic_sidecar_assembly,
     extract_service_port_from_compose_start_spec,
