@@ -1,10 +1,11 @@
 from typing import Optional
 
 from models_library.basic_types import PortInt, VersionTag
-from pydantic import AnyHttpUrl, BaseSettings, Field, validator
+from pydantic import AnyHttpUrl, Field, validator
+from settings_library.base import BaseCustomSettings
 
 
-class DatcoreAdapterSettings(BaseSettings):
+class DatcoreAdapterSettings(BaseCustomSettings):
     ENABLED: bool = True
     HOST: str = "datcore-adapter"
     PORT: PortInt = 8000
