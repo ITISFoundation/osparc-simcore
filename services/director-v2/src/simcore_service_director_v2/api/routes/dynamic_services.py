@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Coroutine, Dict, List, Optional
+from typing import Coroutine, List, Optional, Union, cast
 from uuid import UUID
 
 import httpx
@@ -57,10 +57,11 @@ async def list_running_dynamic_services(
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_services_settings: DynamicServicesSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> List[Dict[str, Any]]:
-    legacy_running_services: List[
-        DynamicServiceOut
-    ] = await director_v0_client.get_running_services(user_id, project_id)
+) -> List[DynamicServiceOut]:
+    legacy_running_services: List[DynamicServiceOut] = cast(
+        List[DynamicServiceOut],
+        await director_v0_client.get_running_services(user_id, project_id),
+    )
 
     get_stack_statuse_tasks: List[Coroutine] = [
         monitor.get_stack_status(UUID(service["Spec"]["Labels"]["uuid"]))
@@ -68,8 +69,8 @@ async def list_running_dynamic_services(
             dynamic_services_settings.dynamic_sidecar, user_id, project_id
         )
     ]
-    dynamic_sidecar_running_services: List[DynamicServiceOut] = await asyncio.gather(
-        *get_stack_statuse_tasks
+    dynamic_sidecar_running_services: List[DynamicServiceOut] = cast(
+        List[DynamicServiceOut], await asyncio.gather(*get_stack_statuse_tasks)
     )
 
     return legacy_running_services + dynamic_sidecar_running_services
@@ -89,7 +90,7 @@ async def create_dynamic_service(
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_services_settings: DynamicServicesSettings = Depends(get_settings),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> DynamicServiceOut:
+) -> Union[DynamicServiceOut, RedirectResponse]:
     simcore_service_labels: SimcoreServiceLabels = (
         await director_v0_client.get_service_labels(
             service=ServiceKeyVersion(key=service.key, version=service.version)
@@ -109,7 +110,7 @@ async def create_dynamic_service(
             },
         )
         log.debug("Redirecting %s", redirect_url_with_query)
-        return RedirectResponse(redirect_url_with_query)
+        return RedirectResponse(str(redirect_url_with_query))
 
     if not await is_dynamic_service_running(
         dynamic_services_settings.dynamic_sidecar, service.node_uuid
@@ -124,7 +125,7 @@ async def create_dynamic_service(
         )
         await monitor.add_service_to_monitor(monitor_data)
 
-    return await monitor.get_stack_status(service.node_uuid)
+    return cast(DynamicServiceOut, await monitor.get_stack_status(service.node_uuid))
 
 
 @router.get(
@@ -136,10 +137,10 @@ async def get_dynamic_sidecar_status(
     node_uuid: NodeID,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> DynamicServiceOut:
+) -> Union[DynamicServiceOut, RedirectResponse]:
 
     try:
-        return await monitor.get_stack_status(node_uuid)
+        return cast(DynamicServiceOut, await monitor.get_stack_status(node_uuid))
     except DynamicSidecarNotFoundError:
         # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0
@@ -147,7 +148,7 @@ async def get_dynamic_sidecar_status(
             path=f"/v0/running_interactive_services/{node_uuid}",
         )
 
-        return RedirectResponse(redirection_url)
+        return RedirectResponse(str(redirection_url))
 
 
 @router.delete(
@@ -161,7 +162,7 @@ async def stop_dynamic_service(
     save_state: Optional[bool] = True,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),
-) -> None:
+) -> Union[None, RedirectResponse]:
 
     try:
         await monitor.remove_service_from_monitor(node_uuid, save_state)
@@ -173,7 +174,7 @@ async def stop_dynamic_service(
             params={"save_state": bool(save_state)},
         )
 
-        return RedirectResponse(redirection_url)
+        return RedirectResponse(str(redirection_url))
 
 
 @router.post(
