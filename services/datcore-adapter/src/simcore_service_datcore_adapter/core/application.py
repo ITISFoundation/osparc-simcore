@@ -47,6 +47,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
     app.add_event_handler("shutdown", create_stop_app_handler(app))
     app.add_event_handler("shutdown", on_shutdown)
 
+    # Routing
     setup_api(app)
 
     if settings.DATCORE_ADAPTER_PENNSIEVE.ENABLED:
