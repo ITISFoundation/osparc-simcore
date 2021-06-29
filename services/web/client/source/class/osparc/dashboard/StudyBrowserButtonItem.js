@@ -469,7 +469,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyState: function(state) {
-      console.log(state);
       const locked = ("locked" in state) ? state["locked"]["value"] : false;
       this.setLocked(locked);
       if (locked) {
