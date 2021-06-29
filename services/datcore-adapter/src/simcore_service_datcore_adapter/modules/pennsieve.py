@@ -93,28 +93,31 @@ class PennsieveApiClient(BaseServiceClientApi):
         collection_id: Optional[str] = None,
     ) -> Tuple[Sequence, int]:
         headers = await self._get_authorization_bearer_header(api_key, api_secret)
-        # get dataset details
+        # get dataset or collection details
+        url = (
+            f"/packages/{collection_id}" if collection_id else f"/datasets/{dataset_id}"
+        )
+        params = (
+            {"includeAncestors": False}
+            if collection_id
+            else {"includePublishedDataset": False}
+        )
         response = await self.client.get(
-            f"/datasets/{dataset_id}",
+            url,
             headers=headers,
-            params={"includePublishedDataset": False},
+            params=params,
         )
         response.raise_for_status()
-        dataset_details = response.json()
-        dataset_details["children"]
-        logger.warning(dataset_details["children"])
-
-        ps: Pennsieve = await self._get_client(api_key=api_key, api_secret=api_secret)
-        ds: pennsieve.models.BaseCollection = ps.get_dataset(dataset_id)
-        if collection_id:
-            ds = ps.get(collection_id)
+        package_details = response.json()
 
         return (
             [
-                FileMetaData.from_pennsieve_package(ps, package)
-                for package in islice(ds, offset, offset + limit)
+                FileMetaData.from_pennsieve_api_package(package)
+                for package in islice(
+                    package_details["children"], offset, offset + limit
+                )
             ],
-            len(ds.items),
+            len(package_details["children"]),
         )
 
     async def list_dataset_files(
