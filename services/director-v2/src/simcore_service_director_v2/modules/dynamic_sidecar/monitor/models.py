@@ -362,7 +362,7 @@ class MonitorData(BaseModel):
         return str(v)
 
     @classmethod
-    def make_from_http_request(
+    def from_http_request(
         # pylint: disable=too-many-arguments
         cls,
         service: "DynamicServiceCreate",
@@ -396,7 +396,7 @@ class MonitorData(BaseModel):
         )
 
     @classmethod
-    def make_from_service_labels_stored_data(
+    def from_service_labels_stored_data(
         cls,
         service_labels_stored_data: ServiceLabelsStoredData,
         port: Optional[int],

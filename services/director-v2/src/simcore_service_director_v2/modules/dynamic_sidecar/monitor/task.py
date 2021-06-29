@@ -339,7 +339,7 @@ class DynamicSidecarsMonitor:
         )
 
         for service_to_monitor in services_to_monitor:
-            monitor_data = MonitorData.make_from_service_labels_stored_data(
+            monitor_data = MonitorData.from_service_labels_stored_data(
                 service_labels_stored_data=service_to_monitor,
                 port=dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
             )

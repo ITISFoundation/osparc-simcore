@@ -116,7 +116,7 @@ async def create_dynamic_service(
         dynamic_services_settings.dynamic_sidecar, service.node_uuid
     ):
         # services where successfully started and they can be monitored
-        monitor_data = MonitorData.make_from_http_request(
+        monitor_data = MonitorData.from_http_request(
             service=service,
             simcore_service_labels=simcore_service_labels,
             port=dynamic_services_settings.dynamic_sidecar.DYNAMIC_SIDECAR_PORT,
