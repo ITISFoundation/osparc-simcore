@@ -109,7 +109,6 @@ def _docker_container_state_to_service_state(state: str) -> ServiceState:
 
 
 def extract_task_state(task_status: Dict[str, str]) -> Tuple[ServiceState, str]:
-    task_state: ServiceState = ServiceState(task_status["State"])
     last_task_error_msg = task_status["Err"] if "Err" in task_status else ""
 
     task_state = _docker_task_state_to_service_state(state=task_status["State"])
@@ -119,7 +118,6 @@ def extract_task_state(task_status: Dict[str, str]) -> Tuple[ServiceState, str]:
 def _extract_container_status(
     container_status: Dict[str, str]
 ) -> Tuple[ServiceState, str]:
-    container_state: ServiceState = ServiceState(container_status["Status"])
     last_task_error_msg = (
         container_status["Error"] if "Error" in container_status else ""
     )
