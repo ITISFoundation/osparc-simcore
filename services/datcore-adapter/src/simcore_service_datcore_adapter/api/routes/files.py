@@ -26,6 +26,6 @@ async def download_file(
     presigned_download_link = await pennsieve_client.get_presigned_download_link(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
-        file_id=file_id,
+        package_id=file_id,
     )
     return FileDownloadOut(link=f"{presigned_download_link}")

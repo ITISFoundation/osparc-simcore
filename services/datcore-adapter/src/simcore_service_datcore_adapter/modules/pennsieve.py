@@ -3,7 +3,8 @@ import logging
 from functools import lru_cache
 from itertools import islice
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from pprint import pformat
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import pennsieve
 from fastapi.applications import FastAPI
@@ -17,10 +18,23 @@ from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 logger = logging.getLogger(__name__)
 
-# NOTE: each pennsieve client seems to be about 8MB. so let's keep max 32
-@lru_cache(maxsize=32)
-def create_pennsieve_client(api_key: str, api_secret: str) -> Pennsieve:
-    return Pennsieve(api_token=api_key, api_secret=api_secret)
+
+async def _get_pennsieve_client(api_key: str, api_secret: str) -> Pennsieve:
+    # NOTE: each pennsieve client seems to be about 8MB. so let's keep max 32
+    @lru_cache(maxsize=32)
+    def create_pennsieve_client(api_key: str, api_secret: str) -> Pennsieve:
+        return Pennsieve(api_token=api_key, api_secret=api_secret)
+
+    return await asyncio.get_event_loop().run_in_executor(
+        None,
+        lambda: create_pennsieve_client(api_key=api_key, api_secret=api_secret),
+    )
+
+
+async def _get_authorization_headers(api_key: str, api_secret: str) -> Dict[str, str]:
+    ps: Pennsieve = await _get_pennsieve_client(api_key=api_key, api_secret=api_secret)
+    bearer_code = ps._api.token  # pylint: disable=protected-access
+    return {"Authorization": f"Bearer {bearer_code}"}
 
 
 def _compute_file_path(all_packages: List[Dict[str, Any]], pck: Dict[str, Any]) -> Path:
@@ -38,39 +52,121 @@ class PennsieveApiClient(BaseServiceClientApi):
     """The client uses a combination of the pennsieve official API client to authenticate,
     then uses the internal httpx-based client to call the REST API asynchronously"""
 
-    # NOTE: this trick allows to bypass all the python parsing/slowing down of the interface
-    # info given by Joost from Datcore
-    async def _get_client(self, api_key: str, api_secret: str) -> Pennsieve:
-        return await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: create_pennsieve_client(api_key=api_key, api_secret=api_secret),
+    async def _request(
+        self,
+        api_key: str,
+        api_secret: str,
+        method: str,
+        path: str,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+        response = await self.client.request(
+            method,
+            path,
+            headers=await _get_authorization_headers(api_key, api_secret),
+            params=params,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def _get_dataset_packages_count(
+        self, api_key: str, api_secret: str, dataset_id: str
+    ) -> int:
+        package_type_counts = cast(
+            Dict[str, Any],
+            await self._request(
+                api_key, api_secret, "GET", f"/datasets/{dataset_id}/packageTypeCounts"
+            ),
+        )
+        return sum(package_type_counts.values())
+
+    async def _get_dataset(
+        self, api_key: str, api_secret: str, dataset_id: str
+    ) -> Dict[str, Any]:
+        return cast(
+            Dict[str, Any],
+            await self._request(
+                api_key,
+                api_secret,
+                "GET",
+                f"/datasets/{dataset_id}",
+                params={"includePublishedDataset": False},
+            ),
         )
 
-    async def _get_authorization_bearer_header(
-        self, api_key: str, api_secret: str
-    ) -> Dict[str, str]:
-        ps: Pennsieve = await self._get_client(api_key=api_key, api_secret=api_secret)
-        bearer_code = ps._api.token  # pylint: disable=protected-access
-        return {"Authorization": f"Bearer {bearer_code}"}
+    async def _get_dataset_packages(
+        self,
+        api_key: str,
+        api_secret: str,
+        dataset_id: str,
+        page_size: int,
+        cursor: str,
+    ) -> Dict[str, Any]:
+        return cast(
+            Dict[str, Any],
+            await self._request(
+                api_key,
+                api_secret,
+                "GET",
+                f"/datasets/{dataset_id}/packages",
+                params={
+                    "includeSourceFiles": False,
+                    "pageSize": page_size,
+                    "cursor": cursor,
+                },
+            ),
+        )
+
+    async def _get_package(
+        self, api_key: str, api_secret: str, package_id: str
+    ) -> Dict[str, Any]:
+        return cast(
+            Dict[str, Any],
+            await self._request(
+                api_key,
+                api_secret,
+                "GET",
+                f"/packages/{package_id}",
+            ),
+        )
+
+    async def _get_package_files(
+        self, api_key: str, api_secret: str, package_id: str
+    ) -> List[Dict[str, Any]]:
+        return cast(
+            List[Dict[str, Any]],
+            await self._request(
+                api_key,
+                api_secret,
+                "GET",
+                f"/packages/{package_id}/files",
+            ),
+        )
 
     async def get_user_profile(self, api_key: str, api_secret: str) -> Profile:
-        ps: Pennsieve = await self._get_client(api_key=api_key, api_secret=api_secret)
+        ps: Pennsieve = await _get_pennsieve_client(
+            api_key=api_key, api_secret=api_secret
+        )
         return Profile(id=ps.profile.id)
 
     async def get_datasets(
         self, api_key: str, api_secret: str, limit: int, offset: int
     ) -> Tuple[Sequence, int]:
-        response = await self.client.get(
-            "/datasets/paginated",
-            headers=await self._get_authorization_bearer_header(api_key, api_secret),
-            params={
-                "includeBannerUrl": False,
-                "includePublishedDataset": False,
-                "limit": limit,
-                "offset": offset,
-            },
+        dataset_page = cast(
+            Dict[str, Any],
+            await self._request(
+                api_key,
+                api_secret,
+                "GET",
+                "/datasets/paginated",
+                params={
+                    "includeBannerUrl": False,
+                    "includePublishedDataset": False,
+                    "limit": limit,
+                    "offset": offset,
+                },
+            ),
         )
-        dataset_page = response.json()
 
         return (
             [
@@ -92,7 +188,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         offset: int,
         collection_id: Optional[str] = None,
     ) -> Tuple[Sequence, int]:
-        headers = await self._get_authorization_bearer_header(api_key, api_secret)
+        headers = await _get_authorization_headers(api_key, api_secret)
         # get dataset or collection details
         url = (
             f"/packages/{collection_id}" if collection_id else f"/datasets/{dataset_id}"
@@ -123,43 +219,25 @@ class PennsieveApiClient(BaseServiceClientApi):
     async def list_dataset_files(
         self, api_key: str, api_secret: str, dataset_id: str
     ) -> List:
-        headers = await self._get_authorization_bearer_header(api_key, api_secret)
-
         async def _parse_dataset_items() -> List[FileMetaData]:
             file_meta_data = []
             cursor = ""
             page_size = 1000
 
             # get number of packages
-            response = await self.client.get(
-                f"/datasets/{dataset_id}/packageTypeCounts", headers=headers
+            num_packages = await self._get_dataset_packages_count(
+                api_key, api_secret, dataset_id
             )
-            response.raise_for_status()
-            num_packages = sum(response.json().values())
 
             # get dataset details
-            response = await self.client.get(
-                f"/datasets/{dataset_id}",
-                headers=headers,
-                params={"includePublishedDataset": False},
-            )
-            response.raise_for_status()
-            dataset_details = response.json()
+            dataset_details = await self._get_dataset(api_key, api_secret, dataset_id)
             base_path = Path(dataset_details["content"]["name"])
 
             # get all data packages inside the dataset
             all_packages: Dict[str, Dict[str, Any]] = {}
-            while resp := await self.client.get(
-                f"/datasets/{dataset_id}/packages",
-                params={
-                    "includeSourceFiles": False,
-                    "pageSize": page_size,
-                    "cursor": cursor,
-                },
-                headers=headers,
+            while resp := await self._get_dataset_packages(
+                api_key, api_secret, dataset_id, page_size, cursor
             ):
-                resp.raise_for_status()
-                resp = resp.json()
                 cursor = resp.get("cursor")
                 all_packages.update(
                     {p["content"]["id"]: p for p in resp.get("packages", [])}
@@ -199,14 +277,20 @@ class PennsieveApiClient(BaseServiceClientApi):
         return dataset_files
 
     async def get_presigned_download_link(
-        self, api_key: str, api_secret: str, file_id: str
+        self, api_key: str, api_secret: str, package_id: str
     ) -> URL:
-        ps: Pennsieve = await self._get_client(api_key=api_key, api_secret=api_secret)
-        dp: pennsieve.models.DataPackage = ps.get(file_id)
-        assert len(dp.files) == 1  # nosec
-        file: pennsieve.models.File = dp.files[0]
+        files = await self._get_package_files(api_key, api_secret, package_id)
 
-        return URL(file.url)
+        # NOTE: this was done like this in the original dsm. we might encounter a problem when there are more than one files
+        assert len(files) == 1  # nosec
+        file_id = files[0]["content"]["id"]
+        file_link = cast(
+            Dict[str, Any],
+            await self._request(
+                api_key, api_secret, "GET", f"/packages/{package_id}/files/{file_id}"
+            ),
+        )
+        return URL(file_link["url"])
 
 
 def setup(app: FastAPI, settings: PennsieveSettings) -> None:
