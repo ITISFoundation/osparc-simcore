@@ -5,16 +5,23 @@
 import json
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterator, Optional
+from unittest.mock import MagicMock
 from uuid import uuid4
 
+import faker
 import httpx
 import pytest
+import respx
 import simcore_service_datcore_adapter
 from asgi_lifespan import LifespanManager
 from fastapi.applications import FastAPI
+from starlette import status
 from starlette.testclient import TestClient
 
 pytest_plugins = ["pytest_simcore.repository_paths"]
+
+
+fake = faker.Faker()
 
 
 @pytest.fixture(scope="session")
@@ -191,9 +198,6 @@ def pennsieve_api_headers(
     }
 
 
-from unittest.mock import MagicMock
-
-
 @pytest.fixture()
 def pennsieve_client_mock(
     use_real_pennsieve_interface: bool,
@@ -214,19 +218,6 @@ def pennsieve_client_mock(
         # ps_mock.assert_any_call(
         #     api_secret=pennsieve_api_secret, api_token=pennsieve_api_key
         # )
-
-
-@pytest.fixture()
-def pennsieve_dataset_package_mock(
-    mocker, use_real_pennsieve_interface: bool
-) -> Optional[Any]:
-    if not use_real_pennsieve_interface:
-        data_package_mock = mocker.patch(
-            "simcore_service_datcore_adapter.modules.pennsieve.pennsieve.models.DataSet",
-            autospec=True,
-        )
-        return data_package_mock
-    return None
 
 
 @pytest.fixture()
@@ -253,3 +244,76 @@ def pennsieve_file_package_mock(
         )
         return file_mock
     return None
+
+
+@pytest.fixture(scope="module")
+def pennsieve_random_fake_datasets(
+    pennsieve_fake_dataset_id: Callable,
+) -> Dict[str, Any]:
+    datasets = {
+        "datasets": [
+            {"content": {"id": pennsieve_fake_dataset_id(), "name": fake.text()}}
+            for _ in range(10)
+        ],
+        "totalCount": 20,
+    }
+    return datasets
+
+
+@pytest.fixture()
+async def pennsieve_subsystem_mock(
+    pennsieve_client_mock,
+    pennsieve_random_fake_datasets: Dict[str, Any],
+    pennsieve_mock_dataset_packages: Dict[str, Any],
+    pennsieve_dataset_id: str,
+    pennsieve_collection_id: str,
+):
+    if pennsieve_client_mock:
+        async with respx.mock as mock:
+            # get dataset packages counts
+            mock.get(
+                f"https://api.pennsieve.io/datasets/{pennsieve_dataset_id}/packageTypeCounts"
+            ).respond(
+                status.HTTP_200_OK,
+                json={"part1": len(pennsieve_mock_dataset_packages["packages"])},
+            )
+            # get datasets paginated
+            mock.get("https://api.pennsieve.io/datasets/paginated").respond(
+                status.HTTP_200_OK, json=pennsieve_random_fake_datasets
+            )
+            # get dataset details
+            mock.get(
+                f"https://api.pennsieve.io/datasets/{pennsieve_dataset_id}"
+            ).respond(
+                status.HTTP_200_OK,
+                json={
+                    "content": {"name": "Some dataset name that is awesome"},
+                    "children": pennsieve_mock_dataset_packages["packages"],
+                },
+            )
+            # get datasets packages
+            mock.get(
+                f"https://api.pennsieve.io/datasets/{pennsieve_dataset_id}/packages"
+            ).respond(status.HTTP_200_OK, json=pennsieve_mock_dataset_packages)
+
+            # get collection packages
+            mock.get(
+                f"https://api.pennsieve.io/packages/{pennsieve_collection_id}"
+            ).respond(
+                status.HTTP_200_OK,
+                json={
+                    "content": {"name": "this package name is also awesome"},
+                    "children": pennsieve_mock_dataset_packages["packages"],
+                    "ancestors": [
+                        {"content": {"name": "Bigger guy"}},
+                        {"content": {"name": "Big guy"}},
+                    ],
+                },
+            )
+            # get packages files
+            mock.get(url__regex=r"https://api.pennsieve.io/packages/.+/files").respond(
+                status.HTTP_200_OK, json=[{"content": {"size": 12345}}]
+            )
+            yield mock
+    else:
+        yield
