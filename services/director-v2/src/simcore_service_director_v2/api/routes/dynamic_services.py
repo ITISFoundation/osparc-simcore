@@ -132,7 +132,7 @@ async def create_dynamic_service(
     summary="assembles the status for the dynamic-sidecar",
     response_model=DynamicServiceOut,
 )
-async def dynamic_sidecar_status(
+async def get_dynamic_sidecar_status(
     node_uuid: NodeID,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     monitor: DynamicSidecarsMonitor = Depends(get_monitor),

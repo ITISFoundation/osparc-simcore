@@ -672,7 +672,7 @@
         "tags": [
           "dynamic services"
         ],
-        "summary": "create & start the dynamic service",
+        "summary": "creates & starts the dynamic service",
         "operationId": "create_dynamic_service_v2_dynamic_services_post",
         "parameters": [
           {
@@ -734,7 +734,7 @@
           "dynamic services"
         ],
         "summary": "assembles the status for the dynamic-sidecar",
-        "operationId": "dynamic_sidecar_status_v2_dynamic_services__node_uuid__get",
+        "operationId": "get_dynamic_sidecar_status_v2_dynamic_services__node_uuid__get",
         "parameters": [
           {
             "required": true,
@@ -1522,7 +1522,7 @@
           "ABORTED"
         ],
         "type": "string",
-        "description": "An enumeration."
+        "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state"
       },
       "SelectBox": {
         "title": "SelectBox",
