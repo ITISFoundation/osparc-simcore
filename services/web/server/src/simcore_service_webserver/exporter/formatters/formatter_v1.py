@@ -82,10 +82,10 @@ async def extract_download_links(
 
     log.debug("s3 files metadata %s: ", s3_metadata)
 
-    # Still not sure if these are required, when pulling files from blackfynn they end up in S3
-    # I am not sure there is an example where we need to directly export form blackfynn
+    # Still not sure if these are required, when pulling files from pennsieve they end up in S3
+    # I am not sure there is an example where we need to directly export form pennsieve
     try:
-        blackfynn_metadata = await get_project_files_metadata(
+        pennsieve_metadata = await get_project_files_metadata(
             app=app,
             location_id="1",
             uuid_filter=project_id,
@@ -93,11 +93,11 @@ async def extract_download_links(
         )
     except Exception as e:
         raise ExporterException(
-            f"Error while requesting project files metadata for blackfynn for project {project_id}"
+            f"Error while requesting project files metadata for pennsieve for project {project_id}"
         ) from e
-    log.debug("blackfynn files metadata %s: ", blackfynn_metadata)
+    log.debug("pennsieve files metadata %s: ", pennsieve_metadata)
 
-    for file_metadata in chain(s3_metadata, blackfynn_metadata):
+    for file_metadata in chain(s3_metadata, pennsieve_metadata):
         try:
             download_link = await get_file_download_url(
                 app=app,

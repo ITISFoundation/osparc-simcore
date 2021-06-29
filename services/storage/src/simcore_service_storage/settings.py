@@ -38,10 +38,10 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         False, description="Flag to enable some fakes for testing purposes"
     )
     BF_API_KEY: Optional[str] = Field(
-        None, description="Blackfynn API key ONLY for testing purposes"
+        None, description="Pennsieve API key ONLY for testing purposes"
     )
     BF_API_SECRET: Optional[str] = Field(
-        None, description="Blackfynn API secret ONLY for testing purposes"
+        None, description="Pennsieve API secret ONLY for testing purposes"
     )
 
     STORAGE_POSTGRES: PostgresSettings

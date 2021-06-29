@@ -190,7 +190,7 @@ async def test_create_token(client, logged_user, tokens_db, expected):
     assert "/v0/me/tokens" == str(url)
 
     token = {
-        "service": "blackfynn",
+        "service": "pennsieve",
         "token_key": "4k9lyzBTS",
         "token_secret": "my secret",
     }
