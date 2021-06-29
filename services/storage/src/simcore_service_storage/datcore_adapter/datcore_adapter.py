@@ -58,9 +58,7 @@ async def _request(
         ) as response:
             return await response.json()
     except aiohttp.ClientResponseError as exc:
-        raise _DatcoreAdapterResponseError(
-            status=exc.status, reason=exc.reason
-        ) from exc
+        raise _DatcoreAdapterResponseError(status=exc.status, reason=exc) from exc
     except TimeoutError as exc:
         raise DatcoreAdapterClientError("datcore-adapter server timed-out") from exc
     except aiohttp.ClientError as exc:
@@ -112,7 +110,7 @@ async def check_user_can_connect(
     try:
         await _request(app, api_token, api_secret, "GET", "/user/profile")
         return True
-    except DatcoreAdapterClientError:
+    except DatcoreAdapterException:
         return False
 
 
