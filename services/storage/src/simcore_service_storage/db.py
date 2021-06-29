@@ -27,11 +27,11 @@ async def pg_engine(app: web.Application):
     pg_cfg: PostgresSettings = app[APP_CONFIG_KEY].STORAGE_POSTGRES
     dsn = DataSourceName(
         application_name=f"{__name__}_{id(app)}",
-        database=pg_cfg.db,
-        user=pg_cfg.user,
-        password=pg_cfg.password.get_secret_value(),
-        host=pg_cfg.host,
-        port=pg_cfg.port,
+        database=pg_cfg.POSTGRES_DB,
+        user=pg_cfg.POSTGRES_USER,
+        password=pg_cfg.POSTGRES_PASSWORD.get_secret_value(),
+        host=pg_cfg.POSTGRES_HOST,
+        port=pg_cfg.POSTGRES_PORT,
     )  # type: ignore
 
     log.info("Creating pg engine for %s", dsn)
@@ -40,7 +40,7 @@ async def pg_engine(app: web.Application):
     ):
         with attempt:
             engine = await create_pg_engine(
-                dsn, minsize=pg_cfg.minsize, maxsize=pg_cfg.maxsize
+                dsn, minsize=pg_cfg.POSTGRES_MINSIZE, maxsize=pg_cfg.POSTGRES_MAXSIZE
             )
             await raise_if_not_responsive(engine)
 

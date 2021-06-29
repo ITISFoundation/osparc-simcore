@@ -11,10 +11,11 @@
 -r _test.txt
 
 # installs this repo's packages
-../../packages/postgres-database/
-../../packages/service-library/
 ../../packages/models-library/
+../../packages/postgres-database/
 ../../packages/pytest-simcore/
+../../packages/service-library/
+../../packages/settings-library/
 
 # installs current package
 .
