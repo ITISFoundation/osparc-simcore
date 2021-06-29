@@ -1,1 +1,1 @@
-from .submodule_setup import setup
+from .module_setup import setup
