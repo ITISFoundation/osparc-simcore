@@ -28,7 +28,7 @@ async def list_datasets(
     params: Params = Depends(),
 ) -> Page[DatasetsOut]:
     raw_params: RawParams = resolve_params(params).to_raw_params()
-    datasets, total = await pennsieve_client.get_datasets(
+    datasets, total = await pennsieve_client.list_datasets(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
         limit=raw_params.limit,

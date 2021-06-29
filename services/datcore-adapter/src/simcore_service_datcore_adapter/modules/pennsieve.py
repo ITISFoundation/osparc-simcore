@@ -154,7 +154,7 @@ class PennsieveApiClient(BaseServiceClientApi):
 
         return Profile(id=ps.profile.id)
 
-    async def get_datasets(
+    async def list_datasets(
         self, api_key: str, api_secret: str, limit: int, offset: int
     ) -> Tuple[Sequence, int]:
         """returns all the datasets a user has access to"""
@@ -245,49 +245,6 @@ class PennsieveApiClient(BaseServiceClientApi):
                 for pck in islice(collection_pck["children"], offset, offset + limit)
             ],
             len(collection_pck["children"]),
-        )
-
-    async def list_top_level_files(
-        self,
-        api_key: str,
-        api_secret: str,
-        dataset_id: str,
-        limit: int,
-        offset: int,
-        collection_id: Optional[str] = None,
-    ) -> Tuple[Sequence, int]:
-        headers = await _get_authorization_headers(api_key, api_secret)
-        # get dataset or collection details
-        url = (
-            f"/packages/{collection_id}" if collection_id else f"/datasets/{dataset_id}"
-        )
-        params = (
-            {"includeAncestors": False}
-            if collection_id
-            else {"includePublishedDataset": False}
-        )
-        response = await self.client.get(
-            url,
-            headers=headers,
-            params=params,
-        )
-        response.raise_for_status()
-        package_details = response.json()
-
-        return (
-            [
-                FileMetaData.from_pennsieve_package(
-                    package,
-                    await self._get_package_files(
-                        api_key, api_secret, package["content"]["nodeId"]
-                    ),
-                    Path(""),
-                )
-                for package in islice(
-                    package_details["children"], offset, offset + limit
-                )
-            ],
-            len(package_details["children"]),
         )
 
     async def list_all_dataset_files(
