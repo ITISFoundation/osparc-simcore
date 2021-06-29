@@ -53,8 +53,8 @@ async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) ->
         all_networks = await client.networks.list()
 
     network_name = "_default"
-    if dynamic_sidecar_settings.simcore_services_network_name:
-        network_name = dynamic_sidecar_settings.simcore_services_network_name
+    if dynamic_sidecar_settings.SIMCORE_SERVICES_NETWORK_NAME:
+        network_name = dynamic_sidecar_settings.SIMCORE_SERVICES_NETWORK_NAME
     # try to find the network name (usually named STACKNAME_default)
     networks = [
         x for x in all_networks if "swarm" in x["Scope"] and network_name in x["Name"]
@@ -118,7 +118,7 @@ async def get_dynamic_sidecars_to_monitor(
         running_dynamic_sidecar_services = await client.services.list(
             filters={
                 "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}"
+                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}"
                 ],
                 "name": [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"],
             }
@@ -143,7 +143,10 @@ async def _extract_task_data_from_service_for_state(
     async def sleep_or_error(started: float, task: Dict):
         await asyncio.sleep(1.0)
         elapsed = time.time() - started
-        if elapsed > dynamic_sidecar_settings.timeout_fetch_dynamic_sidecar_node_id:
+        if (
+            elapsed
+            > dynamic_sidecar_settings.DYNAMIC_SIDECAR_TIMEOUT_FETCH_DYNAMIC_SIDECAR_NODE_ID
+        ):
             raise DynamicSidecarError(
                 msg=(
                     "Timed out while searching for an assigned NodeID for "
@@ -243,7 +246,7 @@ async def are_services_missing(
     try:
         filters = {
             "label": [
-                f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}",
+                f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
                 f"uuid={node_uuid}",
             ]
         }
@@ -269,7 +272,7 @@ async def are_all_services_present(
         stack_services = await client.services.list(
             filters={
                 "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}",
+                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
                     f"uuid={node_uuid}",
                 ]
             }
@@ -289,7 +292,7 @@ async def remove_dynamic_sidecar_stack(
         services_to_remove = await client.services.list(
             filters={
                 "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}",
+                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
                     f"uuid={node_uuid}",
                 ]
             }
@@ -321,7 +324,7 @@ async def list_dynamic_sidecar_services(
 ) -> List[Dict[str, Any]]:
     service_filters = {
         "label": [
-            f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}",
+            f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
         ],
         "name": [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"],
     }
@@ -341,7 +344,7 @@ async def is_dynamic_service_running(
         dynamic_sidecar_services = await client.services.list(
             filters={
                 "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}",
+                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
                     f"type={ServiceType.MAIN.value}",
                     f"uuid={node_uuid}",
                 ]

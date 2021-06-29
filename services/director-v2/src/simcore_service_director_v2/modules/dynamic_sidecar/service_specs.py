@@ -62,8 +62,8 @@ async def dyn_proxy_entrypoint_assembly(
     return {
         # TODO: use a pydantic model, make the traefik version a setting, log level, etc...
         "labels": {
-            "io.simcore.zone": f"{dynamic_sidecar_settings.traefik_simcore_zone}",
-            "swarm_stack_name": dynamic_sidecar_settings.swarm_stack_name,
+            "io.simcore.zone": f"{dynamic_sidecar_settings.TRAEFIK_SIMCORE_ZONE}",
+            "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,
             "traefik.docker.network": swarm_network_name,
             "traefik.enable": "true",
             f"traefik.http.middlewares.{monitor_data.proxy_service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {monitor_data.request_dns}",
@@ -75,7 +75,7 @@ async def dyn_proxy_entrypoint_assembly(
             f"traefik.http.routers.{monitor_data.proxy_service_name}.entrypoints": "http",
             f"traefik.http.routers.{monitor_data.proxy_service_name}.priority": "10",
             f"traefik.http.routers.{monitor_data.proxy_service_name}.rule": f"hostregexp(`{monitor_data.node_uuid}.services.{{host:.+}}`)",
-            f"traefik.http.routers.{monitor_data.proxy_service_name}.middlewares": f"{dynamic_sidecar_settings.swarm_stack_name}_gzip@docker, {monitor_data.proxy_service_name}-security-headers",
+            f"traefik.http.routers.{monitor_data.proxy_service_name}.middlewares": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}_gzip@docker, {monitor_data.proxy_service_name}-security-headers",
             "type": ServiceType.DEPENDENCY.value,
             "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
             "study_id": f"{monitor_data.project_id}",
@@ -88,7 +88,7 @@ async def dyn_proxy_entrypoint_assembly(
             "ContainerSpec": {
                 "Env": {},
                 "Hosts": [],
-                "Image": f"traefik:{dynamic_sidecar_settings.traefik_version}",
+                "Image": f"traefik:{dynamic_sidecar_settings.DYNAMIC_SIDECAR_TRAEFIK_VERSION}",
                 "Init": True,
                 "Labels": {},
                 "Command": [
@@ -494,8 +494,8 @@ async def dynamic_sidecar_assembly(
 
     endpint_spec = {}
 
-    if dynamic_sidecar_settings.mount_path_dev is not None:
-        dynamic_sidecar_path = dynamic_sidecar_settings.mount_path_dev
+    if dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV is not None:
+        dynamic_sidecar_path = dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
         if dynamic_sidecar_path is None:
             log.warning(
                 (
@@ -512,7 +512,10 @@ async def dynamic_sidecar_assembly(
                 }
             )
             packages_path = (
-                dynamic_sidecar_settings.mount_path_dev / ".." / ".." / "packages"
+                dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
+                / ".."
+                / ".."
+                / "packages"
             )
             mounts.append(
                 {
@@ -522,9 +525,12 @@ async def dynamic_sidecar_assembly(
                 }
             )
     # expose this service on an empty port
-    if dynamic_sidecar_settings.expose_port:
+    if dynamic_sidecar_settings.DYNAMIC_SIDECAR_EXPOSE_PORT:
         endpint_spec["Ports"] = [
-            {"Protocol": "tcp", "TargetPort": dynamic_sidecar_settings.port}
+            {
+                "Protocol": "tcp",
+                "TargetPort": dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
+            }
         ]
 
     # used for the container name to avoid collisions for started containers on the same node
@@ -537,19 +543,19 @@ async def dynamic_sidecar_assembly(
         "labels": {
             # TODO: let's use a pydantic model with descriptions
             "io.simcore.zone": monitor_data.simcore_traefik_zone,
-            "port": f"{dynamic_sidecar_settings.port}",
+            "port": f"{dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT}",
             "study_id": f"{monitor_data.project_id}",
             "traefik.docker.network": monitor_data.dynamic_sidecar_network_name,  # also used for monitoring
             "traefik.enable": "true",
             f"traefik.http.routers.{monitor_data.service_name}.entrypoints": "http",
             f"traefik.http.routers.{monitor_data.service_name}.priority": "10",
             f"traefik.http.routers.{monitor_data.service_name}.rule": "PathPrefix(`/`)",
-            f"traefik.http.services.{monitor_data.service_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.port}",
+            f"traefik.http.services.{monitor_data.service_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT}",
             "type": ServiceType.MAIN.value,  # required to be listed as an interactive service and be properly cleaned up
             "user_id": f"{monitor_data.user_id}",
             # the following are used for monitoring
             "uuid": f"{monitor_data.node_uuid}",  # also needed for removal when project is closed
-            "swarm_stack_name": dynamic_sidecar_settings.swarm_stack_name,
+            "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,
             "service_key": monitor_data.service_key,
             "service_tag": monitor_data.service_tag,
             "paths_mapping": monitor_data.paths_mapping.json(),
@@ -570,7 +576,7 @@ async def dynamic_sidecar_assembly(
                     },
                 },
                 "Hosts": [],
-                "Image": dynamic_sidecar_settings.image,
+                "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
                 "Init": True,
                 "Labels": {},
                 "Mounts": mounts,

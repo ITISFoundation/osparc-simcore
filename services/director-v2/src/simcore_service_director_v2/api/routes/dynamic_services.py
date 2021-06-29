@@ -121,7 +121,7 @@ async def create_dynamic_service(
     monitor_data = MonitorData.make_from_http_request(
         service=service,
         simcore_service_labels=simcore_service_labels,
-        port=dynamic_services_settings.dynamic_sidecar.port,
+        port=dynamic_services_settings.dynamic_sidecar.DYNAMIC_SIDECAR_PORT,
         request_dns=x_dynamic_sidecar_request_dns,
         request_scheme=x_dynamic_sidecar_request_scheme,
     )

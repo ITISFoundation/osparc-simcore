@@ -81,7 +81,7 @@ class CreateServices(MonitorEvent):
             "Name": monitor_data.dynamic_sidecar_network_name,
             "Driver": "overlay",
             "Labels": {
-                "io.simcore.zone": f"{dynamic_sidecar_settings.traefik_simcore_zone}",
+                "io.simcore.zone": f"{dynamic_sidecar_settings.TRAEFIK_SIMCORE_ZONE}",
                 "com.simcore.description": f"interactive for node: {monitor_data.node_uuid}",
                 "uuid": f"{monitor_data.node_uuid}",  # needed for removal when project is closed
             },

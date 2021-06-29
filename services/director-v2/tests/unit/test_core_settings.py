@@ -37,10 +37,11 @@ def test_loading_env_devel_in_settings(project_env_devel_environment):
 )
 def test_dynamic_sidecar_settings(image: str) -> None:
     required_kwards = dict(
-        simcore_services_network_name="test",
-        traefik_simcore_zone="",
-        swarm_stack_name="",
-        registry=RegistrySettings(
+        DYNAMIC_SIDECAR_IMAGE=image,
+        SIMCORE_SERVICES_NETWORK_NAME="test",
+        TRAEFIK_SIMCORE_ZONE="",
+        SWARM_STACK_NAME="",
+        REGISTRY=RegistrySettings(
             REGISTRY_URL="http://te.st",
             REGISTRY_AUTH=True,
             REGISTRY_USER="test",
@@ -48,6 +49,5 @@ def test_dynamic_sidecar_settings(image: str) -> None:
             REGISTRY_SSL=False,
         ),
     )
-    required_kwards["image"] = image
     settings = DynamicSidecarSettings(**required_kwards)
-    assert settings.image == image
+    assert settings.DYNAMIC_SIDECAR_IMAGE == image

@@ -7,12 +7,12 @@ from typing import Optional
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.services import SERVICE_NETWORK_RE
+from models_library.settings.base import BaseCustomSettings
 from models_library.settings.celery import CeleryConfig
 from models_library.settings.docker_registry import RegistrySettings
 from models_library.settings.http_clients import ClientRequestSettings
 from models_library.settings.postgres import PostgresSettings
 from pydantic import BaseSettings, Field, PositiveFloat, PositiveInt, constr, validator
-from pydantic.main import BaseConfig
 
 from ..meta import api_vtag
 
@@ -81,45 +81,44 @@ _DYNAMIC_SIDECAR_DOCKER_IMAGE_RE = (
 )
 
 
-class DynamicSidecarSettings(BaseSettings):
-    boot_mode: BootModeEnum = Field(
+class DynamicSidecarSettings(BaseCustomSettings):
+    SC_BOOT_MODE: BootModeEnum = Field(
         BootModeEnum.PRODUCTION,
         description="Used to compute where or not should start sidecar in development mode",
-        env="SC_BOOT_MODE",
     )
-    image: str = Field(
+    DYNAMIC_SIDECAR_IMAGE: str = Field(
         ...,
         regex=_DYNAMIC_SIDECAR_DOCKER_IMAGE_RE,
         description="used by the director to start a specific version of the dynamic-sidecar",
     )
 
-    port: PortInt = Field(
+    DYNAMIC_SIDECAR_PORT: PortInt = Field(
         8000,
         description="port on which the webserver for the dynamic-sidecar is exposed",
     )
-    mount_path_dev: Optional[Path] = Field(
+    DYNAMIC_SIDECAR_MOUNT_PATH_DEV: Optional[Path] = Field(
         None,
         description="optional, only used for development, mounts the source of the dynamic-sidecar",
     )
 
-    expose_port: bool = Field(
-        False, description="exposes the service on localhost for debuging and testing"
+    DYNAMIC_SIDECAR_EXPOSE_PORT: bool = Field(
+        False,
+        description="exposes the service on localhost for debuging and testing",
     )
 
-    simcore_services_network_name: str = Field(
+    SIMCORE_SERVICES_NETWORK_NAME: str = Field(
         ...,
         regex=SERVICE_NETWORK_RE,
         description="network all dynamic services are connected to",
-        env="SIMCORE_SERVICES_NETWORK_NAME",
     )
-    api_request_timeout: PositiveInt = Field(
+    DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT: PositiveInt = Field(
         15,
         description=(
             "the default timeout each request to the dynamic-sidecar API in seconds; as per "
             "design, all requests should answer quite quickly, in theory a few seconds or less"
         ),
     )
-    timeout_fetch_dynamic_sidecar_node_id: PositiveFloat = Field(
+    DYNAMIC_SIDECAR_TIMEOUT_FETCH_DYNAMIC_SIDECAR_NODE_ID: PositiveFloat = Field(
         60,
         description=(
             "When starting the dynamic-sidecar proxy, the NodeID of the dynamic-sidecar container "
@@ -129,28 +128,22 @@ class DynamicSidecarSettings(BaseSettings):
         ),
     )
 
-    traefik_simcore_zone: str = Field(
+    TRAEFIK_SIMCORE_ZONE: str = Field(
         ...,
         description="Names the traefik zone for services that must be accessible from platform http entrypoint",
-        env="TRAEFIK_SIMCORE_ZONE",
     )
 
-    traefik_version: str = Field(
+    DYNAMIC_SIDECAR_TRAEFIK_VERSION: str = Field(
         "v2.2.1",
         description="current version of the Treafik image to be pulled and used from dockerhub",
     )
 
-    swarm_stack_name: str = Field(
+    SWARM_STACK_NAME: str = Field(
         ...,
         description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
-        env="SWARM_STACK_NAME",
     )
 
-    registry: RegistrySettings
-
-    class Config(BaseConfig):
-        case_sensitive = False
-        env_prefix = "DYNAMIC_SIDECAR_"
+    REGISTRY: RegistrySettings
 
 
 class DynamicServicesMonitoringSettings(BaseSettings):
@@ -174,7 +167,7 @@ class DynamicServicesSettings(BaseSettings):
     def create_from_env(cls, **override) -> "DynamicServicesSettings":
         # this calls trigger env parsers
         return cls(
-            dynamic_sidecar=DynamicSidecarSettings(registry=RegistrySettings()),
+            dynamic_sidecar=DynamicSidecarSettings(REGISTRY=RegistrySettings()),
             monitoring=DynamicServicesMonitoringSettings(),
             **override,
         )

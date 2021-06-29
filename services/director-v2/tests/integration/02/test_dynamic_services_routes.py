@@ -118,19 +118,18 @@ def start_request_data(
 
 @pytest.fixture
 async def test_client(
-    loop: asyncio.BaseEventLoop, dynamic_sidecar_image: None, network_name: str
+    loop: asyncio.BaseEventLoop,
+    dynamic_sidecar_image: None,
+    network_name: str,
+    monkeypatch,
 ) -> TestClient:
+    monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "True")
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", network_name)
+    monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
 
     settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
     settings.postgres.enabled = False
     settings.scheduler.enabled = False
-
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        settings.dynamic_services.dynamic_sidecar
-    )
-    dynamic_sidecar_settings.expose_port = True
-    dynamic_sidecar_settings.simcore_services_network_name = network_name
-    dynamic_sidecar_settings.mount_path_dev = None
 
     app = init_app(settings)
 

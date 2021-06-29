@@ -338,7 +338,7 @@ class DynamicSidecarsMonitor:
         for service_to_monitor in services_to_monitor:
             monitor_data = MonitorData.make_from_service_labels_stored_data(
                 service_labels_stored_data=service_to_monitor,
-                port=dynamic_sidecar_settings.port,
+                port=dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
             )
             await self.add_service_to_monitor(monitor_data)
 
