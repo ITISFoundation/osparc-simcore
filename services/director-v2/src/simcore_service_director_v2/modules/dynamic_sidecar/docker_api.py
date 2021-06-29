@@ -4,7 +4,7 @@ import logging
 import time
 import traceback
 from contextlib import asynccontextmanager
-from typing import Any, Deque, Dict, List, Optional, Set, Tuple
+from typing import Any, AsyncIterator, Deque, Dict, List, Optional, Set, Tuple
 
 import aiodocker
 from models_library.projects import ProjectID
@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def docker_client() -> aiodocker.docker.Docker:
+async def docker_client() -> AsyncIterator[aiodocker.docker.Docker]:
     try:
         client = aiodocker.Docker()
         yield client
@@ -45,7 +45,8 @@ async def docker_client() -> aiodocker.docker.Docker:
         log.warning(log_message)
         raise GenericDockerError(message, e) from e
     finally:
-        await client.close()
+        if client is not None:
+            await client.close()
 
 
 async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) -> Dict:
