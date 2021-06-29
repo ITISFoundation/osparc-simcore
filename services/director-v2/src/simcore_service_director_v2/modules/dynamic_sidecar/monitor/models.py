@@ -433,6 +433,10 @@ class AsyncResourceLock(BaseModel):
     _lock: Lock = PrivateAttr()
     _is_locked = PrivateAttr()
 
+    def __init__(self, **data: Any) -> None:
+        super().__init__(**data)
+        self._lock = Lock()
+
     @classmethod
     def from_is_locked(cls, is_locked: bool) -> "AsyncResourceLock":
         instance = cls()
