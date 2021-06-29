@@ -25,7 +25,7 @@ from ...modules.dynamic_sidecar.docker_api import (
     is_dynamic_service_running,
     list_dynamic_sidecar_services,
 )
-from ...modules.dynamic_sidecar.exceptions import DynamicSidecarNotFoundError
+from ...modules.dynamic_sidecar.errors import DynamicSidecarNotFoundError
 from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor, MonitorData
 from ...utils.logging_utils import log_decorator
 from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client

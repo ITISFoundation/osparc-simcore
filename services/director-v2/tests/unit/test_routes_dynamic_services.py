@@ -21,7 +21,7 @@ from simcore_service_director_v2.models.domains.dynamic_services import (
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     RunningDynamicServiceDetails,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.exceptions import (
+from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,
 )
 from starlette import status
