@@ -276,6 +276,7 @@ async def _extract_osparc_involved_service_labels(
     reverse_mapping: Dict[str, str] = {}
 
     compose_spec_services = service_labels.compose_spec.get("services", {})
+    image = None
     for compose_service_key, service_data in compose_spec_services.items():
         image = service_data.get("image", None)
         if image is None:
