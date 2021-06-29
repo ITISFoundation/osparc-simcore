@@ -24,8 +24,8 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             settings.SC_BOOT_MODE
             in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL]
         ),
-        title="Components Catalog Service",
-        description="Manages and maintains a **catalog** of all published components (e.g. macro-algorithms, scripts, etc)",
+        title="Datcore Adapter Service",
+        description="Interfaces with Pennsieve storage service",
         version=api_version,
         openapi_url=f"/api/{api_vtag}/openapi.json",
         docs_url="/dev/doc",
