@@ -16,14 +16,14 @@ from simcore_service_director_v2.models.schemas.constants import (
 
 from ...core.settings import DynamicSidecarSettings, ServiceType
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
-from .exceptions import DynamicSidecarError, GenericDockerError
-from .monitor import ServiceLabelsStoredData
-from .parse_docker_status import (
+from .docker_states import (
     TASK_STATES_ALL,
     TASK_STATES_RUNNING,
     ServiceState,
     extract_task_state,
 )
+from .exceptions import DynamicSidecarError, GenericDockerError
+from .monitor import ServiceLabelsStoredData
 
 NO_PENDING_OVERWRITE = {
     ServiceState.FAILED,
