@@ -64,8 +64,8 @@ def create_data_iterator_integer_service() -> ServiceDockerData:
         inputs={
             "iteration_type": {
                 "displayOrder": 0,
-                "label": "Iteration type",
-                "description": "Iteration type",
+                "label": "Iteration method",
+                "description": "Iteration method",
                 "defaultValue": "custom",
                 "type": "string",
                 "widget": {
