@@ -15,7 +15,7 @@ from ..docker_api import (
     get_node_id_from_task_for_service,
     get_swarm_network,
 )
-from ..docker_compose_assembly import assemble_spec
+from ..docker_compose_specs import assemble_spec
 from ..service_specs import (
     dyn_proxy_entrypoint_assembly,
     dynamic_sidecar_assembly,
