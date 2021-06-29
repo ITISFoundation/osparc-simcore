@@ -29,7 +29,7 @@ from ..docker_api import (
 )
 from ..docker_states import ServiceState, extract_containers_minimim_statuses
 from ..errors import DynamicSidecarError, DynamicSidecarNotFoundError
-from .handlers import REGISTERED_EVENTS
+from .events import REGISTERED_EVENTS
 from .models import (
     DynamicSidecarStatus,
     LockWithMonitorData,
