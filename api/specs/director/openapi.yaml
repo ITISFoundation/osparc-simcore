@@ -143,7 +143,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ServicesEnveloped"
+                type: object
+                additionalProperties:
+                  type: string
         "401":
           description: Unauthorized access
           content:
