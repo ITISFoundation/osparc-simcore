@@ -36,6 +36,7 @@ log = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def docker_client() -> AsyncIterator[aiodocker.docker.Docker]:
+    client = None
     try:
         client = aiodocker.Docker()
         yield client
@@ -50,7 +51,7 @@ async def docker_client() -> AsyncIterator[aiodocker.docker.Docker]:
 
 
 async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) -> Dict:
-    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+    async with docker_client() as client:
         all_networks = await client.networks.list()
 
     network_name = "_default"
@@ -68,7 +69,7 @@ async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) ->
 
 
 async def create_network(network_config: Dict[str, Any]) -> str:
-    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+    async with docker_client() as client:
         try:
             docker_network = await client.networks.create(network_config)
             return docker_network.id
@@ -96,7 +97,7 @@ async def create_network(network_config: Dict[str, Any]) -> str:
 
 
 async def create_service_and_get_id(create_service_data: Dict[str, Any]) -> str:
-    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+    async with docker_client() as client:
         service_start_result = await client.services.create(**create_service_data)
 
     if "ID" not in service_start_result:
@@ -107,7 +108,7 @@ async def create_service_and_get_id(create_service_data: Dict[str, Any]) -> str:
 
 
 async def inspect_service(service_id: str) -> Dict[str, Any]:
-    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+    async with docker_client() as client:
         return await client.services.inspect(service_id)
 
 
@@ -115,7 +116,7 @@ async def get_dynamic_sidecars_to_monitor(
     dynamic_sidecar_settings: DynamicSidecarSettings,
 ) -> Deque[ServiceLabelsStoredData]:
     """called when monitor is started to discover new services to monitor"""
-    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+    async with docker_client() as client:
         running_dynamic_sidecar_services = await client.services.list(
             filters={
                 "label": [
@@ -125,7 +126,7 @@ async def get_dynamic_sidecars_to_monitor(
             }
         )
 
-    dynamic_sidecar_services: Deque[Tuple[str, str]] = Deque()
+    dynamic_sidecar_services: Deque[ServiceLabelsStoredData] = Deque()
 
     for service in running_dynamic_sidecar_services:
         dynamic_sidecar_services.append(ServiceLabelsStoredData.from_service(service))
@@ -155,8 +156,11 @@ async def _extract_task_data_from_service_for_state(
                 )
             )
 
-    async with docker_client() as client:  # pylint: disable=not-async-context-manager
-        service_state: str = None
+    async with docker_client() as client:
+        # both of the below states will get overwritten
+        service_state: Optional[str] = None
+        task = {}
+
         started = time.time()
 
         while service_state not in target_statuses:
@@ -175,13 +179,13 @@ async def _extract_task_data_from_service_for_state(
             # Only interested in the latest Task/container as only 1 container per service
             # is being run
             sorted_tasks = sorted(running_services, key=lambda task: task["UpdatedAt"])
-            task = sorted_tasks[-1]
 
+            task = sorted_tasks[-1]
             service_state = task["Status"]["State"]
 
             await sleep_or_error(started=started, task=task)
 
-    return task
+        return task
 
 
 async def get_node_id_from_task_for_service(
@@ -251,7 +255,7 @@ async def are_services_missing(
                 f"uuid={node_uuid}",
             ]
         }
-        async with docker_client() as client:  # pylint: disable=not-async-context-manager
+        async with docker_client() as client:
             stack_services = await client.services.list(filters=filters)
             return len(stack_services) == 0
     except GenericDockerError as e:
@@ -269,7 +273,7 @@ async def are_all_services_present(
     """
     The dynamic-sidecar stack always expects to have 2 running services
     """
-    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+    async with docker_client() as client:
         stack_services = await client.services.list(
             filters={
                 "label": [
@@ -289,7 +293,7 @@ async def remove_dynamic_sidecar_stack(
     node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> None:
     """Removes all services from the stack, in theory there should only be 2 services"""
-    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+    async with docker_client() as client:
         services_to_remove = await client.services.list(
             filters={
                 "label": [
@@ -306,7 +310,7 @@ async def remove_dynamic_sidecar_stack(
 
 async def remove_dynamic_sidecar_network(network_name: str):
     try:
-        async with docker_client() as client:  # pylint: disable=not-async-context-manager
+        async with docker_client() as client:
             network = await client.networks.get(network_name)
             await network.delete()
     except aiodocker.exceptions.DockerError as e:
@@ -334,14 +338,14 @@ async def list_dynamic_sidecar_services(
     if project_id is not None:
         service_filters["label"].append(f"study_id={project_id}")
 
-    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+    async with docker_client() as client:
         return await client.services.list(filters=service_filters)
 
 
 async def is_dynamic_service_running(
     dynamic_sidecar_settings: DynamicSidecarSettings, node_uuid: NodeID
-) -> Optional[Tuple[str, str]]:
-    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+) -> bool:
+    async with docker_client() as client:
         dynamic_sidecar_services = await client.services.list(
             filters={
                 "label": [
@@ -352,5 +356,4 @@ async def is_dynamic_service_running(
             }
         )
 
-        is_dynamic_sidecar = len(dynamic_sidecar_services) == 1
-        return is_dynamic_sidecar
+        return len(dynamic_sidecar_services) == 1
