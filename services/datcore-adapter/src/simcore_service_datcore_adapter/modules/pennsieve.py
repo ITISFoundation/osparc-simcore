@@ -148,11 +148,11 @@ class PennsieveApiClient(BaseServiceClientApi):
 
     async def get_user_profile(self, api_key: str, api_secret: str) -> Profile:
         """returns the user profile id"""
-        ps: Pennsieve = await _get_pennsieve_client(
-            api_key=api_key, api_secret=api_secret
+        pennsieve_user = cast(
+            Dict[str, Any], await self._request(api_key, api_secret, "GET", "/user/")
         )
 
-        return Profile(id=ps.profile.id)
+        return Profile(id=pennsieve_user["id"])
 
     async def list_datasets(
         self, api_key: str, api_secret: str, limit: int, offset: int
@@ -313,7 +313,6 @@ class PennsieveApiClient(BaseServiceClientApi):
     ) -> URL:
         """returns the presigned download link of the first file in the package"""
         files = await self._get_package_files(api_key, api_secret, package_id)
-
         # NOTE: this was done like this in the original dsm. we might encounter a problem when there are more than one files
         assert len(files) == 1  # nosec
         file_id = files[0]["content"]["id"]

@@ -133,7 +133,7 @@ def pennsieve_fake_dataset_id() -> Callable:
 @pytest.fixture(scope="session")
 def pennsieve_fake_package_id() -> Callable:
     def creator() -> str:
-        return f"N:dataset:{uuid4()}"
+        return f"N:package:{uuid4()}"
 
     return creator
 
@@ -220,32 +220,6 @@ def pennsieve_client_mock(
         # )
 
 
-@pytest.fixture()
-def pennsieve_data_package_mock(
-    mocker, use_real_pennsieve_interface: bool
-) -> Optional[Any]:
-    if not use_real_pennsieve_interface:
-        data_package_mock = mocker.patch(
-            "simcore_service_datcore_adapter.modules.pennsieve.pennsieve.models.DataPackage",
-            autospec=True,
-        )
-        return data_package_mock
-    return None
-
-
-@pytest.fixture()
-def pennsieve_file_package_mock(
-    mocker, use_real_pennsieve_interface: bool
-) -> Optional[Any]:
-    if not use_real_pennsieve_interface:
-        file_mock = mocker.patch(
-            "simcore_service_datcore_adapter.modules.pennsieve.pennsieve.models.File",
-            autospec=True,
-        )
-        return file_mock
-    return None
-
-
 @pytest.fixture(scope="module")
 def pennsieve_random_fake_datasets(
     pennsieve_fake_dataset_id: Callable,
@@ -267,9 +241,14 @@ async def pennsieve_subsystem_mock(
     pennsieve_mock_dataset_packages: Dict[str, Any],
     pennsieve_dataset_id: str,
     pennsieve_collection_id: str,
+    pennsieve_file_id: str,
 ):
     if pennsieve_client_mock:
         async with respx.mock as mock:
+            # get user
+            mock.get("https://api.pennsieve.io/user/").respond(
+                status.HTTP_200_OK, json={"id": "some_user_id"}
+            )
             # get dataset packages counts
             mock.get(
                 f"https://api.pennsieve.io/datasets/{pennsieve_dataset_id}/packageTypeCounts"
@@ -311,9 +290,11 @@ async def pennsieve_subsystem_mock(
                 },
             )
             # get packages files
-            mock.get(url__regex=r"https://api.pennsieve.io/packages/.+/files").respond(
-                status.HTTP_200_OK, json=[{"content": {"size": 12345}}]
+            mock.get(url__regex=r"https://api.pennsieve.io/packages/.+/files$").respond(
+                status.HTTP_200_OK,
+                json=[{"content": {"size": 12345}}],
             )
+
             yield mock
     else:
         yield
