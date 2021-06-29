@@ -28,7 +28,7 @@ from ..docker_api import (
     remove_dynamic_sidecar_stack,
 )
 from ..docker_states import ServiceState, extract_containers_minimim_statuses
-from ..exceptions import DynamicSidecarError, DynamicSidecarNotFoundError
+from ..errors import DynamicSidecarError, DynamicSidecarNotFoundError
 from .handlers import REGISTERED_EVENTS
 from .models import (
     DynamicSidecarStatus,

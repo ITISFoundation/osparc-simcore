@@ -6,7 +6,7 @@ import httpx
 from fastapi import FastAPI
 
 from ...core.settings import DynamicSidecarSettings
-from .exceptions import MonitorException
+from .errors import MonitorException
 from .monitor.models import MonitorData
 
 logger = logging.getLogger(__name__)
