@@ -4,6 +4,7 @@ import traceback
 from asyncio import Lock, sleep
 from copy import deepcopy
 from typing import Deque, Dict, Optional
+from uuid import UUID
 
 from async_timeout import timeout
 from fastapi import FastAPI
@@ -31,12 +32,12 @@ from ..docker_states import ServiceState, extract_containers_minimim_statuses
 from ..errors import DynamicSidecarError, DynamicSidecarNotFoundError
 from .events import REGISTERED_EVENTS
 from .models import (
+    AsyncResourceLock,
     DynamicSidecarStatus,
     LockWithMonitorData,
     MonitorData,
     ServiceLabelsStoredData,
 )
-from .utils import AsyncResourceLock
 
 logger = logging.getLogger(__name__)
 
@@ -83,10 +84,10 @@ async def apply_monitoring(app: FastAPI, monitor_data: MonitorData) -> None:
     except asyncio.TimeoutError:
         monitor_data.dynamic_sidecar.is_available = False
 
-    for event in REGISTERED_EVENTS:
-        if await event.will_trigger(app, monitor_data):
+    for monitor_event in REGISTERED_EVENTS:
+        if await monitor_event.will_trigger(app=app, monitor_data=monitor_data):
             # event.action will apply changes to the output_monitor_data
-            await event.action(app, monitor_data)
+            await monitor_event.action(app, monitor_data)
 
     # check if the status of the services has changed from OK
     if initial_status != monitor_data.dynamic_sidecar.status:
@@ -112,7 +113,7 @@ class DynamicSidecarsMonitor:
 
         self._to_monitor: Dict[str, LockWithMonitorData] = dict()
         self._keep_running: bool = False
-        self._inverse_search_mapping: Dict[str, str] = dict()
+        self._inverse_search_mapping: Dict[UUID, str] = dict()
 
     async def add_service_to_monitor(self, monitor_data: MonitorData) -> None:
         """Invoked before the service is started
@@ -140,7 +141,7 @@ class DynamicSidecarsMonitor:
                 monitor_data.node_uuid
             ] = monitor_data.service_name
             self._to_monitor[monitor_data.service_name] = LockWithMonitorData(
-                resource_lock=AsyncResourceLock(False),
+                resource_lock=AsyncResourceLock.from_is_locked(False),
                 monitor_data=monitor_data,
             )
             logger.debug("Added service '%s' to monitor", monitor_data.service_name)

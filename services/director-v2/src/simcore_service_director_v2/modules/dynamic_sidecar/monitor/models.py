@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+from asyncio import Lock
 from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID
@@ -14,26 +15,21 @@ from models_library.service_settings_labels import (
     SimcoreServiceLabels,
 )
 from models_library.services import SERVICE_KEY_RE
-from pydantic import BaseModel, Field, PositiveInt, validator
+from pydantic import BaseModel, Field, PositiveInt, PrivateAttr, validator
 
-from ....models.domains.dynamic_services import DynamicServiceCreate
 from ....models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
     UserID,
 )
-from ....modules.dynamic_sidecar.utils import (
-    MAX_ALLOWED_SERVICE_NAME_LENGTH,
-    assemble_service_name,
-)
-from .utils import AsyncResourceLock
-
-logger = logging.getLogger()
+from ..utils import MAX_ALLOWED_SERVICE_NAME_LENGTH, assemble_service_name
 
 TEMPORARY_PORT_NUMBER = 65_534
 
 REGEX_DY_SERVICE_SIDECAR = fr"^{DYNAMIC_SIDECAR_SERVICE_PREFIX}_[a-zA-Z0-9-_]*"
 REGEX_DY_SERVICE_PROXY = fr"^{DYNAMIC_PROXY_SERVICE_PREFIX}_[a-zA-Z0-9-_]*"
+
+logger = logging.getLogger()
 
 
 class DynamicSidecarStatus(str, Enum):
@@ -369,7 +365,7 @@ class MonitorData(BaseModel):
     def make_from_http_request(
         # pylint: disable=too-many-arguments
         cls,
-        service: DynamicServiceCreate,
+        service: "DynamicServiceCreate",
         simcore_service_labels: SimcoreServiceLabels,
         port: Optional[int],
         request_dns: str = None,
@@ -431,6 +427,35 @@ class MonitorData(BaseModel):
                 ),
             )
         )
+
+
+class AsyncResourceLock(BaseModel):
+    _lock: Lock = PrivateAttr()
+    _is_locked = PrivateAttr()
+
+    @classmethod
+    def from_is_locked(cls, is_locked: bool) -> "AsyncResourceLock":
+        instance = cls()
+        instance._is_locked = is_locked
+        return instance
+
+    async def mark_as_locked_if_unlocked(self) -> bool:
+        """
+        If the resource is currently not in used it will mark it as in use.
+
+        returns: True if it succeeds otherwise False
+        """
+        async with self._lock:
+            if not self._is_locked:
+                self._is_locked = True
+                return True
+
+        return False
+
+    async def unlock_resource(self) -> None:
+        """Marks the resource as unlocked"""
+        async with self._lock:
+            self._is_locked = False
 
 
 class LockWithMonitorData(BaseModel):
