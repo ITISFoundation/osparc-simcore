@@ -110,9 +110,7 @@ def run_sequentially_in_context(target_args: List[str] = None):
                             result = e
                         await out_q.put(result)
 
-                asyncio.get_event_loop().create_task(
-                    worker(context.in_queue, context.out_queue)
-                )
+                asyncio.create_task(worker(context.in_queue, context.out_queue))
 
             await context.in_queue.put(decorated_function(*args, **kwargs))
 
