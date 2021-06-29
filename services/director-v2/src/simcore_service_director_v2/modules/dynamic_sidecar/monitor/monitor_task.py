@@ -15,7 +15,12 @@ from ....core.settings import (
     DynamicSidecarSettings,
 )
 from ....models.schemas.dynamic_services import RunningDynamicServiceDetails
-from ..docker_utils import (
+from ..client_api import (
+    DynamicSidecarClient,
+    get_dynamic_sidecar_client,
+    update_dynamic_sidecar_health,
+)
+from ..docker_api import (
     are_all_services_present,
     get_dynamic_sidecar_state,
     get_dynamic_sidecars_to_monitor,
@@ -24,11 +29,6 @@ from ..docker_utils import (
 )
 from ..exceptions import DynamicSidecarError, DynamicSidecarNotFoundError
 from ..parse_docker_status import ServiceState, extract_containers_minimim_statuses
-from .dynamic_sidecar_api import (
-    DynamicSidecarClient,
-    get_api_client,
-    update_dynamic_sidecar_health,
-)
 from .handlers import REGISTERED_EVENTS
 from .models import (
     DynamicSidecarStatus,
@@ -158,11 +158,13 @@ class DynamicSidecarsMonitor:
                 return
 
             # invoke container cleanup at this point
-            services_sidecar_client: DynamicSidecarClient = get_api_client(self._app)
+            dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
+                self._app
+            )
 
             current: LockWithMonitorData = self._to_monitor[service_name]
             dynamic_sidecar_endpoint = current.monitor_data.dynamic_sidecar.endpoint
-            await services_sidecar_client.begin_service_destruction(
+            await dynamic_sidecar_client.begin_service_destruction(
                 dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
             )
 
@@ -210,7 +212,9 @@ class DynamicSidecarsMonitor:
             dynamic_sidecar_settings: DynamicSidecarSettings = (
                 self._app.state.settings.dynamic_services.dynamic_sidecar
             )
-            services_sidecar_client: DynamicSidecarClient = get_api_client(self._app)
+            dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
+                self._app
+            )
 
             service_state, service_message = await get_dynamic_sidecar_state(
                 # the service_name is unique and will not collide with other names
@@ -230,7 +234,7 @@ class DynamicSidecarsMonitor:
 
             docker_statuses: Optional[
                 Dict[str, Dict[str, str]]
-            ] = await services_sidecar_client.containers_docker_status(
+            ] = await dynamic_sidecar_client.containers_docker_status(
                 dynamic_sidecar_endpoint=monitor_data.dynamic_sidecar.endpoint
             )
 

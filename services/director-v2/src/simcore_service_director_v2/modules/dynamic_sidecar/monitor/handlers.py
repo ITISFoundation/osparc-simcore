@@ -7,21 +7,21 @@ from fastapi import FastAPI
 
 from ....core.settings import DynamicSidecarSettings
 from ....modules.director_v0 import DirectorV0Client
-from ..docker_compose_assembly import assemble_spec
-from ..docker_utils import (
+from ..client_api import get_dynamic_sidecar_client
+from ..docker_api import (
     are_services_missing,
     create_network,
     create_service_and_get_id,
     get_node_id_from_task_for_service,
     get_swarm_network,
 )
+from ..docker_compose_assembly import assemble_spec
 from ..service_specs import (
     dyn_proxy_entrypoint_assembly,
     dynamic_sidecar_assembly,
     extract_service_port_from_compose_start_spec,
     merge_settings_before_use,
 )
-from .dynamic_sidecar_api import get_api_client
 from .handlers_base import MonitorEvent
 from .models import DockerContainerInspect, DynamicSidecarStatus, MonitorData
 
@@ -158,10 +158,10 @@ class ServicesInspect(MonitorEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, monitor_data: MonitorData) -> None:
-        api_client = get_api_client(app)
+        dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = monitor_data.dynamic_sidecar.endpoint
 
-        containers_inspect = await api_client.containers_inspect(
+        containers_inspect = await dynamic_sidecar_client.containers_inspect(
             dynamic_sidecar_endpoint
         )
         if containers_inspect is None:
@@ -194,7 +194,7 @@ class RunDockerComposeUp(MonitorEvent):
             "Getting docker compose spec for service %s", monitor_data.service_name
         )
 
-        api_client = get_api_client(app)
+        dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = monitor_data.dynamic_sidecar.endpoint
 
         # creates a docker compose spec given the service key and tag
@@ -210,7 +210,9 @@ class RunDockerComposeUp(MonitorEvent):
             service_port=monitor_data.service_port,
         )
 
-        await api_client.start_service_creation(dynamic_sidecar_endpoint, compose_spec)
+        await dynamic_sidecar_client.start_service_creation(
+            dynamic_sidecar_endpoint, compose_spec
+        )
 
         monitor_data.dynamic_sidecar.was_compose_spec_submitted = True
 

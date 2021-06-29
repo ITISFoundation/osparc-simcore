@@ -21,7 +21,7 @@ from ...models.domains.dynamic_services import (
     RetrieveDataOutEnveloped,
 )
 from ...models.schemas.constants import UserID
-from ...modules.dynamic_sidecar.docker_utils import (
+from ...modules.dynamic_sidecar.docker_api import (
     is_dynamic_service_running,
     list_dynamic_sidecar_services,
 )

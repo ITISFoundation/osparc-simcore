@@ -5,9 +5,9 @@ from typing import Any, Dict, Optional
 import httpx
 from fastapi import FastAPI
 
-from ....core.settings import DynamicSidecarSettings
-from ..exceptions import MonitorException
-from .models import MonitorData
+from ...core.settings import DynamicSidecarSettings
+from .exceptions import MonitorException
+from .monitor.models import MonitorData
 
 logger = logging.getLogger(__name__)
 
@@ -164,7 +164,7 @@ async def shutdown_api_client(app: FastAPI) -> None:
     await dynamic_sidecar_api_client.close()
 
 
-def get_api_client(app: FastAPI) -> DynamicSidecarClient:
+def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:
     return app.state.dynamic_sidecar_api_client
 
 
@@ -172,7 +172,7 @@ async def update_dynamic_sidecar_health(
     app: FastAPI, monitor_data: MonitorData
 ) -> None:
 
-    api_client = get_api_client(app)
+    api_client = get_dynamic_sidecar_client(app)
     service_endpoint = monitor_data.dynamic_sidecar.endpoint
 
     # update service health
