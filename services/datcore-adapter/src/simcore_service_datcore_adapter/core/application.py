@@ -7,6 +7,12 @@ from models_library.basic_types import BootModeEnum
 from ..api.module_setup import setup_api
 from ..meta import api_version, api_vtag
 from ..modules import pennsieve
+from .events import (
+    create_start_app_handler,
+    create_stop_app_handler,
+    on_shutdown,
+    on_startup,
+)
 from .settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -34,6 +40,12 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
 
     logger.debug(settings)
     app.state.settings = settings
+
+    # events
+    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("startup", create_start_app_handler(app))
+    app.add_event_handler("shutdown", create_stop_app_handler(app))
+    app.add_event_handler("shutdown", on_shutdown)
 
     setup_api(app)
 
