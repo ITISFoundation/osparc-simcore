@@ -6826,7 +6826,7 @@ paths:
                         key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                           example:
                             - simcore/services/comp/sleeper
                             - simcore/services/dynamic/3dviewer
@@ -6875,14 +6875,6 @@ paths:
                                     - string
                                     - number
                                     - 'null'
-                                - type: array
-                                  items:
-                                    type:
-                                      - integer
-                                      - boolean
-                                      - string
-                                      - number
-                                      - 'null'
                                 - type: object
                                   additionalProperties: false
                                   required:
@@ -6913,26 +6905,6 @@ paths:
                                       type: string
                                     eTag:
                                       type: string
-                                - type: array
-                                  items:
-                                    type: object
-                                    additionalProperties: false
-                                    required:
-                                      - store
-                                      - path
-                                    properties:
-                                      store:
-                                        type:
-                                          - string
-                                          - integer
-                                      dataset:
-                                        type: string
-                                      path:
-                                        type: string
-                                      label:
-                                        type: string
-                                      eTag:
-                                        type: string
                                 - type: object
                                   additionalProperties: false
                                   required:
@@ -7341,7 +7313,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -7390,14 +7362,6 @@ paths:
                                               - string
                                               - number
                                               - 'null'
-                                          - type: array
-                                            items:
-                                              type:
-                                                - integer
-                                                - boolean
-                                                - string
-                                                - number
-                                                - 'null'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -7428,26 +7392,6 @@ paths:
                                                 type: string
                                               eTag:
                                                 type: string
-                                          - type: array
-                                            items:
-                                              type: object
-                                              additionalProperties: false
-                                              required:
-                                                - store
-                                                - path
-                                              properties:
-                                                store:
-                                                  type:
-                                                    - string
-                                                    - integer
-                                                dataset:
-                                                  type: string
-                                                path:
-                                                  type: string
-                                                label:
-                                                  type: string
-                                                eTag:
-                                                  type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -7974,7 +7918,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -8023,14 +7967,6 @@ paths:
                                               - string
                                               - number
                                               - 'null'
-                                          - type: array
-                                            items:
-                                              type:
-                                                - integer
-                                                - boolean
-                                                - string
-                                                - number
-                                                - 'null'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -8061,26 +7997,6 @@ paths:
                                                 type: string
                                               eTag:
                                                 type: string
-                                          - type: array
-                                            items:
-                                              type: object
-                                              additionalProperties: false
-                                              required:
-                                                - store
-                                                - path
-                                              properties:
-                                                store:
-                                                  type:
-                                                    - string
-                                                    - integer
-                                                dataset:
-                                                  type: string
-                                                path:
-                                                  type: string
-                                                label:
-                                                  type: string
-                                                eTag:
-                                                  type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -8613,7 +8529,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -8662,14 +8578,6 @@ paths:
                                               - string
                                               - number
                                               - 'null'
-                                          - type: array
-                                            items:
-                                              type:
-                                                - integer
-                                                - boolean
-                                                - string
-                                                - number
-                                                - 'null'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -8700,26 +8608,6 @@ paths:
                                                 type: string
                                               eTag:
                                                 type: string
-                                          - type: array
-                                            items:
-                                              type: object
-                                              additionalProperties: false
-                                              required:
-                                                - store
-                                                - path
-                                              properties:
-                                                store:
-                                                  type:
-                                                    - string
-                                                    - integer
-                                                dataset:
-                                                  type: string
-                                                path:
-                                                  type: string
-                                                label:
-                                                  type: string
-                                                eTag:
-                                                  type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -9243,7 +9131,7 @@ paths:
                         key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                           example:
                             - simcore/services/comp/sleeper
                             - simcore/services/dynamic/3dviewer
@@ -9292,14 +9180,6 @@ paths:
                                     - string
                                     - number
                                     - 'null'
-                                - type: array
-                                  items:
-                                    type:
-                                      - integer
-                                      - boolean
-                                      - string
-                                      - number
-                                      - 'null'
                                 - type: object
                                   additionalProperties: false
                                   required:
@@ -9330,26 +9210,6 @@ paths:
                                       type: string
                                     eTag:
                                       type: string
-                                - type: array
-                                  items:
-                                    type: object
-                                    additionalProperties: false
-                                    required:
-                                      - store
-                                      - path
-                                    properties:
-                                      store:
-                                        type:
-                                          - string
-                                          - integer
-                                      dataset:
-                                        type: string
-                                      path:
-                                        type: string
-                                      label:
-                                        type: string
-                                      eTag:
-                                        type: string
                                 - type: object
                                   additionalProperties: false
                                   required:
@@ -9758,7 +9618,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -9807,14 +9667,6 @@ paths:
                                               - string
                                               - number
                                               - 'null'
-                                          - type: array
-                                            items:
-                                              type:
-                                                - integer
-                                                - boolean
-                                                - string
-                                                - number
-                                                - 'null'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -9845,26 +9697,6 @@ paths:
                                                 type: string
                                               eTag:
                                                 type: string
-                                          - type: array
-                                            items:
-                                              type: object
-                                              additionalProperties: false
-                                              required:
-                                                - store
-                                                - path
-                                              properties:
-                                                store:
-                                                  type:
-                                                    - string
-                                                    - integer
-                                                dataset:
-                                                  type: string
-                                                path:
-                                                  type: string
-                                                label:
-                                                  type: string
-                                                eTag:
-                                                  type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -10413,7 +10245,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -10462,14 +10294,6 @@ paths:
                                               - string
                                               - number
                                               - 'null'
-                                          - type: array
-                                            items:
-                                              type:
-                                                - integer
-                                                - boolean
-                                                - string
-                                                - number
-                                                - 'null'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -10500,26 +10324,6 @@ paths:
                                                 type: string
                                               eTag:
                                                 type: string
-                                          - type: array
-                                            items:
-                                              type: object
-                                              additionalProperties: false
-                                              required:
-                                                - store
-                                                - path
-                                              properties:
-                                                store:
-                                                  type:
-                                                    - string
-                                                    - integer
-                                                dataset:
-                                                  type: string
-                                                path:
-                                                  type: string
-                                                label:
-                                                  type: string
-                                                eTag:
-                                                  type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -12201,7 +12005,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -12250,14 +12054,6 @@ paths:
                                               - string
                                               - number
                                               - 'null'
-                                          - type: array
-                                            items:
-                                              type:
-                                                - integer
-                                                - boolean
-                                                - string
-                                                - number
-                                                - 'null'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -12288,26 +12084,6 @@ paths:
                                                 type: string
                                               eTag:
                                                 type: string
-                                          - type: array
-                                            items:
-                                              type: object
-                                              additionalProperties: false
-                                              required:
-                                                - store
-                                                - path
-                                              properties:
-                                                store:
-                                                  type:
-                                                    - string
-                                                    - integer
-                                                dataset:
-                                                  type: string
-                                                path:
-                                                  type: string
-                                                label:
-                                                  type: string
-                                                eTag:
-                                                  type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -12833,7 +12609,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -12882,14 +12658,6 @@ paths:
                                               - string
                                               - number
                                               - 'null'
-                                          - type: array
-                                            items:
-                                              type:
-                                                - integer
-                                                - boolean
-                                                - string
-                                                - number
-                                                - 'null'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -12920,26 +12688,6 @@ paths:
                                                 type: string
                                               eTag:
                                                 type: string
-                                          - type: array
-                                            items:
-                                              type: object
-                                              additionalProperties: false
-                                              required:
-                                                - store
-                                                - path
-                                              properties:
-                                                store:
-                                                  type:
-                                                    - string
-                                                    - integer
-                                                dataset:
-                                                  type: string
-                                                path:
-                                                  type: string
-                                                label:
-                                                  type: string
-                                                eTag:
-                                                  type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
