@@ -655,6 +655,3 @@ class LockWithMonitorData(BaseModel):
     monitor_data: MonitorData = Field(
         ..., description="required data used to monitor the dynamic-sidecar"
     )
-
-    class Config:
-        arbitrary_types_allowed = True
