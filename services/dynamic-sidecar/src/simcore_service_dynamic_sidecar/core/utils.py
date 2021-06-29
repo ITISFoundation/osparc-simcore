@@ -4,13 +4,13 @@ import json
 import logging
 import tempfile
 import traceback
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator, List, Tuple
 
 import aiodocker
 import aiofiles
 import yaml
-from async_generator import asynccontextmanager
 from async_timeout import timeout
 from fastapi import HTTPException
 from models_library.settings.docker_registry import RegistrySettings
