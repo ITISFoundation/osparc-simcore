@@ -2,6 +2,7 @@ import logging
 from typing import Any, Optional
 
 from models_library.basic_types import BootModeEnum, PortInt
+from models_library.settings.docker_registry import RegistrySettings
 from pydantic import BaseSettings, Field, PositiveInt, validator
 
 
@@ -9,6 +10,7 @@ class DynamicSidecarSettings(BaseSettings):
     @classmethod
     def create(cls, **settings_kwargs: Any) -> "DynamicSidecarSettings":
         return cls(
+            registry=RegistrySettings(),
             **settings_kwargs,
         )
 
@@ -70,8 +72,10 @@ class DynamicSidecarSettings(BaseSettings):
     )
 
     docker_compose_down_timeout: PositiveInt = Field(
-        ..., description="used during shutdown when containers swapend will be removed"
+        15, description="used during shutdown when containers swapend will be removed"
     )
+
+    registry: RegistrySettings
 
     @property
     def is_development_mode(self) -> bool:

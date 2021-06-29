@@ -7,3 +7,8 @@ pytest-asyncio
 pytest-mock
 async-asgi-testclient
 faker
+
+# missing mypy stubs
+types-pkg_resources
+types-aiofiles
+types-PyYAML
