@@ -16,6 +16,7 @@ from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 logger = logging.getLogger(__name__)
 
+Total = int
 
 # NOTE: each pennsieve client seems to be about 8MB. so let's keep max 32
 @lru_cache(maxsize=32)
@@ -73,7 +74,7 @@ class PennsieveApiClient(BaseServiceClientApi):
 
     async def _get_dataset_packages_count(
         self, api_key: str, api_secret: str, dataset_id: str
-    ) -> int:
+    ) -> Total:
         package_type_counts = cast(
             Dict[str, Any],
             await self._request(
@@ -156,7 +157,7 @@ class PennsieveApiClient(BaseServiceClientApi):
 
     async def list_datasets(
         self, api_key: str, api_secret: str, limit: int, offset: int
-    ) -> Tuple[Sequence, int]:
+    ) -> Tuple[Sequence, Total]:
         """returns all the datasets a user has access to"""
         dataset_page = cast(
             Dict[str, Any],
@@ -192,7 +193,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         dataset_id: str,
         limit: int,
         offset: int,
-    ) -> Tuple[Sequence, int]:
+    ) -> Tuple[Sequence, Total]:
         dataset_pck = await self._get_dataset(api_key, api_secret, dataset_id)
         # FIXME: calls to files when a collection are not needed
         return (
@@ -217,7 +218,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         collection_id: str,
         limit: int,
         offset: int,
-    ) -> Tuple[Sequence, int]:
+    ) -> Tuple[Sequence, Total]:
         dataset = await self._get_dataset(api_key, api_secret, dataset_id)
         collection_pck = await self._get_package(api_key, api_secret, collection_id)
         # compute base path ancestors are ordered
