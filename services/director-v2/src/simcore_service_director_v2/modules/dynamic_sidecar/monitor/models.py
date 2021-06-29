@@ -124,7 +124,7 @@ class DynamicSidecar(BaseModel):
         If the compose-spec is submitted it can be safely assumed that the
         containers_inspect contains some elements.
         """
-        return self.was_compose_spec_submitted or len(self.containers_inspect)
+        return self.was_compose_spec_submitted or len(self.containers_inspect) > 0
 
     was_compose_spec_submitted: bool = Field(
         False,
