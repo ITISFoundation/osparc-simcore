@@ -60,7 +60,7 @@ class ServiceState(Enum):
 
 # defines the order in which the fields should be sorted
 # without having to change the values of each enum property
-_SERVICE_STATE_COMPARISON_ORDER: Dict[int, ServiceState] = {
+_SERVICE_STATE_COMPARISON_ORDER: Dict[ServiceState, int] = {
     ServiceState.PENDING: 0,
     ServiceState.PULLING: 1,
     ServiceState.STARTING: 2,
@@ -109,22 +109,24 @@ def _docker_container_state_to_service_state(state: str) -> ServiceState:
 
 
 def extract_task_state(task_status: Dict[str, str]) -> Tuple[ServiceState, str]:
-    task_state: str = task_status["State"]
+    task_state: ServiceState = ServiceState(task_status["State"])
     last_task_error_msg = task_status["Err"] if "Err" in task_status else ""
 
-    task_state = _docker_task_state_to_service_state(state=task_state)
+    task_state = _docker_task_state_to_service_state(state=task_status["State"])
     return (task_state, last_task_error_msg)
 
 
 def _extract_container_status(
     container_status: Dict[str, str]
 ) -> Tuple[ServiceState, str]:
-    container_state: str = container_status["Status"]
+    container_state: ServiceState = ServiceState(container_status["Status"])
     last_task_error_msg = (
         container_status["Error"] if "Error" in container_status else ""
     )
 
-    container_state = _docker_container_state_to_service_state(state=container_state)
+    container_state = _docker_container_state_to_service_state(
+        state=container_status["Status"]
+    )
     return (container_state, last_task_error_msg)
 
 
