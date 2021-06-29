@@ -34,7 +34,7 @@ fi
 # - FIXME: create command prefix: https://unix.stackexchange.com/questions/444946/how-can-we-run-a-command-stored-in-a-variable
 #
 
-if [ -z ${DASK_SCHEDULER_ADDRESS+x} ]; then
+if [ ${DASK_START_AS_SCHEDULER+x} ]; then
   SCHEDULER_VERSION=$(dask-scheduler --version)
 
   echo "$INFO" "Starting as ${SCHEDULER_VERSION}..."
@@ -42,9 +42,11 @@ if [ -z ${DASK_SCHEDULER_ADDRESS+x} ]; then
 
     exec watchmedo auto-restart --recursive --pattern="*.py" -- \
       dask-scheduler
+
   else
 
     exec dask-scheduler
+
   fi
 else
   WORKER_VERSION=$(dask-worker --version)
@@ -58,6 +60,7 @@ else
         --preload simcore_service_dask_sidecar.tasks \
         --reconnect \
         --dashboard-address 8787
+
   else
 
     exec dask-worker "${DASK_SCHEDULER_ADDRESS}" \
@@ -65,5 +68,6 @@ else
         --preload simcore_service_dask_sidecar.tasks \
         --reconnect \
         --dashboard-address 8787
+
   fi
 fi
