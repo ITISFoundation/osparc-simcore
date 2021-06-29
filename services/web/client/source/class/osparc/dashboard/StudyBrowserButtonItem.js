@@ -518,6 +518,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     _applyLocked: function(locked) {
       this.__enableCard(!locked);
       this.getChildControl("lock-status").set({
+        opacity: 1.0,
         visibility: locked ? "visible" : "excluded"
       });
     },
