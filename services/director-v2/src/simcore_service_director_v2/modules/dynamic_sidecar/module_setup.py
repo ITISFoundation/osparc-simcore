@@ -1,4 +1,4 @@
-from aiohttp.web import Application
+from fastapi import FastAPI
 
 from .monitor import (
     setup_api_client,
@@ -8,7 +8,7 @@ from .monitor import (
 )
 
 
-def setup(app: Application) -> None:
+def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         await setup_api_client(app)
         await setup_monitor(app)
