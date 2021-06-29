@@ -1,8 +1,8 @@
 from datetime import datetime
 from enum import Enum, unique
 from pathlib import Path
+from typing import Any, Dict, List
 
-import pennsieve
 from pydantic import BaseModel
 
 
@@ -15,22 +15,6 @@ class DatasetMetaData(BaseModel):
 class DataType(str, Enum):
     FILE = "FILE"
     FOLDER = "FOLDER"
-
-
-def compute_full_path(
-    ps: pennsieve.Pennsieve, package: pennsieve.models.BaseDataNode
-) -> Path:
-    dataset_path = Path(ps.get_dataset(package.dataset).name)
-
-    def _get_full_path(pck: pennsieve.models.BaseDataNode) -> Path:
-        path = Path(pck.name)
-        if pck.type != "Collection":
-            path = Path(pck.files[0].s3_key).name
-        if pck.parent:
-            path = _get_full_path(ps.get(pck.parent)) / path
-        return path
-
-    return dataset_path / _get_full_path(package)
 
 
 class FileMetaData(BaseModel):
@@ -47,19 +31,26 @@ class FileMetaData(BaseModel):
 
     @classmethod
     def from_pennsieve_package(
-        cls, ps: pennsieve.Pennsieve, package: pennsieve.models.BaseDataNode
+        cls, package: Dict[str, Any], files: List[Dict[str, Any]], base_path: Path
     ):
+        """creates a FileMetaData from a pennsieve data structure."""
+        pck_name: str = package["content"]["name"]
+        if "extension" in package and not pck_name.endswith(package["extension"]):
+            pck_name += ".".join([pck_name, package["extension"]])
+
         return cls(
-            dataset_id=package.dataset,
-            package_id=package.id,
-            id=package.id,
-            name=package.name,
-            path=compute_full_path(ps, package),
-            type=package.type,
-            size=-1 if package.type == "Collection" else package.files[0].size,
-            created_at=package.created_at,
-            last_modified_at=package.updated_at,
+            dataset_id=package["content"]["datasetNodeId"],
+            package_id=package["content"]["nodeId"],
+            id=package["content"]["id"],
+            name=pck_name,
+            path=base_path / pck_name,
+            type=package["content"]["packageType"],
+            size=0
+            if package["content"]["packageType"] == "Collection"
+            else files[0]["content"]["size"],
+            created_at=package["content"]["createdAt"],
+            last_modified_at=package["content"]["updatedAt"],
             data_type=DataType.FOLDER
-            if package.type == "Collection"
+            if package["content"]["packageType"] == "Collection"
             else DataType.FILE,
         )

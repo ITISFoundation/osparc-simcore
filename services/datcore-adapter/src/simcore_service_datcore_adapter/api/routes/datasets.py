@@ -2,13 +2,12 @@ import logging
 from typing import List
 
 from fastapi import APIRouter, Depends, Header
-from fastapi_pagination import Page, Params, paginate
+from fastapi_pagination import Page, Params
 from fastapi_pagination.api import create_page, resolve_params
 from fastapi_pagination.bases import RawParams
 from starlette import status
 
 from ...models.domains.datasets import DatasetsOut, FileMetaDataOut
-from ...models.schemas.datasets import DatasetMetaData
 from ...modules.pennsieve import PennsieveApiClient
 from ..dependencies.pennsieve import get_pennsieve_api_client
 
@@ -53,7 +52,7 @@ async def list_dataset_top_level_files(
 ) -> Page[FileMetaDataOut]:
     raw_params: RawParams = resolve_params(params).to_raw_params()
 
-    file_metas, total = await pennsieve_client.get_dataset_files(
+    file_metas, total = await pennsieve_client.list_packages_in_dataset(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
         dataset_id=dataset_id,
@@ -79,12 +78,12 @@ async def list_dataset_collection_files(
 ) -> Page[FileMetaDataOut]:
     raw_params: RawParams = resolve_params(params).to_raw_params()
 
-    file_metas, total = await pennsieve_client.get_dataset_files(
+    file_metas, total = await pennsieve_client.list_packages_in_collection(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
-        dataset_id=dataset_id,
         limit=raw_params.limit,
         offset=raw_params.offset,
+        dataset_id=dataset_id,
         collection_id=collection_id,
     )
     return create_page(items=file_metas, total=total, params=params)
@@ -102,7 +101,7 @@ async def list_dataset_files_legacy(
     x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
     pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
 ) -> List[FileMetaDataOut]:
-    file_metas = await pennsieve_client.list_dataset_files(
+    file_metas = await pennsieve_client.list_all_dataset_files(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
         dataset_id=dataset_id,

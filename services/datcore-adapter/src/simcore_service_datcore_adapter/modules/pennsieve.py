@@ -3,28 +3,28 @@ import logging
 from functools import lru_cache
 from itertools import islice
 from pathlib import Path
-from pprint import pformat
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-import pennsieve
 from fastapi.applications import FastAPI
 from pennsieve import Pennsieve
 from starlette.datastructures import URL
 
 from ..core.settings import PennsieveSettings
 from ..models.domains.user import Profile
-from ..models.schemas.datasets import DatasetMetaData, DataType, FileMetaData
+from ..models.schemas.datasets import DatasetMetaData, FileMetaData
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 logger = logging.getLogger(__name__)
 
 
-async def _get_pennsieve_client(api_key: str, api_secret: str) -> Pennsieve:
-    # NOTE: each pennsieve client seems to be about 8MB. so let's keep max 32
-    @lru_cache(maxsize=32)
-    def create_pennsieve_client(api_key: str, api_secret: str) -> Pennsieve:
-        return Pennsieve(api_token=api_key, api_secret=api_secret)
+# NOTE: each pennsieve client seems to be about 8MB. so let's keep max 32
+@lru_cache(maxsize=32)
+def create_pennsieve_client(api_key: str, api_secret: str) -> Pennsieve:
+    logger.debug("creating new client for key/secret [%s/%s]", api_key, api_secret)
+    return Pennsieve(api_token=api_key, api_secret=api_secret)
 
+
+async def _get_pennsieve_client(api_key: str, api_secret: str) -> Pennsieve:
     return await asyncio.get_event_loop().run_in_executor(
         None,
         lambda: create_pennsieve_client(api_key=api_key, api_secret=api_secret),
@@ -37,7 +37,9 @@ async def _get_authorization_headers(api_key: str, api_secret: str) -> Dict[str,
     return {"Authorization": f"Bearer {bearer_code}"}
 
 
-def _compute_file_path(all_packages: List[Dict[str, Any]], pck: Dict[str, Any]) -> Path:
+def _compute_file_path(
+    all_packages: Dict[str, Dict[str, Any]], pck: Dict[str, Any]
+) -> Path:
     file_path = Path(pck["content"]["name"])
     if "extension" in pck:
         file_path = ".".join([f"{file_path}", pck["extension"]])
@@ -127,6 +129,7 @@ class PennsieveApiClient(BaseServiceClientApi):
                 api_secret,
                 "GET",
                 f"/packages/{package_id}",
+                params={"includeAncestors": True},
             ),
         )
 
@@ -148,6 +151,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         ps: Pennsieve = await _get_pennsieve_client(
             api_key=api_key, api_secret=api_secret
         )
+
         return Profile(id=ps.profile.id)
 
     async def get_datasets(
@@ -181,7 +185,69 @@ class PennsieveApiClient(BaseServiceClientApi):
             dataset_page["totalCount"],
         )
 
-    async def get_dataset_files(
+    async def list_packages_in_dataset(
+        self,
+        api_key: str,
+        api_secret: str,
+        dataset_id: str,
+        limit: int,
+        offset: int,
+    ) -> Tuple[Sequence, int]:
+        dataset_pck = await self._get_dataset(api_key, api_secret, dataset_id)
+        # FIXME: calls to files when a collection are not needed
+        return (
+            [
+                FileMetaData.from_pennsieve_package(
+                    pck,
+                    await self._get_package_files(
+                        api_key, api_secret, pck["content"]["nodeId"]
+                    ),
+                    base_path=Path(dataset_pck["content"]["name"]),
+                )
+                for pck in islice(dataset_pck["children"], offset, offset + limit)
+            ],
+            len(dataset_pck["children"]),
+        )
+
+    async def list_packages_in_collection(
+        self,
+        api_key: str,
+        api_secret: str,
+        dataset_id: str,
+        collection_id: str,
+        limit: int,
+        offset: int,
+    ) -> Tuple[Sequence, int]:
+        dataset = await self._get_dataset(api_key, api_secret, dataset_id)
+        collection_pck = await self._get_package(api_key, api_secret, collection_id)
+        # compute base path ancestors are ordered
+        base_path = Path(dataset["content"]["name"]) / (
+            Path(
+                "/".join(
+                    [
+                        ancestor_pck["content"]["name"]
+                        for ancestor_pck in collection_pck["ancestors"]
+                    ]
+                )
+            )
+            / collection_pck["content"]["name"]
+        )
+        # FIXME: calls to files when a collection are not needed
+        return (
+            [
+                FileMetaData.from_pennsieve_package(
+                    pck,
+                    await self._get_package_files(
+                        api_key, api_secret, pck["content"]["nodeId"]
+                    ),
+                    base_path=base_path,
+                )
+                for pck in islice(collection_pck["children"], offset, offset + limit)
+            ],
+            len(collection_pck["children"]),
+        )
+
+    async def list_top_level_files(
         self,
         api_key: str,
         api_secret: str,
@@ -210,7 +276,13 @@ class PennsieveApiClient(BaseServiceClientApi):
 
         return (
             [
-                FileMetaData.from_pennsieve_api_package(package)
+                FileMetaData.from_pennsieve_package(
+                    package,
+                    await self._get_package_files(
+                        api_key, api_secret, package["content"]["nodeId"]
+                    ),
+                    Path(""),
+                )
                 for package in islice(
                     package_details["children"], offset, offset + limit
                 )
@@ -218,7 +290,7 @@ class PennsieveApiClient(BaseServiceClientApi):
             len(package_details["children"]),
         )
 
-    async def list_dataset_files(
+    async def list_all_dataset_files(
         self, api_key: str, api_secret: str, dataset_id: str
     ) -> List:
         """returns ALL the files belonging to the dataset, can be slow if there are a lot of files"""
@@ -259,19 +331,18 @@ class PennsieveApiClient(BaseServiceClientApi):
                     continue
 
                 file_path = base_path / _compute_file_path(all_packages, package)
+                files = await self._get_package_files(
+                    api_key, api_secret, package["content"]["nodeId"]
+                )
+                if len(files) > 1:
+                    logger.warning(
+                        "Package %s contains more than 1 file, only the first one will be retrieved, please check",
+                        package_id,
+                    )
 
                 file_meta_data.append(
-                    FileMetaData(
-                        dataset_id=package["content"]["datasetNodeId"],
-                        package_id=package["content"]["nodeId"],
-                        id=package_id,
-                        name=file_path.name,
-                        path=file_path,
-                        type=package["content"]["packageType"],
-                        size=-1,  # no size available in this mode
-                        created_at=package["content"]["createdAt"],
-                        last_modified_at=package["content"]["updatedAt"],
-                        data_type=DataType.FILE,
+                    FileMetaData.from_pennsieve_package(
+                        package, files, file_path.parent
                     )
                 )
 
