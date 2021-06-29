@@ -17,8 +17,3 @@ aiofiles
 PyYAML
 async-timeout
 async_generator
-
-# missing mypy stubs
-types-pkg_resources
-types-aiofiles
-types-PyYAML
