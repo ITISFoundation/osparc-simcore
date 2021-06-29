@@ -22,7 +22,7 @@ from ..docker_service_specs import (
     extract_service_port_from_compose_start_spec,
     merge_settings_before_use,
 )
-from .handlers_base import MonitorEvent
+from .abc import MonitorEvent
 from .models import DockerContainerInspect, DynamicSidecarStatus, MonitorData
 
 logger = logging.getLogger(__name__)

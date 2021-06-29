@@ -1,11 +1,11 @@
-from abc import abstractclassmethod
+from abc import ABC, abstractclassmethod
 
 from fastapi import FastAPI
 
 from .models import MonitorData
 
 
-class MonitorEvent:
+class MonitorEvent(ABC):
     @abstractclassmethod
     async def will_trigger(self, app: FastAPI, monitor_data: MonitorData) -> bool:
         """
