@@ -6,6 +6,11 @@ from typing import Any, Deque, Dict, List, Optional, Type
 from fastapi import FastAPI
 
 from ....core.settings import DynamicSidecarSettings
+from ....models.schemas.dynamic_services import (
+    DockerContainerInspect,
+    DynamicSidecarStatus,
+    MonitorData,
+)
 from ....modules.director_v0 import DirectorV0Client
 from ..client_api import get_dynamic_sidecar_client
 from ..docker_api import (
@@ -23,7 +28,6 @@ from ..docker_service_specs import (
     merge_settings_before_use,
 )
 from .abc import MonitorEvent
-from .models import DockerContainerInspect, DynamicSidecarStatus, MonitorData
 
 logger = logging.getLogger(__name__)
 

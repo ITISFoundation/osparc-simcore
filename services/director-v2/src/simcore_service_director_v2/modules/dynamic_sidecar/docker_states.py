@@ -2,9 +2,9 @@
 States from Docker Tasks and docker Containers are mapped to ServiceState.
 """
 import logging
-from enum import Enum
-from functools import total_ordering
 from typing import Dict, Set, Tuple
+
+from ...models.schemas.dynamic_services import ServiceState
 
 logger = logging.getLogger(__name__)
 
@@ -33,41 +33,6 @@ CONTAINER_STATES_PULLING: Set[str] = {"pulling"}  # fake state
 CONTAINER_STATES_STARTING: Set[str] = {"created"}
 CONTAINER_STATES_RUNNING: Set[str] = {"running"}
 CONTAINER_STATES_COMPLETE: Set[str] = {"removing", "exited"}
-
-
-@total_ordering
-class ServiceState(Enum):
-    """
-    `Docker Task` and `Docker Container` states are remapped to this `Service State`
-    These states need to be comparable in a predefined order,
-    see _SERVICE_STATE_COMPARISON_ORDER below.
-    """
-
-    PENDING = "pending"
-    PULLING = "pulling"
-    STARTING = "starting"
-    RUNNING = "running"
-    COMPLETE = "complete"
-    FAILED = "failed"
-
-    def __lt__(self, other):
-        if self.__class__ is other.__class__:
-            self_index = _SERVICE_STATE_COMPARISON_ORDER[self]
-            other_index = _SERVICE_STATE_COMPARISON_ORDER[other]
-            return self_index < other_index
-        return NotImplemented
-
-
-# defines the order in which the fields should be sorted
-# without having to change the values of each enum property
-_SERVICE_STATE_COMPARISON_ORDER: Dict[ServiceState, int] = {
-    ServiceState.PENDING: 0,
-    ServiceState.PULLING: 1,
-    ServiceState.STARTING: 2,
-    ServiceState.RUNNING: 3,
-    ServiceState.COMPLETE: 4,
-    ServiceState.FAILED: 5,
-}
 
 
 def _docker_task_state_to_service_state(state: str) -> ServiceState:

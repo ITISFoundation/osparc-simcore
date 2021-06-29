@@ -15,7 +15,14 @@ from ....core.settings import (
     DynamicServicesSettings,
     DynamicSidecarSettings,
 )
-from ....models.schemas.dynamic_services import RunningDynamicServiceDetails
+from ....models.schemas.dynamic_services import (
+    AsyncResourceLock,
+    DynamicSidecarStatus,
+    LockWithMonitorData,
+    MonitorData,
+    RunningDynamicServiceDetails,
+    ServiceLabelsStoredData,
+)
 from ..client_api import (
     DynamicSidecarClient,
     get_dynamic_sidecar_client,
@@ -31,13 +38,6 @@ from ..docker_api import (
 from ..docker_states import ServiceState, extract_containers_minimim_statuses
 from ..errors import DynamicSidecarError, DynamicSidecarNotFoundError
 from .events import REGISTERED_EVENTS
-from .models import (
-    AsyncResourceLock,
-    DynamicSidecarStatus,
-    LockWithMonitorData,
-    MonitorData,
-    ServiceLabelsStoredData,
-)
 
 logger = logging.getLogger(__name__)
 

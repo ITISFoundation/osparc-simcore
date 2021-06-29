@@ -7,14 +7,12 @@ from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
 )
 from simcore_service_director_v2.models.schemas.dynamic_services import (
+    MonitorData,
     RunningDynamicServiceDetails,
     ServiceBootType,
     ServiceDetails,
-    ServiceState,
-)
-from simcore_service_director_v2.modules.dynamic_sidecar.monitor import (
-    MonitorData,
     ServiceLabelsStoredData,
+    ServiceState,
 )
 
 
@@ -58,7 +56,7 @@ def from_http_request(
     simcore_service_labels: SimcoreServiceLabels,
     port: int,
 ) -> MonitorData:
-    return MonitorData.make_from_http_request(
+    return MonitorData.from_http_request(
         service=dynamic_service_create,
         simcore_service_labels=simcore_service_labels,
         port=port,
@@ -69,7 +67,7 @@ def from_http_request(
 def from_service_labels_stored_data(
     service_labels_stored_data: ServiceLabelsStoredData, port: int
 ) -> MonitorData:
-    return MonitorData.make_from_service_labels_stored_data(
+    return MonitorData.from_service_labels_stored_data(
         service_labels_stored_data=service_labels_stored_data, port=port
     )
 

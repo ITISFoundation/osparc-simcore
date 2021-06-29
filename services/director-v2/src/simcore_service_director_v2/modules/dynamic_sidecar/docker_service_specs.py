@@ -14,7 +14,7 @@ from models_library.services import ServiceKeyVersion
 from ...api.dependencies.director_v0 import DirectorV0Client
 from ...core.settings import DynamicSidecarSettings, ServiceType
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
-from ...modules.dynamic_sidecar.monitor import MonitorData
+from ...models.schemas.dynamic_services import MonitorData
 from .errors import DynamicSidecarError
 
 # Notes on below env var names:

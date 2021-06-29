@@ -21,12 +21,13 @@ from ...models.domains.dynamic_services import (
     RetrieveDataOutEnveloped,
 )
 from ...models.schemas.constants import UserID
+from ...models.schemas.dynamic_services import MonitorData
 from ...modules.dynamic_sidecar.docker_api import (
     is_dynamic_service_running,
     list_dynamic_sidecar_services,
 )
 from ...modules.dynamic_sidecar.errors import DynamicSidecarNotFoundError
-from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor, MonitorData
+from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor
 from ...utils.logging_utils import log_decorator
 from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
 from ..dependencies.dynamic_services import (

@@ -2,7 +2,7 @@ from abc import ABC, abstractclassmethod
 
 from fastapi import FastAPI
 
-from .models import MonitorData
+from ....models.schemas.dynamic_services import MonitorData
 
 
 class MonitorEvent(ABC):

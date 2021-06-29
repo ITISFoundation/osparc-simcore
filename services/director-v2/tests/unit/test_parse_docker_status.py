@@ -3,9 +3,8 @@
 from typing import Dict, Set
 
 import pytest
+from simcore_service_director_v2.models.schemas.dynamic_services import ServiceState
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_states import (
-    _SERVICE_STATE_COMPARISON_ORDER,
-    ServiceState,
     extract_containers_minimim_statuses,
 )
 
@@ -37,10 +36,10 @@ def _all_states() -> Set[ServiceState]:
 
 def test_all_states_are_mapped():
     service_state_defined: Set[ServiceState] = _all_states()
-    comparison_mapped: Set[ServiceState] = set(_SERVICE_STATE_COMPARISON_ORDER.keys())
+    comparison_mapped: Set[ServiceState] = set(ServiceState.comparison_order().keys())
     assert (
         service_state_defined == comparison_mapped
-    ), "entries from _SERVICE_STATE_COMPARISON_ORDER do not match all states in ServiceState"
+    ), "entries from _COMPARISON_ORDER do not match all states in ServiceState"
 
 
 def test_equality():
