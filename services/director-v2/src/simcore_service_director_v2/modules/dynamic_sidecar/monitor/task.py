@@ -300,9 +300,7 @@ class DynamicSidecarsMonitor:
             )
             if resource_marked_as_locked:
                 # fire and forget about the task
-                asyncio.get_event_loop().create_task(
-                    monitor_single_service(service_name)
-                )
+                asyncio.create_task(monitor_single_service(service_name))
 
     async def _run_monitor_task(self) -> None:
         settings: DynamicServicesMonitoringSettings = (
@@ -325,7 +323,7 @@ class DynamicSidecarsMonitor:
         # run as a background task
         logging.info("Starting dynamic-sidecar monitor")
         self._keep_running = True
-        asyncio.get_event_loop().create_task(self._run_monitor_task())
+        asyncio.create_task(self._run_monitor_task())
 
         # discover all services which were started before and add them to the monitor
         dynamic_sidecar_settings: DynamicSidecarSettings = (
