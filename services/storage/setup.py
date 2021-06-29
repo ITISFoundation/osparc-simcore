@@ -20,9 +20,10 @@ def read_reqs(reqs_path: Path):
 
 
 install_requirements = read_reqs(here / "requirements" / "_base.txt") + [
+    "simcore-models-library",
     "simcore-postgres-database",
     "simcore-service-library",
-    "simcore-models-library",
+    "simcore-settings-library",
 ]
 
 test_requirements = read_reqs(here / "requirements" / "_test.txt")

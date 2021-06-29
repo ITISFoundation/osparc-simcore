@@ -614,6 +614,53 @@ jobs:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
+  unit-test-settings-library:
+    name: "[unit] settings-library"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-settings-library-${{ hashFiles('packages/settings-library/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-settings-library-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install
+        run: ./ci/github/unit-testing/settings-library.bash install
+      - name: test
+        run: ./ci/github/unit-testing/settings-library.bash test
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
   unit-test-models-library:
     name: "[unit] models-library"
     runs-on: ${{ matrix.os }}
@@ -1917,6 +1964,7 @@ jobs:
         unit-test-dask-sidecar,
         unit-test-service-integration,
         unit-test-service-library,
+        unit-test-settings-library,
         unit-test-models-library,
         unit-test-simcore-sdk,
         unit-test-storage,
@@ -1976,6 +2024,7 @@ jobs:
         unit-test-python-linting,
         unit-test-service-integration,
         unit-test-service-library,
+        unit-test-settings-library,
         unit-test-models-library,
         unit-test-simcore-sdk,
         unit-test-storage,

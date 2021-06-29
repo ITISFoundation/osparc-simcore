@@ -72,7 +72,7 @@ def setup_dsm(app: web.Application):
                 engine=app.get(APP_DB_ENGINE_KEY),
                 loop=asyncio.get_event_loop(),
                 pool=executor,
-                simcore_bucket_name=cfg.STORAGE_S3.bucket_name,
+                simcore_bucket_name=cfg.STORAGE_S3.S3_BUCKET_NAME,
                 has_project_db=not cfg.STORAGE_TESTING,
                 app=app,
             )  # type: ignore
