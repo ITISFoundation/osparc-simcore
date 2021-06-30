@@ -299,7 +299,7 @@ async def test_action_check(client):
 
 def get_project_with_data() -> Dict[str, Any]:
     projects = []
-    with open(current_dir / "data/projects_with_data.json") as fp:
+    with open(current_dir / "../data/projects_with_data.json") as fp:
         projects = json.load(fp)
 
     # TODO: add schema validation
