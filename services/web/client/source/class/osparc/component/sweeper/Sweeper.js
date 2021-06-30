@@ -111,7 +111,7 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
         this.__snapshotsSection.remove(this.__snapshotsTable);
       }
 
-      const snapshotsTable = this.__snapshotsTable = new osparc.component.sweeper.Snapshots(this.__primaryStudy);
+      const snapshotsTable = this.__snapshotsTable = new osparc.component.snapshots.Snapshots(this.__primaryStudy);
       snapshotsTable.addListener("cellTap", e => {
         if (this.__openSnapshotBtn) {
           this.__openSnapshotBtn.setEnabled(true);

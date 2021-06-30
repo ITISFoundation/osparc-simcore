@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.sweeper.Snapshots", {
+qx.Class.define("osparc.component.snapshots.Snapshots", {
   extend: osparc.ui.table.Table,
 
   construct: function(primaryStudy) {
