@@ -254,7 +254,7 @@ qx.Class.define("osparc.utils.Services", {
       ].forEach(inOut => {
         if (inOut in service) {
           for (const key in service[inOut]) {
-            if (Object.prototype.hasOwnProperty.call(service[inOut][key], "fileToKeyMap")) {
+            if ("fileToKeyMap" in service[inOut][key]) {
               delete service[inOut][key]["fileToKeyMap"];
             }
           }
