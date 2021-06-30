@@ -25,6 +25,13 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
 
     const primaryStudyId = study.getSweeper().getPrimaryStudyId();
     if (primaryStudyId === null) {
+      // it's primary/meta study
+      this.__primaryStudy = study;
+      const parametersSection = this.__buildParametersSection();
+      this._add(parametersSection, {
+        flex: 1
+      });
+    } else {
       // it's snapshot study
       const openPrimaryStudyParamBtn = new qx.ui.form.Button(this.tr("Open Primary Study")).set({
         allowGrowX: false
@@ -33,13 +40,6 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
         this.fireDataEvent("openPrimaryStudy", primaryStudyId);
       });
       this._add(openPrimaryStudyParamBtn);
-    } else {
-      // it's primary/meta study
-      this.__primaryStudy = study;
-      const parametersSection = this.__buildParametersSection();
-      this._add(parametersSection, {
-        flex: 1
-      });
     }
   },
 
