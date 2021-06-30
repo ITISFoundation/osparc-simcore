@@ -2,13 +2,15 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 import httpx
 import pytest
 from pydantic import parse_obj_as
 from simcore_service_datcore_adapter.models.domains.files import FileDownloadOut
 from starlette import status
+
+pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
@@ -31,7 +33,6 @@ async def pennsieve_files_mock(pennsieve_subsystem_mock, pennsieve_file_id: str)
     yield mock
 
 
-@pytest.mark.asyncio
 async def test_download_file_entrypoint(
     async_client: httpx.AsyncClient,
     pennsieve_client_mock: Any,

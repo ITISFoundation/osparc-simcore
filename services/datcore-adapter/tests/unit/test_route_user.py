@@ -9,8 +9,9 @@ import httpx
 import pytest
 from starlette import status
 
+pytestmark = pytest.mark.asyncio
 
-@pytest.mark.asyncio
+
 async def test_users_profile_entrypoint(
     async_client: httpx.AsyncClient,
     pennsieve_subsystem_mock,

@@ -15,10 +15,11 @@ from simcore_service_datcore_adapter.models.schemas.datasets import (
 )
 from starlette import status
 
+pytestmark = pytest.mark.asyncio
+
 ps_dataset = namedtuple("ps_dataset", "id,name")
 
 
-@pytest.mark.asyncio
 async def test_list_datasets_entrypoint(
     async_client: httpx.AsyncClient,
     pennsieve_subsystem_mock,
@@ -35,7 +36,6 @@ async def test_list_datasets_entrypoint(
     parse_obj_as(Page[DatasetMetaData], data)
 
 
-@pytest.mark.asyncio
 async def test_list_dataset_files_legacy_entrypoint(
     async_client: httpx.AsyncClient,
     pennsieve_dataset_id: str,
@@ -54,7 +54,6 @@ async def test_list_dataset_files_legacy_entrypoint(
     parse_obj_as(List[FileMetaData], data)
 
 
-@pytest.mark.asyncio
 async def test_list_dataset_top_level_files_entrypoint(
     async_client: httpx.AsyncClient,
     pennsieve_dataset_id: str,
@@ -73,7 +72,6 @@ async def test_list_dataset_top_level_files_entrypoint(
     parse_obj_as(Page[FileMetaData], data)
 
 
-@pytest.mark.asyncio
 async def test_list_dataset_collection_files_entrypoint(
     async_client: httpx.AsyncClient,
     pennsieve_dataset_id: str,
