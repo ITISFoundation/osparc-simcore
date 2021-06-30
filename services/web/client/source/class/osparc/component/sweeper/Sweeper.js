@@ -23,11 +23,23 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    if (study.getSweeper().getPrimaryStudyId()) {
-      this.__buildSnapshotLayout(study);
+    const primaryStudyId = study.getSweeper().getPrimaryStudyId();
+    if (primaryStudyId) {
+      // it's snapshot study
+      const openPrimaryStudyParamBtn = new qx.ui.form.Button(this.tr("Open Primary Study")).set({
+        allowGrowX: false
+      });
+      openPrimaryStudyParamBtn.addListener("execute", () => {
+        this.fireDataEvent("openPrimaryStudy", primaryStudyId);
+      });
+      this._add(openPrimaryStudyParamBtn);
     } else {
+      // it's primary/meta study
       this.__primaryStudy = study;
-      this.__buildPrimaryStudyLayout();
+      const parametersSection = this.__buildParametersSection();
+      this._add(parametersSection, {
+        flex: 1
+      });
     }
   },
 
@@ -38,24 +50,6 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
   members: {
     __primaryStudy: null,
     __parametersTable: null,
-
-    __buildPrimaryStudyLayout: function() {
-      const parametersSection = this.__buildParametersSection();
-      this._add(parametersSection, {
-        flex: 1
-      });
-    },
-
-    __buildSnapshotLayout: function(secondaryStudy) {
-      const openPrimaryStudyParamBtn = new qx.ui.form.Button(this.tr("Open Primary Study")).set({
-        allowGrowX: false
-      });
-      openPrimaryStudyParamBtn.addListener("execute", () => {
-        const primaryStudyId = secondaryStudy.getSweeper().getPrimaryStudyId();
-        this.fireDataEvent("openPrimaryStudy", primaryStudyId);
-      });
-      this._add(openPrimaryStudyParamBtn);
-    },
 
     __buildParametersSection: function() {
       const parametersSection = new qx.ui.groupbox.GroupBox(this.tr("Parameters")).set({

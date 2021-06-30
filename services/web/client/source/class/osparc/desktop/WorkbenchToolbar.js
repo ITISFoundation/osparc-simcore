@@ -63,6 +63,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
             allowGrowX: false
           });
+          // control.setEnabled(false);
           control.addListener("execute", () => {
             this.fireDataEvent("showSnapshots");
           }, this);
@@ -85,6 +86,15 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
         .then(isSweeperEnabled => {
           if (isSweeperEnabled) {
             sweeperBtn.show();
+          }
+        });
+
+      const iteratorBtn = this.getChildControl("snapshots-btn");
+      iteratorBtn.exclude();
+      osparc.data.model.Sweeper.isSweeperEnabled()
+        .then(isSweeperEnabled => {
+          if (isSweeperEnabled) {
+            iteratorBtn.show();
           }
         });
 

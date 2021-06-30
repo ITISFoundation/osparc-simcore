@@ -166,7 +166,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const study = this.getStudy();
       const sweeper = new osparc.component.sweeper.Sweeper(study);
       const title = this.tr("Sweeper");
-      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 400, 700);
+      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 400, 500);
       sweeper.addListener("openPrimaryStudy", e => {
         win.close();
         const primaryStudyId = e.getData();
@@ -188,9 +188,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __showSnapshots: function() {
       const study = this.getStudy();
-      const sweeper = new osparc.component.sweeper.Sweeper(study);
+      const sweeper = new osparc.component.snapshots.SnapshotsView(study);
       const title = this.tr("Snapshots");
-      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 400, 700);
+      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 400, 500);
       sweeper.addListener("snapshotSelected", e => {
         win.close();
         const snapshotStudyId = e.getData();
