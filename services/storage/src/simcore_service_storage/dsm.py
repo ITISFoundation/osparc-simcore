@@ -384,12 +384,15 @@ class DataStorageManager:
     # UPLOAD/DOWNLOAD LINKS ---------------------------
 
     async def upload_file_to_datcore(
-        self, user_id: str, local_file_path: str, destination_id: str
+        self, _user_id: str, _local_file_path: str, _destination_id: str
     ):
+        import warnings
+
+        warnings.warn("NOT IMPLEMENTED!!!")
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
-        api_token, api_secret = self._get_datcore_tokens(user_id)
-        dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-        await dcw.upload_file_to_id(destination_id, local_file_path)
+        # api_token, api_secret = self._get_datcore_tokens(user_id)
+        # dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
+        # await dcw.upload_file_to_id(destination_id, local_file_path)
 
     async def _metadata_file_updater(
         self,
@@ -887,10 +890,9 @@ class DataStorageManager:
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-            # destination, filename = _parse_datcore(file_uuid)
-            file_id = file_uuid
-            return await dcw.delete_file_by_id(file_id)
+            await datcore_adapter.delete_file(
+                self.app, api_token, api_secret, file_uuid
+            )
 
     async def delete_project_simcore_s3(
         self, user_id: str, project_id: str, node_id: Optional[str] = None
