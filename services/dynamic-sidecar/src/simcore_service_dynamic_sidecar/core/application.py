@@ -15,7 +15,7 @@ from .utils import login_registry
 logger = logging.getLogger(__name__)
 
 #
-# https://patorjk.com/software/taag/#p=display&f=JS%20Stick%20Letters&t=API-server%0A
+# https://patorjk.com/software/taag/#p=display&f=AMC%20Tubes&t=DYSIDECAR
 #
 
 WELCOME_MSG = r"""
