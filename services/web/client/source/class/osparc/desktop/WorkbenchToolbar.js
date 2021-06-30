@@ -25,7 +25,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
   },
 
   events: {
-    "showSweeper": "qx.event.type.Event"
+    "showParameters": "qx.event.type.Event"
   },
 
   members: {
@@ -44,15 +44,14 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
           });
           break;
         }
-        case "sweeper-btn": {
-          control = new qx.ui.form.Button(this.tr("Sweeper"), "@FontAwesome5Solid/paw/14").set({
-            toolTipText: this.tr("Sweeper"),
-            icon: "@FontAwesome5Solid/paw/14",
+        case "parameters-btn": {
+          control = new qx.ui.form.Button(this.tr("Parameters")).set({
+            icon: "@FontAwesome5Solid/sliders-h/14",
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
             allowGrowX: false
           });
-          control.addListener("execute", e => {
-            this.fireDataEvent("showSweeper");
+          control.addListener("execute", () => {
+            this.fireDataEvent("showParameters");
           }, this);
           this._add(control);
           break;
@@ -67,7 +66,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
       this._add(new qx.ui.core.Spacer(20));
 
-      const sweeperBtn = this.getChildControl("sweeper-btn");
+      const sweeperBtn = this.getChildControl("parameters-btn");
       sweeperBtn.exclude();
       osparc.data.model.Sweeper.isSweeperEnabled()
         .then(isSweeperEnabled => {
@@ -86,7 +85,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
         const nodeIds = study.getWorkbench().getPathIds(study.getUi().getCurrentNodeId());
         this._navNodes.populateButtons(nodeIds, "slash");
 
-        const sweeperBtn = this.getChildControl("sweeper-btn");
+        const sweeperBtn = this.getChildControl("parameters-btn");
         study.getWorkbench().addListener("nNodesChanged", () => {
           const allNodes = study.getWorkbench().getNodes(true);
           const isSweepeable = Object.values(allNodes).some(node => node.isDataIterator());

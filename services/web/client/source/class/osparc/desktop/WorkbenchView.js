@@ -471,7 +471,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.nodeSelected(nodeId);
         }, this);
       });
-      workbenchToolbar.addListener("showSweeper", this.__showSweeper, this);
+      workbenchToolbar.addListener("showParameters", this.__showSweeper, this);
 
       nodesTree.addListener("changeSelectedNode", e => {
         const node = workbenchUI.getNodeUI(e.getData());
