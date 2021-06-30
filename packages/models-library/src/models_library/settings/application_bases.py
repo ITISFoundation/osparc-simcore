@@ -5,8 +5,10 @@
 """
 import logging
 from typing import Optional
-from pydantic import Field, BaseSettings, validator, AnyHttpUrl
-from ..basic_types import PortInt, BootModeEnum, LogLevel, VersionTag
+
+from pydantic import AnyHttpUrl, BaseSettings, Field, validator
+
+from ..basic_types import BootModeEnum, LogLevel, PortInt, VersionTag
 
 
 class BaseFastApiAppSettings(BaseSettings):
