@@ -28,7 +28,7 @@ fi
 
 # RUNNING application ----------------------------------------
 #
-# - If DASK_SCHEDULER_ADDRESS is DEFINED, it starts as a worker, otherwise as a scheduler
+# - If DASK_START_AS_SCHEDULER is set, then it boots as scheduler otherwise as worker
 # - SEE https://docs.dask.org/en/latest/setup/cli.html
 # - SEE https://stackoverflow.com/questions/3601515/how-to-check-if-a-variable-is-set-in-bash
 # - FIXME: create command prefix: https://unix.stackexchange.com/questions/444946/how-can-we-run-a-command-stored-in-a-variable
@@ -49,9 +49,11 @@ if [ ${DASK_START_AS_SCHEDULER+x} ]; then
 
   fi
 else
-  WORKER_VERSION=$(dask-worker --version)
+  DASK_WORKER_VERSION=$(dask-worker --version)
+  DASK_SCHEDULER_ADDRESS="tcp://${DASK_SCHEDULER_HOST}:8786"
 
-  echo "$INFO" "Starting as a ${WORKER_VERSION} -> ${DASK_SCHEDULER_ADDRESS} ..."
+
+  echo "$INFO" "Starting as a ${DASK_WORKER_VERSION} -> ${DASK_SCHEDULER_ADDRESS} ..."
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
 
     exec watchmedo auto-restart --recursive --pattern="*.py" -- \
