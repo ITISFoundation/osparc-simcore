@@ -47,7 +47,7 @@ qx.Class.define("osparc.component.permissions.Study", {
       }
       return false;
     },
-    canGroupExecute: function(accessRights, GID) {
+    canGroupDelete: function(accessRights, GID) {
       if (GID in accessRights) {
         return accessRights[GID]["delete"];
       }
