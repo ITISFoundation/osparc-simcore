@@ -22,9 +22,8 @@ from aiohttp import web
 from aiopg.sa import create_engine
 from servicelib.application import create_safe_application
 from simcore_service_storage.constants import SIMCORE_S3_STR
-from simcore_service_storage.datcore_adapter import datcore_adapter
 from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
-from simcore_service_storage.models import DatasetMetaData, FileMetaData
+from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.s3wrapper.s3_client import MinioClientWrapper
 from tests.utils import (
     ACCESS_KEY,
