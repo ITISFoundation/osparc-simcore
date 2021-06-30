@@ -6,7 +6,7 @@ from typing import Dict
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
-from models_library.settings.docker_registry import RegistrySettings
+from settings_library.docker_registry import RegistrySettings
 
 MOCKED_BASE_REGISTRY_ENV_VARS: Dict[str, str] = {
     "REGISTRY_AUTH": "False",

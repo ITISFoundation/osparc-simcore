@@ -1,3 +1,4 @@
+from functools import cached_property
 from typing import Optional
 
 from pydantic import Field, SecretStr
@@ -11,7 +12,8 @@ class RegistrySettings(BaseCustomSettings):
     REGISTRY_PATH: Optional[str] = Field(
         None, description="development mode only, in case a local registry is used"
     )
-    REGISTRY_URL: str = Field("", description="url to the docker registry")
+    # NOTE: name is missleading, http or https protocol are not included
+    REGISTRY_URL: str = Field("", description="address to the docker registry")
 
     REGISTRY_USER: str = Field(
         ..., description="username to access the docker registry"
@@ -21,6 +23,6 @@ class RegistrySettings(BaseCustomSettings):
     )
     REGISTRY_SSL: bool = Field(..., description="access to registry through ssl")
 
-    @property
+    @cached_property
     def resolved_registry_url(self) -> str:
         return self.REGISTRY_PATH or self.REGISTRY_URL
