@@ -246,7 +246,9 @@ def mock_files_factory(tmpdir_factory):
 
 
 @pytest.fixture(scope="function")
-def dsm_mockup_complete_db(postgres_service_url, s3_client) -> Tuple[Dict, Dict]:
+def dsm_mockup_complete_db(
+    postgres_service_url, s3_client
+) -> Tuple[Dict[str, str], Dict[str, str]]:
 
     tests.utils.fill_tables_from_csv_files(url=postgres_service_url)
 
@@ -388,29 +390,6 @@ def dsm_fixture(s3_client, postgres_engine, loop, moduleless_app):
         dsm_fixture.datcore_tokens[USER_ID] = DatCoreApiToken(api_token, api_secret)
 
         yield dsm_fixture
-
-
-@pytest.fixture(scope="function")
-async def datcore_testbucket(loop, mock_files_factory):
-    # TODO: what if I do not have an app to the the config from?
-    api_token = os.environ.get("BF_API_KEY")
-    api_secret = os.environ.get("BF_API_SECRET")
-
-    if api_secret is None:
-        yield "no_bucket"
-        return
-
-    with ThreadPoolExecutor(2) as pool:
-        dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
-
-        await dcw.create_test_dataset(BUCKET_NAME)
-        tmp_files = mock_files_factory(2)
-        for f in tmp_files:
-            await dcw.upload_file(BUCKET_NAME, os.path.normpath(f))
-
-        yield BUCKET_NAME, tmp_files[0], tmp_files[1]
-
-        await dcw.delete_test_dataset(BUCKET_NAME)
 
 
 @pytest.fixture(scope="function")
