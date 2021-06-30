@@ -348,8 +348,14 @@ class PennsieveApiClient(BaseServiceClientApi):
     ):
         """uploads a file NOTE: uses the pennsieve agent and the pennsieve python client"""
         ps = await _get_pennsieve_client(api_key, api_secret)
-        dataset: pennsieve.models.Dataset = ps.get_dataset(dataset_id)
-        dataset.upload(file)
+        dataset: pennsieve.models.Dataset = (
+            await asyncio.get_event_loop().run_in_executor(
+                None, lambda: ps.get_dataset(dataset_id)
+            )
+        )
+        await asyncio.get_event_loop().run_in_executor(
+            None, lambda: dataset.upload(file.as_posix())
+        )
 
 
 def setup(app: FastAPI, settings: PennsieveSettings) -> None:

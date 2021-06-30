@@ -1,4 +1,6 @@
 ARG PYTHON_VERSION="3.8.10"
+ARG PENNSIEVE_VERSION="0.3.5"
+FROM itisfoundation/pennsieve-agent:${PYTHON_VERSION}-${PENNSIEVE_VERSION} as pennsieve-agent
 FROM python:${PYTHON_VERSION}-slim-buster as base
 
 #
@@ -48,15 +50,9 @@ EXPOSE 8000
 EXPOSE 3000
 
 # install Pennsieve agent [ref](https://docs.pennsieve.io/docs/the-pennsieve-agent)
-RUN set -eux; \
-  apt-get update; \
-  apt-get install -y --no-install-recommends wget sudo; \
-  rm -rf /var/lib/apt/lists/*; \
-  wget https://github.com/Pennsieve/agent/releases/download/0.3.5/pennsieve_0.3.5_amd64.deb; \
-  apt-get install ./pennsieve_0.3.5_amd64.deb; \
-  apt-get remove -y wget; \
-  rm --force pennsieve_0.3.5_amd64.deb;
-ENV PATH="/usr/local/opt/pennsieve/bin:$PATH"
+# from in-house-built version see https://github.com/ITISFoundation/dockerfiles/pennsieve-agent
+COPY --from=pennsieve-agent /pennsieve /opt/pennsieve/bin/pennsieve
+ENV PATH="/opt/pennsieve/bin:$PATH"
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
