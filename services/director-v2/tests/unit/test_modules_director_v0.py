@@ -9,7 +9,7 @@ import urllib.parse
 from collections import namedtuple
 from pathlib import Path
 from random import choice
-from typing import Callable, Dict, List
+from typing import Any, Callable, Dict, List
 from uuid import uuid4
 
 import pytest
@@ -18,9 +18,13 @@ from fastapi import FastAPI, status
 from models_library.services import ServiceDockerData, ServiceKeyVersion
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     RunningDynamicServiceDetails,
+    SimcoreServiceLabels,
 )
 from simcore_service_director_v2.models.schemas.services import ServiceExtras
 from simcore_service_director_v2.modules.director_v0 import DirectorV0Client
+
+MOCK_SERVICE_KEY = "simcore/services/dynamic/myservice"
+MOCK_SERVICE_VERSION = "1.3.4"
 
 
 @pytest.fixture(autouse=True)
@@ -49,6 +53,11 @@ def mocked_director_v0_service_api(
         ).respond(json=exp_data)
 
         yield respx_mock
+
+
+@pytest.fixture
+def mock_service_key_version() -> ServiceKeyVersion:
+    return ServiceKeyVersion(key=MOCK_SERVICE_KEY, version=MOCK_SERVICE_VERSION)
 
 
 ForwardToDirectorParams = namedtuple(
@@ -81,9 +90,10 @@ def _get_list_services_calls() -> List[ForwardToDirectorParams]:
 
 def _get_service_version_calls() -> List[ForwardToDirectorParams]:
     # TODO: here we see the return value is currently not validated
+    quoted_key = urllib.parse.quote_plus(MOCK_SERVICE_KEY)
     return [
         ForwardToDirectorParams(
-            entrypoint="/v0/services/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
+            entrypoint=f"/v0/services/{quoted_key}/{MOCK_SERVICE_VERSION}",
             exp_status=status.HTTP_200_OK,
             exp_data={"data": ["stuff about my service"]},
             resp_alias="get_service_version",
@@ -93,9 +103,10 @@ def _get_service_version_calls() -> List[ForwardToDirectorParams]:
 
 def _get_service_version_extras_calls() -> List[ForwardToDirectorParams]:
     # TODO: here we see the return value is currently not validated
+    quoted_key = urllib.parse.quote_plus(MOCK_SERVICE_KEY)
     return [
         ForwardToDirectorParams(
-            entrypoint="/v0/services/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4/extras",
+            entrypoint=f"/v0/services/{quoted_key}/{MOCK_SERVICE_VERSION}/extras",
             exp_status=status.HTTP_200_OK,
             exp_data={"data": "extra stuff about my service"},
             resp_alias="get_service_extras",
@@ -147,10 +158,17 @@ def fake_running_service_details() -> RunningDynamicServiceDetails:
 
 
 @pytest.fixture
+def fake_service_labels() -> Dict[str, Any]:
+    return choice(SimcoreServiceLabels.Config.schema_extra["examples"])
+
+
+@pytest.fixture
 def mocked_director_service_fcts(
     minimal_app: FastAPI,
+    mock_service_key_version: ServiceKeyVersion,
     fake_service_details: ServiceDockerData,
     fake_service_extras: ServiceExtras,
+    fake_service_labels: Dict[str, Any],
     fake_running_service_details: RunningDynamicServiceDetails,
 ):
     with respx.mock(
@@ -158,19 +176,20 @@ def mocked_director_service_fcts(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-        respx_mock.get(
-            "/v0/services/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
-            name="get_service_version",
-        ).respond(
-            json={"data": [fake_service_details.dict(by_alias=True)]},
-        )
+        quoted_key = urllib.parse.quote_plus(mock_service_key_version.key)
+        version = mock_service_key_version.version
 
         respx_mock.get(
-            "/v0/service_extras/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
-            name="get_service_extras",
-        ).respond(
-            json={"data": fake_service_extras.dict(by_alias=True)},
-        )
+            f"/v0/services/{quoted_key}/{version}", name="get_service_version"
+        ).respond(json={"data": [fake_service_details.dict(by_alias=True)]})
+
+        respx_mock.get(
+            f"/v0/service_extras/{quoted_key}/{version}", name="get_service_extras"
+        ).respond(json={"data": fake_service_extras.dict(by_alias=True)})
+
+        respx_mock.get(
+            f"/v0/services/{quoted_key}/{version}/labels", name="get_service_labels"
+        ).respond(json={"data": fake_service_labels})
 
         respx_mock.get(
             re.compile(
@@ -178,7 +197,7 @@ def mocked_director_service_fcts(
             ),
             name="get_running_service_details",
         ).respond(
-            json={"data": json.loads(fake_running_service_details.json(by_alias=True))},
+            json={"data": json.loads(fake_running_service_details.json(by_alias=True))}
         )
 
         yield respx_mock
@@ -187,14 +206,12 @@ def mocked_director_service_fcts(
 async def test_get_service_details(
     minimal_app: FastAPI,
     mocked_director_service_fcts,
+    mock_service_key_version: ServiceKeyVersion,
     fake_service_details: ServiceDockerData,
 ):
     director_client: DirectorV0Client = minimal_app.state.director_v0_client
-    service = ServiceKeyVersion(
-        key="simcore/services/dynamic/myservice", version="1.3.4"
-    )
     service_details: ServiceDockerData = await director_client.get_service_details(
-        service
+        mock_service_key_version
     )
     assert mocked_director_service_fcts["get_service_version"].called
     assert fake_service_details == service_details
@@ -203,15 +220,30 @@ async def test_get_service_details(
 async def test_get_service_extras(
     minimal_app: FastAPI,
     mocked_director_service_fcts,
+    mock_service_key_version: ServiceKeyVersion,
     fake_service_extras: ServiceExtras,
 ):
     director_client: DirectorV0Client = minimal_app.state.director_v0_client
-    service = ServiceKeyVersion(
-        key="simcore/services/dynamic/myservice", version="1.3.4"
+    service_extras: ServiceExtras = await director_client.get_service_extras(
+        mock_service_key_version
     )
-    service_extras: ServiceExtras = await director_client.get_service_extras(service)
     assert mocked_director_service_fcts["get_service_extras"].called
     assert fake_service_extras == service_extras
+
+
+async def test_get_service_labels(
+    minimal_app: FastAPI,
+    mocked_director_service_fcts,
+    fake_service_labels: Dict[str, Any],
+    mock_service_key_version: ServiceKeyVersion,
+):
+    director_client: DirectorV0Client = minimal_app.state.director_v0_client
+
+    service_labels: SimcoreServiceLabels = await director_client.get_service_labels(
+        mock_service_key_version
+    )
+    assert mocked_director_service_fcts["get_service_labels"].called
+    assert SimcoreServiceLabels(**fake_service_labels) == service_labels
 
 
 async def test_get_running_service_details(
@@ -219,11 +251,10 @@ async def test_get_running_service_details(
     mocked_director_service_fcts,
     fake_running_service_details: RunningDynamicServiceDetails,
 ):
-
     director_client: DirectorV0Client = minimal_app.state.director_v0_client
 
     service_details: RunningDynamicServiceDetails = (
-        await director_client.get_running_service_details(str(uuid4()))
+        await director_client.get_running_service_details(uuid4())
     )
     assert mocked_director_service_fcts["get_running_service_details"].called
     assert fake_running_service_details == service_details
