@@ -4,6 +4,7 @@
 # NOTE: ALL version constraints MUST be commented
 -c ../../../requirements/constraints.txt
 
+aiofiles
 fastapi
 fastapi-pagination
 httpx
@@ -11,3 +12,4 @@ uvicorn[standard]
 
 pennsieve
 pydantic
+python-multipart
