@@ -1,13 +1,18 @@
 # pylint: disable=no-self-argument
 # pylint: disable=no-self-use
 import logging
+from enum import Enum, unique
+from pathlib import Path
 from typing import Optional
 
 from models_library.basic_types import BootModeEnum, PortInt
+from models_library.services import SERVICE_NETWORK_RE
+from models_library.settings.base import BaseCustomSettings
 from models_library.settings.celery import CeleryConfig
+from models_library.settings.docker_registry import RegistrySettings
 from models_library.settings.http_clients import ClientRequestSettings
 from models_library.settings.postgres import PostgresSettings
-from pydantic import BaseSettings, Field, SecretStr, constr, root_validator, validator
+from pydantic import BaseSettings, Field, PositiveFloat, PositiveInt, constr, validator
 
 from ..meta import api_vtag
 
@@ -59,11 +64,112 @@ class DirectorV0Settings(ApiServiceSettings):
         env_prefix = "DIRECTOR_"
 
 
+_DYNAMIC_SIDECAR_DOCKER_IMAGE_RE = (
+    r"(^(local|itisfoundation)/)?(dynamic-sidecar):([\w]+)"
+)
+
+
+class DynamicSidecarSettings(BaseCustomSettings):
+    SC_BOOT_MODE: BootModeEnum = Field(
+        BootModeEnum.PRODUCTION,
+        description="Used to compute where or not should start sidecar in development mode",
+    )
+    DYNAMIC_SIDECAR_IMAGE: str = Field(
+        ...,
+        regex=_DYNAMIC_SIDECAR_DOCKER_IMAGE_RE,
+        description="used by the director to start a specific version of the dynamic-sidecar",
+    )
+
+    DYNAMIC_SIDECAR_PORT: PortInt = Field(
+        8000,
+        description="port on which the webserver for the dynamic-sidecar is exposed",
+    )
+    DYNAMIC_SIDECAR_MOUNT_PATH_DEV: Optional[Path] = Field(
+        None,
+        description="optional, only used for development, mounts the source of the dynamic-sidecar",
+    )
+
+    DYNAMIC_SIDECAR_EXPOSE_PORT: bool = Field(
+        False,
+        description="exposes the service on localhost for debuging and testing",
+    )
+
+    SIMCORE_SERVICES_NETWORK_NAME: str = Field(
+        ...,
+        regex=SERVICE_NETWORK_RE,
+        description="network all dynamic services are connected to",
+    )
+    DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT: PositiveInt = Field(
+        15,
+        description=(
+            "the default timeout each request to the dynamic-sidecar API in seconds; as per "
+            "design, all requests should answer quite quickly, in theory a few seconds or less"
+        ),
+    )
+    DYNAMIC_SIDECAR_TIMEOUT_FETCH_DYNAMIC_SIDECAR_NODE_ID: PositiveFloat = Field(
+        60,
+        description=(
+            "When starting the dynamic-sidecar proxy, the NodeID of the dynamic-sidecar container "
+            "is required. If something goes wrong timeout and do not wait forever in a loop. "
+            "This is used to monitor the status of the service via aiodocker and not http requests "
+            "twards the dynamic-sidecar, as is the case with the above timeout field."
+        ),
+    )
+
+    TRAEFIK_SIMCORE_ZONE: str = Field(
+        ...,
+        description="Names the traefik zone for services that must be accessible from platform http entrypoint",
+    )
+
+    DYNAMIC_SIDECAR_TRAEFIK_VERSION: str = Field(
+        "v2.2.1",
+        description="current version of the Treafik image to be pulled and used from dockerhub",
+    )
+
+    SWARM_STACK_NAME: str = Field(
+        ...,
+        description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
+    )
+
+    REGISTRY: RegistrySettings
+
+
+class DynamicServicesMonitoringSettings(BaseSettings):
+    monitoring_enabled: bool = True
+
+    monitor_interval_seconds: PositiveFloat = Field(
+        5.0, description="interval at which the monitor cycle is repeated"
+    )
+
+    max_status_api_duration: PositiveFloat = Field(
+        1.0,
+        description=(
+            "when requesting the status of a service this is the "
+            "maximum amount of time the request can last"
+        ),
+    )
+
+
 class DynamicServicesSettings(BaseSettings):
+    @classmethod
+    def create_from_env(cls, **override) -> "DynamicServicesSettings":
+        # this calls trigger env parsers
+        return cls(
+            dynamic_sidecar=DynamicSidecarSettings(REGISTRY=RegistrySettings()),
+            monitoring=DynamicServicesMonitoringSettings(),
+            **override,
+        )
+
     enabled: bool = Field(True, description="Enables/Disables connection with service")
 
+    # dynamic sidecar
+    dynamic_sidecar: DynamicSidecarSettings
+
+    # dynamic services monitoring
+    monitoring: DynamicServicesMonitoringSettings
+
     class Config(CommonConfig):
-        pass
+        env_prefix = "DIRECTOR_V2_DYNAMIC_SERVICES_"
 
 
 class PGSettings(PostgresSettings):
@@ -71,45 +177,6 @@ class PGSettings(PostgresSettings):
 
     class Config(CommonConfig, PostgresSettings.Config):
         env_prefix = "POSTGRES_"
-
-
-class RegistrySettings(BaseSettings):
-    """Settings for docker_registry module"""
-
-    enabled: bool = Field(True, description="Enables/Disables connection with service")
-
-    # entrypoint
-    ssl: bool = True
-    url: str = Field(..., description="URL to the docker registry", env="REGISTRY_URL")
-
-    # auth
-    auth: bool = True
-    user: Optional[str] = None
-    pw: Optional[SecretStr] = None
-
-    @validator("url", pre=True)
-    def secure_url(cls, v, values):
-        if values["ssl"]:
-            if v.startswith("http://"):
-                v = v.replace("http://", "https://")
-        return v
-
-    @root_validator
-    def check_auth_credentials(cls, values):
-        if values["auth"]:
-            user, pw = values.get("user"), values.get("pw")
-            if user is None or pw is None:
-                raise ValueError("Cannot authenticate without credentials user, pw")
-            if not values["ssl"]:
-                raise ValueError("Authentication REQUIRES a secured channel")
-        return values
-
-    @property
-    def api_url(self) -> str:
-        return f"{self.url}/v2"
-
-    class Config(CommonConfig):
-        env_prefix = "REGISTRY_"
 
 
 class CelerySchedulerSettings(BaseSettings):
@@ -129,9 +196,8 @@ class AppSettings(BaseSettings):
         return cls(
             postgres=PGSettings(),
             director_v0=DirectorV0Settings(),
-            registry=RegistrySettings(),
             celery=CelerySettings.create_from_env(),
-            dynamic_services=DynamicServicesSettings(),
+            dynamic_services=DynamicServicesSettings.create_from_env(),
             client_request=ClientRequestSettings(),
             scheduler=CelerySchedulerSettings(),
             **settings_kwargs,
@@ -165,60 +231,11 @@ class AppSettings(BaseSettings):
     # Dynamic Services submodule
     dynamic_services: DynamicServicesSettings
 
-    # REGISTRY submodule
-    registry: RegistrySettings
-
     # POSTGRES
     postgres: PGSettings
 
     # STORAGE
     storage_endpoint: str = Field("storage:8080", env="STORAGE_ENDPOINT")
-
-    # caching registry and TTL (time-to-live)
-    # TODO: fix these variables once the director-v2 is able to start dynamic services
-    registry_caching: bool = Field(True, env="DIRECTOR_V2_REGISTRY_CACHING")
-    registry_caching_ttl: int = Field(15 * MINS, env="DIRECTOR_V2_REGISTRY_CACHING_TTL")
-
-    # for passing self-signed certificate to spawned services
-    # TODO: fix these variables once the director-v2 is able to start dynamic services
-    self_signed_ssl_secret_id: str = Field(
-        "", env="DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID"
-    )
-    self_signed_ssl_secret_name: str = Field(
-        "", env="DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME"
-    )
-    self_signed_ssl_filename: str = Field(
-        "", env="DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME"
-    )
-
-    # extras
-    extra_hosts_suffix: str = Field("undefined", env="EXTRA_HOSTS_SUFFIX")
-    published_hosts_name: str = Field("", env="PUBLISHED_HOSTS_NAME")
-    swarm_stack_name: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
-
-    #
-    node_schema_location: str = Field(
-        f"{API_ROOT}/{api_vtag}/schemas/node-meta-v0.0.1.json",
-        description="used when in devel mode vs release mode",
-        env="NODE_SCHEMA_LOCATION",
-    )
-
-    #
-    simcore_services_network_name: Optional[str] = Field(
-        None,
-        description="used to find the right network name",
-        env="SIMCORE_SERVICES_NETWORK_NAME",
-    )
-    simcore_services_prefix: Optional[str] = Field(
-        "simcore/services",
-        description="useful when developing with an alternative registry namespace",
-        env="SIMCORE_SERVICES_PREFIX",
-    )
-
-    # traefik
-    traefik_simcore_zone: str = Field(
-        "internal_simcore_stack", env="TRAEFIK_SIMCORE_ZONE"
-    )
 
     # monitoring
     monitoring_enabled: str = Field(False, env="MONITORING_ENABLED")
