@@ -197,9 +197,9 @@ source $(CURDIR)/.env; \
 set +o allexport; \
 separator=------------------------------------------;\
 separator=$${separator}$${separator}$${separator};\
-rows="%-22s| %80s| %12s| %12s\n";\
+rows="%-22s | %80s | %12s | %12s\n";\
 TableWidth=140;\
-printf "%22s| %80s| %12s| %12s\n" Name Endpoint User Password;\
+printf "%22s | %80s | %12s | %12s\n" Name Endpoint User Password;\
 printf "%.$${TableWidth}s\n" "$$separator";\
 printf "$$rows" 'oSparc platform' "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9081";\
 printf "$$rows" 'Postgres DB' "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18080/?pgsql=postgres&username=$${POSTGRES_USER}&db=$${POSTGRES_DB}&ns=public" $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
