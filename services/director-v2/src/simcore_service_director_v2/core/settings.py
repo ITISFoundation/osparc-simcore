@@ -9,10 +9,10 @@ from models_library.basic_types import BootModeEnum, PortInt
 from models_library.services import SERVICE_NETWORK_RE
 from models_library.settings.base import BaseCustomSettings
 from models_library.settings.celery import CeleryConfig
-from models_library.settings.docker_registry import RegistrySettings
 from models_library.settings.http_clients import ClientRequestSettings
 from models_library.settings.postgres import PostgresSettings
 from pydantic import BaseSettings, Field, PositiveFloat, PositiveInt, constr, validator
+from settings_library.docker_registry import RegistrySettings
 
 from ..meta import api_vtag
 
@@ -29,6 +29,18 @@ ORG_LABELS_TO_SCHEMA_LABELS = {
     "org.label-schema.vcs-ref": "vcs_ref",
     "org.label-schema.vcs-url": "vcs_url",
 }
+
+
+@unique
+class ServiceType(Enum):
+    """
+    Used to filter out services spawned by this service in the stack.
+    The version was added to distinguish from the ones spawned by director-v0
+    These values are attached to the dynamic-sidecar and its relative proxy.
+    """
+
+    MAIN: str = f"main-{api_vtag}"
+    DEPENDENCY: str = f"dependency-{api_vtag}"
 
 
 class CommonConfig:

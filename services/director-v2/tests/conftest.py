@@ -4,6 +4,8 @@
 
 import asyncio
 import json
+import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, Iterator
 
@@ -31,6 +33,8 @@ pytest_plugins = [
     "pytest_simcore.simcore_services",
     "pytest_simcore.tmp_path_extra",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session")
@@ -61,11 +65,37 @@ def project_env_devel_dict(project_slug_dir: Path) -> Dict[str, Any]:
 def project_env_devel_environment(project_env_devel_dict: Dict[str, Any], monkeypatch):
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
+    monkeypatch.setenv(
+        "DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:TEST_MOCKED_TAG_NOT_PRESENT"
+    )
 
 
 @pytest.fixture(scope="function")
-def client(loop: asyncio.BaseEventLoop) -> TestClient:
+def dynamic_sidecar_image(monkeypatch) -> None:
+    # Works as below line in docker.compose.yml
+    # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
+
+    registry = os.environ.get("DOCKER_REGISTRY", "local")
+    image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
+
+    image_name = f"{registry}/dynamic-sidecar:{image_tag}".strip("/")
+    logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", image_name)
+
+    monkeypatch.setenv("REGISTRY_auth", "false")
+    monkeypatch.setenv("REGISTRY_user", "test")
+    monkeypatch.setenv("REGISTRY_PW", "test")
+    monkeypatch.setenv("REGISTRY_ssl", "false")
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
+    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
+    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
+
+
+@pytest.fixture(scope="function")
+def client(loop: asyncio.BaseEventLoop, dynamic_sidecar_image) -> TestClient:
     settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
+    settings.dynamic_services.enabled = False
+    settings.dynamic_services.monitoring.monitoring_enabled = False
     app = init_app(settings)
 
     # NOTE: this way we ensure the events are run in the application

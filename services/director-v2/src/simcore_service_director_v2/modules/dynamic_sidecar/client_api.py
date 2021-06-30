@@ -1,6 +1,4 @@
 import logging
-import traceback
-from typing import Any, Dict, Optional
 
 import httpx
 from fastapi import FastAPI
