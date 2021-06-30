@@ -38,6 +38,10 @@ class FileMetaData(BaseModel):
         if "extension" in package and not pck_name.endswith(package["extension"]):
             pck_name += ".".join([pck_name, package["extension"]])
 
+        file_size = 0
+        if package["content"]["packageType"] != "Collection" and files is not None:
+            file_size = files[0]["content"]["size"]
+
         return cls(
             dataset_id=package["content"]["datasetNodeId"],
             package_id=package["content"]["nodeId"],
@@ -45,9 +49,7 @@ class FileMetaData(BaseModel):
             name=pck_name,
             path=base_path / pck_name,
             type=package["content"]["packageType"],
-            size=0
-            if package["content"]["packageType"] == "Collection"
-            else files[0]["content"]["size"],
+            size=file_size,
             created_at=package["content"]["createdAt"],
             last_modified_at=package["content"]["updatedAt"],
             data_type=DataType.FOLDER
