@@ -10,7 +10,7 @@ class DatcoreAdapterSettings(BaseCustomSettings):
     HOST: str = "datcore-adapter"
     PORT: PortInt = 8000
     VTAG: VersionTag = Field(
-        "v0", alias="version", description="Datcore-adapter service API's version tag"
+        "v0", description="Datcore-adapter service API's version tag"
     )
 
     endpoint: Optional[AnyHttpUrl] = None

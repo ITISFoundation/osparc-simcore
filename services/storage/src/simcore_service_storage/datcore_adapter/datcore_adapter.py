@@ -206,7 +206,7 @@ async def delete_file(
     await _request(app, api_key, api_secret, "DELETE", f"/files/{file_id}")
 
 
-async def upload_file(
-    app: aiohttp.web.Application, api_key: str, api_secret: str, file_path: str
-) -> FileMetaData:
-    pass
+# async def upload_file(
+#     app: aiohttp.web.Application, api_key: str, api_secret: str, file_path: str
+# ) -> FileMetaData:
+#     pass
