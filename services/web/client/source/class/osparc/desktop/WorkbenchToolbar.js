@@ -25,7 +25,8 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
   },
 
   events: {
-    "showParameters": "qx.event.type.Event"
+    "showParameters": "qx.event.type.Event",
+    "showSnapshots": "qx.event.type.Event"
   },
 
   members: {
@@ -52,6 +53,18 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
           });
           control.addListener("execute", () => {
             this.fireDataEvent("showParameters");
+          }, this);
+          this._add(control);
+          break;
+        }
+        case "snapshots-btn": {
+          control = new qx.ui.form.Button(this.tr("Snapshots")).set({
+            icon: "@FontAwesome5Solid/code-branch-h/14",
+            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
+            allowGrowX: false
+          });
+          control.addListener("execute", () => {
+            this.fireDataEvent("showSnapshots");
           }, this);
           this._add(control);
           break;

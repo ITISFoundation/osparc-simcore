@@ -162,10 +162,34 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __showSweeper: function() {
+    __showParameters: function() {
       const study = this.getStudy();
       const sweeper = new osparc.component.sweeper.Sweeper(study);
       const title = this.tr("Sweeper");
+      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 400, 700);
+      sweeper.addListener("openPrimaryStudy", e => {
+        win.close();
+        const primaryStudyId = e.getData();
+        const params = {
+          url: {
+            "projectId": primaryStudyId
+          }
+        };
+        osparc.data.Resources.getOne("studies", params)
+          .then(studyData => {
+            study.removeIFrames();
+            const data = {
+              studyId: studyData.uuid
+            };
+            this.fireDataEvent("startStudy", data);
+          });
+      });
+    },
+
+    __showSnapshots: function() {
+      const study = this.getStudy();
+      const sweeper = new osparc.component.sweeper.Sweeper(study);
+      const title = this.tr("Snapshots");
       const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 400, 700);
       sweeper.addListener("snapshotSelected", e => {
         win.close();
@@ -471,7 +495,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.nodeSelected(nodeId);
         }, this);
       });
-      workbenchToolbar.addListener("showParameters", this.__showSweeper, this);
+      workbenchToolbar.addListener("showParameters", this.__showParameters, this);
+      workbenchToolbar.addListener("showSnapshots", this.__showSnapshots, this);
 
       nodesTree.addListener("changeSelectedNode", e => {
         const node = workbenchUI.getNodeUI(e.getData());
