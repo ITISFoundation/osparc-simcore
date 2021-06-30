@@ -230,7 +230,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       let groupedServicesList = [];
       for (const key in groupedServices) {
         let service = osparc.utils.Services.getLatest(groupedServices, key);
-        service = osparc.utils.Services.removeFileToKeyMap(service);
+        osparc.utils.Services.removeFileToKeyMap(service);
         let newModel = qx.data.marshal.Json.createModel(service);
         groupedServicesList.push(newModel);
       }
@@ -271,9 +271,9 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
         return;
       }
 
-      let service = model || this.__getSelectedService();
+      const service = model || this.__getSelectedService();
       if (service) {
-        service = osparc.utils.Services.removeFileToKeyMap(service);
+        osparc.utils.Services.removeFileToKeyMap(service);
         const serviceModel = qx.data.marshal.Json.createModel(service);
         const eData = {
           service: serviceModel,
