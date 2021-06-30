@@ -404,49 +404,50 @@ async def datcore_structured_testbucket(loop, mock_files_factory, moduleless_app
         return
     import warnings
 
-    warnings.warn("NOT IMPLEMENTED!!!")
+    warnings.warn("DISABLED!!!")
     raise Exception
     # TODO: there are some missing commands in datcore-adapter before this can run
-    # this shall be used when the time comes
-    dataset: DatasetMetaData = await datcore_adapter.create_dataset(
-        moduleless_app, api_token, api_secret, BUCKET_NAME
-    )
-    dataset_id = dataset.dataset_id
-    assert dataset_id, f"Could not create dataset {BUCKET_NAME}"
+    # this shall be used when the time comes and this code should be enabled again
 
-    tmp_files = mock_files_factory(3)
+    # dataset: DatasetMetaData = await datcore_adapter.create_dataset(
+    #     moduleless_app, api_token, api_secret, BUCKET_NAME
+    # )
+    # dataset_id = dataset.dataset_id
+    # assert dataset_id, f"Could not create dataset {BUCKET_NAME}"
 
-    # first file to the root
-    filename1 = os.path.normpath(tmp_files[0])
-    await datcore_adapter.upload_file(moduleless_app, api_token, api_secret, filename1)
-    file_id1 = await dcw.upload_file_to_id(dataset_id, filename1)
-    assert file_id1, f"Could not upload {filename1} to the root of {BUCKET_NAME}"
+    # tmp_files = mock_files_factory(3)
 
-    # create first level folder
-    collection_id1 = await dcw.create_collection(dataset_id, "level1")
+    # # first file to the root
+    # filename1 = os.path.normpath(tmp_files[0])
+    # await datcore_adapter.upload_file(moduleless_app, api_token, api_secret, filename1)
+    # file_id1 = await dcw.upload_file_to_id(dataset_id, filename1)
+    # assert file_id1, f"Could not upload {filename1} to the root of {BUCKET_NAME}"
 
-    # upload second file
-    filename2 = os.path.normpath(tmp_files[1])
-    file_id2 = await dcw.upload_file_to_id(collection_id1, filename2)
-    assert file_id2, f"Could not upload {filename2} to the {BUCKET_NAME}/level1"
+    # # create first level folder
+    # collection_id1 = await dcw.create_collection(dataset_id, "level1")
 
-    # create 3rd level folder
-    filename3 = os.path.normpath(tmp_files[2])
-    collection_id2 = await dcw.create_collection(collection_id1, "level2")
-    file_id3 = await dcw.upload_file_to_id(collection_id2, filename3)
-    assert file_id3, f"Could not upload {filename3} to the {BUCKET_NAME}/level1/level2"
+    # # upload second file
+    # filename2 = os.path.normpath(tmp_files[1])
+    # file_id2 = await dcw.upload_file_to_id(collection_id1, filename2)
+    # assert file_id2, f"Could not upload {filename2} to the {BUCKET_NAME}/level1"
 
-    yield {
-        "dataset_id": dataset_id,
-        "coll1_id": collection_id1,
-        "coll2_id": collection_id2,
-        "file_id1": file_id1,
-        "filename1": tmp_files[0],
-        "file_id2": file_id2,
-        "filename2": tmp_files[1],
-        "file_id3": file_id3,
-        "filename3": tmp_files[2],
-        "dcw": dcw,
-    }
+    # # create 3rd level folder
+    # filename3 = os.path.normpath(tmp_files[2])
+    # collection_id2 = await dcw.create_collection(collection_id1, "level2")
+    # file_id3 = await dcw.upload_file_to_id(collection_id2, filename3)
+    # assert file_id3, f"Could not upload {filename3} to the {BUCKET_NAME}/level1/level2"
 
-    await dcw.delete_test_dataset(BUCKET_NAME)
+    # yield {
+    #     "dataset_id": dataset_id,
+    #     "coll1_id": collection_id1,
+    #     "coll2_id": collection_id2,
+    #     "file_id1": file_id1,
+    #     "filename1": tmp_files[0],
+    #     "file_id2": file_id2,
+    #     "filename2": tmp_files[1],
+    #     "file_id3": file_id3,
+    #     "filename3": tmp_files[2],
+    #     "dcw": dcw,
+    # }
+
+    # await dcw.delete_test_dataset(BUCKET_NAME)
