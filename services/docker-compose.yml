@@ -271,6 +271,7 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
+      - DATCORE_ADAPTER_HOST=${DATCORE_ADAPTER_HOST:-datcore-adapter}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
