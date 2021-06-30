@@ -378,7 +378,7 @@ class DataStorageManager:
 
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies
-            api_token, api_secret = self._get_datcore_tokens(user_id)
+            # api_token, api_secret = self._get_datcore_tokens(user_id)
             import warnings
 
             warnings.warn("NOT IMPLEMENTED!!!")
