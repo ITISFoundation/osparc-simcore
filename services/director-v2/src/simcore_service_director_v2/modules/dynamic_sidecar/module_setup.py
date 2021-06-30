@@ -1,11 +1,7 @@
 from fastapi import FastAPI
 
-from .monitor import (
-    setup_api_client,
-    setup_monitor,
-    shutdown_api_client,
-    shutdown_monitor,
-)
+from .client_api import setup_api_client, shutdown_api_client
+from .monitor import setup_monitor, shutdown_monitor
 
 
 def setup(app: FastAPI) -> None:
