@@ -1,3 +1,4 @@
+# NOTE: this module will come in via PR https://github.com/ITISFoundation/osparc-simcore/pull/2406 with tests
 from functools import cached_property
 from typing import Optional
 
