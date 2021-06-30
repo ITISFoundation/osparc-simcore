@@ -7,7 +7,7 @@ import configparser
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple, Callable
+from typing import List, Tuple
 
 import pytest
 import yaml
