@@ -207,9 +207,9 @@ async def test_upload_link(client, dsm_mockup_db):
         assert data
 
 
+@pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 async def test_copy(client, dsm_mockup_db, datcore_structured_testbucket):
-    if not has_datcore_tokens():
-        return
+
     # copy N files
     N = 2
     counter = 0
