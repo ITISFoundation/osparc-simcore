@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Any, Dict
+from typing import Dict
 
 import httpx
 import pytest

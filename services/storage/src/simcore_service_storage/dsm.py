@@ -379,7 +379,10 @@ class DataStorageManager:
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            return datcore_adapter.get_file_metadata(api_token, api_secret, file_uuid)
+            import warnings
+
+            warnings.warn("NOT IMPLEMENTED!!!")
+            return None
 
     # UPLOAD/DOWNLOAD LINKS ---------------------------
 
@@ -604,9 +607,9 @@ class DataStorageManager:
 
             # Uploads local -> DATCore
             await self.upload_file_to_datcore(
-                user_id=user_id,
-                local_file_path=local_file_path,
-                destination_id=dest_uuid,
+                _user_id=user_id,
+                _local_file_path=local_file_path,
+                _destination_id=dest_uuid,
             )
 
     async def copy_file_datcore_s3(

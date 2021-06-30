@@ -151,6 +151,7 @@ async def list_all_files_metadatas_in_dataset(
                 object_name=d["path"],
                 file_name=d["name"],
                 file_id=d["package_id"],
+                file_size=d["size"],
                 created_at=d["created_at"],
                 last_modified=d["last_modified_at"],
                 display_file_path=d["name"],
@@ -174,12 +175,6 @@ async def list_datasets(
     )
 
     return all_datasets
-
-
-async def get_file_metadata(
-    app: aiohttp.web.Application, api_key: str, api_secret: str, file_id: str
-) -> FileMetaDataEx:
-    pass
 
 
 async def get_file_download_presigned_link(
