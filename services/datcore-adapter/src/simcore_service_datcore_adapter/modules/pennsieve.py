@@ -344,17 +344,24 @@ class PennsieveApiClient(BaseServiceClientApi):
         api_secret: str,
         file: Path,
         dataset_id: str,
-        _collection_id: Optional[str] = None,
+        collection_id: Optional[str] = None,
     ):
         """uploads a file NOTE: uses the pennsieve agent and the pennsieve python client"""
         ps = await _get_pennsieve_client(api_key, api_secret)
-        dataset: pennsieve.models.Dataset = (
-            await asyncio.get_event_loop().run_in_executor(
+        collection: Optional[pennsieve.models.BaseCollection] = None
+        if collection_id:
+            collection = await asyncio.get_event_loop().run_in_executor(
+                None, lambda: ps.get(collection_id)
+            )
+        else:
+            collection = await asyncio.get_event_loop().run_in_executor(
                 None, lambda: ps.get_dataset(dataset_id)
             )
-        )
+        if collection is None:
+            raise ValueError("could not retrieve collection where to upload the file")
+
         await asyncio.get_event_loop().run_in_executor(
-            None, lambda: dataset.upload(file.as_posix())
+            None, lambda: collection.upload(file.as_posix())
         )
 
 

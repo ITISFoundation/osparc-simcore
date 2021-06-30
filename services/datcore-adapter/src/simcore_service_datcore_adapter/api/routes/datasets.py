@@ -65,6 +65,33 @@ async def list_dataset_top_level_files(
     return create_page(items=file_metas, total=total, params=params)
 
 
+@router.post(
+    "/datasets/{dataset_id}/files",
+    summary="uploads a file into a dataset",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def upload_file(
+    dataset_id: str,
+    file: UploadFile = File(...),
+    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
+    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
+    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
+):
+    # the file must be locally available to be uploaded via the pennsieve agent
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        received_file = Path(tmp_dir) / file.filename
+        async with aiofiles.open(received_file, "wb") as out_fd:
+            while content := await file.read(16 * 1024):
+                await out_fd.write(content)
+        # now upload to pennsieve
+        await pennsieve_client.upload_file(
+            api_key=x_datcore_api_key,
+            api_secret=x_datcore_api_secret,
+            file=received_file,
+            dataset_id=dataset_id,
+        )
+
+
 @router.get(
     "/datasets/{dataset_id}/files/{collection_id}",
     summary="list top level files/folders in a collection in a dataset",
@@ -92,6 +119,35 @@ async def list_dataset_collection_files(
     return create_page(items=file_metas, total=total, params=params)
 
 
+@router.post(
+    "/datasets/{dataset_id}/files/{collection_id}",
+    summary="uploads a file into a collection",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def upload_file_in_collection(
+    dataset_id: str,
+    collection_id: str,
+    file: UploadFile = File(...),
+    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
+    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
+    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
+):
+    # the file must be locally available to be uploaded via the pennsieve agent
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        received_file = Path(tmp_dir) / file.filename
+        async with aiofiles.open(received_file, "wb") as out_fd:
+            while content := await file.read(16 * 1024):
+                await out_fd.write(content)
+        # now upload to pennsieve
+        await pennsieve_client.upload_file(
+            api_key=x_datcore_api_key,
+            api_secret=x_datcore_api_secret,
+            file=received_file,
+            dataset_id=dataset_id,
+            collection_id=collection_id,
+        )
+
+
 @router.get(
     "/datasets/{dataset_id}/files_legacy",
     summary="list all file meta data in dataset",
@@ -110,31 +166,3 @@ async def list_dataset_files_legacy(
         dataset_id=dataset_id,
     )
     return file_metas
-
-
-# DISABLED: The pennsieve agent requires GLIB 2.29, but Debian buster has 2.28.
-@router.post(
-    "/datasets/{dataset_id}/files",
-    summary="uploads a file into a dataset",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def upload_file(
-    dataset_id: str,
-    file: UploadFile = File(...),
-    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
-    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
-    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
-):
-    # the file must be locally available to be uploaded via the pennsieve agent
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        received_file = Path(tmp_dir) / file.filename
-        async with aiofiles.open(received_file, "wb") as out_fd:
-            while content := await file.read(64 * 1024):
-                await out_fd.write(content)
-        # now upload to pennsieve
-        await pennsieve_client.upload_file(
-            api_key=x_datcore_api_key,
-            api_secret=x_datcore_api_secret,
-            file=received_file,
-            dataset_id=dataset_id,
-        )
