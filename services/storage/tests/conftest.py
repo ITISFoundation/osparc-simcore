@@ -23,7 +23,6 @@ from aiohttp import web
 from aiopg.sa import create_engine
 from servicelib.application import create_safe_application
 from simcore_service_storage.constants import SIMCORE_S3_STR
-from simcore_service_storage.datcore_wrapper import DatcoreWrapper
 from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.s3wrapper.s3_client import MinioClientWrapper
@@ -362,29 +361,6 @@ def dsm_mockup_db(
 
 
 @pytest.fixture(scope="function")
-async def datcore_testbucket(loop, mock_files_factory):
-    # TODO: what if I do not have an app to the the config from?
-    api_token = os.environ.get("BF_API_KEY")
-    api_secret = os.environ.get("BF_API_SECRET")
-
-    if api_secret is None:
-        yield "no_bucket"
-        return
-
-    with ThreadPoolExecutor(2) as pool:
-        dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
-
-        await dcw.create_test_dataset(BUCKET_NAME)
-        tmp_files = mock_files_factory(2)
-        for f in tmp_files:
-            await dcw.upload_file(BUCKET_NAME, os.path.normpath(f))
-
-        yield BUCKET_NAME, tmp_files[0], tmp_files[1]
-
-        await dcw.delete_test_dataset(BUCKET_NAME)
-
-
-@pytest.fixture(scope="function")
 def moduleless_app(loop, aiohttp_server) -> web.Application:
     app: web.Application = create_safe_application()
     # creates a dummy server
@@ -412,6 +388,29 @@ def dsm_fixture(s3_client, postgres_engine, loop, moduleless_app):
         dsm_fixture.datcore_tokens[USER_ID] = DatCoreApiToken(api_token, api_secret)
 
         yield dsm_fixture
+
+
+@pytest.fixture(scope="function")
+async def datcore_testbucket(loop, mock_files_factory):
+    # TODO: what if I do not have an app to the the config from?
+    api_token = os.environ.get("BF_API_KEY")
+    api_secret = os.environ.get("BF_API_SECRET")
+
+    if api_secret is None:
+        yield "no_bucket"
+        return
+
+    with ThreadPoolExecutor(2) as pool:
+        dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
+
+        await dcw.create_test_dataset(BUCKET_NAME)
+        tmp_files = mock_files_factory(2)
+        for f in tmp_files:
+            await dcw.upload_file(BUCKET_NAME, os.path.normpath(f))
+
+        yield BUCKET_NAME, tmp_files[0], tmp_files[1]
+
+        await dcw.delete_test_dataset(BUCKET_NAME)
 
 
 @pytest.fixture(scope="function")

@@ -394,7 +394,6 @@ class DataStorageManager:
         warnings.warn("NOT IMPLEMENTED!!!")
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
         # api_token, api_secret = self._get_datcore_tokens(user_id)
-        # dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
         # await dcw.upload_file_to_id(destination_id, local_file_path)
 
     async def _metadata_file_updater(
