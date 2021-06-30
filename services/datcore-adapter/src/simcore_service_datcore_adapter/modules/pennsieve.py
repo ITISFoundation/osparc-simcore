@@ -62,12 +62,14 @@ class PennsieveApiClient(BaseServiceClientApi):
         method: str,
         path: str,
         params: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
     ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         response = await self.client.request(
             method,
             path,
             headers=await _get_authorization_headers(api_key, api_secret),
             params=params,
+            json=json,
         )
         response.raise_for_status()
         return response.json()
@@ -324,6 +326,15 @@ class PennsieveApiClient(BaseServiceClientApi):
             ),
         )
         return URL(file_link["url"])
+
+    async def delete_object(self, api_key: str, api_secret: str, obj_id: str) -> None:
+        """deletes the file in datcore"""
+        _response = cast(
+            Dict[str, Any],
+            await self._request(
+                api_key, api_secret, "POST", "/data/delete", json={"things": [obj_id]}
+            ),
+        )
 
 
 def setup(app: FastAPI, settings: PennsieveSettings) -> None:

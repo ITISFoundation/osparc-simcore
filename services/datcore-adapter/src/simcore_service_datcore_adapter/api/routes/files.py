@@ -29,3 +29,19 @@ async def download_file(
         package_id=file_id,
     )
     return FileDownloadOut(link=f"{presigned_download_link}")
+
+
+@router.delete(
+    "/files/{file_id}", summary="deletes a file", status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_file(
+    file_id: str,
+    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
+    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
+    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
+):
+    await pennsieve_client.delete_object(
+        api_key=x_datcore_api_key,
+        api_secret=x_datcore_api_secret,
+        obj_id=file_id,
+    )
