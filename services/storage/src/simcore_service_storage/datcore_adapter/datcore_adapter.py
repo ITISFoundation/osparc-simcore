@@ -36,7 +36,7 @@ async def _request(
     api_secret: str,
     method: str,
     path: str,
-    data: Optional[Dict[str, Any]] = None,
+    json: Optional[Dict[str, Any]] = None,
     params: Optional[Dict[str, Any]] = None,
 ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
     datcore_adapter_settings = app[APP_CONFIG_KEY].DATCORE_ADAPTER
@@ -53,7 +53,7 @@ async def _request(
                 "x-datcore-api-key": api_key,
                 "x-datcore-api-secret": api_secret,
             },
-            json=data,
+            json=json,
             params=params,
         ) as response:
             return await response.json()
@@ -113,6 +113,20 @@ async def check_user_can_connect(
         return True
     except DatcoreAdapterException:
         return False
+
+
+async def create_dataset(
+    app: aiohttp.web.Application, api_key: str, api_secret: str, name: str
+) -> DatasetMetaData:
+    new_dataset = cast(
+        Dict[str, Any],
+        await _request(
+            app, api_key, api_secret, "POST", "/datasets", json={"name": name}
+        ),
+    )
+    return DatasetMetaData(
+        dataset_id=new_dataset["id"], display_name=new_dataset["display_name"]
+    )
 
 
 async def list_all_datasets_files_metadatas(
@@ -190,3 +204,9 @@ async def delete_file(
     app: aiohttp.web.Application, api_key: str, api_secret: str, file_id: str
 ):
     await _request(app, api_key, api_secret, "DELETE", f"/files/{file_id}")
+
+
+async def upload_file(
+    app: aiohttp.web.Application, api_key: str, api_secret: str, file_path: str
+) -> FileMetaData:
+    pass
