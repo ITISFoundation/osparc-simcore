@@ -402,8 +402,12 @@ async def datcore_structured_testbucket(loop, mock_files_factory, moduleless_app
     if api_token is None or api_secret is None:
         yield "no_bucket"
         return
+    import warnings
 
-    # TODO: this needs testing...
+    warnings.warn("NOT IMPLEMENTED!!!")
+    raise Exception
+    # TODO: there are some missing commands in datcore-adapter before this can run
+    # this shall be used when the time comes
     dataset: DatasetMetaData = await datcore_adapter.create_dataset(
         moduleless_app, api_token, api_secret, BUCKET_NAME
     )

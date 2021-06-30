@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 
 import pandas as pd
-import pytest
 import requests
 import sqlalchemy as sa
 from simcore_service_storage.models import (

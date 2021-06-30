@@ -115,20 +115,6 @@ async def check_user_can_connect(
         return False
 
 
-async def create_dataset(
-    app: aiohttp.web.Application, api_key: str, api_secret: str, name: str
-) -> DatasetMetaData:
-    new_dataset = cast(
-        Dict[str, Any],
-        await _request(
-            app, api_key, api_secret, "POST", "/datasets", json={"name": name}
-        ),
-    )
-    return DatasetMetaData(
-        dataset_id=new_dataset["id"], display_name=new_dataset["display_name"]
-    )
-
-
 async def list_all_datasets_files_metadatas(
     app: aiohttp.web.Application, api_key: str, api_secret: str
 ) -> List[FileMetaDataEx]:
@@ -204,9 +190,3 @@ async def delete_file(
     app: aiohttp.web.Application, api_key: str, api_secret: str, file_id: str
 ):
     await _request(app, api_key, api_secret, "DELETE", f"/files/{file_id}")
-
-
-# async def upload_file(
-#     app: aiohttp.web.Application, api_key: str, api_secret: str, file_path: str
-# ) -> FileMetaData:
-#     pass
