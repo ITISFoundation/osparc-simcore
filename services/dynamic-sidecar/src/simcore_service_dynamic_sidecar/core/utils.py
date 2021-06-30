@@ -13,7 +13,7 @@ import aiofiles
 import yaml
 from async_timeout import timeout
 from fastapi import HTTPException
-from models_library.settings.docker_registry import RegistrySettings
+from settings_library.docker_registry import RegistrySettings
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
