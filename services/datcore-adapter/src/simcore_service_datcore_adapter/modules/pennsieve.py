@@ -198,14 +198,15 @@ class PennsieveApiClient(BaseServiceClientApi):
         offset: int,
     ) -> Tuple[Sequence, Total]:
         dataset_pck = await self._get_dataset(api_key, api_secret, dataset_id)
-        # FIXME: calls to files when a collection are not needed
         return (
             [
                 FileMetaData.from_pennsieve_package(
                     pck,
                     await self._get_package_files(
                         api_key, api_secret, pck["content"]["nodeId"]
-                    ),
+                    )
+                    if pck["content"]["packageType"] != "Collection"
+                    else [],
                     base_path=Path(dataset_pck["content"]["name"]),
                 )
                 for pck in islice(dataset_pck["children"], offset, offset + limit)
@@ -236,14 +237,16 @@ class PennsieveApiClient(BaseServiceClientApi):
             )
             / collection_pck["content"]["name"]
         )
-        # FIXME: calls to files when a collection are not needed
+
         return (
             [
                 FileMetaData.from_pennsieve_package(
                     pck,
                     await self._get_package_files(
                         api_key, api_secret, pck["content"]["nodeId"]
-                    ),
+                    )
+                    if pck["content"]["packageType"] != "Collection"
+                    else [],
                     base_path=base_path,
                 )
                 for pck in islice(collection_pck["children"], offset, offset + limit)
