@@ -247,15 +247,15 @@ qx.Class.define("osparc.utils.Services", {
       });
     },
 
-    removeFileKeyToMap: function(service) {
+    removeFileToKeyMap: function(service) {
       [
         "inputs",
         "outputs"
       ].forEach(inOut => {
         if (inOut in service) {
           for (const key in service[inOut]) {
-            if (Object.prototype.hasOwnProperty.call(service[inOut][key], "fileKeyToMap")) {
-              delete service[inOut][key]["fileKeyToMap"];
+            if (Object.prototype.hasOwnProperty.call(service[inOut][key], "fileToKeyMap")) {
+              delete service[inOut][key]["fileToKeyMap"];
             }
           }
         }
