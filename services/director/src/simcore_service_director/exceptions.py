@@ -21,6 +21,8 @@ translate into something like
 
 from typing import Optional
 
+from aiodocker.exceptions import DockerError
+
 
 class DirectorException(Exception):
     """Basic exception"""
@@ -32,8 +34,8 @@ class DirectorException(Exception):
 class GenericDockerError(DirectorException):
     """Generic docker library error"""
 
-    def __init__(self, msg: str, original_exception: Exception):
-        super().__init__(msg + ": {original_exception}")
+    def __init__(self, msg: str, original_exception: DockerError):
+        super().__init__(msg + f": {original_exception.message}")
         self.original_exception = original_exception
 
 

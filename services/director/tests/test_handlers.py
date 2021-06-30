@@ -155,6 +155,27 @@ async def test_services_by_key_version_get(
     _check_services(created_services, retrieved_services)
 
 
+async def test_get_service_labels(
+    client, push_services, api_version_prefix
+):  # pylint: disable=W0613, W0621
+    created_services = await push_services(3, 2)
+
+    for service in created_services:
+        service_description = service["service_description"]
+        # note that it is very important to remove the safe="/" from quote!!!!
+        key, version = [
+            quote(service_description[key], safe="") for key in ("key", "version")
+        ]
+        url = f"/{api_version_prefix}/services/{key}/{version}/labels"
+        web_response = await client.get(url)
+        assert web_response.status == 200, await web_response.text()
+
+        services_enveloped = await web_response.json()
+        labels = services_enveloped["data"]
+
+        assert service["docker_labels"] == labels
+
+
 async def test_services_extras_by_key_version_get(
     client, push_services, api_version_prefix
 ):  # pylint: disable=W0613, W0621
