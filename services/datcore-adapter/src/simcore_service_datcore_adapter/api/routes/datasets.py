@@ -1,7 +1,10 @@
 import logging
+import tempfile
+from pathlib import Path
 from typing import List
 
-from fastapi import APIRouter, Depends, Header
+import aiofiles
+from fastapi import APIRouter, Depends, File, Header, UploadFile
 from fastapi_pagination import Page, Params
 from fastapi_pagination.api import create_page, resolve_params
 from fastapi_pagination.bases import RawParams
@@ -107,3 +110,30 @@ async def list_dataset_files_legacy(
         dataset_id=dataset_id,
     )
     return file_metas
+
+
+# DISABLED: The pennsieve agent requires GLIB 2.29, but Debian buster has 2.28.
+# @router.post(
+#     "/datasets/{dataset_id}/files",
+#     summary="uploads a file into a dataset",
+#     status_code=status.HTTP_202_ACCEPTED,
+# )
+async def upload_file(
+    dataset_id: str,
+    file: UploadFile = File(...),
+    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
+    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
+    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
+):
+    # the file must be locally available to be uploaded via the pennsieve agent
+    with tempfile.NamedTemporaryFile("wb") as tmp_file:
+        async with aiofiles.open(tmp_file.name, "wb") as out_file:
+            while content := await file.read(1024):
+                await out_file.write(content)
+        # now upload to pennsieve
+        await pennsieve_client.upload_file(
+            api_key=x_datcore_api_key,
+            api_secret=x_datcore_api_secret,
+            file=Path(tmp_file.name),
+            dataset_id=dataset_id,
+        )

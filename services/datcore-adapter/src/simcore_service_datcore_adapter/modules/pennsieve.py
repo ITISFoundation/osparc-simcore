@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 from fastapi.applications import FastAPI
 from pennsieve import Pennsieve
+import pennsieve
 from starlette.datastructures import URL
 
 from ..core.settings import PennsieveSettings
@@ -335,6 +336,20 @@ class PennsieveApiClient(BaseServiceClientApi):
                 api_key, api_secret, "POST", "/data/delete", json={"things": [obj_id]}
             ),
         )
+
+    # FIXME: currently debian buster does not allow using the pennsieve agent
+    async def upload_file(
+        self,
+        api_key: str,
+        api_secret: str,
+        file: Path,
+        dataset_id: str,
+        _collection_id: Optional[str] = None,
+    ):
+        """uploads a file NOTE: uses the pennsieve agent and the pennsieve python client"""
+        ps = await _get_pennsieve_client(api_key, api_secret)
+        dataset: pennsieve.models.Dataset = ps.get_dataset(dataset_id)
+        dataset.upload(file)
 
 
 def setup(app: FastAPI, settings: PennsieveSettings) -> None:

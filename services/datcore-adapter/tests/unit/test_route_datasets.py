@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 from collections import namedtuple
+from pathlib import Path
 from typing import Dict, List
 
 import httpx
@@ -90,3 +91,29 @@ async def test_list_dataset_collection_files_entrypoint(
     data = response.json()
     assert data
     parse_obj_as(Page[FileMetaData], data)
+
+
+@pytest.mark.skip(
+    reason="unable to make the httpx client work with fastapi. And also debian buster does not allow the pennsieve agent to run"
+)
+async def test_upload_file_in_dataset_entrypoint(
+    async_client: httpx.AsyncClient,
+    pennsieve_dataset_id: str,
+    pennsieve_subsystem_mock,
+    pennsieve_api_headers: Dict[str, str],
+    tmp_path: Path,
+):
+    # create some temp file
+    file_to_upload = tmp_path / "file_to_upload_to_pennsieve.txt"
+    file_to_upload.touch()
+    # headers = {"Content-Type": "multipart/form-data"}
+    headers = {}
+    headers.update(pennsieve_api_headers)
+    dataset_id = pennsieve_dataset_id
+    response = await async_client.post(
+        f"v0/datasets/{dataset_id}/files",
+        headers=headers,
+        files={
+            "file": file_to_upload.open("rb"),
+        },
+    )
