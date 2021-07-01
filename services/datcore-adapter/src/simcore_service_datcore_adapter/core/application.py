@@ -22,8 +22,8 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
     if settings is None:
         settings = Settings.create_from_envs()
 
-    logging.basicConfig(level=settings.DATCORE_ADAPTER_LOG_LEVEL.value)
-    logging.root.setLevel(settings.DATCORE_ADAPTER_LOG_LEVEL.value)
+    logging.basicConfig(level=settings.LOG_LEVEL.value)
+    logging.root.setLevel(settings.LOG_LEVEL.value)
 
     app = FastAPI(
         debug=bool(
