@@ -191,7 +191,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     },
 
     __createEvents: function() {
-      this.__serviceBrowser.addListener("serviceadd", e => {
+      this.__serviceBrowser.addListener("serviceAdd", e => {
         this.__onAddService(e.getData());
       }, this);
     },
