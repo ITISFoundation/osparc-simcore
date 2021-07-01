@@ -3,11 +3,11 @@ import logging
 from functools import lru_cache
 from itertools import islice
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
+import pennsieve
 from fastapi.applications import FastAPI
 from pennsieve import Pennsieve
-import pennsieve
 from starlette.datastructures import URL
 
 from ..core.settings import PennsieveSettings
@@ -160,7 +160,7 @@ class PennsieveApiClient(BaseServiceClientApi):
 
     async def list_datasets(
         self, api_key: str, api_secret: str, limit: int, offset: int
-    ) -> Tuple[Sequence, Total]:
+    ) -> Tuple[List, Total]:
         """returns all the datasets a user has access to"""
         dataset_page = cast(
             Dict[str, Any],
@@ -196,7 +196,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         dataset_id: str,
         limit: int,
         offset: int,
-    ) -> Tuple[Sequence, Total]:
+    ) -> Tuple[List, Total]:
         dataset_pck = await self._get_dataset(api_key, api_secret, dataset_id)
         # TODO: improve speed using gather!!
         return (
@@ -223,7 +223,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         collection_id: str,
         limit: int,
         offset: int,
-    ) -> Tuple[Sequence, Total]:
+    ) -> Tuple[List, Total]:
         dataset = await self._get_dataset(api_key, api_secret, dataset_id)
         collection_pck = await self._get_package(api_key, api_secret, collection_id)
         # compute base path ancestors are ordered
