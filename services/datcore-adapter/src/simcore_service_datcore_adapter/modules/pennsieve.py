@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 import pennsieve
 from fastapi.applications import FastAPI
 from pennsieve import Pennsieve
+from pennsieve.models import BaseCollection
 from starlette.datastructures import URL
 
 from ..core.settings import PennsieveSettings
@@ -369,7 +370,7 @@ class PennsieveApiClient(BaseServiceClientApi):
             raise ValueError("could not retrieve collection where to upload the file")
 
         await asyncio.get_event_loop().run_in_executor(
-            None, lambda: collection.upload(file.as_posix())
+            None, lambda: cast(BaseCollection, collection).upload(file.as_posix())
         )
 
 
