@@ -1,3 +1,4 @@
+import warnings
 from typing import Optional
 
 from pydantic import (
@@ -11,6 +12,12 @@ from pydantic import (
 )
 
 from ..basic_types import PortInt
+
+warnings.warn(
+    "models_library.settings will be mostly replaced by settings_library in future versions. "
+    "SEE https://github.com/ITISFoundation/osparc-simcore/pull/2395 for details",
+    DeprecationWarning,
+)
 
 
 class PostgresSettings(BaseSettings):

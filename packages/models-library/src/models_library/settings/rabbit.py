@@ -1,8 +1,15 @@
+import warnings
 from typing import Dict, Optional
 
 from pydantic import BaseSettings, Extra, validator
 from pydantic.networks import AnyUrl
 from pydantic.types import PositiveInt, SecretStr
+
+warnings.warn(
+    "models_library.settings will be mostly replaced by settings_library in future versions. "
+    "SEE https://github.com/ITISFoundation/osparc-simcore/pull/2395 for details",
+    DeprecationWarning,
+)
 
 
 class RabbitDsn(AnyUrl):
