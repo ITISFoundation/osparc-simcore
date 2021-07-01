@@ -15,6 +15,7 @@ import respx
 import simcore_service_datcore_adapter
 from asgi_lifespan import LifespanManager
 from fastapi.applications import FastAPI
+from simcore_service_datcore_adapter.modules.pennsieve import _create_pennsieve_client
 from starlette import status
 from starlette.testclient import TestClient
 
@@ -208,6 +209,9 @@ def pennsieve_client_mock(
     if use_real_pennsieve_interface:
         yield None
     else:
+        # NOTE: this function is decorated with lru_cache. so before testing we clear it
+        _create_pennsieve_client.cache_clear()
+        # mock the Pennsieve python client
         ps_mock = mocker.patch(
             "simcore_service_datcore_adapter.modules.pennsieve.Pennsieve", autospec=True
         )
@@ -215,9 +219,9 @@ def pennsieve_client_mock(
         yield ps_mock
 
         # TODO: with lru cache it does not work anymore
-        # ps_mock.assert_any_call(
-        #     api_secret=pennsieve_api_secret, api_token=pennsieve_api_key
-        # )
+        ps_mock.assert_any_call(
+            api_secret=pennsieve_api_secret, api_token=pennsieve_api_key
+        )
 
 
 @pytest.fixture(scope="module")
