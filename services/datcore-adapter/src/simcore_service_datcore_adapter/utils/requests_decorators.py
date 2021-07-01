@@ -5,7 +5,7 @@ from contextlib import suppress
 from functools import wraps
 from typing import Any, Callable, Coroutine, Optional
 
-from fastapi import Depends, Request, Response
+from fastapi import Request, Response
 
 logger = logging.getLogger(__name__)
 
