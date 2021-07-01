@@ -95,6 +95,14 @@ def not_started_containers() -> List[str]:
     return [f"missing-container-{i}" for i in range(5)]
 
 
+async def test_start_containers_wrong_spec(test_client: TestClient) -> None:
+    response = await test_client.post(
+        f"/{api_vtag}/containers", data={"opsie": "shame on me"}
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.json() == {"detail": "\nProvided yaml is not valid!"}
+
+
 async def test_start_same_space_twice(
     test_client: TestClient, compose_spec: str
 ) -> None:
