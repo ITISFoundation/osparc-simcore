@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from collections import namedtuple
 from pathlib import Path
 from typing import Dict, List
 
@@ -17,8 +16,6 @@ from simcore_service_datcore_adapter.models.schemas.datasets import (
 from starlette import status
 
 pytestmark = pytest.mark.asyncio
-
-ps_dataset = namedtuple("ps_dataset", "id,name")
 
 
 async def test_list_datasets_entrypoint(
