@@ -264,13 +264,10 @@ class PennsieveApiClient(BaseServiceClientApi):
             cursor = ""
             page_size = 1000
 
-            # get number of packages
-            num_packages = await self._get_dataset_packages_count(
-                api_key, api_secret, dataset_id
+            num_packages, dataset_details = await asyncio.gather(
+                self._get_dataset_packages_count(api_key, api_secret, dataset_id),
+                self._get_dataset(api_key, api_secret, dataset_id),
             )
-
-            # get dataset details
-            dataset_details = await self._get_dataset(api_key, api_secret, dataset_id)
             base_path = Path(dataset_details["content"]["name"])
 
             # get all data packages inside the dataset
@@ -282,31 +279,43 @@ class PennsieveApiClient(BaseServiceClientApi):
                 all_packages.update(
                     {p["content"]["id"]: p for p in resp.get("packages", [])}
                 )
-                logger.warning(
-                    "received packages [%s/%s]", len(all_packages), num_packages
+                logger.info(
+                    "received packages [%s/%s], cursor: %s",
+                    len(all_packages),
+                    num_packages,
+                    cursor,
                 )
                 if cursor is None:
                     # the whole collection is there now
                     break
 
             # get the information about the files
+            async def _get_files_task(
+                api_key: str, api_secret: str, pck_id: str, pck: Dict[str, Any]
+            ) -> Tuple[str, List[Dict[str, Any]]]:
+                return (
+                    pck_id,
+                    await self._get_package_files(
+                        api_key, api_secret, pck["content"]["nodeId"]
+                    ),
+                )
+
+            package_files_tasks = [
+                _get_files_task(api_key, api_secret, pck_id, pck_data)
+                for pck_id, pck_data in all_packages.items()
+                if pck_data["content"]["packageType"] != "Collection"
+            ]
+            package_files = dict(await asyncio.gather(*package_files_tasks))
+
             for package_id, package in all_packages.items():
                 if package["content"]["packageType"] == "Collection":
                     continue
 
                 file_path = base_path / _compute_file_path(all_packages, package)
-                files = await self._get_package_files(
-                    api_key, api_secret, package["content"]["nodeId"]
-                )
-                if len(files) > 1:
-                    logger.warning(
-                        "Package %s contains more than 1 file, only the first one will be retrieved, please check",
-                        package_id,
-                    )
 
                 file_meta_data.append(
                     FileMetaData.from_pennsieve_package(
-                        package, files, file_path.parent
+                        package, package_files[package_id], file_path.parent
                     )
                 )
 
