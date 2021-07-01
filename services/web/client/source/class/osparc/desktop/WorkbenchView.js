@@ -170,19 +170,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       sweeper.addListener("openPrimaryStudy", e => {
         win.close();
         const primaryStudyId = e.getData();
-        const params = {
-          url: {
-            "projectId": primaryStudyId
-          }
-        };
-        osparc.data.Resources.getOne("studies", params)
-          .then(studyData => {
-            study.removeIFrames();
-            const data = {
-              studyId: studyData.uuid
-            };
-            this.fireDataEvent("startStudy", data);
-          });
+        this.__switchStudy(primaryStudyId);
       });
     },
 
@@ -191,23 +179,33 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const sweeper = new osparc.component.snapshots.SnapshotsView(study);
       const title = this.tr("Snapshots");
       const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 400, 500);
-      sweeper.addListener("snapshotSelected", e => {
-        win.close();
-        const snapshotStudyId = e.getData();
-        const params = {
-          url: {
-            "projectId": snapshotStudyId
-          }
-        };
-        osparc.data.Resources.getOne("studies", params)
-          .then(studyData => {
-            study.removeIFrames();
-            const data = {
-              studyId: studyData.uuid
-            };
-            this.fireDataEvent("startStudy", data);
-          });
+      [
+        "openPrimaryStudy",
+        "openSnapshot"
+      ].forEach(signalName => {
+        sweeper.addListener(signalName, e => {
+          win.close();
+          const studyId = e.getData();
+          this.__switchStudy(studyId);
+        });
       });
+    },
+
+    __switchStudy: function(studyId) {
+      const params = {
+        url: {
+          "projectId": studyId
+        }
+      };
+      osparc.data.Resources.getOne("studies", params)
+        .then(studyData => {
+          const study = this.getStudy();
+          study.removeIFrames();
+          const data = {
+            studyId: studyData.uuid
+          };
+          this.fireDataEvent("startStudy", data);
+        });
     },
 
     __showWorkbenchUI: function() {

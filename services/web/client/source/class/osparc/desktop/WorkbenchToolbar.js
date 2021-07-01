@@ -26,7 +26,8 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
   events: {
     "showParameters": "qx.event.type.Event",
-    "showSnapshots": "qx.event.type.Event"
+    "showSnapshots": "qx.event.type.Event",
+    "openPrimaryStudy": "qx.event.type.Data"
   },
 
   members: {
@@ -80,25 +81,30 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
       this._add(new qx.ui.core.Spacer(20));
 
-      const sweeperBtn = this.getChildControl("parameters-btn");
-      sweeperBtn.exclude();
-      osparc.data.model.Sweeper.isSweeperEnabled()
-        .then(isSweeperEnabled => {
-          if (isSweeperEnabled) {
-            sweeperBtn.show();
-          }
-        });
+      if (this.getStudy().isSnapshot()) {
+        const primaryStudyId = this.getStudy().getSweeper().getPrimaryStudyId();
+        this.fireDataEvent("openPrimaryStudy", primaryStudyId);
+      } else {
+        const sweeperBtn = this.getChildControl("parameters-btn");
+        sweeperBtn.exclude();
+        osparc.data.model.Sweeper.isSweeperEnabled()
+          .then(isSweeperEnabled => {
+            if (isSweeperEnabled) {
+              sweeperBtn.show();
+            }
+          });
 
-      const iteratorBtn = this.getChildControl("snapshots-btn");
-      iteratorBtn.exclude();
-      osparc.data.model.Sweeper.isSweeperEnabled()
-        .then(isSweeperEnabled => {
-          if (isSweeperEnabled) {
-            iteratorBtn.show();
-          }
-        });
+        const iteratorBtn = this.getChildControl("snapshots-btn");
+        iteratorBtn.exclude();
+        osparc.data.model.Sweeper.isSweeperEnabled()
+          .then(isSweeperEnabled => {
+            if (isSweeperEnabled) {
+              iteratorBtn.show();
+            }
+          });
 
-      this._startStopBtns = this.getChildControl("start-stop-btns");
+        this._startStopBtns = this.getChildControl("start-stop-btns");
+      }
     },
 
     // overriden
