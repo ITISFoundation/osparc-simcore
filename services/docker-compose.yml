@@ -245,8 +245,7 @@ services:
     volumes: *sidecar-volumes
     environment:
       <<: *sidecar-environment
-      DASK_SCHEDULER_ADDRESS: "tcp://dask-scheduler:8786"
-
+      DASK_SCHEDULER_HOST: ${DASK_SCHEDULER_HOST:-dask-scheduler}
     networks:
       - computational_services_subnet
 
@@ -254,7 +253,10 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: dask-scheduler
-    environment: *sidecar-environment
+    environment:
+      <<: *sidecar-environment
+      DASK_START_AS_SCHEDULER: 1
+
     networks:
       - interactive_services_subnet
       - computational_services_subnet
