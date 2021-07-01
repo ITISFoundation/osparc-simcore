@@ -273,7 +273,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       }
 
       let serviceModel = model;
-      if (serviceModel === null) {
+      if (!serviceModel) {
         let service = this.__getSelectedService();
         service = osparc.utils.Utils.deepCloneObject(service);
         osparc.utils.Services.removeFileToKeyMap(service);
