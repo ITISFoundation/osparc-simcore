@@ -295,8 +295,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     },
 
     turnIntoIterator: function(canvas) {
-      const outputs = this.getNode().getOutputs();
-      const firstOutput = outputs[Object.keys(outputs)[0]];
+      const firstOutput = this.getFirstOutput();
       if ("value" in firstOutput) {
         this.__turnIntoIteratorWithOutput(firstOutput["value"]);
       } else {

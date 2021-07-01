@@ -291,6 +291,14 @@ qx.Class.define("osparc.data.model.Node", {
       return this.getOutputs()[outputId];
     },
 
+    getFirstOutput: function() {
+      const outputs = this.getOutputs();
+      if (Object.keys(outputs).length) {
+        return outputs[Object.keys(outputs)[0]];
+      }
+      return null;
+    },
+
     hasChildren: function() {
       const innerNodes = this.getInnerNodes();
       if (innerNodes) {
