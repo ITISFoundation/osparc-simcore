@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List
 
 import aiofiles
-from fastapi import APIRouter, Depends, File, Header, UploadFile
+from fastapi import APIRouter, Depends, File, Header, Request, UploadFile
 from fastapi_pagination import Page, Params
 from fastapi_pagination.api import create_page, resolve_params
 from fastapi_pagination.bases import RawParams
@@ -12,6 +12,7 @@ from starlette import status
 
 from ...models.domains.datasets import DatasetsOut, FileMetaDataOut
 from ...modules.pennsieve import PennsieveApiClient
+from ...utils.requests_decorators import cancellable_request
 from ..dependencies.pennsieve import get_pennsieve_api_client
 
 router = APIRouter()
@@ -24,7 +25,9 @@ log = logging.getLogger(__file__)
     status_code=status.HTTP_200_OK,
     response_model=Page[DatasetsOut],
 )
+@cancellable_request
 async def list_datasets(
+    request: Request,  # pylint:disable=unused-argument
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
     x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
     pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
@@ -46,7 +49,9 @@ async def list_datasets(
     status_code=status.HTTP_200_OK,
     response_model=Page[FileMetaDataOut],
 )
+@cancellable_request
 async def list_dataset_top_level_files(
+    request: Request,  # pylint:disable=unused-argument
     dataset_id: str,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
     x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
@@ -70,7 +75,9 @@ async def list_dataset_top_level_files(
     summary="uploads a file into a dataset",
     status_code=status.HTTP_204_NO_CONTENT,
 )
+@cancellable_request
 async def upload_file(
+    request: Request,  # pylint:disable=unused-argument
     dataset_id: str,
     file: UploadFile = File(...),
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
@@ -98,7 +105,9 @@ async def upload_file(
     status_code=status.HTTP_200_OK,
     response_model=Page[FileMetaDataOut],
 )
+@cancellable_request
 async def list_dataset_collection_files(
+    request: Request,  # pylint:disable=unused-argument
     dataset_id: str,
     collection_id: str,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
@@ -124,7 +133,9 @@ async def list_dataset_collection_files(
     summary="uploads a file into a collection",
     status_code=status.HTTP_202_ACCEPTED,
 )
+@cancellable_request
 async def upload_file_in_collection(
+    request: Request,  # pylint:disable=unused-argument
     dataset_id: str,
     collection_id: str,
     file: UploadFile = File(...),
@@ -154,7 +165,9 @@ async def upload_file_in_collection(
     status_code=status.HTTP_200_OK,
     response_model=List[FileMetaDataOut],
 )
+@cancellable_request
 async def list_dataset_files_legacy(
+    request: Request,  # pylint:disable=unused-argument
     dataset_id: str,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
     x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),

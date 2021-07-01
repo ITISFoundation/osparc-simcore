@@ -36,7 +36,7 @@ class FileMetaData(BaseModel):
         """creates a FileMetaData from a pennsieve data structure."""
         pck_name: str = package["content"]["name"]
         if "extension" in package and not pck_name.endswith(package["extension"]):
-            pck_name += ".".join([pck_name, package["extension"]])
+            pck_name += ".".join((pck_name, package["extension"]))
 
         file_size = 0
         if package["content"]["packageType"] != "Collection" and files is not None:

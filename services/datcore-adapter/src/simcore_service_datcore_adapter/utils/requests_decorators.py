@@ -3,9 +3,9 @@ import logging
 from asyncio import CancelledError
 from contextlib import suppress
 from functools import wraps
-from typing import Any, Callable, Coroutine
+from typing import Any, Callable, Coroutine, Optional
 
-from fastapi import Request, Response
+from fastapi import Depends, Request, Response
 
 logger = logging.getLogger(__name__)
 
@@ -24,11 +24,21 @@ async def _cancel_task_if_client_disconnected(
             await asyncio.sleep(interval)
 
 
-def cancellable_request(handler: Callable[[Any], Coroutine[Any, Any, Response]]):
-    """this decorator periodically checks if the client disconnected and then will cancel the request and return a 499 code (a la nginx)."""
+def cancellable_request(handler: Callable[[Any], Coroutine[Any, Any, Optional[Any]]]):
+    """this decorator periodically checks if the client disconnected and then will cancel the request and return a 499 code (a la nginx).
+    Usage:
+
+    decorate the cancellable route and add request: Request as an argument
+
+    @cancellable_request
+    async def route(
+        request: Request,  # pylint:disable=unused-argument
+        ...
+    )
+    """
 
     @wraps(handler)
-    async def decorator(request: Request, *args, **kwargs) -> Response:
+    async def decorator(request: Request, *args, **kwargs) -> Optional[Any]:
         handler_task = asyncio.get_event_loop().create_task(
             handler(request, *args, **kwargs)
         )
