@@ -346,7 +346,6 @@ class PennsieveApiClient(BaseServiceClientApi):
             ),
         )
 
-    # FIXME: currently debian buster does not allow using the pennsieve agent
     async def upload_file(
         self,
         api_key: str,
