@@ -82,8 +82,8 @@ async def extract_download_links(
 
     log.debug("s3 files metadata %s: ", s3_metadata)
 
-    # Still not sure if these are required, when pulling files from pennsieve they end up in S3
-    # I am not sure there is an example where we need to directly export form pennsieve
+    # Still not sure if these are required, when pulling files from datcore they end up in S3
+    # I am not sure there is an example where we need to directly export form datcore
     try:
         pennsieve_metadata = await get_project_files_metadata(
             app=app,
