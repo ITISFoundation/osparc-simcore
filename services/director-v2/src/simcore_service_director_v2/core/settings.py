@@ -39,8 +39,8 @@ class ServiceType(Enum):
     These values are attached to the dynamic-sidecar and its relative proxy.
     """
 
-    MAIN: str = f"main-{api_vtag}"
-    DEPENDENCY: str = f"dependency-{api_vtag}"
+    MAIN = f"main-{api_vtag}"
+    DEPENDENCY = f"dependency-{api_vtag}"
 
 
 class CommonConfig:
