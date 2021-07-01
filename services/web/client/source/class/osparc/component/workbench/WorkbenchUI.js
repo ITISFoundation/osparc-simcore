@@ -444,16 +444,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       nodeUI.populateNodeLayout();
       this.__createDragDropMechanism(nodeUI);
 
+      if (node.isFilePicker()) {
+        nodeUI.turnIntoFileUI();
+      }
       if (node.isIterator()) {
-        const nShadows = 2;
-        nodeUI.shadows = [];
-        for (let i=0; i<nShadows; i++) {
-          const nodeUIShadow = this.__svgWidgetWorkbench.drawNodeUI(
-            osparc.component.workbench.NodeUI.NODE_WIDTH - 50,
-            62
-          );
-          nodeUI.shadows.push(nodeUIShadow);
-        }
+        nodeUI.turnIntoIterator(this.__svgWidgetWorkbench);
       }
 
       return nodeUI;

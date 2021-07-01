@@ -205,12 +205,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         converter: state => osparc.utils.StatusUI.getBorderDecorator(state)
       });
       */
-      if (node.isFilePicker()) {
-        this.turnIntoFileUI();
-      }
-      if (node.isIterator()) {
-        this.turnIntoIterator();
-      }
     },
 
     turnIntoFileUI: function() {
@@ -260,12 +254,22 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.fireEvent("nodeMoving");
     },
 
-    turnIntoIterator: function() {
+    turnIntoIterator: function(canvas) {
       this.set({
         width: this.self().NODE_WIDTH - 50,
         maxWidth: this.self().NODE_WIDTH - 50,
         minWidth: this.self().NODE_WIDTH - 50
       });
+
+      const nShadows = 2;
+      this.shadows = [];
+      for (let i=0; i<nShadows; i++) {
+        const nodeUIShadow = canvas.drawNodeUI(
+          osparc.component.workbench.NodeUI.NODE_WIDTH - 50,
+          62
+        );
+        this.shadows.push(nodeUIShadow);
+      }
     },
 
     getInputPort: function() {
