@@ -64,9 +64,20 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
             allowGrowX: false
           });
-          // control.setEnabled(false);
           control.addListener("execute", () => {
             this.fireDataEvent("showSnapshots");
+          }, this);
+          this._add(control);
+          break;
+        }
+        case "primary-study-btn": {
+          control = new qx.ui.form.Button(this.tr("Open Primary Study")).set({
+            icon: "@FontAwesome5Solid/sliders-h/14",
+            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
+            allowGrowX: false
+          });
+          control.addListener("execute", () => {
+            this.fireDataEvent("openPrimaryStudy");
           }, this);
           this._add(control);
           break;
@@ -82,6 +93,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       this._add(new qx.ui.core.Spacer(20));
 
       if (this.getStudy().isSnapshot()) {
+        const sweeperBtn = this.getChildControl("primary-study-btn");
         const primaryStudyId = this.getStudy().getSweeper().getPrimaryStudyId();
         this.fireDataEvent("openPrimaryStudy", primaryStudyId);
       } else {
