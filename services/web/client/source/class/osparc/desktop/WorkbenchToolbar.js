@@ -72,7 +72,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
         }
         case "primary-study-btn": {
           control = new qx.ui.form.Button(this.tr("Open Primary Study")).set({
-            icon: "@FontAwesome5Solid/sliders-h/14",
+            icon: "@FontAwesome5Solid/external-link-alt/14",
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
             allowGrowX: false
           });
@@ -95,29 +95,28 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
       this._add(new qx.ui.core.Spacer(20));
 
-      if (this.getStudy().isSnapshot()) {
-        this.getChildControl("primary-study-btn");
-      } else {
-        const sweeperBtn = this.getChildControl("parameters-btn");
-        sweeperBtn.exclude();
-        osparc.data.model.Sweeper.isSweeperEnabled()
-          .then(isSweeperEnabled => {
-            if (isSweeperEnabled) {
-              sweeperBtn.show();
-            }
-          });
+      const primaryBtn = this.getChildControl("primary-study-btn");
+      primaryBtn.exclude();
 
-        const iteratorBtn = this.getChildControl("snapshots-btn");
-        iteratorBtn.exclude();
-        osparc.data.model.Sweeper.isSweeperEnabled()
-          .then(isSweeperEnabled => {
-            if (isSweeperEnabled) {
-              iteratorBtn.show();
-            }
-          });
+      const sweeperBtn = this.getChildControl("parameters-btn");
+      sweeperBtn.exclude();
+      osparc.data.model.Sweeper.isSweeperEnabled()
+        .then(isSweeperEnabled => {
+          if (isSweeperEnabled) {
+            sweeperBtn.show();
+          }
+        });
 
-        this._startStopBtns = this.getChildControl("start-stop-btns");
-      }
+      const snapshotsBtn = this.getChildControl("snapshots-btn");
+      snapshotsBtn.exclude();
+      osparc.data.model.Sweeper.isSweeperEnabled()
+        .then(isSweeperEnabled => {
+          if (isSweeperEnabled) {
+            snapshotsBtn.show();
+          }
+        });
+
+      this._startStopBtns = this.getChildControl("start-stop-btns");
     },
 
     // overriden
@@ -127,10 +126,19 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
         const nodeIds = study.getWorkbench().getPathIds(study.getUi().getCurrentNodeId());
         this._navNodes.populateButtons(nodeIds, "slash");
 
+        const primaryBtn = this.getChildControl("primary-study-btn");
+        primaryBtn.setVisibility(study.isSnapshot() ? "visible" : "excluded");
+
         const sweeperBtn = this.getChildControl("parameters-btn");
+        sweeperBtn.setVisibility(study.isSnapshot() ? "excluded" : "visible");
+
+        const snapshotsBtn = this.getChildControl("snapshots-btn");
+        snapshotsBtn.setVisibility(study.isSnapshot() ? "excluded" : "visible");
+
         study.getWorkbench().addListener("nNodesChanged", () => {
           const allNodes = study.getWorkbench().getNodes(true);
           const isSweepeable = Object.values(allNodes).some(node => node.isDataIterator());
+          snapshotsBtn.setEnabled(isSweepeable);
           sweeperBtn.setEnabled(isSweepeable);
         }, this);
       }
