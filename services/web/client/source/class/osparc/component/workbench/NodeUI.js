@@ -178,13 +178,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
       this.__inputOutputLayout = this.getChildControl("inputOutput");
       const chipContainer = this.getChildControl("chips");
-      if (node.isIterator()) {
-        this.set({
-          width: this.self().NODE_WIDTH - 50,
-          maxWidth: this.self().NODE_WIDTH - 50,
-          minWidth: this.self().NODE_WIDTH - 50
-        });
-      } else if (node.isComputational() || node.isFilePicker()) {
+
+      if (node.isComputational() || node.isFilePicker()) {
         this.__progressBar = this.getChildControl("progress");
       }
 
@@ -212,6 +207,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       */
       if (node.isFilePicker()) {
         this.turnIntoFileUI();
+      }
+      if (node.isIterator()) {
+        this.turnIntoIterator();
       }
     },
 
@@ -260,6 +258,14 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         });
       }
       this.fireEvent("nodeMoving");
+    },
+
+    turnIntoIterator: function() {
+      this.set({
+        width: this.self().NODE_WIDTH - 50,
+        maxWidth: this.self().NODE_WIDTH - 50,
+        minWidth: this.self().NODE_WIDTH - 50
+      });
     },
 
     getInputPort: function() {
