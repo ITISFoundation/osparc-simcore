@@ -354,7 +354,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         file: Path,
         dataset_id: str,
         collection_id: Optional[str] = None,
-    ):
+    ) -> None:
         """uploads a file NOTE: uses the pennsieve agent and the pennsieve python client"""
         ps = await _get_pennsieve_client(api_key, api_secret)
         collection: Optional[pennsieve.models.BaseCollection] = None
