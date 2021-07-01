@@ -272,11 +272,14 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
         return;
       }
 
-      let service = model || this.__getSelectedService();
-      if (service) {
+      let serviceModel = model;
+      if (serviceModel === null) {
+        let service = this.__getSelectedService();
         service = osparc.utils.Utils.deepCloneObject(service);
         osparc.utils.Services.removeFileToKeyMap(service);
-        const serviceModel = qx.data.marshal.Json.createModel(service);
+        serviceModel = qx.data.marshal.Json.createModel(service);
+      }
+      if (serviceModel) {
         const eData = {
           service: serviceModel,
           contextNodeId: this.__contextNodeId,
