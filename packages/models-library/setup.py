@@ -28,6 +28,7 @@ setup(
     version="0.1.0",
     author="Sylvain Anderegg (sanderegg)",
     description="Core service library for simcore pydantic models",
+    python_requires="~=3.8",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
