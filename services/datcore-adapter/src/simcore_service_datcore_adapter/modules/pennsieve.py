@@ -198,6 +198,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         offset: int,
     ) -> Tuple[Sequence, Total]:
         dataset_pck = await self._get_dataset(api_key, api_secret, dataset_id)
+        # TODO: improve speed using gather!!
         return (
             [
                 FileMetaData.from_pennsieve_package(
@@ -237,7 +238,7 @@ class PennsieveApiClient(BaseServiceClientApi):
             )
             / collection_pck["content"]["name"]
         )
-
+        # TODO: improve speed using gather!!
         return (
             [
                 FileMetaData.from_pennsieve_package(
