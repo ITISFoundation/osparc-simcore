@@ -37,7 +37,7 @@ qx.Class.define("osparc.component.service.ServiceList", {
 
   events: {
     "changeValue": "qx.event.type.Data",
-    "serviceadd": "qx.event.type.Data"
+    "serviceAdd": "qx.event.type.Data"
   },
 
   properties: {
@@ -71,11 +71,11 @@ qx.Class.define("osparc.component.service.ServiceList", {
           group.add(button);
           this._add(button);
           button.addListener("dbltap", e => {
-            this.fireDataEvent("serviceadd", button.getServiceModel());
+            this.fireDataEvent("serviceAdd", button.getServiceModel());
           }, this);
           button.addListener("keypress", e => {
             if (e.getKeyIdentifier() === "Enter") {
-              this.fireDataEvent("serviceadd", button.getServiceModel());
+              this.fireDataEvent("serviceAdd", button.getServiceModel());
             }
           }, this);
         });
