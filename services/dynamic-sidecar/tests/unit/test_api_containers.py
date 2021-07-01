@@ -5,9 +5,9 @@
 import json
 from typing import Any, Dict, List
 
+import faker
 import pytest
 from async_asgi_testclient import TestClient
-from faker import Faker
 from fastapi import status
 from simcore_service_dynamic_sidecar._meta import api_vtag
 from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
@@ -95,6 +95,14 @@ def not_started_containers() -> List[str]:
     return [f"missing-container-{i}" for i in range(5)]
 
 
+async def test_start_containers_wrong_spec(test_client: TestClient) -> None:
+    response = await test_client.post(
+        f"/{api_vtag}/containers", data={"opsie": "shame on me"}
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.json() == {"detail": "\nProvided yaml is not valid!"}
+
+
 async def test_start_same_space_twice(
     test_client: TestClient, compose_spec: str
 ) -> None:
@@ -124,7 +132,7 @@ async def test_compose_up_spec_not_provided(test_client: TestClient) -> None:
 
 
 async def test_compose_up_spec_invalid(test_client: TestClient) -> None:
-    invalid_compose_spec = Faker().text()
+    invalid_compose_spec = faker.Faker().text()  # pylint: disable=no-member
     response = await test_client.post(
         f"/{api_vtag}/containers", data=invalid_compose_spec
     )
@@ -197,17 +205,17 @@ async def test_containers_get_status(
 
 
 async def test_containers_inspect_docker_error(
-    test_client: TestClient, started_containers: List[str], mock_containers_get: None
+    test_client: TestClient, started_containers: List[str], mock_containers_get: int
 ) -> None:
     response = await test_client.get(f"/{api_vtag}/containers")
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, response.text
+    assert response.status_code == mock_containers_get, response.text
 
 
 async def test_containers_docker_status_docker_error(
-    test_client: TestClient, started_containers: List[str], mock_containers_get: None
+    test_client: TestClient, started_containers: List[str], mock_containers_get: int
 ) -> None:
     response = await test_client.get(f"/{api_vtag}/containers")
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, response.text
+    assert response.status_code == mock_containers_get, response.text
 
 
 async def test_container_inspect_logs_remove(
@@ -260,7 +268,7 @@ async def test_container_missing_container(
 async def test_container_docker_error(
     test_client: TestClient,
     started_containers: List[str],
-    mock_containers_get: None,
+    mock_containers_get: int,
 ) -> None:
     def _expected_error_string() -> Dict[str, str]:
         return dict(detail="aiodocker_mocked_error")
@@ -268,14 +276,10 @@ async def test_container_docker_error(
     for container in started_containers:
         # get container logs
         response = await test_client.get(f"/{api_vtag}/containers/{container}/logs")
-        assert (
-            response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-        ), response.text
+        assert response.status_code == mock_containers_get, response.text
         assert response.json() == _expected_error_string()
 
         # inspect container
         response = await test_client.get(f"/{api_vtag}/containers/{container}")
-        assert (
-            response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-        ), response.text
+        assert response.status_code == mock_containers_get, response.text
         assert response.json() == _expected_error_string()
