@@ -370,6 +370,11 @@
             "type": "boolean",
             "description": "returns True if the service sis running correctly",
             "default": true
+          },
+          "error_message": {
+            "title": "Error Message",
+            "type": "string",
+            "description": "in case of error this gets set"
           }
         }
       },
