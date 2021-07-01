@@ -286,8 +286,13 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.__progressBar.exclude();
       }
 
-      const label = new qx.ui.basic.Label(value).set({
-        font: "text-18"
+      this.__inputLayout.ui.exclude();
+
+      const label = new qx.ui.basic.Label(String(value)).set({
+        font: "text-24",
+        allowGrowX: true,
+        textAlign: "center",
+        padding: 6
       });
       this.__inputOutputLayout.addAt(label, 1, {
         flex: 1
@@ -296,7 +301,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     turnIntoIterator: function(canvas) {
       const firstOutput = this.getNode().getFirstOutput();
-      if ("value" in firstOutput) {
+      if (firstOutput && "value" in firstOutput) {
         this.__turnIntoIteratorWithOutput(firstOutput["value"]);
       } else {
         this.__turnIntoIterator(canvas);
