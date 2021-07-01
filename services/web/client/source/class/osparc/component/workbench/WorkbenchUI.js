@@ -444,7 +444,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       nodeUI.populateNodeLayout();
       this.__createDragDropMechanism(nodeUI);
 
-      if (node.isDataIterator()) {
+      if (node.isIterator()) {
         const nShadows = 2;
         nodeUI.shadows = [];
         for (let i=0; i<nShadows; i++) {
@@ -747,7 +747,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __updateNodeUIPos: function(nodeUI) {
       this.__updateEdges(nodeUI);
-      if (nodeUI.getNode().isDataIterator()) {
+      if (nodeUI.getNode().isIterator()) {
         this.__updateIteratorShadows(nodeUI);
       }
     },

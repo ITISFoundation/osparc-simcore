@@ -188,18 +188,18 @@ qx.Class.define("osparc.data.model.Node", {
 
   statics: {
     isFilePicker: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("file-picker") && !metaData.key.includes("data-iterator"));
+      return (metaData && metaData.key && metaData.key.includes("file-picker") && !osparc.data.model.Node.isIterator(metaData));
     },
 
     isMultiFilePicker: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("file-picker") && metaData.key.includes("data-iterator"));
+      return (metaData && metaData.key && metaData.key.includes("file-picker") && osparc.data.model.Node.isIterator(metaData));
     },
 
     isContainer: function(metaData) {
       return (metaData && metaData.key && metaData.key.includes("nodes-group"));
     },
 
-    isDataIterator: function(metaData) {
+    isIterator: function(metaData) {
       return (metaData && metaData.key && metaData.key.includes("data-iterator"));
     },
 
@@ -252,8 +252,8 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.data.model.Node.isContainer(this.getMetaData());
     },
 
-    isDataIterator: function() {
-      return osparc.data.model.Node.isDataIterator(this.getMetaData());
+    isIterator: function() {
+      return osparc.data.model.Node.isIterator(this.getMetaData());
     },
 
     isDynamic: function() {

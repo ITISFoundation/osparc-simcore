@@ -47,7 +47,7 @@ qx.Class.define("osparc.component.node.DataIteratorNodeView", {
 
     // overridden
     _applyNode: function(node) {
-      if (!node.isDataIterator()) {
+      if (!node.isIterator()) {
         console.error("Only file picker nodes are supported");
       }
       this.base(arguments, node);

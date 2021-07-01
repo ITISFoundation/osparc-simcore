@@ -144,7 +144,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           if (this.getNode().isContainer()) {
             nodeType = "container";
           }
-          if (this.getNode().isDataIterator()) {
+          if (this.getNode().isIterator()) {
             nodeType = "iterator";
           }
           const type = osparc.utils.Services.getType(nodeType);
@@ -178,7 +178,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
       this.__inputOutputLayout = this.getChildControl("inputOutput");
       const chipContainer = this.getChildControl("chips");
-      if (node.isDataIterator()) {
+      if (node.isIterator()) {
         this.set({
           width: this.self().NODE_WIDTH - 50,
           maxWidth: this.self().NODE_WIDTH - 50,
@@ -221,7 +221,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         return;
       }
 
-      const fileUIWidth = 120;
+      const fileUIWidth = null;
       this.set({
         width: fileUIWidth,
         maxWidth: fileUIWidth,
