@@ -263,7 +263,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         async def _parse_dataset_items() -> List[FileMetaData]:
             file_meta_data = []
             cursor = ""
-            PAGE_SIZE = 500
+            PAGE_SIZE = 1000
 
             num_packages, dataset_details = await asyncio.gather(
                 self._get_dataset_packages_count(api_key, api_secret, dataset_id),
