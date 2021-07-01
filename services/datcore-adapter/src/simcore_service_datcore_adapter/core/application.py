@@ -50,7 +50,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
     # Routing
     setup_api(app)
 
-    if settings.DATCORE_ADAPTER_PENNSIEVE.ENABLED:
-        pennsieve.setup(app, settings.DATCORE_ADAPTER_PENNSIEVE)
+    if settings.PENNSIEVE.ENABLED:
+        pennsieve.setup(app, settings.PENNSIEVE)
 
     return app

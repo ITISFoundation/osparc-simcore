@@ -13,6 +13,7 @@
 
 # installs this repo's packages
 -e ../../packages/models-library
+-e ../../packages/settings-library/
 -e ../../packages/pytest-simcore
 
 # installs current package

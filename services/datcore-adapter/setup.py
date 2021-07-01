@@ -24,6 +24,7 @@ version = (current_dir / "VERSION").read_text().strip()
 
 install_requirements = read_reqs(current_dir / "requirements" / "_base.txt") + [
     "simcore-models-library",
+    "simcore-settings-library",
 ]
 test_requirements = read_reqs(current_dir / "requirements" / "_test.txt")
 
