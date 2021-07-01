@@ -77,7 +77,10 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
             allowGrowX: false
           });
           control.addListener("execute", () => {
-            this.fireDataEvent("openPrimaryStudy");
+            const primaryStudyId = this.getStudy().getSweeper().getPrimaryStudyId();
+            if (primaryStudyId) {
+              this.fireDataEvent("openPrimaryStudy", primaryStudyId);
+            }
           }, this);
           this._add(control);
           break;
@@ -93,9 +96,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       this._add(new qx.ui.core.Spacer(20));
 
       if (this.getStudy().isSnapshot()) {
-        const sweeperBtn = this.getChildControl("primary-study-btn");
-        const primaryStudyId = this.getStudy().getSweeper().getPrimaryStudyId();
-        this.fireDataEvent("openPrimaryStudy", primaryStudyId);
+        this.getChildControl("primary-study-btn");
       } else {
         const sweeperBtn = this.getChildControl("parameters-btn");
         sweeperBtn.exclude();
