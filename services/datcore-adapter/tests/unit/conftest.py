@@ -123,7 +123,7 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(scope="session")
-def pennsieve_fake_dataset_id() -> Callable:
+def create_pennsieve_fake_dataset_id() -> Callable[[], str]:
     def creator() -> str:
         return f"N:dataset:{uuid4()}"
 
@@ -131,7 +131,7 @@ def pennsieve_fake_dataset_id() -> Callable:
 
 
 @pytest.fixture(scope="session")
-def pennsieve_fake_package_id() -> Callable:
+def create_pennsieve_fake_package_id() -> Callable[[], str]:
     def creator() -> str:
         return f"N:package:{uuid4()}"
 
@@ -155,30 +155,30 @@ def pennsieve_api_secret(request) -> str:
 
 
 @pytest.fixture(scope="session")
-def pennsieve_dataset_id(request, pennsieve_fake_dataset_id) -> str:
+def pennsieve_dataset_id(request, create_pennsieve_fake_dataset_id) -> str:
     dataset_id = request.config.getoption("--dataset")
 
     if dataset_id:
         print("Provided pennsieve dataset id:", dataset_id)
-    return dataset_id or pennsieve_fake_dataset_id()
+    return dataset_id or create_pennsieve_fake_dataset_id()
 
 
 @pytest.fixture(scope="session")
-def pennsieve_collection_id(request, pennsieve_fake_package_id) -> str:
+def pennsieve_collection_id(request, create_pennsieve_fake_package_id) -> str:
     package_id = request.config.getoption("--collection")
 
     if package_id:
         print("Provided pennsieve collection package id:", package_id)
-    return package_id or pennsieve_fake_package_id()
+    return package_id or create_pennsieve_fake_package_id()
 
 
 @pytest.fixture(scope="session")
-def pennsieve_file_id(request, pennsieve_fake_package_id) -> str:
+def pennsieve_file_id(request, create_pennsieve_fake_package_id) -> str:
     package_id = request.config.getoption("--file")
 
     if package_id:
         print("Provided pennsieve file package id:", package_id)
-    return package_id or pennsieve_fake_package_id()
+    return package_id or create_pennsieve_fake_package_id()
 
 
 @pytest.fixture(scope="session")
@@ -222,11 +222,11 @@ def pennsieve_client_mock(
 
 @pytest.fixture(scope="module")
 def pennsieve_random_fake_datasets(
-    pennsieve_fake_dataset_id: Callable,
+    create_pennsieve_fake_dataset_id: Callable,
 ) -> Dict[str, Any]:
     datasets = {
         "datasets": [
-            {"content": {"id": pennsieve_fake_dataset_id(), "name": fake.text()}}
+            {"content": {"id": create_pennsieve_fake_dataset_id(), "name": fake.text()}}
             for _ in range(10)
         ],
         "totalCount": 20,
