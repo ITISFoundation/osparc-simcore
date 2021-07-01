@@ -21,7 +21,7 @@ Total = int
 
 # NOTE: each pennsieve client seems to be about 8MB. so let's keep max 32
 @lru_cache(maxsize=32)
-def create_pennsieve_client(api_key: str, api_secret: str) -> Pennsieve:
+def _create_pennsieve_client(api_key: str, api_secret: str) -> Pennsieve:
     logger.debug("creating new client for key/secret [%s/%s]", api_key, api_secret)
     return Pennsieve(api_token=api_key, api_secret=api_secret)
 
@@ -29,7 +29,7 @@ def create_pennsieve_client(api_key: str, api_secret: str) -> Pennsieve:
 async def _get_pennsieve_client(api_key: str, api_secret: str) -> Pennsieve:
     return await asyncio.get_event_loop().run_in_executor(
         None,
-        lambda: create_pennsieve_client(api_key=api_key, api_secret=api_secret),
+        lambda: _create_pennsieve_client(api_key=api_key, api_secret=api_secret),
     )
 
 
