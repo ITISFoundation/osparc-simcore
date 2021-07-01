@@ -210,14 +210,15 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     turnIntoFileUI: function() {
       const outputs = this.getNode().getOutputs();
       if ([null, ""].includes(osparc.file.FilePicker.getOutput(outputs))) {
+        // no output selected
         return;
       }
 
-      const fileUIWidth = null;
+      const width = 120;
       this.set({
-        width: fileUIWidth,
-        maxWidth: fileUIWidth,
-        minWidth: fileUIWidth
+        width: width,
+        maxWidth: width,
+        minWidth: width
       });
 
       // two lines
@@ -225,8 +226,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         rich: true,
         wrap: true,
         maxHeight: 28,
-        minWidth: fileUIWidth-16,
-        maxWidth: fileUIWidth-16
+        minWidth: width-16,
+        maxWidth: width-16
       });
 
       const chipContainer = this.getChildControl("chips");
@@ -254,21 +255,52 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.fireEvent("nodeMoving");
     },
 
-    turnIntoIterator: function(canvas) {
+    __turnIntoIterator: function(canvas) {
+      const width = 150;
       this.set({
-        width: this.self().NODE_WIDTH - 50,
-        maxWidth: this.self().NODE_WIDTH - 50,
-        minWidth: this.self().NODE_WIDTH - 50
+        width: width,
+        maxWidth: width,
+        minWidth: width
       });
 
       const nShadows = 2;
       this.shadows = [];
       for (let i=0; i<nShadows; i++) {
-        const nodeUIShadow = canvas.drawNodeUI(
-          osparc.component.workbench.NodeUI.NODE_WIDTH - 50,
-          62
-        );
+        const nodeUIShadow = canvas.drawNodeUI(width, 62);
         this.shadows.push(nodeUIShadow);
+      }
+    },
+
+    __turnIntoIteratorWithOutput: function(value) {
+      const width = 120;
+      this.set({
+        width: width,
+        maxWidth: width,
+        minWidth: width
+      });
+
+      const chipContainer = this.getChildControl("chips");
+      chipContainer.exclude();
+
+      if (this.__progressBar) {
+        this.__progressBar.exclude();
+      }
+
+      const label = new qx.ui.basic.Label(value).set({
+        font: "text-18"
+      });
+      this.__inputOutputLayout.addAt(label, 1, {
+        flex: 1
+      });
+    },
+
+    turnIntoIterator: function(canvas) {
+      const outputs = this.getNode().getOutputs();
+      const firstOutput = outputs[Object.keys(outputs)[0]];
+      if ("value" in firstOutput) {
+        this.__turnIntoIteratorWithOutput(firstOutput["value"]);
+      } else {
+        this.__turnIntoIterator(canvas);
       }
     },
 
