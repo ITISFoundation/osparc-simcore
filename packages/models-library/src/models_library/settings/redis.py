@@ -1,8 +1,15 @@
+import warnings
 from typing import Optional
 
 from pydantic import BaseSettings, PositiveInt, validator
 from pydantic.networks import RedisDsn
 from pydantic.types import SecretStr
+
+warnings.warn(
+    "models_library.settings will be mostly replaced by settings_library in future versions. "
+    "SEE https://github.com/ITISFoundation/osparc-simcore/pull/2395 for details",
+    DeprecationWarning,
+)
 
 
 class RedisConfig(BaseSettings):
