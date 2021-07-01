@@ -9,13 +9,9 @@ from typing import Any, AsyncIterator, Deque, Dict, List, Optional, Set, Tuple
 import aiodocker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from simcore_service_director_v2.models.schemas.constants import (
-    DYNAMIC_SIDECAR_SERVICE_PREFIX,
-    UserID,
-)
 
 from ...core.settings import DynamicSidecarSettings, ServiceType
-from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
+from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX, UserID
 from ...models.schemas.dynamic_services import ServiceLabelsStoredData, ServiceState
 from .docker_states import TASK_STATES_ALL, TASK_STATES_RUNNING, extract_task_state
 from .errors import DynamicSidecarError, GenericDockerError
@@ -77,7 +73,7 @@ async def create_network(network_config: Dict[str, Any]) -> str:
             # Fetch network name if network already exists.
             # The environment is trashed because there seems to be an issue
             # when stopping previous services.
-            # It is not possible to immediately remote the network after
+            # It is not possible to immediately remove the network after
             # a docker-compose down involving and external overlay network
             # has removed a container; it results as already attached
             for network_details in await client.networks.list():
@@ -303,18 +299,20 @@ async def remove_dynamic_sidecar_stack(
         await asyncio.gather(*to_remove_tasks)
 
 
-async def remove_dynamic_sidecar_network(network_name: str):
+async def remove_dynamic_sidecar_network(network_name: str) -> bool:
     try:
         async with docker_client() as client:
             network = await client.networks.get(network_name)
             await network.delete()
-    except aiodocker.exceptions.DockerError as e:
+            return True
+    except GenericDockerError as e:
         message = (
             f"{str(e)}\nThe above error may occur when trying tor remove the network.\n"
             "Docker takes some time to establish that the network has no more "
             "containers attaced to it."
         )
         log.warning(message)
+        return False
 
 
 async def list_dynamic_sidecar_services(
@@ -338,7 +336,7 @@ async def list_dynamic_sidecar_services(
 
 
 async def is_dynamic_service_running(
-    dynamic_sidecar_settings: DynamicSidecarSettings, node_uuid: NodeID
+    node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> bool:
     async with docker_client() as client:
         dynamic_sidecar_services = await client.services.list(
