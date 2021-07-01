@@ -257,7 +257,7 @@ class PennsieveApiClient(BaseServiceClientApi):
 
     async def list_all_dataset_files(
         self, api_key: str, api_secret: str, dataset_id: str
-    ) -> List:
+    ) -> List[FileMetaData]:
         """returns ALL the files belonging to the dataset, can be slow if there are a lot of files"""
 
         async def _parse_dataset_items() -> List[FileMetaData]:
