@@ -44,7 +44,7 @@ def _compute_file_path(
 ) -> Path:
     file_path = Path(pck["content"]["name"])
     if "extension" in pck:
-        file_path = ".".join([f"{file_path}", pck["extension"]])
+        file_path = ".".join((f"{file_path}", pck["extension"]))
     if parent_id := pck["content"].get("parentId"):
         file_path = (
             _compute_file_path(all_packages, all_packages[parent_id]) / file_path
@@ -229,10 +229,10 @@ class PennsieveApiClient(BaseServiceClientApi):
         base_path = Path(dataset["content"]["name"]) / (
             Path(
                 "/".join(
-                    [
+                    (
                         ancestor_pck["content"]["name"]
                         for ancestor_pck in collection_pck["ancestors"]
-                    ]
+                    )
                 )
             )
             / collection_pck["content"]["name"]
