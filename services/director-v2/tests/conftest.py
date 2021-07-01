@@ -11,6 +11,7 @@ from typing import Any, Dict, Iterator
 
 import dotenv
 import httpx
+import nest_asyncio
 import pytest
 import simcore_service_director_v2
 from asgi_lifespan import LifespanManager
@@ -19,6 +20,9 @@ from models_library.projects import Node, Workbench
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings, BootModeEnum
 from starlette.testclient import TestClient
+
+nest_asyncio.apply()
+
 
 pytest_plugins = [
     "pytest_simcore.docker_compose",
@@ -92,7 +96,7 @@ def dynamic_sidecar_image(monkeypatch) -> None:
 
 
 @pytest.fixture(scope="function")
-def client(loop: asyncio.BaseEventLoop, dynamic_sidecar_image) -> TestClient:
+async def client(loop: asyncio.BaseEventLoop, dynamic_sidecar_image) -> TestClient:
     settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
     settings.dynamic_services.enabled = False
     settings.dynamic_services.monitoring.monitoring_enabled = False
