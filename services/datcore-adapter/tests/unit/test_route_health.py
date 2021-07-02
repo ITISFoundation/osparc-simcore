@@ -11,8 +11,9 @@ import respx
 from models_library.app_diagnostics import AppStatusCheck
 from starlette import status
 
+pytestmark = pytest.mark.asyncio
 
-@pytest.mark.asyncio
+
 async def test_live_entrypoint(async_client: httpx.AsyncClient):
     response = await async_client.get("v0/live")
     assert response.status_code == status.HTTP_200_OK
@@ -24,7 +25,6 @@ async def test_live_entrypoint(async_client: httpx.AsyncClient):
     )
 
 
-@pytest.mark.asyncio
 async def test_check_subsystem_health(async_client: httpx.AsyncClient):
     async with respx.mock:
         pennsieve_health_route = respx.get("https://api.pennsieve.io/health/").respond(
