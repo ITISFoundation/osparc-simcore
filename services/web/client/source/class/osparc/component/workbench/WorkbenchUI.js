@@ -45,6 +45,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     this.base(arguments);
 
     this.__nodesUI = [];
+    this.__parametersUI = [];
     this.__edgesUI = [];
     this.__selectedNodes = [];
 
@@ -156,6 +157,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
   members: {
     __unlinkButton: null,
     __nodesUI: null,
+    __parametersUI: null,
     __edgesUI: null,
     __selectedNodes: null,
     __inputNodesLayout: null,
@@ -384,6 +386,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__updateHint();
     },
 
+    __addParameterUIToWorkbench: function(parameterUI, position) {
+      this.__updateWorkbenchLayoutSize(position);
+
+      parameterUI.moveTo(position.x, position.y);
+      this.__desktop.add(parameterUI);
+      parameterUI.open();
+      this.__parametersUI.push(parameterUI);
+    },
+
     __updateWorkbenchLayoutSize: function(position) {
       const minWidth = position.x + osparc.component.workbench.NodeUI.NODE_WIDTH;
       const minHeight = position.y + osparc.component.workbench.NodeUI.NODE_HEIGHT;
@@ -458,6 +469,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return nodeUI;
     },
 
+    __createParameterUI: function(parameter) {
+      const parameterUI = new osparc.component.workbench.ParameterUI(parameter);
+      this.bind("scale", parameterUI, "scale");
+      parameterUI.populateParameterLayout();
+      this.__createDragDropMechanism(parameterUI);
+      return parameterUI;
+    },
+
     __createEdgeUI: function(node1Id, node2Id, edgeId) {
       const edge = this.__getWorkbench().createEdge(edgeId, node1Id, node2Id);
       if (!edge) {
@@ -525,21 +544,36 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         let data = e.getData();
         let event = data.event;
         let dragNodeId = data.nodeId;
+        let dragParameterId = data.parameterId;
         let dragIsInput = data.isInput;
 
         // Register supported actions
         event.addAction("move");
 
-        // Register supported types
-        event.addType("osparc-node-link");
-        let dragData = {
-          dragNodeId: dragNodeId,
-          dragIsInput: dragIsInput
-        };
-        event.addData("osparc-node-link", dragData);
+        if (dragNodeId) {
+          // Register supported types
+          event.addType("osparc-node-link");
+          let dragData = {
+            dragNodeId: dragNodeId,
+            dragIsInput: dragIsInput
+          };
+          event.addData("osparc-node-link", dragData);
 
-        this.__tempEdgeNodeId = dragData.dragNodeId;
-        this.__tempEdgeIsInput = dragData.dragIsInput;
+          this.__tempEdgeNodeId = dragData.dragNodeId;
+          this.__tempEdgeIsInput = dragData.dragIsInput;
+        } else if (dragParameterId) {
+          // Register supported types
+          event.addType("osparc-parameter-link");
+          let dragData = {
+            dragParameterId: dragParameterId,
+            dragIsInput: dragIsInput
+          };
+          event.addData("osparc-parameter-link", dragData);
+
+          this.__tempEdgeParameterId = dragData.dragParameterId;
+          this.__tempEdgeIsInput = dragData.dragIsInput;
+        }
+
         qx.bom.Element.addListener(
           this.__desktop,
           evType,
@@ -564,6 +598,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           const dragPortTarget = dragIsInput ? dragNode.getInputPort() : dragNode.getOutputPort();
           const dropPortTarget = dropIsInput ? dropNode.getInputPort() : dropNode.getOutputPort();
           compatible = dragPortTarget.isInput !== dropPortTarget.isInput;
+        } else if (event.supportsType("osparc-parameter-link")) {
+          compatible = true;
         }
 
         if (!compatible) {
@@ -907,6 +943,22 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
+    __clearParameter: function(parameterUI) {
+      if (this.__desktop.getChildren().includes(parameterUI)) {
+        this.__desktop.remove(parameterUI);
+      }
+      let index = this.__parametersUI.indexOf(parameterUI);
+      if (index > -1) {
+        this.__parametersUI.splice(index, 1);
+      }
+    },
+
+    __clearAllParameters: function() {
+      while (this.__parametersUI.length > 0) {
+        this.__clearParameter(this.__parametersUI[this.__parametersUI.length - 1]);
+      }
+    },
+
     __clearEdge: function(edge) {
       if (edge) {
         osparc.component.workbench.SvgWidget.removeCurve(edge.getRepresentation());
@@ -925,6 +977,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     clearAll: function() {
       this.__clearAllNodes();
+      this.__clearAllParameters();
       this.__clearAllEdges();
     },
 
@@ -955,6 +1008,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         }
         qx.ui.core.queue.Visibility.flush();
 
+        // create nodes
         let nodes = isContainer ? model.getInnerNodes() : model.getNodes();
         for (const nodeUuid in nodes) {
           const node = nodes[nodeUuid];
@@ -962,6 +1016,19 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           this.__addNodeUIToWorkbench(nodeUI, node.getPosition());
         }
 
+        // create parameters
+        if (this.getStudy().getSweeper().hasParameters()) {
+          this.getStudy().getSweeper().getParameters()
+            .forEach(parameter => {
+              const paramterUI = this.__createParameterUI(parameter);
+              this.__addParameterUIToWorkbench(paramterUI, {
+                x: "xPos" in parameter ? parameter["xPos"] : 0,
+                y: "yPos" in parameter ? parameter["yPos"] : 0
+              });
+            });
+        }
+
+        // create links
         for (const nodeUuid in nodes) {
           const node = nodes[nodeUuid];
           const inputNodes = node.getInputNodes();
