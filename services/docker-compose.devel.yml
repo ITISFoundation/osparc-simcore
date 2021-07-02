@@ -21,6 +21,7 @@ services:
       - SC_BOOT_MODE=debug-ptvsd
       - LOG_LEVEL=debug
       - DEBUG=true
+      - DYNAMIC_SIDECAR_MOUNT_PATH_DEV=${PWD}/services/dynamic-sidecar
     volumes:
       - ./catalog:/devel/services/catalog
       - ../packages:/devel/packages
