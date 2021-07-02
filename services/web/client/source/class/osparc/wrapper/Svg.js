@@ -127,7 +127,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       return rect;
     },
 
-    drawNodeUI: function(draw, width, height, x, y) {
+    drawNodeUI: function(draw, width, height, radius, x, y) {
       const nodeUIColor = qx.theme.manager.Color.getInstance().getTheme().colors["window-border"];
       const rect = draw.rect(width, height)
         .fill(nodeUIColor)
@@ -137,8 +137,8 @@ qx.Class.define("osparc.wrapper.Svg", {
         })
         .move(x, y)
         .attr({
-          rx: 3,
-          ry: 3
+          rx: radius,
+          ry: radius
         });
       return rect;
     },

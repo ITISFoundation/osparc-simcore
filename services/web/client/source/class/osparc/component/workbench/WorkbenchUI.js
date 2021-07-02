@@ -734,7 +734,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __updateIteratorShadows: function(nodeUI) {
       if ("shadows" in nodeUI) {
-        const shadowDiffX = -4;
+        const shadowDiffX = -5;
         const shadowDiffY = +3;
         const pos = nodeUI.getNode().getPosition();
         const nShadows = nodeUI.shadows.length;

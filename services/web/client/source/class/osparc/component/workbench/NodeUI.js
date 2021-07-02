@@ -220,6 +220,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         maxWidth: width,
         minWidth: width
       });
+      this.getContentElement().setStyles({
+        "border-radius": "16px"
+      });
 
       // two lines
       this.getChildControl("title").set({
@@ -262,11 +265,14 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         maxWidth: width,
         minWidth: width
       });
+      this.getContentElement().setStyles({
+        "border-radius": "16px"
+      });
 
       const nShadows = 2;
       this.shadows = [];
       for (let i=0; i<nShadows; i++) {
-        const nodeUIShadow = canvas.drawNodeUI(width, 62);
+        const nodeUIShadow = canvas.drawNodeUI(width, 62, 16);
         this.shadows.push(nodeUIShadow);
       }
     },
@@ -280,6 +286,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           width: width,
           maxWidth: width,
           minWidth: width
+        });
+        this.getContentElement().setStyles({
+          "border-radius": "16px"
         });
 
         const chipContainer = this.getChildControl("chips");
