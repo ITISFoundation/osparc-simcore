@@ -27,7 +27,7 @@ log = logging.getLogger(__file__)
 )
 @cancellable_request
 async def list_datasets(
-    request: Request,  # pylint:disable=unused-argument
+    _request: Request,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
     x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
     pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
@@ -51,7 +51,7 @@ async def list_datasets(
 )
 @cancellable_request
 async def list_dataset_top_level_files(
-    request: Request,  # pylint:disable=unused-argument
+    _request: Request,
     dataset_id: str,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
     x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
@@ -77,7 +77,7 @@ async def list_dataset_top_level_files(
 )
 @cancellable_request
 async def upload_file(
-    request: Request,  # pylint:disable=unused-argument
+    _request: Request,
     dataset_id: str,
     file: UploadFile = File(...),
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
@@ -107,7 +107,7 @@ async def upload_file(
 )
 @cancellable_request
 async def list_dataset_collection_files(
-    request: Request,  # pylint:disable=unused-argument
+    _request: Request,
     dataset_id: str,
     collection_id: str,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
@@ -135,7 +135,7 @@ async def list_dataset_collection_files(
 )
 @cancellable_request
 async def upload_file_in_collection(
-    request: Request,  # pylint:disable=unused-argument
+    _request: Request,
     dataset_id: str,
     collection_id: str,
     file: UploadFile = File(...),
@@ -167,7 +167,7 @@ async def upload_file_in_collection(
 )
 @cancellable_request
 async def list_dataset_files_legacy(
-    request: Request,  # pylint:disable=unused-argument
+    _request: Request,
     dataset_id: str,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
     x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),

@@ -55,7 +55,7 @@ def setup_client_instance(
     def _create_instance() -> None:
         api_cls.create_once(
             app,
-            client=httpx.AsyncClient(base_url=api_baseurl, timeout=api_general_timeout),
+            client=httpx.AsyncClient(base_url=api_baseurl, timeout=None),
             service_name=service_name,
             **extra_fields
         )
