@@ -90,25 +90,32 @@ async def test_list_dataset_collection_files_entrypoint(
     parse_obj_as(Page[FileMetaData], data)
 
 
+# FIXME: one issue: the client had a header Content-Type: application/json, and the file was empty, to be tested again
 @pytest.mark.skip(reason="unable to make the httpx client work with fastapi.")
 async def test_upload_file_in_dataset_entrypoint(
     async_client: httpx.AsyncClient,
     pennsieve_dataset_id: str,
-    pennsieve_subsystem_mock,
+    # pennsieve_subsystem_mock,
     pennsieve_api_headers: Dict[str, str],
     tmp_path: Path,
 ):
-    # create some temp file
-    file_to_upload = tmp_path / "file_to_upload_to_pennsieve.txt"
-    file_to_upload.touch()
-    # headers = {"Content-Type": "multipart/form-data"}
-    headers = {}
-    headers.update(pennsieve_api_headers)
-    dataset_id = pennsieve_dataset_id
-    response = await async_client.post(
-        f"v0/datasets/{dataset_id}/files",
-        headers=headers,
-        files={
-            "file": file_to_upload.open("rb"),
-        },
-    )
+    async with httpx.AsyncClient() as client:
+
+        # create some temp file
+        file_to_upload = tmp_path / "file_to_upload_to_pennsieve.txt"
+        file_to_upload.write_bytes(b"\x01" * 1024)
+        # headers = {"Content-Type": "multipart/form-data"}
+        headers = {}
+        headers.update(pennsieve_api_headers)
+        dataset_id = pennsieve_dataset_id
+        response = await client.post(
+            # f"v0/datasets/{dataset_id}/files",
+            "http://httpbin.org/anything",
+            headers=headers,
+            files={
+                "file": file_to_upload.open("rb"),
+            },
+        )
+    import pdb
+
+    pdb.set_trace()
