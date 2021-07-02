@@ -146,6 +146,22 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+      "snapshots": {
+        get: {
+          method: "GET",
+          url: statics.API + "/projects/{primaryStudyId}/snapshots"
+        },
+        getOne: {
+          useCache: false,
+          method: "GET",
+          url: statics.API + "/projects/{primaryStudyId}/snapshots/{studyId}"
+        },
+        getParameters: {
+          useCache: false,
+          method: "GET",
+          url: statics.API + "/projects/{primaryStudyId}/snapshots/{studyId}/parameters"
+        }
+      },
       /*
        * TEMPLATES (actually studies flagged as templates)
        */
