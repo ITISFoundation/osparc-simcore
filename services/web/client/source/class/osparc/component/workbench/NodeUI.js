@@ -106,6 +106,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     NODE_WIDTH: 200,
     NODE_HEIGHT: 80,
     PORT_HEIGHT: 16,
+    CIRCLED_RADIUS: 16,
     captionHeight: function() {
       return osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().height ||
         osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
@@ -207,6 +208,17 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       */
     },
 
+    __turnIntoCircledUI: function(width) {
+      this.set({
+        width: width,
+        maxWidth: width,
+        minWidth: width
+      });
+      this.getContentElement().setStyles({
+        "border-radius": this.self().CIRCLED_RADIUS+"px"
+      });
+    },
+
     turnIntoFileUI: function() {
       const outputs = this.getNode().getOutputs();
       if ([null, ""].includes(osparc.file.FilePicker.getOutput(outputs))) {
@@ -215,14 +227,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
 
       const width = 120;
-      this.set({
-        width: width,
-        maxWidth: width,
-        minWidth: width
-      });
-      this.getContentElement().setStyles({
-        "border-radius": "16px"
-      });
+      this.__turnIntoCircledUI(width);
 
       // two lines
       this.getChildControl("title").set({
@@ -260,19 +265,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     turnIntoIteratorPrimary: function(canvas) {
       const width = 150;
-      this.set({
-        width: width,
-        maxWidth: width,
-        minWidth: width
-      });
-      this.getContentElement().setStyles({
-        "border-radius": "16px"
-      });
+      this.__turnIntoCircledUI(width);
 
       const nShadows = 2;
       this.shadows = [];
       for (let i=0; i<nShadows; i++) {
-        const nodeUIShadow = canvas.drawNodeUI(width, 62, 16);
+        const nodeUIShadow = canvas.drawNodeUI(width, 62, this.self().CIRCLED_RADIUS);
         this.shadows.push(nodeUIShadow);
       }
     },
@@ -281,15 +279,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const firstOutput = this.getNode().getFirstOutput();
       if (firstOutput && "value" in firstOutput) {
         const value = firstOutput["value"];
+
         const width = 120;
-        this.set({
-          width: width,
-          maxWidth: width,
-          minWidth: width
-        });
-        this.getContentElement().setStyles({
-          "border-radius": "16px"
-        });
+        this.__turnIntoCircledUI(width);
 
         const chipContainer = this.getChildControl("chips");
         chipContainer.exclude();
