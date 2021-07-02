@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import traceback
-from asyncio import Lock, sleep
+from asyncio import Lock, Task, sleep
 from copy import deepcopy
 from typing import Deque, Dict, Optional
 from uuid import UUID
@@ -42,7 +42,9 @@ from .events import REGISTERED_EVENTS
 logger = logging.getLogger(__name__)
 
 
-async def apply_monitoring(app: FastAPI, monitor_data: MonitorData) -> None:
+async def _apply_monitoring(
+    app: FastAPI, monitor: "DynamicSidecarsMonitor", monitor_data: MonitorData
+) -> None:
     """
     fetches status for service and then processes all the registered events
     and updates the status back
@@ -59,7 +61,6 @@ async def apply_monitoring(app: FastAPI, monitor_data: MonitorData) -> None:
             dynamic_sidecar_settings=dynamic_services_settings.dynamic_sidecar,
         )
     ):
-        monitor: DynamicSidecarsMonitor = _get_monitor(app)
         logger.warning("Removing service %s from monitoring", monitor_data.service_name)
         await monitor.remove_service_from_monitor(
             node_uuid=monitor_data.node_uuid,
@@ -106,6 +107,7 @@ class DynamicSidecarsMonitor:
         self._to_monitor: Dict[str, LockWithMonitorData] = dict()
         self._keep_running: bool = False
         self._inverse_search_mapping: Dict[UUID, str] = dict()
+        self._monitor_task: Optional[Task] = None
 
     async def add_service_to_monitor(self, monitor_data: MonitorData) -> None:
         """Invoked before the service is started
@@ -269,7 +271,7 @@ class DynamicSidecarsMonitor:
             lock_with_monitor_data: LockWithMonitorData = self._to_monitor[service_name]
             monitor_data: MonitorData = lock_with_monitor_data.monitor_data
             try:
-                await apply_monitoring(self._app, monitor_data)
+                await _apply_monitoring(self._app, self, monitor_data)
             except asyncio.CancelledError:  # pylint: disable=try-except-raise
                 raise
             except Exception:  # pylint: disable=broad-except
@@ -316,7 +318,7 @@ class DynamicSidecarsMonitor:
         # run as a background task
         logging.info("Starting dynamic-sidecar monitor")
         self._keep_running = True
-        asyncio.create_task(self._run_monitor_task())
+        self._monitor_task = asyncio.create_task(self._run_monitor_task())
 
         # discover all services which were started before and add them to the monitor
         dynamic_sidecar_settings: DynamicSidecarSettings = (
@@ -343,9 +345,9 @@ class DynamicSidecarsMonitor:
         self._inverse_search_mapping = dict()
         self._to_monitor = dict()
 
-
-def _get_monitor(app: FastAPI) -> DynamicSidecarsMonitor:
-    return app.state.dynamic_sidecar_monitor
+        if self._monitor_task is not None:
+            await self._monitor_task
+            self._monitor_task = None
 
 
 async def setup_monitor(app: FastAPI):
