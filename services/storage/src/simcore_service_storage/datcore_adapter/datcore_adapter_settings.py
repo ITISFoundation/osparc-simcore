@@ -21,6 +21,3 @@ class DatcoreAdapterSettings(BaseCustomSettings):
             port=f"{self.PORT}",
             path=f"/{self.VTAG}",
         )
-
-    class Config:
-        env_prefix = "DATCORE_ADAPTER_"
