@@ -500,14 +500,17 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.addAt(this.__thumbnail, 0);
     },
 
+    // implement osparc.component.filter.IFilterable
     _filter: function() {
       this.setOpacity(0.4);
     },
 
+    // implement osparc.component.filter.IFilterable
     _unfilter: function() {
       this.setOpacity(1);
     },
 
+    // implement osparc.component.filter.IFilterable
     _shouldApplyFilter: function(data) {
       if (data.text) {
         const label = this.getNode().getLabel()
@@ -527,6 +530,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       return false;
     },
 
+    // implement osparc.component.filter.IFilterable
     _shouldReactToFilter: function(data) {
       if (data.text && data.text.length > 1) {
         return true;
