@@ -195,8 +195,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.setIcon("@FontAwesome5Solid/folder-open/14");
       }
       const metaData = node.getMetaData();
-      this.__createUIPorts(true, metaData && metaData.inputs);
-      this.__createUIPorts(false, metaData && metaData.outputs);
+      if ((metaData && metaData.inputs && Object.keys(metaData.inputs).length) || this.getNode().isContainer()) {
+        this.__createUIPorts(true);
+      }
+      if ((metaData && metaData.outputs && Object.keys(metaData.outputs).length) || this.getNode().isContainer()) {
+        this.__createUIPorts(false);
+      }
       if (node.isComputational() || node.isFilePicker()) {
         node.getStatus().bind("progress", this.__progressBar, "value");
       }
@@ -310,11 +314,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       return this.__outputLayout;
     },
 
-    __createUIPorts: function(isInput, ports) {
-      // Always create ports if node is a container
-      if (!this.getNode().isContainer() && Object.keys(ports).length < 1) {
-        return;
-      }
+    __createUIPorts: function(isInput) {
       const portLabel = this.__createUIPortLabel(isInput);
       const label = {
         isInput: isInput,
