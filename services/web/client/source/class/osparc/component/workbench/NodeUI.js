@@ -255,7 +255,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.fireEvent("nodeMoving");
     },
 
-    __turnIntoIterator: function(canvas) {
+    turnIntoIteratorPrimary: function(canvas) {
       const width = 150;
       this.set({
         width: width,
@@ -271,40 +271,35 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
     },
 
-    __turnIntoIteratorWithOutput: function(value) {
-      const width = 120;
-      this.set({
-        width: width,
-        maxWidth: width,
-        minWidth: width
-      });
-
-      const chipContainer = this.getChildControl("chips");
-      chipContainer.exclude();
-
-      if (this.__progressBar) {
-        this.__progressBar.exclude();
-      }
-
-      this.__inputLayout.ui.exclude();
-
-      const label = new qx.ui.basic.Label(String(value)).set({
-        font: "text-24",
-        allowGrowX: true,
-        textAlign: "center",
-        padding: 6
-      });
-      this.__inputOutputLayout.addAt(label, 1, {
-        flex: 1
-      });
-    },
-
-    turnIntoIterator: function(canvas) {
+    turnIntoIteratorSnaphot: function() {
       const firstOutput = this.getNode().getFirstOutput();
       if (firstOutput && "value" in firstOutput) {
-        this.__turnIntoIteratorWithOutput(firstOutput["value"]);
-      } else {
-        this.__turnIntoIterator(canvas);
+        const value = firstOutput["value"];
+        const width = 120;
+        this.set({
+          width: width,
+          maxWidth: width,
+          minWidth: width
+        });
+
+        const chipContainer = this.getChildControl("chips");
+        chipContainer.exclude();
+
+        if (this.__progressBar) {
+          this.__progressBar.exclude();
+        }
+
+        this.__inputLayout.ui.exclude();
+
+        const label = new qx.ui.basic.Label(String(value)).set({
+          font: "text-24",
+          allowGrowX: true,
+          textAlign: "center",
+          padding: 6
+        });
+        this.__inputOutputLayout.addAt(label, 1, {
+          flex: 1
+        });
       }
     },
 

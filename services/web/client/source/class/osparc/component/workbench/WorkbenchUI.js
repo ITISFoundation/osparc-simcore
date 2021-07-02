@@ -448,7 +448,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         nodeUI.turnIntoFileUI();
       }
       if (node.isIterator()) {
-        nodeUI.turnIntoIterator(this.__svgWidgetWorkbench);
+        if (this.getStudy().isSnapshot()) {
+          nodeUI.turnIntoIteratorSnaphot();
+        } else {
+          nodeUI.turnIntoIteratorPrimary(this.__svgWidgetWorkbench);
+        }
       }
 
       return nodeUI;
