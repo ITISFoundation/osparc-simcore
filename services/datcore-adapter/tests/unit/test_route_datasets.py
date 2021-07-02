@@ -90,9 +90,7 @@ async def test_list_dataset_collection_files_entrypoint(
     parse_obj_as(Page[FileMetaData], data)
 
 
-@pytest.mark.skip(
-    reason="unable to make the httpx client work with fastapi. And also debian buster does not allow the pennsieve agent to run"
-)
+@pytest.mark.skip(reason="unable to make the httpx client work with fastapi.")
 async def test_upload_file_in_dataset_entrypoint(
     async_client: httpx.AsyncClient,
     pennsieve_dataset_id: str,
