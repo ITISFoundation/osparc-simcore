@@ -99,14 +99,6 @@ async def apply_monitoring(app: FastAPI, monitor_data: MonitorData) -> None:
 
 
 class DynamicSidecarsMonitor:
-    __slots__ = (
-        "_to_monitor",
-        "_lock",
-        "_keep_running",
-        "_inverse_search_mapping",
-        "_app",
-    )
-
     def __init__(self, app: FastAPI):
         self._app: FastAPI = app
         self._lock: Lock = Lock()
