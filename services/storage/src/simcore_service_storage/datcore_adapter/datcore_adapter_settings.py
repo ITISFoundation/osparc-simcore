@@ -1,7 +1,7 @@
-from typing import Optional
+from functools import cached_property
 
 from models_library.basic_types import PortInt, VersionTag
-from pydantic import AnyHttpUrl, Field, validator
+from pydantic import AnyHttpUrl, Field
 from settings_library.base import BaseCustomSettings
 
 
@@ -13,19 +13,14 @@ class DatcoreAdapterSettings(BaseCustomSettings):
         "v0", description="Datcore-adapter service API's version tag"
     )
 
-    endpoint: Optional[AnyHttpUrl] = None
-
-    @validator("endpoint", pre=True)
-    @classmethod
-    def auto_fill_endpoint(cls, v, values):
-        if v is None:
-            return AnyHttpUrl.build(
-                scheme="http",
-                host=values["HOST"],
-                port=f"{values['PORT']}",
-                path=f"/{values['VTAG']}",
-            )
-        return v
+    @cached_property
+    def endpoint(self) -> str:
+        return AnyHttpUrl.build(
+            scheme="http",
+            host=self.HOST,
+            port=f"{self.PORT}",
+            path=f"/{self.VTAG}",
+        )
 
     class Config:
         env_prefix = "DATCORE_ADAPTER_"
