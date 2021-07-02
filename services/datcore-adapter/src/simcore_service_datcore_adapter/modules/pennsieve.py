@@ -391,4 +391,5 @@ def setup(app: FastAPI, settings: PennsieveSettings) -> None:
         api_baseurl=f"{settings.PENNSIEVE_API_URL}",
         service_name="pennsieve.io",
         health_check_path="/health/",
+        health_check_timeout=settings.PENNSIEVE_HEALTCHCHECK_TIMEOUT,
     )

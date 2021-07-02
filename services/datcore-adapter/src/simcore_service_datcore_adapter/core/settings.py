@@ -11,6 +11,7 @@ class PennsieveSettings(BaseCustomSettings):
     PENNSIEVE_ENABLED: bool = True
 
     PENNSIEVE_API_URL: AnyUrl = "https://api.pennsieve.io"
+    PENNSIEVE_HEALTCHCHECK_TIMEOUT: int = 1
 
 
 class Settings(BaseCustomSettings, MixinLoggingSettings):

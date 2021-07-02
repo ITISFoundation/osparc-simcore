@@ -23,10 +23,13 @@ class BaseServiceClientApi(AppDataMixin):
     client: httpx.AsyncClient
     service_name: str
     health_check_path: str = "/"
+    health_check_timeout: int = 1
 
     async def is_responsive(self) -> bool:
         try:
-            resp = await self.client.get(self.health_check_path)
+            resp = await self.client.get(
+                self.health_check_path, timeout=self.health_check_timeout
+            )
             resp.raise_for_status()
             return True
         except (httpx.HTTPStatusError, httpx.RequestError) as err:
