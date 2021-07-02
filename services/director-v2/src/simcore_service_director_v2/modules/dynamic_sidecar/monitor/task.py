@@ -367,3 +367,6 @@ async def setup_monitor(app: FastAPI):
 async def shutdown_monitor(app: FastAPI):
     dynamic_sidecars_monitor = app.state.dynamic_sidecar_monitor
     await dynamic_sidecars_monitor.shutdown()
+
+
+__all__ = ["DynamicSidecarsMonitor", "setup_monitor", "shutdown_monitor"]
