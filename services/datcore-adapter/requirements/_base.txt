@@ -52,12 +52,18 @@ h11==0.12.0
     # via
     #   httpcore
     #   uvicorn
+h2==3.2.0
+    # via httpx
+hpack==3.0.0
+    # via h2
 httpcore==0.13.6
     # via httpx
 httptools==0.2.0
     # via uvicorn
-httpx==0.18.2
+httpx[http2]==0.18.2
     # via -r requirements/_base.in
+hyperframe==5.2.0
+    # via h2
 idna==2.10
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in

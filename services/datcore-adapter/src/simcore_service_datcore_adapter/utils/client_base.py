@@ -23,7 +23,7 @@ class BaseServiceClientApi(AppDataMixin):
     client: httpx.AsyncClient
     service_name: str
     health_check_path: str = "/"
-    health_check_timeout: int = 1
+    health_check_timeout: float = 1.0
 
     async def is_responsive(self) -> bool:
         try:
@@ -45,7 +45,7 @@ def setup_client_instance(
     api_cls: Type[BaseServiceClientApi],
     api_baseurl: str,
     service_name: str,
-    api_general_timeout: int = 5,
+    api_general_timeout: float = 5.0,
     **extra_fields
 ) -> None:
     """Helper to add init/cleanup of ServiceClientApi instances in the app lifespam"""
@@ -55,7 +55,7 @@ def setup_client_instance(
     def _create_instance() -> None:
         api_cls.create_once(
             app,
-            client=httpx.AsyncClient(base_url=api_baseurl, timeout=api_general_timeout),
+            client=httpx.AsyncClient(http2=True, base_url=api_baseurl, timeout=api_general_timeout),
             service_name=service_name,
             **extra_fields
         )

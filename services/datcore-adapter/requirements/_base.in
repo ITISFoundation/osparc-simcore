@@ -11,7 +11,7 @@
 aiofiles
 fastapi
 fastapi-pagination
-httpx
+httpx[http2]
 uvicorn[standard]
 
 pennsieve
