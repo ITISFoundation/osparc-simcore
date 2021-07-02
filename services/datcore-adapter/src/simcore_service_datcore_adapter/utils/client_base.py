@@ -43,8 +43,9 @@ class BaseServiceClientApi(AppDataMixin):
 def setup_client_instance(
     app: FastAPI,
     api_cls: Type[BaseServiceClientApi],
-    api_baseurl,
+    api_baseurl: str,
     service_name: str,
+    api_general_timeout: int = 5,
     **extra_fields
 ) -> None:
     """Helper to add init/cleanup of ServiceClientApi instances in the app lifespam"""
@@ -54,7 +55,7 @@ def setup_client_instance(
     def _create_instance() -> None:
         api_cls.create_once(
             app,
-            client=httpx.AsyncClient(base_url=api_baseurl),
+            client=httpx.AsyncClient(base_url=api_baseurl, timeout=api_general_timeout),
             service_name=service_name,
             **extra_fields
         )
