@@ -6,10 +6,10 @@ from settings_library.base import BaseCustomSettings
 
 
 class DatcoreAdapterSettings(BaseCustomSettings):
-    ENABLED: bool = True
-    HOST: str = "datcore-adapter"
-    PORT: PortInt = 8000
-    VTAG: VersionTag = Field(
+    DATCORE_ADAPTER_ENABLED: bool = True
+    DATCORE_ADAPTER_HOST: str = "datcore-adapter"
+    DATCORE_ADAPTER_PORT: PortInt = 8000
+    DATCORE_ADAPTER_VTAG: VersionTag = Field(
         "v0", description="Datcore-adapter service API's version tag"
     )
 
@@ -17,7 +17,7 @@ class DatcoreAdapterSettings(BaseCustomSettings):
     def endpoint(self) -> str:
         return AnyHttpUrl.build(
             scheme="http",
-            host=self.HOST,
-            port=f"{self.PORT}",
-            path=f"/{self.VTAG}",
+            host=self.DATCORE_ADAPTER_HOST,
+            port=f"{self.DATCORE_ADAPTER_PORT}",
+            path=f"/{self.DATCORE_ADAPTER_VTAG}",
         )
