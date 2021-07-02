@@ -25,7 +25,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
 
     if (study.isSnapshot()) {
       const primaryStudyId = study.getSweeper().getPrimaryStudyId();
-      const openPrimaryStudyParamBtn = new qx.ui.form.Button(this.tr("Open Primary Study")).set({
+      const openPrimaryStudyParamBtn = new qx.ui.form.Button(this.tr("Open Main Study")).set({
         allowGrowX: false
       });
       openPrimaryStudyParamBtn.addListener("execute", () => {
