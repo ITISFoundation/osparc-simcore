@@ -134,7 +134,7 @@ qx.Class.define("osparc.component.workbench.ParameterUI", {
         "border-radius": this.self().CIRCLED_RADIUS+"px"
       });
 
-      const value = 5;
+      const value = this.__parameter["low"];
       const label = new qx.ui.basic.Label(String(value)).set({
         font: "text-24",
         allowGrowX: true,
