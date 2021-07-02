@@ -61,7 +61,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     this.setNode(node);
 
-    this.__createNodeLayout();
+    this.__createWindowLayout();
 
     this.subscribeToFilterGroup("workbench");
 
@@ -172,7 +172,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       return control || this.base(arguments, id);
     },
 
-    __createNodeLayout: function() {
+    __createWindowLayout: function() {
       const node = this.getNode();
       if (node.getThumbnail()) {
         this.setThumbnail(node.getThumbnail());
