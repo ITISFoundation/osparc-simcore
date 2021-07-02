@@ -219,6 +219,19 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       });
     },
 
+    __hideExtraElements: function() {
+      const chipContainer = this.getChildControl("chips");
+      chipContainer.exclude();
+
+      if (this.__progressBar) {
+        this.__progressBar.exclude();
+      }
+
+      if (this.__inputLayout && "ui" in this.__inputLayout) {
+        this.__inputLayout.ui.exclude();
+      }
+    },
+
     turnIntoFileUI: function() {
       const outputs = this.getNode().getOutputs();
       if ([null, ""].includes(osparc.file.FilePicker.getOutput(outputs))) {
@@ -228,6 +241,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
       const width = 120;
       this.__turnIntoCircledUI(width);
+      this.__hideExtraElements();
 
       // two lines
       this.getChildControl("title").set({
@@ -238,18 +252,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         maxWidth: width-16
       });
 
-      const chipContainer = this.getChildControl("chips");
-      chipContainer.exclude();
-
-      if (this.__progressBar) {
-        this.__progressBar.exclude();
-      }
-
       let imageSrc = null;
       if (osparc.file.FilePicker.isOutputFromStore(outputs)) {
         imageSrc = "@FontAwesome5Solid/file-alt/34";
-      }
-      if (osparc.file.FilePicker.isOutputDownloadLink(outputs)) {
+      } else if (osparc.file.FilePicker.isOutputDownloadLink(outputs)) {
         imageSrc = "@FontAwesome5Solid/link/34";
       }
       if (imageSrc) {
@@ -282,15 +288,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
         const width = 120;
         this.__turnIntoCircledUI(width);
-
-        const chipContainer = this.getChildControl("chips");
-        chipContainer.exclude();
-
-        if (this.__progressBar) {
-          this.__progressBar.exclude();
-        }
-
-        this.__inputLayout.ui.exclude();
+        this.__hideExtraElements();
 
         const label = new qx.ui.basic.Label(String(value)).set({
           font: "text-24",
