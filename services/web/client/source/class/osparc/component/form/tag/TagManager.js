@@ -149,7 +149,7 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
       const params = {
         url: {
           tagId,
-          studyUuid: this.__resourceId
+          studyId: this.__resourceId
         }
       };
       return osparc.data.Resources.fetch("studies", "addTag", params);
@@ -159,7 +159,7 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
       const params = {
         url: {
           tagId,
-          studyUuid: this.__resourceId
+          studyId: this.__resourceId
         }
       };
       return osparc.data.Resources.fetch("studies", "removeTag", params);

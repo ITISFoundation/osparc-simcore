@@ -138,11 +138,11 @@ qx.Class.define("osparc.data.Resources", {
           },
           addTag: {
             method: "PUT",
-            url: statics.API + "/projects/{studyUuid}/tags/{tagId}"
+            url: statics.API + "/projects/{studyId}/tags/{tagId}"
           },
           removeTag: {
             method: "DELETE",
-            url: statics.API + "/projects/{studyUuid}/tags/{tagId}"
+            url: statics.API + "/projects/{studyId}/tags/{tagId}"
           }
         }
       },
