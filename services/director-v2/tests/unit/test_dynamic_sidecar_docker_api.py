@@ -43,6 +43,8 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     GenericDockerError,
 )
 
+pytestmark = pytest.mark.asyncio
+
 # FIXTURES
 
 
@@ -259,7 +261,6 @@ async def _count_services_in_stack(
 # TESTS
 
 
-@pytest.mark.asyncio
 async def test_failed_docker_client_request(missing_network_name: str) -> None:
     with pytest.raises(GenericDockerError) as execinfo:
         async with docker_client() as client:
@@ -270,7 +271,6 @@ async def test_failed_docker_client_request(missing_network_name: str) -> None:
     )
 
 
-@pytest.mark.asyncio
 async def test_get_swarm_network_ok(
     dynamic_sidecar_settings: DynamicSidecarSettings,
     simcore_services_network_name: str,
@@ -280,7 +280,6 @@ async def test_get_swarm_network_ok(
     assert swarm_network["Name"] == simcore_services_network_name
 
 
-@pytest.mark.asyncio
 async def test_get_swarm_network_missing_network(
     dynamic_sidecar_settings: DynamicSidecarSettings,
 ) -> None:
@@ -292,7 +291,6 @@ async def test_get_swarm_network_missing_network(
     )
 
 
-@pytest.mark.asyncio
 async def test_recreate_network_multiple_times(
     network_config: Dict[str, Any], cleanup_swarm_network: None
 ) -> None:
@@ -300,7 +298,6 @@ async def test_recreate_network_multiple_times(
     assert len(set(network_ids)) == 1
 
 
-@pytest.mark.asyncio
 async def test_create_service(
     service_spec: Dict[str, Any], cleanup_test_service_name: None
 ) -> None:
@@ -308,7 +305,6 @@ async def test_create_service(
     assert service_id
 
 
-@pytest.mark.asyncio
 async def test_inspect_service(
     service_spec: Dict[str, Any], cleanup_test_service_name: None
 ) -> None:
@@ -320,7 +316,6 @@ async def test_inspect_service(
     _assert_service(service_spec, service_inspect)
 
 
-@pytest.mark.asyncio
 async def test_services_to_monitor_exist(
     dynamic_sidecar_service_name: str,
     dynamic_sidecar_service_spec: Dict[str, Any],
@@ -339,7 +334,6 @@ async def test_services_to_monitor_exist(
         assert service_labels_stored_data.service_name == dynamic_sidecar_service_name
 
 
-@pytest.mark.asyncio
 async def test_dynamic_sidecar_in_running_state_and_node_id_is_recovered(
     dynamic_sidecar_service_spec: Dict[str, Any],
     dynamic_sidecar_settings: DynamicSidecarSettings,
@@ -361,7 +355,6 @@ async def test_dynamic_sidecar_in_running_state_and_node_id_is_recovered(
     assert dynamic_sidecar_state == (ServiceState.RUNNING, "")
 
 
-@pytest.mark.asyncio
 async def test_are_services_missing(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
@@ -385,7 +378,6 @@ async def test_are_services_missing(
     assert services_are_missing == False
 
 
-@pytest.mark.asyncio
 async def test_are_all_services_present(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
@@ -408,7 +400,6 @@ async def test_are_all_services_present(
     assert services_are_missing == True
 
 
-@pytest.mark.asyncio
 async def test_remove_dynamic_sidecar_stack(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
@@ -428,7 +419,6 @@ async def test_remove_dynamic_sidecar_stack(
     assert await _count_services_in_stack(node_uuid, dynamic_sidecar_settings) == 0
 
 
-@pytest.mark.asyncio
 async def test_remove_dynamic_sidecar_network(
     network_config: Dict[str, Any], simcore_services_network_name: str
 ) -> None:
@@ -439,7 +429,6 @@ async def test_remove_dynamic_sidecar_network(
     assert delete_result is True
 
 
-@pytest.mark.asyncio
 async def test_remove_dynamic_sidecar_network_fails(
     simcore_services_network_name: str,
 ) -> None:
@@ -447,7 +436,6 @@ async def test_remove_dynamic_sidecar_network_fails(
     assert delete_result is False
 
 
-@pytest.mark.asyncio
 async def test_list_dynamic_sidecar_services(
     node_uuid: UUID,
     user_id: UserID,
@@ -467,7 +455,6 @@ async def test_list_dynamic_sidecar_services(
     assert len(services) == 1
 
 
-@pytest.mark.asyncio
 async def test_is_dynamic_service_running(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
