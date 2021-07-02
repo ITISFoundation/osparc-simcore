@@ -1,5 +1,4 @@
 import asyncio
-import itertools
 import logging
 from math import ceil
 from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
@@ -58,7 +57,7 @@ async def _request(
         ) as response:
             return await response.json()
     except aiohttp.ClientResponseError as exc:
-        raise _DatcoreAdapterResponseError(status=exc.status, reason=exc) from exc
+        raise _DatcoreAdapterResponseError(status=exc.status, reason=f"{exc}") from exc
     except TimeoutError as exc:
         raise DatcoreAdapterClientError("datcore-adapter server timed-out") from exc
     except aiohttp.ClientError as exc:
@@ -77,19 +76,22 @@ async def _retrieve_all_pages(
     page = 1
     objs: List[return_type] = []
     while (
-        response := await _request(
-            app, api_key, api_secret, method, path, params={"page": page}
+        response := cast(
+            Dict[str, Any],
+            await _request(
+                app, api_key, api_secret, method, path, params={"page": page}
+            ),
         )
     ) and response.get("items"):
         log.debug(
             "called %s [%d/%d], received %d objects",
             path,
             page,
-            ceil(response.get("total", -1) / response.get("size")),
-            len(response.get("items")),
+            ceil(response.get("total", -1) / response.get("size", 1)),
+            len(response.get("items", [])),
         )
 
-        objs += [return_type_creator(d) for d in response.get("items")]
+        objs += [return_type_creator(d) for d in response.get("items", [])]
         page += 1
     return objs
 
@@ -124,7 +126,9 @@ async def list_all_datasets_files_metadatas(
         for d in all_datasets
     ]
     results = await asyncio.gather(*get_dataset_files_tasks)
-    all_files_of_all_datasets: List[FileMetaDataEx] = itertools.chain(results)
+    all_files_of_all_datasets: List[FileMetaDataEx] = []
+    for data in results:
+        all_files_of_all_datasets += data
     return all_files_of_all_datasets
 
 
@@ -180,8 +184,9 @@ async def list_datasets(
 async def get_file_download_presigned_link(
     app: aiohttp.web.Application, api_key: str, api_secret: str, file_id: str
 ) -> URL:
-    file_download_data = await _request(
-        app, api_key, api_secret, "GET", f"/files/{file_id}"
+    file_download_data = cast(
+        Dict[str, Any],
+        await _request(app, api_key, api_secret, "GET", f"/files/{file_id}"),
     )
     return file_download_data["link"]
 
