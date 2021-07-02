@@ -388,7 +388,7 @@ def setup(app: FastAPI, settings: PennsieveSettings) -> None:
     setup_client_instance(
         app,
         PennsieveApiClient,
-        api_baseurl=f"{settings.URL}",
+        api_baseurl=f"{settings.PENNSIEVE_API_URL}",
         service_name="pennsieve.io",
         health_check_path="/health/",
     )

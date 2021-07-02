@@ -8,9 +8,9 @@ from settings_library.logging_utils import MixinLoggingSettings
 
 
 class PennsieveSettings(BaseCustomSettings):
-    ENABLED: bool = True
+    PENNSIEVE_ENABLED: bool = True
 
-    URL: AnyUrl = "https://api.pennsieve.io"
+    PENNSIEVE_API_URL: AnyUrl = "https://api.pennsieve.io"
 
 
 class Settings(BaseCustomSettings, MixinLoggingSettings):
