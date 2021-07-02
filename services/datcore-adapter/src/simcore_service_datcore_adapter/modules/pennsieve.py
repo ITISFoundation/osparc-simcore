@@ -151,6 +151,16 @@ class PennsieveApiClient(BaseServiceClientApi):
             ),
         )
 
+    async def _get_pck_id_files(
+        self, api_key: str, api_secret: str, pck_id: str, pck: Dict[str, Any]
+    ) -> Tuple[str, List[Dict[str, Any]]]:
+        return (
+            pck_id,
+            await self._get_package_files(
+                api_key, api_secret, pck["content"]["nodeId"]
+            ),
+        )
+
     async def get_user_profile(self, api_key: str, api_secret: str) -> Profile:
         """returns the user profile id"""
         pennsieve_user = cast(
@@ -161,7 +171,7 @@ class PennsieveApiClient(BaseServiceClientApi):
 
     async def list_datasets(
         self, api_key: str, api_secret: str, limit: int, offset: int
-    ) -> Tuple[List, Total]:
+    ) -> Tuple[List[DatasetMetaData], Total]:
         """returns all the datasets a user has access to"""
         dataset_page = cast(
             Dict[str, Any],
@@ -199,14 +209,18 @@ class PennsieveApiClient(BaseServiceClientApi):
         offset: int,
     ) -> Tuple[List, Total]:
         dataset_pck = await self._get_dataset(api_key, api_secret, dataset_id)
-        # TODO: improve speed using gather!!
+        # get the information about the files
+        package_files_tasks = [
+            self._get_pck_id_files(api_key, api_secret, pck["content"]["id"], pck)
+            for pck in islice(dataset_pck["children"], offset, offset + limit)
+            if pck["content"]["packageType"] != "Collection"
+        ]
+        package_files = dict(await asyncio.gather(*package_files_tasks))
         return (
             [
                 FileMetaData.from_pennsieve_package(
                     pck,
-                    await self._get_package_files(
-                        api_key, api_secret, pck["content"]["nodeId"]
-                    )
+                    package_files[pck["content"]["id"]]
                     if pck["content"]["packageType"] != "Collection"
                     else [],
                     base_path=Path(dataset_pck["content"]["name"]),
@@ -240,13 +254,19 @@ class PennsieveApiClient(BaseServiceClientApi):
             / collection_pck["content"]["name"]
         )
         # TODO: improve speed using gather!!
+        # get the information about the files
+        package_files_tasks = [
+            self._get_pck_id_files(api_key, api_secret, pck["content"]["id"], pck)
+            for pck in islice(collection_pck["children"], offset, offset + limit)
+            if pck["content"]["packageType"] != "Collection"
+        ]
+        package_files = dict(await asyncio.gather(*package_files_tasks))
+
         return (
             [
                 FileMetaData.from_pennsieve_package(
                     pck,
-                    await self._get_package_files(
-                        api_key, api_secret, pck["content"]["nodeId"]
-                    )
+                    package_files[pck["content"]["id"]]
                     if pck["content"]["packageType"] != "Collection"
                     else [],
                     base_path=base_path,
@@ -291,18 +311,8 @@ class PennsieveApiClient(BaseServiceClientApi):
                 break
 
         # get the information about the files
-        async def _get_files_task(
-            api_key: str, api_secret: str, pck_id: str, pck: Dict[str, Any]
-        ) -> Tuple[str, List[Dict[str, Any]]]:
-            return (
-                pck_id,
-                await self._get_package_files(
-                    api_key, api_secret, pck["content"]["nodeId"]
-                ),
-            )
-
         package_files_tasks = [
-            _get_files_task(api_key, api_secret, pck_id, pck_data)
+            self._get_pck_id_files(api_key, api_secret, pck_id, pck_data)
             for pck_id, pck_data in all_packages.items()
             if pck_data["content"]["packageType"] != "Collection"
         ]
