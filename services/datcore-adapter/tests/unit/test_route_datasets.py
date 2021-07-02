@@ -116,6 +116,3 @@ async def test_upload_file_in_dataset_entrypoint(
                 "file": file_to_upload.open("rb"),
             },
         )
-    import pdb
-
-    pdb.set_trace()
