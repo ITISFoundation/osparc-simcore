@@ -110,7 +110,7 @@ qx.Class.define("osparc.component.permissions.Study", {
       });
       const params = {
         url: {
-          "projectId": this.__studyData["uuid"]
+          "studyId": this.__studyData["uuid"]
         },
         data: this.__studyData
       };
@@ -135,7 +135,7 @@ qx.Class.define("osparc.component.permissions.Study", {
 
       const params = {
         url: {
-          "projectId": this.__studyData["uuid"]
+          "studyId": this.__studyData["uuid"]
         },
         data: this.__studyData
       };
@@ -156,7 +156,7 @@ qx.Class.define("osparc.component.permissions.Study", {
       this.__studyData["accessRights"][collboratorGId] = newAccessRights;
       const params = {
         url: {
-          "projectId": this.__studyData["uuid"]
+          "studyId": this.__studyData["uuid"]
         },
         data: this.__studyData
       };

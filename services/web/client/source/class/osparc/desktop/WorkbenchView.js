@@ -194,7 +194,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __switchStudy: function(studyId) {
       const params = {
         url: {
-          "projectId": studyId
+          "studyId": studyId
         }
       };
       osparc.data.Resources.getOne("studies", params)

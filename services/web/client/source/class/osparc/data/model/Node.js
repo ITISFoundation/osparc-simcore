@@ -434,7 +434,7 @@ qx.Class.define("osparc.data.model.Node", {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const params = {
         url: {
-          projectId: study.getUuid()
+          studyId: study.getUuid()
         },
         data: {
           "service_id": this.getNodeId(),
@@ -463,7 +463,7 @@ qx.Class.define("osparc.data.model.Node", {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const params = {
         url: {
-          projectId: study.getUuid(),
+          studyId: study.getUuid(),
           nodeId: this.getNodeId()
         }
       };
@@ -1042,7 +1042,7 @@ qx.Class.define("osparc.data.model.Node", {
 
       const params = {
         url: {
-          projectId: study.getUuid(),
+          studyId: study.getUuid(),
           nodeId: this.getNodeId()
         }
       };
