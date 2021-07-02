@@ -863,7 +863,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         osparc.component.workbench.SvgWidget.updateCurve(this.__tempEdgeRepr, x1, y1, x2, y2);
       }
 
-      if (!this.__tempEdgeIsInput) {
+      if (this.__tempEdgeParameterId) {
+        const colorHex = osparc.component.workbench.EdgeUI.getEdgeColor(false);
+        osparc.component.workbench.SvgWidget.updateCurveColor(this.__tempEdgeRepr, colorHex);
+      } else if (!this.__tempEdgeIsInput) {
         const modified = nodeUI.getNode().getStatus().getModified();
         const colorHex = osparc.component.workbench.EdgeUI.getEdgeColor(modified);
         osparc.component.workbench.SvgWidget.updateCurveColor(this.__tempEdgeRepr, colorHex);
@@ -876,6 +879,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
       this.__tempEdgeRepr = null;
       this.__tempEdgeNodeId = null;
+      this.__tempEdgeParameterId = null;
       this.__pointerPos = null;
     },
 
