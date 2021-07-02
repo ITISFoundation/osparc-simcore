@@ -90,6 +90,7 @@ qx.Class.define("osparc.component.workbench.ParameterUI", {
   },
 
   members: {
+    __parameter: null,
     __inputOutputLayout: null,
     __outputLayout: null,
 
@@ -108,6 +109,10 @@ qx.Class.define("osparc.component.workbench.ParameterUI", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    getParameter: function() {
+      return this.__parameter;
     },
 
     __createWindowLayout: function() {

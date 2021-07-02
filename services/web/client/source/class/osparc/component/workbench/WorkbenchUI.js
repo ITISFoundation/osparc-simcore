@@ -167,6 +167,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __desktop: null,
     __svgWidgetWorkbench: null,
     __tempEdgeNodeId: null,
+    __tempEdgeIsInput: null,
     __tempEdgeRepr: null,
     __pointerPos: null,
     __selectedItemId: null,
@@ -807,10 +808,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __updateTempEdge: function(pointerEvent) {
-      if (this.__tempEdgeNodeId === null) {
-        return;
+      let nodeUI = null;
+      if (this.__tempEdgeNodeId !== null) {
+        nodeUI = this.getNodeUI(this.__tempEdgeNodeId);
+      } else if (this.__tempEdgeParameterId !== null) {
+        nodeUI = this.__getParameterUI(this.__tempEdgeParameterId);
       }
-      let nodeUI = this.getNodeUI(this.__tempEdgeNodeId);
       if (nodeUI === null) {
         return;
       }
@@ -893,6 +896,16 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       for (let i = 0; i < this.__nodesUI.length; i++) {
         if (this.__nodesUI[i].getNodeId() === nodeId) {
           return this.__nodesUI[i];
+        }
+      }
+      return null;
+    },
+
+    __getParameterUI: function(parameterId) {
+      for (let i = 0; i < this.__parametersUI.length; i++) {
+        const parameter = this.__parametersUI[i].getParameter();
+        if (parameter["id"] === parameterId) {
+          return this.__parametersUI[i];
         }
       }
       return null;
