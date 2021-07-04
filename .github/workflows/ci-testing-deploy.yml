@@ -1774,7 +1774,7 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash clean_up
 
   system-test-swarm-deploy:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] deploy simcore"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
