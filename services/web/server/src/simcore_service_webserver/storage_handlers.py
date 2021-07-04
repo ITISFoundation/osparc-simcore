@@ -170,7 +170,7 @@ async def get_project_files_metadata(
     session = get_client_session(app)
 
     url: URL = (
-        _get_base_storage_url(app) / f"locations" / location_id / "files" / "metadata"
+        _get_base_storage_url(app) / "locations" / location_id / "files" / "metadata"
     )
     params = dict(user_id=user_id, uuid_filter=uuid_filter)
     async with session.get(url, ssl=False, params=params) as resp:
