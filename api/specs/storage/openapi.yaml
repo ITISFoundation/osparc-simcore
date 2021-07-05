@@ -113,7 +113,6 @@ paths:
           schema:
             type: boolean
             default: true
-
       responses:
         "200":
           description: An object containing added, changed and removed paths
