@@ -6,7 +6,8 @@ import traceback
 from collections import deque
 from itertools import chain
 from pathlib import Path
-from typing import Deque, Dict, List, Optional, Tuple
+from pprint import pformat
+from typing import Any, Deque, Dict, List, Optional, Tuple
 
 import aiofiles
 from aiohttp import ClientSession, ClientTimeout, web
@@ -22,6 +23,7 @@ from ...storage_handlers import (
     get_file_download_url,
     get_file_upload_url,
     get_project_files_metadata,
+    get_storage_locations_for_user,
 )
 from ...users_api import get_user
 from ...utils import now_str
@@ -67,37 +69,34 @@ async def extract_download_links(
     app: web.Application, dir_path: Path, project_id: str, user_id: int
 ) -> Deque[LinkAndPath2]:
     download_links: Deque[LinkAndPath2] = deque()
-
     try:
-        s3_metadata = await get_project_files_metadata(
-            app=app,
-            location_id="0",
-            uuid_filter=project_id,
-            user_id=user_id,
+        available_locations: List[
+            Dict[str, Any]
+        ] = await get_storage_locations_for_user(app=app, user_id=user_id)
+        log.debug(
+            "will create download links for following locations: %s",
+            pformat(available_locations),
+        )
+
+        all_file_metadata = await asyncio.gather(
+            *[
+                get_project_files_metadata(
+                    app=app,
+                    location_id=str(loc["id"]),
+                    uuid_filter=project_id,
+                    user_id=user_id,
+                )
+                for loc in available_locations
+            ]
         )
     except Exception as e:
         raise ExporterException(
             f"Error while requesting project files metadata for S3 for project {project_id}"
         ) from e
 
-    log.debug("s3 files metadata %s: ", s3_metadata)
+    log.debug("files metadata %s: ", all_file_metadata)
 
-    # Still not sure if these are required, when pulling files from blackfynn they end up in S3
-    # I am not sure there is an example where we need to directly export form blackfynn
-    try:
-        blackfynn_metadata = await get_project_files_metadata(
-            app=app,
-            location_id="1",
-            uuid_filter=project_id,
-            user_id=user_id,
-        )
-    except Exception as e:
-        raise ExporterException(
-            f"Error while requesting project files metadata for blackfynn for project {project_id}"
-        ) from e
-    log.debug("blackfynn files metadata %s: ", blackfynn_metadata)
-
-    for file_metadata in chain(s3_metadata, blackfynn_metadata):
+    for file_metadata in chain.from_iterable(all_file_metadata):
         try:
             download_link = await get_file_download_url(
                 app=app,

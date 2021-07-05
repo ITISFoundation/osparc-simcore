@@ -11,7 +11,7 @@ REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 UPGRADE_OPTION := $(if $(upgrade),--upgrade-package $(upgrade),--upgrade)
 
 
-objects = $(wildcard *.in)
+objects = $(sort $(wildcard *.in))
 outputs := $(objects:.in=.txt)
 
 reqs: $(outputs) ## pip-compiles all requirements/*.in -> requirements/*.txt; make reqs upgrade=foo will only upgrade package foo

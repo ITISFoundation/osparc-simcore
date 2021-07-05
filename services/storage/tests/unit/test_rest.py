@@ -207,9 +207,9 @@ async def test_upload_link(client, dsm_mockup_db):
         assert data
 
 
+@pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 async def test_copy(client, dsm_mockup_db, datcore_structured_testbucket):
-    if not has_datcore_tokens():
-        return
+
     # copy N files
     N = 2
     counter = 0
@@ -299,7 +299,7 @@ async def test_action_check(client):
 
 def get_project_with_data() -> Dict[str, Any]:
     projects = []
-    with open(current_dir / "data/projects_with_data.json") as fp:
+    with open(current_dir / "../data/projects_with_data.json") as fp:
         projects = json.load(fp)
 
     # TODO: add schema validation

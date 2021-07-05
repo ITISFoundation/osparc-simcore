@@ -4,7 +4,7 @@
 """
 import logging
 import urllib
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from aiohttp import web
 from servicelib.request_keys import RQT_USERID_KEY
@@ -62,7 +62,9 @@ async def _request_storage(request: web.Request, method: str):
         return payload
 
 
-async def safe_unwrap(resp: web.Response) -> Tuple[Optional[Dict], Optional[Dict]]:
+async def safe_unwrap(
+    resp: web.Response,
+) -> Tuple[Optional[Union[Dict[str, Any], List[Dict[str, Any]]]], Optional[Dict]]:
     if resp.status != 200:
         body = await resp.text()
         raise web.HTTPException(reason=f"Unexpected response: '{body}'")
@@ -148,6 +150,18 @@ async def delete_file(request: web.Request):
     await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, "DELETE")
     return payload
+
+
+async def get_storage_locations_for_user(
+    app: web.Application, user_id: int
+) -> List[Dict[str, Any]]:
+    session = get_client_session(app)
+
+    url: URL = _get_base_storage_url(app) / "locations"
+    params = dict(user_id=user_id)
+    async with session.get(url, ssl=False, params=params) as resp:
+        data, _ = cast(List[Dict[str, Any]], await safe_unwrap(resp))
+        return data
 
 
 async def get_project_files_metadata(

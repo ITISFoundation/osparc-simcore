@@ -11,7 +11,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from aiohttp import web
-from servicelib.observer import observe
+from servicelib.observer import observe, emit
 from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
 
@@ -123,8 +123,7 @@ async def on_user_logout(
     with managed_resource(user_id, client_session_id, app) as rt:
         # start by disconnecting this client if possible
         if client_session_id:
-            socket_id = await rt.get_socket_id()
-            if socket_id:
+            if socket_id := await rt.get_socket_id():
                 await sio.disconnect(sid=socket_id)
             # trigger faster gc on disconnect
             await rt.user_pressed_disconnect()
@@ -153,6 +152,9 @@ async def disconnect(sid: str, app: web.Application) -> None:
             with managed_resource(user_id, client_session_id, app) as rt:
                 log.debug("client %s disconnected from room %s", user_id, sid)
                 await rt.remove_socket_id()
+            # signal same user other clients if available
+            await emit("SIGNAL_USER_DISCONNECTED", user_id, client_session_id, app)
+
         else:
             # this should not happen!!
             log.error(
