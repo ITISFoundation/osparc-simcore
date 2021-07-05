@@ -154,9 +154,9 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
 
     __supportedExternalServices: function() {
       const supportedServices = [{
-        name: "blackfynn-datcore",
+        name: "pennsieve-datcore",
         label: "DAT-Core",
-        link: "https://app.blackfynn.io",
+        link: "https://app.pennsieve.io",
         logo: "osparc/blackfynn-logo.png"
       }];
       return supportedServices;

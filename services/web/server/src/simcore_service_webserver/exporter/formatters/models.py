@@ -23,7 +23,7 @@ class LinkAndPath2(BaseModel):
     )
     storage_type: str = Field(
         ...,
-        description="usually 0 for S3 or 1 for BlackFynn",
+        description="usually 0 for S3 or 1 for Pennsieve",
     )
     relative_path_to_file: Path = Field(
         ...,

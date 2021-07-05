@@ -14,7 +14,7 @@ _DEFAULT_CHECK_INTERVAL_S: float = 0.5
 
 async def _cancel_task_if_client_disconnected(
     request: Request, task: asyncio.Task, interval: float = _DEFAULT_CHECK_INTERVAL_S
-) -> bool:
+) -> None:
     with suppress(CancelledError):
         while True:
             if await request.is_disconnected():

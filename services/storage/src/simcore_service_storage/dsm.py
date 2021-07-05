@@ -20,7 +20,6 @@ from aiobotocore.session import AioSession, ClientCreatorContext
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.result import RowProxy
-from blackfynn.base import UnauthorizedException
 from servicelib.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
@@ -44,7 +43,7 @@ from .constants import (
     SIMCORE_S3_ID,
     SIMCORE_S3_STR,
 )
-from .datcore_wrapper import DatcoreWrapper
+from .datcore_adapter import datcore_adapter
 from .models import (
     DatasetMetaData,
     FileMetaData,
@@ -172,8 +171,10 @@ class DataStorageManager:
         simcore_s3 = {"name": SIMCORE_S3_STR, "id": SIMCORE_S3_ID}
         locs.append(simcore_s3)
 
-        ping_ok = await self.ping_datcore(user_id=user_id)
-        if ping_ok:
+        api_token, api_secret = self._get_datcore_tokens(user_id)
+        if await datcore_adapter.check_user_can_connect(
+            self.app, api_token, api_secret
+        ):
             datcore = {"name": DATCORE_STR, "id": DATCORE_ID}
             locs.append(datcore)
 
@@ -182,28 +183,6 @@ class DataStorageManager:
     @classmethod
     def location_from_id(cls, location_id: str):
         return get_location_from_id(location_id)
-
-    async def ping_datcore(self, user_id: str) -> bool:
-        """Checks whether user account in datcore is accesible
-
-        :param user_id: user identifier
-        :type user_id: str
-        :return: True if user can access his datcore account
-        :rtype: bool
-        """
-
-        api_token, api_secret = self._get_datcore_tokens(user_id)
-        logger.info("token: %s, secret %s", api_token, api_secret)
-        if api_token:
-            try:
-                dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-                profile = await dcw.ping()
-                if profile:
-                    return True
-            except UnauthorizedException:
-                logger.exception("Connection to datcore not possible")
-
-        return False
 
     # LIST/GET ---------------------------
 
@@ -292,8 +271,9 @@ class DataStorageManager:
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-            data = await dcw.list_files_raw()
+            return await datcore_adapter.list_all_datasets_files_metadatas(
+                self.app, api_token, api_secret
+            )
 
         if uuid_filter:
             # TODO: incorporate this in db query!
@@ -332,8 +312,10 @@ class DataStorageManager:
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-            data: List[FileMetaData] = await dcw.list_files_raw_dataset(dataset_id)
+            # lists all the files inside the dataset
+            return await datcore_adapter.list_all_files_metadatas_in_dataset(
+                self.app, api_token, api_secret, dataset_id
+            )
 
         return data
 
@@ -369,8 +351,7 @@ class DataStorageManager:
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-            data = await dcw.list_datasets()
+            return await datcore_adapter.list_datasets(self.app, api_token, api_secret)
 
         return data
 
@@ -397,20 +378,23 @@ class DataStorageManager:
 
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies
-            api_token, api_secret = self._get_datcore_tokens(user_id)
-            _dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-            data = []  # await _dcw.list_file(file_uuid)
-            return data
+            # api_token, api_secret = self._get_datcore_tokens(user_id)
+            import warnings
+
+            warnings.warn("NOT IMPLEMENTED!!!")
+            return None
 
     # UPLOAD/DOWNLOAD LINKS ---------------------------
 
     async def upload_file_to_datcore(
-        self, user_id: str, local_file_path: str, destination_id: str
+        self, _user_id: str, _local_file_path: str, _destination_id: str
     ):
+        import warnings
+
+        warnings.warn("NOT IMPLEMENTED!!!")
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
-        api_token, api_secret = self._get_datcore_tokens(user_id)
-        dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-        await dcw.upload_file_to_id(destination_id, local_file_path)
+        # api_token, api_secret = self._get_datcore_tokens(user_id)
+        # await dcw.upload_file_to_id(destination_id, local_file_path)
 
     async def _metadata_file_updater(
         self,
@@ -570,14 +554,11 @@ class DataStorageManager:
         link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
         return link
 
-    async def download_link_datcore(
-        self, user_id: str, file_id: str
-    ) -> Tuple[str, str]:
-        link, filename = "", ""
+    async def download_link_datcore(self, user_id: str, file_id: str) -> URL:
         api_token, api_secret = self._get_datcore_tokens(user_id)
-        dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-        link, filename = await dcw.download_link_by_id(file_id)
-        return link, filename
+        return await datcore_adapter.get_file_download_presigned_link(
+            self.app, api_token, api_secret, file_id
+        )
 
     # COPY -----------------------------
 
@@ -625,9 +606,9 @@ class DataStorageManager:
 
             # Uploads local -> DATCore
             await self.upload_file_to_datcore(
-                user_id=user_id,
-                local_file_path=local_file_path,
-                destination_id=dest_uuid,
+                _user_id=user_id,
+                _local_file_path=local_file_path,
+                _destination_id=dest_uuid,
             )
 
     async def copy_file_datcore_s3(
@@ -911,10 +892,9 @@ class DataStorageManager:
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-            # destination, filename = _parse_datcore(file_uuid)
-            file_id = file_uuid
-            return await dcw.delete_file_by_id(file_id)
+            await datcore_adapter.delete_file(
+                self.app, api_token, api_secret, file_uuid
+            )
 
     async def delete_project_simcore_s3(
         self, user_id: str, project_id: str, node_id: Optional[str] = None

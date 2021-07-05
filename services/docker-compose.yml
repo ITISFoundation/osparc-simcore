@@ -262,10 +262,17 @@ services:
       - interactive_services_subnet
       - computational_services_subnet
 
+  datcore-adapter:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    networks:
+      - storage_subnet
+
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
+      - DATCORE_ADAPTER_HOST=${DATCORE_ADAPTER_HOST:-datcore-adapter}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -291,6 +298,7 @@ services:
       - default
       - interactive_services_subnet
       - computational_services_subnet
+      - storage_subnet
 
   rabbit:
     image: itisfoundation/rabbitmq:3.8.0-management
@@ -455,6 +463,8 @@ volumes:
 
 networks:
   default:
+    attachable: true
+  storage_subnet:
     attachable: true
   interactive_services_subnet:
     driver: overlay
