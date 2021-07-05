@@ -224,12 +224,16 @@ async def test_copy_s3_s3(
 
 
 # NOTE: Below tests directly access the datcore platform, use with care!
-@pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available")
+@pytest.mark.skipif(
+    not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available"
+)
 def test_datcore_fixture(datcore_structured_testbucket):
     print(datcore_structured_testbucket)
 
 
-@pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available")
+@pytest.mark.skipif(
+    not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available"
+)
 async def test_dsm_datcore(
     postgres_service_url, dsm_fixture, datcore_structured_testbucket, bucket_name: str
 ):
@@ -257,7 +261,9 @@ async def test_dsm_datcore(
     assert len(data) == 2
 
 
-@pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available")
+@pytest.mark.skipif(
+    not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available"
+)
 async def test_dsm_s3_to_datcore(
     file_meta_data: FileMetaData,
     fake_file: Path,
@@ -306,7 +312,9 @@ async def test_dsm_s3_to_datcore(
     assert len(data) == 5
 
 
-@pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available")
+@pytest.mark.skipif(
+    not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available"
+)
 async def test_dsm_datcore_to_local(
     dsm_fixture,
     fake_file: Path,
@@ -331,7 +339,9 @@ async def test_dsm_datcore_to_local(
     assert filecmp.cmp(fake_file2, fake_file)
 
 
-@pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available")
+@pytest.mark.skipif(
+    not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available"
+)
 async def test_dsm_datcore_to_S3(
     file_meta_data: FileMetaData,
     fake_file: Path,
@@ -382,7 +392,9 @@ async def test_dsm_datcore_to_S3(
     assert filecmp.cmp(fake_file1, fake_file2)
 
 
-@pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available")
+@pytest.mark.skipif(
+    not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available"
+)
 async def test_copy_datcore(
     file_meta_data: FileMetaData,
     fake_file: Path,
@@ -486,7 +498,9 @@ async def test_delete_data_folders(dsm_fixture, dsm_mockup_complete_db):
     assert not data
 
 
-@pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available")
+@pytest.mark.skipif(
+    not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available"
+)
 async def test_deep_copy_project_simcore_s3(
     dsm_fixture,
     s3_client,
@@ -640,7 +654,9 @@ async def test_sync_table_meta_data(
     assert list_changes["removed"] == []
 
 
-@pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available")
+@pytest.mark.skipif(
+    not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available"
+)
 async def test_dsm_list_datasets_datcore(
     dsm_fixture, datcore_structured_testbucket, user_id: int, bucket_name: str
 ):
@@ -680,7 +696,9 @@ async def test_dsm_list_dataset_files_s3(dsm_fixture, dsm_mockup_complete_db):
             #  because these are added artificially in list_files
 
 
-@pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available")
+@pytest.mark.skipif(
+    not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available"
+)
 async def test_dsm_list_dataset_files_datcore(
     dsm_fixture, datcore_structured_testbucket, user_id: int, bucket_name: str
 ):

@@ -207,7 +207,9 @@ async def test_upload_link(client, dsm_mockup_db):
         assert data
 
 
-@pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available")
+@pytest.mark.skipif(
+    not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available"
+)
 async def test_copy(
     client, dsm_mockup_db, datcore_structured_testbucket, user_id: int, bucket_name: str
 ):

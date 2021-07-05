@@ -30,7 +30,7 @@ class DatCoreApiToken:
 
 @dataclass
 class DatCoreStorage(DataStorageInterface):
-    """ Access to DAT-CORE storage """
+    """Access to DAT-CORE storage"""
 
     # TODO: perhaps can be used a cache? add a lifetime?
     datcore_tokens: Dict[str, DatCoreApiToken]

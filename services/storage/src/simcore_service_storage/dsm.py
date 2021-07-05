@@ -289,7 +289,9 @@ class DataStorageManager:
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
             # lists all the files inside the dataset
-            data: List[FileMetaDataEx] = await datcore_adapter.list_all_files_metadatas_in_dataset(
+            data: List[
+                FileMetaDataEx
+            ] = await datcore_adapter.list_all_files_metadatas_in_dataset(
                 self.app, api_token, api_secret, dataset_id
             )
 
@@ -855,12 +857,16 @@ class DataStorageManager:
                 ).where(file_meta_data.c.file_uuid == file_uuid)
 
                 async for row in conn.execute(query):
-                    if self.s3_client.remove_objects(row.bucket_name, [row.object_name]):
+                    if self.s3_client.remove_objects(
+                        row.bucket_name, [row.object_name]
+                    ):
                         to_delete.append(file_uuid)
 
                 await conn.execute(
-                    file_meta_data.delete().where(file_meta_data.c.file_uuid.in_(to_delete))
+                    file_meta_data.delete().where(
+                        file_meta_data.c.file_uuid.in_(to_delete)
                     )
+                )
 
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies

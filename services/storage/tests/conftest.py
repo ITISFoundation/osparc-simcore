@@ -17,6 +17,7 @@ from typing import Callable, Dict, Iterator, Tuple
 import dotenv
 import pytest
 import simcore_service_storage
+import tests.utils
 from aiohttp import web
 from aiopg.sa import create_engine
 from servicelib.application import create_safe_application
@@ -25,8 +26,6 @@ from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.s3wrapper.s3_client import MinioClientWrapper
 from tests.utils import DATA_DIR
-import tests.utils
-
 
 pytest_plugins = [
     "pytest_simcore.cli_runner",
