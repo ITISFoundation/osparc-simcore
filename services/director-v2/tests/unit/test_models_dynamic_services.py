@@ -2,23 +2,12 @@
 import uuid
 
 import pytest
-from models_library.service_settings_labels import SimcoreServiceLabels
-from simcore_service_director_v2.models.domains.dynamic_services import (
-    DynamicServiceCreate,
-)
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     MonitorData,
     RunningDynamicServiceDetails,
     ServiceBootType,
-    ServiceDetails,
-    ServiceLabelsStoredData,
     ServiceState,
 )
-
-
-@pytest.fixture
-def port() -> int:
-    return 1222
 
 
 @pytest.fixture
@@ -31,53 +20,12 @@ def service_state() -> ServiceState:
     return ServiceState.RUNNING
 
 
-@pytest.fixture
-def simcore_service_labels() -> SimcoreServiceLabels:
-    return SimcoreServiceLabels(
-        **SimcoreServiceLabels.Config.schema_extra["examples"][1]
-    )
-
-
-@pytest.fixture
-def dynamic_service_create() -> DynamicServiceCreate:
-    return DynamicServiceCreate.parse_obj(ServiceDetails.Config.schema_extra["example"])
-
-
-@pytest.fixture
-def service_labels_stored_data() -> ServiceLabelsStoredData:
-    return ServiceLabelsStoredData.parse_obj(
-        ServiceLabelsStoredData.Config.schema_extra["example"]
-    )
-
-
-@pytest.fixture
-def from_http_request(
-    dynamic_service_create: DynamicServiceCreate,
-    simcore_service_labels: SimcoreServiceLabels,
-    port: int,
-) -> MonitorData:
-    return MonitorData.from_http_request(
-        service=dynamic_service_create,
-        simcore_service_labels=simcore_service_labels,
-        port=port,
-    )
-
-
-@pytest.fixture
-def from_service_labels_stored_data(
-    service_labels_stored_data: ServiceLabelsStoredData, port: int
-) -> MonitorData:
-    return MonitorData.from_service_labels_stored_data(
-        service_labels_stored_data=service_labels_stored_data, port=port
-    )
-
-
 @pytest.mark.parametrize(
     "monitor_data",
     [
         # pylint: disable=no-member
-        pytest.lazy_fixture("from_http_request"),
-        pytest.lazy_fixture("from_service_labels_stored_data"),
+        pytest.lazy_fixture("monitor_data_from_http_request"),
+        pytest.lazy_fixture("monitor_data_from_service_labels_stored_data"),
     ],
 )
 def test_running_service_details_make_status(

@@ -1,5 +1,14 @@
 # pylint: disable=redefined-outer-name
 import pytest
+from models_library.service_settings_labels import SimcoreServiceLabels
+from simcore_service_director_v2.models.domains.dynamic_services import (
+    DynamicServiceCreate,
+)
+from simcore_service_director_v2.models.schemas.dynamic_services import (
+    MonitorData,
+    ServiceDetails,
+    ServiceLabelsStoredData,
+)
 
 
 @pytest.fixture
@@ -19,3 +28,43 @@ def disable_dynamic_sidecar_monitor_in_unit_tests(
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", simcore_services_network_name)
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
+
+
+@pytest.fixture
+def simcore_service_labels() -> SimcoreServiceLabels:
+    return SimcoreServiceLabels(
+        **SimcoreServiceLabels.Config.schema_extra["examples"][1]
+    )
+
+
+@pytest.fixture
+def dynamic_service_create() -> DynamicServiceCreate:
+    return DynamicServiceCreate.parse_obj(ServiceDetails.Config.schema_extra["example"])
+
+
+@pytest.fixture
+def service_labels_stored_data() -> ServiceLabelsStoredData:
+    return ServiceLabelsStoredData.parse_obj(
+        ServiceLabelsStoredData.Config.schema_extra["example"]
+    )
+
+
+@pytest.fixture
+def monitor_data_from_http_request(
+    dynamic_service_create: DynamicServiceCreate,
+    simcore_service_labels: SimcoreServiceLabels,
+) -> MonitorData:
+    return MonitorData.from_http_request(
+        service=dynamic_service_create,
+        simcore_service_labels=simcore_service_labels,
+        port=1222,
+    )
+
+
+@pytest.fixture
+def monitor_data_from_service_labels_stored_data(
+    service_labels_stored_data: ServiceLabelsStoredData, port: int
+) -> MonitorData:
+    return MonitorData.from_service_labels_stored_data(
+        service_labels_stored_data=service_labels_stored_data, port=port
+    )
