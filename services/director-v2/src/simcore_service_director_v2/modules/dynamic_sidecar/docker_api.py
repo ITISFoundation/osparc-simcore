@@ -239,23 +239,15 @@ async def are_services_missing(
     node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> bool:
     """Used to check if the service should be created"""
-    try:
-        filters = {
-            "label": [
-                f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                f"uuid={node_uuid}",
-            ]
-        }
-        async with docker_client() as client:
-            stack_services = await client.services.list(filters=filters)
-            return len(stack_services) == 0
-    except GenericDockerError as e:
-        service_name = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{node_uuid}"
-        original_exception_message = e.original_exception.message
-        was_service_not_found = (
-            original_exception_message == f"service {service_name} not found"
-        )
-        return was_service_not_found
+    filters = {
+        "label": [
+            f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
+            f"uuid={node_uuid}",
+        ]
+    }
+    async with docker_client() as client:
+        stack_services = await client.services.list(filters=filters)
+        return len(stack_services) == 0
 
 
 async def are_all_services_present(
