@@ -1409,7 +1409,7 @@ jobs:
         run: ./ci/deploy/dockerhub-test-images.bash
 
   integration-test-webserver-01:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 01"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1537,7 +1537,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-director-v2:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] director-v2"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1601,7 +1601,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-sidecar:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] sidecar"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1665,7 +1665,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-simcore-sdk:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] simcore-sdk"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1819,7 +1819,7 @@ jobs:
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
 
   system-test-e2e:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] e2e"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1897,7 +1897,7 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash clean_up
 
   system-test-environment-setup:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] environment setup"
     runs-on: ${{ matrix.os }}
     strategy:
