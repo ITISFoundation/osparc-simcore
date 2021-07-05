@@ -1,10 +1,13 @@
 import logging
+import traceback
+from typing import Dict, Optional
 
 import httpx
 from fastapi import FastAPI
 
 from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.dynamic_services import MonitorData
+from .errors import MonitorException
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +16,20 @@ def get_url(dynamic_sidecar_endpoint: str, postfix: str) -> str:
     """formats and returns an url for the request"""
     url = f"{dynamic_sidecar_endpoint}{postfix}"
     return url
+
+
+def log_httpx_http_error(url: str, method: str, formatted_traceback: str) -> None:
+    # mainly used to debug issues with the API
+    logging.debug(
+        (
+            "%s -> %s generated:\n %s\nThe above logs can safely "
+            "be ignored, except when debugging an issue "
+            "regarding the dynamic-sidecar"
+        ),
+        method,
+        url,
+        formatted_traceback,
+    )
 
 
 class DynamicSidecarClient:
@@ -50,6 +67,46 @@ class DynamicSidecarClient:
             return response.json()["is_healthy"]
         except httpx.HTTPError:
             return False
+
+    async def containers_docker_status(
+        self, dynamic_sidecar_endpoint: str
+    ) -> Optional[Dict[str, Dict[str, str]]]:
+        """returns: None in case of error, otherwise a dict will be returned"""
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
+        try:
+            response = await self.httpx_client.get(
+                url=url, params=dict(only_status=True)
+            )
+            if response.status_code != 200:
+                logging.warning(
+                    "error during request status=%s, body=%s",
+                    response.status_code,
+                    response.text,
+                )
+                return None
+
+            return response.json()
+        except httpx.HTTPError:
+            log_httpx_http_error(url, "GET", traceback.format_exc())
+            return None
+
+    async def begin_service_destruction(self, dynamic_sidecar_endpoint: str) -> None:
+        """runs docker compose down on the started spec"""
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers:down")
+        try:
+            response = await self.httpx_client.post(url)
+            if response.status_code != 200:
+                message = (
+                    f"ERROR during service destruction request: "
+                    f"status={response.status_code}, body={response.text}"
+                )
+                logging.warning(message)
+                raise MonitorException(message)
+
+            logger.info("Compose down result %s", response.text)
+        except httpx.HTTPError as e:
+            log_httpx_http_error(url, "POST", traceback.format_exc())
+            raise e
 
 
 async def setup_api_client(app: FastAPI) -> None:

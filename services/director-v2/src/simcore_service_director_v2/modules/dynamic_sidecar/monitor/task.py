@@ -66,7 +66,7 @@ async def _apply_monitoring(
             node_uuid=monitor_data.node_uuid,
             save_state=monitor_data.dynamic_sidecar.can_save_state,
         )
-        return
+        return  # pragma: no cover
 
     # if the service is not OK (for now failing) monitoring cycle will
     # be skipped. This will allow for others to debug it
@@ -273,7 +273,7 @@ class DynamicSidecarsMonitor:
             try:
                 await _apply_monitoring(self._app, self, monitor_data)
             except asyncio.CancelledError:  # pylint: disable=try-except-raise
-                raise
+                raise  # pragma: no cover
             except Exception:  # pylint: disable=broad-except
                 service_name = monitor_data.service_name
 
@@ -309,8 +309,8 @@ class DynamicSidecarsMonitor:
                     await self._runner()
 
                 await sleep(settings.monitor_interval_seconds)
-            except asyncio.CancelledError:
-                break
+            except asyncio.CancelledError:  # pragma: no cover
+                break  # pragma: no cover
 
         logger.warning("Monitor was shut down")
 
