@@ -105,6 +105,12 @@ paths:
           required: true
           schema:
             type: string
+        - name: dry_run
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
       responses:
         '200':
           description: 'An object containing added, changed and removed paths'
@@ -630,26 +636,8 @@ components:
     TableSynchronisation:
       type: object
       required:
-        - added
-        - changed
         - removed
       properties:
-        added:
-          type: array
-          items:
-            type: string
-        changed:
-          type: array
-          items:
-            type: object
-            required:
-              - old
-              - new
-            properties:
-              old:
-                type: string
-              new:
-                type: string
         removed:
           type: array
           items:
