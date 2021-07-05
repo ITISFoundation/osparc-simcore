@@ -152,6 +152,8 @@ def dynamic_sidecar_settings(monkeypatch: MonkeyPatch) -> AppSettings:
     monkeypatch.setenv("POSTGRES_USER", "mocked_out")
     monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_out")
     monkeypatch.setenv("POSTGRES_DB", "mocked_out")
+    monkeypatch.setenv("DIRECTOR_HOST", "mocked_out")
+    monkeypatch.setenv("SC_BOOT_MODE", "local-development")
 
     app_settings = AppSettings.create_from_env()
     app_settings.dynamic_services.monitoring.monitor_interval_seconds = (
