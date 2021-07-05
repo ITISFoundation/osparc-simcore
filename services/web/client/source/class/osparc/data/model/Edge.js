@@ -93,7 +93,17 @@ qx.Class.define("osparc.data.model.Edge", {
 
   members: {
     getInputNodeId: function() {
-      return this.getInputNode().getNodeId();
+      if (this.getInputNode()) {
+        return this.getInputNode().getNodeId();
+      }
+      return null;
+    },
+
+    getInputParameterId: function() {
+      if (this.getInputParameter()) {
+        return this.getInputParameter()["id"];
+      }
+      return null;
     },
 
     getOutputNodeId: function() {

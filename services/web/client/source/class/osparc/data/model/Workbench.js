@@ -129,7 +129,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const connectedEdges = [];
       const edges = Object.values(this.__edges);
       for (const edge of edges) {
-        const inputNodeId = edge.getInputNodeId();
+        const inputNodeId = edge.getInputNodeId() || edge.getInputParameterId();
         const outputNodeId = edge.getOutputNodeId();
         if ([inputNodeId, outputNodeId].includes(nodeId)) {
           connectedEdges.push(edge.getEdgeId());
@@ -150,6 +150,12 @@ qx.Class.define("osparc.data.model.Workbench", {
           return edge;
         }
       }
+      for (const edge of edges) {
+        if (edge.getInputParameterId() === node1Id &&
+          edge.getOutputNodeId() === node2Id) {
+          return edge;
+        }
+      }
       return null;
     },
 
@@ -165,7 +171,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const nodeTo = this.getNode(nodeToId);
       if (nodeFrom && nodeTo) {
         const edge = new osparc.data.model.Edge(edgeId, nodeFrom, nodeTo, true);
-        this.addEdge(edge);
+        this.__addEdge(edge);
 
         // post edge creation
         this.getNode(nodeToId).edgeAdded(edge);
@@ -175,11 +181,33 @@ qx.Class.define("osparc.data.model.Workbench", {
       return null;
     },
 
-    addEdge: function(edge) {
+    createParameterEdge: function(edgeId, parameterFromId, nodeToId) {
+      const existingEdge = this.getEdge(edgeId, parameterFromId, nodeToId);
+      if (existingEdge) {
+        return existingEdge;
+      }
+      if (!osparc.data.Permissions.getInstance().canDo("study.edge.create", true)) {
+        return null;
+      }
+
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const parameterFrom = study.getSweeper().getParameter(parameterFromId);
+      const nodeTo = this.getNode(nodeToId);
+      if (parameterFrom && nodeTo) {
+        const edge = new osparc.data.model.Edge(edgeId, parameterFrom, nodeTo, false);
+        this.__addEdge(edge);
+
+        return edge;
+      }
+      return null;
+    },
+
+    __addEdge: function(edge) {
       const edgeId = edge.getEdgeId();
       const node1Id = edge.getInputNodeId();
+      const parameter1Id = edge.getInputNodeId();
       const node2Id = edge.getOutputNodeId();
-      const exists = this.getEdge(edgeId, node1Id, node2Id);
+      const exists = this.getEdge(edgeId, node1Id, node2Id) || this.getEdge(edgeId, parameter1Id, node2Id);
       if (!exists) {
         this.__edges[edgeId] = edge;
       }
@@ -491,7 +519,7 @@ qx.Class.define("osparc.data.model.Workbench", {
             return;
           }
           const edge = new osparc.data.model.Edge(null, node1, node, true);
-          this.addEdge(edge);
+          this.__addEdge(edge);
           if (isInput) {
             node.addInputNode(inputOutputNodeId);
           } else {

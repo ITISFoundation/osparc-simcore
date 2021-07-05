@@ -392,6 +392,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__desktop.add(parameterUI);
       parameterUI.open();
       this.__nodesUI.push(parameterUI);
+
+      parameterUI.addListener("nodeMoving", () => {
+        this.__updateNodeUIPos(parameterUI);
+      }, this);
     },
 
     __updateWorkbenchLayoutSize: function(position) {
@@ -522,6 +526,49 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
       return null;
     },
+
+    __createParameterEdgeUI: function(parameterId, node2Id, edgeId) {
+      const edge = this.__getWorkbench().createParameterEdge(edgeId, parameterId, node2Id);
+      if (!edge) {
+        return null;
+      }
+      if (this.__edgeRepresetationExists(edge)) {
+        return null;
+      }
+
+      // build representation
+      const nodeUI1 = this.getParameterUI(parameterId);
+      const nodeUI2 = this.getNodeUI(node2Id);
+      const port1 = nodeUI1.getOutputPort();
+      const port2 = nodeUI2.getInputPort();
+      if (port1 && port2) {
+        const pointList = this.__getEdgePoints(nodeUI1, port1, nodeUI2, port2);
+        const x1 = pointList[0] ? pointList[0][0] : 0;
+        const y1 = pointList[0] ? pointList[0][1] : 0;
+        const x2 = pointList[1] ? pointList[1][0] : 0;
+        const y2 = pointList[1] ? pointList[1][1] : 0;
+        const edgeRepresentation = this.__svgWidgetWorkbench.drawCurve(x1, y1, x2, y2, !edge.isPortConnected());
+
+        edge.addListener("changePortConnected", e => {
+          const portConnected = e.getData();
+          osparc.component.workbench.SvgWidget.updateCurveDashes(edgeRepresentation, !portConnected);
+        }, this);
+
+        const edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
+        this.__edgesUI.push(edgeUI);
+
+        const that = this;
+        edgeUI.getRepresentation().node.addEventListener("click", e => {
+          // this is needed to get out of the context of svg
+          that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
+          e.stopPropagation();
+        }, this);
+
+        return edgeUI;
+      }
+      return null;
+    },
+
 
     __edgeRepresetationExists: function(edge) {
       for (let i=0; i<this.__edgesUI.length; i++) {
@@ -750,7 +797,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __createEdgeBetweenParameterAndNode: function(from, to, edgeId) {
       const parameterId = from.parameterId;
       const node2Id = to.nodeId;
-      // this.__createEdgeUI(node1Id, node2Id, edgeId);
+      this.__createParameterEdgeUI(parameterId, node2Id, edgeId);
     },
 
     __createEdgeBetweenNodesAndInputNodes: function(from, to, edgeId) {
@@ -773,25 +820,33 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __updateEdges: function(nodeUI) {
+      let edgesInvolved = [];
       if (nodeUI.getNodeType() === "service") {
-        let edgesInvolved = this.__getWorkbench().getConnectedEdges(nodeUI.getNodeId());
-
-        edgesInvolved.forEach(edgeId => {
-          let edgeUI = this.__getEdgeUI(edgeId);
-          if (edgeUI) {
-            let node1 = this.getNodeUI(edgeUI.getEdge().getInputNodeId());
-            let port1 = node1.getOutputPort();
-            let node2 = this.getNodeUI(edgeUI.getEdge().getOutputNodeId());
-            let port2 = node2.getInputPort();
-            const pointList = this.__getEdgePoints(node1, port1, node2, port2);
-            const x1 = pointList[0][0];
-            const y1 = pointList[0][1];
-            const x2 = pointList[1][0];
-            const y2 = pointList[1][1];
-            osparc.component.workbench.SvgWidget.updateCurve(edgeUI.getRepresentation(), x1, y1, x2, y2);
-          }
-        });
+        edgesInvolved = this.__getWorkbench().getConnectedEdges(nodeUI.getNodeId());
+      } else if (nodeUI.getNodeType() === "parameter") {
+        edgesInvolved = this.__getWorkbench().getConnectedEdges(nodeUI.getParameterId());
       }
+
+      edgesInvolved.forEach(edgeId => {
+        let edgeUI = this.__getEdgeUI(edgeId);
+        if (edgeUI) {
+          let node1 = null;
+          if (edgeUI.getEdge().getInputNodeId()) {
+            node1 = this.getNodeUI(edgeUI.getEdge().getInputNodeId());
+          } else if (edgeUI.getEdge().getInputParameterId()) {
+            node1 = this.getParameterUI(edgeUI.getEdge().getInputParameterId());
+          }
+          let port1 = node1.getOutputPort();
+          let node2 = this.getNodeUI(edgeUI.getEdge().getOutputNodeId());
+          let port2 = node2.getInputPort();
+          const pointList = this.__getEdgePoints(node1, port1, node2, port2);
+          const x1 = pointList[0][0];
+          const y1 = pointList[0][1];
+          const x2 = pointList[1][0];
+          const y2 = pointList[1][1];
+          osparc.component.workbench.SvgWidget.updateCurve(edgeUI.getRepresentation(), x1, y1, x2, y2);
+        }
+      });
     },
 
     __updateIteratorShadows: function(nodeUI) {
@@ -808,7 +863,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __updateNodeUIPos: function(nodeUI) {
       this.__updateEdges(nodeUI);
-      if (nodeUI.getNode().isIterator()) {
+      if (nodeUI.getNode && nodeUI.getNode().isIterator()) {
         this.__updateIteratorShadows(nodeUI);
       }
     },
@@ -926,7 +981,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     getParameterUI: function(parameterId) {
-      return this.__nodesUI.find(nodeUI => nodeUI.getNodeType() === "parameter" && nodeUI.getParameter()["id"] === parameterId);
+      return this.__nodesUI.find(nodeUI => nodeUI.getNodeType() === "parameter" && nodeUI.getParameterId() === parameterId);
     },
 
     __getEdgeUI: function(edgeId) {

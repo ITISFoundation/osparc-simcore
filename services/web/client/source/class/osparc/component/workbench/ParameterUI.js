@@ -119,6 +119,13 @@ qx.Class.define("osparc.component.workbench.ParameterUI", {
       return this.__parameter;
     },
 
+    getParameterId: function() {
+      if ("id" in this.__parameter) {
+        return this.__parameter["id"];
+      }
+      return null;
+    },
+
     __createWindowLayout: function() {
       this.__inputOutputLayout = this.getChildControl("inputOutput");
     },

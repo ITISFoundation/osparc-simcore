@@ -674,17 +674,6 @@ qx.Class.define("osparc.data.model.Node", {
       const inputNode = this.getWorkbench().getNode(edge.getInputNodeId());
       const outputNode = this.getWorkbench().getNode(edge.getOutputNodeId());
       this.__createAutoPortConnection(inputNode, outputNode);
-
-      if (this.isInKey("multi-plot")) {
-        const innerNodes = Object.values(this.getInnerNodes());
-        for (let i=0; i<innerNodes.length; i++) {
-          const innerNode = innerNodes[i];
-          if (innerNode.addInputNode(inputNode.getNodeId())) {
-            this.__createAutoPortConnection(inputNode, innerNode);
-          }
-        }
-        this.callRetrieveInputs();
-      }
     },
 
     // Iterate over output ports and connect them to first compatible input port
