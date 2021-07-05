@@ -636,7 +636,7 @@ async def try_close_project_for_user(
     app: web.Application,
 ):
     with managed_resource(user_id, client_session_id, app) as rt:
-        user_to_session_ids: List[Tuple(int, str)] = await rt.find_users_of_resource(
+        user_to_session_ids: List[UserSessionID] = await rt.find_users_of_resource(
             PROJECT_ID_KEY, project_uuid
         )
         # first check we have it opened now
@@ -654,7 +654,7 @@ async def try_close_project_for_user(
         )
         await rt.remove(PROJECT_ID_KEY)
     # check it is not opened by someone else
-    user_to_session_ids.remove((user_id, client_session_id))
+    user_to_session_ids.remove(UserSessionID(user_id, client_session_id))
     log.debug("remaining user_to_session_ids: %s", user_to_session_ids)
     if not user_to_session_ids:
         # NOTE: depending on the garbage collector speed, it might already be removing it
