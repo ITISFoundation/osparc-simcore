@@ -120,6 +120,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     __progressBar: null,
     __thumbnail: null,
 
+    getNodeType: function() {
+      return "service";
+    },
+
     getNodeId: function() {
       return this.getNode().getNodeId();
     },

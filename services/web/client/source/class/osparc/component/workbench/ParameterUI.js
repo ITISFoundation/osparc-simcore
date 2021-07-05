@@ -94,6 +94,10 @@ qx.Class.define("osparc.component.workbench.ParameterUI", {
     __inputOutputLayout: null,
     __outputLayout: null,
 
+    getNodeType: function() {
+      return "parameter";
+    },
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
