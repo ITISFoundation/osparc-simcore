@@ -50,21 +50,27 @@ def service_labels_stored_data() -> ServiceLabelsStoredData:
 
 
 @pytest.fixture
+def dynamic_sidecar_port() -> int:
+    return 1222
+
+
+@pytest.fixture
 def monitor_data_from_http_request(
     dynamic_service_create: DynamicServiceCreate,
     simcore_service_labels: SimcoreServiceLabels,
+    dynamic_sidecar_port: int,
 ) -> MonitorData:
     return MonitorData.from_http_request(
         service=dynamic_service_create,
         simcore_service_labels=simcore_service_labels,
-        port=1222,
+        port=dynamic_sidecar_port,
     )
 
 
 @pytest.fixture
 def monitor_data_from_service_labels_stored_data(
-    service_labels_stored_data: ServiceLabelsStoredData, port: int
+    service_labels_stored_data: ServiceLabelsStoredData, dynamic_sidecar_port: int
 ) -> MonitorData:
     return MonitorData.from_service_labels_stored_data(
-        service_labels_stored_data=service_labels_stored_data, port=port
+        service_labels_stored_data=service_labels_stored_data, port=dynamic_sidecar_port
     )
