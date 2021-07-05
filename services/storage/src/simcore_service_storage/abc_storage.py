@@ -16,7 +16,7 @@ def DataStorageInterface(ABC):
 
     @abstractmethod
     async def list_files(
-        self, session_id: str, *, filter: Optional[Dict[str, Any]] = None
+        self, session_id: str, *, fields_filter: Optional[Dict[str, Any]] = None
     ) -> List[FileMetaDataEx]:
         """Lists all files of a given session"""
         # TODO: pagination
