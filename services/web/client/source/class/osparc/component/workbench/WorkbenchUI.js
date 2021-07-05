@@ -45,7 +45,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     this.base(arguments);
 
     this.__nodesUI = [];
-    this.__parametersUI = [];
     this.__edgesUI = [];
     this.__selectedNodes = [];
 
@@ -157,7 +156,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
   members: {
     __unlinkButton: null,
     __nodesUI: null,
-    __parametersUI: null,
     __edgesUI: null,
     __selectedNodes: null,
     __inputNodesLayout: null,
@@ -393,7 +391,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       parameterUI.moveTo(position.x, position.y);
       this.__desktop.add(parameterUI);
       parameterUI.open();
-      this.__parametersUI.push(parameterUI);
+      this.__nodesUI.push(parameterUI);
     },
 
     __updateWorkbenchLayoutSize: function(position) {
@@ -837,7 +835,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__tempEdgeNodeId !== null) {
         nodeUI = this.getNodeUI(this.__tempEdgeNodeId);
       } else if (this.__tempEdgeParameterId !== null) {
-        nodeUI = this.__getParameterUI(this.__tempEdgeParameterId);
+        nodeUI = this.getParameterUI(this.__tempEdgeParameterId);
       }
       if (nodeUI === null) {
         return;
@@ -922,22 +920,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     getNodeUI: function(nodeId) {
-      for (let i = 0; i < this.__nodesUI.length; i++) {
-        if (this.__nodesUI[i].getNodeId() === nodeId) {
-          return this.__nodesUI[i];
-        }
-      }
-      return null;
+      return this.__nodesUI.find(nodeUI => nodeUI.getNodeType() === "service" && nodeUI.getNodeId() === nodeId);
     },
 
-    __getParameterUI: function(parameterId) {
-      for (let i = 0; i < this.__parametersUI.length; i++) {
-        const parameter = this.__parametersUI[i].getParameter();
-        if (parameter["id"] === parameterId) {
-          return this.__parametersUI[i];
-        }
-      }
-      return null;
+    getParameterUI: function(parameterId) {
+      return this.__nodesUI.find(nodeUI => nodeUI.getNodeType() === "parameter" && nodeUI.getParameter()["id"] === parameterId);
     },
 
     __getEdgeUI: function(edgeId) {
@@ -950,7 +937,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     clearNode(nodeId) {
-      this.__clearNode(nodeId);
+      const nodeUI = this.getNodeUI(nodeId);
+      this.__clearNodeUI(nodeUI);
     },
 
     clearEdge: function(edgeId) {
@@ -961,8 +949,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.fireDataEvent("removeEdge", edge.getEdgeId());
     },
 
-    __clearNode: function(nodeId) {
-      let nodeUI = this.getNodeUI(nodeId);
+    __clearNodeUI: function(nodeUI) {
       if (this.__desktop.getChildren().includes(nodeUI)) {
         this.__desktop.remove(nodeUI);
       }
@@ -980,24 +967,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __clearAllNodes: function() {
-      while (this.__nodesUI.length > 0) {
-        this.__clearNode(this.__nodesUI[this.__nodesUI.length - 1].getNodeId());
-      }
-    },
-
-    __clearParameter: function(parameterUI) {
-      if (this.__desktop.getChildren().includes(parameterUI)) {
-        this.__desktop.remove(parameterUI);
-      }
-      let index = this.__parametersUI.indexOf(parameterUI);
-      if (index > -1) {
-        this.__parametersUI.splice(index, 1);
-      }
-    },
-
-    __clearAllParameters: function() {
-      while (this.__parametersUI.length > 0) {
-        this.__clearParameter(this.__parametersUI[this.__parametersUI.length - 1]);
+      while (this.__nodesUI.length) {
+        this.__clearNodeUI(this.__nodesUI[this.__nodesUI.length-1]);
       }
     },
 
@@ -1019,7 +990,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     clearAll: function() {
       this.__clearAllNodes();
-      this.__clearAllParameters();
       this.__clearAllEdges();
     },
 
