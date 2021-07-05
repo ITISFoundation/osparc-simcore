@@ -145,9 +145,7 @@ def assert_monitor_runs_once(caplog: LogCaptureFixture) -> Callable:
 
 @pytest.fixture
 def dynamic_sidecar_settings(monkeypatch: MonkeyPatch) -> AppSettings:
-    monkeypatch.setenv(
-        "DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:TEST_MOCKED_TAG_NOT_PRESENT"
-    )
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
     monkeypatch.setenv("POSTGRES_HOST", "mocked_out")
     monkeypatch.setenv("POSTGRES_USER", "mocked_out")
     monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_out")
