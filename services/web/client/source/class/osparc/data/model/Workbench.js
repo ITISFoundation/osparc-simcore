@@ -164,7 +164,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const nodeFrom = this.getNode(nodeFromId);
       const nodeTo = this.getNode(nodeToId);
       if (nodeFrom && nodeTo) {
-        const edge = new osparc.data.model.Edge(edgeId, nodeFrom, null, nodeTo);
+        const edge = new osparc.data.model.Edge(edgeId, nodeFrom, nodeTo, true);
         this.addEdge(edge);
 
         // post edge creation
@@ -490,7 +490,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           if (node1 === null) {
             return;
           }
-          const edge = new osparc.data.model.Edge(null, node1, null, node);
+          const edge = new osparc.data.model.Edge(null, node1, node, true);
           this.addEdge(edge);
           if (isInput) {
             node.addInputNode(inputOutputNodeId);
