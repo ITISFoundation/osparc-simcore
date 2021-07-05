@@ -36,15 +36,21 @@ qx.Class.define("osparc.data.model.Edge", {
 
   /**
     * @param edgeId {String} uuid if the edge. If not provided, a random one will be assigned
-    * @param node1 {osparc.data.model.Node} node where the edge comes from
-    * @param node2 {osparc.data.model.Node} node where the edge goes to
-  */
-  construct: function(edgeId, node1, node2) {
+    * @param nodeFrom {osparc.data.model.Node} node where the edge comes from
+    * @param paramterFrom {Object} parameter where the edge comes from
+    * @param nodeTo {osparc.data.model.Node} node where the edge goes to
+    */
+  construct: function(edgeId, nodeFrom, parameterFrom, nodeTo) {
     this.base();
 
     this.setEdgeId(edgeId || osparc.utils.Utils.uuidv4());
-    this.setInputNode(node1);
-    this.setOutputNode(node2);
+    if (nodeFrom) {
+      this.setInputNode(nodeFrom);
+    }
+    if (parameterFrom) {
+      this.setInputParameter(parameterFrom);
+    }
+    this.setOutputNode(nodeTo);
   },
 
   properties: {
@@ -55,7 +61,14 @@ qx.Class.define("osparc.data.model.Edge", {
 
     inputNode: {
       check: "osparc.data.model.Node",
-      nullable: false
+      init: null,
+      nullable: true
+    },
+
+    inputParameter: {
+      check: "Object",
+      init: null,
+      nullable: true
     },
 
     outputNode: {
