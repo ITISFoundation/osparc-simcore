@@ -11,7 +11,7 @@ class PennsieveSettings(BaseCustomSettings):
     PENNSIEVE_ENABLED: bool = True
 
     PENNSIEVE_API_URL: AnyUrl = "https://api.pennsieve.io"
-    PENNSIEVE_API_GENERAL_TIMEOUT: float = 5.0
+    PENNSIEVE_API_GENERAL_TIMEOUT: float = 20.0
     PENNSIEVE_HEALTCHCHECK_TIMEOUT: float = 1.0
 
 
