@@ -14,7 +14,6 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 import respx
-from _pytest.logging import LogCaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
@@ -135,10 +134,9 @@ def mocked_monitor_events() -> None:
 
 
 @pytest.fixture
-def assert_monitor_runs_once(caplog: LogCaptureFixture) -> Callable:
+def ensure_monitor_runs_once() -> Callable:
     async def check_monitor_ran_once() -> None:
         await asyncio.sleep(SLEEP_TO_AWAIT_MONITOR_TRIGGERS)
-        assert "Monitoring dynamic-sidecars" in caplog.text
 
     return check_monitor_ran_once
 
@@ -217,81 +215,58 @@ def mock_service_running(mocker: MockerFixture) -> AsyncMock:
 
 
 async def test_monitor_add_remove(
-    assert_monitor_runs_once: Callable,
+    ensure_monitor_runs_once: Callable,
     monitor: DynamicSidecarsMonitor,
     monitor_data: MonitorData,
-    caplog: LogCaptureFixture,
     mocked_client_api: MockRouter,
 ) -> None:
-    await assert_monitor_runs_once()
-
+    await ensure_monitor_runs_once()
     await monitor.add_service_to_monitor(monitor_data)
 
-    assert f"Added service '{monitor_data.service_name}' to monitor" in caplog.text
-
-    await assert_monitor_runs_once()
-
+    await ensure_monitor_runs_once()
     assert monitor_data.dynamic_sidecar.is_available is True
 
     await monitor.remove_service_from_monitor(monitor_data.node_uuid, True)
 
-    assert (
-        f"Removed service '{monitor_data.service_name}' from monitoring" in caplog.text
-    )
-
 
 async def test_monitor_removes_partially_started_services(
-    assert_monitor_runs_once: Callable,
+    ensure_monitor_runs_once: Callable,
     monitor: DynamicSidecarsMonitor,
     monitor_data: MonitorData,
-    caplog: LogCaptureFixture,
 ) -> None:
-    await assert_monitor_runs_once()
+    await ensure_monitor_runs_once()
     await monitor.add_service_to_monitor(monitor_data)
 
     monitor_data.dynamic_sidecar.were_services_created = True
-    await assert_monitor_runs_once()
-
-    assert (
-        f"Removing service {monitor_data.service_name} from monitoring" in caplog.text
-    )
+    await ensure_monitor_runs_once()
 
 
 async def test_monitor_is_failing(
-    assert_monitor_runs_once: Callable,
+    ensure_monitor_runs_once: Callable,
     monitor: DynamicSidecarsMonitor,
     monitor_data: MonitorData,
-    caplog: LogCaptureFixture,
 ) -> None:
-    await assert_monitor_runs_once()
+    await ensure_monitor_runs_once()
     await monitor.add_service_to_monitor(monitor_data)
 
     monitor_data.dynamic_sidecar.status.current = DynamicSidecarStatus.FAILING
-    await assert_monitor_runs_once()
-
-    log_message = (
-        f"Service {monitor_data.service_name} is failing. Skipping monitoring.\n"
-        f"Monitor data\n{monitor_data}"
-    )
-
-    assert log_message in caplog.text
+    await ensure_monitor_runs_once()
 
 
 async def test_monitor_health_timing_out(
     mocked_app: FastAPI,
-    assert_monitor_runs_once: Callable,
+    ensure_monitor_runs_once: Callable,
     monitor: DynamicSidecarsMonitor,
     monitor_data: MonitorData,
-    caplog: LogCaptureFixture,
 ) -> None:
     dynamic_services_settings: DynamicServicesSettings = (
         mocked_app.state.settings.dynamic_services
     )
     dynamic_services_settings.monitoring.max_status_api_duration = 0.0001
 
-    await assert_monitor_runs_once()
+    await ensure_monitor_runs_once()
     await monitor.add_service_to_monitor(monitor_data)
-    await assert_monitor_runs_once()
+    await ensure_monitor_runs_once()
 
     assert monitor_data.dynamic_sidecar.is_available == False
 
@@ -299,13 +274,9 @@ async def test_monitor_health_timing_out(
 async def test_adding_service_two_times(
     monitor: DynamicSidecarsMonitor,
     monitor_data: MonitorData,
-    caplog: LogCaptureFixture,
 ) -> None:
     await monitor.add_service_to_monitor(monitor_data)
     await monitor.add_service_to_monitor(monitor_data)
-    assert (
-        f"Service {monitor_data.service_name} is already being monitored" in caplog.text
-    )
 
 
 async def test_collition_at_global_level(
@@ -336,11 +307,11 @@ async def test_remove_missing_no_error(
 
 
 async def test_get_stack_status(
-    assert_monitor_runs_once: Callable,
+    ensure_monitor_runs_once: Callable,
     monitor: DynamicSidecarsMonitor,
     monitor_data: MonitorData,
 ) -> None:
-    await assert_monitor_runs_once()
+    await ensure_monitor_runs_once()
 
     await monitor.add_service_to_monitor(monitor_data)
 
