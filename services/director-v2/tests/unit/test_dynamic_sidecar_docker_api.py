@@ -9,10 +9,7 @@ from uuid import UUID, uuid4
 import pytest
 from models_library.projects import ProjectID
 from settings_library.docker_registry import RegistrySettings
-from simcore_service_director_v2.core.settings import (
-    DynamicSidecarSettings,
-    ServiceType,
-)
+from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
@@ -21,6 +18,7 @@ from simcore_service_director_v2.models.schemas.constants import (
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     ServiceLabelsStoredData,
     ServiceState,
+    ServiceType,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_api import (
     are_all_services_present,

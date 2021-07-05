@@ -10,9 +10,13 @@ import aiodocker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 
-from ...core.settings import DynamicSidecarSettings, ServiceType
+from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX, UserID
-from ...models.schemas.dynamic_services import ServiceLabelsStoredData, ServiceState
+from ...models.schemas.dynamic_services import (
+    ServiceLabelsStoredData,
+    ServiceState,
+    ServiceType,
+)
 from .docker_states import TASK_STATES_ALL, TASK_STATES_RUNNING, extract_task_state
 from .errors import DynamicSidecarError, GenericDockerError
 

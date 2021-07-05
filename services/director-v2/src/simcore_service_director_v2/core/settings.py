@@ -1,7 +1,6 @@
 # pylint: disable=no-self-argument
 # pylint: disable=no-self-use
 import logging
-from enum import Enum, unique
 from pathlib import Path
 from typing import Optional
 
@@ -13,8 +12,6 @@ from models_library.settings.http_clients import ClientRequestSettings
 from models_library.settings.postgres import PostgresSettings
 from pydantic import BaseSettings, Field, PositiveFloat, PositiveInt, constr, validator
 from settings_library.docker_registry import RegistrySettings
-
-from ..meta import api_vtag
 
 MINS = 60
 API_ROOT: str = "api"
@@ -29,18 +26,6 @@ ORG_LABELS_TO_SCHEMA_LABELS = {
     "org.label-schema.vcs-ref": "vcs_ref",
     "org.label-schema.vcs-url": "vcs_url",
 }
-
-
-@unique
-class ServiceType(Enum):
-    """
-    Used to filter out services spawned by this service in the stack.
-    The version was added to distinguish from the ones spawned by director-v0
-    These values are attached to the dynamic-sidecar and its relative proxy.
-    """
-
-    MAIN = f"main-{api_vtag}"
-    DEPENDENCY = f"dependency-{api_vtag}"
 
 
 class CommonConfig:
