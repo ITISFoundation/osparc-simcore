@@ -60,7 +60,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
         }
         case "snapshots-btn": {
           control = new qx.ui.form.Button(this.tr("Snapshots")).set({
-            icon: "@FontAwesome5Solid/code-branch-h/14",
+            icon: "@FontAwesome5Solid/copy/14",
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
             allowGrowX: false
           });
