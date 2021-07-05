@@ -7,6 +7,8 @@ from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.s3 import S3Settings
 
+from .datcore_adapter.datcore_adapter_settings import DatcoreAdapterSettings
+
 
 class TracingSettings(BaseCustomSettings):
     # FIXME: upgrade to new setup
@@ -36,10 +38,10 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         False, description="Flag to enable some fakes for testing purposes"
     )
     BF_API_KEY: Optional[str] = Field(
-        None, description="Blackfynn API key ONLY for testing purposes"
+        None, description="Pennsieve API key ONLY for testing purposes"
     )
     BF_API_SECRET: Optional[str] = Field(
-        None, description="Blackfynn API secret ONLY for testing purposes"
+        None, description="Pennsieve API secret ONLY for testing purposes"
     )
 
     STORAGE_POSTGRES: PostgresSettings
@@ -47,6 +49,8 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     STORAGE_S3: S3Settings
 
     STORAGE_TRACING: TracingSettings
+
+    DATCORE_ADAPTER: DatcoreAdapterSettings
 
     @validator("LOG_LEVEL")
     @classmethod

@@ -168,6 +168,57 @@ jobs:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
+  unit-test-datcore-adapter:
+    name: "[unit] datcore-adapter"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v1
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: install
+        run: ./ci/github/unit-testing/datcore-adapter.bash install
+      - name: test
+        run: ./ci/github/unit-testing/datcore-adapter.bash test
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/datcore-adapter/test_failures
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
   unit-test-director:
     name: "[unit] director"
     runs-on: ${{ matrix.os }}
@@ -1358,7 +1409,7 @@ jobs:
         run: ./ci/deploy/dockerhub-test-images.bash
 
   integration-test-webserver-01:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 01"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1422,7 +1473,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-webserver-02:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 02"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1486,7 +1537,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-director-v2:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] director-v2"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1550,7 +1601,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-sidecar:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] sidecar"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1614,7 +1665,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-simcore-sdk:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] simcore-sdk"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1723,7 +1774,7 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash clean_up
 
   system-test-swarm-deploy:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] deploy simcore"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1768,7 +1819,7 @@ jobs:
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
 
   system-test-e2e:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] e2e"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1846,7 +1897,7 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash clean_up
 
   system-test-environment-setup:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] environment setup"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1893,6 +1944,7 @@ jobs:
     needs:
       [
         unit-test-catalog,
+        unit-test-datcore-adapter,
         unit-test-director,
         unit-test-director-v2,
         unit-test-sidecar,
@@ -1950,6 +2002,7 @@ jobs:
       [
         unit-test-api,
         unit-test-catalog,
+        unit-test-datcore-adapter,
         unit-test-director,
         unit-test-director-v2,
         unit-test-sidecar,

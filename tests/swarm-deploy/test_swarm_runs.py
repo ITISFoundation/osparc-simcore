@@ -83,6 +83,7 @@ def test_all_services_up(
         "catalog",
         "dask-scheduler",
         "dask-sidecar",
+        "datcore-adapter",
         "director-v2",
         "director",
         "migration",

@@ -29,7 +29,6 @@ async def _prepare_storage_manager(
 
     INIT_STR = "init"
     dsm: DataStorageManager = request.app[APP_DSM_KEY]
-
     user_id = query.get("user_id")
     location_id = params.get("location_id")
     location = (
@@ -41,7 +40,7 @@ async def _prepare_storage_manager(
         # re-query when needed.
 
         # updates from db
-        token_info = await get_api_token_and_secret(request.app, user_id)
+        token_info = await get_api_token_and_secret(request.app, int(user_id))
         if all(token_info):
             dsm.datcore_tokens[user_id] = DatCoreApiToken(*token_info)
         else:
@@ -263,7 +262,7 @@ async def download_file(request: web.Request):
         if location == SIMCORE_S3_STR:
             link = await dsm.download_link_s3(file_uuid, user_id)
         else:
-            link, _filename = await dsm.download_link_datcore(user_id, file_uuid)
+            link = await dsm.download_link_datcore(user_id, file_uuid)
 
         return {"error": None, "data": {"link": link}}
 

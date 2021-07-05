@@ -215,18 +215,15 @@ async def test_copy_s3_s3(
 
 
 # NOTE: Below tests directly access the datcore platform, use with care!
+@pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 def test_datcore_fixture(datcore_structured_testbucket):
-    if not has_datcore_tokens():
-        return
     print(datcore_structured_testbucket)
 
 
+@pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 async def test_dsm_datcore(
     postgres_service_url, dsm_fixture, datcore_structured_testbucket
 ):
-    if not has_datcore_tokens():
-        return
-
     dsm = dsm_fixture
     user_id = "0"
     data = await dsm.list_files(
@@ -251,6 +248,7 @@ async def test_dsm_datcore(
     assert len(data) == 2
 
 
+@pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 async def test_dsm_s3_to_datcore(
     postgres_service_url,
     s3_client,
@@ -258,9 +256,6 @@ async def test_dsm_s3_to_datcore(
     dsm_fixture,
     datcore_structured_testbucket,
 ):
-    if not has_datcore_tokens():
-        return
-
     tmp_file = mock_files_factory(1)[0]
 
     fmd = _create_file_meta_for_s3(postgres_service_url, s3_client, tmp_file)
@@ -305,11 +300,10 @@ async def test_dsm_s3_to_datcore(
     assert len(data) == 5
 
 
+@pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 async def test_dsm_datcore_to_local(
     postgres_service_url, dsm_fixture, mock_files_factory, datcore_structured_testbucket
 ):
-    if not has_datcore_tokens():
-        return
 
     dsm = dsm_fixture
     user_id = USER_ID
@@ -330,6 +324,7 @@ async def test_dsm_datcore_to_local(
     assert filecmp.cmp(tmp_file2, tmp_file)
 
 
+@pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 async def test_dsm_datcore_to_S3(
     postgres_service_url,
     s3_client,
@@ -337,9 +332,6 @@ async def test_dsm_datcore_to_S3(
     mock_files_factory,
     datcore_structured_testbucket,
 ):
-    if not has_datcore_tokens():
-        return
-
     # create temporary file
     tmp_file = mock_files_factory(1)[0]
     dest_fmd = _create_file_meta_for_s3(postgres_service_url, s3_client, tmp_file)
@@ -383,6 +375,7 @@ async def test_dsm_datcore_to_S3(
     assert filecmp.cmp(tmp_file1, tmp_file2)
 
 
+@pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 async def test_copy_datcore(
     postgres_service_url,
     s3_client,
@@ -390,9 +383,6 @@ async def test_copy_datcore(
     mock_files_factory,
     datcore_structured_testbucket,
 ):
-    if not has_datcore_tokens():
-        return
-
     # the fixture should provide 3 files
     dsm = dsm_fixture
     user_id = USER_ID
@@ -490,11 +480,10 @@ async def test_delete_data_folders(dsm_fixture, dsm_mockup_complete_db):
     assert not data
 
 
+@pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 async def test_deep_copy_project_simcore_s3(
     dsm_fixture, s3_client, postgres_service_url, datcore_structured_testbucket
 ):
-    if not has_datcore_tokens():
-        return
     dsm = dsm_fixture
 
     tests.utils.fill_tables_from_csv_files(url=postgres_service_url)
@@ -603,10 +592,8 @@ async def test_dsm_list_datasets_s3(dsm_fixture, dsm_mockup_complete_db):
     assert any("Kember" in d.display_name for d in datasets)
 
 
+@pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 async def test_dsm_list_datasets_datcore(dsm_fixture, datcore_structured_testbucket):
-    if not has_datcore_tokens():
-        return
-
     datasets = await dsm_fixture.list_datasets(user_id=USER_ID, location=DATCORE_STR)
 
     assert len(datasets)
@@ -642,12 +629,10 @@ async def test_dsm_list_dataset_files_s3(dsm_fixture, dsm_mockup_complete_db):
             #  because these are added artificially in list_files
 
 
+@pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 async def test_dsm_list_dataset_files_datcore(
     dsm_fixture, datcore_structured_testbucket
 ):
-    if not has_datcore_tokens():
-        return
-
     datasets = await dsm_fixture.list_datasets(user_id=USER_ID, location=DATCORE_STR)
 
     assert len(datasets)
@@ -662,6 +647,7 @@ async def test_dsm_list_dataset_files_datcore(
 
 
 @pytest.mark.skip(reason="develop only")
+@pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 async def test_download_links(
     datcore_structured_testbucket, s3_client, mock_files_factory
 ):

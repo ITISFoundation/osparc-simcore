@@ -14,20 +14,23 @@ log = logging.getLogger(__name__)
 
 
 @retry(**PostgresRetryPolicyUponOperation(log).kwargs)
-async def _get_tokens_from_db(engine, userid):
+async def _get_tokens_from_db(engine: sa.engine.Engine, userid: int):
     async with engine.acquire() as conn:
-        stmt = sa.select(
-            [
-                tokens,
-            ]
-        ).where(tokens.c.user_id == userid)
-        result = await conn.execute(stmt)
+        result = await conn.execute(
+            sa.select(
+                [
+                    tokens,
+                ]
+            ).where(tokens.c.user_id == userid)
+        )
         row = await result.first()
         data = dict(row) if row else {}
         return data
 
 
-async def get_api_token_and_secret(app: web.Application, userid) -> Tuple[str, str]:
+async def get_api_token_and_secret(
+    app: web.Application, userid: int
+) -> Tuple[str, str]:
     # FIXME: this is a temporary solution. This information should be sent in some form
     # from the client side together with the userid?
     engine = app.get(APP_DB_ENGINE_KEY, None)
@@ -49,7 +52,7 @@ async def get_api_token_and_secret(app: web.Application, userid) -> Tuple[str, s
             )
         else:
             data = data.get("token_data", {})
-            api_token = data.get("BF_API_KEY", api_token)
-            api_secret = data.get("BF_API_SECRET", api_secret)
+            api_token = data.get("token_key", api_token)
+            api_secret = data.get("token_secret", api_secret)
 
     return api_token, api_secret

@@ -26,7 +26,7 @@ class BaseServiceClientApi(AppDataMixin):
 
     async def is_responsive(self) -> bool:
         try:
-            resp = await self.client.get(self.health_check_path)
+            resp = await self.client.get(self.health_check_path, timeout=1)
             resp.raise_for_status()
             return True
         except (httpx.HTTPStatusError, httpx.RequestError) as err:

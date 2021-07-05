@@ -15,7 +15,7 @@ from collections import defaultdict
 from contextlib import suppress
 from pprint import pformat
 from typing import Any, Dict, List, Optional, Set, Tuple
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from aiohttp import web
 from models_library.projects_state import (
@@ -37,7 +37,11 @@ from ..director_v2 import (
     get_computation_task,
     request_retrieve_dyn_service,
 )
-from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
+from ..resource_manager.websocket_manager import (
+    PROJECT_ID_KEY,
+    UserSessionID,
+    managed_resource,
+)
 from ..socketio.events import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
@@ -557,7 +561,7 @@ async def trigger_connected_service_retrieve(
 
 
 async def _user_has_another_client_open(
-    user_session_id_list: List[Tuple[int, str]], app: web.Application
+    user_session_id_list: List[UserSessionID], app: web.Application
 ) -> bool:
     # NOTE if there is an active socket in use, that means the client is active
     for user_id, client_session_id in user_session_id_list:
@@ -686,7 +690,7 @@ async def _get_project_lock_state(
 
     # let's now check if anyone has the project in use somehow
     with managed_resource(user_id, None, app) as rt:
-        user_session_id_list: List[Tuple[int, str]] = await rt.find_users_of_resource(
+        user_session_id_list: List[UserSessionID] = await rt.find_users_of_resource(
             PROJECT_ID_KEY, project_uuid
         )
     set_user_ids = {x for x, _ in user_session_id_list}
@@ -743,7 +747,7 @@ async def get_project_states_for_user(
     running_state = RunningState.UNKNOWN
     lock_state, computation_task = await logged_gather(
         _get_project_lock_state(user_id, project_uuid, app),
-        get_computation_task(app, user_id, project_uuid),
+        get_computation_task(app, user_id, UUID(project_uuid)),
     )
     if computation_task:
         # get the running state

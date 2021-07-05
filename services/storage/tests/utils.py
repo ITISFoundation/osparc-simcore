@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 
 import pandas as pd
-import pytest
 import requests
 import sqlalchemy as sa
 from simcore_service_storage.models import (
@@ -48,7 +47,6 @@ def has_datcore_tokens() -> bool:
     # CI shall add BF_API_KEY, BF_API_SECRET environs as secrets
     #
     if not os.environ.get("BF_API_KEY") or not os.environ.get("BF_API_SECRET"):
-        pytest.skip("Datcore access API tokens not available, skipping test")
         return False
     return True
 
@@ -66,7 +64,7 @@ def is_responsive(url, code=200) -> bool:
 
 
 def is_postgres_responsive(url) -> bool:
-    """Check if something responds to ``url`` """
+    """Check if something responds to ``url``"""
     try:
         engine = sa.create_engine(url)
         conn = engine.connect()
