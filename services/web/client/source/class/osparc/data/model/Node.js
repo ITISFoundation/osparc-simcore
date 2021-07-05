@@ -577,7 +577,7 @@ qx.Class.define("osparc.data.model.Node", {
       for (const portId in inputs) {
         if (inputs[portId] && Object.prototype.hasOwnProperty.call(inputs[portId], "nodeUuid")) {
           if (inputs[portId]["nodeUuid"] === inputNodeId) {
-            this.getPropsForm().removeLink(portId);
+            this.getPropsForm().removePortLink(portId);
           }
         }
       }
@@ -626,7 +626,7 @@ qx.Class.define("osparc.data.model.Node", {
             inputData[key] = inputsCopy[key];
           }
         }
-        this.getPropsForm().addLinks(inputLinks);
+        this.getPropsForm().addPortLinks(inputLinks);
         this.getPropsForm().addParameters(inputParameters);
         this.__settingsForm.setData(inputData);
       }
@@ -718,7 +718,7 @@ qx.Class.define("osparc.data.model.Node", {
         osparc.utils.Ports.arePortsCompatible(fromNode, fromPortId, this, toPortId)
           .then(compatible => {
             if (compatible) {
-              resolve(this.getPropsForm().addLink(toPortId, fromNodeId, fromPortId));
+              resolve(this.getPropsForm().addPortLink(toPortId, fromNodeId, fromPortId));
             }
             resolve(false);
           });
