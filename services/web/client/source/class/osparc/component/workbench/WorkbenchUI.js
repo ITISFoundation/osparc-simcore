@@ -1097,7 +1097,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
             });
         }
 
-        // create links
+        // create links between nodes
         for (const nodeId in nodes) {
           const node = nodes[nodeId];
           const inputNodes = node.getInputNodes();
@@ -1127,6 +1127,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
             }, {
               nodeId: model.getNodeId()
             });
+          }
+        }
+
+        // create links between parameters
+        for (const nodeId in nodes) {
+          const node = nodes[nodeId];
+          if (node.getPropsForm) {
+            console.log(node.getPropsForm().getParameters());
           }
         }
       }

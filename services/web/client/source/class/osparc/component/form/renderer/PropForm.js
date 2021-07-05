@@ -654,6 +654,21 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       this.__resetCtrlField(portId);
     },
 
+    getParameter: function(portId) {
+      return null;
+    },
+
+    getParameters: function() {
+      const parameters = [];
+      Object.keys(this.__ctrlParamMap).forEach(portId => {
+        const link = this.getLink(portId);
+        if (link) {
+          parameters.push(link);
+        }
+      });
+      return parameters;
+    },
+
     // overridden
     addParameter: function(portId, parameter) {
       if (!this.__isPortAvailable(portId)) {
