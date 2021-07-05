@@ -310,9 +310,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           [nodeAId, portA, nodeBId, portB] = [nodeBId, portB, nodeAId, portA];
         }
         this.__createEdgeBetweenNodes({
-          nodeUuid: nodeAId
+          nodeId: nodeAId
         }, {
-          nodeUuid: nodeBId
+          nodeId: nodeBId
         });
       }
 
@@ -622,9 +622,28 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           let nodeBId = dragIsInput ? dragNodeId : dropNodeId;
 
           this.__createEdgeBetweenNodes({
-            nodeUuid: nodeAId
+            nodeId: nodeAId
           }, {
-            nodeUuid: nodeBId
+            nodeId: nodeBId
+          });
+          this.__removeTempEdge();
+          qx.bom.Element.removeListener(
+            this.__desktop,
+            evType,
+            this.__updateTempEdge,
+            this
+          );
+        } else if (event.supportsType("osparc-parameter-link")) {
+          let dragParameterId = event.getData("osparc-parameter-link").dragParameterId;
+          let dragIsInput = event.getData("osparc-parameter-link").dragIsInput;
+
+          let parameterId = dropIsInput ? dragParameterId : dropNodeId;
+          let nodeBId = dragIsInput ? dragParameterId : dropNodeId;
+
+          this.__createEdgeBetweenParameterAndNode({
+            parameterId: parameterId
+          }, {
+            nodeId: nodeBId
           });
           this.__removeTempEdge();
           qx.bom.Element.removeListener(
@@ -725,9 +744,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __createEdgeBetweenNodes: function(from, to, edgeId) {
-      const node1Id = from.nodeUuid;
-      const node2Id = to.nodeUuid;
+      const node1Id = from.nodeId;
+      const node2Id = to.nodeId;
       this.__createEdgeUI(node1Id, node2Id, edgeId);
+    },
+
+    __createEdgeBetweenParameterAndNode: function(from, to, edgeId) {
+      const parameterId = from.parameterId;
+      const node2Id = to.nodeId;
+      // this.__createEdgeUI(node1Id, node2Id, edgeId);
     },
 
     __createEdgeBetweenNodesAndInputNodes: function(from, to, edgeId) {
@@ -735,9 +760,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       // Children[0] is the title
       for (let i = 1; i < inputNodes.length; i++) {
         const inputNodeId = inputNodes[i].getNodeId();
-        if (inputNodeId === from.nodeUuid) {
-          let node1Id = from.nodeUuid;
-          let node2Id = to.nodeUuid;
+        if (inputNodeId === from.nodeId) {
+          let node1Id = from.nodeId;
+          let node2Id = to.nodeId;
           this.__createEdgeUI(node1Id, node2Id, edgeId);
         }
       }
@@ -1027,9 +1052,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
         // create nodes
         let nodes = isContainer ? model.getInnerNodes() : model.getNodes();
-        for (const nodeUuid in nodes) {
-          const node = nodes[nodeUuid];
-          const nodeUI = this.__createNodeUI(nodeUuid);
+        for (const nodeId in nodes) {
+          const node = nodes[nodeId];
+          const nodeUI = this.__createNodeUI(nodeId);
           this.__addNodeUIToWorkbench(nodeUI, node.getPosition());
         }
 
@@ -1046,22 +1071,22 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         }
 
         // create links
-        for (const nodeUuid in nodes) {
-          const node = nodes[nodeUuid];
+        for (const nodeId in nodes) {
+          const node = nodes[nodeId];
           const inputNodes = node.getInputNodes();
           for (let i = 0; i < inputNodes.length; i++) {
             let inputNode = inputNodes[i];
             if (inputNode in nodes) {
               this.__createEdgeBetweenNodes({
-                nodeUuid: inputNode
+                nodeId: inputNode
               }, {
-                nodeUuid: nodeUuid
+                nodeId: nodeId
               });
             } else {
               this.__createEdgeBetweenNodesAndInputNodes({
-                nodeUuid: inputNode
+                nodeId: inputNode
               }, {
-                nodeUuid: nodeUuid
+                nodeId: nodeId
               });
             }
           }
@@ -1071,9 +1096,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           const outputNodes = model.getOutputNodes();
           for (let i=0; i<outputNodes.length; i++) {
             this.__createEdgeBetweenNodes({
-              nodeUuid: outputNodes[i]
+              nodeId: outputNodes[i]
             }, {
-              nodeUuid: model.getNodeId()
+              nodeId: model.getNodeId()
             });
           }
         }
