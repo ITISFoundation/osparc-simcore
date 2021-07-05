@@ -2,14 +2,12 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-
 from pytest_simcore.helpers.utils_pylint import (
     assert_no_pdb_in_code,
     assert_pylint_is_passing,
 )
 
 
-@pytest.mark.skip(reason="TEMP out")
 def test_run_pylint(pylintrc, package_dir):
     # fixtures in pytest_simcore.environs
     assert_pylint_is_passing(pylintrc=pylintrc, package_dir=package_dir)
