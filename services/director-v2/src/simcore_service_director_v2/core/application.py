@@ -68,7 +68,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         celery.setup(app, settings.CELERY)
 
     if settings.CELERY_SCHEDULER.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED:
-        scheduler.setup(app)
+        celery_scheduler.setup(app)
 
     if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
         dynamic_services.setup(app, settings.DYNAMIC_SERVICES)

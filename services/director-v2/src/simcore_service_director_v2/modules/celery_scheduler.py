@@ -284,9 +284,11 @@ async def scheduler_task(scheduler: CeleryScheduler) -> None:
 
 def on_app_startup(app: FastAPI) -> Callable:
     async def start_scheduler() -> None:
-        app.state.scheduler = scheduler = await CeleryScheduler.create_from_db(app)
-        task = asyncio.create_task(scheduler_task(scheduler))
-        app.state.scheduler_task = task
+        app.state.celery_scheduler = scheduler = await CeleryScheduler.create_from_db(
+            app
+        )
+        task = asyncio.get_event_loop().create_task(scheduler_task(scheduler))
+        app.state.celery_scheduler_task = task
         logger.info("CeleryScheduler started")
 
     return start_scheduler
@@ -294,8 +296,8 @@ def on_app_startup(app: FastAPI) -> Callable:
 
 def on_app_shutdown(app: FastAPI) -> Callable:
     async def stop_scheduler() -> None:
-        task = app.state.scheduler_task
-        app.state.scheduler = None
+        task = app.state.celery_scheduler_task
+        app.state.celery_scheduler = None
         with suppress(CancelledError):
             task.cancel()
             await task

@@ -28,11 +28,11 @@ from ...models.schemas.comp_tasks import (
 )
 from ...models.schemas.constants import UserID
 from ...modules.celery import CeleryClient
+from ...modules.celery_scheduler import CeleryScheduler
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.director_v0 import DirectorV0Client
-from ...modules.scheduler import CeleryScheduler
 from ...utils.async_utils import run_sequentially_in_context
 from ...utils.computations import (
     get_pipeline_state_from_task_states,
