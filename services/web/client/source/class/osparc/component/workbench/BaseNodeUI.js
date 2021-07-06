@@ -111,7 +111,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
         width: width,
         maxWidth: width,
         minWidth: width,
-        minHeight: 80
+        minHeight: 60
       });
       this.getContentElement().setStyles({
         "border-radius": radius+"px"
