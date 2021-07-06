@@ -241,6 +241,7 @@ class DaskSchedulerSettings(BaseCustomSettings):
         "dask-scheduler",
         description="Address of the scheduler to register (only if started as worker )",
     )
+    DASK_SCHEDULER_PORT: PortInt = 8786
 
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
