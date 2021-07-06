@@ -162,28 +162,49 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __showSweeper: function() {
+    __showParameters: function() {
       const study = this.getStudy();
       const sweeper = new osparc.component.sweeper.Sweeper(study);
       const title = this.tr("Sweeper");
-      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 400, 700);
+      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 400, 500);
       sweeper.addListener("openPrimaryStudy", e => {
         win.close();
-        const iterationStudyId = e.getData();
-        const params = {
-          url: {
-            "studyId": iterationStudyId
-          }
-        };
-        osparc.data.Resources.getOne("studies", params)
-          .then(studyData => {
-            study.removeIFrames();
-            const data = {
-              studyId: studyData.uuid
-            };
-            this.fireDataEvent("startStudy", data);
-          });
+        const primaryStudyId = e.getData();
+        this.__switchStudy(primaryStudyId);
       });
+    },
+    __showSnapshots: function() {
+      const study = this.getStudy();
+      const sweeper = new osparc.component.snapshots.SnapshotsView(study);
+      const title = this.tr("Snapshots");
+      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 400, 500);
+      [
+        "openPrimaryStudy",
+        "openSnapshot"
+      ].forEach(signalName => {
+        sweeper.addListener(signalName, e => {
+          win.close();
+          const studyId = e.getData();
+          this.__switchStudy(studyId);
+        });
+      });
+    },
+
+    __switchStudy: function(studyId) {
+      const params = {
+        url: {
+          "studyId": studyId
+        }
+      };
+      osparc.data.Resources.getOne("studies", params)
+        .then(studyData => {
+          const study = this.getStudy();
+          study.removeIFrames();
+          const data = {
+            studyId: studyData.uuid
+          };
+          this.fireDataEvent("startStudy", data);
+        });
     },
 
     __showWorkbenchUI: function() {
@@ -471,7 +492,19 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.nodeSelected(nodeId);
         }, this);
       });
-      workbenchToolbar.addListener("showSweeper", this.__showSweeper, this);
+      workbenchToolbar.addListener("showSweeper", this.__showParameters, this);
+      if (!workbenchToolbar.hasListener("showParameters")) {
+        workbenchToolbar.addListener("showParameters", this.__showParameters, this);
+      }
+      if (!workbenchToolbar.hasListener("showSnapshots")) {
+        workbenchToolbar.addListener("showSnapshots", this.__showSnapshots, this);
+      }
+      if (!workbenchToolbar.hasListener("openPrimaryStudy")) {
+        workbenchToolbar.addListener("openPrimaryStudy", e => {
+          const primaryStudyId = e.getData();
+          this.__switchStudy(primaryStudyId);
+        }, this);
+      }
 
       nodesTree.addListener("changeSelectedNode", e => {
         const node = workbenchUI.getNodeUI(e.getData());

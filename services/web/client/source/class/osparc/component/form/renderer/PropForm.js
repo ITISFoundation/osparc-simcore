@@ -102,14 +102,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         position: "bottom-right"
       });
 
-      /*
-      const newParamBtn = new qx.ui.menu.Button(this.tr("Set new parameter"));
-      newParamBtn.addListener("execute", () => {
-        this.__createNewParameter(portId);
-      }, this);
-      paramsMenu.add(newParamBtn);
-      */
-
       const existingParamMenu = new qx.ui.menu.Menu();
       this.__populateExistingParamsMenu(portId, existingParamMenu);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
