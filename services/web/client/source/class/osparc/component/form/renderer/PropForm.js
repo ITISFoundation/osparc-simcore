@@ -130,26 +130,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return menuBtn;
     },
 
-    __createNewParameter: function(fieldKey) {
-      const title = this.tr("Create new parameter");
-      const newParamName = new osparc.component.widget.Renamer(null, null, title);
-      newParamName.addListener("labelChanged", e => {
-        const study = osparc.store.Store.getInstance().getCurrentStudy();
-        let newParameterLabel = e.getData()["newLabel"];
-        newParameterLabel = newParameterLabel.replace(/ /g, "_").replace(/"/g, "'");
-        if (study.getSweeper().parameterLabelExists(newParameterLabel)) {
-          const msg = this.tr("Parameter name already exists");
-          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-        } else {
-          const param = study.getSweeper().addNewParameter(newParameterLabel);
-          this._setParameter(fieldKey, param);
-          newParamName.close();
-        }
-      }, this);
-      newParamName.center();
-      newParamName.open();
-    },
-
     __populateExistingParamsMenu: function(fieldKey, existingParamMenu) {
       existingParamMenu.removeAll();
       const study = osparc.store.Store.getInstance().getCurrentStudy();
@@ -656,36 +636,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __parameterRemoved: function(portId) {
       this.__resetCtrlField(portId);
-    },
-
-    // overridden
-    _setParameter: function(portId, parameter) {
-      if (!this.__isPortAvailable(portId)) {
-        return false;
-      }
-      if (!parameter) {
-        return false;
-      }
-
-      this.getControlParam(portId).setEnabled(false);
-      this._form.getControl(portId).parameter = parameter;
-      // ToDo: Binding missing
-      this.getControlParam(portId).setValue(this.tr("Parameter: ") + parameter.label);
-      this.__parameterAdded(portId);
-      return true;
-    },
-
-    setParameters: function(data) {
-      for (let key in data) {
-        if (osparc.utils.Ports.isDataAParameter(data[key])) {
-          const parameterId = data[key].replace("{{", "").replace("}}", "");
-          const study = osparc.store.Store.getInstance().getCurrentStudy();
-          const parameter = study.getSweeper().getParameter(parameterId);
-          if (parameter) {
-            this._setParameter(key, parameter);
-          }
-        }
-      }
     },
 
     removeParameter: function(portId) {
