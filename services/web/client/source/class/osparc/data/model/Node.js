@@ -195,6 +195,10 @@ qx.Class.define("osparc.data.model.Node", {
       return (metaData && metaData.key && metaData.key.includes("file-picker") && osparc.data.model.Node.isIterator(metaData));
     },
 
+    isParameter: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("/parameter/"));
+    },
+
     isContainer: function(metaData) {
       return (metaData && metaData.key && metaData.key.includes("nodes-group"));
     },
@@ -246,6 +250,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     isMultiFilePicker: function() {
       return osparc.data.model.Node.isMultiFilePicker(this.getMetaData());
+    },
+
+    isParameter: function() {
+      return osparc.data.model.Node.isParameter(this.getMetaData());
     },
 
     isContainer: function() {

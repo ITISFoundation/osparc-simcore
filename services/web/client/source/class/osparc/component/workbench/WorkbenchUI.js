@@ -447,8 +447,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       if (node.isFilePicker()) {
         nodeUI.turnIntoFileUI();
-      }
-      if (node.isIterator()) {
+      } else if (node.isParameter()) {
+        nodeUI.turnIntoParameterUI();
+      } else if (node.isIterator()) {
         if (this.getStudy().isSnapshot()) {
           nodeUI.turnIntoIteratorSnaphot();
         } else {
@@ -967,22 +968,22 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           this.__addNodeUIToWorkbench(nodeUI, node.getPosition());
         }
 
-        for (const nodeUuid in nodes) {
-          const node = nodes[nodeUuid];
+        for (const nodeId in nodes) {
+          const node = nodes[nodeId];
           const inputNodes = node.getInputNodes();
           for (let i = 0; i < inputNodes.length; i++) {
-            let inputNode = inputNodes[i];
-            if (inputNode in nodes) {
+            let inputNodeId = inputNodes[i];
+            if (inputNodeId in nodes) {
               this.__createEdgeBetweenNodes({
-                nodeUuid: inputNode
+                nodeId: inputNodeId
               }, {
-                nodeUuid: nodeUuid
+                nodeId: nodeId
               });
             } else {
               this.__createEdgeBetweenNodesAndInputNodes({
-                nodeUuid: inputNode
+                nodeId: inputNodeId
               }, {
-                nodeUuid: nodeUuid
+                nodeId: nodeId
               });
             }
           }
