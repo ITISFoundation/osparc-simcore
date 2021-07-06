@@ -376,13 +376,29 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
 
       nodeUI.addListener("dbltap", e => {
-        this.fireDataEvent("nodeSelected", nodeUI.getNodeId());
+        if (nodeUI.getNode().isParameter()) {
+          this.__popUpParameterView(nodeUI);
+        } else {
+          this.fireDataEvent("nodeSelected", nodeUI.getNodeId());
+        }
         e.stopPropagation();
       }, this);
 
       qx.ui.core.queue.Layout.flush();
 
       this.__updateHint();
+    },
+
+    __popUpParameterView: function(nodeUI) {
+      const parameterView = new osparc.component.node.ParameterView(nodeUI.getNode());
+      const win = osparc.ui.window.Window.popUpInWindow(parameterView, "Edit Parameter", 300, 200);
+      parameterView.addListener("ok", () => {
+        console.log(parameterView.getValue());
+        win.close();
+      }, this);
+      parameterView.addListener("cancel", () => {
+        win.close();
+      }, this);
     },
 
     __updateWorkbenchLayoutSize: function(position) {
