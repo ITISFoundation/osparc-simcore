@@ -3,16 +3,19 @@ import logging
 from asyncio import CancelledError
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Any, Callable, Coroutine, List, Set, Tuple, Type, cast
+from typing import Any, Callable, Coroutine, Dict, List, Set, Tuple, Type, cast
 
+import networkx as nx
 from aiopg.sa.engine import Engine
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
 
-from ..core.errors import ConfigurationError
+from ..core.errors import ConfigurationError, SchedulerError
+from ..models.domains.comp_pipelines import CompPipelineAtDB
 from ..models.domains.comp_runs import CompRunsAtDB
+from ..models.domains.comp_tasks import CompTaskAtDB
 from ..models.schemas.constants import UserID
 from .db.repositories import BaseRepository
 from .db.repositories.comp_pipelines import CompPipelinesRepository
@@ -73,12 +76,83 @@ class DaskScheduler:
             },
         )  # type: ignore
 
+    async def run_new_pipeline(self, user_id: UserID, project_id: ProjectID) -> None:
+        runs_repo: CompRunsRepository = _get_repository(
+            self.db_engine, CompRunsRepository
+        )  # type: ignore
+        new_run: CompRunsAtDB = await runs_repo.create(
+            user_id=user_id, project_id=project_id
+        )
+        self.scheduled_pipelines.add((user_id, project_id, new_run.iteration))
+        # ensure the scheduler starts right away
+        self._wake_up_scheduler_now()
+
+    async def schedule_all_pipelines(self) -> None:
+        self.wake_up_event.clear()
+        # if one of the task throws, the other are NOT cancelled which is what we want
+        await asyncio.gather(
+            *[
+                self._schedule_pipeline(user_id, project_id, iteration)
+                for user_id, project_id, iteration in self.scheduled_pipelines
+            ]
+        )
+
+    async def _get_pipeline_dag(self, project_id: ProjectID) -> nx.DiGraph:
+        comp_pipeline_repo: CompPipelinesRepository = _get_repository(
+            self.db_engine, CompPipelinesRepository
+        )  # type: ignore
+        pipeline_at_db: CompPipelineAtDB = await comp_pipeline_repo.get_pipeline(
+            project_id
+        )
+        pipeline_dag = pipeline_at_db.get_graph()
+        if not pipeline_dag.nodes():
+            # this should not happen
+            raise SchedulerError(
+                f"The pipeline of project {project_id} does not contain an adjacency list! Please check."
+            )
+        return pipeline_dag
+
+    async def _get_pipeline_tasks(
+        self, project_id: ProjectID, pipeline_dag: nx.DiGraph
+    ) -> Dict[str, CompTaskAtDB]:
+        comp_tasks_repo: CompTasksRepository = _get_repository(
+            self.db_engine, CompTasksRepository
+        )  # type: ignore
+        pipeline_comp_tasks: Dict[str, CompTaskAtDB] = {
+            str(t.node_id): t
+            for t in await comp_tasks_repo.get_comp_tasks(project_id)
+            if (str(t.node_id) in list(pipeline_dag.nodes()))
+        }
+        if len(pipeline_comp_tasks) != len(pipeline_dag.nodes()):
+            raise SchedulerError(
+                f"The tasks defined for {project_id} do not contain all the tasks defined in the pipeline [{list(pipeline_dag.nodes)}]! Please check."
+            )
+        return pipeline_comp_tasks
+
+    async def _schedule_pipeline(
+        self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
+    ) -> None:
+        logger.debug(
+            "checking run of project [%s:%s] for user [%s]",
+            project_id,
+            iteration,
+            user_id,
+        )
+
+        pipeline_dag: nx.DiGraph = await self._get_pipeline_dag(project_id)
+        pipeline_tasks: Dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(
+            project_id, pipeline_dag
+        )
+
+    def _wake_up_scheduler_now(self) -> None:
+        self.wake_up_event.set()
+
 
 async def scheduler_task(scheduler: DaskScheduler) -> None:
     while True:
         try:
             logger.debug("scheduler task running...")
-            # await scheduler.schedule_all_pipelines()
+            await scheduler.schedule_all_pipelines()
             with suppress(asyncio.TimeoutError):
                 await asyncio.wait_for(
                     scheduler.wake_up_event.wait(), timeout=_DEFAULT_TIMEOUT_S

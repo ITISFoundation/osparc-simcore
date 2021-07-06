@@ -25,7 +25,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
 
-from ..core.errors import CelerySchedulerError, ConfigurationError
+from ..core.errors import ConfigurationError, SchedulerError
 from ..models.domains.comp_pipelines import CompPipelineAtDB
 from ..models.domains.comp_runs import CompRunsAtDB
 from ..models.domains.comp_tasks import CompTaskAtDB
@@ -123,7 +123,7 @@ class CeleryScheduler:
         pipeline_dag = pipeline_at_db.get_graph()
         if not pipeline_dag.nodes():
             # this should not happen
-            raise CelerySchedulerError(
+            raise SchedulerError(
                 f"The pipeline of project {project_id} does not contain an adjacency list! Please check."
             )
         return pipeline_dag
@@ -140,7 +140,7 @@ class CeleryScheduler:
             if (str(t.node_id) in list(pipeline_dag.nodes()))
         }
         if len(pipeline_comp_tasks) != len(pipeline_dag.nodes()):
-            raise CelerySchedulerError(
+            raise SchedulerError(
                 f"The tasks defined for {project_id} do not contain all the tasks defined in the pipeline [{list(pipeline_dag.nodes)}]! Please check."
             )
         return pipeline_comp_tasks
