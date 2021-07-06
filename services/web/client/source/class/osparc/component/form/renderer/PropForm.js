@@ -135,11 +135,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         const study = osparc.store.Store.getInstance().getCurrentStudy();
         let newParameterLabel = e.getData()["newLabel"];
         newParameterLabel = newParameterLabel.replace(/ /g, "_").replace(/"/g, "'");
-        if (study.getSweeper().parameterLabelExists(newParameterLabel)) {
+        if (study.parameterLabelExists(newParameterLabel)) {
           const msg = this.tr("Parameter name already exists");
           osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
         } else {
-          const param = study.getSweeper().addNewParameter(newParameterLabel);
+          const param = study.addNewParameter(newParameterLabel);
           this._setParameter(fieldKey, param);
           newParamName.close();
         }
