@@ -30,9 +30,17 @@ qx.Class.define("osparc.component.workbench.ParameterUI", {
       minWidth: this.self().NODE_WIDTH
     });
 
-    this.__parameter = parameter;
+    this.setParameter(parameter);
 
     this._createWindowLayout();
+  },
+
+  properties: {
+    parameter: {
+      check: "Object",
+      nullable: false,
+      init: null
+    }
   },
 
   statics: {
@@ -42,30 +50,24 @@ qx.Class.define("osparc.component.workbench.ParameterUI", {
   },
 
   members: {
-    __parameter: null,
-
     getNodeType: function() {
       return "parameter";
     },
 
-    getParameter: function() {
-      return this.__parameter;
-    },
-
     getParameterId: function() {
-      if ("id" in this.__parameter) {
-        return this.__parameter["id"];
+      if (this.getParameter()) {
+        return this.getParameter()["id"];
       }
       return null;
     },
 
     // overridden
     _createWindowLayout: function() {
-      this.__inputOutputLayout = this.getChildControl("inputOutput");
+      this._inputOutputLayout = this.getChildControl("input-output");
     },
 
     populateParameterLayout: function() {
-      this.setCaption(this.__parameter["label"]);
+      this.setCaption(this.getParameter()["label"]);
 
       const isInput = false;
       this._createUIPorts(isInput);
@@ -75,14 +77,14 @@ qx.Class.define("osparc.component.workbench.ParameterUI", {
     },
 
     _populateLayout: function() {
-      const value = this.__parameter["low"];
+      const value = this.getParameter()["low"];
       const label = new qx.ui.basic.Label(String(value)).set({
         font: "text-24",
         allowGrowX: true,
         textAlign: "center",
         padding: 6
       });
-      this.__inputOutputLayout.addAt(label, 1, {
+      this._inputOutputLayout.addAt(label, 1, {
         flex: 1
       });
     },
@@ -91,7 +93,7 @@ qx.Class.define("osparc.component.workbench.ParameterUI", {
     _createUIPorts: function() {
       const isInput = false;
 
-      const portLabel = this.__createUIPortLabel(isInput);
+      const portLabel = this._createUIPortLabel(isInput);
       const label = {
         isInput: isInput,
         ui: portLabel
@@ -100,11 +102,38 @@ qx.Class.define("osparc.component.workbench.ParameterUI", {
       label.ui.isInput = false;
       this._addDragDropMechanism(label.ui, isInput);
 
-      this.__outputLayout = label;
-      const nElements = this.__inputOutputLayout.getChildren().length;
-      this.__inputOutputLayout.addAt(label.ui, nElements, {
+      this._outputLayout = label;
+      const nElements = this._inputOutputLayout.getChildren().length;
+      this._inputOutputLayout.addAt(label.ui, nElements, {
         flex: 1
       });
+    },
+
+    // override qx.ui.core.MMovable
+    _onMovePointerMove: function(e) {
+      // Only react when dragging is active
+      if (!this.hasState("move")) {
+        return;
+      }
+
+      const coords = this._setPositionFromEvent(e);
+      this.getParameter()["xPos"] = coords.x;
+      this.getParameter()["yPos"] = coords.y;
+
+      this.base(arguments, e);
+    },
+
+    // implement osparc.component.filter.IFilterable
+    _shouldApplyFilter: function(data) {
+      if (data.text) {
+        const label = this.getParameter()["label"]
+          .trim()
+          .toLowerCase();
+        if (label.indexOf(data.text) === -1) {
+          return true;
+        }
+      }
+      return false;
     }
   }
 });

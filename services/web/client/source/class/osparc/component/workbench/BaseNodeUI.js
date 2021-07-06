@@ -78,13 +78,14 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
   },
 
   members: {
-    __inputOutputLayout: null,
-    __outputLayout: null,
+    _inputOutputLayout: null,
+    _inputLayout: null,
+    _outputLayout: null,
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "inputOutput":
+        case "input-output":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
           control.add(new qx.ui.core.Spacer(), {
             flex: 1
@@ -101,7 +102,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
     /**
       * @abstract
       */
-    __createWindowLayout: function() {
+    _createWindowLayout: function() {
       throw new Error("Abstract method called!");
     },
 
@@ -116,8 +117,12 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       });
     },
 
+    getInputPort: function() {
+      return this._inputLayout;
+    },
+
     getOutputPort: function() {
-      return this.__outputLayout;
+      return this._outputLayout;
     },
 
     /**
@@ -127,7 +132,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       throw new Error("Abstract method called!");
     },
 
-    __createUIPortLabel: function(isInput) {
+    _createUIPortLabel: function(isInput) {
       const labelText = isInput ? "in" : "out";
       const alignX = isInput ? "left" : "right";
       const uiPort = new qx.ui.basic.Label(labelText).set({
@@ -189,12 +194,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       };
     },
 
-    // override qx.ui.core.MMovable
-    _onMovePointerMove: function(e) {
-      // Only react when dragging is active
-      if (!this.hasState("move")) {
-        return;
-      }
+    _setPositionFromEvent: function(e) {
       const sideBarWidth = this.__dragRange.left;
       const navigationBarHeight = this.__dragRange.top;
       const native = e.getNativeEvent();
@@ -203,10 +203,16 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       const coords = this.__scaleCoordinates(x, y);
       const insets = this.getLayoutParent().getInsets();
       this.setDomPosition(coords.x - (insets.left || 0), coords.y - (insets.top || 0));
-      e.stopPropagation();
+      return coords;
+    },
 
-      this.__parameter["xPos"] = coords.x;
-      this.__parameter["yPos"] = coords.y;
+    // override qx.ui.core.MMovable
+    _onMovePointerMove: function(e) {
+      // Only react when dragging is active
+      if (!this.hasState("move")) {
+        return;
+      }
+      e.stopPropagation();
       this.fireEvent("nodeMoving");
     },
 
@@ -243,17 +249,11 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       this.setOpacity(1);
     },
 
-    // implement osparc.component.filter.IFilterable
+    /**
+      * @abstract
+      */
     _shouldApplyFilter: function(data) {
-      if (data.text) {
-        const label = this.__parameter["label"]
-          .trim()
-          .toLowerCase();
-        if (label.indexOf(data.text) === -1) {
-          return true;
-        }
-      }
-      return false;
+      throw new Error("Abstract method called!");
     },
 
     // implement osparc.component.filter.IFilterable
