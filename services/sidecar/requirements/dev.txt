@@ -7,18 +7,18 @@
 #
 
 # installs base + tests + tools requirements
--r _base.txt
--r _packages.txt
--r _test.txt
--r _tools.txt
+--requirement _base.txt
+--requirement _packages.txt
+--requirement _test.txt
+--requirement _tools.txt
 
 # installs this repo's packages
--e ../../packages/models-library/
--e ../../packages/postgres-database/
--e ../../packages/pytest-simcore/
--e ../../packages/service-library/
--e ../../packages/simcore-sdk/
--e ../../services/storage/client-sdk/python/
+--editable ../../packages/models-library/
+--editable ../../packages/postgres-database/
+--editable ../../packages/pytest-simcore/
+--editable ../../packages/service-library/
+--editable ../../packages/simcore-sdk/
+--editable ../../services/storage/client-sdk/python/
 
 # installs current package
--e .
+--editable .

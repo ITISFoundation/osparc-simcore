@@ -4,8 +4,8 @@
 --constraint ../../../requirements/constraints.txt
 --constraint _base.txt
 
--r ../../../packages/models-library/requirements/_base.in
--r ../../../packages/postgres-database/requirements/_base.in
--r ../../../packages/service-library/requirements/_base.in
--r ../../../packages/simcore-sdk/requirements/_base.in
--r ../../../services/sidecar/requirements/_base.txt
+--requirement ../../../packages/models-library/requirements/_base.in
+--requirement ../../../packages/postgres-database/requirements/_base.in
+--requirement ../../../packages/service-library/requirements/_base.in
+--requirement ../../../packages/simcore-sdk/requirements/_base.in
+--requirement ../../../services/sidecar/requirements/_base.txt

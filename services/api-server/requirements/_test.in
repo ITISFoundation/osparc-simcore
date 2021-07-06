@@ -25,7 +25,7 @@ passlib[bcrypt]
 respx
 
 # db migration
--r ../../../packages/postgres-database/requirements/_base.in
+--requirement ../../../packages/postgres-database/requirements/_base.in
 alembic
 click
 docker

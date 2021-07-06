@@ -4,7 +4,7 @@
 --constraint _packages.txt
 --constraint _test.txt
 
--r ../../../requirements/devenv.txt
+--requirement ../../../requirements/devenv.txt
 
 # basic dev tools
 watchdog[watchmedo]

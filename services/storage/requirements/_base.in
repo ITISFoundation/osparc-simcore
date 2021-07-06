@@ -1,10 +1,10 @@
 # WARNING: manually disabled urllib3 contraint to upgrade minio
 --constraint ../../../requirements/constraints.txt
 
--r ../../../packages/models-library/requirements/_base.in
--r ../../../packages/postgres-database/requirements/_base.in
--r ../../../packages/service-library/requirements/_base.in
--r ../../../packages/settings-library/requirements/_base.in
+--requirement ../../../packages/models-library/requirements/_base.in
+--requirement ../../../packages/postgres-database/requirements/_base.in
+--requirement ../../../packages/service-library/requirements/_base.in
+--requirement ../../../packages/settings-library/requirements/_base.in
 
 
 aiobotocore
