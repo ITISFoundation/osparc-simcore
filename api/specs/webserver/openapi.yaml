@@ -139,6 +139,9 @@ paths:
   /storage/locations:
     $ref: "./openapi-storage.yaml#/paths/~1storage~1locations"
 
+  /storage/locations/{location_id}:sync:
+    $ref: "./openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}:sync"
+
   /storage/locations/{location_id}/files/metadata:
     $ref: "./openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1files~1metadata"
 

@@ -13,7 +13,7 @@ from servicelib.rest_utils import extract_and_validate
 from yarl import URL
 
 from .login.decorators import login_required
-from .security_api import check_permission
+from .security_decorators import permission_required
 from .storage_config import get_client_session, get_storage_config
 
 log = logging.getLogger(__name__)
@@ -89,66 +89,73 @@ def extract_link(data: Optional[Dict]) -> str:
 
 
 @login_required
+@permission_required("storage.files.*")
 async def get_storage_locations(request: web.Request):
-    await check_permission(request, "storage.locations.*")
     payload = await _request_storage(request, "GET")
     return payload
 
 
 @login_required
+@permission_required("storage.files.*")
 async def get_datasets_metadata(request: web.Request):
-    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, "GET")
     return payload
 
 
 @login_required
+@permission_required("storage.files.*")
 async def get_files_metadata(request: web.Request):
-    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, "GET")
     return payload
 
 
 @login_required
+@permission_required("storage.files.*")
 async def get_files_metadata_dataset(request: web.Request):
-    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, "GET")
     return payload
 
 
 @login_required
+@permission_required("storage.files.*")
 async def get_file_metadata(request: web.Request):
-    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, "GET")
     return payload
 
 
 @login_required
+@permission_required("storage.files.*")
 async def update_file_meta_data(request: web.Request):
-    await check_permission(request, "storage.files.*")
     raise NotImplementedError
     # payload = await _request_storage(request, 'PATCH' or 'PUT'???) See projects
     # return payload
 
 
 @login_required
+@permission_required("storage.files.*")
 async def download_file(request: web.Request):
-    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, "GET")
     return payload
 
 
 @login_required
+@permission_required("storage.files.*")
 async def upload_file(request: web.Request):
-    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, "PUT")
     return payload
 
 
 @login_required
+@permission_required("storage.files.*")
 async def delete_file(request: web.Request):
-    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, "DELETE")
+    return payload
+
+
+@login_required
+@permission_required("storage.files.sync")
+async def synchronise_meta_data_table(request: web.Request):
+    payload = await _request_storage(request, "POST")
     return payload
 
 

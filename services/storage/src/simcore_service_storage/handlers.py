@@ -1,7 +1,7 @@
 import json
 import logging
 from contextlib import contextmanager
-from typing import Dict
+from typing import Any, Dict
 
 import attr
 from aiohttp import web
@@ -217,6 +217,24 @@ async def get_file_metadata(request: web.Request):
             "error": None,
             "data": {**attr.asdict(data.fmd), "parent_id": data.parent_id},
         }
+
+
+@routes.post(f"/{api_vtag}/locations/{{location_id}}:sync")  # type: ignore
+async def synchronise_meta_data_table(request: web.Request) -> Dict[str, Any]:
+    params, query, *_ = await extract_and_validate(request)
+    assert query["dry_run"] is not None  # nosec
+    assert params["location_id"]  # nosec
+
+    with handle_storage_errors():
+        location_id = params["location_id"]
+        dry_run = query["dry_run"]
+        dsm = await _prepare_storage_manager(params, query, request)
+        location = dsm.location_from_id(location_id)
+        data_changed: Dict[str, Any] = await dsm.synchronise_meta_data_table(
+            location, dry_run
+        )
+
+    return {"error": None, "data": data_changed}
 
 
 # DISABLED: @routes.patch(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}/metadata") # type: ignore
