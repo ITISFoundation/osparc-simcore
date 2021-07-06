@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Callable, List
 
-from dask.distributed import Client
+from dask.distributed import Client, fire_and_forget
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -82,3 +82,4 @@ class DaskClient:
             task_future = self.client.submit(
                 sidecar_fun, "dask", f"{user_id}", f"{project_id}", f"{task.node_id}"
             )
+            fire_and_forget(task_future)
