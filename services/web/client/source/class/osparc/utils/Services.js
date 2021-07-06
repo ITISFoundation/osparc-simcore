@@ -44,7 +44,19 @@ qx.Class.define("osparc.utils.Services", {
       container: {
         label: "Group of nodes",
         icon: "@FontAwesome5Solid/box-open/"
-      }
+      },
+      iterator: {
+        label: "Iterator",
+        icon: "@FontAwesome5Solid/copy/"
+      },
+
+      DATA_ITERATOR_TYPES: [
+        "integer",
+        "number",
+        "boolean",
+        "string",
+        "data"
+      ]
     },
 
     servicesCached: {},
