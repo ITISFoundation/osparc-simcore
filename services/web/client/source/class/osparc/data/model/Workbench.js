@@ -304,7 +304,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
         // remove old connection if any
         if (link !== null) {
-          requesterNode.getPropsForm().removeLink(portId);
+          requesterNode.getPropsForm().removePortLink(portId);
         }
 
         // create connection

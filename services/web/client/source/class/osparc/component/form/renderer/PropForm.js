@@ -140,7 +140,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
         } else {
           const param = study.getSweeper().addNewParameter(newParameterLabel);
-          this.addParameter(fieldKey, param);
+          this._setParameter(fieldKey, param);
           newParamName.close();
         }
       }, this);
@@ -154,7 +154,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       study.getSweeper().getParameters().forEach(param => {
         const paramButton = new qx.ui.menu.Button(param.label);
         paramButton.addListener("execute", () => {
-          this.addParameter(fieldKey, param);
+          this._setParameter(fieldKey, param);
         }, this);
         existingParamMenu.add(paramButton);
       });
@@ -509,7 +509,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
         const unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
         unlinkBtn.addListener("execute", function() {
-          this.removeLink(portId);
+          this.removePortLink(portId);
         }, this);
         hBox.add(unlinkBtn);
 
@@ -530,7 +530,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
     },
 
-    __linkRemoved: function(portId) {
+    __portLinkRemoved: function(portId) {
       if (this.__resetCtrlField(portId)) {
         // enable fieldOpts button
         const fieldOpts = this._getFieldOptsChild(portId);
@@ -564,7 +564,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return links;
     },
 
-    addLink: function(toPortId, fromNodeId, fromPortId) {
+    addPortLink: function(toPortId, fromNodeId, fromPortId) {
       if (!this.__isPortAvailable(toPortId)) {
         return false;
       }
@@ -588,21 +588,21 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return true;
     },
 
-    addLinks: function(data) {
+    addPortLinks: function(data) {
       for (let key in data) {
         if (osparc.utils.Ports.isDataALink(data[key])) {
-          this.addLink(key, data[key].nodeUuid, data[key].output);
+          this.addPortLink(key, data[key].nodeUuid, data[key].output);
         }
       }
     },
 
-    removeLink: function(toPortId) {
+    removePortLink: function(toPortId) {
       this.getControlLink(toPortId).setEnabled(false);
       if ("link" in this._form.getControl(toPortId)) {
         delete this._form.getControl(toPortId)["link"];
       }
 
-      this.__linkRemoved(toPortId);
+      this.__portLinkRemoved(toPortId);
     },
     /* /LINKS */
 
@@ -655,7 +655,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     // overridden
-    addParameter: function(portId, parameter) {
+    _setParameter: function(portId, parameter) {
       if (!this.__isPortAvailable(portId)) {
         return false;
       }
@@ -671,14 +671,14 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return true;
     },
 
-    addParameters: function(data) {
+    setParameters: function(data) {
       for (let key in data) {
         if (osparc.utils.Ports.isDataAParameter(data[key])) {
           const parameterId = data[key].replace("{{", "").replace("}}", "");
           const study = osparc.store.Store.getInstance().getCurrentStudy();
           const parameter = study.getSweeper().getParameter(parameterId);
           if (parameter) {
-            this.addParameter(key, parameter);
+            this._setParameter(key, parameter);
           }
         }
       }

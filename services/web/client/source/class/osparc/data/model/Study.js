@@ -256,7 +256,7 @@ qx.Class.define("osparc.data.model.Study", {
     openStudy: function() {
       const params = {
         url: {
-          projectId: this.getUuid()
+          "studyId": this.getUuid()
         },
         data: osparc.utils.Utils.getClientSessionID()
       };
@@ -307,7 +307,7 @@ qx.Class.define("osparc.data.model.Study", {
       return new Promise(resolve => {
         osparc.data.Resources.fetch("studies", "put", {
           url: {
-            projectId: this.getUuid(),
+            "studyId": this.getUuid(),
             run
           },
           data: {

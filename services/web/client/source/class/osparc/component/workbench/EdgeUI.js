@@ -44,9 +44,11 @@ qx.Class.define("osparc.component.workbench.EdgeUI", {
     this.setEdge(edge);
     this.setRepresentation(representation);
 
-    edge.getInputNode().getStatus().addListener("changeModified", () => {
-      this.__updateEdgeColor();
-    });
+    if (edge.getInputNode()) {
+      edge.getInputNode().getStatus().addListener("changeModified", () => {
+        this.__updateEdgeColor();
+      });
+    }
     this.__updateEdgeColor();
 
     this.subscribeToFilterGroup("workbench");
@@ -78,9 +80,12 @@ qx.Class.define("osparc.component.workbench.EdgeUI", {
 
   members: {
     __updateEdgeColor: function() {
-      const modified = this.getEdge().getInputNode().getStatus()
-        .getModified();
-      const colorHex = this.self().getEdgeColor(modified);
+      let colorHex = this.self().getEdgeColor(false);
+      if (this.getEdge().getInputNode()) {
+        const modified = this.getEdge().getInputNode().getStatus()
+          .getModified();
+        colorHex = this.self().getEdgeColor(modified);
+      }
       osparc.component.workbench.SvgWidget.updateCurveColor(this.getRepresentation(), colorHex);
     },
 

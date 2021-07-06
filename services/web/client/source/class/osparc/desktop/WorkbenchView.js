@@ -172,7 +172,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const iterationStudyId = e.getData();
         const params = {
           url: {
-            "projectId": iterationStudyId
+            "studyId": iterationStudyId
           }
         };
         osparc.data.Resources.getOne("studies", params)

@@ -192,7 +192,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     /**
       * @abstract
       */
-    addParameter: function() {
+    _setParameter: function() {
       throw new Error("Abstract method called!");
     },
 
