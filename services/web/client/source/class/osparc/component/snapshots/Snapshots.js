@@ -110,7 +110,9 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
               const paramValues = secondaryStudy["dev"]["sweeper"]["parameterValues"];
               paramValues.forEach(paramValue => {
                 for (const [key, value] of Object.entries(paramValue)) {
-                  row[this.__cols[key].col] = value;
+                  if (this.__cols && key in this.__cols) {
+                    row[this.__cols[key].col] = value;
+                  }
                 }
               });
               rows.push(row);
