@@ -27,6 +27,12 @@ ORG_LABELS_TO_SCHEMA_LABELS = {
     "org.label-schema.vcs-url": "vcs_url",
 }
 
+DYNAMIC_SIDECAR_DOCKER_IMAGE_RE = (
+    r"(^(local|itisfoundation)/)?(dynamic-sidecar):([\w]+)"
+)
+
+VersionTag = constr(regex=r"^v\d$")
+
 
 class CommonConfig:
     case_sensitive = False
@@ -40,7 +46,7 @@ class ApiServiceSettings(BaseSettings):
 
     host: str
     port: PortInt = 8000
-    vtag: constr(regex=r"^v\d$") = "v0"
+    vtag: VersionTag = "v0"
 
     def base_url(self, include_tag=False) -> str:
         url = f"http://{self.host}:{self.port}"
@@ -61,11 +67,6 @@ class DirectorV0Settings(ApiServiceSettings):
         env_prefix = "DIRECTOR_"
 
 
-_DYNAMIC_SIDECAR_DOCKER_IMAGE_RE = (
-    r"(^(local|itisfoundation)/)?(dynamic-sidecar):([\w]+)"
-)
-
-
 class DynamicSidecarSettings(BaseCustomSettings):
     SC_BOOT_MODE: BootModeEnum = Field(
         BootModeEnum.PRODUCTION,
@@ -73,7 +74,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
     )
     DYNAMIC_SIDECAR_IMAGE: str = Field(
         ...,
-        regex=_DYNAMIC_SIDECAR_DOCKER_IMAGE_RE,
+        regex=DYNAMIC_SIDECAR_DOCKER_IMAGE_RE,
         description="used by the director to start a specific version of the dynamic-sidecar",
     )
 
@@ -120,7 +121,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
 
     DYNAMIC_SIDECAR_TRAEFIK_VERSION: str = Field(
         "v2.2.1",
-        description="current version of the Treafik image to be pulled and used from dockerhub",
+        description="current version of the Traefik image to be pulled and used from dockerhub",
     )
 
     SWARM_STACK_NAME: str = Field(
