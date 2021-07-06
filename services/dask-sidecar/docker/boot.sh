@@ -25,7 +25,6 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   pip list | sed 's/^/    /'
 fi
 
-
 # RUNNING application ----------------------------------------
 #
 # - If DASK_START_AS_SCHEDULER is set, then it boots as scheduler otherwise as worker
@@ -52,24 +51,25 @@ else
   DASK_WORKER_VERSION=$(dask-worker --version)
   DASK_SCHEDULER_ADDRESS="tcp://${DASK_SCHEDULER_HOST}:8786"
 
-
   echo "$INFO" "Starting as a ${DASK_WORKER_VERSION} -> ${DASK_SCHEDULER_ADDRESS} ..."
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
 
     exec watchmedo auto-restart --recursive --pattern="*.py" -- \
       dask-worker "${DASK_SCHEDULER_ADDRESS}" \
-        --local-directory /tmp/dask-sidecar \
-        --preload simcore_service_dask_sidecar.tasks \
-        --reconnect \
-        --dashboard-address 8787
+      --local-directory /tmp/dask-sidecar \
+      --preload simcore_service_dask_sidecar.tasks \
+      --reconnect \
+      --no-nanny \
+      --dashboard-address 8787
 
   else
 
     exec dask-worker "${DASK_SCHEDULER_ADDRESS}" \
-        --local-directory /tmp/dask-sidecar \
-        --preload simcore_service_dask_sidecar.tasks \
-        --reconnect \
-        --dashboard-address 8787
+      --local-directory /tmp/dask-sidecar \
+      --preload simcore_service_dask_sidecar.tasks \
+      --reconnect \
+      --no-nanny \
+      --dashboard-address 8787
 
   fi
 fi
