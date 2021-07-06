@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 import pytest
 from models_library.service_settings_labels import SimcoreServiceLabels
 from simcore_service_director_v2.models.domains.dynamic_services import (
@@ -74,3 +75,8 @@ def monitor_data_from_service_labels_stored_data(
     return MonitorData.from_service_labels_stored_data(
         service_labels_stored_data=service_labels_stored_data, port=dynamic_sidecar_port
     )
+
+
+@pytest.fixture
+def ensure_in_docker_swarm(docker_swarm: None) -> None:
+    pass

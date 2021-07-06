@@ -18,10 +18,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
 from respx.router import MockRouter
-from simcore_service_director_v2.core.settings import (
-    AppSettings,
-    DynamicServicesSettings,
-)
+from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     DynamicSidecarStatus,
     MonitorData,
@@ -103,12 +100,7 @@ async def _assert_get_dynamic_services_mocked(
 # FIXTURES
 
 
-@pytest.fixture(scope="module", autouse=True)
-def ensure_in_docker_swarm(docker_swarm: None) -> None:
-    pass
-
-
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture
 def mocked_monitor_events() -> None:
     class AlwaysTriggersMonitorEvent(MonitorEvent):
         @classmethod
@@ -225,6 +217,8 @@ async def test_monitor_add_remove(
     monitor: DynamicSidecarsMonitor,
     monitor_data: MonitorData,
     mocked_client_api: MockRouter,
+    ensure_in_docker_swarm: None,
+    mocked_monitor_events: None,
 ) -> None:
     await ensure_monitor_runs_once()
     await monitor.add_service_to_monitor(monitor_data)
@@ -239,6 +233,8 @@ async def test_monitor_removes_partially_started_services(
     ensure_monitor_runs_once: Callable,
     monitor: DynamicSidecarsMonitor,
     monitor_data: MonitorData,
+    ensure_in_docker_swarm: None,
+    mocked_monitor_events: None,
 ) -> None:
     await ensure_monitor_runs_once()
     await monitor.add_service_to_monitor(monitor_data)
@@ -251,6 +247,8 @@ async def test_monitor_is_failing(
     ensure_monitor_runs_once: Callable,
     monitor: DynamicSidecarsMonitor,
     monitor_data: MonitorData,
+    ensure_in_docker_swarm: None,
+    mocked_monitor_events: None,
 ) -> None:
     await ensure_monitor_runs_once()
     await monitor.add_service_to_monitor(monitor_data)
@@ -264,6 +262,8 @@ async def test_monitor_health_timing_out(
     monitor: DynamicSidecarsMonitor,
     monitor_data: MonitorData,
     mock_max_status_api_duration: None,
+    ensure_in_docker_swarm: None,
+    mocked_monitor_events: None,
 ) -> None:
 
     await ensure_monitor_runs_once()
@@ -276,13 +276,18 @@ async def test_monitor_health_timing_out(
 async def test_adding_service_two_times(
     monitor: DynamicSidecarsMonitor,
     monitor_data: MonitorData,
+    ensure_in_docker_swarm: None,
+    mocked_monitor_events: None,
 ) -> None:
     await monitor.add_service_to_monitor(monitor_data)
     await monitor.add_service_to_monitor(monitor_data)
 
 
 async def test_collition_at_global_level(
-    monitor: DynamicSidecarsMonitor, monitor_data: MonitorData
+    monitor: DynamicSidecarsMonitor,
+    monitor_data: MonitorData,
+    ensure_in_docker_swarm: None,
+    mocked_monitor_events: None,
 ) -> None:
     # pylint: disable=protected-access
     monitor._inverse_search_mapping[monitor_data.node_uuid] = "mock_service_name"
@@ -292,7 +297,10 @@ async def test_collition_at_global_level(
 
 
 async def test_no_service_name(
-    monitor: DynamicSidecarsMonitor, monitor_data: MonitorData
+    monitor: DynamicSidecarsMonitor,
+    monitor_data: MonitorData,
+    ensure_in_docker_swarm: None,
+    mocked_monitor_events: None,
 ) -> None:
     monitor_data.service_name = ""
     with pytest.raises(DynamicSidecarError) as execinfo:
@@ -301,7 +309,10 @@ async def test_no_service_name(
 
 
 async def test_remove_missing_no_error(
-    monitor: DynamicSidecarsMonitor, monitor_data: MonitorData
+    monitor: DynamicSidecarsMonitor,
+    monitor_data: MonitorData,
+    ensure_in_docker_swarm: None,
+    mocked_monitor_events: None,
 ) -> None:
     with pytest.raises(DynamicSidecarNotFoundError) as execinfo:
         await monitor.remove_service_from_monitor(monitor_data.node_uuid, True)
@@ -312,6 +323,8 @@ async def test_get_stack_status(
     ensure_monitor_runs_once: Callable,
     monitor: DynamicSidecarsMonitor,
     monitor_data: MonitorData,
+    ensure_in_docker_swarm: None,
+    mocked_monitor_events: None,
 ) -> None:
     await ensure_monitor_runs_once()
 
@@ -327,7 +340,10 @@ async def test_get_stack_status(
 
 
 async def test_get_stack_status_missing(
-    monitor: DynamicSidecarsMonitor, monitor_data: MonitorData
+    monitor: DynamicSidecarsMonitor,
+    monitor_data: MonitorData,
+    ensure_in_docker_swarm: None,
+    mocked_monitor_events: None,
 ) -> None:
     with pytest.raises(DynamicSidecarNotFoundError) as execinfo:
         await monitor.get_stack_status(monitor_data.node_uuid)
@@ -335,7 +351,10 @@ async def test_get_stack_status_missing(
 
 
 async def test_get_stack_status_failing_sidecar(
-    monitor: DynamicSidecarsMonitor, monitor_data: MonitorData
+    monitor: DynamicSidecarsMonitor,
+    monitor_data: MonitorData,
+    ensure_in_docker_swarm: None,
+    mocked_monitor_events: None,
 ) -> None:
     failing_message = "some_failing_message"
     monitor_data.dynamic_sidecar.status.update_failing_status(failing_message)
@@ -355,6 +374,8 @@ async def test_get_stack_status_report_missing_statuses(
     monitor: DynamicSidecarsMonitor,
     monitor_data: MonitorData,
     mock_service_running: AsyncMock,
+    ensure_in_docker_swarm: None,
+    mocked_monitor_events: None,
 ) -> None:
     async with _assert_get_dynamic_services_mocked(
         monitor,
@@ -374,6 +395,8 @@ async def test_get_stack_status_containers_are_starting(
     monitor: DynamicSidecarsMonitor,
     monitor_data: MonitorData,
     mock_service_running: AsyncMock,
+    ensure_in_docker_swarm: None,
+    mocked_monitor_events: None,
 ) -> None:
     async with _assert_get_dynamic_services_mocked(
         monitor,
@@ -393,6 +416,8 @@ async def test_get_stack_status_ok(
     monitor: DynamicSidecarsMonitor,
     monitor_data: MonitorData,
     mock_service_running: AsyncMock,
+    ensure_in_docker_swarm: None,
+    mocked_monitor_events: None,
 ) -> None:
     async with _assert_get_dynamic_services_mocked(
         monitor,
