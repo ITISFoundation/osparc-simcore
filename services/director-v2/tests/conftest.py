@@ -75,7 +75,7 @@ def project_env_devel_environment(project_env_devel_dict: Dict[str, Any], monkey
 
 
 @pytest.fixture(scope="function")
-def dynamic_sidecar_image(monkeypatch) -> None:
+def mock_env(monkeypatch) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
@@ -94,14 +94,13 @@ def dynamic_sidecar_image(monkeypatch) -> None:
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
 
-
-@pytest.fixture(scope="function")
-async def client(
-    loop: asyncio.BaseEventLoop, dynamic_sidecar_image, monkeypatch
-) -> TestClient:
-    settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_MONITORING_ENABLED", "false")
+
+
+@pytest.fixture(scope="function")
+async def client(loop: asyncio.BaseEventLoop, mock_env: None) -> TestClient:
+    settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
     app = init_app(settings)
 
     # NOTE: this way we ensure the events are run in the application
