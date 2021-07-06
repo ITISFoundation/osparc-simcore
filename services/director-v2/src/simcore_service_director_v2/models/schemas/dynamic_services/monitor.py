@@ -66,7 +66,7 @@ class Status(BaseModel):
         return self.current == other.current and self.info == other.info
 
     @classmethod
-    def make_initially_ok(cls) -> "Status":
+    def create_as_initially_ok(cls) -> "Status":
         # the service is initially ok when started
         initial_state = cls(current=DynamicSidecarStatus.OK, info="")
         return initial_state
@@ -106,7 +106,7 @@ class DockerContainerInspect(BaseModel):
 
 class DynamicSidecar(BaseModel):
     status: Status = Field(
-        Status.make_initially_ok(),
+        Status.create_as_initially_ok(),
         description="status of the service sidecar also with additional information",
     )
 
