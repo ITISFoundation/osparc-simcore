@@ -1,4 +1,4 @@
--c ../../../requirements/constraints.txt
+--constraint ../../../requirements/constraints.txt
 
 -r ../../../packages/postgres-database/requirements/_migration.txt
 -r ../../../packages/simcore-sdk/requirements/_base.in

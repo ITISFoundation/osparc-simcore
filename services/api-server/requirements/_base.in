@@ -3,7 +3,7 @@
 #
 # NOTE: ALL version constraints MUST be commented
 # intra-repo constraints
--c ../../../requirements/constraints.txt
+--constraint ../../../requirements/constraints.txt
 
 # intra-repo required dependencies
 -r ../../../packages/postgres-database/requirements/_base.in

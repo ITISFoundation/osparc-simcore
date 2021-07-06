@@ -1,7 +1,7 @@
 #
 # Specifies third-party dependencies for 'simcore-sdk'
 #
--c ../../../requirements/constraints.txt
+--constraint ../../../requirements/constraints.txt
 -r ../../../packages/postgres-database/requirements/_base.in
 -r ../../../packages/postgres-database/requirements/_migration.in
 -r ../../../packages/service-library/requirements/_base.in
