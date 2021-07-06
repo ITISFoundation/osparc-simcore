@@ -148,6 +148,13 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       return uiPort;
     },
 
+    /**
+      * @abstract
+      */
+    _createDragDropEventData: function(e, isInput) {
+      throw new Error("Abstract method called!");
+    },
+
     _addDragDropMechanism: function(uiPort, isInput) {
       [
         ["dragstart", "edgeDragStart"],
@@ -156,11 +163,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
         ["dragend", "edgeDragEnd"]
       ].forEach(eventPair => {
         uiPort.addListener(eventPair[0], e => {
-          const eData = {
-            event: e,
-            parameterId: this.__parameter["id"],
-            isInput: isInput
-          };
+          const eData = this._createDragDropEventData(e, isInput);
           this.fireDataEvent(eventPair[1], eData);
         }, this);
       }, this);

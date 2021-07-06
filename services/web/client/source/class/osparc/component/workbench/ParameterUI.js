@@ -109,6 +109,15 @@ qx.Class.define("osparc.component.workbench.ParameterUI", {
       });
     },
 
+    // overridden
+    _createDragDropEventData: function(e, isInput) {
+      return {
+        event: e,
+        parameterId: this.getParameterId(),
+        isInput: isInput
+      };
+    },
+
     // override qx.ui.core.MMovable
     _onMovePointerMove: function(e) {
       // Only react when dragging is active
