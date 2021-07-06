@@ -150,11 +150,11 @@ def dynamic_sidecar_settings(monkeypatch: MonkeyPatch) -> AppSettings:
     monkeypatch.setenv("POSTGRES_DB", "mocked_out")
     monkeypatch.setenv("DIRECTOR_HOST", "mocked_out")
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
+    monkeypatch.setenv(
+        "DIRECTOR_V2_MONITOR_INTERVAL_SECONDS", str(TEST_MONITOR_INTERVAL_SECONDS)
+    )
 
     app_settings = AppSettings.create_from_env()
-    app_settings.dynamic_services.monitoring.monitor_interval_seconds = (
-        TEST_MONITOR_INTERVAL_SECONDS
-    )
     return app_settings
 
 
@@ -211,6 +211,12 @@ def mock_service_running(mocker: MockerFixture) -> AsyncMock:
     yield mock
 
 
+@pytest.fixture
+def mock_max_status_api_duration(monkeypatch: MonkeyPatch) -> Iterator[None]:
+    monkeypatch.setenv("DIRECTOR_V2_MONITOR_MAX_STATUS_API_DURATION", "0.0001")
+    yield
+
+
 # TESTS
 
 
@@ -254,15 +260,11 @@ async def test_monitor_is_failing(
 
 
 async def test_monitor_health_timing_out(
-    mocked_app: FastAPI,
     ensure_monitor_runs_once: Callable,
     monitor: DynamicSidecarsMonitor,
     monitor_data: MonitorData,
+    mock_max_status_api_duration: None,
 ) -> None:
-    dynamic_services_settings: DynamicServicesSettings = (
-        mocked_app.state.settings.dynamic_services
-    )
-    dynamic_services_settings.monitoring.max_status_api_duration = 0.0001
 
     await ensure_monitor_runs_once()
     await monitor.add_service_to_monitor(monitor_data)

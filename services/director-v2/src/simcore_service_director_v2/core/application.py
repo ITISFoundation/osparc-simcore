@@ -55,7 +55,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings.director_v0.enabled:
         director_v0.setup(app, settings.director_v0)
 
-    if settings.dynamic_services.enabled:
+    if settings.dynamic_services.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
         dynamic_services.setup(app, settings.dynamic_services)
 
     if settings.postgres.enabled:

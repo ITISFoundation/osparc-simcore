@@ -96,10 +96,12 @@ def dynamic_sidecar_image(monkeypatch) -> None:
 
 
 @pytest.fixture(scope="function")
-async def client(loop: asyncio.BaseEventLoop, dynamic_sidecar_image) -> TestClient:
+async def client(
+    loop: asyncio.BaseEventLoop, dynamic_sidecar_image, monkeypatch
+) -> TestClient:
     settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
-    settings.dynamic_services.enabled = False
-    settings.dynamic_services.monitoring.monitoring_enabled = False
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED", "false")
+    monkeypatch.setenv("DIRECTOR_V2_MONITORING_ENABLED", "false")
     app = init_app(settings)
 
     # NOTE: this way we ensure the events are run in the application

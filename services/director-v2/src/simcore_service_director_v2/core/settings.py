@@ -132,14 +132,14 @@ class DynamicSidecarSettings(BaseCustomSettings):
     REGISTRY: RegistrySettings
 
 
-class DynamicServicesMonitoringSettings(BaseSettings):
-    monitoring_enabled: bool = True
+class DynamicServicesMonitoringSettings(BaseCustomSettings):
+    DIRECTOR_V2_MONITORING_ENABLED: bool = True
 
-    monitor_interval_seconds: PositiveFloat = Field(
+    DIRECTOR_V2_MONITOR_INTERVAL_SECONDS: PositiveFloat = Field(
         5.0, description="interval at which the monitor cycle is repeated"
     )
 
-    max_status_api_duration: PositiveFloat = Field(
+    DIRECTOR_V2_MONITOR_MAX_STATUS_API_DURATION: PositiveFloat = Field(
         1.0,
         description=(
             "when requesting the status of a service this is the "
@@ -148,26 +148,16 @@ class DynamicServicesMonitoringSettings(BaseSettings):
     )
 
 
-class DynamicServicesSettings(BaseSettings):
-    @classmethod
-    def create_from_env(cls, **override) -> "DynamicServicesSettings":
-        # this calls trigger env parsers
-        return cls(
-            dynamic_sidecar=DynamicSidecarSettings(REGISTRY=RegistrySettings()),
-            monitoring=DynamicServicesMonitoringSettings(),
-            **override,
-        )
-
-    enabled: bool = Field(True, description="Enables/Disables connection with service")
+class DynamicServicesSettings(BaseCustomSettings):
+    DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED: bool = Field(
+        True, description="Enables/Disables connection with service"
+    )
 
     # dynamic sidecar
-    dynamic_sidecar: DynamicSidecarSettings
+    DYNAMIC_SIDECAR: DynamicSidecarSettings
 
     # dynamic services monitoring
-    monitoring: DynamicServicesMonitoringSettings
-
-    class Config(CommonConfig):
-        env_prefix = "DIRECTOR_V2_DYNAMIC_SERVICES_"
+    MONITORING: DynamicServicesMonitoringSettings
 
 
 class PGSettings(PostgresSettings):
@@ -195,7 +185,10 @@ class AppSettings(BaseSettings):
             postgres=PGSettings(),
             director_v0=DirectorV0Settings(),
             celery=CelerySettings.create_from_env(),
-            dynamic_services=DynamicServicesSettings.create_from_env(),
+            dynamic_services=DynamicServicesSettings(
+                DYNAMIC_SIDECAR=DynamicSidecarSettings(REGISTRY=RegistrySettings()),
+                MONITORING=DynamicServicesMonitoringSettings(),
+            ),
             client_request=ClientRequestSettings(),
             scheduler=CelerySchedulerSettings(),
             **settings_kwargs,

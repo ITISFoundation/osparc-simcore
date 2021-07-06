@@ -58,7 +58,7 @@ async def _apply_monitoring(
         monitor_data.dynamic_sidecar.were_services_created
         and not await are_all_services_present(
             node_uuid=monitor_data.node_uuid,
-            dynamic_sidecar_settings=dynamic_services_settings.dynamic_sidecar,
+            dynamic_sidecar_settings=dynamic_services_settings.DYNAMIC_SIDECAR,
         )
     ):
         logger.warning("Removing service %s from monitoring", monitor_data.service_name)
@@ -80,7 +80,9 @@ async def _apply_monitoring(
         return
 
     try:
-        with timeout(dynamic_services_settings.monitoring.max_status_api_duration):
+        with timeout(
+            dynamic_services_settings.MONITORING.DIRECTOR_V2_MONITOR_MAX_STATUS_API_DURATION
+        ):
             await update_dynamic_sidecar_health(app, monitor_data)
     except asyncio.TimeoutError:
         monitor_data.dynamic_sidecar.is_available = False
@@ -164,7 +166,7 @@ class DynamicSidecarsMonitor:
             )
 
             dynamic_sidecar_settings: DynamicSidecarSettings = (
-                self._app.state.settings.dynamic_services.dynamic_sidecar
+                self._app.state.settings.dynamic_services.DYNAMIC_SIDECAR
             )
 
             _ = save_state
@@ -205,7 +207,7 @@ class DynamicSidecarsMonitor:
                 )
 
             dynamic_sidecar_settings: DynamicSidecarSettings = (
-                self._app.state.settings.dynamic_services.dynamic_sidecar
+                self._app.state.settings.dynamic_services.DYNAMIC_SIDECAR
             )
             dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
                 self._app
@@ -299,7 +301,7 @@ class DynamicSidecarsMonitor:
 
     async def _run_monitor_task(self) -> None:
         settings: DynamicServicesMonitoringSettings = (
-            self._app.state.settings.dynamic_services.monitoring
+            self._app.state.settings.dynamic_services.MONITORING
         )
 
         while self._keep_running:
@@ -308,7 +310,7 @@ class DynamicSidecarsMonitor:
                 async with self._lock:
                     await self._runner()
 
-                await sleep(settings.monitor_interval_seconds)
+                await sleep(settings.DIRECTOR_V2_MONITOR_INTERVAL_SECONDS)
             except asyncio.CancelledError:  # pragma: no cover
                 break  # pragma: no cover
 
@@ -322,7 +324,7 @@ class DynamicSidecarsMonitor:
 
         # discover all services which were started before and add them to the monitor
         dynamic_sidecar_settings: DynamicSidecarSettings = (
-            self._app.state.settings.dynamic_services.dynamic_sidecar
+            self._app.state.settings.dynamic_services.DYNAMIC_SIDECAR
         )
         services_to_monitor: Deque[
             ServiceLabelsStoredData
@@ -355,9 +357,9 @@ async def setup_monitor(app: FastAPI):
     app.state.dynamic_sidecar_monitor = dynamic_sidecars_monitor
 
     settings: DynamicServicesMonitoringSettings = (
-        app.state.settings.dynamic_services.monitoring
+        app.state.settings.dynamic_services.MONITORING
     )
-    if not settings.monitoring_enabled:
+    if not settings.DIRECTOR_V2_MONITORING_ENABLED:
         logger.warning("Monitor will not be started!!!")
         return
 
