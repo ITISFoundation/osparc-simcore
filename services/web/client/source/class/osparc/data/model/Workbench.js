@@ -191,7 +191,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
 
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const parameterFrom = study.getSweeper().getParameter(parameterFromId);
+      const parameterFrom = study.getParameter(parameterFromId);
       const nodeTo = this.getNode(nodeToId);
       if (parameterFrom && nodeTo) {
         const edge = new osparc.data.model.Edge(edgeId, parameterFrom, nodeTo, false);

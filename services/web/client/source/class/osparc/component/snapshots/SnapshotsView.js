@@ -149,7 +149,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
     __recreateSnapshots: function() {
       return new Promise((resolve, reject) => {
         const primaryStudyData = this.__primaryStudy.serialize();
-        this.__primaryStudy.getSweeper().recreateSnapshots(primaryStudyData)
+        this.__primaryStudy.getSweeper().recreateSnapshots(primaryStudyData, this.__primaryStudy.getParameters())
           .then(secondaryStudyIds => {
             const msg = secondaryStudyIds.length + this.tr(" Snapshots Created");
             osparc.component.message.FlashMessenger.getInstance().logAs(msg);

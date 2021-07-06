@@ -62,6 +62,22 @@ qx.Class.define("osparc.data.model.Study", {
     this.setUi(new osparc.data.model.StudyUI(studyData.ui));
 
     this.setSweeper(new osparc.data.model.Sweeper(studyData));
+
+    this.__parameters = [];
+    this.__parameterValues = [];
+    if ("dev" in studyData) {
+      const devData = studyData["dev"];
+      if ("parameters" in devData) {
+        this.__setParameters(devData["parameters"]);
+      }
+      if ("parameterValues" in devData) {
+        this.__setParameterValues(devData["parameterValues"]);
+      }
+    }
+  },
+
+  events: {
+    "changeParameters": "qx.event.type.Event"
   },
 
   properties: {
@@ -232,6 +248,9 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
+    __parameters: null,
+    __parameterValues: null,
+
     initStudy: function() {
       this.getWorkbench().initWorkbench();
     },
@@ -279,6 +298,64 @@ qx.Class.define("osparc.data.model.Study", {
       }
     },
 
+    /* PARAMETERS */
+    hasParameters: function() {
+      return Boolean(Object.keys(this.__parameters).length);
+    },
+
+    getParameter: function(parameterId) {
+      return this.__parameters.find(parameter => parameter.id === parameterId);
+    },
+
+    getParameters: function() {
+      return this.__parameters;
+    },
+
+    parameterLabelExists: function(parameterLabel) {
+      const params = this.getParameters();
+      const idx = params.findIndex(param => param.label === parameterLabel);
+      return (idx !== -1);
+    },
+
+    __setParameters: function(parameters) {
+      this.__parameters = parameters;
+      this.fireEvent("changeParameters");
+    },
+
+    addNewParameter: function(parameterLabel) {
+      if (!this.parameterLabelExists(parameterLabel)) {
+        const parameter = {
+          id: parameterLabel,
+          label: parameterLabel,
+          low: 1,
+          high: 2,
+          nSteps: 2,
+          distribution: "linear"
+        };
+        this.__parameters.push(parameter);
+
+        this.fireEvent("changeParameters");
+
+        return parameter;
+      }
+      return null;
+    },
+    /* /PARAMETERS */
+
+    /* /PARAMETER VALUES */
+    hasParameterValues: function() {
+      return Boolean(this.__parameterValues.length);
+    },
+
+    getParameterValues: function() {
+      return this.__parameterValues;
+    },
+
+    __setParameterValues: function(parameterValues) {
+      this.__parameterValues = parameterValues;
+    },
+    /* /PARAMETER VALUES */
+
     serialize: function() {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
@@ -299,12 +376,31 @@ qx.Class.define("osparc.data.model.Study", {
           jsonObject["dev"]["sweeper"] = this.getSweeper().serialize();
           return;
         }
+
         const value = this.get(key);
         if (value !== null) {
           // only put the value in the payload if there is a value
           jsonObject[key] = value;
         }
       });
+
+      if (!("dev" in jsonObject)) {
+        jsonObject["dev"] = {};
+      }
+      if (this.hasParameters()) {
+        jsonObject["dev"]["parameters"] = [];
+        this.getParameters().forEach(parameter => {
+          jsonObject["dev"]["parameters"].push(parameter);
+        });
+      }
+
+      if (this.hasParameterValues()) {
+        jsonObject["dev"]["parameterValues"] = [];
+        this.getParameterValues().forEach(parameterValue => {
+          jsonObject["dev"]["parameterValues"].push(parameterValue);
+        });
+      }
+
       return jsonObject;
     },
 

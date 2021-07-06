@@ -132,9 +132,9 @@ qx.Class.define("osparc.data.StudyParametrizer", {
                       secondaryStudyData = JSON.parse(secondaryStudyDataStr);
                       secondaryStudyData["dev"] = {
                         "sweeper": {
-                          "primaryStudyId": primaryStudyData.uuid,
-                          "parameterValues": parameterValues
-                        }
+                          "primaryStudyId": primaryStudyData.uuid
+                        },
+                        "parameterValues": parameterValues
                       };
                       const paramsUpdateSec = {
                         url: {

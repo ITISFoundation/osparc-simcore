@@ -1086,8 +1086,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         }
 
         // create parameters
-        if (this.getStudy().getSweeper().hasParameters()) {
-          this.getStudy().getSweeper().getParameters()
+        if (this.getStudy().hasParameters()) {
+          this.getStudy().getParameters()
             .forEach(parameter => {
               const paramterUI = this.__createParameterUI(parameter);
               this.__addParameterUIToWorkbench(paramterUI, {

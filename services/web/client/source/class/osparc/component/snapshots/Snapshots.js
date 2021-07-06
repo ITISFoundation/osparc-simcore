@@ -63,7 +63,7 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
       const model = this.__model = new qx.ui.table.model.Simple();
 
       // add variables in columns
-      const parameters = this.__primaryStudy.getSweeper().getParameters();
+      const parameters = this.__primaryStudy.getParameters();
       this.__cleanupCols();
       const nextCol = this.__cols["name"].col + 1;
       for (let i=0; i<parameters.length; i++) {
@@ -107,7 +107,7 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
               const row = [];
               row[this.__cols["id"].col] = secondaryStudy.uuid;
               row[this.__cols["name"].col] = secondaryStudy.name;
-              const paramValues = secondaryStudy["dev"]["sweeper"]["parameterValues"];
+              const paramValues = secondaryStudy["dev"]["parameterValues"];
               paramValues.forEach(paramValue => {
                 for (const [key, value] of Object.entries(paramValue)) {
                   row[this.__cols[key].col] = value;

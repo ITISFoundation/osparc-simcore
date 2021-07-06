@@ -105,7 +105,7 @@ qx.Class.define("osparc.component.sweeper.Parameters", {
     },
 
     updateTable: function() {
-      const parameters = this.__primaryStudy.getSweeper().getParameters();
+      const parameters = this.__primaryStudy.getParameters();
 
       const rows = [];
       parameters.forEach(parameter => {
@@ -123,7 +123,7 @@ qx.Class.define("osparc.component.sweeper.Parameters", {
 
     __dataChanged: function(rowData) {
       const cols = this.__cols;
-      const parameters = this.__primaryStudy.getSweeper().getParameters();
+      const parameters = this.__primaryStudy.getParameters();
       const idx = parameters.findIndex(existingParam => existingParam.id === rowData[cols["id"].col]);
       if (idx !== -1) {
         const parameter = parameters[idx];

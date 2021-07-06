@@ -111,7 +111,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       const existingParamMenu = new qx.ui.menu.Menu();
       this.__populateExistingParamsMenu(portId, existingParamMenu);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      study.getSweeper().addListener("changeParameters", () => {
+      study.addListener("changeParameters", () => {
         this.__populateExistingParamsMenu(portId, existingParamMenu);
       }, this);
 
@@ -151,7 +151,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __populateExistingParamsMenu: function(fieldKey, existingParamMenu) {
       existingParamMenu.removeAll();
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      study.getSweeper().getParameters().forEach(param => {
+      study.getParameters().forEach(param => {
         const paramButton = new qx.ui.menu.Button(param.label);
         paramButton.addListener("execute", () => {
           this.addParameter(fieldKey, param);
@@ -691,7 +691,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         if (osparc.utils.Ports.isDataAParameter(data[key])) {
           const parameterId = data[key].replace("{{", "").replace("}}", "");
           const study = osparc.store.Store.getInstance().getCurrentStudy();
-          const parameter = study.getSweeper().getParameter(parameterId);
+          const parameter = study.getParameter(parameterId);
           if (parameter) {
             this.addParameter(key, parameter);
           }

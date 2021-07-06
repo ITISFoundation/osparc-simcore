@@ -24,12 +24,10 @@ qx.Class.define("osparc.data.model.Sweeper", {
 
   /**
     * @param studyData {Object} Object containing the serialized Study Data
-   */
+    */
   construct: function(studyData = {}) {
     this.base(arguments);
 
-    this.__parameters = [];
-    this.__parameterValues = [];
     this.__combinations = [];
     this.__secondaryStudyIds = [];
     this.__primaryStudyId = null;
@@ -54,74 +52,10 @@ qx.Class.define("osparc.data.model.Sweeper", {
     }
   },
 
-  events: {
-    "changeParameters": "qx.event.type.Event"
-  },
-
   members: {
-    __parameters: null,
-    __parameterValues: null,
     __combinations: null,
     __secondaryStudyIds: null,
     __primaryStudyId: null,
-
-    /* PARAMETERS */
-    hasParameters: function() {
-      return Boolean(Object.keys(this.__parameters).length);
-    },
-
-    getParameter: function(parameterId) {
-      return this.__parameters.find(parameter => parameter.id === parameterId);
-    },
-
-    getParameters: function() {
-      return this.__parameters;
-    },
-
-    parameterLabelExists: function(parameterLabel) {
-      const params = this.getParameters();
-      const idx = params.findIndex(param => param.label === parameterLabel);
-      return (idx !== -1);
-    },
-
-    __setParameters: function(parameters) {
-      this.__parameters = parameters;
-      this.fireEvent("changeParameters");
-    },
-
-    addNewParameter: function(parameterLabel) {
-      if (!this.parameterLabelExists(parameterLabel)) {
-        const parameter = {
-          id: parameterLabel,
-          label: parameterLabel,
-          low: 1,
-          high: 2,
-          nSteps: 2,
-          distribution: "linear"
-        };
-        this.__parameters.push(parameter);
-
-        this.fireEvent("changeParameters");
-
-        return parameter;
-      }
-      return null;
-    },
-    /* /PARAMETERS */
-
-    /* /PARAMETER VALUES */
-    hasParameterValues: function() {
-      return Boolean(this.__parameterValues.length);
-    },
-
-    getParameterValues: function() {
-      return this.__parameterValues;
-    },
-
-    __setParameterValues: function(parameterValues) {
-      this.__parameterValues = parameterValues;
-    },
-    /* /PARAMETER VALUES */
 
     /* COMBINATIONS */
     __hasCombinations: function() {
@@ -196,12 +130,12 @@ qx.Class.define("osparc.data.model.Sweeper", {
     },
     /* /PRIMARY STUDY */
 
-    recreateSnapshots: function(primaryStudyData) {
+    recreateSnapshots: function(primaryStudyData, parameters) {
       return new Promise((resolve, reject) => {
         // delete previous snapshots
         this.removeSecondaryStudies()
           .then(() => {
-            const usedParams = osparc.data.StudyParametrizer.getActiveParameters(primaryStudyData, this.__parameters);
+            const usedParams = osparc.data.StudyParametrizer.getActiveParameters(primaryStudyData, parameters);
 
             const steps = osparc.data.StudyParametrizer.calculateSteps(usedParams);
             if (steps.length !== usedParams.length) {
@@ -226,20 +160,6 @@ qx.Class.define("osparc.data.model.Sweeper", {
     serialize: function() {
       const obj = {};
 
-      if (this.hasParameters()) {
-        obj["parameters"] = [];
-        this.getParameters().forEach(parameter => {
-          obj["parameters"].push(parameter);
-        });
-      }
-
-      if (this.hasParameterValues()) {
-        obj["parameterValues"] = [];
-        this.getParameterValues().forEach(parameterValue => {
-          obj["parameterValues"].push(parameterValue);
-        });
-      }
-
       if (this.__hasCombinations()) {
         obj["combinations"] = [];
         this.getCombinations().forEach(combination => {
@@ -263,14 +183,6 @@ qx.Class.define("osparc.data.model.Sweeper", {
     },
 
     deserialize: function(sweeperData) {
-      if ("parameters" in sweeperData) {
-        this.__setParameters(sweeperData["parameters"]);
-      }
-
-      if ("parameterValues" in sweeperData) {
-        this.__setParameterValues(sweeperData["parameterValues"]);
-      }
-
       if ("combinations" in sweeperData) {
         this.__setCombinations(sweeperData["combinations"]);
       }
