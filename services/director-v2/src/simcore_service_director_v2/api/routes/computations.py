@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_state import RunningState
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
+from simcore_service_director_v2.modules.dask_scheduler import DaskScheduler
 from simcore_service_director_v2.utils.async_utils import run_sequentially_in_context
 from starlette import status
 from starlette.requests import Request
@@ -50,7 +51,7 @@ from ...utils.exceptions import PipelineNotFoundError, ProjectNotFoundError
 from ..dependencies.celery import get_celery_client
 from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
-from ..dependencies.scheduler import get_celery_scheduler
+from ..dependencies.scheduler import get_celery_scheduler, get_dask_scheduler
 
 router = APIRouter()
 log = logging.getLogger(__file__)
@@ -92,7 +93,8 @@ async def create_computation(
     ),
     celery_client: CeleryClient = Depends(get_celery_client),
     director_client: DirectorV0Client = Depends(get_director_v0_client),
-    celery_scheduler: CeleryScheduler = Depends(get_celery_scheduler),
+    # celery_scheduler: CeleryScheduler = Depends(get_celery_scheduler),
+    dask_scheduler: DaskScheduler = Depends(get_dask_scheduler),
 ) -> ComputationTaskOut:
     log.debug(
         "User %s is creating a new computation from project %s",
@@ -150,7 +152,8 @@ async def create_computation(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"Project {job.project_id} has no computational services, or contains cycles",
                 )
-            await celery_scheduler.run_new_pipeline(job.user_id, job.project_id)
+            # await celery_scheduler.run_new_pipeline(job.user_id, job.project_id)
+            await dask_scheduler.run_new_pipeline(job.user_id, job.project_id)
 
         return ComputationTaskOut(
             id=job.project_id,
