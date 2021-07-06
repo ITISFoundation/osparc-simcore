@@ -49,6 +49,48 @@ def create_parametrization_const_number() -> ServiceDockerData:
     )
 
 
+def create_parametrization_const_integer() -> ServiceDockerData:
+    return ServiceDockerData(
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/integer",
+        version="1.0.0",
+        type=ServiceType.FRONTEND,
+        name="Integer Parameter",
+        description="Integer Parameter",
+        authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
+        contact="maiz@itis.swiss",
+        inputs={},
+        outputs={
+            "out_1": {
+                "displayOrder": 0,
+                "label": "Integer",
+                "description": "",
+                "type": "integer",
+            }
+        },
+    )
+
+
+def create_parametrization_const_boolean() -> ServiceDockerData:
+    return ServiceDockerData(
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/boolean",
+        version="1.0.0",
+        type=ServiceType.FRONTEND,
+        name="Boolean Parameter",
+        description="Boolean Parameter",
+        authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
+        contact="maiz@itis.swiss",
+        inputs={},
+        outputs={
+            "out_1": {
+                "displayOrder": 0,
+                "label": "Boolean",
+                "description": "",
+                "type": "boolean",
+            }
+        },
+    )
+
+
 def create_data_iterator_integer_service() -> ServiceDockerData:
     return ServiceDockerData(
         key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/number",
@@ -145,48 +187,6 @@ def create_data_iterator_integer_service() -> ServiceDockerData:
     )
 
 
-def create_parametrization_const_integer() -> ServiceDockerData:
-    return ServiceDockerData(
-        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/integer",
-        version="1.0.0",
-        type=ServiceType.FRONTEND,
-        name="Integer Parameter",
-        description="Integer Parameter",
-        authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
-        contact="maiz@itis.swiss",
-        inputs={},
-        outputs={
-            "out_1": {
-                "displayOrder": 0,
-                "label": "Integer",
-                "description": "",
-                "type": "integer",
-            }
-        },
-    )
-
-
-def create_parametrization_const_boolean() -> ServiceDockerData:
-    return ServiceDockerData(
-        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/boolean",
-        version="1.0.0",
-        type=ServiceType.FRONTEND,
-        name="Boolean Parameter",
-        description="Boolean Parameter",
-        authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
-        contact="maiz@itis.swiss",
-        inputs={},
-        outputs={
-            "out_1": {
-                "displayOrder": 0,
-                "label": "Boolean",
-                "description": "",
-                "type": "boolean",
-            }
-        },
-    )
-
-
 def create_node_group_service() -> ServiceDockerData:
     return ServiceDockerData(
         key=f"{FRONTEND_SERVICE_KEY_PREFIX}/nodes-group",
@@ -218,6 +218,7 @@ def iter_service_docker_data() -> Iterator[ServiceDockerData]:
         create_parametrization_const_number,
         create_parametrization_const_integer,
         create_parametrization_const_boolean,
+        create_data_iterator_integer_service,
         create_node_group_service
     ]:
         model_instance = factory()
