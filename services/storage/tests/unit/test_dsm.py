@@ -16,12 +16,15 @@ import urllib
 import uuid
 from pathlib import Path
 from shutil import copyfile
+from typing import Any, Dict, Tuple
 
 import attr
 import pytest
 import tests.utils
 from simcore_service_storage.constants import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
+from simcore_service_storage.dsm import DataStorageManager
 from simcore_service_storage.models import FileMetaData
+from simcore_service_storage.s3wrapper.s3_client import MinioClientWrapper
 from tests.utils import BUCKET_NAME, USER_ID, has_datcore_tokens
 
 
@@ -590,6 +593,46 @@ async def test_dsm_list_datasets_s3(dsm_fixture, dsm_mockup_complete_db):
 
     assert len(datasets) == 1
     assert any("Kember" in d.display_name for d in datasets)
+
+
+async def test_sync_table_meta_data(
+    dsm_fixture: DataStorageManager,
+    dsm_mockup_complete_db: Tuple[Dict[str, str], Dict[str, str]],
+    s3_client: MinioClientWrapper,
+):
+    dsm_fixture.has_project_db = True
+
+    expected_removed_files = []
+    # the list should be empty on start
+    list_changes: Dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
+        location=SIMCORE_S3_STR, dry_run=True
+    )
+    assert "removed" in list_changes
+    assert list_changes["removed"] == expected_removed_files
+
+    # now remove the files
+    for file_entry in dsm_mockup_complete_db:
+        s3_key = f"{file_entry['project_id']}/{file_entry['node_id']}/{file_entry['filename']}"
+        s3_client.remove_objects(BUCKET_NAME, [s3_key])
+        expected_removed_files.append(s3_key)
+
+        # the list should now contain the removed entries
+        list_changes: Dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
+            location=SIMCORE_S3_STR, dry_run=True
+        )
+        assert "removed" in list_changes
+        assert list_changes["removed"] == expected_removed_files
+
+    # now effectively call the function should really remove the files
+    list_changes: Dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
+        location=SIMCORE_S3_STR, dry_run=False
+    )
+    # listing again will show an empty list again
+    list_changes: Dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
+        location=SIMCORE_S3_STR, dry_run=True
+    )
+    assert "removed" in list_changes
+    assert list_changes["removed"] == []
 
 
 @pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")

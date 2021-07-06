@@ -1009,3 +1009,42 @@ class DataStorageManager:
             result = await conn.execute(stmt)
             link = to_meta_data_extended(await result.first())
             return link
+
+    async def synchronise_meta_data_table(
+        self, location: str, dry_run: bool
+    ) -> Dict[str, Any]:
+        sync_results = {"removed": []}
+        if location == SIMCORE_S3_STR:
+            # NOTE: only valid for Simcore, since datcore data is not in the database table
+            # let's get all the files in the table
+            logger.warning(
+                "synchronisation of database/s3 storage started, this will take some time..."
+            )
+            async with self.engine.acquire() as conn, self._create_client_context() as s3_client:
+                number_of_rows_in_db = await conn.scalar(file_meta_data.count())
+                logger.warning(
+                    "total number of entries to check %d",
+                    number_of_rows_in_db,
+                )
+
+                async for row in conn.execute(file_meta_data.select()):
+                    s3_key = row.object_name  # type: ignore
+
+                    # now check if the file exists in S3
+                    try:
+                        await s3_client.get_object(
+                            Bucket=self.simcore_bucket_name,
+                            Key=s3_key,
+                        )
+                    except s3_client.exceptions.NoSuchKey:
+                        # this file does not exist
+                        sync_results["removed"].append(s3_key)
+
+                if not dry_run:
+                    await conn.execute(
+                        file_meta_data.delete().where(
+                            file_meta_data.c.object_name.in_(sync_results["removed"])
+                        )
+                    )
+
+        return sync_results
