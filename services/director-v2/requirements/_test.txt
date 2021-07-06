@@ -192,7 +192,9 @@ pylint==2.8.3
 pynacl==1.4.0
     # via paramiko
 pyparsing==2.4.7
-    # via packaging
+    # via
+    #   -c requirements/_base.txt
+    #   packaging
 pyrsistent==0.17.3
     # via jsonschema
 pytest==6.2.4
@@ -228,6 +230,7 @@ pytest-xdist==2.3.0
     # via -r requirements/_test.in
 python-dateutil==2.8.1
     # via
+    #   -c requirements/_base.txt
     #   alembic
     #   faker
 python-dotenv==0.15.0
