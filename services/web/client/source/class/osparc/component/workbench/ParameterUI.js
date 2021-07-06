@@ -224,9 +224,6 @@ qx.Class.define("osparc.component.workbench.ParameterUI", {
       const captionHeight = Math.max(this.getChildControl("captionbar").getSizeHint().height, this.self().captionHeight());
       const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width;
       let y = bounds.top + captionHeight + this.self().PORT_HEIGHT/2 + 1;
-      if (this.__thumbnail) {
-        y += this.__thumbnail.getBounds().height;
-      }
       return [x, y];
     },
 

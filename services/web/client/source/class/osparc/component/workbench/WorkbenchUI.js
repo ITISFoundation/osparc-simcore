@@ -396,6 +396,18 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       parameterUI.addListener("nodeMoving", () => {
         this.__updateNodeUIPos(parameterUI);
       }, this);
+
+      parameterUI.addListener("nodeStoppedMoving", () => {
+        this.__updateWorkbenchBounds();
+      }, this);
+
+      parameterUI.addListener("appear", () => {
+        this.__updateNodeUIPos(parameterUI);
+      }, this);
+
+      qx.ui.core.queue.Layout.flush();
+
+      this.__updateHint();
     },
 
     __updateWorkbenchLayoutSize: function(position) {
@@ -1134,7 +1146,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         for (const nodeId in nodes) {
           const node = nodes[nodeId];
           if (node.getPropsForm) {
-            console.log(node.getPropsForm().getParameters());
+            const params = node.getPropsForm().getParameters();
+            params.forEach(param => {
+              this.__createEdgeBetweenParameterAndNode({
+                parameterId: param["id"]
+              }, {
+                nodeId: nodeId
+              });
+            });
           }
         }
       }

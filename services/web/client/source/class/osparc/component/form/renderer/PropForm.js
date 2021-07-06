@@ -655,13 +655,16 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     getParameter: function(portId) {
+      if ("parameter" in this._form.getControl(portId)) {
+        return this._form.getControl(portId)["parameter"];
+      }
       return null;
     },
 
     getParameters: function() {
       const parameters = [];
       Object.keys(this.__ctrlParamMap).forEach(portId => {
-        const link = this.getLink(portId);
+        const link = this.getParameter(portId);
         if (link) {
           parameters.push(link);
         }
