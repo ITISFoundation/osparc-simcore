@@ -35,48 +35,31 @@ CONTAINER_STATES_RUNNING: Set[str] = {"running"}
 CONTAINER_STATES_COMPLETE: Set[str] = {"removing", "exited"}
 
 
-def _docker_task_state_to_service_state(state: str) -> ServiceState:
-    last_state = ServiceState.STARTING  # default
+_TASK_STATE_TO_SERVICE_STATE: Dict[str, ServiceState] = {
+    **dict.fromkeys(TASK_STATES_FAILED, ServiceState.FAILED),
+    **dict.fromkeys(TASK_STATES_PENDING, ServiceState.PENDING),
+    **dict.fromkeys(TASK_STATES_PULLING, ServiceState.PULLING),
+    **dict.fromkeys(TASK_STATES_STARTING, ServiceState.STARTING),
+    **dict.fromkeys(TASK_STATES_RUNNING, ServiceState.RUNNING),
+    **dict.fromkeys(TASK_STATES_COMPLETE, ServiceState.COMPLETE),
+}
 
-    if state in TASK_STATES_FAILED:
-        last_state = ServiceState.FAILED
-    elif state in TASK_STATES_PENDING:
-        last_state = ServiceState.PENDING
-    elif state in TASK_STATES_PULLING:
-        last_state = ServiceState.PULLING
-    elif state in TASK_STATES_STARTING:
-        last_state = ServiceState.STARTING
-    elif state in TASK_STATES_RUNNING:
-        last_state = ServiceState.RUNNING
-    elif state in TASK_STATES_COMPLETE:
-        last_state = ServiceState.COMPLETE
-
-    return last_state
-
-
-def _docker_container_state_to_service_state(state: str) -> ServiceState:
-    last_state = ServiceState.STARTING  # default
-
-    if state in CONTAINER_STATES_FAILED:
-        last_state = ServiceState.FAILED
-    elif state in CONTAINER_STATES_PENDING:
-        last_state = ServiceState.PENDING
-    elif state in CONTAINER_STATES_PULLING:
-        last_state = ServiceState.PULLING
-    elif state in CONTAINER_STATES_STARTING:
-        last_state = ServiceState.STARTING
-    elif state in CONTAINER_STATES_RUNNING:
-        last_state = ServiceState.RUNNING
-    elif state in CONTAINER_STATES_COMPLETE:
-        last_state = ServiceState.COMPLETE
-
-    return last_state
+_CONTAINER_STATE_TO_SERVICE_STATE: Dict[str, ServiceState] = {
+    **dict.fromkeys(CONTAINER_STATES_FAILED, ServiceState.FAILED),
+    **dict.fromkeys(CONTAINER_STATES_PENDING, ServiceState.PENDING),
+    **dict.fromkeys(CONTAINER_STATES_PULLING, ServiceState.PULLING),
+    **dict.fromkeys(CONTAINER_STATES_STARTING, ServiceState.STARTING),
+    **dict.fromkeys(CONTAINER_STATES_RUNNING, ServiceState.RUNNING),
+    **dict.fromkeys(CONTAINER_STATES_COMPLETE, ServiceState.COMPLETE),
+}
 
 
 def extract_task_state(task_status: Dict[str, str]) -> Tuple[ServiceState, str]:
     last_task_error_msg = task_status["Err"] if "Err" in task_status else ""
 
-    task_state = _docker_task_state_to_service_state(state=task_status["State"])
+    task_state = _TASK_STATE_TO_SERVICE_STATE.get(
+        task_status["State"], ServiceState.STARTING
+    )
     return (task_state, last_task_error_msg)
 
 
@@ -87,8 +70,8 @@ def _extract_container_status(
         container_status["Error"] if "Error" in container_status else ""
     )
 
-    container_state = _docker_container_state_to_service_state(
-        state=container_status["Status"]
+    container_state = _CONTAINER_STATE_TO_SERVICE_STATE.get(
+        container_status["Status"], ServiceState.STARTING
     )
     return (container_state, last_task_error_msg)
 
