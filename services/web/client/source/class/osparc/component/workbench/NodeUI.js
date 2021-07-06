@@ -217,19 +217,26 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this._turnIntoCircledUI(width, radius);
       this.__hideExtraElements();
 
+      const label = new qx.ui.basic.Label().set({
+        font: "text-24",
+        allowGrowX: true,
+        textAlign: "center",
+        padding: 6
+      });
+      this._inputOutputLayout.addAt(label, 1, {
+        flex: 1
+      });
+
       const firstOutput = this.getNode().getFirstOutput();
       if (firstOutput && "value" in firstOutput) {
         const value = firstOutput["value"];
-        const label = new qx.ui.basic.Label(String(value)).set({
-          font: "text-24",
-          allowGrowX: true,
-          textAlign: "center",
-          padding: 6
-        });
-        this._inputOutputLayout.addAt(label, 1, {
-          flex: 1
-        });
+        label.setValue(String(value));
       }
+      this.getNode().addListener("changeOutputs", e => {
+        const updatedOutputs = e.getData();
+        const newVal = updatedOutputs["out_1"];
+        label.setValue(String(newVal["value"]));
+      });
     },
 
     turnIntoIteratorPrimary: function(canvas) {

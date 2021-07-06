@@ -1179,6 +1179,14 @@ qx.Class.define("osparc.data.model.Node", {
       } else if (this.isFilePicker()) {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
+      } else if (this.isParameter()) {
+        const outputs = this.getOutputs();
+        if ("value" in outputs["out_1"]) {
+          const output = {
+            "out_1": outputs["out_1"]["value"]
+          };
+          nodeEntry.outputs = output;
+        }
       }
 
       // remove null entries from the payload

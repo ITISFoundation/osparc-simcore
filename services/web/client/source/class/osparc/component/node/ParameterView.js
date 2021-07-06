@@ -55,7 +55,9 @@ qx.Class.define("osparc.component.node.ParameterView", {
       let control;
       switch (id) {
         case "data-type": {
-          control = new qx.ui.form.SelectBox();
+          control = new qx.ui.form.SelectBox().set({
+            allowGrowX: false
+          });
           [
             "number",
             "integer",
@@ -90,14 +92,18 @@ qx.Class.define("osparc.component.node.ParameterView", {
           break;
         case "cancel-button": {
           const buttons = this.getChildControl("buttons-layout");
-          control = new qx.ui.form.Button();
+          control = new qx.ui.form.Button(this.tr("Cancel")).set({
+            allowGrowX: false
+          });
           control.addListener("execute", () => this.fireEvent("cancel"));
           buttons.add(control);
           break;
         }
         case "ok-button": {
           const buttons = this.getChildControl("buttons-layout");
-          control = new qx.ui.form.Button();
+          control = new qx.ui.form.Button(this.tr("OK")).set({
+            allowGrowX: false
+          });
           control.addListener("execute", () => this.fireEvent("ok"));
           buttons.add(control);
           break;
@@ -117,6 +123,12 @@ qx.Class.define("osparc.component.node.ParameterView", {
         }
       });
       this.__valueField = this.getChildControl(type);
+      const outputs = node.getOutputs();
+      if ("value" in outputs["out_1"]) {
+        this.__valueField.setValue(outputs["out_1"]["value"]);
+      }
+      this.getChildControl("cancel-button");
+      this.getChildControl("ok-button");
     },
 
     getValue: function() {
