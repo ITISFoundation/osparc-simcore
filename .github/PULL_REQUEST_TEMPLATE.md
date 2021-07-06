@@ -2,8 +2,18 @@
 
 WIP: work in progress
 
-Consider prefix your PR message with an emoji from https://gitmoji.dev/
-Append (⚠️ devops) if changes in devops configuration required before deploying
+Consider prefix your PR message with an emoticon
+  🐛 bugfix
+  ✨ new feature
+  ♻️ refactoring
+  💄 updates UI or 🚸 UX/usability
+  🚑️ hotfix
+  ⚗️ experimental
+  ⬆️ upgrades dependencies
+  📝 documentation
+or from https://gitmoji.dev/
+
+and append (⚠️ devops) if changes in devops configuration required before deploying
 -->
 
 ## What do these changes do?
