@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 from pprint import pformat
-from typing import Any, Dict
+from typing import Any, Dict, Type
 
 import pytest
 from models_library.service_settings_labels import (
@@ -62,7 +62,7 @@ def test_simcore_service_labels(example: Dict, items: int, uses_dynamic_sidecar:
     ),
 )
 def test_service_settings_model_examples(
-    model_cls: BaseModel, model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
@@ -75,7 +75,7 @@ def test_service_settings_model_examples(
     (SimcoreServiceLabels,),
 )
 def test_correctly_detect_dynamic_sidecar_boot(
-    model_cls: BaseModel, model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
