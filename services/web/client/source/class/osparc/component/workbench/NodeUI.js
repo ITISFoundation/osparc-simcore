@@ -212,7 +212,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     },
 
     turnIntoParameterUI: function() {
-      const width = 100;
+      const width = 90;
       const radius = 32;
       this._turnIntoCircledUI(width, radius);
       this.__hideExtraElements();
