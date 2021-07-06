@@ -72,12 +72,16 @@ def test_service_settings_model_examples(
         assert model_instance, f"Failed with {name}"
 
 
+@pytest.mark.parametrize(
+    "model_cls",
+    (SimcoreServiceLabels,),
+)
 def test_correctly_detect_dynamic_sidecar_boot(
-    model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
 ) -> None:
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
-        model_instance = SimcoreServiceLabels(**example)
+        model_instance = model_cls(**example)
         assert model_instance.needs_dynamic_sidecar == (
             "simcore.service.paths-mapping" in example
         )
