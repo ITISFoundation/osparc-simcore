@@ -36,8 +36,8 @@ class DynamicSidecarClient:
     """Will handle connections to the service sidecar"""
 
     def __init__(self, app: FastAPI):
-        self._app = app
-        self._heatlth_request_timeout = httpx.Timeout(1.0, connect=1.0)
+        self._app: FastAPI = app
+        self._heatlth_request_timeout: httpx.Timeout = httpx.Timeout(1.0, connect=1.0)
 
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.dynamic_services.DYNAMIC_SIDECAR
