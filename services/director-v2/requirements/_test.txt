@@ -156,8 +156,10 @@ multidict==5.0.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-packaging==20.9
-    # via pytest
+packaging==21.0
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
 pamqp==2.3.0
     # via aiormq
 paramiko==2.7.2
@@ -187,7 +189,9 @@ pylint==2.8.3
 pynacl==1.4.0
     # via paramiko
 pyparsing==2.4.7
-    # via packaging
+    # via
+    #   -c requirements/_base.txt
+    #   packaging
 pyrsistent==0.17.3
     # via jsonschema
 pytest-aiohttp==0.3.0
@@ -220,6 +224,7 @@ pytest==6.2.4
     #   pytest-xdist
 python-dateutil==2.8.1
     # via
+    #   -c requirements/_base.txt
     #   alembic
     #   faker
 python-dotenv==0.15.0
