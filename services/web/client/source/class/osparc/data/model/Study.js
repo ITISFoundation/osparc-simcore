@@ -173,6 +173,10 @@ qx.Class.define("osparc.data.model.Study", {
     }
   },
 
+  events: {
+    "changeParameters": "qx.event.type.Event"
+  },
+
   statics: {
     createMyNewStudyObject: function() {
       let myNewStudyObject = {};
@@ -272,6 +276,28 @@ qx.Class.define("osparc.data.model.Study", {
       for (const node of Object.values(nodes)) {
         node.removeIFrame();
       }
+    },
+
+    /* PARAMETERS */
+    hasParameters: function() {
+      const nodes = this.getWorkbench().getNodes(true);
+      return Object.values(nodes).some(node => node.isParameter());
+    },
+
+    getParameters: function() {
+      const parameters = [];
+      const nodes = this.getWorkbench().getNodes(true);
+      Object.values(nodes).forEach(node => {
+        if (node.isParameter()) {
+          parameters.push(node);
+        }
+      });
+      return parameters;
+    },
+
+    __setParameters: function(parameters) {
+      this.__parameters = parameters;
+      this.fireEvent("changeParameters");
     },
 
     serialize: function() {

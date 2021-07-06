@@ -335,6 +335,12 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
       node.setParentNodeId(parentNode ? parentNode.getNodeId() : null);
       this.fireEvent("nNodesChanged");
+      if (node.isParameter()) {
+        const study = osparc.store.Store.getInstance().getCurrentStudy();
+        if (study) {
+          study.fireEvent("changeParameters");
+        }
+      }
     },
 
     moveNode: function(node, newParent, oldParent) {

@@ -102,16 +102,18 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         position: "bottom-right"
       });
 
+      /*
       const newParamBtn = new qx.ui.menu.Button(this.tr("Set new parameter"));
       newParamBtn.addListener("execute", () => {
         this.__createNewParameter(portId);
       }, this);
       paramsMenu.add(newParamBtn);
+      */
 
       const existingParamMenu = new qx.ui.menu.Menu();
       this.__populateExistingParamsMenu(portId, existingParamMenu);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      study.getSweeper().addListener("changeParameters", () => {
+      study.addListener("changeParameters", () => {
         this.__populateExistingParamsMenu(portId, existingParamMenu);
       }, this);
 
@@ -151,10 +153,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __populateExistingParamsMenu: function(fieldKey, existingParamMenu) {
       existingParamMenu.removeAll();
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      study.getSweeper().getParameters().forEach(param => {
-        const paramButton = new qx.ui.menu.Button(param.label);
+      study.getParameters().forEach(param => {
+        const paramButton = new qx.ui.menu.Button();
+        param.bind("label", paramButton, "label");
         paramButton.addListener("execute", () => {
-          this._setParameter(fieldKey, param);
+          this.getNode().addInputNode(param.getNodeId());
+          this.getNode().addPortLink(fieldKey, param.getNodeId(), "out_1");
         }, this);
         existingParamMenu.add(paramButton);
       });
