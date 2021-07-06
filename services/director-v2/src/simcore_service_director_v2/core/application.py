@@ -31,10 +31,6 @@ logger = logging.getLogger(__name__)
 
 
 def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
-    import os
-    from pprint import pformat
-
-    logger.warning(pformat(os.environ))
     if settings is None:
         settings = AppSettings.create_from_envs()
 
