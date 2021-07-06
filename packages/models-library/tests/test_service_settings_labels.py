@@ -14,7 +14,7 @@ from models_library.service_settings_labels import (
 from pydantic import BaseModel
 
 
-def test_service_settings():
+def test_service_settings() -> None:
     simcore_settings_settings_label = SimcoreServiceSettingsLabel.parse_obj(
         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
     )
@@ -46,7 +46,9 @@ SIMCORE_SERVICE_EXAMPLES = [
     ],
     ids=[i for _, _, _, i in SIMCORE_SERVICE_EXAMPLES],
 )
-def test_simcore_service_labels(example: Dict, items: int, uses_dynamic_sidecar: bool):
+def test_simcore_service_labels(
+    example: Dict, items: int, uses_dynamic_sidecar: bool
+) -> None:
     simcore_service_labels = SimcoreServiceLabels.parse_obj(example)
     assert simcore_service_labels
     assert len(simcore_service_labels.dict(exclude_unset=True)) == items
@@ -63,29 +65,25 @@ def test_simcore_service_labels(example: Dict, items: int, uses_dynamic_sidecar:
 )
 def test_service_settings_model_examples(
     model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
-):
+) -> None:
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)
         assert model_instance, f"Failed with {name}"
 
 
-@pytest.mark.parametrize(
-    "model_cls",
-    (SimcoreServiceLabels,),
-)
 def test_correctly_detect_dynamic_sidecar_boot(
-    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
-):
+    model_cls_examples: Dict[str, Dict[str, Any]]
+) -> None:
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
-        model_instance = model_cls(**example)
+        model_instance = SimcoreServiceLabels(**example)
         assert model_instance.needs_dynamic_sidecar == (
             "simcore.service.paths-mapping" in example
         )
 
 
-def test_raises_error_if_http_entrypoint_is_missing():
+def test_raises_error_if_http_entrypoint_is_missing() -> None:
     simcore_service_labels: Dict[str, Any] = SimcoreServiceLabels.Config.schema_extra[
         "examples"
     ][2]
