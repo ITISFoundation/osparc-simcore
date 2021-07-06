@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from simcore_service_director_v2.modules import dask_client
 from starlette import status
 from starlette.exceptions import HTTPException
 
@@ -16,6 +17,7 @@ from ..meta import api_version, api_vtag, project_name, summary
 from ..modules import (
     celery,
     celery_scheduler,
+    dask_client,
     dask_scheduler,
     db,
     director_v0,
@@ -77,6 +79,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         dynamic_sidecar.setup(app)
 
     if settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_SCHEDULER_ENABLED:
+        dask_client.setup(app, settings.DASK_SCHEDULER)
         dask_scheduler.setup(app)
 
     # setup app --
