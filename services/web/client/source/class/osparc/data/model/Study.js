@@ -278,12 +278,6 @@ qx.Class.define("osparc.data.model.Study", {
       }
     },
 
-    /* PARAMETERS */
-    hasParameters: function() {
-      const nodes = this.getWorkbench().getNodes(true);
-      return Object.values(nodes).some(node => node.isParameter());
-    },
-
     getParameters: function() {
       const parameters = [];
       const nodes = this.getWorkbench().getNodes(true);
@@ -293,11 +287,6 @@ qx.Class.define("osparc.data.model.Study", {
         }
       });
       return parameters;
-    },
-
-    __setParameters: function(parameters) {
-      this.__parameters = parameters;
-      this.fireEvent("changeParameters");
     },
 
     serialize: function() {
