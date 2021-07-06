@@ -217,7 +217,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this._turnIntoCircledUI(width, radius);
       this.__hideExtraElements();
 
-      /*
       const firstOutput = this.getNode().getFirstOutput();
       if (firstOutput && "value" in firstOutput) {
         const value = firstOutput["value"];
@@ -231,7 +230,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           flex: 1
         });
       }
-      */
     },
 
     turnIntoIteratorPrimary: function(canvas) {
