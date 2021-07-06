@@ -50,7 +50,7 @@ from ...utils.exceptions import PipelineNotFoundError, ProjectNotFoundError
 from ..dependencies.celery import get_celery_client
 from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
-from ..dependencies.scheduler import get_scheduler
+from ..dependencies.scheduler import get_celery_scheduler
 
 router = APIRouter()
 log = logging.getLogger(__file__)
@@ -92,7 +92,7 @@ async def create_computation(
     ),
     celery_client: CeleryClient = Depends(get_celery_client),
     director_client: DirectorV0Client = Depends(get_director_v0_client),
-    scheduler: CeleryScheduler = Depends(get_scheduler),
+    celery_scheduler: CeleryScheduler = Depends(get_celery_scheduler),
 ) -> ComputationTaskOut:
     log.debug(
         "User %s is creating a new computation from project %s",
@@ -150,7 +150,7 @@ async def create_computation(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"Project {job.project_id} has no computational services, or contains cycles",
                 )
-            await scheduler.run_new_pipeline(job.user_id, job.project_id)
+            await celery_scheduler.run_new_pipeline(job.user_id, job.project_id)
 
         return ComputationTaskOut(
             id=job.project_id,
