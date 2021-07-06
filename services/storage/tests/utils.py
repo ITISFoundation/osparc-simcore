@@ -19,7 +19,7 @@ from simcore_service_storage.models import (
 log = logging.getLogger(__name__)
 
 
-DATABASE = "aio_login_tests"
+DATABASE = "test"
 USER = "admin"
 PASS = "admin"
 

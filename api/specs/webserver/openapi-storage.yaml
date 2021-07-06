@@ -15,6 +15,34 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
+  /storage/locations/{location_id}:sync:
+    post:
+      summary: Manually triggers the synchronisation of the file meta data table in the database
+      tags:
+        - storage
+      operationId: synchronise_meta_data_table
+      parameters:
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: dry_run
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: An object containing added, changed and removed paths
+          content:
+            application/json:
+              schema:
+                $ref: "./components/schemas/locations.yaml#/TableSynchronisationEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
   /storage/locations/{location_id}/datasets:
     get:
       summary: Get datasets metadata
