@@ -153,7 +153,7 @@ class CeleryScheduler:
 
         pipeline_state_from_tasks = get_pipeline_state_from_task_states(
             list(pipeline_tasks.values()),
-            self.celery_client.settings.publication_timeout,
+            self.celery_client.settings.CELERY_PUBLICATION_TIMEOUT,
         )
 
         comp_runs_repo: CompRunsRepository = _get_repository(

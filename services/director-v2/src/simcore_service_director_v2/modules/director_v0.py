@@ -34,10 +34,11 @@ def setup(app: FastAPI, settings: DirectorV0Settings):
         DirectorV0Client.create(
             app,
             client=httpx.AsyncClient(
-                base_url=settings.base_url(include_tag=True),
-                timeout=app.state.settings.client_request.total_timeout,
+                base_url=f"{settings.endpoint}",
+                timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
             ),
         )
+        logger.debug("created client for director-v0: %s", settings.endpoint)
 
     async def on_shutdown() -> None:
         client = DirectorV0Client.instance(app).client
@@ -94,7 +95,7 @@ class DirectorV0Client:
         self, service: ServiceKeyVersion
     ) -> ServiceDockerData:
         resp = await self.request(
-            "GET", f"services/{urllib.parse.quote_plus(service.key)}/{service.version}"
+            "GET", f"/services/{urllib.parse.quote_plus(service.key)}/{service.version}"
         )
         if resp.status_code == status.HTTP_200_OK:
             return ServiceDockerData.parse_obj(unenvelope_or_raise_error(resp)[0])
@@ -104,7 +105,7 @@ class DirectorV0Client:
     async def get_service_extras(self, service: ServiceKeyVersion) -> ServiceExtras:
         resp = await self.request(
             "GET",
-            f"service_extras/{urllib.parse.quote_plus(service.key)}/{service.version}",
+            f"/service_extras/{urllib.parse.quote_plus(service.key)}/{service.version}",
         )
         if resp.status_code == status.HTTP_200_OK:
             return ServiceExtras.parse_obj(unenvelope_or_raise_error(resp))
@@ -114,7 +115,9 @@ class DirectorV0Client:
     async def get_running_service_details(
         self, service_uuid: NodeID
     ) -> RunningServiceDetails:
-        resp = await self.request("GET", f"running_interactive_services/{service_uuid}")
+        resp = await self.request(
+            "GET", f"/running_interactive_services/{service_uuid}"
+        )
         if resp.status_code == status.HTTP_200_OK:
             return RunningServiceDetails.parse_obj(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)

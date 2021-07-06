@@ -8,7 +8,7 @@ from celery.contrib.abortable import AbortableAsyncResult
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.settings.celery import CeleryConfig
+from settings_library.celery import CelerySettings
 
 from ..core.errors import ConfigurationError
 from ..models.domains.comp_tasks import Image
@@ -17,15 +17,12 @@ from ..models.schemas.constants import UserID
 logger = logging.getLogger(__name__)
 
 
-def setup(app: FastAPI, settings: CeleryConfig) -> None:
-    if not settings:
-        settings = CeleryConfig.create_from_env()
-
+def setup(app: FastAPI, settings: CelerySettings) -> None:
     def on_startup() -> None:
         CeleryClient.create(
             app,
             client=Celery(
-                settings.task_name,
+                settings.CELERY_TASK_NAME,
                 broker=settings.broker_url,
                 backend=settings.result_backend,
             ),
@@ -40,7 +37,7 @@ def setup(app: FastAPI, settings: CeleryConfig) -> None:
 
 
 def _computation_task_signature(
-    settings: CeleryConfig,
+    settings: CelerySettings,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -48,8 +45,8 @@ def _computation_task_signature(
 ) -> Signature:
     """returns the signature of the computation task (see celery canvas)"""
     task_signature = signature(
-        settings.task_name,
-        queue=f"{settings.task_name}.{routing_queue}",
+        settings.CELERY_TASK_NAME,
+        queue=f"{settings.CELERY_TASK_NAME}.{routing_queue}",
         kwargs={
             "user_id": user_id,
             "project_id": str(project_id),
@@ -83,7 +80,7 @@ CeleryTaskOut = Task
 @dataclass
 class CeleryClient:
     client: Celery
-    settings: CeleryConfig
+    settings: CelerySettings
 
     @classmethod
     def create(cls, app: FastAPI, *args, **kwargs) -> "CeleryClient":
@@ -112,7 +109,7 @@ class CeleryClient:
                 self.settings,
                 user_id,
                 project_id,
-                str(task.node_id),
+                task.node_id,
                 task.runtime_requirements,
             )
             async_tasks[

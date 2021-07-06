@@ -60,11 +60,14 @@ class RegistryApiClient:
 
         self.client = AsyncClient(
             base_url=self.settings.api_url,
-            timeout=app.state.settings.client_request.total_timeout,
+            timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
         )
 
     def get_basic_auth(self):
-        auth = (self.settings.user, self.settings.pw.get_secret_value())
+        auth = (
+            self.settings.REGISTRY_USER,
+            self.settings.REGISTRY_PW.get_secret_value(),
+        )
         return auth
 
     async def list_repositories(self, number_of_retrieved_repos=50) -> List[str]:

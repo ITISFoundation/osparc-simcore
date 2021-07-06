@@ -42,7 +42,7 @@ def minimal_celery_config(
     monkeypatch.setenv("POSTGRES_ENABLED", "0")
     monkeypatch.setenv("CELERY_ENABLED", "1")
     monkeypatch.setenv("REGISTRY_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_SCHEDULER_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
 
     monkeypatch.setattr(CeleryConfig, "broker_url", celery_config["broker_url"])
     monkeypatch.setattr(CeleryConfig, "result_backend", celery_config["result_backend"])

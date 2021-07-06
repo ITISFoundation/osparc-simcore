@@ -109,7 +109,7 @@ async def create_computation(
             job.project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(
-            comp_tasks, celery_client.settings.publication_timeout
+            comp_tasks, celery_client.settings.CELERY_PUBLICATION_TIMEOUT
         )
         if is_pipeline_running(pipeline_state):
             raise HTTPException(
@@ -213,7 +213,7 @@ async def get_computation(
             t for t in all_comp_tasks if str(t.node_id) in list(pipeline_dag.nodes())
         ]
         pipeline_state = get_pipeline_state_from_task_states(
-            filtered_tasks, celery_client.settings.publication_timeout
+            filtered_tasks, celery_client.settings.CELERY_PUBLICATION_TIMEOUT
         )
 
         log.debug(
@@ -281,7 +281,7 @@ async def stop_computation_project(
             t for t in tasks if str(t.node_id) in list(pipeline_dag.nodes())
         ]
         pipeline_state = get_pipeline_state_from_task_states(
-            filtered_tasks, celery_client.settings.publication_timeout
+            filtered_tasks, celery_client.settings.CELERY_PUBLICATION_TIMEOUT
         )
 
         if is_pipeline_running(pipeline_state):
@@ -327,7 +327,7 @@ async def delete_pipeline(
             project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(
-            comp_tasks, celery_client.settings.publication_timeout
+            comp_tasks, celery_client.settings.CELERY_PUBLICATION_TIMEOUT
         )
         if is_pipeline_running(pipeline_state):
             if not comp_task_stop.force:
@@ -358,7 +358,7 @@ async def delete_pipeline(
                 )
                 pipeline_state = get_pipeline_state_from_task_states(
                     comp_tasks,
-                    celery_client.settings.publication_timeout,
+                    celery_client.settings.CELERY_PUBLICATION_TIMEOUT,
                 )
                 return is_pipeline_stopped(pipeline_state)
 

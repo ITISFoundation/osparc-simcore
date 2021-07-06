@@ -15,7 +15,7 @@ def minimal_director_config(project_env_devel_environment, monkeypatch):
     monkeypatch.setenv("POSTGRES_ENABLED", "0")
     monkeypatch.setenv("CELERY_ENABLED", "0")
     monkeypatch.setenv("REGISTRY_ENABLED", "1")
-    monkeypatch.setenv("DIRECTOR_V2_SCHEDULER_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
 
 
 @pytest.fixture
