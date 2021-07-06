@@ -12,7 +12,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import randrange
-from typing import Callable, Dict, Iterator, Tuple
+from typing import Any, Callable, Dict, Iterator, Tuple
 
 import dotenv
 import pytest
@@ -156,7 +156,7 @@ async def postgres_engine(loop, postgres_service_url):
 
 
 @pytest.fixture(scope="session")
-def minio_service(docker_services, docker_ip, project_env_devel_dict)-> Dict[str, Any]:
+def minio_service(docker_services, docker_ip, project_env_devel_dict) -> Dict[str, Any]:
 
     # Build URL to service listening on random port.
     host = docker_ip
