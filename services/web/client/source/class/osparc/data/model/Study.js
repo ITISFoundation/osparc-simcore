@@ -244,6 +244,11 @@ qx.Class.define("osparc.data.model.Study", {
       this.getWorkbench().buildWorkbench();
     },
 
+    isSnapshot: function() {
+      const primaryStudyId = this.getSweeper().getPrimaryStudyId();
+      return primaryStudyId !== null;
+    },
+
     __applyAccessRights: function(value) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
