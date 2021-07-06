@@ -11,12 +11,14 @@ from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
+from simcore_service_director_v2.core.settings import DaskSchedulerSettings
 
 from ..core.errors import ConfigurationError, SchedulerError
 from ..models.domains.comp_pipelines import CompPipelineAtDB
 from ..models.domains.comp_runs import CompRunsAtDB
 from ..models.domains.comp_tasks import CompTaskAtDB
 from ..models.schemas.constants import UserID
+from ..utils.computations import get_pipeline_state_from_task_states
 from .db.repositories import BaseRepository
 from .db.repositories.comp_pipelines import CompPipelinesRepository
 from .db.repositories.comp_runs import CompRunsRepository
@@ -48,6 +50,7 @@ Iteration = PositiveInt
 
 @dataclass
 class DaskScheduler:
+    settings: DaskSchedulerSettings
     scheduled_pipelines: Set[Tuple[UserID, ProjectID, Iteration]]
     db_engine: Engine
     wake_up_event: asyncio.Event = asyncio.Event()
@@ -69,6 +72,7 @@ class DaskScheduler:
         )
         logger.info("DaskScheduler creation with %s runs being scheduled", len(runs))
         return cls(
+            settings=app.state.settings.DASK_SCHEDULER,
             db_engine=db_engine,
             # celery_client=CeleryClient.instance(app),
             scheduled_pipelines={
@@ -129,6 +133,31 @@ class DaskScheduler:
             )
         return pipeline_comp_tasks
 
+    async def _update_run_result(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        iteration: PositiveInt,
+        pipeline_tasks: Dict[str, CompTaskAtDB],
+    ) -> RunningState:
+
+        pipeline_state_from_tasks = get_pipeline_state_from_task_states(
+            list(pipeline_tasks.values()),
+            100000000000000,
+        )
+
+        comp_runs_repo: CompRunsRepository = _get_repository(
+            self.db_engine, CompRunsRepository
+        )  # type: ignore
+        await comp_runs_repo.set_run_result(
+            user_id=user_id,
+            project_id=project_id,
+            iteration=iteration,
+            result_state=pipeline_state_from_tasks,
+            final_state=(pipeline_state_from_tasks in _COMPLETED_STATES),
+        )
+        return pipeline_state_from_tasks
+
     async def _schedule_pipeline(
         self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
     ) -> None:
@@ -143,6 +172,33 @@ class DaskScheduler:
         pipeline_tasks: Dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(
             project_id, pipeline_dag
         )
+
+        # filter out the tasks with what were already completed
+        pipeline_dag.remove_nodes_from(
+            {
+                node_id
+                for node_id, t in pipeline_tasks.items()
+                if t.state in _COMPLETED_STATES
+            }
+        )
+
+        # update the current status of the run
+        pipeline_result: RunningState = await self._update_run_result(
+            user_id, project_id, iteration, pipeline_tasks
+        )
+
+        if not pipeline_dag.nodes():
+            # there is nothing left, the run is completed, we're done here
+            self.scheduled_pipelines.remove((user_id, project_id, iteration))
+            logger.info(
+                "pipeline %s scheduling completed with result %s",
+                project_id,
+                pipeline_result,
+            )
+            return
+
+        # now transfer the pipeline to the dask scheduler
+        from dask.distributed import Client
 
     def _wake_up_scheduler_now(self) -> None:
         self.wake_up_event.set()

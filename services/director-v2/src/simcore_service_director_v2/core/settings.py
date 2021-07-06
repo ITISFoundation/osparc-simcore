@@ -237,6 +237,10 @@ class CelerySchedulerSettings(BaseCustomSettings):
 
 class DaskSchedulerSettings(BaseCustomSettings):
     DIRECTOR_V2_DASK_SCHEDULER_ENABLED: bool = True
+    DASK_SCHEDULER_HOST: str = Field(
+        "dask-scheduler",
+        description="Address of the scheduler to register (only if started as worker )",
+    )
 
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):

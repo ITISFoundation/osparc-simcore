@@ -90,6 +90,7 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director-v2:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
+      - DASK_SCHEDULER_HOST=${DASK_SCHEDULER_HOST:-dask-scheduler}
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
       - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
       - DYNAMIC_SIDECAR_IMAGE=${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
