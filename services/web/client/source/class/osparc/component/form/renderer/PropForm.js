@@ -140,7 +140,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
         } else {
           const param = study.getSweeper().addNewParameter(newParameterLabel);
-          this.addParameter(fieldKey, param);
+          this._setParameter(fieldKey, param);
           newParamName.close();
         }
       }, this);
@@ -154,7 +154,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       study.getParameters().forEach(param => {
         const paramButton = new qx.ui.menu.Button(param.label);
         paramButton.addListener("execute", () => {
-          this.addParameter(fieldKey, param);
+          this._setParameter(fieldKey, param);
         }, this);
         existingParamMenu.add(paramButton);
       });
@@ -670,7 +670,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     // overridden
-    addParameter: function(portId, parameter) {
+    _setParameter: function(portId, parameter) {
       if (!this.__isPortAvailable(portId)) {
         return false;
       }
@@ -686,14 +686,14 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return true;
     },
 
-    addParameters: function(data) {
+    setParameters: function(data) {
       for (let key in data) {
         if (osparc.utils.Ports.isDataAParameter(data[key])) {
           const parameterId = data[key].replace("{{", "").replace("}}", "");
           const study = osparc.store.Store.getInstance().getCurrentStudy();
           const parameter = study.getParameter(parameterId);
           if (parameter) {
-            this.addParameter(key, parameter);
+            this._setParameter(key, parameter);
           }
         }
       }

@@ -627,7 +627,7 @@ qx.Class.define("osparc.data.model.Node", {
           }
         }
         this.getPropsForm().addPortLinks(inputLinks);
-        this.getPropsForm().addParameters(inputParameters);
+        this.getPropsForm().setParameters(inputParameters);
         this.__settingsForm.setData(inputData);
       }
     },
