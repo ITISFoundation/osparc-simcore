@@ -230,7 +230,7 @@ class PGSettings(PostgresSettings):
 
 class CelerySchedulerSettings(BaseCustomSettings):
     DIRECTOR_V2_CELERY_SCHEDULER_ENABLED: bool = Field(
-        True,
+        False,
         description="Enables/Disables the scheduler",
     )
 
