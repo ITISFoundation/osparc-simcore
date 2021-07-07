@@ -77,6 +77,9 @@ class SimcoreServiceSettingsLabel(BaseModel):
     def __getitem__(self, item):
         return self.__root__[item]
 
+    def __len__(self):
+        return len(self.__root__)
+
 
 class PathMappingsLabel(BaseModel):
     inputs_path: Path = Field(
@@ -104,32 +107,7 @@ class PathMappingsLabel(BaseModel):
 ComposeSpecLabel = Optional[Dict[str, Any]]
 
 
-class SimcoreServiceLabels(BaseModel):
-    """
-    Validate all the simcores.services.* labels on a service.
-
-    When no other fields expect `settings` are present
-    the service will be started as legacy by director-v0.
-
-    If `paths_mapping` is present the service will be started
-    via dynamic-sidecar by director-v2.
-
-    When starting via dynamic-sidecar, if `compose_spec` is
-    present, also `container_http_entry` must be present.
-    When both of these fields are missing a docker-compose
-    spec will be generated before starting the service.
-    """
-
-    settings: Json[SimcoreServiceSettingsLabel] = Field(
-        ...,
-        alias="simcore.service.settings",
-        description=(
-            "Json encoded. Contains setting like environment variables and "
-            "resource constraints which are required by the service. "
-            "Should be compatible with Docker REST API."
-        ),
-    )
-
+class DynamicSidecarServiceLabels(BaseModel):
     paths_mapping: Optional[Json[PathMappingsLabel]] = Field(
         None,
         alias="simcore.service.paths-mapping",
@@ -176,6 +154,36 @@ class SimcoreServiceLabels(BaseModel):
                 "`container_http_entry` not allowed if `compose_spec` is missing"
             )
         return v
+
+    class Config(_BaseConfig):
+        pass
+
+
+class SimcoreServiceLabels(DynamicSidecarServiceLabels):
+    """
+    Validate all the simcores.services.* labels on a service.
+
+    When no other fields expect `settings` are present
+    the service will be started as legacy by director-v0.
+
+    If `paths_mapping` is present the service will be started
+    via dynamic-sidecar by director-v2.
+
+    When starting via dynamic-sidecar, if `compose_spec` is
+    present, also `container_http_entry` must be present.
+    When both of these fields are missing a docker-compose
+    spec will be generated before starting the service.
+    """
+
+    settings: Json[SimcoreServiceSettingsLabel] = Field(
+        ...,
+        alias="simcore.service.settings",
+        description=(
+            "Json encoded. Contains setting like environment variables and "
+            "resource constraints which are required by the service. "
+            "Should be compatible with Docker REST API."
+        ),
+    )
 
     class Config(_BaseConfig):
         schema_extra = {

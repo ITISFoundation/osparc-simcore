@@ -10,11 +10,12 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
+    DynamicSidecarServiceLabels,
     PathMappingsLabel,
     SimcoreServiceLabels,
 )
-from models_library.services import SERVICE_KEY_RE, VERSION_RE
-from pydantic import BaseModel, Field, PositiveInt, PrivateAttr, validator
+from models_library.services import ServiceKeyVersion
+from pydantic import BaseModel, Extra, Field, PositiveInt, PrivateAttr, validator
 
 from ..constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
@@ -285,7 +286,7 @@ class DynamicSidecarNames(BaseModel):
         )
 
 
-class MonitorData(BaseModel):
+class MonitorData(ServiceKeyVersion, DynamicSidecarServiceLabels):
     service_name: str = Field(
         ..., description="Name of the current dynamic-sidecar being monitored"
     )
@@ -305,34 +306,7 @@ class MonitorData(BaseModel):
         description="stores information fetched from the dynamic-sidecar",
     )
 
-    service_key: str = Field(
-        ...,
-        regex=SERVICE_KEY_RE,
-        description="together with the tag used to compose the docker-compose spec for the service",
-    )
-    service_tag: str = Field(
-        ...,
-        regex=VERSION_RE,
-        description="together with the key used to compose the docker-compose spec for the service",
-    )
-    paths_mapping: PathMappingsLabel = Field(
-        ...,
-        description=(
-            "the service explicitly requests where to mount all paths "
-            "which will be handeled by the dynamic-sidecar"
-        ),
-    )
-    compose_spec: ComposeSpecLabel = Field(
-        ...,
-        description=(
-            "if the user provides a compose_spec, it will be used instead "
-            "of compsing one from the service_key and service_tag"
-        ),
-    )
-    container_http_entry: Optional[str] = Field(
-        ...,
-        description="when the user defines a compose spec, it should pick a container inside the spec to receive traffic on a defined port",
-    )
+    paths_mapping: PathMappingsLabel
 
     dynamic_sidecar_network_name: str = Field(
         ...,
@@ -387,8 +361,8 @@ class MonitorData(BaseModel):
                 node_uuid=service.node_uuid,
                 project_id=service.project_id,
                 user_id=service.user_id,
-                service_key=service.key,
-                service_tag=service.version,
+                key=service.key,
+                version=service.version,
                 paths_mapping=simcore_service_labels.paths_mapping,
                 compose_spec=simcore_service_labels.compose_spec,
                 container_http_entry=simcore_service_labels.container_http_entry,
@@ -436,6 +410,9 @@ class MonitorData(BaseModel):
                 ),
             )
         )
+
+    class Config:
+        extra = Extra.allow
 
 
 class AsyncResourceLock(BaseModel):

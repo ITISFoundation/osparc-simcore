@@ -257,17 +257,19 @@ class ServiceOutput(ServiceProperty):
 class ServiceKeyVersion(BaseModel):
     """This pair uniquely identifies a services"""
 
-    key: constr(regex=KEY_RE) = Field(
+    key: str = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
+        regex=KEY_RE,
         examples=[
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
         ],
     )
-    version: constr(regex=VERSION_RE) = Field(
+    version: str = Field(
         ...,
         description="service version number",
+        regex=VERSION_RE,
         examples=["1.0.0", "0.0.1"],
     )
 

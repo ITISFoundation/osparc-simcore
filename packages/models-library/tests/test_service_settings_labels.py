@@ -52,6 +52,7 @@ def test_simcore_service_labels(
     example: Dict, items: int, uses_dynamic_sidecar: bool
 ) -> None:
     simcore_service_labels = SimcoreServiceLabels.parse_obj(example)
+
     assert simcore_service_labels
     assert len(simcore_service_labels.dict(exclude_unset=True)) == items
     assert simcore_service_labels.needs_dynamic_sidecar == uses_dynamic_sidecar
@@ -62,6 +63,10 @@ def test_service_settings() -> None:
         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
     )
     assert simcore_settings_settings_label
+    assert len(simcore_settings_settings_label) == len(
+        SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
+    )
+    assert simcore_settings_settings_label[0]
 
     # ensure private attribute assignment
     for service_setting in simcore_settings_settings_label:
