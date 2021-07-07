@@ -9,6 +9,7 @@
     - TODO: see https://github.com/claws/aioprometheus
 """
 
+import asyncio
 import logging
 import time
 
@@ -58,6 +59,10 @@ def middleware_factory(app_name):
                 resp_time,
                 resp.status,
             )
+        except asyncio.CancelledError as exc:
+            # python 3.8 cancellederror is not an Exception
+            resp = web.HTTPRequestTimeout(reason=str(exc))
+            raise
         finally:
             # metrics on the same request
             resp_time = time.time() - request["start_time"]
@@ -73,7 +78,7 @@ def middleware_factory(app_name):
                 app_name, request.method, request.path, resp.status
             ).inc()
 
-        return resp
+            return resp
 
     middleware_handler.__middleware_name__ = __name__  # SEE check_outermost_middleware
     return middleware_handler
