@@ -391,7 +391,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __popUpParameterEditor: function(nodeUI) {
       const parameterEditor = new osparc.component.node.ParameterEditor(nodeUI.getNode());
-      const win = osparc.ui.window.Window.popUpInWindow(parameterEditor, "Edit Parameter", 250, 150);
+      const win = osparc.ui.window.Window.popUpInWindow(parameterEditor, "Edit Parameter", 250, 175);
       parameterEditor.addListener("ok", () => {
         const label = parameterEditor.getLabel();
         nodeUI.getNode().setLabel(label);
