@@ -1671,7 +1671,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
       - name: set docker builx cache environs
-        run: echo "DOCKER_BUILDX_CACHE_TO=/tmp/.buildx-cache-new"
+        run: echo "DOCKER_BUILDX_CACHE_TO=/tmp/.buildx-cache-new" >> $GITHUB_ENV
       - name: show system environs
         run: ./ci/helpers/show_system_versions.bash
       - name: pull images
