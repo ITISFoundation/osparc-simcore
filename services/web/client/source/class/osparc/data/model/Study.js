@@ -294,6 +294,17 @@ qx.Class.define("osparc.data.model.Study", {
       return parameters;
     },
 
+    getIterators: function() {
+      const iterators = [];
+      const nodes = this.getWorkbench().getNodes(true);
+      Object.values(nodes).forEach(node => {
+        if (node.isIterator()) {
+          iterators.push(node);
+        }
+      });
+      return iterators;
+    },
+
     serialize: function() {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();

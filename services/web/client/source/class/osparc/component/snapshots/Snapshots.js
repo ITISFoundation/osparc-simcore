@@ -62,15 +62,15 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
     __initModel: function() {
       const model = this.__model = new qx.ui.table.model.Simple();
 
-      // add variables in columns
-      const parameters = this.__primaryStudy.getSweeper().getParameters();
+      // add data-iterators in columns
       this.__cleanupCols();
       const nextCol = this.__cols["name"].col + 1;
-      for (let i=0; i<parameters.length; i++) {
-        const parameter = parameters[i];
-        this.__cols[parameter.id] = {
+      const iterators = this.__primaryStudy.getIterators();
+      for (let i=0; i<iterators.length; i++) {
+        const dataIterator = iterators[i];
+        this.__cols[dataIterator.getNodeId()] = {
           col: nextCol+i,
-          label: parameter.label
+          label: dataIterator.getLabel()
         };
       }
 
@@ -107,14 +107,8 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
               const row = [];
               row[this.__cols["id"].col] = secondaryStudy.uuid;
               row[this.__cols["name"].col] = secondaryStudy.name;
-              const paramValues = secondaryStudy["dev"]["sweeper"]["parameterValues"];
-              paramValues.forEach(paramValue => {
-                for (const [key, value] of Object.entries(paramValue)) {
-                  if (this.__cols && key in this.__cols) {
-                    row[this.__cols[key].col] = value;
-                  }
-                }
-              });
+              // OM: hack for demo for
+              row[2] = i+1;
               rows.push(row);
             }
             this.getTableModel().setData(rows, false);
