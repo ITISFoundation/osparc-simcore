@@ -2,16 +2,18 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from copy import deepcopy
 from pprint import pformat
 from typing import Any, Dict, Type
 
 import pytest
 from models_library.service_settings_labels import (
+    PathMappingsLabel,
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 
 def test_service_settings() -> None:
@@ -95,3 +97,10 @@ def test_raises_error_if_http_entrypoint_is_missing() -> None:
 
     with pytest.raises(ValueError):
         simcore_service = SimcoreServiceLabels(**simcore_service_labels)
+
+
+def test_path_mappings_none_state_paths() -> None:
+    sample_data = deepcopy(PathMappingsLabel.Config.schema_extra["examples"])
+    sample_data["state_paths"] = None
+    with pytest.raises(ValidationError):
+        PathMappingsLabel(**sample_data)

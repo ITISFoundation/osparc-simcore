@@ -10,7 +10,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
-    PathsMappingLabel,
+    PathMappingsLabel,
     SimcoreServiceLabels,
 )
 from models_library.services import SERVICE_KEY_RE, VERSION_RE
@@ -179,7 +179,7 @@ class ServiceLabelsStoredData(BaseModel):
     node_uuid: NodeID
     service_key: str
     service_tag: str
-    paths_mapping: PathsMappingLabel
+    paths_mapping: PathMappingsLabel
     compose_spec: ComposeSpecLabel
     container_http_entry: Optional[str]
     dynamic_sidecar_network_name: str
@@ -195,7 +195,7 @@ class ServiceLabelsStoredData(BaseModel):
             node_uuid=NodeID(service["Spec"]["Labels"]["uuid"]),
             service_key=service["Spec"]["Labels"]["service_key"],
             service_tag=service["Spec"]["Labels"]["service_tag"],
-            paths_mapping=PathsMappingLabel.parse_raw(
+            paths_mapping=PathMappingsLabel.parse_raw(
                 service["Spec"]["Labels"]["paths_mapping"]
             ),
             compose_spec=json.loads(service["Spec"]["Labels"]["compose_spec"]),
@@ -216,8 +216,8 @@ class ServiceLabelsStoredData(BaseModel):
                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 "service_key": "simcore/services/dynamic/3dviewer",
                 "service_tag": "2.4.5",
-                "paths_mapping": PathsMappingLabel.parse_obj(
-                    PathsMappingLabel.Config.schema_extra["examples"]
+                "paths_mapping": PathMappingsLabel.parse_obj(
+                    PathMappingsLabel.Config.schema_extra["examples"]
                 ),
                 "compose_spec": json.loads(
                     SimcoreServiceLabels.Config.schema_extra["examples"][2][
@@ -315,7 +315,7 @@ class MonitorData(BaseModel):
         regex=VERSION_RE,
         description="together with the key used to compose the docker-compose spec for the service",
     )
-    paths_mapping: PathsMappingLabel = Field(
+    paths_mapping: PathMappingsLabel = Field(
         ...,
         description=(
             "the service explicitly requests where to mount all paths "

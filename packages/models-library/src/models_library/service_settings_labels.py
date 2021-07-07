@@ -7,7 +7,7 @@ from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
 
 
 class _BaseConfig:
-    extra = Extra.ignore
+    extra = Extra.forbid
 
 
 class SimcoreServiceSettingLabelEntry(BaseModel):
@@ -76,22 +76,18 @@ class SimcoreServiceSettingsLabel(BaseModel):
         return self.__root__[item]
 
 
-class PathsMappingLabel(BaseModel):
+class PathMappingsLabel(BaseModel):
     inputs_path: Path = Field(
-        ..., description="path where the service expects all the inputs folder"
+        ..., description="folder path where the service expects all the inputs"
     )
     outputs_path: Path = Field(
-        ..., description="path where the service expects all the outputs folder"
+        ...,
+        description="folder path where the service is expected to provide all its outputs",
     )
     state_paths: List[Path] = Field(
         [],
-        description="optional list of path which contents need to be saved and restored",
+        description="optional list of paths which contents need to be persisted",
     )
-
-    @validator("state_paths", always=True)
-    @classmethod
-    def convert_none_to_empty_list(cls, v):
-        return [] if v is None else v
 
     class Config(_BaseConfig):
         schema_extra = {
@@ -131,7 +127,7 @@ class SimcoreServiceLabels(BaseModel):
         ),
     )
 
-    paths_mapping: Optional[Json[PathsMappingLabel]] = Field(
+    paths_mapping: Optional[Json[PathMappingsLabel]] = Field(
         None,
         alias="simcore.service.paths-mapping",
         description="json encoded, determines where the outputs and inputs directories are",
@@ -180,7 +176,7 @@ class SimcoreServiceLabels(BaseModel):
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
                     "simcore.service.paths-mapping": json.dumps(
-                        PathsMappingLabel.Config.schema_extra["examples"]
+                        PathMappingsLabel.Config.schema_extra["examples"]
                     ),
                 },
                 # dynamic-service with compose spec
@@ -189,7 +185,7 @@ class SimcoreServiceLabels(BaseModel):
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
                     "simcore.service.paths-mapping": json.dumps(
-                        PathsMappingLabel.Config.schema_extra["examples"]
+                        PathMappingsLabel.Config.schema_extra["examples"]
                     ),
                     "simcore.service.compose-spec": json.dumps(
                         {
