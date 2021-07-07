@@ -46,7 +46,7 @@ class DynamicSidecarClient:
         self.httpx_client = httpx.AsyncClient(
             timeout=httpx.Timeout(
                 dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
-                connect=1.0,
+                connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
             )
         )
 

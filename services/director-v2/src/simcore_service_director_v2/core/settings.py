@@ -93,15 +93,21 @@ class DynamicSidecarSettings(BaseCustomSettings):
         regex=SERVICE_NETWORK_RE,
         description="network all dynamic services are connected to",
     )
-    DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT: PositiveInt = Field(
-        15,
+    DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT: PositiveFloat = Field(
+        15.0,
         description=(
             "the default timeout each request to the dynamic-sidecar API in seconds; as per "
             "design, all requests should answer quite quickly, in theory a few seconds or less"
         ),
     )
+    DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT: PositiveFloat = Field(
+        1.0,
+        description=(
+            "Connections to the dynamic-sidecars in the same swarm deployment should be very fast."
+        ),
+    )
     DYNAMIC_SIDECAR_TIMEOUT_FETCH_DYNAMIC_SIDECAR_NODE_ID: PositiveFloat = Field(
-        60,
+        60.0,
         description=(
             "When starting the dynamic-sidecar proxy, the NodeID of the dynamic-sidecar container "
             "is required. If something goes wrong timeout and do not wait forever in a loop. "
