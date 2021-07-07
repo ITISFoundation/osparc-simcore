@@ -60,6 +60,14 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
     }
   },
 
+  statics: {
+    PORT_HEIGHT: 16,
+    captionHeight: function() {
+      return osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().height ||
+        osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
+    }
+  },
+
   events: {
     "edgeDragStart": "qx.event.type.Data",
     "edgeDragOver": "qx.event.type.Data",
@@ -67,14 +75,6 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
     "edgeDragEnd": "qx.event.type.Data",
     "nodeMoving": "qx.event.type.Event",
     "nodeStoppedMoving": "qx.event.type.Event"
-  },
-
-  statics: {
-    PORT_HEIGHT: 16,
-    captionHeight: function() {
-      return osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().height ||
-        osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
-    }
   },
 
   members: {

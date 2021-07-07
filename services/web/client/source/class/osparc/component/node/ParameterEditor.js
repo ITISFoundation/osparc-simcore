@@ -43,15 +43,15 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
     }
   },
 
+  events: {
+    "ok": "qx.event.type.Event",
+    "cancel": "qx.event.type.Event"
+  },
+
   properties: {
     node: {
       check: "osparc.data.model.Node"
     }
-  },
-
-  events: {
-    "ok": "qx.event.type.Event",
-    "cancel": "qx.event.type.Event"
   },
 
   members: {
