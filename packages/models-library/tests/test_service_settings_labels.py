@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from collections import namedtuple
 from copy import deepcopy
 from pprint import pformat
 from typing import Any, Dict, Type
@@ -15,28 +16,30 @@ from models_library.service_settings_labels import (
 )
 from pydantic import BaseModel, ValidationError
 
-
-def test_service_settings() -> None:
-    simcore_settings_settings_label = SimcoreServiceSettingsLabel.parse_obj(
-        SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
-    )
-    assert simcore_settings_settings_label
-
-    # ensure private attribute assignment
-    for service_setting in simcore_settings_settings_label:
-        # pylint: disable=protected-access
-        service_setting._destination_container = "random_value"
+SimcoreServiceExample = namedtuple(
+    "SimcoreServiceExample", "example, items, uses_dynamic_sidecar, index"
+)
 
 
 SIMCORE_SERVICE_EXAMPLES = [
-    (example, items, uses_dynamic_sidecar, index)
-    # pylint: disable=unnecessary-comprehension
-    for example, items, uses_dynamic_sidecar, index in zip(
-        SimcoreServiceLabels.Config.schema_extra["examples"],
-        [1, 2, 4],
-        [False, True, True],
-        ["legacy", "dynamic-service", "dynamic-service-with-compose-spec"],
-    )
+    SimcoreServiceExample(
+        example=SimcoreServiceLabels.Config.schema_extra["examples"][0],
+        items=1,
+        uses_dynamic_sidecar=False,
+        index="legacy",
+    ),
+    SimcoreServiceExample(
+        example=SimcoreServiceLabels.Config.schema_extra["examples"][1],
+        items=2,
+        uses_dynamic_sidecar=True,
+        index="dynamic-service",
+    ),
+    SimcoreServiceExample(
+        example=SimcoreServiceLabels.Config.schema_extra["examples"][2],
+        items=4,
+        uses_dynamic_sidecar=True,
+        index="dynamic-service-with-compose-spec",
+    ),
 ]
 
 
@@ -55,6 +58,18 @@ def test_simcore_service_labels(
     assert simcore_service_labels
     assert len(simcore_service_labels.dict(exclude_unset=True)) == items
     assert simcore_service_labels.needs_dynamic_sidecar == uses_dynamic_sidecar
+
+
+def test_service_settings() -> None:
+    simcore_settings_settings_label = SimcoreServiceSettingsLabel.parse_obj(
+        SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
+    )
+    assert simcore_settings_settings_label
+
+    # ensure private attribute assignment
+    for service_setting in simcore_settings_settings_label:
+        # pylint: disable=protected-access
+        service_setting._destination_container = "random_value"
 
 
 @pytest.mark.parametrize(
@@ -90,13 +105,13 @@ def test_correctly_detect_dynamic_sidecar_boot(
 
 
 def test_raises_error_if_http_entrypoint_is_missing() -> None:
-    simcore_service_labels: Dict[str, Any] = SimcoreServiceLabels.Config.schema_extra[
-        "examples"
-    ][2]
+    simcore_service_labels: Dict[str, Any] = deepcopy(
+        SimcoreServiceLabels.Config.schema_extra["examples"][2]
+    )
     del simcore_service_labels["simcore.service.container-http-entrypoint"]
 
     with pytest.raises(ValueError):
-        simcore_service = SimcoreServiceLabels(**simcore_service_labels)
+        SimcoreServiceLabels(**simcore_service_labels)
 
 
 def test_path_mappings_none_state_paths() -> None:
@@ -104,3 +119,12 @@ def test_path_mappings_none_state_paths() -> None:
     sample_data["state_paths"] = None
     with pytest.raises(ValidationError):
         PathMappingsLabel(**sample_data)
+
+
+def test_simcore_services_labels_compose_spec_null_container_http_entry_provided() -> None:
+    sample_data = deepcopy(SimcoreServiceLabels.Config.schema_extra["examples"][2])
+    assert sample_data["simcore.service.container-http-entrypoint"]
+
+    sample_data["simcore.service.compose-spec"] = None
+    with pytest.raises(ValidationError):
+        SimcoreServiceLabels(**sample_data)

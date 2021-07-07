@@ -1,5 +1,6 @@
 # pylint: disable=unsubscriptable-object
 import json
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -8,6 +9,7 @@ from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
 
 class _BaseConfig:
     extra = Extra.forbid
+    keep_untouched = (cached_property,)
 
 
 class SimcoreServiceSettingLabelEntry(BaseModel):
@@ -122,32 +124,42 @@ class SimcoreServiceLabels(BaseModel):
         ...,
         alias="simcore.service.settings",
         description=(
-            "Contains setting like environment variables and "
-            "resource constraints which are required by the service"
+            "Json encoded. Contains setting like environment variables and "
+            "resource constraints which are required by the service. "
+            "Should be compatible with Docker REST API."
         ),
     )
 
     paths_mapping: Optional[Json[PathMappingsLabel]] = Field(
         None,
         alias="simcore.service.paths-mapping",
-        description="json encoded, determines where the outputs and inputs directories are",
+        description=(
+            "json encoded, determines how the folders are mapped in "
+            "the service. Required by dynamic-sidecar."
+        ),
     )
 
     compose_spec: Optional[Json[ComposeSpecLabel]] = Field(
         None,
         alias="simcore.service.compose-spec",
-        description="json encoded docker-compose spec",
+        description=(
+            "json encoded docker-compose specifications. see "
+            "https://docs.docker.com/compose/compose-file/, "
+            "only used by dynamic-sidecar."
+        ),
     )
     container_http_entry: Optional[str] = Field(
         None,
         alias="simcore.service.container-http-entrypoint",
         description=(
-            "When a compose spec is provided, a container where the proxy "
-            "needs to send http traffic must be specified"
+            "When a docker-compose specifications is provided, "
+            "the container where the traffic must flow has to be "
+            "specified. Required by dynamic-sidecar when "
+            "compose_spec is set."
         ),
     )
 
-    @property
+    @cached_property
     def needs_dynamic_sidecar(self) -> bool:
         """if paths mapping is present the service needs to be ran via dynamic-sidecar"""
         return self.paths_mapping is not None
@@ -158,6 +170,10 @@ class SimcoreServiceLabels(BaseModel):
         if v is None and values.get("compose_spec") is not None:
             raise ValueError(
                 "Field `container_http_entry` must be defined but is missing"
+            )
+        if v is not None and values.get("compose_spec") is None:
+            raise ValueError(
+                "`container_http_entry` not allowed if `compose_spec` is missing"
             )
         return v
 
