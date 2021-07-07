@@ -246,7 +246,7 @@ qx.Class.define("osparc.utils.Services", {
     },
 
     getParameterMetadata: function(type) {
-      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/"+type);
+      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/parameter/"+type);
     },
 
     getNodesGroup: function() {
