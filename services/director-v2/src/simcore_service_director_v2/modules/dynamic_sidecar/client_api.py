@@ -54,7 +54,7 @@ class DynamicSidecarClient:
         await self.httpx_client.aclose()
 
     async def is_healthy(self, dynamic_sidecar_endpoint: str) -> bool:
-        """retruns True if service is UP and running else False"""
+        """returns True if service is UP and running else False"""
         url = get_url(dynamic_sidecar_endpoint, "/health")
         try:
             # this request uses a very short timeout

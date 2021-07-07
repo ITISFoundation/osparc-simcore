@@ -267,7 +267,7 @@ def assert_dicts_match_by_common_keys(first_dict, second_dict) -> bool:
 
 
 async def query_user_from_db(aiopg_engine: aiopg.sa.Engine, user: Dict):
-    """Retruns a user from the db"""
+    """returns a user from the db"""
     async with aiopg_engine.acquire() as conn:
         user_result = await conn.execute(
             users.select().where(users.c.id == int(user["id"]))
