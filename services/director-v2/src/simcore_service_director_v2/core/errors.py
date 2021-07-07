@@ -62,13 +62,6 @@ class ServiceUUIDInUseError(DirectorException):
         self.service_uuid = service_uuid
 
 
-class RegistryConnectionError(DirectorException):
-    """Error while connecting to the docker regitry"""
-
-    def __init__(self, msg: str):
-        super().__init__(msg or "Unexpected connection error while accessing registry")
-
-
 class ServiceStartTimeoutError(DirectorException):
     """The service was created but never run (time-out)"""
 

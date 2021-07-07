@@ -4,6 +4,10 @@
 # NOTE: ALL version constraints MUST be commented
 --constraint ../../../requirements/constraints.txt
 
+--requirements ../../../packages/models-library/requirements/_base.in
+--requirements ../../../packages/settings-library/requirements/_base.in
+--requirements ../../../packages/postgres-database/requirements/_base.in
+
 # fastapi and extensions
 fastapi[all]
 
