@@ -10,7 +10,7 @@ from models_library.settings.base import BaseCustomSettings
 from models_library.settings.celery import CeleryConfig
 from models_library.settings.http_clients import ClientRequestSettings
 from models_library.settings.postgres import PostgresSettings
-from pydantic import BaseSettings, Field, PositiveFloat, PositiveInt, validator
+from pydantic import BaseSettings, Field, PositiveFloat, validator
 from settings_library.docker_registry import RegistrySettings
 
 from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
