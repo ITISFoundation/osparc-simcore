@@ -49,7 +49,7 @@ def service_labels_stored_data() -> ServiceLabelsStoredData:
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def dynamic_sidecar_port() -> int:
     return 1222
 

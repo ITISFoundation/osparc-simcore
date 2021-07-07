@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 
 import pytest
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.schemas.constants import (
@@ -159,7 +160,7 @@ async def cleanup_test_dynamic_sidecar_service(
 
 
 @pytest.fixture
-def node_uuid() -> UUID:
+def node_uuid() -> NodeID:
     return uuid4()
 
 
