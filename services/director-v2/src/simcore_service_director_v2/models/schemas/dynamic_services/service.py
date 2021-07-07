@@ -95,10 +95,7 @@ class ServiceState(Enum):
     @classmethod
     @lru_cache(maxsize=2)
     def comparison_order(cls) -> Dict["ServiceState", int]:
-        """
-        `Docker Task` and `Docker Container` states are remapped to this `Service State`
-        These states need to be comparable in a predefined order.
-        """
+        """States are comparable to supportmin() on a list of ServiceState"""
         return {
             ServiceState.PENDING: 0,
             ServiceState.PULLING: 1,

@@ -74,6 +74,11 @@ def _extract_container_status(
 def extract_containers_minimim_statuses(
     containers_status: Dict[str, Dict[str, str]]
 ) -> Tuple[ServiceState, str]:
+    """
+    Because more then one container can be started by the dynamic-sidecar,
+    the lowest (considered worst) state will be forwarded to the frontend.
+    `ServiceState` defines the order of the states.
+    """
     logger.info("containers_status=%s", containers_status)
     remapped_service_statuses = {
         k: _extract_container_status(value)
