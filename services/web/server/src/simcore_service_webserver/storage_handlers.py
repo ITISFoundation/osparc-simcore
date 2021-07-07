@@ -6,7 +6,8 @@ import logging
 import urllib
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from aiohttp import web
+from aiohttp import ClientTimeout, web
+from aiohttp.client import ClientTimeout
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
 from servicelib.rest_utils import extract_and_validate
@@ -46,7 +47,7 @@ def _resolve_storage_url(request: web.Request) -> URL:
     return url
 
 
-async def _request_storage(request: web.Request, method: str):
+async def _request_storage(request: web.Request, method: str, **kwargs):
     await extract_and_validate(request)
 
     url = _resolve_storage_url(request)
@@ -57,7 +58,9 @@ async def _request_storage(request: web.Request, method: str):
         body = await request.json()
 
     session = get_client_session(request.app)
-    async with session.request(method.upper(), url, ssl=False, json=body) as resp:
+    async with session.request(
+        method.upper(), url, ssl=False, json=body, **kwargs
+    ) as resp:
         payload = await resp.json()
         return payload
 
@@ -155,7 +158,7 @@ async def delete_file(request: web.Request):
 @login_required
 @permission_required("storage.files.sync")
 async def synchronise_meta_data_table(request: web.Request):
-    payload = await _request_storage(request, "POST")
+    payload = await _request_storage(request, "POST", timeout=ClientTimeout(total=300))
     return payload
 
 
