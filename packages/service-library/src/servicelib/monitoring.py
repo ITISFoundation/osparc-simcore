@@ -32,6 +32,7 @@ def middleware_factory(app_name):
     @web.middleware
     async def middleware_handler(request: web.Request, handler):
         # See https://prometheus.io/docs/concepts/metric_types
+        resp = None
         try:
             request["start_time"] = time.time()
             request.app["REQUEST_IN_PROGRESS"].labels(
@@ -78,7 +79,7 @@ def middleware_factory(app_name):
                 app_name, request.method, request.path, resp.status
             ).inc()
 
-            return resp
+        return resp
 
     middleware_handler.__middleware_name__ = __name__  # SEE check_outermost_middleware
     return middleware_handler
