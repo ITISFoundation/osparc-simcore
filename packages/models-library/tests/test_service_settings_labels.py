@@ -17,7 +17,7 @@ from models_library.service_settings_labels import (
 from pydantic import BaseModel, ValidationError
 
 SimcoreServiceExample = namedtuple(
-    "SimcoreServiceExample", "example, items, uses_dynamic_sidecar, index"
+    "SimcoreServiceExample", "example, items, uses_dynamic_sidecar, id"
 )
 
 
@@ -26,30 +26,27 @@ SIMCORE_SERVICE_EXAMPLES = [
         example=SimcoreServiceLabels.Config.schema_extra["examples"][0],
         items=1,
         uses_dynamic_sidecar=False,
-        index="legacy",
+        id="legacy",
     ),
     SimcoreServiceExample(
         example=SimcoreServiceLabels.Config.schema_extra["examples"][1],
         items=2,
         uses_dynamic_sidecar=True,
-        index="dynamic-service",
+        id="dynamic-service",
     ),
     SimcoreServiceExample(
         example=SimcoreServiceLabels.Config.schema_extra["examples"][2],
         items=4,
         uses_dynamic_sidecar=True,
-        index="dynamic-service-with-compose-spec",
+        id="dynamic-service-with-compose-spec",
     ),
 ]
 
 
 @pytest.mark.parametrize(
     "example, items, uses_dynamic_sidecar",
-    [
-        (example, items, uses_dynamic_sidecar)
-        for example, items, uses_dynamic_sidecar, _ in SIMCORE_SERVICE_EXAMPLES
-    ],
-    ids=[i for _, _, _, i in SIMCORE_SERVICE_EXAMPLES],
+    [(x.example, x.items, x.uses_dynamic_sidecar) for x in SIMCORE_SERVICE_EXAMPLES],
+    ids=[x.id for x in SIMCORE_SERVICE_EXAMPLES],
 )
 def test_simcore_service_labels(
     example: Dict, items: int, uses_dynamic_sidecar: bool
