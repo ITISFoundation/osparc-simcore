@@ -31,8 +31,7 @@ def minimal_director_config(project_env_devel_environment, monkeypatch):
     monkeypatch.setenv("CELERY_ENABLED", "0")
     monkeypatch.setenv("REGISTRY_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_SCHEDULER_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V2_MONITORING_ENABLED", "false")
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
 
 
 @pytest.fixture

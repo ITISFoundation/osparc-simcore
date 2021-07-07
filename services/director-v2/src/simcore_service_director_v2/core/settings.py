@@ -152,6 +152,9 @@ class DynamicServicesSettings(BaseCustomSettings):
     DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED: bool = Field(
         True, description="Enables/Disables connection with service"
     )
+    DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED: bool = Field(
+        True, description="Enables/Disables the dynamic_sidecar submodule"
+    )
 
     # dynamic sidecar
     DYNAMIC_SIDECAR: DynamicSidecarSettings

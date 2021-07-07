@@ -94,8 +94,7 @@ def mock_env(monkeypatch) -> None:
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
 
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V2_MONITORING_ENABLED", "false")
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
 
 
 @pytest.fixture(scope="function")

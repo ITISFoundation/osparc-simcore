@@ -64,7 +64,8 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings.celery.enabled:
         celery.setup(app, settings.celery)
 
-    dynamic_sidecar.setup(app)
+    if settings.dynamic_services.DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED:
+        dynamic_sidecar.setup(app)
 
     if settings.scheduler.enabled:
         scheduler.setup(app)
