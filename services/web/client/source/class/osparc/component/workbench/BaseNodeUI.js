@@ -141,7 +141,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
         draggable: true,
         droppable: true,
         textAlign: alignX,
-        allowGrowX: true,
+        width: 30,
         paddingLeft: 5,
         paddingRight: 5
       });
