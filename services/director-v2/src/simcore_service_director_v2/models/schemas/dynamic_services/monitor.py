@@ -19,6 +19,8 @@ from pydantic import BaseModel, Field, PositiveInt, PrivateAttr, validator
 from ..constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
+    REGEX_DY_SERVICE_PROXY,
+    REGEX_DY_SERVICE_SIDECAR,
     UserID,
 )
 
@@ -26,8 +28,6 @@ TEMPORARY_PORT_NUMBER = 65_534
 
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 
-REGEX_DY_SERVICE_SIDECAR = fr"^{DYNAMIC_SIDECAR_SERVICE_PREFIX}_[a-zA-Z0-9-_]*"
-REGEX_DY_SERVICE_PROXY = fr"^{DYNAMIC_PROXY_SERVICE_PREFIX}_[a-zA-Z0-9-_]*"
 
 logger = logging.getLogger()
 
