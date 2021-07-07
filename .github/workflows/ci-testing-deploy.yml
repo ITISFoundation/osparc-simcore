@@ -1662,6 +1662,8 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: cache docker layers
+        # if we are on master we do not want the cache, we build from scratch
+        if: github.ref != 'refs/heads/master'
         uses: actions/cache@v2
         with:
           path: /tmp/.buildx-cache
