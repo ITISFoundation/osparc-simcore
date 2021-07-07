@@ -125,14 +125,19 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __populateExistingParamsMenu: function(fieldKey, existingParamMenu) {
       existingParamMenu.removeAll();
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      study.getParameters().forEach(param => {
-        const paramButton = new qx.ui.menu.Button();
-        param.bind("label", paramButton, "label");
-        paramButton.addListener("execute", () => {
-          this.getNode().addInputNode(param.getNodeId());
-          this.getNode().addPortLink(fieldKey, param.getNodeId(), "out_1");
-        }, this);
-        existingParamMenu.add(paramButton);
+      study.getParameters().forEach(paramNode => {
+        osparc.utils.Ports.arePortsCompatible(paramNode, "out_1", this.getNode(), fieldKey)
+          .then(compatible => {
+            if (compatible) {
+              const paramButton = new qx.ui.menu.Button();
+              paramNode.bind("label", paramButton, "label");
+              paramButton.addListener("execute", () => {
+                this.getNode().addInputNode(paramNode.getNodeId());
+                this.getNode().addPortLink(fieldKey, paramNode.getNodeId(), "out_1");
+              }, this);
+              existingParamMenu.add(paramButton);
+            }
+          });
       });
     },
 
