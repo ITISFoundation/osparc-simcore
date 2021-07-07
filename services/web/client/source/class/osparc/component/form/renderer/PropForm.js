@@ -34,6 +34,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
   events: {
     "linkFieldModified": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
+    "parameterNodeRequested": "qx.event.type.Data",
     "changeChildVisibility": "qx.event.type.Event"
   },
 
@@ -55,6 +56,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     gridPos: {
       ...osparc.component.form.renderer.PropFormBase.gridPos,
       retrieveStatus: Object.keys(osparc.component.form.renderer.PropFormBase.gridPos).length
+    },
+
+    isFieldParametrizable: function(field) {
+      return ["Number", "Spinner", "CheckBox"].includes(field.widgetType);
     }
   },
 
@@ -74,7 +79,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       if (["FileButton"].includes(field.widgetType)) {
         return this.__getSelectFileButton(field.key);
       }
-      if (["Number", "Spinner", "CheckBox"].includes(field.widgetType)) {
+      if (this.self().isFieldParametrizable(field)) {
         const paramsMenuBtn = this.__getParamsMenuButton(field.key).set({
           visibility: "excluded"
         });
@@ -101,6 +106,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       const paramsMenu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
+
+      const newParamBtn = new qx.ui.menu.Button(this.tr("Set new parameter"));
+      newParamBtn.addListener("execute", () => {
+        this.fireDataEvent("parameterNodeRequested", portId);
+      }, this);
+      paramsMenu.add(newParamBtn);
 
       const existingParamMenu = new qx.ui.menu.Menu();
       this.__populateExistingParamsMenu(portId, existingParamMenu);

@@ -182,6 +182,7 @@ qx.Class.define("osparc.data.model.Node", {
   events: {
     "retrieveInputs": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
+    "parameterNodeRequested": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data",
     "outputListChanged": "qx.event.type.Event"
   },
@@ -562,13 +563,18 @@ qx.Class.define("osparc.data.model.Node", {
         this.callRetrieveInputs(portId);
       }, this);
 
-      propsForm.addListener("filePickerRequested", e => {
-        const portId = e.getData();
-        this.fireDataEvent("filePickerRequested", {
-          portId,
-          nodeId: this.getNodeId()
-        });
-      }, this);
+      [
+        "filePickerRequested",
+        "parameterNodeRequested"
+      ].forEach(nodeRequestSignal => {
+        propsForm.addListener(nodeRequestSignal, e => {
+          const portId = e.getData();
+          this.fireDataEvent(nodeRequestSignal, {
+            portId,
+            nodeId: this.getNodeId()
+          });
+        }, this);
+      });
     },
 
     __addSettingsEditor: function(inputs) {
