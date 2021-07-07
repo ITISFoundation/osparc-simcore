@@ -1,7 +1,7 @@
 #
 # Specifies third-party dependencies for 'models-library'
 #
--c ../../../requirements/constraints.txt
+--constraint ../../../requirements/constraints.txt
 
 pydantic[email]
 

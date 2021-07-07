@@ -5,7 +5,7 @@
 #
 
 # installs requirements first
--r _base.txt
--r _migration.txt
+--requirement _base.txt
+--requirement _migration.txt
 
 .

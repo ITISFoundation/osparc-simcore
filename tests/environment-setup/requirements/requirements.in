@@ -1,4 +1,4 @@
--c ../../../requirements/constraints.txt
+--constraint ../../../requirements/constraints.txt
 
 pytest
 pytest-aiohttp

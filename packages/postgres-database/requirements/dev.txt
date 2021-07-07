@@ -7,13 +7,13 @@
 #
 
 # installs base + tests requirements
--r _base.txt
--r _migration.txt
--r _test.txt
--r _tools.txt
+--requirement _base.txt
+--requirement _migration.txt
+--requirement _test.txt
+--requirement _tools.txt
 
 # installs this repo's packages
--e ../../packages/pytest-simcore/
+--editable ../../packages/pytest-simcore/
 
 # current module
--e .
+--editable .

@@ -2,7 +2,7 @@
 # Specifies third-party dependencies for 'services/director-v2/src'
 #
 # NOTE: ALL version constraints MUST be commented
--c ../../../requirements/constraints.txt
+--constraint ../../../requirements/constraints.txt
 
 # fastapi and extensions
 fastapi[all]
