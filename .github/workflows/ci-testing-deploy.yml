@@ -51,9 +51,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -94,9 +94,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -150,9 +150,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -212,9 +212,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -273,9 +273,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -329,9 +329,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -389,9 +389,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -445,9 +445,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -501,9 +501,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -559,9 +559,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node }}
@@ -596,9 +596,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -639,9 +639,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -696,9 +696,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -752,9 +752,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -808,9 +808,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -864,9 +864,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -920,9 +920,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -976,9 +976,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1032,9 +1032,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1089,9 +1089,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1146,9 +1146,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1203,9 +1203,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1260,9 +1260,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1317,9 +1317,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1374,9 +1374,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1431,9 +1431,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1488,9 +1488,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1545,9 +1545,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: cache docker layers
         uses: actions/cache@v2
         with:
@@ -1609,9 +1609,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: cache docker layers
         uses: actions/cache@v2
         with:
@@ -1668,17 +1668,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: setup docker buildx
-        if: github.event_name == 'push'
         id: buildx
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        if: github.event_name == 'push'
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: cache docker layers
-        if: github.event_name == 'push'
         uses: actions/cache@v2
         with:
           path: /tmp/.buildx-cache
@@ -1686,9 +1683,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
       - name: show system environs
-        if: github.event_name == 'push'
+        run: ./ci/helpers/show_system_versions.bash
+      - name: pull images
+        run: ./ci/build/test-images.bash pull_images
       - name: build images
-        if: github.event_name == 'push'
         run: ./ci/build/test-images.bash build_images
       - name: set owner variable
         if: github.event_name == 'push'
@@ -1726,9 +1724,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: cache docker layers
         uses: actions/cache@v2
         with:
@@ -1805,9 +1803,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: cache docker layers
         uses: actions/cache@v2
         with:
@@ -1884,9 +1882,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: cache docker layers
         uses: actions/cache@v2
         with:
@@ -1963,9 +1961,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: cache docker layers
         uses: actions/cache@v2
         with:
@@ -2042,9 +2040,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: cache docker layers
         uses: actions/cache@v2
         with:
@@ -2121,9 +2119,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: cache docker layers
         uses: actions/cache@v2
         with:
@@ -2182,9 +2180,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -2237,9 +2235,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -2322,9 +2320,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -2461,9 +2459,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          buildkitd-flags: --debug
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+        run: ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - name: deploy master
