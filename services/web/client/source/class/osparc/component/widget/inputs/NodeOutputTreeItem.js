@@ -93,6 +93,16 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
     }
   },
 
+  statics: {
+    isNumber: function(n) {
+      return !isNaN(parseFloat(n)) && !isNaN(n - 0);
+    },
+
+    isBoolean: function(n) {
+      return typeof n == "boolean";
+    }
+  },
+
   members : {
     __label: null,
 
@@ -161,10 +171,6 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
       }
     },
 
-    __isNumber: function(n) {
-      return !isNaN(parseFloat(n)) && !isNaN(n - 0);
-    },
-
     _transformValue: function(value) {
       if (value.getPath) {
         // it's a file
@@ -188,7 +194,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
       if (value.getLabel) {
         return value.getLabel();
       }
-      if (this.__isNumber(value)) {
+      if (this.self().isNumber(value) || this.self().isBoolean(value)) {
         return value.toString();
       }
       return value;
