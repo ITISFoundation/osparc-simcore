@@ -381,6 +381,24 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.isDynamic()) {
         this.__initIFrame();
       }
+
+      if (this.isParameter()) {
+        const type = osparc.component.node.ParameterEditor.getParameterOutputType(this);
+        // set default values
+        let val = null;
+        switch (type) {
+          case "boolean":
+            val = true;
+            break;
+          case "number":
+          case "integer":
+            val = 1;
+            break;
+        }
+        if (val !== null) {
+          osparc.component.node.ParameterEditor.setParameterOutputValue(this, val);
+        }
+      }
     },
 
     populateNodeUIData: function(nodeUIData) {

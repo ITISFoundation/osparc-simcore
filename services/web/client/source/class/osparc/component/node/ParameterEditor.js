@@ -34,6 +34,12 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
     getParameterOutputType: function(node) {
       const metaData = node.getMetaData();
       return metaData["outputs"]["out_1"]["type"];
+    },
+
+    setParameterOutputValue: function(node, val) {
+      node.setOutputData({
+        "out_1": val
+      });
     }
   },
 

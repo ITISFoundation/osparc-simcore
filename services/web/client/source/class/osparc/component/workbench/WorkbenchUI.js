@@ -397,9 +397,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         nodeUI.getNode().setLabel(label);
 
         const val = parameterEditor.getValue();
-        nodeUI.getNode().setOutputData({
-          "out_1": val
-        });
+        osparc.component.node.ParameterEditor.setParameterOutputValue(nodeUI.getNode(), val);
 
         win.close();
       }, this);

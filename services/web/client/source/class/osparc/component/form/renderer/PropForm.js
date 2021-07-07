@@ -74,7 +74,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       if (["FileButton"].includes(field.widgetType)) {
         return this.__getSelectFileButton(field.key);
       }
-      if (["Number", "Spinner"].includes(field.widgetType)) {
+      if (["Number", "Spinner", "CheckBox"].includes(field.widgetType)) {
         const paramsMenuBtn = this.__getParamsMenuButton(field.key).set({
           visibility: "excluded"
         });
