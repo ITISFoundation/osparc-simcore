@@ -393,10 +393,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const parameterEditor = new osparc.component.node.ParameterEditor(nodeUI.getNode());
       const win = osparc.ui.window.Window.popUpInWindow(parameterEditor, "Edit Parameter", 250, 150);
       parameterEditor.addListener("ok", () => {
+        const label = parameterEditor.getLabel();
+        nodeUI.getNode().setLabel(label);
+
         const val = parameterEditor.getValue();
         nodeUI.getNode().setOutputData({
           "out_1": val
         });
+
         win.close();
       }, this);
       parameterEditor.addListener("cancel", () => {

@@ -54,6 +54,10 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "label":
+          control = new qx.ui.form.TextField();
+          this._add(control);
+          break;
         case "data-type": {
           control = new qx.ui.form.SelectBox().set({
             allowGrowX: false
@@ -114,6 +118,10 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
 
     __buildLayout: function() {
       const node = this.getNode();
+
+      const label = this.getChildControl("label");
+      label.setValue(node.getLabel());
+
       const type = this.self().getParameterOutputType(node);
       const typeBox = this.getChildControl("data-type");
       typeBox.getSelectables().forEach(selectable => {
@@ -122,6 +130,7 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
           typeBox.setEnabled(false);
         }
       });
+
       this.__valueField = this.getChildControl(type);
       const outputs = node.getOutputs();
       if ("value" in outputs["out_1"]) {
@@ -129,6 +138,10 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
       }
       this.getChildControl("cancel-button");
       this.getChildControl("ok-button");
+    },
+
+    getLabel: function() {
+      return this.getChildControl("label").getValue();
     },
 
     getValue: function() {
