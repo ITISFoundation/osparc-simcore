@@ -118,7 +118,7 @@ def test_forward_to_director(
     exp_data: Dict,
     resp_alias,
 ):
-    response = client.get(entrypoint)
+    response = client.get(f"v0/{entrypoint}")
 
     assert response.status_code == exp_status
     assert response.json() == exp_data
@@ -164,19 +164,19 @@ def mocked_director_service_fcts(
     fake_running_service_details: RunningServiceDetails,
 ):
     with respx.mock(
-        base_url=minimal_app.state.settings.director_v0.base_url(include_tag=False),
+        base_url=minimal_app.state.settings.DIRECTOR_V0.endpoint,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
         respx_mock.get(
-            "/v0/services/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
+            "/services/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
             name="get_service_version",
         ).respond(
             json={"data": [fake_service_details.dict(by_alias=True)]},
         )
 
         respx_mock.get(
-            "/v0/service_extras/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
+            "/service_extras/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
             name="get_service_extras",
         ).respond(
             json={"data": fake_service_extras.dict(by_alias=True)},
@@ -184,7 +184,7 @@ def mocked_director_service_fcts(
 
         respx_mock.get(
             re.compile(
-                r"v0/running_interactive_services/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                r"running_interactive_services/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
             ),
             name="get_running_service_details",
         ).respond(
