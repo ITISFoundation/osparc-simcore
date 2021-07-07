@@ -4,14 +4,16 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from models_library.basic_types import BootModeEnum, PortInt
+from models_library.basic_types import BootModeEnum, PortInt, VersionTag
 from models_library.services import SERVICE_NETWORK_RE
 from models_library.settings.base import BaseCustomSettings
 from models_library.settings.celery import CeleryConfig
 from models_library.settings.http_clients import ClientRequestSettings
 from models_library.settings.postgres import PostgresSettings
-from pydantic import BaseSettings, Field, PositiveFloat, PositiveInt, constr, validator
+from pydantic import BaseSettings, Field, PositiveFloat, PositiveInt, validator
 from settings_library.docker_registry import RegistrySettings
+
+from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
 
 MINS = 60
 API_ROOT: str = "api"
@@ -26,12 +28,6 @@ ORG_LABELS_TO_SCHEMA_LABELS = {
     "org.label-schema.vcs-ref": "vcs_ref",
     "org.label-schema.vcs-url": "vcs_url",
 }
-
-DYNAMIC_SIDECAR_DOCKER_IMAGE_RE = (
-    r"(^(local|itisfoundation)/)?(dynamic-sidecar):([\w]+)"
-)
-
-VersionTag = constr(regex=r"^v\d$")
 
 
 class CommonConfig:
