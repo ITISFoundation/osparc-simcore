@@ -45,10 +45,12 @@ def middleware_factory(app_name):
             # Captures raised reponses (success/failures accounted with resp.status)
             resp = exc
             raise
-        except Exception as exc:  # pylint: disable=broad-except
+        except asyncio.CancelledError as exc:
+            # python 3.8 cancellederror is a subclass of BaseException and NOT Exception
+            resp = web.HTTPRequestTimeout(reason=str(exc))
+        except BaseException as exc:  # pylint: disable=broad-except
             # Prevents issue #1025.
             resp = web.HTTPInternalServerError(reason=str(exc))
-            resp_time = time.time() - request["start_time"]
 
             # NOTE: all access to API (i.e. and not other paths as /socket, /x, etc) shall return web.HTTPErrors since processed by error_middleware_factory
             log.exception(
@@ -57,13 +59,10 @@ def middleware_factory(app_name):
                 request.remote,
                 request.method,
                 request.path,
-                resp_time,
+                time.time() - request["start_time"],
                 resp.status,
             )
-        except asyncio.CancelledError as exc:
-            # python 3.8 cancellederror is not an Exception
-            resp = web.HTTPRequestTimeout(reason=str(exc))
-            raise
+
         finally:
             # metrics on the same request
             resp_time = time.time() - request["start_time"]
@@ -75,9 +74,10 @@ def middleware_factory(app_name):
                 app_name, request.path, request.method
             ).dec()
 
-            request.app["REQUEST_COUNT"].labels(
-                app_name, request.method, request.path, resp.status
-            ).inc()
+            if resp:
+                request.app["REQUEST_COUNT"].labels(
+                    app_name, request.method, request.path, resp.status
+                ).inc()
 
         return resp
 
