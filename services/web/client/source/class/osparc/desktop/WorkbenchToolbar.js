@@ -98,6 +98,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       const primaryBtn = this.getChildControl("primary-study-btn");
       primaryBtn.exclude();
 
+      /*
       const sweeperBtn = this.getChildControl("parameters-btn");
       sweeperBtn.exclude();
       osparc.data.model.Sweeper.isSweeperEnabled()
@@ -106,6 +107,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
             sweeperBtn.show();
           }
         });
+      */
 
       const snapshotsBtn = this.getChildControl("snapshots-btn");
       snapshotsBtn.exclude();
