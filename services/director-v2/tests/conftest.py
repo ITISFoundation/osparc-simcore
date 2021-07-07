@@ -13,7 +13,6 @@ import pytest
 import simcore_service_director_v2
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
-from models_library.basic_types import BootModeEnum
 from models_library.projects import Node, Workbench
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
