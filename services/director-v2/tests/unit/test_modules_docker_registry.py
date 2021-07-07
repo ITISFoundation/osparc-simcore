@@ -11,27 +11,27 @@ import respx
 @pytest.fixture(autouse=True)
 def minimal_director_config(project_env_devel_environment, monkeypatch):
     """set a minimal configuration for testing the director connection only"""
-    monkeypatch.setenv("DIRECTOR_ENABLED", "0")
-    monkeypatch.setenv("POSTGRES_ENABLED", "0")
-    monkeypatch.setenv("CELERY_ENABLED", "0")
-    monkeypatch.setenv("REGISTRY_ENABLED", "1")
+    monkeypatch.setenv("DIRECTOR_V0_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_DOCKER_REGISTRY_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
 
 
 @pytest.fixture
 def mocked_registry_service_api(minimal_app):
     with respx.mock(
-        base_url=str(minimal_app.state.settings.registry.url),
+        base_url=str(minimal_app.state.settings.REGISTRY.api_url),
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
         # lists images catalog
-        respx_mock.get(re.compile(r"/v2/_catalog\?n=\d+"), name="catalog",).respond(
+        respx_mock.get(re.compile(r"/_catalog\?n=\d+"), name="catalog",).respond(
             json={"repositories": ["/simcore/services/comp/itis/sleeper"]},
         )
         # lists tags of sleeper
         respx_mock.get(
-            "/v2/simcore/services/comp/itis/sleeper/tags/list?n=50",
+            "/simcore/services/comp/itis/sleeper/tags/list?n=50",
             name="sleeper-tags",
         ).respond(
             json={"tags": ["1.0", "2.0"]},
