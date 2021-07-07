@@ -1668,6 +1668,8 @@ jobs:
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
+      - name: set docker builx cache environs
+        run: echo "DOCKER_BUILDX_CACHE_TO=/tmp/.buildx-cache-new"
       - name: show system environs
         run: ./ci/helpers/show_system_versions.bash
       - name: pull images
@@ -1681,6 +1683,14 @@ jobs:
         # only pushes have access to the docker credentials
         if: github.event_name == 'push'
         run: ./ci/deploy/dockerhub-test-images.bash
+        # Temp fix: The docker cache is piling up and hits the 5GB limit in Github workflows, so we copy the cache over here
+        # see a good refence [here](https://evilmartians.com/chronicles/build-images-on-github-actions-with-docker-layer-caching)
+        # https://github.com/docker/build-push-action/issues/252
+        # https://github.com/moby/buildkit/issues/1896
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   integration-test-webserver-01:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests

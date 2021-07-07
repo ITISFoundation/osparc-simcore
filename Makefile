@@ -60,6 +60,10 @@ export DATCORE_ADAPTER_API_VERSION    := $(shell cat $(CURDIR)/services/datcore-
 export WEBSERVER_API_VERSION  := $(shell cat $(CURDIR)/services/web/server/VERSION)
 
 
+# docker buildx cache location
+DOCKER_BUILDX_CACHE_FROM ?= /tmp/.buildx-cache
+DOCKER_BUILDX_CACHE_TO ?= /tmp/.buildx-cache
+
 # swarm stacks
 export SWARM_STACK_NAME ?= master-simcore
 export SWARM_STACK_NAME_NO_HYPHEN = $(subst -,_,$(SWARM_STACK_NAME))
@@ -110,8 +114,8 @@ docker buildx create --name osparc-builder --use || true; \
 docker buildx bake \
 	$(if $(findstring -devel,$@),,\
 	$(foreach service, $(SERVICES_LIST),\
-		--set $(service).cache-from="type=local,src=/tmp/.buildx-cache/$(service)" \
-		--set $(service).cache-to="type=local,mode=max,dest=/tmp/.buildx-cache/$(service)" \
+		--set $(service).cache-from="type=local,src=$(DOCKER_BUILDX_CACHE_FROM)/$(service)" \
+		--set $(service).cache-to="type=local,mode=max,dest=$(DOCKER_BUILDX_CACHE_TO)/$(service)" \
 	)\
 	)\
 	--set *.output="type=docker,push=false" \
