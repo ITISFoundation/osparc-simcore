@@ -9,8 +9,8 @@ from ...models.schemas.dynamic_services import ServiceState
 logger = logging.getLogger(__name__)
 
 TASK_STATES_FAILED: Set[str] = {"failed", "rejected"}
-TASK_STATES_PENDING: Set[str] = {"pending"}
-TASK_STATES_PULLING: Set[str] = {"assigned", "accepted", "preparing"}
+TASK_STATES_PENDING: Set[str] = {"assigned", "accepted", "pending"}
+TASK_STATES_PULLING: Set[str] = {"preparing"}
 TASK_STATES_STARTING: Set[str] = {"ready", "starting"}
 TASK_STATES_RUNNING: Set[str] = {"running"}
 TASK_STATES_COMPLETE: Set[str] = {"complete", "shutdown"}
@@ -27,9 +27,9 @@ TASK_STATES_ALL: Set[str] = (
 
 
 # mapping container states into 4 categories
+# For all avaliable states SEE
+# https://github.com/moby/moby/blob/master/container/state.go
 CONTAINER_STATES_FAILED: Set[str] = {"restarting", "dead", "paused"}
-CONTAINER_STATES_PENDING: Set[str] = {"pending"}  # fake state
-CONTAINER_STATES_PULLING: Set[str] = {"pulling"}  # fake state
 CONTAINER_STATES_STARTING: Set[str] = {"created"}
 CONTAINER_STATES_RUNNING: Set[str] = {"running"}
 CONTAINER_STATES_COMPLETE: Set[str] = {"removing", "exited"}
@@ -44,10 +44,9 @@ _TASK_STATE_TO_SERVICE_STATE: Dict[str, ServiceState] = {
     **dict.fromkeys(TASK_STATES_COMPLETE, ServiceState.COMPLETE),
 }
 
+
 _CONTAINER_STATE_TO_SERVICE_STATE: Dict[str, ServiceState] = {
     **dict.fromkeys(CONTAINER_STATES_FAILED, ServiceState.FAILED),
-    **dict.fromkeys(CONTAINER_STATES_PENDING, ServiceState.PENDING),
-    **dict.fromkeys(CONTAINER_STATES_PULLING, ServiceState.PULLING),
     **dict.fromkeys(CONTAINER_STATES_STARTING, ServiceState.STARTING),
     **dict.fromkeys(CONTAINER_STATES_RUNNING, ServiceState.RUNNING),
     **dict.fromkeys(CONTAINER_STATES_COMPLETE, ServiceState.COMPLETE),
@@ -57,9 +56,7 @@ _CONTAINER_STATE_TO_SERVICE_STATE: Dict[str, ServiceState] = {
 def extract_task_state(task_status: Dict[str, str]) -> Tuple[ServiceState, str]:
     last_task_error_msg = task_status["Err"] if "Err" in task_status else ""
 
-    task_state = _TASK_STATE_TO_SERVICE_STATE.get(
-        task_status["State"], ServiceState.STARTING
-    )
+    task_state = _TASK_STATE_TO_SERVICE_STATE[task_status["State"]]
     return (task_state, last_task_error_msg)
 
 
@@ -70,9 +67,7 @@ def _extract_container_status(
         container_status["Error"] if "Error" in container_status else ""
     )
 
-    container_state = _CONTAINER_STATE_TO_SERVICE_STATE.get(
-        container_status["Status"], ServiceState.STARTING
-    )
+    container_state = _CONTAINER_STATE_TO_SERVICE_STATE[container_status["Status"]]
     return (container_state, last_task_error_msg)
 
 
