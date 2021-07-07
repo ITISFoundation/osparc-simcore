@@ -61,8 +61,7 @@ class DynamicSidecarClient:
             response = await self.httpx_client.get(
                 url=url, timeout=self._heatlth_request_timeout
             )
-            if response.status_code != 200:
-                return False
+            response.raise_for_status()
 
             return response.json()["is_healthy"]
         except httpx.HTTPError:
