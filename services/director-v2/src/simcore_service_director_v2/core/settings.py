@@ -64,8 +64,8 @@ class ClientRequestSettings(BaseCustomSettings):
 class DirectorV0Settings(BaseCustomSettings):
     DIRECTOR_V0_ENABLED: bool = True
 
-    DIRECTOR_V0_HOST: str = "director"
-    DIRECTOR_V0_PORT: PortInt = 8080
+    DIRECTOR_HOST: str = "director"
+    DIRECTOR_PORT: PortInt = 8080
     DIRECTOR_V0_VTAG: VersionTag = Field(
         "v0", description="Director-v0 service API's version tag"
     )
@@ -74,8 +74,8 @@ class DirectorV0Settings(BaseCustomSettings):
     def endpoint(self) -> str:
         return AnyHttpUrl.build(
             scheme="http",
-            host=self.DIRECTOR_V0_HOST,
-            port=f"{self.DIRECTOR_V0_PORT}",
+            host=self.DIRECTOR_HOST,
+            port=f"{self.DIRECTOR_PORT}",
             path=f"/{self.DIRECTOR_V0_VTAG}",
         )
 
