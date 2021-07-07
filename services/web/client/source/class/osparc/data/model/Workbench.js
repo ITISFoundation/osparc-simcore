@@ -343,20 +343,32 @@ qx.Class.define("osparc.data.model.Workbench", {
     __parameterNodeRequested: function(nodeId, portId) {
       const requesterNode = this.getNode(nodeId);
 
-      // do not overlap the new Parameter Node with other nodes
-      const freePos = this.__getFreeSpotPostition(requesterNode);
-
       // create a new ParameterNode
-      const pmMD = osparc.utils.Services.getParameterMetadata("integer");
-      const parentNodeId = requesterNode.getParentNodeId();
-      const parent = parentNodeId ? this.getNode(parentNodeId) : null;
-      const pm = this.createNode(pmMD["key"], pmMD["version"], null, parent);
-      pm.setPosition(freePos);
+      const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["inputs"], portId);
+      const pmMD = osparc.utils.Services.getParameterMetadata(type);
+      if (pmMD) {
+        const parentNodeId = requesterNode.getParentNodeId();
+        const parent = parentNodeId ? this.getNode(parentNodeId) : null;
+        const pm = this.createNode(pmMD["key"], pmMD["version"], null, parent);
 
-      // create connection
-      const fpId = pm.getNodeId();
-      requesterNode.addInputNode(fpId);
-      requesterNode.addPortLink(portId, fpId, "out_1");
+        // do not overlap the new Parameter Node with other nodes
+        const freePos = this.__getFreeSpotPostition(requesterNode);
+        pm.setPosition(freePos);
+
+        // create connection
+        const pmId = pm.getNodeId();
+        requesterNode.addInputNode(pmId);
+        requesterNode.addPortLink(portId, pmId, "out_1")
+          .then(success => {
+            if (success) {
+              this.fireDataEvent("openNode", pmId);
+            } else {
+              this.removeNode(pmId);
+              const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
+              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            }
+          });
+      }
     },
 
     addNode: function(node, parentNode) {
