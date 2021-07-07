@@ -26,9 +26,6 @@ networkx
 # celery
 celery[redis]
 
-# dask
-dask[complete]
-
 # other
 tenacity
 orjson
