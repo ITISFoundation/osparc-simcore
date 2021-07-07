@@ -376,34 +376,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
 
       nodeUI.addListener("dbltap", e => {
-        if (nodeUI.getNode().isParameter()) {
-          this.__popUpParameterEditor(nodeUI);
-        } else {
-          this.fireDataEvent("nodeSelected", nodeUI.getNodeId());
-        }
+        this.fireDataEvent("nodeSelected", nodeUI.getNodeId());
         e.stopPropagation();
       }, this);
 
       qx.ui.core.queue.Layout.flush();
 
       this.__updateHint();
-    },
-
-    __popUpParameterEditor: function(nodeUI) {
-      const parameterEditor = new osparc.component.node.ParameterEditor(nodeUI.getNode());
-      const win = osparc.ui.window.Window.popUpInWindow(parameterEditor, "Edit Parameter", 250, 175);
-      parameterEditor.addListener("ok", () => {
-        const label = parameterEditor.getLabel();
-        nodeUI.getNode().setLabel(label);
-
-        const val = parameterEditor.getValue();
-        osparc.component.node.ParameterEditor.setParameterOutputValue(nodeUI.getNode(), val);
-
-        win.close();
-      }, this);
-      parameterEditor.addListener("cancel", () => {
-        win.close();
-      }, this);
     },
 
     __updateWorkbenchLayoutSize: function(position) {

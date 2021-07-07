@@ -218,7 +218,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.__hideExtraElements();
 
       const label = new qx.ui.basic.Label().set({
-        font: "text-24",
+        font: "text-22",
         allowGrowX: true,
         textAlign: "center",
         padding: 6
@@ -261,7 +261,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         const value = firstOutput["value"];
 
         const label = new qx.ui.basic.Label(String(value)).set({
-          font: "text-24",
+          font: "text-22",
           allowGrowX: true,
           textAlign: "center",
           padding: 6
