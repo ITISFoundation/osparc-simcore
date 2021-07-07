@@ -377,7 +377,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       nodeUI.addListener("dbltap", e => {
         if (nodeUI.getNode().isParameter()) {
-          this.__popUpParameterView(nodeUI);
+          this.__popUpParameterEditor(nodeUI);
         } else {
           this.fireDataEvent("nodeSelected", nodeUI.getNodeId());
         }
@@ -389,17 +389,17 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__updateHint();
     },
 
-    __popUpParameterView: function(nodeUI) {
-      const parameterView = new osparc.component.node.ParameterView(nodeUI.getNode());
-      const win = osparc.ui.window.Window.popUpInWindow(parameterView, "Edit Parameter", 250, 150);
-      parameterView.addListener("ok", () => {
-        const val = parameterView.getValue();
+    __popUpParameterEditor: function(nodeUI) {
+      const parameterEditor = new osparc.component.node.ParameterEditor(nodeUI.getNode());
+      const win = osparc.ui.window.Window.popUpInWindow(parameterEditor, "Edit Parameter", 250, 150);
+      parameterEditor.addListener("ok", () => {
+        const val = parameterEditor.getValue();
         nodeUI.getNode().setOutputData({
           "out_1": val
         });
         win.close();
       }, this);
-      parameterView.addListener("cancel", () => {
+      parameterEditor.addListener("cancel", () => {
         win.close();
       }, this);
     },

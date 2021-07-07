@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.component.node.ParameterView", {
+qx.Class.define("osparc.component.node.ParameterEditor", {
   extend: qx.ui.core.Widget,
 
   construct: function(node) {
