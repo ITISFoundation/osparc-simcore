@@ -1,7 +1,7 @@
 #
 # Specifies third-party dependencies for 'simcore-postgres-database'
 #
--c ../../../requirements/constraints.txt
+--constraint ../../../requirements/constraints.txt
 
 # sqlalchemy[postgresql_psycopg2binary]<1.4,>=1.1 (from aiopg[sa]==1.2.1->-r requirements/_test.in (line 14))
 sqlalchemy[postgresql_psycopg2binary]<1.4,>=1.1

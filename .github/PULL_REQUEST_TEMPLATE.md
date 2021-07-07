@@ -5,11 +5,13 @@ WIP: work in progress
 Consider prefix your PR message with an emoticon
   🐛 bugfix
   ✨ new feature
-  🔨 refactoring
-  🏗️ maintenance
-  📚 documentation
-
-or get your emoji from https://gitmoji.dev/
+  ♻️ refactoring
+  💄 updates UI or 🚸 UX/usability
+  🚑️ hotfix
+  ⚗️ experimental
+  ⬆️ upgrades dependencies
+  📝 documentation
+or from https://gitmoji.dev/
 
 and append (⚠️ devops) if changes in devops configuration required before deploying
 -->

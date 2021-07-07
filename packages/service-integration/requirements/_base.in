@@ -1,9 +1,9 @@
 #
 # Specifies third-party dependencies for 'service-integration'
 #
--c ../../../requirements/constraints.txt
+--constraint ../../../requirements/constraints.txt
 
--r ../../../packages/models-library/requirements/_base.in
+--requirement ../../../packages/models-library/requirements/_base.in
 
 # tools
 pyyaml
