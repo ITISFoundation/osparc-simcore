@@ -14,7 +14,6 @@ from models_library.basic_types import (
 from pydantic import AnyHttpUrl, Field, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.celery import CelerySettings as BaseCelerySettings
-from settings_library.docker_registry import RegistrySettings
 from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
 
@@ -22,7 +21,6 @@ from ..meta import api_vtag
 
 MINS = 60
 API_ROOT: str = "api"
-APP_REGISTRY_CACHE_DATA_KEY: str = __name__ + "_registry_cache_data"
 
 SERVICE_RUNTIME_SETTINGS: str = "simcore.service.settings"
 SERVICE_REVERSE_PROXY_SETTINGS: str = "simcore.service.reverse-proxy-settings"
@@ -101,12 +99,6 @@ class PGSettings(PostgresSettings):
     )
 
 
-class DockerRegistrySettings(RegistrySettings):
-    DIRECTOR_V2_DOCKER_REGISTRY_ENABLED: bool = Field(
-        True, description="Enables/Disables connection with service"
-    )
-
-
 class CelerySchedulerSettings(BaseCustomSettings):
     DIRECTOR_V2_CELERY_SCHEDULER_ENABLED: bool = Field(
         True,
@@ -137,19 +129,11 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     # Dynamic Services submodule
     DYNAMIC_SERVICES: DynamicServicesSettings
 
-    # REGISTRY submodule
-    REGISTRY: DockerRegistrySettings
-
     # POSTGRES
     POSTGRES: PGSettings
 
     # STORAGE
     STORAGE_ENDPOINT: str = Field("storage:8080", env="STORAGE_ENDPOINT")
-
-    # caching registry and TTL (time-to-live)
-    # TODO: fix these variables once the timeout-minutes: 30 is able to start dynamic services
-    DIRECTOR_V2_REGISTRY_CACHING: bool = True
-    DIRECTOR_V2_REGISTRY_CACHING_TTL: int = 15 * MINS
 
     # for passing self-signed certificate to spawned services
     # TODO: fix these variables once the timeout-minutes: 30 is able to start dynamic services

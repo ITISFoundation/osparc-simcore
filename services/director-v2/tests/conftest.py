@@ -13,6 +13,7 @@ import pytest
 import simcore_service_director_v2
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
+from models_library.basic_types import BootModeEnum
 from models_library.projects import Node, Workbench
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
@@ -64,7 +65,8 @@ def project_env_devel_environment(project_env_devel_dict: Dict[str, Any], monkey
 
 
 @pytest.fixture(scope="function")
-def client(loop: asyncio.BaseEventLoop) -> TestClient:
+def client(loop: asyncio.BaseEventLoop, monkeypatch) -> TestClient:
+    monkeypatch.setenv("SC_BOOT_MODE", "production")
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
 

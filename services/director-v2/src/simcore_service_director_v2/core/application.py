@@ -13,15 +13,7 @@ from ..api.errors.http_error import (
 )
 from ..api.errors.validation_error import http422_error_handler
 from ..meta import api_version, api_vtag, project_name, summary
-from ..modules import (
-    celery,
-    db,
-    director_v0,
-    docker_registry,
-    dynamic_services,
-    remote_debug,
-    scheduler,
-)
+from ..modules import celery, db, director_v0, dynamic_services, remote_debug, scheduler
 from ..utils.logging_utils import config_all_loggers
 from .events import on_shutdown, on_startup
 from .settings import AppSettings, BootModeEnum
@@ -30,10 +22,6 @@ logger = logging.getLogger(__name__)
 
 
 def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
-    import os
-    from pprint import pformat
-
-    logger.warning(pformat(os.environ))
     if settings is None:
         settings = AppSettings.create_from_envs()
 
@@ -69,9 +57,6 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     if settings.CELERY.DIRECTOR_V2_CELERY_ENABLED:
         celery.setup(app, settings.CELERY)
-
-    if settings.REGISTRY.DIRECTOR_V2_DOCKER_REGISTRY_ENABLED:
-        docker_registry.setup(app, settings.REGISTRY)
 
     if settings.CELERY_SCHEDULER.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED:
         scheduler.setup(app)

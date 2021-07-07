@@ -29,7 +29,6 @@ def minimal_director_config(project_env_devel_environment, monkeypatch):
     monkeypatch.setenv("DIRECTOR_V0_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_CELERY_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_DOCKER_REGISTRY_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
 
 
