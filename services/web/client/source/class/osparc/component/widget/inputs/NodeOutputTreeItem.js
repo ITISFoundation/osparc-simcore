@@ -152,10 +152,12 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
         const locationId = value.store;
         const fileId = value.path;
         const filename = value.filename;
+        this.__labelLink.set({
+          value: filename
+        });
         const presignedLinkData = await osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId);
-        if ("presignedLink" in presignedLinkData) {
+        if ("presignedLink" in presignedLinkData && presignedLinkData.presignedLink) {
           this.__labelLink.set({
-            value: filename,
             url: presignedLinkData.presignedLink.link
           });
         }
