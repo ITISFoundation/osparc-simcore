@@ -2,11 +2,11 @@
 # Specifies dependencies required to run 'services/api-server/test'
 #  both for unit and integration tests!!
 #
--c ../../../requirements/constraints.txt
+--constraint ../../../requirements/constraints.txt
 # Adds base AS CONSTRAINT specs, not requirement.
 #  - Resulting _text.txt is a frozen list of EXTRA packages for testing, besides _base.txt
 #
--c _base.txt
+--constraint _base.txt
 
 # 'services/api-server/tests/unit' dependencies
 
@@ -25,7 +25,7 @@ passlib[bcrypt]
 respx
 
 # db migration
--r ../../../packages/postgres-database/requirements/_base.in
+--requirement ../../../packages/postgres-database/requirements/_base.in
 alembic
 click
 docker

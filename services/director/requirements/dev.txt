@@ -8,13 +8,13 @@
 
 
 # installs base + tests requirements
--r _test.txt
+--requirement _test.txt
 
 # installs this repo's packages
--e ../../packages/pytest-simcore/
+--editable ../../packages/pytest-simcore/
 
 # installs current package
--e .
+--editable .
 
 # basic dev tools
 watchdog[watchmedo]

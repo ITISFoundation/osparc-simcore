@@ -2,17 +2,17 @@
 # Specifies third-party dependencies for 'sidecar'
 #
 
--c ../../../requirements/constraints.txt
+--constraint ../../../requirements/constraints.txt
 
 # intra-repo packages CONSTRAINTS
 #   - Input-requirements on intra-repo packages are tested using latest updates
 #   - Added as constraints instead of requirements in order to avoid polluting base.txt
 #   - Will be installed when prod.txt or dev.txt
 #
--c ../../../packages/models-library/requirements/_base.in
--c ../../../packages/postgres-database/requirements/_base.in
--c ../../../packages/service-library/requirements/_base.in
--c ../../../packages/simcore-sdk/requirements/_base.in
+--constraint ../../../packages/models-library/requirements/_base.in
+--constraint ../../../packages/postgres-database/requirements/_base.in
+--constraint ../../../packages/service-library/requirements/_base.in
+--constraint ../../../packages/simcore-sdk/requirements/_base.in
 # TODO: tests that these above are in sync with ci/dev/prod.txts and with packages
 
 aio-pika
