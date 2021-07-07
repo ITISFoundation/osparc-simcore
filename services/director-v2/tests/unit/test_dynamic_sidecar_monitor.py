@@ -16,6 +16,7 @@ import pytest
 import respx
 from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from pytest_mock.plugin import MockerFixture
 from respx.router import MockRouter
 from simcore_service_director_v2.core.settings import AppSettings
@@ -25,6 +26,7 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     RunningDynamicServiceDetails,
     ServiceState,
 )
+from simcore_service_director_v2.modules.dynamic_sidecar import module_setup
 from simcore_service_director_v2.modules.dynamic_sidecar.client_api import (
     get_url,
     setup_api_client,
@@ -433,3 +435,11 @@ async def test_get_stack_status_ok(
             service_state=ServiceState.STARTING,
             service_message="",
         )
+
+
+async def test_module_setup(dynamic_sidecar_settings: AppSettings) -> None:
+    app = FastAPI()
+    app.state.settings = dynamic_sidecar_settings
+    module_setup.setup(app)
+    with TestClient(app):
+        pass
