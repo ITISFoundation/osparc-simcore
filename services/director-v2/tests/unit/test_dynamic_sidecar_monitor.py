@@ -426,13 +426,13 @@ async def test_get_stack_status_ok(
         monitor_data,
         mock_service_running,
         expected_response=httpx.Response(
-            200, json={"fake_entry": {"Status": "fake_status"}}
+            200, json={"fake_entry": {"Status": "running"}}
         ),
     ) as stack_status:
         assert stack_status == RunningDynamicServiceDetails.from_monitoring_status(
             node_uuid=monitor_data.node_uuid,
             monitor_data=monitor_data,
-            service_state=ServiceState.STARTING,
+            service_state=ServiceState.RUNNING,
             service_message="",
         )
 
