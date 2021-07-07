@@ -127,9 +127,7 @@ def dynamic_sidecar_service_spec(
     dynamic_sidecar_service_name: str, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> Dict[str, Any]:
     # "joseluisq/static-web-server" is ~2MB docker image
-    paths_mapping = ServiceLabelsStoredData.Config.schema_extra["example"][
-        "paths_mapping"
-    ].json()
+    sample = ServiceLabelsStoredData.Config.schema_extra["example"]
 
     return {
         "name": dynamic_sidecar_service_name,
@@ -137,11 +135,11 @@ def dynamic_sidecar_service_spec(
         "labels": {
             "swarm_stack_name": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
             "uuid": f"{uuid4()}",
-            "compose_spec": json.dumps(""),
-            "service_key": "",
-            "service_tag": "",
-            "container_http_entry": "",
-            "paths_mapping": paths_mapping,
+            "service_key": "simcore/services/dynamic/3dviewer",
+            "service_tag": "2.4.5",
+            "paths_mapping": sample["paths_mapping"].json(),
+            "compose_spec": json.dumps(sample["compose_spec"]),
+            "container_http_entry": sample["container_http_entry"],
             "traefik.docker.network": "",
             "io.simcore.zone": "",
             "service_port": "80",
@@ -332,9 +330,7 @@ async def test_services_to_monitor_exist(
     assert len(dynamic_services) == 1
 
     for entry in dynamic_services:
-        service_labels_stored_data = ServiceLabelsStoredData(**entry.dict())
-        assert service_labels_stored_data
-        assert service_labels_stored_data.service_name == dynamic_sidecar_service_name
+        assert entry.service_name == dynamic_sidecar_service_name
 
 
 async def test_dynamic_sidecar_in_running_state_and_node_id_is_recovered(

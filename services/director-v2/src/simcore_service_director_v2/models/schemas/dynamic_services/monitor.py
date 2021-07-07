@@ -9,21 +9,19 @@ from uuid import UUID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
-    ComposeSpecLabel,
     DynamicSidecarServiceLabels,
     PathMappingsLabel,
     SimcoreServiceLabels,
 )
-from models_library.services import ServiceKeyVersion
-from pydantic import BaseModel, Extra, Field, PositiveInt, PrivateAttr, validator
+from pydantic import BaseModel, Extra, Field, PositiveInt, PrivateAttr
 
 from ..constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
     REGEX_DY_SERVICE_PROXY,
     REGEX_DY_SERVICE_SIDECAR,
-    UserID,
 )
+from .service import CommonServiceDetails
 
 TEMPORARY_PORT_NUMBER = 65_534
 
@@ -175,56 +173,50 @@ class DynamicSidecar(BaseModel):
         )
 
 
-class ServiceLabelsStoredData(BaseModel):
+class ServiceLabelsStoredData(CommonServiceDetails, DynamicSidecarServiceLabels):
     service_name: str
-    node_uuid: NodeID
-    service_key: str
-    service_tag: str
-    paths_mapping: PathMappingsLabel
-    compose_spec: ComposeSpecLabel
-    container_http_entry: Optional[str]
+    paths_mapping: PathMappingsLabel  # overwrites in DynamicSidecarServiceLabels
     dynamic_sidecar_network_name: str
     simcore_traefik_zone: str
     service_port: int
-    project_id: ProjectID
-    user_id: UserID
 
     @classmethod
     def from_service(cls, service: Dict[str, Any]) -> "ServiceLabelsStoredData":
-        return cls(
+        labels = service["Spec"]["Labels"]
+        params = dict(
             service_name=service["Spec"]["Name"],
-            node_uuid=NodeID(service["Spec"]["Labels"]["uuid"]),
-            service_key=service["Spec"]["Labels"]["service_key"],
-            service_tag=service["Spec"]["Labels"]["service_tag"],
-            paths_mapping=PathMappingsLabel.parse_raw(
-                service["Spec"]["Labels"]["paths_mapping"]
-            ),
-            compose_spec=json.loads(service["Spec"]["Labels"]["compose_spec"]),
-            container_http_entry=service["Spec"]["Labels"]["container_http_entry"],
-            dynamic_sidecar_network_name=service["Spec"]["Labels"][
-                "traefik.docker.network"
-            ],
-            simcore_traefik_zone=service["Spec"]["Labels"]["io.simcore.zone"],
-            service_port=service["Spec"]["Labels"]["service_port"],
-            project_id=ProjectID(service["Spec"]["Labels"]["study_id"]),
-            user_id=int(service["Spec"]["Labels"]["user_id"]),
+            node_uuid=NodeID(labels["uuid"]),
+            key=labels["service_key"],
+            version=labels["service_tag"],
+            paths_mapping=PathMappingsLabel.parse_raw(labels["paths_mapping"]),
+            dynamic_sidecar_network_name=labels["traefik.docker.network"],
+            simcore_traefik_zone=labels["io.simcore.zone"],
+            service_port=labels["service_port"],
+            project_id=ProjectID(labels["study_id"]),
+            user_id=int(labels["user_id"]),
         )
+        if "compose_spec" in labels:
+            params["compose_spec"] = json.loads(labels["compose_spec"])
+        if "container_http_entry" in labels:
+            params["container_http_entry"] = labels["container_http_entry"]
+
+        return cls(**params)
 
     class Config:
+        extra = Extra.allow
+        allow_population_by_field_name = True
         schema_extra = {
             "example": {
                 "service_name": "some service",
-                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-                "service_key": "simcore/services/dynamic/3dviewer",
-                "service_tag": "2.4.5",
+                "node_uuid": UUID("75c7f3f4-18f9-4678-8610-54a2ade78eaa"),
+                "key": "simcore/services/dynamic/3dviewer",
+                "version": "2.4.5",
                 "paths_mapping": PathMappingsLabel.parse_obj(
                     PathMappingsLabel.Config.schema_extra["examples"]
                 ),
-                "compose_spec": json.loads(
-                    SimcoreServiceLabels.Config.schema_extra["examples"][2][
-                        "simcore.service.compose-spec"
-                    ]
-                ),
+                "compose_spec": SimcoreServiceLabels.Config.schema_extra["examples"][2][
+                    "simcore.service.compose-spec"
+                ],
                 "container_http_entry": "some-entrypoint",
                 "dynamic_sidecar_network_name": "some_network_name",
                 "simcore_traefik_zone": "main",
@@ -286,27 +278,17 @@ class DynamicSidecarNames(BaseModel):
         )
 
 
-class MonitorData(ServiceKeyVersion, DynamicSidecarServiceLabels):
+class MonitorData(CommonServiceDetails, DynamicSidecarServiceLabels):
     service_name: str = Field(
         ..., description="Name of the current dynamic-sidecar being monitored"
     )
-
-    node_uuid: NodeID = Field(
-        ..., description="the node_id of the service as defined in the workbench"
-    )
-
-    project_id: ProjectID = Field(
-        ..., description="project_uuid required by the status"
-    )
-
-    user_id: UserID = Field(..., description="user_id required by the status")
 
     dynamic_sidecar: DynamicSidecar = Field(
         ...,
         description="stores information fetched from the dynamic-sidecar",
     )
 
-    paths_mapping: PathMappingsLabel
+    paths_mapping: PathMappingsLabel  # overwrites in DynamicSidecarServiceLabels
 
     dynamic_sidecar_network_name: str = Field(
         ...,
@@ -338,11 +320,6 @@ class MonitorData(ServiceKeyVersion, DynamicSidecarServiceLabels):
     proxy_service_name: Optional[str] = Field(
         None, description="service name given to the proxy"
     )
-
-    @validator("project_id", always=True)
-    @classmethod
-    def str_project_id(cls, v):
-        return str(v)
 
     @classmethod
     def from_http_request(
@@ -393,8 +370,8 @@ class MonitorData(ServiceKeyVersion, DynamicSidecarServiceLabels):
                 node_uuid=service_labels_stored_data.node_uuid,
                 project_id=service_labels_stored_data.project_id,
                 user_id=service_labels_stored_data.user_id,
-                service_key=service_labels_stored_data.service_key,
-                service_tag=service_labels_stored_data.service_tag,
+                service_key=service_labels_stored_data.key,
+                service_tag=service_labels_stored_data.version,
                 paths_mapping=service_labels_stored_data.paths_mapping,
                 compose_spec=service_labels_stored_data.compose_spec,
                 container_http_entry=service_labels_stored_data.container_http_entry,
@@ -413,6 +390,7 @@ class MonitorData(ServiceKeyVersion, DynamicSidecarServiceLabels):
 
     class Config:
         extra = Extra.allow
+        allow_population_by_field_name = True
 
 
 class AsyncResourceLock(BaseModel):

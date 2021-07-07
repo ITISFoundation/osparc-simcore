@@ -25,7 +25,7 @@ class ServiceType(Enum):
     DEPENDENCY = f"dependency-{api_vtag}"
 
 
-class ServiceDetails(BaseModel):
+class CommonServiceDetails(BaseModel):
     key: str = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
@@ -47,6 +47,8 @@ class ServiceDetails(BaseModel):
     project_id: ProjectID
     node_uuid: NodeID = Field(..., alias="service_uuid")
 
+
+class ServiceDetails(CommonServiceDetails):
     basepath: Path = Field(
         None,
         description="predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
@@ -54,6 +56,7 @@ class ServiceDetails(BaseModel):
     )
 
     class Config:
+        allow_population_by_field_name = True
         schema_extra = {
             "example": {
                 "key": "simcore/services/dynamic/3dviewer",
@@ -64,7 +67,6 @@ class ServiceDetails(BaseModel):
                 "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
             }
         }
-        allow_population_by_field_name = True
 
 
 @unique
