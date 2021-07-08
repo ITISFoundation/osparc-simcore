@@ -31,10 +31,10 @@ TASK_STATES_ALL: Set[str] = (
 # mapping container states into 4 categories
 # For all avaliable containerstates SEE
 # https://github.com/moby/moby/blob/master/container/state.go#L140
-CONTAINER_STATES_FAILED: Set[str] = {"restarting", "dead", "paused"}
-CONTAINER_STATES_STARTING: Set[str] = {"created"}
-CONTAINER_STATES_RUNNING: Set[str] = {"running"}
-CONTAINER_STATES_COMPLETE: Set[str] = {"removing", "exited"}
+CONTAINER_STATUSES_FAILED: Set[str] = {"restarting", "dead", "paused"}
+CONTAINER_STATUSES_STARTING: Set[str] = {"created"}
+CONTAINER_STATUSES_RUNNING: Set[str] = {"running"}
+CONTAINER_STATUSES_COMPLETE: Set[str] = {"removing", "exited"}
 
 
 _TASK_STATE_TO_SERVICE_STATE: Dict[str, ServiceState] = {
@@ -48,10 +48,10 @@ _TASK_STATE_TO_SERVICE_STATE: Dict[str, ServiceState] = {
 
 
 _CONTAINER_STATE_TO_SERVICE_STATE: Dict[str, ServiceState] = {
-    **dict.fromkeys(CONTAINER_STATES_FAILED, ServiceState.FAILED),
-    **dict.fromkeys(CONTAINER_STATES_STARTING, ServiceState.STARTING),
-    **dict.fromkeys(CONTAINER_STATES_RUNNING, ServiceState.RUNNING),
-    **dict.fromkeys(CONTAINER_STATES_COMPLETE, ServiceState.COMPLETE),
+    **dict.fromkeys(CONTAINER_STATUSES_FAILED, ServiceState.FAILED),
+    **dict.fromkeys(CONTAINER_STATUSES_STARTING, ServiceState.STARTING),
+    **dict.fromkeys(CONTAINER_STATUSES_RUNNING, ServiceState.RUNNING),
+    **dict.fromkeys(CONTAINER_STATUSES_COMPLETE, ServiceState.COMPLETE),
 }
 
 
