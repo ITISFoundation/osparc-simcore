@@ -73,26 +73,6 @@ def _get_fake_service_details(
                 }
             }
         )
-    elif "parameter/number" in service.key:
-        return ServiceDockerData(
-            **service.dict(),
-            type=ServiceType.FRONTEND,
-            name="Number Parameter",
-            description="",
-            authors=[
-                Author(name="Odei Maiz", email="maiz@itis.swiss")
-            ],
-            contact="maiz@itis.swiss",
-            inputs={},
-            outputs={
-                "out_1": {
-                    "displayOrder": 0,
-                    "label": "Number Parameter",
-                    "description": "",
-                    "type": "number",
-                }
-            }
-        )
     elif "parameter/integer" in service.key:
         return ServiceDockerData(
             **service.dict(),
