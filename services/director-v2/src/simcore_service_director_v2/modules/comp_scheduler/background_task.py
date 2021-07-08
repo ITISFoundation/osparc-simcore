@@ -6,6 +6,7 @@ from typing import Any, Callable, Coroutine
 
 from fastapi import FastAPI
 
+from . import factory
 from .base_scheduler import BaseCompScheduler
 
 logger = logging.getLogger(__name__)
@@ -35,7 +36,7 @@ async def scheduler_task(scheduler: BaseCompScheduler) -> None:
 
 def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
     async def start_scheduler() -> None:
-        app.state.scheduler = scheduler = await BaseCompScheduler.create_from_db(app)
+        app.state.scheduler = scheduler = await factory.create_from_db(app)
         task = asyncio.create_task(
             scheduler_task(scheduler), name="comp. services scheduler"
         )

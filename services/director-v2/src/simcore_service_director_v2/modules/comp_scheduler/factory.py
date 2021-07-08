@@ -12,7 +12,7 @@ from .base_scheduler import BaseCompScheduler
 logger = logging.getLogger(__name__)
 
 
-async def create_from_db(cls, app: FastAPI) -> BaseCompScheduler:
+async def create_from_db(app: FastAPI) -> BaseCompScheduler:
     if not hasattr(app.state, "engine"):
         raise ConfigurationError(
             "Database connection is missing. Please check application configuration."

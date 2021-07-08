@@ -7,9 +7,6 @@ import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_state import RunningState
-from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
-from simcore_service_director_v2.modules.dask_scheduler import DaskScheduler
-from simcore_service_director_v2.utils.async_utils import run_sequentially_in_context
 from starlette import status
 from starlette.requests import Request
 from tenacity import (
@@ -20,6 +17,7 @@ from tenacity import (
     wait_random,
 )
 
+from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_tasks import CompTaskAtDB
 from ...models.schemas.comp_tasks import (
     ComputationTaskCreate,
@@ -29,7 +27,7 @@ from ...models.schemas.comp_tasks import (
 )
 from ...models.schemas.constants import UserID
 from ...modules.celery import CeleryClient
-from ...modules.celery_scheduler import CeleryScheduler
+from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
@@ -51,7 +49,7 @@ from ...utils.exceptions import PipelineNotFoundError, ProjectNotFoundError
 from ..dependencies.celery import get_celery_client
 from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
-from ..dependencies.scheduler import get_celery_scheduler, get_dask_scheduler
+from ..dependencies.scheduler import get_scheduler
 
 router = APIRouter()
 log = logging.getLogger(__file__)
@@ -93,8 +91,7 @@ async def create_computation(
     ),
     celery_client: CeleryClient = Depends(get_celery_client),
     director_client: DirectorV0Client = Depends(get_director_v0_client),
-    # celery_scheduler: CeleryScheduler = Depends(get_celery_scheduler),
-    dask_scheduler: DaskScheduler = Depends(get_dask_scheduler),
+    scheduler: BaseCompScheduler = Depends(get_scheduler),
 ) -> ComputationTaskOut:
     log.debug(
         "User %s is creating a new computation from project %s",
@@ -153,7 +150,7 @@ async def create_computation(
                     detail=f"Project {job.project_id} has no computational services, or contains cycles",
                 )
             # await celery_scheduler.run_new_pipeline(job.user_id, job.project_id)
-            await dask_scheduler.run_new_pipeline(job.user_id, job.project_id)
+            await scheduler.run_new_pipeline(job.user_id, job.project_id)
 
         return ComputationTaskOut(
             id=job.project_id,

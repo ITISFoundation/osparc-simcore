@@ -70,7 +70,7 @@ class DaskClient:
         user_id: UserID,
         project_id: ProjectID,
         single_tasks: List[DaskTaskIn],
-        callback: Callable,
+        _callback: Callable,
     ):
         def sidecar_fun(job_id: str, user_id: str, project_id: str, node_id: str):
             from simcore_service_sidecar.cli import run_sidecar

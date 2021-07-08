@@ -19,11 +19,16 @@ from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from simcore_service_director_v2.core.errors import ConfigurationError
 from simcore_service_director_v2.modules.celery import CeleryClient
-from simcore_service_director_v2.modules.scheduler import (
-    _COMPLETED_STATES,
-    _SCHEDULED_STATES,
-    CeleryScheduler,
+from simcore_service_director_v2.modules.comp_scheduler.background_task import (
     scheduler_task,
+)
+from simcore_service_director_v2.modules.comp_scheduler.celery_scheduler import (
+    CeleryScheduler,
+)
+from simcore_service_director_v2.modules.comp_scheduler.factory import create_from_db
+from simcore_service_director_v2.utils.scheduler import (
+    COMPLETED_STATES,
+    SCHEDULED_STATES,
 )
 
 pytest_simcore_core_services_selection = ["postgres", "redis", "rabbit"]
@@ -40,7 +45,7 @@ pytest_simcore_ops_services_selection = ["adminer", "redis-commander"]
     ],
 )
 def test_scheduler_takes_care_of_runs_with_state(state: RunningState):
-    assert state in _SCHEDULED_STATES
+    assert state in SCHEDULED_STATES
 
 
 @pytest.mark.parametrize(
@@ -52,11 +57,11 @@ def test_scheduler_takes_care_of_runs_with_state(state: RunningState):
     ],
 )
 def test_scheduler_knows_these_are_completed_states(state: RunningState):
-    assert state in _COMPLETED_STATES
+    assert state in COMPLETED_STATES
 
 
 def test_scheduler_knows_all_the_states():
-    assert _COMPLETED_STATES.union(_SCHEDULED_STATES).union(
+    assert COMPLETED_STATES.union(SCHEDULED_STATES).union(
         {RunningState.NOT_STARTED, RunningState.UNKNOWN}
     ) == set(RunningState)
 
@@ -111,7 +116,7 @@ async def test_scheduler_throws_error_for_missing_dependencies(
     # missing db engine
     incorectly_configured_app = FakeApp(state=None)
     with pytest.raises(ConfigurationError):
-        await CeleryScheduler.create_from_db(incorectly_configured_app)
+        await create_from_db(incorectly_configured_app)
 
     # missing celery client
     incorectly_configured_app = FakeApp(
@@ -119,7 +124,7 @@ async def test_scheduler_throws_error_for_missing_dependencies(
     )
     del incorectly_configured_app.state.celery_client
     with pytest.raises(ConfigurationError):
-        await CeleryScheduler.create_from_db(incorectly_configured_app)
+        await create_from_db(incorectly_configured_app)
 
     # now should be ok
     correctly_configured_app = FakeApp(
@@ -128,17 +133,17 @@ async def test_scheduler_throws_error_for_missing_dependencies(
             celery_client=celery_client,
         )
     )
-    await CeleryScheduler.create_from_db(correctly_configured_app)
+    await create_from_db(correctly_configured_app)
 
 
 async def test_scheduler_initializes_without_error(
     fake_app: FakeApp,
 ):
-    await CeleryScheduler.create_from_db(fake_app)
+    await create_from_db(fake_app)
 
 
 async def test_scheduler_task_starts_and_stops_gracefully(fake_app: FakeApp):
-    scheduler = await CeleryScheduler.create_from_db(fake_app)
+    scheduler = await create_from_db(fake_app)
     task = asyncio.get_event_loop().create_task(scheduler_task(scheduler))
     # let it run
     await asyncio.sleep(3)

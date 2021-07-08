@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List
+from typing import Dict, List, cast
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -33,14 +33,14 @@ class DaskScheduler(BaseCompScheduler):
         ]
 
         # The sidecar only pick up tasks that are in PENDING state
-        comp_tasks_repo: CompTasksRepository = get_repository(
-            self.db_engine, CompTasksRepository
-        )  # type: ignore
+        comp_tasks_repo: CompTasksRepository = cast(
+            CompTasksRepository, get_repository(self.db_engine, CompTasksRepository)
+        )
         await comp_tasks_repo.mark_project_tasks_as_pending(project_id, tasks)
         # now transfer the pipeline to the dask scheduler
         self.dask_client.send_computation_tasks(
             user_id=user_id,
             project_id=project_id,
             single_tasks=dask_tasks,
-            callback=self._wake_up_scheduler_now,
+            _callback=self._wake_up_scheduler_now,
         )

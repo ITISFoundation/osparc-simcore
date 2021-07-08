@@ -16,9 +16,8 @@ from ..api.errors.validation_error import http422_error_handler
 from ..meta import api_version, api_vtag, project_name, summary
 from ..modules import (
     celery,
-    celery_scheduler,
+    comp_scheduler,
     dask_client,
-    dask_scheduler,
     db,
     director_v0,
     dynamic_services,
@@ -66,9 +65,6 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings.CELERY.DIRECTOR_V2_CELERY_ENABLED:
         celery.setup(app, settings.CELERY)
 
-    if settings.CELERY_SCHEDULER.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED:
-        celery_scheduler.setup(app)
-
     if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
         dynamic_services.setup(app, settings.DYNAMIC_SERVICES)
 
@@ -80,7 +76,12 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     if settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_SCHEDULER_ENABLED:
         dask_client.setup(app, settings.DASK_SCHEDULER)
-        dask_scheduler.setup(app)
+
+    if (
+        settings.CELERY_SCHEDULER.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED
+        or settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_SCHEDULER_ENABLED
+    ):
+        comp_scheduler.setup(app)
 
     # setup app --
     app.add_event_handler("startup", on_startup)
