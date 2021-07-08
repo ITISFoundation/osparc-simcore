@@ -21,6 +21,7 @@ from ..models.domains.comp_runs import CompRunsAtDB
 from ..models.domains.comp_tasks import CompTaskAtDB
 from ..models.schemas.constants import UserID
 from ..utils.computations import get_pipeline_state_from_task_states
+from ..utils.exceptions import PipelineNotFoundError
 from .db.repositories import BaseRepository
 from .db.repositories.comp_pipelines import CompPipelinesRepository
 from .db.repositories.comp_runs import CompRunsRepository
@@ -197,24 +198,33 @@ class DaskScheduler:
             user_id,
         )
 
-        pipeline_dag: nx.DiGraph = await self._get_pipeline_dag(project_id)
-        pipeline_tasks: Dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(
-            project_id, pipeline_dag
-        )
+        pipeline_dag = nx.DiGraph()
+        pipeline_tasks: Dict[str, CompTaskAtDB] = {}
+        pipeline_result: RunningState = RunningState.UNKNOWN
+        try:
+            pipeline_dag = await self._get_pipeline_dag(project_id)
+            pipeline_tasks: Dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(
+                project_id, pipeline_dag
+            )
 
-        # filter out the tasks with what were already completed
-        pipeline_dag.remove_nodes_from(
-            {
-                node_id
-                for node_id, t in pipeline_tasks.items()
-                if t.state in _COMPLETED_STATES
-            }
-        )
+            # filter out the tasks with what were already completed
+            pipeline_dag.remove_nodes_from(
+                {
+                    node_id
+                    for node_id, t in pipeline_tasks.items()
+                    if t.state in _COMPLETED_STATES
+                }
+            )
 
-        # update the current status of the run
-        pipeline_result: RunningState = await self._update_run_result(
-            user_id, project_id, iteration, pipeline_tasks
-        )
+            # update the current status of the run
+            pipeline_result = await self._update_run_result(
+                user_id, project_id, iteration, pipeline_tasks
+            )
+        except PipelineNotFoundError:
+            logger.warning(
+                "pipeline %s does not exist in comp_pipeline table, it will be removed from scheduler",
+                project_id,
+            )
 
         if not pipeline_dag.nodes():
             # there is nothing left, the run is completed, we're done here
