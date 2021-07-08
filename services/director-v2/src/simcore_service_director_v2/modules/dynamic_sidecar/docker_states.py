@@ -8,6 +8,8 @@ from ...models.schemas.dynamic_services import ServiceState
 
 logger = logging.getLogger(__name__)
 
+# For all available task states SEE
+# https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
 TASK_STATES_FAILED: Set[str] = {"failed", "rejected", "orphaned"}
 TASK_STATES_PENDING: Set[str] = {"new", "assigned", "accepted", "pending"}
 TASK_STATES_PULLING: Set[str] = {"preparing"}
@@ -27,7 +29,7 @@ TASK_STATES_ALL: Set[str] = (
 
 
 # mapping container states into 4 categories
-# For all avaliable states SEE
+# For all avaliable container states SEE
 # https://github.com/moby/moby/blob/master/container/state.go#L140
 CONTAINER_STATES_FAILED: Set[str] = {"restarting", "dead", "paused"}
 CONTAINER_STATES_STARTING: Set[str] = {"created"}
