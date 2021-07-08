@@ -34,14 +34,6 @@ def _get_fake_service_details(
 ) -> Optional[ServiceDockerData]:
 
     if "file-picker" in service.key:
-        file_picker_outputs = {
-            "outFile": {
-                "label": "File",
-                "displayOrder": 0,
-                "description": "Chosen File",
-                "type": "data:*/*",
-            }
-        }
         return ServiceDockerData(
             **service.dict(),
             name="File Picker",
@@ -51,8 +43,95 @@ def _get_fake_service_details(
             ],
             contact="maiz@itis.swiss",
             inputs={},
-            outputs=file_picker_outputs,
+            outputs={
+                "outFile": {
+                    "label": "File",
+                    "displayOrder": 0,
+                    "description": "Chosen File",
+                    "type": "data:*/*",
+                }
+            },
             type=ServiceType.FRONTEND,
+        )
+    elif "parameter/number" in service.key:
+        return ServiceDockerData(
+            **service.dict(),
+            type=ServiceType.FRONTEND,
+            name="Number Parameter",
+            description="",
+            authors=[
+                Author(name="Odei Maiz", email="maiz@itis.swiss")
+            ],
+            contact="maiz@itis.swiss",
+            inputs={},
+            outputs={
+                "out_1": {
+                    "displayOrder": 0,
+                    "label": "Number Parameter",
+                    "description": "",
+                    "type": "number",
+                }
+            }
+        )
+    elif "parameter/number" in service.key:
+        return ServiceDockerData(
+            **service.dict(),
+            type=ServiceType.FRONTEND,
+            name="Number Parameter",
+            description="",
+            authors=[
+                Author(name="Odei Maiz", email="maiz@itis.swiss")
+            ],
+            contact="maiz@itis.swiss",
+            inputs={},
+            outputs={
+                "out_1": {
+                    "displayOrder": 0,
+                    "label": "Number Parameter",
+                    "description": "",
+                    "type": "number",
+                }
+            }
+        )
+    elif "parameter/integer" in service.key:
+        return ServiceDockerData(
+            **service.dict(),
+            type=ServiceType.FRONTEND,
+            name="Integer Parameter",
+            description="",
+            authors=[
+                Author(name="Odei Maiz", email="maiz@itis.swiss")
+            ],
+            contact="maiz@itis.swiss",
+            inputs={},
+            outputs={
+                "out_1": {
+                    "displayOrder": 0,
+                    "label": "Integer Parameter",
+                    "description": "",
+                    "type": "integer",
+                }
+            }
+        )
+    elif "parameter/boolean" in service.key:
+        return ServiceDockerData(
+            **service.dict(),
+            type=ServiceType.FRONTEND,
+            name="Boolean Parameter",
+            description="",
+            authors=[
+                Author(name="Odei Maiz", email="maiz@itis.swiss")
+            ],
+            contact="maiz@itis.swiss",
+            inputs={},
+            outputs={
+                "out_1": {
+                    "displayOrder": 0,
+                    "label": "Boolean Parameter",
+                    "description": "",
+                    "type": "boolean",
+                }
+            }
         )
     return None
 
