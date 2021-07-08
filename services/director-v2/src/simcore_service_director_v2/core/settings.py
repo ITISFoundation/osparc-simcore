@@ -230,13 +230,13 @@ class PGSettings(PostgresSettings):
 
 class CelerySchedulerSettings(BaseCustomSettings):
     DIRECTOR_V2_CELERY_SCHEDULER_ENABLED: bool = Field(
-        False,
+        True,
         description="Enables/Disables the scheduler",
     )
 
 
 class DaskSchedulerSettings(BaseCustomSettings):
-    DIRECTOR_V2_DASK_SCHEDULER_ENABLED: bool = True
+    DIRECTOR_V2_DASK_SCHEDULER_ENABLED: bool = False
     DASK_SCHEDULER_HOST: str = Field(
         "dask-scheduler",
         description="Address of the scheduler to register (only if started as worker )",
