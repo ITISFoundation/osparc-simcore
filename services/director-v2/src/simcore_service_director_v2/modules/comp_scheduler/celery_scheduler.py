@@ -1,5 +1,6 @@
 import logging
-from typing import Dict, List
+from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -17,9 +18,10 @@ from ..db.repositories.comp_tasks import CompTasksRepository
 logger = logging.getLogger(__name__)
 
 
+@dataclass
 class CeleryScheduler(BaseCompScheduler):
-    settings: CelerySchedulerSettings
-    celery_client: CeleryClient
+    settings: Optional[CelerySchedulerSettings] = None
+    celery_client: Optional[CeleryClient] = None
 
     async def _start_tasks(
         self,

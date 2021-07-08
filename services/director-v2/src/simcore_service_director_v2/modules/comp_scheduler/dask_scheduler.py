@@ -1,5 +1,6 @@
 import logging
-from typing import Dict, List, cast
+from dataclasses import dataclass
+from typing import Dict, List, Optional, cast
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -15,9 +16,10 @@ from .base_scheduler import BaseCompScheduler
 logger = logging.getLogger(__name__)
 
 
+@dataclass
 class DaskScheduler(BaseCompScheduler):
-    settings: DaskSchedulerSettings
-    dask_client: DaskClient
+    settings: Optional[DaskSchedulerSettings] = None
+    dask_client: Optional[DaskClient] = None
 
     async def _start_tasks(
         self,
