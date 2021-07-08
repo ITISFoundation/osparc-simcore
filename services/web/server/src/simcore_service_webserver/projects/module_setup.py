@@ -25,8 +25,6 @@ from .projects_db import setup_projects_db
 
 logger = logging.getLogger(__name__)
 
-__all__ = "setup_projects"
-
 
 def _create_routes(tag, handlers_module, specs, *, disable_login=False):
     """
