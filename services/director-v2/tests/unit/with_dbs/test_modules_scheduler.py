@@ -18,12 +18,10 @@ from models_library.settings.celery import CeleryConfig
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from simcore_service_director_v2.core.errors import ConfigurationError
+from simcore_service_director_v2.core.settings import CelerySchedulerSettings
 from simcore_service_director_v2.modules.celery import CeleryClient
 from simcore_service_director_v2.modules.comp_scheduler.background_task import (
     scheduler_task,
-)
-from simcore_service_director_v2.modules.comp_scheduler.celery_scheduler import (
-    CeleryScheduler,
 )
 from simcore_service_director_v2.modules.comp_scheduler.factory import create_from_db
 from simcore_service_director_v2.utils.scheduler import (
@@ -67,9 +65,16 @@ def test_scheduler_knows_all_the_states():
 
 
 @dataclass
+class FakeSettings:
+    CELERY_SCHEDULER = CelerySchedulerSettings()
+    DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
+
+
+@dataclass
 class FakeState:
     engine: sa.engine.Engine
     celery_client: CeleryClient
+    settings = FakeSettings()
 
 
 @dataclass
