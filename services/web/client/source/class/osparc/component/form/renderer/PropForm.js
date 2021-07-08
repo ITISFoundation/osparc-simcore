@@ -59,7 +59,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     isFieldParametrizable: function(field) {
-      return ["Number", "Spinner", "CheckBox"].includes(field.widgetType);
+      const supportedTypes = [];
+      const paramsMD = osparc.utils.Services.getParametersMetadata();
+      paramsMD.forEach(paramMD => {
+        supportedTypes.push(osparc.component.node.ParameterEditor.getParameterOutputTypeFromMD(paramMD));
+      });
+      return supportedTypes.includes(field.type);
     }
   },
 
