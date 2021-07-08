@@ -1,6 +1,8 @@
 # pylint: disable=redefined-outer-name
-
-from typing import Dict, Set
+import random
+import string
+from collections import namedtuple
+from typing import Dict, List, Set
 
 import pytest
 from simcore_service_director_v2.models.schemas.dynamic_services import (
@@ -11,8 +13,42 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     ServiceState,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_states import (
+    CONTAINER_STATUSES_FAILED,
     extract_containers_minimim_statuses,
 )
+
+# the following is the predefined expected ordering, change below test only if
+# this order is not adequate anymore
+_EXPECTED_ORDER = [
+    ServiceState.FAILED,
+    ServiceState.PENDING,
+    ServiceState.PULLING,
+    ServiceState.STARTING,
+    ServiceState.RUNNING,
+    ServiceState.COMPLETE,
+]
+
+CNT_STS_RESTARTING = "restarting"
+CNT_STS_DEAD = "dead"
+CNT_STS_PAUSED = "paused"
+CNT_STS_CREATED = "created"
+CNT_STS_RUNNING = "running"
+CNT_STS_REMOVING = "removing"
+CNT_STS_EXITED = "exited"
+
+ALL_CONTAINER_STATUSES: Set[str] = {
+    CNT_STS_RESTARTING,
+    CNT_STS_DEAD,
+    CNT_STS_PAUSED,
+    CNT_STS_CREATED,
+    CNT_STS_RUNNING,
+    CNT_STS_REMOVING,
+    CNT_STS_EXITED,
+}
+
+RANDOM_STRING_DATASET = string.ascii_letters + string.digits
+
+ExpectedStatus = namedtuple("ExpectedStatus", "containers_statuses, expected_state")
 
 # FIXTURES
 
@@ -38,21 +74,49 @@ def mock_containers_statuses() -> Dict[str, Dict[str, str]]:
 
 # UTILS
 
-# the following is the predefined expected ordering, change below test only if
-# this order is not adequate anymore
-_EXPECTED_ORDER = [
-    ServiceState.FAILED,
-    ServiceState.PENDING,
-    ServiceState.PULLING,
-    ServiceState.STARTING,
-    ServiceState.RUNNING,
-    ServiceState.COMPLETE,
-]
+
+def _random_string(length: int = 4) -> str:
+    return "".join(random.choices(RANDOM_STRING_DATASET, k=length))
+
+
+def _make_status_dict(status: str) -> Dict[str, str]:
+    assert status in ALL_CONTAINER_STATUSES
+    status_dict = {"Status": status}
+    if status in CONTAINER_STATUSES_FAILED:
+        status_dict["Error"] = "failed state here"
+    return status_dict
+
+
+def containers_statues(*args: str) -> Dict[str, Dict[str, str]]:
+    return {_random_string(): _make_status_dict(x) for x in args}
 
 
 def _all_states() -> Set[ServiceState]:
     return set(x for x in ServiceState)
 
+
+SAMPLE_EXPECTED_STATUSES: List[ExpectedStatus] = [
+    ExpectedStatus(
+        containers_statuses=containers_statues(
+            CNT_STS_RESTARTING, CNT_STS_RUNNING, CNT_STS_EXITED
+        ),
+        expected_state=ServiceState.FAILED,
+    ),
+    ExpectedStatus(
+        containers_statuses=containers_statues(
+            CNT_STS_CREATED, CNT_STS_RUNNING, CNT_STS_EXITED
+        ),
+        expected_state=ServiceState.STARTING,
+    ),
+    ExpectedStatus(
+        containers_statuses=containers_statues(CNT_STS_RUNNING, CNT_STS_EXITED),
+        expected_state=ServiceState.RUNNING,
+    ),
+    ExpectedStatus(
+        containers_statuses=containers_statues(CNT_STS_REMOVING, CNT_STS_EXITED),
+        expected_state=ServiceState.COMPLETE,
+    ),
+]
 
 # TESTS
 
@@ -130,11 +194,18 @@ def test_min_service_state_is_lowerst_in_expected_order():
         assert min(items_after_index) == items_after_index[0]
 
 
+@pytest.mark.parametrize(
+    "containers_statuses, expected_state",
+    [(x.containers_statuses, x.expected_state) for x in SAMPLE_EXPECTED_STATUSES],
+    ids=[x.expected_state.name for x in SAMPLE_EXPECTED_STATUSES],
+)
 def test_extract_containers_minimim_statuses(
-    mock_containers_statuses: Dict[str, Dict[str, str]]
+    containers_statuses: Dict[str, Dict[str, str]], expected_state: ServiceState
 ):
-    service_state, service_message = extract_containers_minimim_statuses(
-        mock_containers_statuses
-    )
-    assert service_state == ServiceState.FAILED
-    assert service_message == "something"
+    service_state, _ = extract_containers_minimim_statuses(containers_statuses)
+    assert service_state == expected_state
+
+
+def test_not_implemented_comparison() -> None:
+    with pytest.raises(TypeError):
+        ServiceState.FAILED > {}  # pylint: disable=pointless-statement
