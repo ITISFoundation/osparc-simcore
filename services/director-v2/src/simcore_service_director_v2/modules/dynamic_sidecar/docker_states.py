@@ -28,7 +28,7 @@ TASK_STATES_ALL: Set[str] = (
 
 # mapping container states into 4 categories
 # For all avaliable states SEE
-# https://github.com/moby/moby/blob/master/container/state.go
+# https://github.com/moby/moby/blob/master/container/state.go#L140
 CONTAINER_STATES_FAILED: Set[str] = {"restarting", "dead", "paused"}
 CONTAINER_STATES_STARTING: Set[str] = {"created"}
 CONTAINER_STATES_RUNNING: Set[str] = {"running"}
