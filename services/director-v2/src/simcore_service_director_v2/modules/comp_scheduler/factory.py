@@ -28,7 +28,10 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
     )
 
     # check which scheduler to start
-    if app.state.settings.CELERY_SCHEDULER.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED:
+    if (
+        app.state.settings.CELERY_SCHEDULER.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED
+        and not app.state.settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
+    ):
         from ..celery import CeleryClient
         from .celery_scheduler import CeleryScheduler
 

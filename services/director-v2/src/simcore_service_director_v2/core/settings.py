@@ -224,7 +224,8 @@ class DynamicServicesSettings(BaseCustomSettings):
 
 class PGSettings(PostgresSettings):
     DIRECTOR_V2_POSTGRES_ENABLED: bool = Field(
-        True, description="Enables/Disables connection with service"
+        True,
+        description="Enables/Disables connection with service",
     )
 
 
@@ -236,7 +237,9 @@ class CelerySchedulerSettings(BaseCustomSettings):
 
 
 class DaskSchedulerSettings(BaseCustomSettings):
-    DIRECTOR_V2_DASK_SCHEDULER_ENABLED: bool = False
+    DIRECTOR_V2_DASK_SCHEDULER_ENABLED: bool = Field(
+        False,
+    )
     DASK_SCHEDULER_HOST: str = Field(
         "dask-scheduler",
         description="Address of the scheduler to register (only if started as worker )",
@@ -254,6 +257,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         LogLevel.INFO.value,
         env=["DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
+    DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
 
     # for passing self-signed certificate to spawned services
     # TODO: fix these variables once the timeout-minutes: 30 is able to start dynamic services
@@ -313,3 +317,15 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     @classmethod
     def _validate_loglevel(cls, value) -> str:
         return cls.validate_log_level(value)
+
+    @validator("DASK_SCHEDULER")
+    @classmethod
+    def _check_only_one_comp_scheduler_enabled(cls, v, values) -> DaskSchedulerSettings:
+        celery_settings: CelerySchedulerSettings = values["CELERY_SCHEDULER"]
+        dask_settings: DaskSchedulerSettings = v
+        if (
+            celery_settings.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED
+            and dask_settings.DIRECTOR_V2_DASK_SCHEDULER_ENABLED
+        ):
+            celery_settings.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED = False
+        return v
