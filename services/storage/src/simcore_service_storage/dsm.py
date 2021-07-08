@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import aiobotocore
 import attr
 import sqlalchemy as sa
+from aiobotocore.client import AioBaseClient
 from aiobotocore.session import AioSession, ClientCreatorContext
 from aiohttp import web
 from aiopg.sa import Engine
@@ -898,7 +899,7 @@ class DataStorageManager:
 
     async def delete_project_simcore_s3(
         self, user_id: str, project_id: str, node_id: Optional[str] = None
-    ) -> web.Response:
+    ) -> Optional[web.Response]:
 
         """Deletes all files from a given node in a project in simcore.s3 and updated db accordingly.
         If node_id is not given, then all the project files db entries are deleted.
@@ -1014,6 +1015,11 @@ class DataStorageManager:
         self, location: str, dry_run: bool
     ) -> Dict[str, Any]:
         sync_results = {"removed": []}
+
+        assert (
+            location == SIMCORE_S3_STR
+        ), "Only with s3, no other sync implemented"  # nosec
+
         if location == SIMCORE_S3_STR:
             # NOTE: only valid for Simcore, since datcore data is not in the database table
             # let's get all the files in the table
@@ -1027,14 +1033,15 @@ class DataStorageManager:
                     number_of_rows_in_db,
                 )
 
+                assert isinstance(s3_client, AioBaseClient)  # nosec
+
                 async for row in conn.execute(file_meta_data.select()):
                     s3_key = row.object_name  # type: ignore
 
                     # now check if the file exists in S3
                     try:
                         await s3_client.get_object(
-                            Bucket=self.simcore_bucket_name,
-                            Key=s3_key,
+                            Bucket=self.simcore_bucket_name, Key=s3_key
                         )
                     except s3_client.exceptions.NoSuchKey:
                         # this file does not exist
