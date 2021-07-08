@@ -19,5 +19,5 @@ echo "$INFO local dir : $(ls -al)"
 echo "$INFO Starting migration ..."
 sc-pg upgrade-and-close
 
-echo "$INFO Migration Done. Wait forever ..."
-exec tail -f /dev/null
+echo "$INFO Migration Done. Expose http server to allow other services in the stack to start ..."
+uvicorn services.migration.src.server:app

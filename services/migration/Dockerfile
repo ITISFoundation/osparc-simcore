@@ -33,8 +33,8 @@ FROM base as build
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-    build-essential \
-    git \
+  build-essential \
+  git \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -52,6 +52,7 @@ WORKDIR /build
 # install only base 3rd party dependencies
 COPY  --chown=scu:scu packages/postgres-database/ .
 RUN pip --no-cache-dir --quiet install .[migration]
+RUN pip --no-cache-dir install fastapi uvicorn
 
 
 
@@ -74,5 +75,6 @@ USER ${SC_USER_NAME}
 # bring installed package without build tools
 COPY --from=build ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/migration/docker services/migration/docker
+COPY --chown=scu:scu services/migration/src services/migration/src
 
 ENTRYPOINT [ "/bin/sh", "services/migration/docker/entrypoint.sh" ]
