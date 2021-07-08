@@ -26,7 +26,7 @@ from .projects_db import setup_projects_db
 logger = logging.getLogger(__name__)
 
 
-def _create_routes(tag, specs, *handlers_module, disable_login=False):
+def _create_routes(tag, specs, *handlers_module, disable_login: bool = False):
     """
     :param disable_login: Disables login_required decorator for testing purposes defaults to False
     :type disable_login: bool, optional
