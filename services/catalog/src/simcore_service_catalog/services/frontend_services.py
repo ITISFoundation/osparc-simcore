@@ -34,14 +34,14 @@ def create_parametrization_const_number() -> ServiceDockerData:
         version="1.0.0",
         type=ServiceType.FRONTEND,
         name="Number Parameter",
-        description="Number Parameter",
+        description="",
         authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
         contact="maiz@itis.swiss",
         inputs={},
         outputs={
             "out_1": {
                 "displayOrder": 0,
-                "label": "Number",
+                "label": "Number Parameter",
                 "description": "",
                 "type": "number",
             }
@@ -55,14 +55,14 @@ def create_parametrization_const_integer() -> ServiceDockerData:
         version="1.0.0",
         type=ServiceType.FRONTEND,
         name="Integer Parameter",
-        description="Integer Parameter",
+        description="",
         authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
         contact="maiz@itis.swiss",
         inputs={},
         outputs={
             "out_1": {
                 "displayOrder": 0,
-                "label": "Integer",
+                "label": "Integer Parameter",
                 "description": "",
                 "type": "integer",
             }
@@ -76,14 +76,14 @@ def create_parametrization_const_boolean() -> ServiceDockerData:
         version="1.0.0",
         type=ServiceType.FRONTEND,
         name="Boolean Parameter",
-        description="Boolean Parameter",
+        description="",
         authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
         contact="maiz@itis.swiss",
         inputs={},
         outputs={
             "out_1": {
                 "displayOrder": 0,
-                "label": "Boolean",
+                "label": "Boolean Parameter",
                 "description": "",
                 "type": "boolean",
             }
