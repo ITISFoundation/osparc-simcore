@@ -113,7 +113,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
         const allNodes = study.getWorkbench().getNodes(true);
         const hasIterators = Object.values(allNodes).some(node => node.isIterator());
         const snapshotsBtn = this.getChildControl("snapshots-btn");
-        snapshotsBtn.setVisibility(hasIterators ? "excluded" : "visible");
+        snapshotsBtn.setVisibility(hasIterators ? "visible" : "excluded");
       }
     },
 
