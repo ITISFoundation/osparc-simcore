@@ -6,7 +6,7 @@ from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
 )
 from simcore_service_director_v2.models.schemas.dynamic_services import (
-    MonitorData,
+    SchedulerData,
     ServiceDetails,
     ServiceLabelsStoredData,
 )
@@ -18,7 +18,7 @@ def simcore_services_network_name() -> str:
 
 
 @pytest.fixture(autouse=True)
-def disable_dynamic_sidecar_monitor_in_unit_tests(
+def disable_dynamic_sidecar_scheduler_in_unit_tests(
     monkeypatch, simcore_services_network_name: str
 ) -> None:
     monkeypatch.setenv("REGISTRY_auth", "false")
@@ -55,12 +55,12 @@ def dynamic_sidecar_port() -> int:
 
 
 @pytest.fixture
-def monitor_data_from_http_request(
+def scheduler_data_from_http_request(
     dynamic_service_create: DynamicServiceCreate,
     simcore_service_labels: SimcoreServiceLabels,
     dynamic_sidecar_port: int,
-) -> MonitorData:
-    return MonitorData.from_http_request(
+) -> SchedulerData:
+    return SchedulerData.from_http_request(
         service=dynamic_service_create,
         simcore_service_labels=simcore_service_labels,
         port=dynamic_sidecar_port,
@@ -68,9 +68,9 @@ def monitor_data_from_http_request(
 
 
 @pytest.fixture
-def monitor_data_from_service_labels_stored_data(
+def scheduler_data_from_service_labels_stored_data(
     service_labels_stored_data: ServiceLabelsStoredData, dynamic_sidecar_port: int
-) -> MonitorData:
-    return MonitorData.from_service_labels_stored_data(
+) -> SchedulerData:
+    return SchedulerData.from_service_labels_stored_data(
         service_labels_stored_data=service_labels_stored_data, port=dynamic_sidecar_port
     )

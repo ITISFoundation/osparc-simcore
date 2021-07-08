@@ -107,10 +107,10 @@ async def inspect_service(service_id: str) -> Dict[str, Any]:
         return await client.services.inspect(service_id)
 
 
-async def get_dynamic_sidecars_to_monitor(
+async def get_dynamic_sidecars_to_observe(
     dynamic_sidecar_settings: DynamicSidecarSettings,
 ) -> Deque[ServiceLabelsStoredData]:
-    """called when monitor is started to discover new services to monitor"""
+    """called when scheduler is started to discover new services to observe"""
     async with docker_client() as client:
         running_dynamic_sidecar_services = await client.services.list(
             filters={

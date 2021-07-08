@@ -6,8 +6,8 @@ import httpx
 from fastapi import FastAPI
 
 from ...core.settings import DynamicSidecarSettings
-from ...models.schemas.dynamic_services import MonitorData
-from .errors import MonitorException
+from ...models.schemas.dynamic_services import SchedulerData
+from .errors import DynamicSchedulerException
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +100,7 @@ class DynamicSidecarClient:
                     f"status={response.status_code}, body={response.text}"
                 )
                 logging.warning(message)
-                raise MonitorException(message)
+                raise DynamicSchedulerException(message)
 
             logger.info("Compose down result %s", response.text)
         except httpx.HTTPError as e:
@@ -124,12 +124,12 @@ def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:
 
 
 async def update_dynamic_sidecar_health(
-    app: FastAPI, monitor_data: MonitorData
+    app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
 
     api_client = get_dynamic_sidecar_client(app)
-    service_endpoint = monitor_data.dynamic_sidecar.endpoint
+    service_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
     # update service health
     is_healthy = await api_client.is_healthy(service_endpoint)
-    monitor_data.dynamic_sidecar.is_available = is_healthy
+    scheduler_data.dynamic_sidecar.is_available = is_healthy

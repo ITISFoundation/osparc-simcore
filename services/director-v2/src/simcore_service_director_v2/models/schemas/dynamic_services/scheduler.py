@@ -278,9 +278,9 @@ class DynamicSidecarNames(BaseModel):
         )
 
 
-class MonitorData(CommonServiceDetails, DynamicSidecarServiceLabels):
+class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     service_name: str = Field(
-        ..., description="Name of the current dynamic-sidecar being monitored"
+        ..., description="Name of the current dynamic-sidecar being observed"
     )
 
     dynamic_sidecar: DynamicSidecar = Field(
@@ -309,7 +309,7 @@ class MonitorData(CommonServiceDetails, DynamicSidecarServiceLabels):
         ),
     )
     # Below values are used only once and then are nto required, thus optional
-    # after the service is picked up by the monitor after a reboot these are not required
+    # after the service is picked up by the scheduler after a reboot these are not required
     # and can be set to None
     request_dns: Optional[str] = Field(
         None, description="used when configuring the CORS options on the proxy"
@@ -330,7 +330,7 @@ class MonitorData(CommonServiceDetails, DynamicSidecarServiceLabels):
         port: Optional[int],
         request_dns: str = None,
         request_scheme: str = None,
-    ) -> "MonitorData":
+    ) -> "SchedulerData":
         dynamic_sidecar_names = DynamicSidecarNames.make(service.node_uuid)
         return cls.parse_obj(
             dict(
@@ -363,7 +363,7 @@ class MonitorData(CommonServiceDetails, DynamicSidecarServiceLabels):
         request_dns: str = None,
         request_scheme: str = None,
         proxy_service_name: str = None,
-    ) -> "MonitorData":
+    ) -> "SchedulerData":
         return cls.parse_obj(
             dict(
                 service_name=service_labels_stored_data.service_name,
@@ -426,17 +426,17 @@ class AsyncResourceLock(BaseModel):
             self._is_locked = False
 
 
-class LockWithMonitorData(BaseModel):
-    # locking is required to guarantee the monitoring will not be triggered
+class LockWithSchedulerData(BaseModel):
+    # locking is required to guarantee the scheduling will not be triggered
     # twice in a row for the service
     resource_lock: AsyncResourceLock = Field(
         ...,
         description=(
-            "needed to exclude the service from a monitoring cycle while another "
-            "monitoring cycle is already running"
+            "needed to exclude the service from a scheduling cycle while another "
+            "scheduling cycle is already running"
         ),
     )
 
-    monitor_data: MonitorData = Field(
-        ..., description="required data used to monitor the dynamic-sidecar"
+    scheduler_data: SchedulerData = Field(
+        ..., description="required data used to schedule the dynamic-sidecar"
     )

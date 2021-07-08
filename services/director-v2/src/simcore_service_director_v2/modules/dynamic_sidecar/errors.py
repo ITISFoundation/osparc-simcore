@@ -22,5 +22,8 @@ class DynamicSidecarNotFoundError(DirectorException):
         super().__init__(f"node {node_uuid} not found")
 
 
-class MonitorException(DirectorException):
-    """Used to signal that something was wrong with monitoring"""
+class DynamicSchedulerException(DirectorException):
+    """
+    Used to signal that something was wrong with during
+    the service's observation.
+    """

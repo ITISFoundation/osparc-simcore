@@ -137,22 +137,22 @@ class RunningDynamicServiceDetails(ServiceDetails):
     )
 
     @classmethod
-    def from_monitoring_status(
+    def from_scheduler_data(
         cls,
         node_uuid: NodeID,
-        monitor_data: "MonitorData",
+        scheduler_data: "SchedulerData",
         service_state: ServiceState,
         service_message: str,
     ) -> "RunningDynamicServiceDetails":
         return cls(
             boot_type=ServiceBootType.V2,
-            user_id=monitor_data.user_id,
-            project_id=monitor_data.project_id,
+            user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
             node_uuid=node_uuid,
-            key=monitor_data.key,
-            version=monitor_data.version,
-            host=monitor_data.service_name,
-            internal_port=monitor_data.service_port,
+            key=scheduler_data.key,
+            version=scheduler_data.version,
+            host=scheduler_data.service_name,
+            internal_port=scheduler_data.service_port,
             state=service_state.value,
             message=service_message,
         )

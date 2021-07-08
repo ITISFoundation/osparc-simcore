@@ -28,7 +28,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_api import (
     create_service_and_get_id,
     docker_client,
     get_dynamic_sidecar_state,
-    get_dynamic_sidecars_to_monitor,
+    get_dynamic_sidecars_to_observe,
     get_node_id_from_task_for_service,
     get_swarm_network,
     inspect_service,
@@ -317,7 +317,7 @@ async def test_inspect_service(
     _assert_service(service_spec, service_inspect)
 
 
-async def test_services_to_monitor_exist(
+async def test_services_to_observe_exist(
     dynamic_sidecar_service_name: str,
     dynamic_sidecar_service_spec: Dict[str, Any],
     dynamic_sidecar_settings: DynamicSidecarSettings,
@@ -327,7 +327,7 @@ async def test_services_to_monitor_exist(
     service_id = await create_service_and_get_id(dynamic_sidecar_service_spec)
     assert service_id
 
-    dynamic_services = await get_dynamic_sidecars_to_monitor(dynamic_sidecar_settings)
+    dynamic_services = await get_dynamic_sidecars_to_observe(dynamic_sidecar_settings)
     assert len(dynamic_services) == 1
 
     for entry in dynamic_services:

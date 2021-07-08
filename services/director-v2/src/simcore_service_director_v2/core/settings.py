@@ -111,7 +111,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
         description=(
             "When starting the dynamic-sidecar proxy, the NodeID of the dynamic-sidecar container "
             "is required. If something goes wrong timeout and do not wait forever in a loop. "
-            "This is used to monitor the status of the service via aiodocker and not http requests "
+            "This is used to scheduler the status of the service via aiodocker and not http requests "
             "twards the dynamic-sidecar, as is the case with the above timeout field."
         ),
     )
@@ -134,14 +134,14 @@ class DynamicSidecarSettings(BaseCustomSettings):
     REGISTRY: RegistrySettings
 
 
-class DynamicServicesMonitoringSettings(BaseCustomSettings):
-    DIRECTOR_V2_MONITORING_ENABLED: bool = True
+class DynamicServicesSchedulerSettings(BaseCustomSettings):
+    DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED: bool = True
 
-    DIRECTOR_V2_MONITOR_INTERVAL_SECONDS: PositiveFloat = Field(
-        5.0, description="interval at which the monitor cycle is repeated"
+    DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS: PositiveFloat = Field(
+        5.0, description="interval at which the scheduler cycle is repeated"
     )
 
-    DIRECTOR_V2_MONITOR_MAX_STATUS_API_DURATION: PositiveFloat = Field(
+    DIRECTOR_V2_DYNAMIC_SCHEDULER_MAX_STATUS_API_DURATION: PositiveFloat = Field(
         1.0,
         description=(
             "when requesting the status of a service this is the "
@@ -161,8 +161,8 @@ class DynamicServicesSettings(BaseCustomSettings):
     # dynamic sidecar
     DYNAMIC_SIDECAR: DynamicSidecarSettings
 
-    # dynamic services monitoring
-    MONITORING: DynamicServicesMonitoringSettings
+    # dynamic services scheduler
+    DYNAMIC_SCHEDULER: DynamicServicesSchedulerSettings
 
 
 class PGSettings(PostgresSettings):
@@ -192,7 +192,7 @@ class AppSettings(BaseSettings):
             celery=CelerySettings.create_from_env(),
             dynamic_services=DynamicServicesSettings(
                 DYNAMIC_SIDECAR=DynamicSidecarSettings(REGISTRY=RegistrySettings()),
-                MONITORING=DynamicServicesMonitoringSettings(),
+                DYNAMIC_SCHEDULER=DynamicServicesSchedulerSettings(),
             ),
             client_request=ClientRequestSettings(),
             scheduler=CelerySchedulerSettings(),

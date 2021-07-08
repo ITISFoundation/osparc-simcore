@@ -2,8 +2,8 @@
 
 import pytest
 from simcore_service_director_v2.models.schemas.dynamic_services import (
-    MonitorData,
     RunningDynamicServiceDetails,
+    SchedulerData,
     ServiceBootType,
     ServiceLabelsStoredData,
     ServiceState,
@@ -21,19 +21,19 @@ def service_state() -> ServiceState:
 
 
 @pytest.mark.parametrize(
-    "monitor_data",
+    "scheduler_data",
     [
         # pylint: disable=no-member
-        pytest.lazy_fixture("monitor_data_from_http_request"),
-        pytest.lazy_fixture("monitor_data_from_service_labels_stored_data"),
+        pytest.lazy_fixture("scheduler_data_from_http_request"),
+        pytest.lazy_fixture("scheduler_data_from_service_labels_stored_data"),
     ],
 )
 def test_running_service_details_make_status(
-    monitor_data: MonitorData, service_message: str, service_state: ServiceState
+    scheduler_data: SchedulerData, service_message: str, service_state: ServiceState
 ):
-    running_service_details = RunningDynamicServiceDetails.from_monitoring_status(
-        node_uuid=monitor_data.node_uuid,
-        monitor_data=monitor_data,
+    running_service_details = RunningDynamicServiceDetails.from_scheduler_data(
+        node_uuid=scheduler_data.node_uuid,
+        scheduler_data=scheduler_data,
         service_state=service_state,
         service_message=service_message,
     )
@@ -46,15 +46,15 @@ def test_running_service_details_make_status(
 
     expected_running_service_details = {
         "boot_type": ServiceBootType.V2,
-        "project_id": monitor_data.project_id,
+        "project_id": scheduler_data.project_id,
         "service_state": service_state,
         "service_message": service_message,
-        "service_uuid": monitor_data.node_uuid,
-        "service_key": monitor_data.key,
-        "service_version": monitor_data.version,
-        "service_host": monitor_data.service_name,
-        "user_id": monitor_data.user_id,
-        "service_port": monitor_data.service_port,
+        "service_uuid": scheduler_data.node_uuid,
+        "service_key": scheduler_data.key,
+        "service_version": scheduler_data.version,
+        "service_host": scheduler_data.service_name,
+        "user_id": scheduler_data.user_id,
+        "service_port": scheduler_data.service_port,
     }
 
     assert running_service_details_dict == expected_running_service_details
