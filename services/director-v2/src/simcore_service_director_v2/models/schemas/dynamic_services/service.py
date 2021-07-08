@@ -97,12 +97,12 @@ class ServiceState(Enum):
     def comparison_order(cls) -> Dict["ServiceState", int]:
         """States are comparable to supportmin() on a list of ServiceState"""
         return {
-            ServiceState.PENDING: 0,
-            ServiceState.PULLING: 1,
-            ServiceState.STARTING: 2,
-            ServiceState.RUNNING: 3,
-            ServiceState.COMPLETE: 4,
-            ServiceState.FAILED: 5,
+            ServiceState.FAILED: 0,
+            ServiceState.PENDING: 1,
+            ServiceState.PULLING: 2,
+            ServiceState.STARTING: 3,
+            ServiceState.RUNNING: 4,
+            ServiceState.COMPLETE: 5,
         }
 
 
