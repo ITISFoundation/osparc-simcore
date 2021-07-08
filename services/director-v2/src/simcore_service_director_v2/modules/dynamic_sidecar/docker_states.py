@@ -8,12 +8,12 @@ from ...models.schemas.dynamic_services import ServiceState
 
 logger = logging.getLogger(__name__)
 
-TASK_STATES_FAILED: Set[str] = {"failed", "rejected"}
-TASK_STATES_PENDING: Set[str] = {"assigned", "accepted", "pending"}
+TASK_STATES_FAILED: Set[str] = {"failed", "rejected", "orphaned"}
+TASK_STATES_PENDING: Set[str] = {"new", "assigned", "accepted", "pending"}
 TASK_STATES_PULLING: Set[str] = {"preparing"}
 TASK_STATES_STARTING: Set[str] = {"ready", "starting"}
 TASK_STATES_RUNNING: Set[str] = {"running"}
-TASK_STATES_COMPLETE: Set[str] = {"complete", "shutdown"}
+TASK_STATES_COMPLETE: Set[str] = {"complete", "shutdown", "remove"}
 
 
 TASK_STATES_ALL: Set[str] = (
