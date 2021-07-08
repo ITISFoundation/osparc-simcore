@@ -33,16 +33,15 @@ def celery_configuration() -> CeleryConfig:
     return CeleryConfig.create_from_env()
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def minimal_celery_config(
     project_env_devel_environment, monkeypatch, celery_config: Dict[str, Any]
 ):
     """set a minimal configuration for testing the director connection only"""
-    monkeypatch.setenv("DIRECTOR_ENABLED", "0")
-    monkeypatch.setenv("POSTGRES_ENABLED", "0")
-    monkeypatch.setenv("CELERY_ENABLED", "1")
-    monkeypatch.setenv("REGISTRY_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_SCHEDULER_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V0_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_ENABLED", "1")
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
 
     monkeypatch.setattr(CeleryConfig, "broker_url", celery_config["broker_url"])
     monkeypatch.setattr(CeleryConfig, "result_backend", celery_config["result_backend"])
@@ -76,7 +75,9 @@ def celery_enable_logging() -> bool:
 
 # test pytest-celery here
 # https://github.com/celery/celery/issues/3642#issuecomment-369057682 defines why this works
-def test_create_task(celery_app: Celery, celery_worker: TestWorkController):
+def test_create_task(
+    minimal_celery_config: None, celery_app: Celery, celery_worker: TestWorkController
+):
     @celery_app.task
     def mul(x, y):
         return x * y
@@ -87,6 +88,7 @@ def test_create_task(celery_app: Celery, celery_worker: TestWorkController):
 
 @pytest.mark.parametrize("runtime_requirements", ["cpu", "gpu", "mpi", "gpu:mpi"])
 def test_send_computation_tasks(
+    minimal_celery_config: None,
     minimal_app: FastAPI,
     celery_app: Celery,
     celery_worker_parameters: None,
@@ -178,7 +180,10 @@ def test_send_computation_tasks(
         ),
     ],
 )
-def test_celery_in_constructor(image: Image, exp_requirement: str):
-    assert CeleryTaskIn.from_node_image("fake_node_id", image) == CeleryTaskIn(
-        "fake_node_id", exp_requirement
+def test_celery_in_constructor(
+    minimal_celery_config: None, image: Image, exp_requirement: str
+):
+    fake_node_id = uuid4()
+    assert CeleryTaskIn.from_node_image(fake_node_id, image) == CeleryTaskIn(
+        fake_node_id, exp_requirement
     )

@@ -26,3 +26,7 @@ class RegistrySettings(BaseCustomSettings):
     @cached_property
     def resolved_registry_url(self) -> str:
         return self.REGISTRY_PATH or self.REGISTRY_URL
+
+    @cached_property
+    def api_url(self) -> str:
+        return f"{self.REGISTRY_URL}/v2"
