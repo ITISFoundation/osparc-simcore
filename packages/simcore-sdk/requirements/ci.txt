@@ -7,8 +7,8 @@
 #
 
 # installs base + tests requirements
--r _base.txt
--r _test.txt
+--requirement _base.txt
+--requirement _test.txt
 
 # installs this repo's packages
 ../postgres-database/[migration]

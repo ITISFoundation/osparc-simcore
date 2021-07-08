@@ -1,10 +1,10 @@
 #
 # Specifies dependencies required to run 'services/datcore-adapter/test' both for unit and integration tests!!
 #
--c ../../../requirements/constraints.txt
+--constraint ../../../requirements/constraints.txt
 
 # frozen specs
--r _base.txt
+--requirement _base.txt
 
 
 # testing

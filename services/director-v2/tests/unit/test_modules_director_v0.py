@@ -23,7 +23,7 @@ from simcore_service_director_v2.models.schemas.services import (
 from simcore_service_director_v2.modules.director_v0 import DirectorV0Client
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def minimal_director_config(project_env_devel_environment, monkeypatch):
     """set a minimal configuration for testing the director connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "1")
@@ -32,6 +32,10 @@ def minimal_director_config(project_env_devel_environment, monkeypatch):
     monkeypatch.setenv("REGISTRY_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_SCHEDULER_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
+    monkeypatch.setenv("DIRECTOR_V0_ENABLED", "1")
+    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
 
 
 @pytest.fixture
@@ -39,7 +43,7 @@ def mocked_director_v0_service_api(
     minimal_app, entrypoint, exp_data: Dict, resp_alias: str
 ):
     with respx.mock(
-        base_url=minimal_app.state.settings.director_v0.base_url(include_tag=False),
+        base_url=minimal_app.state.settings.DIRECTOR_V0.endpoint,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
@@ -60,19 +64,19 @@ ForwardToDirectorParams = namedtuple(
 def _get_list_services_calls() -> List[ForwardToDirectorParams]:
     return [
         ForwardToDirectorParams(
-            entrypoint="/v0/services",
+            entrypoint="services",
             exp_status=status.HTTP_200_OK,
             exp_data={"data": ["service1", "service2"]},
             resp_alias="list_all_services",
         ),
         ForwardToDirectorParams(
-            entrypoint="/v0/services?service_type=computational",
+            entrypoint="services?service_type=computational",
             exp_status=status.HTTP_200_OK,
             exp_data={"data": ["service1", "service2"]},
             resp_alias="list_computational_services",
         ),
         ForwardToDirectorParams(
-            entrypoint="/v0/services?service_type=dynamic",
+            entrypoint="services?service_type=dynamic",
             exp_status=status.HTTP_200_OK,
             exp_data={"data": ["service1", "service2"]},
             resp_alias="list_dynamic_services",
@@ -84,7 +88,7 @@ def _get_service_version_calls() -> List[ForwardToDirectorParams]:
     # TODO: here we see the return value is currently not validated
     return [
         ForwardToDirectorParams(
-            entrypoint="/v0/services/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
+            entrypoint="services/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
             exp_status=status.HTTP_200_OK,
             exp_data={"data": ["stuff about my service"]},
             resp_alias="get_service_version",
@@ -96,7 +100,7 @@ def _get_service_version_extras_calls() -> List[ForwardToDirectorParams]:
     # TODO: here we see the return value is currently not validated
     return [
         ForwardToDirectorParams(
-            entrypoint="/v0/services/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4/extras",
+            entrypoint="services/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4/extras",
             exp_status=status.HTTP_200_OK,
             exp_data={"data": "extra stuff about my service"},
             resp_alias="get_service_extras",
@@ -111,6 +115,7 @@ def _get_service_version_extras_calls() -> List[ForwardToDirectorParams]:
     + _get_service_version_extras_calls(),
 )
 def test_forward_to_director(
+    minimal_director_config: None,
     client,
     mocked_director_v0_service_api,
     entrypoint,
@@ -118,7 +123,7 @@ def test_forward_to_director(
     exp_data: Dict,
     resp_alias,
 ):
-    response = client.get(entrypoint)
+    response = client.get(f"v0/{entrypoint}")
 
     assert response.status_code == exp_status
     assert response.json() == exp_data
@@ -164,19 +169,19 @@ def mocked_director_service_fcts(
     fake_running_service_details: RunningServiceDetails,
 ):
     with respx.mock(
-        base_url=minimal_app.state.settings.director_v0.base_url(include_tag=False),
+        base_url=minimal_app.state.settings.DIRECTOR_V0.endpoint,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
         respx_mock.get(
-            "/v0/services/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
+            "/services/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
             name="get_service_version",
         ).respond(
             json={"data": [fake_service_details.dict(by_alias=True)]},
         )
 
         respx_mock.get(
-            "/v0/service_extras/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
+            "/service_extras/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
             name="get_service_extras",
         ).respond(
             json={"data": fake_service_extras.dict(by_alias=True)},
@@ -184,7 +189,7 @@ def mocked_director_service_fcts(
 
         respx_mock.get(
             re.compile(
-                r"v0/running_interactive_services/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                r"running_interactive_services/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
             ),
             name="get_running_service_details",
         ).respond(
@@ -195,6 +200,7 @@ def mocked_director_service_fcts(
 
 
 async def test_get_service_details(
+    minimal_director_config: None,
     minimal_app: FastAPI,
     mocked_director_service_fcts,
     fake_service_details: ServiceDockerData,
@@ -211,6 +217,7 @@ async def test_get_service_details(
 
 
 async def test_get_service_extras(
+    minimal_director_config: None,
     minimal_app: FastAPI,
     mocked_director_service_fcts,
     fake_service_extras: ServiceExtras,
@@ -225,6 +232,7 @@ async def test_get_service_extras(
 
 
 async def test_get_running_service_details(
+    minimal_director_config: None,
     minimal_app: FastAPI,
     mocked_director_service_fcts,
     fake_running_service_details: RunningServiceDetails,
@@ -233,7 +241,7 @@ async def test_get_running_service_details(
     director_client: DirectorV0Client = minimal_app.state.director_v0_client
 
     service_details: RunningServiceDetails = (
-        await director_client.get_running_service_details(str(uuid4()))
+        await director_client.get_running_service_details(uuid4())
     )
     assert mocked_director_service_fcts["get_running_service_details"].called
     assert fake_running_service_details == service_details

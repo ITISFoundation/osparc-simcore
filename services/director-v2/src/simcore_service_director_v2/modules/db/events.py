@@ -6,7 +6,7 @@ import orjson
 from aiopg.sa import Engine, create_engine
 from aiopg.sa.engine import get_dialect
 from fastapi import FastAPI
-from models_library.settings.postgres import PostgresSettings
+from settings_library.postgres import PostgresSettings
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 logger = logging.getLogger(__name__)
@@ -43,8 +43,8 @@ async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
     engine: Engine = await create_engine(
         str(settings.dsn),
         application_name=f"{__name__}_{id(app)}",  # unique identifier per app
-        minsize=settings.minsize,
-        maxsize=settings.maxsize,
+        minsize=settings.POSTGRES_MINSIZE,
+        maxsize=settings.POSTGRES_MAXSIZE,
         dialect=aiopg_dialect,
     )
     logger.debug("Connected to %s", engine.dsn)

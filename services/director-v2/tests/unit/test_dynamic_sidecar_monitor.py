@@ -153,7 +153,7 @@ def dynamic_sidecar_settings(monkeypatch: MonkeyPatch) -> AppSettings:
         str(TEST_SCHEDULER_INTERVAL_SECONDS),
     )
 
-    app_settings = AppSettings.create_from_env()
+    app_settings = AppSettings.create_from_envs()
     return app_settings
 
 

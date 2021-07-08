@@ -50,7 +50,7 @@ async def _apply_observation_cycle(
     and updates the status back
     """
     dynamic_services_settings: DynamicServicesSettings = (
-        app.state.settings.dynamic_services
+        app.state.settings.DYNAMIC_SERVICES
     )
     initial_status = deepcopy(scheduler_data.dynamic_sidecar.status)
 
@@ -170,7 +170,7 @@ class DynamicSidecarsScheduler:
             )
 
             dynamic_sidecar_settings: DynamicSidecarSettings = (
-                self._app.state.settings.dynamic_services.DYNAMIC_SIDECAR
+                self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
             )
 
             _ = save_state
@@ -213,7 +213,7 @@ class DynamicSidecarsScheduler:
                 )
 
             dynamic_sidecar_settings: DynamicSidecarSettings = (
-                self._app.state.settings.dynamic_services.DYNAMIC_SIDECAR
+                self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
             )
             dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
                 self._app
@@ -309,7 +309,7 @@ class DynamicSidecarsScheduler:
 
     async def _run_scheduler_task(self) -> None:
         settings: DynamicServicesSchedulerSettings = (
-            self._app.state.settings.dynamic_services.DYNAMIC_SCHEDULER
+            self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
 
         while self._keep_running:
@@ -332,7 +332,7 @@ class DynamicSidecarsScheduler:
 
         # discover all services which were started before and add them to the scheduler
         dynamic_sidecar_settings: DynamicSidecarSettings = (
-            self._app.state.settings.dynamic_services.DYNAMIC_SIDECAR
+            self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
         services_to_observe: Deque[
             ServiceLabelsStoredData
@@ -365,7 +365,7 @@ async def setup_scheduler(app: FastAPI):
     app.state.dynamic_sidecar_scheduler = dynamic_sidecars_scheduler
 
     settings: DynamicServicesSchedulerSettings = (
-        app.state.settings.dynamic_services.DYNAMIC_SCHEDULER
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
     if not settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED:
         logger.warning("Scheduler will not be started!!!")

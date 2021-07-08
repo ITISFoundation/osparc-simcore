@@ -3,7 +3,7 @@
 #
 
 # frozen specs
--r _base.txt
+--requirement _base.txt
 
 # NOTE:
 # FROZEN  (see notes in _base.in)

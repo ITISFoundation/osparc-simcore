@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def setup(app: FastAPI):
-    remote_debug_port = app.state.settings.remote_debug_port
+    remote_debug_port = app.state.settings.DIRECTOR_V2_REMOTE_DEBUG_PORT
 
     def on_startup() -> None:
         try:

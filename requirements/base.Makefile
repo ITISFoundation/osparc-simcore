@@ -39,9 +39,12 @@ help: ## this colorful help
 
 # ------------------------------------------------------------------------------------------
 # NOTE: runs above requirememts/ such that comments sync with dependabot's
+# NOTE: adds --strip-extras since compiled reqs (*.txt) freezes the dependencies. This also simplifies
+#       extracting subsets of requiremenst like e.g _dask-distributed.* and _dask-complete.*
+#
 %.txt: %.in
 	cd ..; \
-	pip-compile $(UPGRADE_OPTION) --build-isolation --output-file requirements/$@ requirements/$<
+	pip-compile $(UPGRADE_OPTION) --build-isolation --strip-extras --output-file requirements/$@ requirements/$<
 
 _test.txt: _base.txt
 

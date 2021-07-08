@@ -13,7 +13,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import randrange
-from typing import Dict, Iterator, Tuple
+from typing import Any, Dict, Iterator, Tuple
 
 import dotenv
 import pytest
@@ -188,7 +188,7 @@ async def postgres_engine(loop, postgres_service_url):
 
 
 @pytest.fixture(scope="session")
-def minio_service(docker_services, docker_ip):
+def minio_service(docker_services, docker_ip) -> Dict[str, Any]:
 
     # Build URL to service listening on random port.
     url = "http://%s:%d/" % (
@@ -215,7 +215,7 @@ def minio_service(docker_services, docker_ip):
 
 
 @pytest.fixture(scope="module")
-def s3_client(minio_service):
+def s3_client(minio_service: Dict[str, Any]) -> MinioClientWrapper:
 
     s3_client = MinioClientWrapper(
         endpoint=minio_service["endpoint"],
