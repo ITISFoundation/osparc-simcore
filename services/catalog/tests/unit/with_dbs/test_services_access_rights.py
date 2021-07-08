@@ -107,8 +107,9 @@ async def test_auto_upgrade_policy(
     )
 
     # SETUP ---
+    MOST_UPDATED_EXAMPLE = -1
     new_service_metadata = ServiceDockerData.parse_obj(
-        ServiceDockerData.Config.schema_extra["example"]
+        ServiceDockerData.Config.schema_extra["examples"][MOST_UPDATED_EXAMPLE]
     )
     new_service_metadata.version = "1.0.1"
 
