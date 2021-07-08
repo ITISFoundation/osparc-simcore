@@ -1,91 +1,52 @@
+"""The scheduler shall be run as a background task.
+Based on oSparc pipelines, it monitors when to start the next celery task(s), either one at a time or as a group of tasks.
+
+In principle the Scheduler maintains the comp_runs table in the database.
+It contains how the pipeline was run and by whom.
+It also contains the final result of the pipeline run.
+
+When a pipeline is scheduled first all the tasks contained in the DAG are set to PUBLISHED state.
+Once the scheduler determines a task shall run, its state is set to PENDING, so that the sidecar can pick up the task.
+The sidecar will then change the state to STARTED, then to SUCCESS or FAILED.
+
+"""
+
 import asyncio
 import logging
-from asyncio import CancelledError
-from contextlib import suppress
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Coroutine, Dict, List, Set, Tuple, Type, cast
+from typing import Dict, List, Set, Tuple
 
 import networkx as nx
 from aiopg.sa.engine import Engine
-from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
-from simcore_service_director_v2.modules.dask_client import DaskClient, DaskTaskIn
 
-from ..core.errors import ConfigurationError, SchedulerError
-from ..core.settings import DaskSchedulerSettings
-from ..models.domains.comp_pipelines import CompPipelineAtDB
-from ..models.domains.comp_runs import CompRunsAtDB
-from ..models.domains.comp_tasks import CompTaskAtDB
-from ..models.schemas.constants import UserID
-from ..utils.computations import get_pipeline_state_from_task_states
-from ..utils.exceptions import PipelineNotFoundError
-from .db.repositories import BaseRepository
-from .db.repositories.comp_pipelines import CompPipelinesRepository
-from .db.repositories.comp_runs import CompRunsRepository
-from .db.repositories.comp_tasks import CompTasksRepository
+from ...core.errors import SchedulerError
+from ...models.domains.comp_pipelines import CompPipelineAtDB
+from ...models.domains.comp_runs import CompRunsAtDB
+from ...models.domains.comp_tasks import CompTaskAtDB
+from ...models.schemas.constants import UserID
+from ...utils.computations import get_pipeline_state_from_task_states
+from ...utils.exceptions import PipelineNotFoundError
+from ...utils.scheduler import COMPLETED_STATES, Iteration, get_repository
+from ..db.repositories.comp_pipelines import CompPipelinesRepository
+from ..db.repositories.comp_runs import CompRunsRepository
+from ..db.repositories.comp_tasks import CompTasksRepository
 
 logger = logging.getLogger(__name__)
 
 
-_SCHEDULED_STATES = {
-    RunningState.PUBLISHED,
-    RunningState.PENDING,
-    RunningState.STARTED,
-    RunningState.RETRY,
-}
-
-_COMPLETED_STATES = {RunningState.ABORTED, RunningState.SUCCESS, RunningState.FAILED}
-
-_DEFAULT_TIMEOUT_S: int = 5
-
-
-def _get_repository(
-    db_engine: Engine, repo_cls: Type[BaseRepository]
-) -> BaseRepository:
-    return repo_cls(db_engine=db_engine)  # type: ignore
-
-
-Iteration = PositiveInt
-
-
 @dataclass
-class DaskScheduler:
-    settings: DaskSchedulerSettings
+class BaseCompScheduler(ABC):
     scheduled_pipelines: Set[Tuple[UserID, ProjectID, Iteration]]
     db_engine: Engine
-    dask_client: DaskClient
     wake_up_event: asyncio.Event = asyncio.Event()
 
-    @classmethod
-    async def create_from_db(cls, app: FastAPI) -> "DaskScheduler":
-        if not hasattr(app.state, "engine"):
-            raise ConfigurationError(
-                "Database connection is missing. Please check application configuration."
-            )
-        db_engine = app.state.engine
-        runs_repository: CompRunsRepository = cast(
-            CompRunsRepository, _get_repository(db_engine, CompRunsRepository)
-        )
-
-        # get currently scheduled runs
-        runs: List[CompRunsAtDB] = await runs_repository.list(
-            filter_by_state=_SCHEDULED_STATES
-        )
-        logger.info("DaskScheduler creation with %s runs being scheduled", len(runs))
-        return cls(
-            settings=app.state.settings.DASK_SCHEDULER,
-            db_engine=db_engine,
-            dask_client=DaskClient.instance(app),
-            scheduled_pipelines={
-                (r.user_id, r.project_uuid, r.iteration) for r in runs
-            },
-        )  # type: ignore
-
     async def run_new_pipeline(self, user_id: UserID, project_id: ProjectID) -> None:
-        runs_repo: CompRunsRepository = _get_repository(
+        runs_repo: CompRunsRepository = get_repository(
             self.db_engine, CompRunsRepository
         )  # type: ignore
         new_run: CompRunsAtDB = await runs_repo.create(
@@ -106,7 +67,7 @@ class DaskScheduler:
         )
 
     async def _get_pipeline_dag(self, project_id: ProjectID) -> nx.DiGraph:
-        comp_pipeline_repo: CompPipelinesRepository = _get_repository(
+        comp_pipeline_repo: CompPipelinesRepository = get_repository(
             self.db_engine, CompPipelinesRepository
         )  # type: ignore
         pipeline_at_db: CompPipelineAtDB = await comp_pipeline_repo.get_pipeline(
@@ -123,7 +84,7 @@ class DaskScheduler:
     async def _get_pipeline_tasks(
         self, project_id: ProjectID, pipeline_dag: nx.DiGraph
     ) -> Dict[str, CompTaskAtDB]:
-        comp_tasks_repo: CompTasksRepository = _get_repository(
+        comp_tasks_repo: CompTasksRepository = get_repository(
             self.db_engine, CompTasksRepository
         )  # type: ignore
         pipeline_comp_tasks: Dict[str, CompTaskAtDB] = {
@@ -150,7 +111,7 @@ class DaskScheduler:
             100000000000000,
         )
 
-        comp_runs_repo: CompRunsRepository = _get_repository(
+        comp_runs_repo: CompRunsRepository = get_repository(
             self.db_engine, CompRunsRepository
         )  # type: ignore
         await comp_runs_repo.set_run_result(
@@ -158,35 +119,19 @@ class DaskScheduler:
             project_id=project_id,
             iteration=iteration,
             result_state=pipeline_state_from_tasks,
-            final_state=(pipeline_state_from_tasks in _COMPLETED_STATES),
+            final_state=(pipeline_state_from_tasks in COMPLETED_STATES),
         )
         return pipeline_state_from_tasks
 
+    @abstractmethod
     async def _start_tasks(
         self,
         user_id: UserID,
         project_id: ProjectID,
         comp_tasks: Dict[str, CompTaskAtDB],
         tasks: List[NodeID],
-    ):
-        # get tasks runtime requirements
-        dask_tasks: List[DaskTaskIn] = [
-            DaskTaskIn.from_node_image(node_id, comp_tasks[f"{node_id}"].image)
-            for node_id in tasks
-        ]
-
-        # The sidecar only pick up tasks that are in PENDING state
-        comp_tasks_repo: CompTasksRepository = _get_repository(
-            self.db_engine, CompTasksRepository
-        )  # type: ignore
-        await comp_tasks_repo.mark_project_tasks_as_pending(project_id, tasks)
-        # now transfer the pipeline to the dask scheduler
-        self.dask_client.send_computation_tasks(
-            user_id=user_id,
-            project_id=project_id,
-            single_tasks=dask_tasks,
-            callback=self._wake_up_scheduler_now,
-        )
+    ) -> None:
+        pass
 
     async def _schedule_pipeline(
         self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
@@ -212,7 +157,7 @@ class DaskScheduler:
                 {
                     node_id
                     for node_id, t in pipeline_tasks.items()
-                    if t.state in _COMPLETED_STATES
+                    if t.state in COMPLETED_STATES
                 }
             )
 
@@ -240,7 +185,7 @@ class DaskScheduler:
         # this tasks are in PUBLISHED state and all their dependents are completed
         next_tasks: List[NodeID] = [
             node_id
-            for node_id, degree in pipeline_dag.in_degree()
+            for node_id, degree in pipeline_dag.in_degree()  # type: ignore
             if degree == 0 and pipeline_tasks[node_id].state == RunningState.PUBLISHED
         ]
         if not next_tasks:
@@ -252,50 +197,3 @@ class DaskScheduler:
 
     def _wake_up_scheduler_now(self) -> None:
         self.wake_up_event.set()
-
-
-async def scheduler_task(scheduler: DaskScheduler) -> None:
-    while True:
-        try:
-            logger.debug("scheduler task running...")
-            await scheduler.schedule_all_pipelines()
-            with suppress(asyncio.TimeoutError):
-                await asyncio.wait_for(
-                    scheduler.wake_up_event.wait(), timeout=_DEFAULT_TIMEOUT_S
-                )
-        except CancelledError:
-            logger.info("scheduler task cancelled")
-            raise
-        except Exception:  # pylint: disable=broad-except
-            logger.exception(
-                "Unexpected error in scheduler task, restarting scheduler now..."
-            )
-            # wait a bit before restarting the task
-            await asyncio.sleep(_DEFAULT_TIMEOUT_S)
-
-
-def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
-    async def start_scheduler() -> None:
-        app.state.dask_scheduler = scheduler = await DaskScheduler.create_from_db(app)
-        task = asyncio.get_event_loop().create_task(scheduler_task(scheduler))
-        app.state.dask_scheduler_task = task
-        logger.info("DaskScheduler started")
-
-    return start_scheduler
-
-
-def on_app_shutdown(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
-    async def stop_scheduler() -> None:
-        task = app.state.dask_scheduler_task
-        app.state.dask_scheduler = None
-        with suppress(CancelledError):
-            task.cancel()
-            await task
-        logger.info("DaskScheduler stopped")
-
-    return stop_scheduler
-
-
-def setup(app: FastAPI):
-    app.add_event_handler("startup", on_app_startup(app))
-    app.add_event_handler("shutdown", on_app_shutdown(app))
