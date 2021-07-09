@@ -59,6 +59,7 @@ ENV SC_BUILD_TARGET=build
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
   build-essential \
+  wget \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -118,9 +119,18 @@ WORKDIR /home/scu
 # Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
 COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
+# wget required by wait-for
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+  wget \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
 # Copies booting scripts
 COPY --chown=scu:scu services/director-v2/docker services/director-v2/docker
 RUN chmod +x services/director-v2/docker/*.sh
+COPY --chown=scu:scu scripts/common-docker-boot/wait-for /usr/local/bin/wait-for
+RUN chmod +x /usr/local/bin/wait-for
 
 
 HEALTHCHECK --interval=30s \
@@ -130,7 +140,7 @@ HEALTHCHECK --interval=30s \
   CMD ["python3", "services/director-v2/docker/healthcheck.py", "http://localhost:8000/"]
 
 ENTRYPOINT [ "/bin/sh", "services/director-v2/docker/entrypoint.sh" ]
-CMD ["/bin/sh", "services/director-v2/docker/boot.sh"]
+CMD ["/bin/sh", "-c",  "wait-for http://migration:8000 -- services/director-v2/docker/boot.sh"]
 
 
 # --------------------------Development stage -------------------
@@ -150,5 +160,8 @@ WORKDIR /devel
 
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
+COPY --chown=scu:scu scripts/common-docker-boot/wait-for /usr/local/bin/wait-for
+RUN chmod +x /usr/local/bin/wait-for
+
 ENTRYPOINT ["/bin/sh", "services/director-v2/docker/entrypoint.sh"]
-CMD ["/bin/sh", "services/director-v2/docker/boot.sh"]
+CMD ["/bin/sh", "-c",  "wait-for http://migration:8000 -- services/director-v2/docker/boot.sh"]

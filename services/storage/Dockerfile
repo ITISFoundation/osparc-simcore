@@ -66,6 +66,7 @@ ENV SC_BUILD_TARGET build
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
   build-essential \
+  wget \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -127,9 +128,18 @@ WORKDIR /home/scu
 # bring installed package without build tools
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
+# wget required by wait-for
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+  wget \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/storage/docker services/storage/docker
 RUN chmod +x services/storage/docker/*.sh
+COPY --chown=scu:scu scripts/common-docker-boot/wait-for /usr/local/bin/wait-for
+RUN chmod +x /usr/local/bin/wait-for
 
 HEALTHCHECK --interval=30s \
   --timeout=120s \
@@ -139,7 +149,7 @@ HEALTHCHECK --interval=30s \
 
 
 ENTRYPOINT [ "/bin/sh", "services/storage/docker/entrypoint.sh" ]
-CMD ["/bin/sh", "services/storage/docker/boot.sh"]
+CMD ["/bin/sh", "-c",  "wait-for http://migration:8000 -- services/storage/docker/boot.sh"]
 # -------------------------- -------------------------------
 
 
@@ -166,6 +176,9 @@ RUN chown -R scu:scu "${VIRTUAL_ENV}"
 #       the client's output folder to /devel/services/web/client.
 #       The latter ls no files
 
+COPY --chown=scu:scu scripts/common-docker-boot/wait-for /usr/local/bin/wait-for
+RUN chmod +x /usr/local/bin/wait-for
+
 ENTRYPOINT [ "/bin/sh", "services/storage/docker/entrypoint.sh" ]
-CMD ["/bin/sh", "services/storage/docker/boot.sh"]
+CMD ["/bin/sh", "-c",  "wait-for http://migration:8000 -- services/storage/docker/boot.sh"]
 # -------------------------- -------------------------------

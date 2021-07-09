@@ -60,6 +60,7 @@ ENV SC_BUILD_TARGET=build
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
   build-essential \
+  wget \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -111,8 +112,17 @@ WORKDIR /home/scu
 
 # bring installed package without build tools
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+
+# wget required by wait-for
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+  wget \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/sidecar/docker services/sidecar/docker
+COPY --chown=scu:scu scripts/common-docker-boot/wait-for /usr/local/bin/wait-for
+RUN chmod +x /usr/local/bin/wait-for
 
 # we use the celery API
 HEALTHCHECK --interval=60s \
@@ -122,7 +132,7 @@ HEALTHCHECK --interval=60s \
   CMD celery inspect ping -b amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT} -d sidecar."$(cat ${SIDECAR_HOST_HOSTNAME_PATH})"@${HOSTNAME}
 
 ENTRYPOINT [ "/bin/sh", "services/sidecar/docker/entrypoint.sh" ]
-CMD ["/bin/sh", "services/sidecar/docker/boot.sh"]
+CMD ["/bin/sh", "-c",  "wait-for http://migration:8000 -- services/sidecar/docker/boot.sh"]
 
 
 # --------------------------Development stage -------------------
@@ -142,5 +152,8 @@ RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
 # NOTE: devel mode does NOT have HEALTHCHECK
 
+COPY --chown=scu:scu scripts/common-docker-boot/wait-for /usr/local/bin/wait-for
+RUN chmod +x /usr/local/bin/wait-for
+
 ENTRYPOINT [ "/bin/sh", "services/sidecar/docker/entrypoint.sh" ]
-CMD ["/bin/sh", "services/sidecar/docker/boot.sh"]
+CMD ["/bin/sh", "-c",  "wait-for http://migration:8000 -- services/sidecar/docker/boot.sh"]

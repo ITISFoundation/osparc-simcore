@@ -11,25 +11,25 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 LABEL maintainer=pcrespov
 
 RUN set -eux; \
-    apt-get update; \
-    apt-get install -y gosu; \
-    rm -rf /var/lib/apt/lists/*; \
-    # verify that the binary works
-    gosu nobody true
+  apt-get update; \
+  apt-get install -y gosu; \
+  rm -rf /var/lib/apt/lists/*; \
+  # verify that the binary works
+  gosu nobody true
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
-    SC_USER_NAME=scu \
-    SC_BUILD_TARGET=base \
-    SC_BOOT_MODE=default
+  SC_USER_NAME=scu \
+  SC_BUILD_TARGET=base \
+  SC_BOOT_MODE=default
 
 RUN adduser \
-    --uid ${SC_USER_ID} \
-    --disabled-password \
-    --gecos "" \
-    --shell /bin/sh \
-    --home /home/${SC_USER_NAME} \
-    ${SC_USER_NAME}
+  --uid ${SC_USER_ID} \
+  --disabled-password \
+  --gecos "" \
+  --shell /bin/sh \
+  --home /home/${SC_USER_NAME} \
+  ${SC_USER_NAME}
 
 
 # Sets utf-8 encoding for Python et al
@@ -37,7 +37,7 @@ ENV LANG=C.UTF-8
 
 # Turns off writing .pyc files; superfluous on an ephemeral container.
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    VIRTUAL_ENV=/home/scu/.venv
+  VIRTUAL_ENV=/home/scu/.venv
 
 # Ensures that the python and pip executables used in the image will be
 # those from our virtualenv.
@@ -56,10 +56,11 @@ FROM base as build
 ENV SC_BUILD_TARGET=build
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    build-essential \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+  && apt-get install -y --no-install-recommends \
+  build-essential \
+  wget \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 
 # NOTE: python virtualenv is used here such that installed
@@ -67,9 +68,9 @@ RUN apt-get update \
 RUN python -m venv "${VIRTUAL_ENV}"
 
 RUN pip install --no-cache-dir --upgrade \
-    pip~=21.0.1  \
-    wheel \
-    setuptools
+  pip~=21.0.1  \
+  wheel \
+  setuptools
 
 WORKDIR /build
 
@@ -96,7 +97,7 @@ COPY --chown=scu:scu services/storage/client-sdk /build/services/storage/client-
 WORKDIR /build/services/api-server
 
 RUN pip --no-cache-dir install -r requirements/prod.txt &&\
-    pip --no-cache-dir list -v
+  pip --no-cache-dir list -v
 
 
 # --------------------------Production stage -------------------
@@ -109,7 +110,7 @@ RUN pip --no-cache-dir install -r requirements/prod.txt &&\
 FROM base as production
 
 ENV SC_BUILD_TARGET=production \
-    SC_BOOT_MODE=production
+  SC_BOOT_MODE=production
 
 ENV PYTHONOPTIMIZE=TRUE
 
@@ -118,18 +119,27 @@ WORKDIR /home/scu
 # Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
 COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
+# wget required by wait-for
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+  wget \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
 # Copies booting scripts
 COPY --chown=scu:scu services/api-server/docker services/api-server/docker
 RUN chmod +x services/api-server/docker/*.sh
+COPY --chown=scu:scu scripts/common-docker-boot/wait-for /usr/local/bin/wait-for
+RUN chmod +x /usr/local/bin/wait-for
 
 HEALTHCHECK --interval=30s \
-    --timeout=20s \
-    --start-period=30s \
-    --retries=3 \
-    CMD ["python3", "services/api-server/docker/healthcheck.py", "http://localhost:8000/"]
+  --timeout=20s \
+  --start-period=30s \
+  --retries=3 \
+  CMD ["python3", "services/api-server/docker/healthcheck.py", "http://localhost:8000/"]
 
 ENTRYPOINT [ "/bin/sh", "services/api-server/docker/entrypoint.sh" ]
-CMD ["/bin/sh", "services/api-server/docker/boot.sh"]
+CMD ["/bin/sh", "-c",  "wait-for http://migration:8000 -- services/api-server/docker/boot.sh"]
 
 
 # --------------------------Development stage -------------------
@@ -148,5 +158,8 @@ WORKDIR /devel
 
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
+COPY --chown=scu:scu scripts/common-docker-boot/wait-for /usr/local/bin/wait-for
+RUN chmod +x /usr/local/bin/wait-for
+
 ENTRYPOINT ["/bin/sh", "services/api-server/docker/entrypoint.sh"]
-CMD ["/bin/sh", "services/api-server/docker/boot.sh"]
+CMD ["/bin/sh", "-c",  "wait-for http://migration:8000 -- services/api-server/docker/boot.sh"]

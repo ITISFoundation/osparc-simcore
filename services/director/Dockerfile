@@ -66,6 +66,7 @@ ENV SC_BUILD_TARGET=build
 RUN apt-get update \
       &&  apt-get install -y --no-install-recommends \
       build-essential \
+      wget \
       git \
       && apt-get clean \
       && rm -rf /var/lib/apt/lists/*
@@ -122,9 +123,18 @@ WORKDIR /home/scu
 # bring installed package without build tools
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
+# wget required by wait-for
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+  wget \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/director/docker services/director/docker
 RUN chmod +x services/director/docker/*.sh
+COPY --chown=scu:scu scripts/common-docker-boot/wait-for /usr/local/bin/wait-for
+RUN chmod +x /usr/local/bin/wait-for
 
 HEALTHCHECK --interval=30s \
       --timeout=120s \
@@ -133,7 +143,7 @@ HEALTHCHECK --interval=30s \
       CMD ["python3", "/home/scu/services/director/docker/healthcheck.py", "http://localhost:8080/v0/"]
 
 ENTRYPOINT [ "services/director/docker/entrypoint.sh" ]
-CMD ["services/director/docker/boot.sh"]
+CMD ["/bin/sh", "-c",  "wait-for http://migration:8000 -- services/director/docker/boot.sh"]
 
 
 # --------------------------Development stage -------------------
@@ -150,5 +160,9 @@ ENV SC_BUILD_TARGET=development
 ENV NODE_SCHEMA_LOCATION=../../../api/specs/common/schemas/node-meta-v0.0.1.json
 WORKDIR /devel
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
+
+COPY --chown=scu:scu scripts/common-docker-boot/wait-for /usr/local/bin/wait-for
+RUN chmod +x /usr/local/bin/wait-for
+
 ENTRYPOINT [ "/bin/sh", "services/director/docker/entrypoint.sh" ]
-CMD ["/bin/sh", "services/director/docker/boot.sh"]
+CMD ["/bin/sh", "-c",  "wait-for http://migration:8000 -- services/director/docker/boot.sh"]
