@@ -18,7 +18,7 @@ class ModuleCategory(Enum):
     ADDON = 1
 
 
-class SkipModuleSetupException(Exception):
+class SkipModuleSetup(Exception):
     def __init__(self, *, reason) -> None:
         self.reason = reason
         super().__init__(reason)
@@ -161,9 +161,9 @@ def app_module_setup(
                 if completed:
                     app[APP_SETUP_KEY].append(module_name)
                 else:
-                    raise SkipModuleSetupException(reason="Undefined")
+                    raise SkipModuleSetup(reason="Undefined")
 
-            except SkipModuleSetupException as exc:
+            except SkipModuleSetup as exc:
                 logger.warning("Skipping '%s' setup: %s", module_name, exc.reason)
                 completed = False
 
