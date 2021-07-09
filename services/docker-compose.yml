@@ -226,6 +226,7 @@ services:
       START_AS_MODE_CPU: ${SIDECAR_FORCE_CPU_NODE:-0}
 
     networks:
+      - default
       - computational_services_subnet
 
   dask-sidecar:

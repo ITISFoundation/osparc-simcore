@@ -158,6 +158,7 @@ services:
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - SIDECAR_HOST_HOSTNAME_PATH=${SIDECAR_HOST_HOSTNAME_PATH:-/home/scu/hostname}
     networks:
+      - default
       - computational_services_subnet
 
   # adding a separate worker to handling MPI mode for development
@@ -215,6 +216,7 @@ services:
       - SIDECAR_HOST_HOSTNAME_PATH=${SIDECAR_HOST_HOSTNAME_PATH:-/home/scu/hostname}
       - TARGET_MPI_NODE_CPU_COUNT=${DEV_PC_CPU_COUNT:-0} # development computer CPU count, if env var is missing put to 0 to disable
     networks:
+      - default
       - computational_services_subnet
 
   storage:
