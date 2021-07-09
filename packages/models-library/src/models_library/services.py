@@ -24,8 +24,10 @@ from .basic_regex import VERSION_RE
 
 # NOTE: needs to end with / !!
 SERVICE_KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$"
+DYNAMIC_SERVICE_KEY_RE = r"^(simcore)/(services)/dynamic(/[\w/-]+)+$"
 COMPUTATIONAL_SERVICE_KEY_RE = r"^(simcore)/(services)/comp(/[\w/-]+)+$"
 KEY_RE = SERVICE_KEY_RE  # TODO: deprecate this global constant by SERVICE_KEY_RE
+SERVICE_NETWORK_RE = r"^([a-zA-Z0-9_]+)$"
 
 PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
 PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"
@@ -255,17 +257,19 @@ class ServiceOutput(ServiceProperty):
 class ServiceKeyVersion(BaseModel):
     """This pair uniquely identifies a services"""
 
-    key: constr(regex=KEY_RE) = Field(
+    key: str = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
+        regex=KEY_RE,
         examples=[
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
         ],
     )
-    version: constr(regex=VERSION_RE) = Field(
+    version: str = Field(
         ...,
         description="service version number",
+        regex=VERSION_RE,
         examples=["1.0.0", "0.0.1"],
     )
 

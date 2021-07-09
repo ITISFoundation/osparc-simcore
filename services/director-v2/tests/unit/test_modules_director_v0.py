@@ -26,6 +26,12 @@ from simcore_service_director_v2.modules.director_v0 import DirectorV0Client
 @pytest.fixture
 def minimal_director_config(project_env_devel_environment, monkeypatch):
     """set a minimal configuration for testing the director connection only"""
+    monkeypatch.setenv("DIRECTOR_ENABLED", "1")
+    monkeypatch.setenv("POSTGRES_ENABLED", "0")
+    monkeypatch.setenv("CELERY_ENABLED", "0")
+    monkeypatch.setenv("REGISTRY_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_SCHEDULER_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V0_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_CELERY_ENABLED", "0")

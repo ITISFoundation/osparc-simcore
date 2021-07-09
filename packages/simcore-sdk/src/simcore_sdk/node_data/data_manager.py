@@ -4,8 +4,8 @@ from shutil import move
 from tempfile import TemporaryDirectory
 from typing import Optional, Union
 
-from simcore_sdk.node_ports import config, filemanager
 from servicelib.archiving_utils import archive_dir, unarchive_dir
+from simcore_sdk.node_ports import config, filemanager
 
 log = logging.getLogger(__name__)
 
@@ -77,7 +77,7 @@ async def pull(file_or_folder: Path):
 
 async def is_file_present_in_storage(file_path: Path) -> bool:
     """
-    :retruns True if an entry is present inside the files_metadata else False
+    :returns True if an entry is present inside the files_metadata else False
     """
     s3_object = _create_s3_object(_get_archive_name(file_path))
     log.debug("Checking if s3_object='%s' is present", s3_object)
