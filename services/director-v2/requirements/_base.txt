@@ -54,9 +54,6 @@ click-didyoumean==0.0.3
     # via celery
 click-repl==0.1.6
     # via celery
-cloudpickle==1.6.0
-    # via dask
-dask==2021.6.2
 decorator==4.4.2
     # via networkx
 dnspython==2.0.0
@@ -67,8 +64,6 @@ email-validator==1.1.2
     #   pydantic
 fastapi==0.65.0
     # via -r requirements/_base.in
-fsspec==2021.6.1
-    # via dask
 graphene==2.1.8
     # via fastapi
 graphql-core==2.3.2
@@ -106,8 +101,6 @@ jinja2==2.11.3
     #   fastapi
 kombu==5.0.2
     # via celery
-locket==0.2.1
-    # via partd
 markupsafe==1.1.1
     # via jinja2
 multidict==5.0.0
@@ -120,8 +113,6 @@ orjson==3.4.3
     # via
     #   -r requirements/_base.in
     #   fastapi
-partd==1.2.0
-    # via dask
 promise==2.3
     # via
     #   graphql-core
@@ -156,7 +147,6 @@ pyyaml==5.4.1
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
-    #   dask
     #   fastapi
     #   uvicorn
 redis==3.5.3
@@ -191,10 +181,6 @@ starlette==0.14.2
     # via fastapi
 tenacity==6.2.0
     # via -r requirements/_base.in
-toolz==0.11.1
-    # via
-    #   dask
-    #   partd
 typer==0.3.2
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==3.7.4.3

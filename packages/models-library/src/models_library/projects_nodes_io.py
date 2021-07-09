@@ -21,7 +21,7 @@ NodeID_AsDictKey = constr(regex=UUID_REGEX)
 
 
 class PortLink(BaseModel):
-    """ I/O port type to reference to an output port of another node in the same project """
+    """I/O port type to reference to an output port of another node in the same project"""
 
     node_uuid: NodeID = Field(
         ...,
@@ -41,7 +41,7 @@ class PortLink(BaseModel):
 
 
 class DownloadLink(BaseModel):
-    """ I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc) """
+    """I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"""
 
     download_link: AnyUrl = Field(..., alias="downloadLink")
     label: Optional[str]
@@ -51,7 +51,7 @@ class DownloadLink(BaseModel):
 
 
 class BaseFileLink(BaseModel):
-    """ Base class for I/O port types with links to storage services"""
+    """Base class for I/O port types with links to storage services"""
 
     # TODO: constructor will always cast to str here. We should perhaps set is as str. Actually
     # if we want to do hash in inputs/outputs ... we should have a single type for identifiers
@@ -86,7 +86,7 @@ class BaseFileLink(BaseModel):
 
 
 class SimCoreFileLink(BaseFileLink):
-    """ I/O port type to hold a link to a file in simcore S3 storage """
+    """I/O port type to hold a link to a file in simcore S3 storage"""
 
     dataset: Optional[str] = Field(
         None,
@@ -97,7 +97,7 @@ class SimCoreFileLink(BaseFileLink):
     @validator("store", always=True)
     @classmethod
     def check_discriminator(cls, v):
-        """ Used as discriminator to cast to this class """
+        """Used as discriminator to cast to this class"""
         if v != "0":
             raise ValueError(f"SimCore store identifier must be set to 0, got {v}")
         return "0"
@@ -129,7 +129,7 @@ class SimCoreFileLink(BaseFileLink):
 
 
 class DatCoreFileLink(BaseFileLink):
-    """ I/O port type to hold a link to a file in DATCORE storage """
+    """I/O port type to hold a link to a file in DATCORE storage"""
 
     label: str = Field(
         ...,
@@ -146,7 +146,7 @@ class DatCoreFileLink(BaseFileLink):
     @validator("store", always=True)
     @classmethod
     def check_discriminator(cls, v):
-        """ Used as discriminator to cast to this class """
+        """Used as discriminator to cast to this class"""
 
         if v != "1":
             raise ValueError(f"DatCore store must be set to 1, got {v}")

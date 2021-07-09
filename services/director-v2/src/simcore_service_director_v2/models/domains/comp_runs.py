@@ -1,3 +1,4 @@
+from contextlib import suppress
 from datetime import datetime
 from typing import Optional
 
@@ -8,8 +9,6 @@ from simcore_postgres_database.models.comp_pipeline import StateType
 
 from ...utils.db import DB_TO_RUNNING_STATE
 from ..schemas.constants import UserID
-
-from contextlib import suppress
 
 
 class CompRunsAtDB(BaseModel):

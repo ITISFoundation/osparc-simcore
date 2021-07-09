@@ -1,6 +1,7 @@
 from fastapi import FastAPI
+
 from ...core.settings import PostgresSettings
-from .events import connect_to_db, close_db_connection
+from .events import close_db_connection, connect_to_db
 
 
 def setup(app: FastAPI, settings: PostgresSettings):
