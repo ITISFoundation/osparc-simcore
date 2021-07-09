@@ -18,6 +18,12 @@ class ModuleCategory(Enum):
     ADDON = 1
 
 
+class SkipModuleSetupException(Exception):
+    def __init__(self, *, reason) -> None:
+        self.reason = reason
+        super().__init__(reason)
+
+
 class ApplicationSetupError(Exception):
     pass
 
@@ -33,9 +39,9 @@ def app_module_setup(
     depends: Optional[List[str]] = None,
     config_section: str = None,
     config_enabled: str = None,
-    logger: Optional[logging.Logger] = None,
+    logger: logging.Logger = log,
 ) -> Callable:
-    """ Decorator that marks a function as 'a setup function' for a given module in an application
+    """Decorator that marks a function as 'a setup function' for a given module in an application
 
         - Marks a function as 'setup' of a given module in an application
         - Ensures setup executed ONLY ONCE per app
@@ -75,8 +81,6 @@ def app_module_setup(
     else:
         # if passes config_enabled, invalidates info on section
         section = None
-
-    logger = logger or log
 
     def decorate(setup_func):
 
@@ -147,17 +151,26 @@ def app_module_setup(
                 raise ApplicationSetupError(msg)
 
             # execution of setup
-            ok = setup_func(app, *args, **kargs)
+            try:
+                completed = setup_func(app, *args, **kargs)
 
-            # post-setup
-            if ok is None:
-                ok = True
+                # post-setup
+                if completed is None:
+                    completed = True
 
-            if ok:
-                app[APP_SETUP_KEY].append(module_name)
+                if completed:
+                    app[APP_SETUP_KEY].append(module_name)
+                else:
+                    raise SkipModuleSetupException(reason="Undefined")
 
-            logger.debug("'%s' setup completed [%s]", module_name, ok)
-            return ok
+            except SkipModuleSetupException as exc:
+                logger.warning("Skipping '%s' setup: %s", module_name, exc.reason)
+                completed = False
+
+            logger.debug(
+                "'%s' setup %s", module_name, "completed" if completed else "skipped"
+            )
+            return completed
 
         setup_wrapper.metadata = setup_metadata
         setup_wrapper.MARK = "setup"
@@ -170,10 +183,9 @@ def app_module_setup(
 def is_setup_function(fun):
     return (
         inspect.isfunction(fun)
-        and hasattr(fun, "MARK")
-        and fun.MARK == "setup"
+        and getattr(fun, "MARK", None) == "setup"
         and any(
             param.annotation == web.Application
-            for name, param in inspect.signature(fun).parameters.items()
+            for _, param in inspect.signature(fun).parameters.items()
         )
     )
