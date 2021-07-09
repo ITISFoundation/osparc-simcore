@@ -9,7 +9,7 @@ import logging
 from aiohttp import web
 from servicelib.application_setup import (
     ModuleCategory,
-    SkipModuleSetupException,
+    SkipModuleSetup,
     app_module_setup,
 )
 
@@ -30,6 +30,6 @@ def setup(app: web.Application):
 
     settings: ApplicationSettings = app[APP_SETTINGS_KEY]
     if not settings.WEBSERVER_DEV_FEATURES_ENABLED:
-        raise SkipModuleSetupException(reason="Development feature")
+        raise SkipModuleSetup(reason="Development feature")
 
     app.add_routes(parametrization_api_handlers.routes)

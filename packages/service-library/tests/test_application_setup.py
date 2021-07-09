@@ -13,7 +13,7 @@ from servicelib.application_setup import (
     APP_SETUP_KEY,
     DependencyError,
     ModuleCategory,
-    SkipModuleSetupException,
+    SkipModuleSetup,
     app_module_setup,
 )
 
@@ -28,7 +28,7 @@ def setup_bar(app: web.Application, arg1, *, raise_skip: bool = False):
 @app_module_setup("package.foo", ModuleCategory.ADDON, logger=log)
 def setup_foo(app: web.Application, arg1, kargs=33, *, raise_skip: bool = False):
     if raise_skip:
-        raise SkipModuleSetupException(reason="explicit skip")
+        raise SkipModuleSetup(reason="explicit skip")
     return True
 
 
