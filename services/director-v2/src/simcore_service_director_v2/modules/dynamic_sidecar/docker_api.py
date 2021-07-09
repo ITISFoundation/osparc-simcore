@@ -338,7 +338,7 @@ async def list_dynamic_sidecar_services(
 
 
 async def is_dynamic_service_running(
-    dynamic_sidecar_settings: DynamicSidecarSettings, node_uuid: NodeID
+    node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> bool:
     async with docker_client() as client:
         dynamic_sidecar_services = await client.services.list(

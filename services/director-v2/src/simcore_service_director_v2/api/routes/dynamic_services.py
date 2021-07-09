@@ -114,7 +114,7 @@ async def create_dynamic_service(
         return RedirectResponse(str(redirect_url_with_query))
 
     if not await is_dynamic_service_running(
-        dynamic_services_settings.dynamic_sidecar, service.node_uuid
+        service.node_uuid, dynamic_services_settings.dynamic_sidecar
     ):
         # services where successfully started and they can be monitored
         monitor_data = MonitorData.from_http_request(
