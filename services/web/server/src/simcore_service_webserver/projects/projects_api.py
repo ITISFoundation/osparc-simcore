@@ -28,8 +28,6 @@ from models_library.projects_state import (
 )
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
-
-## PROJECT NODES -----------------------------------------------------
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_service_webserver.director import director_exceptions
@@ -321,6 +319,9 @@ async def delete_project_from_db(
     await db.delete_user_project(user_id, project_uuid)
     # requests storage to delete all project's stored data
     await delete_data_folders_of_project(app, project_uuid, user_id)
+
+
+## PROJECT NODES -----------------------------------------------------
 
 
 async def add_project_node(

@@ -283,14 +283,12 @@ class ServiceKeyVersion(BaseModel):
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
         ],
-        regex=KEY_RE,
     )
     version: str = Field(
         ...,
         description="service version number",
         regex=VERSION_RE,
         examples=["1.0.0", "0.0.1"],
-        regex=VERSION_RE,
     )
 
 
