@@ -135,6 +135,9 @@ async def _generate_tasks_list_from_project(
         node_details: ServiceDockerData = None
         node_extras: ServiceExtras = None
         if node_class == NodeClass.FRONTEND:
+            # TODO: Catalog knows about the frontend services.
+            # Do not redefine frontend services in the fake services method.
+            # OM: I tried using the director_client but it didn't work out.
             node_details = _get_fake_service_details(service_key_version)
         else:
             node_details = await director_client.get_service_details(
