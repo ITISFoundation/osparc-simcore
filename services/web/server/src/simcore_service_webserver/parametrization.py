@@ -7,7 +7,11 @@
 import logging
 
 from aiohttp import web
-from servicelib.application_setup import ModuleCategory, app_module_setup
+from servicelib.application_setup import (
+    ModuleCategory,
+    SkipModuleSetupException,
+    app_module_setup,
+)
 
 from . import parametrization_api_handlers
 from .constants import APP_SETTINGS_KEY
@@ -26,7 +30,6 @@ def setup(app: web.Application):
 
     settings: ApplicationSettings = app[APP_SETTINGS_KEY]
     if not settings.WEBSERVER_DEV_FEATURES_ENABLED:
-        log.warning("App module '%s' is disabled: Marked as dev feature", __name__)
-        return False
+        raise SkipModuleSetupException(reason="Development feature")
 
     app.add_routes(parametrization_api_handlers.routes)

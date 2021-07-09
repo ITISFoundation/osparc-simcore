@@ -27,6 +27,7 @@ def is_const_param(node: Node) -> bool:
     return is_param(node) and "const" in node.key and not node.inputs
 
 
+@pytest.mark.skip(reason="UNDER DEV")
 async def test_it(app):
 
     project_id = str(uuid4())
