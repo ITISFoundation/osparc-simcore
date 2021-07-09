@@ -5,6 +5,7 @@ from uuid import UUID
 
 from aiohttp import web
 from aiohttp.web_routedef import RouteDef
+from models_library.projects import Project
 from pydantic.decorator import validate_arguments
 from pydantic.error_wrappers import ValidationError
 
@@ -75,13 +76,21 @@ async def _list_project_snapshots_handler(request: web.Request):
 @validate_arguments
 async def list_project_snapshots(project_id: UUID) -> List[Dict[str, Any]]:
     # project_id is param-project?
+    # TODO: add pagination
+    # TODO: optimizaiton will grow snapshots of a project with time!
+    #
 
+    # snapshots:
+    #   - ordered (iterations!)
+    #   - have a parent project with all the parametrization
+    #
     snapshot_info_0 = {
-        "id": "0",
+        "id": 0,
         "display_name": "snapshot 0",
         "parent_id": project_id,
-        "parameters": get_project_snapshot_parameters(project_id, snapshot_id="0"),
+        "parameters": get_project_snapshot_parameters(project_id, snapshot_id=str(id)),
     }
+
     return [
         snapshot_info_0,
     ]
@@ -103,7 +112,10 @@ async def _get_project_snapshot_handler(request: web.Request):
 
 @validate_arguments
 async def get_project_snapshot(project_id: UUID, snapshot_id: str):
-    pass
+    # TODO: create a fake project
+    # - generate project_id
+    # - define what changes etc...
+    project = Project()
 
 
 @routes.get(
