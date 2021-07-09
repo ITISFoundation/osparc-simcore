@@ -20,4 +20,4 @@ echo "$INFO Starting migration ..."
 sc-pg upgrade-and-close
 
 echo "$INFO Migration Done. Expose http server to allow other services in the stack to start ..."
-uvicorn services.migration.src.server:app
+uvicorn services.migration.src.server:app --host 0.0.0.0
