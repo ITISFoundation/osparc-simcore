@@ -210,6 +210,15 @@ paths:
   /projects/{study_uuid}/tags/{tag_id}:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{study_uuid}~1tags~1{tag_id}"
 
+  /projects/{project_id}/snapshots:
+    $ref: "./openapi-projects.yaml#/paths/projects_snapshots"
+
+  /projects/{project_id}/snapshots/{snapshot_id}:
+    $ref: "./openapi-projects.yaml#/paths/projects_id_snapshots_id"
+
+  /projects/{project_id}/snapshots/{snapshot_id}/parameters:
+    $ref: "./openapi-projects.yaml#/paths/projects_id_snapshots_id_parameters"
+
   # ACTIVITY -------------------------------------------------------------------------
   /activity/status:
     $ref: "./openapi-activity.yaml#/paths/~1activity~1status"
