@@ -435,6 +435,53 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
+  projects_snapshots:
+    get:
+      summary: List Project Snapshots
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          format: uuid
+          title: Project Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+
+  projects_id_snapshots_id:
+    get:
+      summary: Get Project Snapshot
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          format: uuid
+          title: Project Id
+          type: string
+      - in: path
+        name: snapshot_id
+        required: true
+        schema:
+          exclusiveMinimum: 0.0
+          title: Snapshot Id
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+
+  projects_id_snapshots_id_parameters:
+    get:
+
+
 components:
   schemas:
     ClientSessionId:
