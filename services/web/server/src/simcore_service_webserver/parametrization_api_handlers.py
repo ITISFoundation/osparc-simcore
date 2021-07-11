@@ -69,6 +69,7 @@ async def _list_project_snapshots_handler(request: web.Request):
         snp["url_parameters"] = url_for_parameters(
             project_id=snp["parent_id"], snapshot_id=snp["id"]
         )
+        # snp['url_project'] =
 
     return snapshots
 
@@ -104,18 +105,20 @@ async def _get_project_snapshot_handler(request: web.Request):
     """
     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
 
-    await get_project_snapshot(
+    prj_dict = await get_project_snapshot(
         project_id=request.match_info["project_id"],  # type: ignore
         snapshot_id=request.match_info["snapshot_id"],
     )
+    return prj_dict  # ???
 
 
 @validate_arguments
-async def get_project_snapshot(project_id: UUID, snapshot_id: str):
+async def get_project_snapshot(project_id: UUID, snapshot_id: str) -> Dict[str, Any]:
     # TODO: create a fake project
     # - generate project_id
     # - define what changes etc...
     project = Project()
+    return project.dict()
 
 
 @routes.get(
@@ -140,6 +143,7 @@ async def _get_project_snapshot_parameters_handler(
 async def get_project_snapshot_parameters(
     project_id: UUID, snapshot_id: str
 ) -> Dict[str, Any]:
+    #
     return {"x": 4, "y": "yes"}
 
 
