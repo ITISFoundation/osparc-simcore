@@ -220,7 +220,7 @@ async def get_file_metadata(request: web.Request):
 
 
 @routes.post(f"/{api_vtag}/locations/{{location_id}}:sync")  # type: ignore
-async def synchronise_meta_data_table(request: web.Request) -> Dict[str, Any]:
+async def synchronise_meta_data_table(request: web.Request):
     params, query, *_ = await extract_and_validate(request)
     assert query["dry_run"] is not None  # nosec
     assert params["location_id"]  # nosec
@@ -230,11 +230,7 @@ async def synchronise_meta_data_table(request: web.Request) -> Dict[str, Any]:
         dry_run = query["dry_run"]
         dsm = await _prepare_storage_manager(params, query, request)
         location = dsm.location_from_id(location_id)
-        data_changed: Dict[str, Any] = await dsm.synchronise_meta_data_table(
-            location, dry_run
-        )
-
-    return {"error": None, "data": data_changed}
+        await dsm.synchronise_meta_data_table(location, dry_run)
 
 
 # DISABLED: @routes.patch(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}/metadata") # type: ignore
