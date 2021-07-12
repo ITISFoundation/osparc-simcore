@@ -51,10 +51,21 @@ qx.Class.define("osparc.desktop.StartPipelineView", {
       rbManager.setSelection(partialPipeline.length ? [runPartialPipeline] : [runPipeline]);
       this._add(partialBox);
 
+      const reRunBox = new qx.ui.groupbox.GroupBox(this.tr("Re-Run"));
+      reRunBox.set({
+        layout: new qx.ui.layout.VBox(),
+        enabled: false
+      });
+      const reRunCB = new qx.ui.form.CheckBox(this.tr("Re-run")).set({
+        value: forceRestart
+      });
+      reRunBox.add(reRunCB);
+      this._add(reRunBox);
+
       const cacheBox = new qx.ui.groupbox.GroupBox(this.tr("Caching"));
       cacheBox.setLayout(new qx.ui.layout.VBox());
       const useCacheCB = new qx.ui.form.CheckBox(this.tr("Use cache")).set({
-        value: !forceRestart
+        value: true
       });
       cacheBox.add(useCacheCB);
       this._add(cacheBox);
