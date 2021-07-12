@@ -95,7 +95,7 @@ qx.Class.define("osparc.data.StudyParametrizer", {
               },
               data: templatePrimaryStudyData
             };
-            osparc.data.Resources.fetch("templates", "postToTemplate", params)
+            osparc.data.Resources.fetch("studies", "postToTemplate", params)
               .then(temporaryTemplate => {
                 const promisesCreateSecs = [];
                 for (let i=0; i<combinations.length; i++) {

@@ -90,6 +90,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/active?client_session_id={tabId}"
           },
+          postToTemplate: {
+            method: "POST",
+            url: statics.API + "/projects?as_template={study_id}"
+          },
           open: {
             method: "POST",
             url: statics.API + "/projects/{studyId}:open"
@@ -160,10 +164,6 @@ qx.Class.define("osparc.data.Resources", {
           getPage: {
             method: "GET",
             url: statics.API + "/projects?type=template&offset={offset}&limit={limit}"
-          },
-          postToTemplate: {
-            method: "POST",
-            url: statics.API + "/projects?as_template={study_id}"
           },
           put: {
             method: "PUT",
