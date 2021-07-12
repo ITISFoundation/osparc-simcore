@@ -151,6 +151,37 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * SNAPSHOTS
+       */
+      "snapshots": {
+        useCache: true,
+        idField: "uuid",
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/snapshots"
+          },
+          getPage: {
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/snapshots?offset={offset}&limit={limit}"
+          },
+          getOne: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/snapshots/{snapshotId}"
+          },
+          getParameters: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/snapshots/{snapshotId}/parameters"
+          },
+          takeSnapshot: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/snapshots"
+          }
+        }
+      },
+      /*
        * TEMPLATES (actually studies flagged as templates)
        */
       "templates": {
