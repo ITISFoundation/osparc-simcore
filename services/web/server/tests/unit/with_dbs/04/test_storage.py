@@ -190,7 +190,6 @@ async def test_sync_file_meta_table(client, storage_server, logged_user, expecte
         # the test of the functionality is already done in storage
         assert "removed" in data
         assert not data["removed"]
-        assert data["dry_run"] == True
 
 
 @pytest.mark.parametrize(
