@@ -70,7 +70,6 @@ qx.Class.define("osparc.desktop.StartPipelineView", {
       const startBtn = new qx.ui.form.Button(this.tr("Start")).set({
         allowGrowX: false
       });
-      startBtn.addListener("execute", () => this.fireEvent("cancel"));
       btnsLayout.add(startBtn);
       startBtn.addListener("execute", () => this.fireDataEvent("startPipeline", {
         "useCache": useCacheCB.getValue()
