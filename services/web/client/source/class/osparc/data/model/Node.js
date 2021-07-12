@@ -384,21 +384,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
 
       if (this.isParameter()) {
-        const type = osparc.component.node.ParameterEditor.getParameterOutputType(this);
-        // set default values
-        let val = null;
-        switch (type) {
-          case "boolean":
-            val = true;
-            break;
-          case "number":
-          case "integer":
-            val = 1;
-            break;
-        }
-        if (val !== null) {
-          osparc.component.node.ParameterEditor.setParameterOutputValue(this, val);
-        }
+        this.__initParameter();
       }
     },
 
@@ -697,6 +683,14 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
+    getOutputData: function(outputKey) {
+      const outputs = this.getOutputs();
+      if (outputKey in outputs && "value" in outputs[outputKey]) {
+        return outputs[outputKey]["value"];
+      }
+      return null;
+    },
+
     // post edge creation routine
     edgeAdded: function(edge) {
       const inputNode = this.getWorkbench().getNode(edge.getInputNodeId());
@@ -891,6 +885,26 @@ qx.Class.define("osparc.data.model.Node", {
               this.setThumbnail(img.outerHTML);
             }
           }, false);
+        }
+      }
+    },
+
+    __initParameter: function() {
+      if (this.isParameter() && this.getOutputData("out_1") === null) {
+        const type = osparc.component.node.ParameterEditor.getParameterOutputType(this);
+        // set default values if none
+        let val = null;
+        switch (type) {
+          case "boolean":
+            val = true;
+            break;
+          case "number":
+          case "integer":
+            val = 1;
+            break;
+        }
+        if (val !== null) {
+          osparc.component.node.ParameterEditor.setParameterOutputValue(this, val);
         }
       }
     },
@@ -1204,11 +1218,10 @@ qx.Class.define("osparc.data.model.Node", {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
       } else if (this.isParameter()) {
-        const outputs = this.getOutputs();
-        if ("value" in outputs["out_1"]) {
-          const output = {
-            "out_1": outputs["out_1"]["value"]
-          };
+        const paramOutKey = "out_1";
+        if (this.getOutputData(paramOutKey)) {
+          const output = {};
+          output[paramOutKey] = this.getOutputData(paramOutKey);
           nodeEntry.outputs = output;
         }
       }
