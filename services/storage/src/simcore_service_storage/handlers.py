@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from contextlib import contextmanager
-from typing import Dict
+from typing import Any, Dict
 
 import attr
 from aiohttp import web
@@ -229,17 +229,15 @@ async def synchronise_meta_data_table(request: web.Request):
     assert params["location_id"]  # nosec
 
     with handle_storage_errors():
-        location_id = params["location_id"]
-        fire_and_forget: bool = params.get("fire_and_forget", False)
+        location_id: str = params["location_id"]
+        fire_and_forget: bool = query["fire_and_forget"]
         dry_run: bool = query["dry_run"]
 
         dsm = await _prepare_storage_manager(params, query, request)
         location = dsm.location_from_id(location_id)
 
-        sync_results = {
+        sync_results: Dict[str, Any] = {
             "removed": [],
-            "fire_and_forget": fire_and_forget,
-            "dry_run": dry_run,
         }
         sync_coro = dsm.synchronise_meta_data_table(location, dry_run)
 
@@ -256,6 +254,9 @@ async def synchronise_meta_data_table(request: web.Request):
             asyncio.create_task(_go(), name="f&f sync_task")
         else:
             sync_results = await sync_coro
+
+        sync_results["fire_and_forget"] = fire_and_forget
+        sync_results["dry_run"] = dry_run
 
         return {"error": None, "data": sync_results}
 
