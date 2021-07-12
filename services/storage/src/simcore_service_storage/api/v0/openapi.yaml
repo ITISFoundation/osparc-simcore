@@ -644,6 +644,10 @@ components:
       required:
         - removed
       properties:
+        dry_run:
+          type: boolean
+        fire_and_forget:
+          type: boolean
         removed:
           type: array
           items:
