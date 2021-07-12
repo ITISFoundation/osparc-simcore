@@ -1013,80 +1013,58 @@ class DataStorageManager:
             link = to_meta_data_extended(await result.first())
             return link
 
-    async def synchronise_meta_data_table(self, location: str, dry_run: bool) -> int:
+    async def synchronise_meta_data_table(
+        self, location: str, dry_run: bool
+    ) -> Dict[str, Any]:
+
+        to_remove = []
 
         assert (  # nosec
             location == SIMCORE_S3_STR
         ), "Only with s3, no other sync implemented"  # nosec
 
-        number_of_rows_in_db: int = 0
-
         if location == SIMCORE_S3_STR:
-            async with self.engine.acquire() as conn:
+
+            # NOTE: only valid for simcore, since datcore data is not in the database table
+            # let's get all the files in the table
+            logger.warning(
+                "synchronisation of database/s3 storage started, this will take some time..."
+            )
+
+            async with self.engine.acquire() as conn, self._create_client_context() as s3_client:
+
                 number_of_rows_in_db = await conn.scalar(file_meta_data.count()) or 0
                 logger.warning(
                     "Total number of entries to check %d",
                     number_of_rows_in_db,
                 )
 
-            async def _sync_task():
-                """
-                Sync task might be very costly specially for large number of files
-                """
-                to_remove = []
+                assert isinstance(s3_client, AioBaseClient)  # nosec
 
-                # NOTE: only valid for simcore, since datcore data is not in the database table
-                # let's get all the files in the table
-                logger.warning(
-                    "synchronisation of database/s3 storage started, this will take some time..."
+                async for row in conn.execute(
+                    sa.select([file_meta_data.c.object_name])
+                ):
+                    s3_key = row.object_name  # type: ignore
+
+                    # now check if the file exists in S3
+                    # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
+                    response = await s3_client.list_objects_v2(
+                        Bucket=self.simcore_bucket_name, Prefix=s3_key
+                    )
+                    if response.get("KeyCount", 0) == 0:  # this file does not exist
+                        to_remove.append(s3_key)
+
+                logger.info(
+                    "%s %d entries ",
+                    "Would delete" if dry_run else "Deleting",
+                    len(to_remove),
                 )
-                async with self.engine.acquire() as conn, self._create_client_context() as s3_client:
-                    assert isinstance(s3_client, AioBaseClient)  # nosec
-
-                    async for row in conn.execute(
-                        sa.select([file_meta_data.c.object_name])
-                    ):
-                        s3_key = row.object_name  # type: ignore
-
-                        # now check if the file exists in S3
-                        # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
-                        response = await s3_client.list_objects_v2(
-                            Bucket=self.simcore_bucket_name, Prefix=s3_key
+                if not dry_run:
+                    await conn.execute(
+                        file_meta_data.delete().where(
+                            file_meta_data.c.object_name.in_(to_remove)
                         )
-                        if response.get("KeyCount", 0) == 0:  # this file does not exist
-                            to_remove.append(s3_key)
-
-                    logger.info(
-                        "%s %d entries ",
-                        "Would delete" if dry_run else "Deleting",
-                        len(to_remove),
                     )
-                    if not dry_run:
-                        await conn.execute(
-                            file_meta_data.delete().where(
-                                file_meta_data.c.object_name.in_(to_remove)
-                            )
-                        )
-                        logger.info("Deleted %s orphan items", len(to_remove))
+                    logger.info("Deleted %s orphan items", len(to_remove))
 
-            async def _time_bound_sync_task(timeout):
-                try:
-                    await asyncio.wait_for(_sync_task(), timeout=timeout)
-                except asyncio.TimeoutError:
-                    logger.error(
-                        "Synchronising  metadata table timed out (%s secs). Table size %d",
-                        timeout,
-                        number_of_rows_in_db,
-                    )
-
-            # fire and forget with timeout to avoid blocking the database
-            assert self.app  # nosec
-            settings: Settings = self.app[
-                APP_CONFIG_KEY
-            ]  # pylint: disable=unsubscriptable-object
-            asyncio.create_task(
-                _time_bound_sync_task(timeout=settings.STORAGE_SYNC_METADATA_TIMEOUT),
-                name="f&f sync_task",
-            )
-
-        return number_of_rows_in_db
+        return {"removed": to_remove}

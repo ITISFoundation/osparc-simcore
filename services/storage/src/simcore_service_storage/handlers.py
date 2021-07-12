@@ -1,12 +1,13 @@
+import asyncio
 import json
 import logging
 from contextlib import contextmanager
-from typing import Any, Dict
+from typing import Dict
 
 import attr
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from pydantic.types import PositiveInt
+from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_utils import extract_and_validate
 
 from .access_layer import InvalidFileIdentifier
@@ -14,6 +15,7 @@ from .constants import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 from .db_tokens import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
 from .meta import __version__, api_vtag
+from .settings import Settings
 
 log = logging.getLogger(__name__)
 
@@ -228,15 +230,29 @@ async def synchronise_meta_data_table(request: web.Request):
 
     with handle_storage_errors():
         location_id = params["location_id"]
-        dry_run = query["dry_run"]
+        fire_and_forget = params.get("fire_and_forget", False)
+
         dsm = await _prepare_storage_manager(params, query, request)
         location = dsm.location_from_id(location_id)
-        entries_in_db: PositiveInt = await dsm.synchronise_meta_data_table(
-            location, dry_run
-        )
 
-        # informative
-        return {"error": None, "data": {"total_db_entries": entries_in_db}}
+        sync_results = {"removed": []}
+        sync_coro = dsm.synchronise_meta_data_table(location, dry_run=query["dry_run"])
+
+        if fire_and_forget:
+            settings: Settings = request.app[APP_CONFIG_KEY]
+
+            async def _go():
+                timeout = settings.STORAGE_SYNC_METADATA_TIMEOUT
+                try:
+                    await asyncio.wait_for(sync_coro, timeout=timeout)
+                except asyncio.TimeoutError:
+                    log.error("Sync metadata table timedout (%s seconds)", timeout)
+
+            asyncio.create_task(_go(), name="f&f sync_task")
+        else:
+            sync_results = await sync_coro
+
+        return {"error": None, "data": sync_results}
 
 
 # DISABLED: @routes.patch(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}/metadata") # type: ignore
