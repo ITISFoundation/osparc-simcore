@@ -118,18 +118,22 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
         const primaryBtn = this.getChildControl("primary-study-btn");
         primaryBtn.setVisibility(study.isSnapshot() ? "visible" : "excluded");
 
-        study.getWorkbench().addListener("nNodesChanged", this.__checkSnapshots, this);
-        this.__checkSnapshots();
+        study.getWorkbench().addListener("nNodesChanged", this.checkSnapshots, this);
+        this.checkSnapshots();
       }
     },
 
-    __checkSnapshots: function() {
+    checkSnapshots: function() {
       const study = this.getStudy();
       if (study) {
         const allNodes = study.getWorkbench().getNodes(true);
         const hasIterators = Object.values(allNodes).some(node => node.isIterator());
         const snapshotsBtn = this.getChildControl("snapshots-btn");
         snapshotsBtn.setVisibility(hasIterators ? "visible" : "excluded");
+        if (!hasIterators) {
+          study.hasSnapshots()
+            .then(hasSnapshots => snapshotsBtn.setVisibility(hasSnapshots ? "visible" : "excluded"));
+        }
       }
     },
 

@@ -220,6 +220,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         osparc.data.Resources.fetch("snapshots", "takeSnapshot", params)
           .then(data => {
             console.log(data);
+            workbenchToolbar.checkSnapshots();
           })
           .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"))
           .finally(takeSnapshotBtn.setFetching(false));
