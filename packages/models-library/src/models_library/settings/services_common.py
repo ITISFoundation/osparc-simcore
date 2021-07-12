@@ -1,5 +1,4 @@
-from pydantic import BaseSettings, PositiveInt, Field
-
+from pydantic import BaseSettings, Field, PositiveInt
 
 _BASE_TIMEOUT_FOR_STOPPING_SERVICES = 60 * 60
 

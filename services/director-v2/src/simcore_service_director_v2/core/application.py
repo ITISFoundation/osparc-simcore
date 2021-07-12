@@ -13,7 +13,15 @@ from ..api.errors.http_error import (
 )
 from ..api.errors.validation_error import http422_error_handler
 from ..meta import api_version, api_vtag, project_name, summary
-from ..modules import celery, db, director_v0, dynamic_services, remote_debug, scheduler
+from ..modules import (
+    celery,
+    db,
+    director_v0,
+    dynamic_services,
+    dynamic_sidecar,
+    remote_debug,
+    scheduler,
+)
 from ..utils.logging_utils import config_all_loggers
 from .events import on_shutdown, on_startup
 from .settings import AppSettings, BootModeEnum
@@ -54,6 +62,9 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     if settings.POSTGRES.DIRECTOR_V2_POSTGRES_ENABLED:
         db.setup(app, settings.POSTGRES)
+
+    if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED:
+        dynamic_sidecar.setup(app)
 
     if settings.CELERY.DIRECTOR_V2_CELERY_ENABLED:
         celery.setup(app, settings.CELERY)

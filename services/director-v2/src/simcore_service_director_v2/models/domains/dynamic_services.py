@@ -3,6 +3,8 @@ from typing import List
 from models_library.services import PropertyName
 from pydantic import BaseModel, Field
 
+from ..schemas.dynamic_services import RunningDynamicServiceDetails, ServiceDetails
+
 
 class RetrieveDataIn(BaseModel):
     port_keys: List[PropertyName] = Field(
@@ -18,3 +20,7 @@ class RetrieveDataOut(BaseModel):
 
 class RetrieveDataOutEnveloped(BaseModel):
     data: RetrieveDataOut
+
+
+DynamicServiceCreate = ServiceDetails
+DynamicServiceOut = RunningDynamicServiceDetails
