@@ -132,7 +132,11 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
       const valueField = this.getChildControl(type);
       const outputs = node.getOutputs();
       if ("value" in outputs["out_1"]) {
-        valueField.setValue(outputs["out_1"]["value"]);
+        if (["integer", "boolean"].includes(type)) {
+          valueField.setValue(outputs["out_1"]["value"]);
+        } else {
+          valueField.setValue(String(outputs["out_1"]["value"]));
+        }
       }
       form.add(valueField, "Value", null, "value");
 
