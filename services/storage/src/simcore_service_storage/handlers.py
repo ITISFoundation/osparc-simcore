@@ -6,6 +6,7 @@ from typing import Any, Dict
 import attr
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from pydantic.types import PositiveInt
 from servicelib.rest_utils import extract_and_validate
 
 from .access_layer import InvalidFileIdentifier
@@ -230,7 +231,12 @@ async def synchronise_meta_data_table(request: web.Request):
         dry_run = query["dry_run"]
         dsm = await _prepare_storage_manager(params, query, request)
         location = dsm.location_from_id(location_id)
-        await dsm.synchronise_meta_data_table(location, dry_run)
+        entries_in_db: PositiveInt = await dsm.synchronise_meta_data_table(
+            location, dry_run
+        )
+
+        # informative
+        return {"error": None, "data": {"total_db_entries": entries_in_db}}
 
 
 # DISABLED: @routes.patch(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}/metadata") # type: ignore
