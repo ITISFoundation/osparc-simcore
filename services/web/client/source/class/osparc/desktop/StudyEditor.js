@@ -235,6 +235,20 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __requestStartPipeline: function(studyId, partialPipeline = [], forceRestart = false) {
+      const startPipelineView = new osparc.desktop.StartPipelineView(partialPipeline, forceRestart);
+      const win = osparc.ui.window.Window.popUpInWindow(startPipelineView, "Start Pipeline", 250, 250);
+      startPipelineView.addListener("startPipeline", e => {
+        const data = e.getData();
+        const useCache = data["useCache"];
+        this.__reallyRequestStartPipeline(studyId, partialPipeline, forceRestart, useCache);
+        win.close();
+      }, this);
+      startPipelineView.addListener("cancel", () => {
+        win.close();
+      }, this);
+    },
+
+    __reallyRequestStartPipeline: function(studyId, partialPipeline = [], forceRestart = false, useCache = false) {
       const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       const startStopButtonsWB = this.__workbenchView.getStartStopButtons();
@@ -268,7 +282,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       req.setRequestData({
         "subgraph": partialPipeline,
-        "force_restart": forceRestart
+        "force_restart": forceRestart,
+        "use_cache": useCache
       });
       req.send();
       if (partialPipeline.length) {

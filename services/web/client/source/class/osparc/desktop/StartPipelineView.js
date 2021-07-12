@@ -27,11 +27,20 @@ qx.Class.define("osparc.desktop.StartPipelineView", {
     this.__buildOptions(partialPipeline, forceRestart);
   },
 
+  events: {
+    "startPipeline": "qx.event.type.Data",
+    "cancel": "qx.event.type.Event"
+  },
+
   members: {
     __buildOptions: function(partialPipeline, forceRestart) {
-      const partialBox = new qx.ui.groupbox.GroupBox(this.tr("Partial running"));
-      const runPipeline = new qx.ui.form.RadioButton(this.tr("Run entire pipeline"));
-      const runPartialPipeline = new qx.ui.form.RadioButton(this.tr("Run partial pipeline"));
+      const partialBox = new qx.ui.groupbox.GroupBox(this.tr("Partial Running"));
+      partialBox.set({
+        layout: new qx.ui.layout.VBox(),
+        enabled: false
+      });
+      const runPipeline = new qx.ui.form.RadioButton(this.tr("Run Entire pipeline"));
+      const runPartialPipeline = new qx.ui.form.RadioButton(this.tr("Run Partial pipeline"));
       const rbManager = new qx.ui.form.RadioGroup(runPipeline, runPartialPipeline).set({
         allowEmptySelection: false
       });
@@ -43,15 +52,30 @@ qx.Class.define("osparc.desktop.StartPipelineView", {
       this._add(partialBox);
 
       const cacheBox = new qx.ui.groupbox.GroupBox(this.tr("Caching"));
-      const useCacheCB = this.__useCacheCB = new qx.ui.form.CheckBox(this.tr("Use cache")).set({
+      cacheBox.setLayout(new qx.ui.layout.VBox());
+      const useCacheCB = new qx.ui.form.CheckBox(this.tr("Use cache")).set({
         value: !forceRestart
       });
       cacheBox.add(useCacheCB);
       this._add(cacheBox);
-    },
 
-    getUseCache: function() {
-      return this.__useCacheCB.getValue();
+      const btnsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        alignX: "right"
+      }));
+      const cancelBtn = new qx.ui.form.Button(this.tr("Cancel")).set({
+        allowGrowX: false
+      });
+      cancelBtn.addListener("execute", () => this.fireEvent("cancel"));
+      btnsLayout.add(cancelBtn);
+      const startBtn = new qx.ui.form.Button(this.tr("Start")).set({
+        allowGrowX: false
+      });
+      startBtn.addListener("execute", () => this.fireEvent("cancel"));
+      btnsLayout.add(startBtn);
+      startBtn.addListener("execute", () => this.fireDataEvent("startPipeline", {
+        "useCache": useCacheCB.getValue()
+      }));
+      this._add(btnsLayout);
     }
   }
 });
