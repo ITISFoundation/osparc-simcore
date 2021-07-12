@@ -25,6 +25,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
   },
 
   events: {
+    "takeSnapshot": "qx.event.type.Event",
     "showParameters": "qx.event.type.Event",
     "showSnapshots": "qx.event.type.Event",
     "openPrimaryStudy": "qx.event.type.Data"
@@ -44,6 +45,18 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
           this._add(control, {
             flex: 1
           });
+          break;
+        }
+        case "take-snapshot-btn": {
+          control = new qx.ui.form.Button(this.tr("Take Snapshot")).set({
+            icon: "@FontAwesome5Solid/camera/14",
+            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
+            allowGrowX: false
+          });
+          control.addListener("execute", () => {
+            this.fireDataEvent("takeSnapshot");
+          }, this);
+          this._add(control);
           break;
         }
         case "snapshots-btn": {
@@ -82,6 +95,9 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       this.getChildControl("breadcrumb-navigation");
 
       this._add(new qx.ui.core.Spacer(20));
+
+      const takeSnapshotBtn = this.getChildControl("take-snapshot-btn");
+      takeSnapshotBtn.setVisibility(osparc.data.Permissions.getInstance().canDo("study.snapshot.create") ? "visible" : "excluded");
 
       const primaryBtn = this.getChildControl("primary-study-btn");
       primaryBtn.exclude();

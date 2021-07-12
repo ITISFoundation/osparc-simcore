@@ -196,6 +196,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__switchStudy(primaryStudyId);
       });
     },
+
+    __takeSnapshot: function() {
+      const study = this.getStudy();
+      const sweeper = new osparc.component.snapshots.TakeSnapshotView(study);
+      const title = this.tr("Take Snapshot");
+      osparc.ui.window.Window.popUpInWindow(sweeper, title, 400, 500);
+    },
+
     __showSnapshots: function() {
       const study = this.getStudy();
       const sweeper = new osparc.component.snapshots.SnapshotsView(study);
@@ -518,6 +526,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       workbenchToolbar.addListener("showSweeper", this.__showParameters, this);
       if (!workbenchToolbar.hasListener("showParameters")) {
         workbenchToolbar.addListener("showParameters", this.__showParameters, this);
+      }
+      if (!workbenchToolbar.hasListener("takeSnapshot")) {
+        workbenchToolbar.addListener("takeSnapshot", this.__takeSnapshot, this);
       }
       if (!workbenchToolbar.hasListener("showSnapshots")) {
         workbenchToolbar.addListener("showSnapshots", this.__showSnapshots, this);
