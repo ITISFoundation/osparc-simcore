@@ -53,7 +53,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     DATCORE_ADAPTER: DatcoreAdapterSettings
 
     STORAGE_SYNC_METADATA_TIMEOUT: PositiveInt = Field(
-        120, description="Timeout (seconds) for metadata sync task"
+        180, description="Timeout (seconds) for metadata sync task"
     )
 
     @validator("LOG_LEVEL")

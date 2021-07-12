@@ -157,7 +157,7 @@ async def delete_file(request: web.Request):
 @login_required
 @permission_required("storage.files.sync")
 async def synchronise_meta_data_table(request: web.Request):
-    payload = await _request_storage(request, "POST", timeout=ClientTimeout(total=300))
+    payload = await _request_storage(request, "POST")
     return payload
 
 

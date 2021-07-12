@@ -230,13 +230,18 @@ async def synchronise_meta_data_table(request: web.Request):
 
     with handle_storage_errors():
         location_id = params["location_id"]
-        fire_and_forget = params.get("fire_and_forget", False)
+        fire_and_forget: bool = params.get("fire_and_forget", False)
+        dry_run: bool = query["dry_run"]
 
         dsm = await _prepare_storage_manager(params, query, request)
         location = dsm.location_from_id(location_id)
 
-        sync_results = {"removed": []}
-        sync_coro = dsm.synchronise_meta_data_table(location, dry_run=query["dry_run"])
+        sync_results = {
+            "removed": [],
+            "fire_and_forget": fire_and_forget,
+            "dry_run": dry_run,
+        }
+        sync_coro = dsm.synchronise_meta_data_table(location, dry_run)
 
         if fire_and_forget:
             settings: Settings = request.app[APP_CONFIG_KEY]
