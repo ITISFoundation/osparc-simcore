@@ -236,7 +236,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __requestStartPipeline: function(studyId, partialPipeline = [], forceRestart = false) {
       const startPipelineView = new osparc.desktop.StartPipelineView(partialPipeline, forceRestart);
-      const win = osparc.ui.window.Window.popUpInWindow(startPipelineView, "Start Pipeline", 250, 280);
+      const win = osparc.ui.window.Window.popUpInWindow(startPipelineView, "Start Pipeline", 250, 290);
       startPipelineView.addListener("startPipeline", e => {
         const data = e.getData();
         const useCache = data["useCache"];
