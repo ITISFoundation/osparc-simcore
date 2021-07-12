@@ -63,7 +63,7 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
   },
 
   statics: {
-    getCurveControls: function(x1, y1, x2, y2, offset = 60) {
+    getCurveControls: function(x1, y1, x2, y2, offset = 100) {
       return [{
         x: x1,
         y: y1
