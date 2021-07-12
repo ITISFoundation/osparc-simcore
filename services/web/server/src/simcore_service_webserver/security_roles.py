@@ -78,9 +78,14 @@ ROLES_PERMISSIONS = {
     UserRole.TESTER: {
         "can": [
             "diagnostics.read",
-            "storage.files.sync",
         ],
         "inherits": [UserRole.USER],
+    },
+    UserRole.ADMIN: {
+        "can": [
+            "storage.files.sync",
+        ],
+        "inherits": [UserRole.TESTER],
     },
 }
 

@@ -175,7 +175,8 @@ async def test_get_storage_locations(client, storage_server, logged_user, expect
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPForbidden),
         (UserRole.USER, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPForbidden),
+        (UserRole.ADMIN, web.HTTPOk),
     ],
 )
 async def test_sync_file_meta_table(client, storage_server, logged_user, expected):
@@ -189,6 +190,7 @@ async def test_sync_file_meta_table(client, storage_server, logged_user, expecte
         # the test of the functionality is already done in storage
         assert "removed" in data
         assert not data["removed"]
+        assert data["dry_run"] == True
 
 
 @pytest.mark.parametrize(

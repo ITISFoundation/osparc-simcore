@@ -6,7 +6,7 @@ import logging
 import urllib
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from aiohttp import ClientTimeout, web
+from aiohttp import web
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
 from servicelib.rest_utils import extract_and_validate
