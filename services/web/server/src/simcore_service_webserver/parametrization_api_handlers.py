@@ -1,16 +1,17 @@
 import json
 from functools import wraps
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 from uuid import UUID
 
 from aiohttp import web
-from aiohttp.web_routedef import RouteDef
 from models_library.projects import Project
 from pydantic.decorator import validate_arguments
 from pydantic.error_wrappers import ValidationError
+from simcore_service_webserver.parametrization_models import Snapshot
 
 from ._meta import api_version_prefix
 from .constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
+from .parametrization_models import Snapshot, SnapshotApiModel
 
 json_dumps = json.dumps
 
@@ -44,23 +45,24 @@ def handle_request_errors(handler: Callable):
 routes = web.RouteTableDef()
 
 
-@routes.get(f"/{api_version_prefix}/projects/{{project_id}}/snapshots")
+@routes.get(
+    f"/{api_version_prefix}/projects/{{project_id}}/snapshots",
+    name="_list_snapshots_handler",
+)
 @handle_request_errors
-async def _list_project_snapshots_handler(request: web.Request):
+async def _list_snapshots_handler(request: web.Request):
     """
     Lists references on project snapshots
     """
     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
 
-    snapshots = await list_project_snapshots(
+    snapshots = await list_snapshots(
         project_id=request.match_info["project_id"],  # type: ignore
     )
 
     # Append url links
-    url_for_snapshot = request.app.router["_get_project_snapshot_handler"].url_for
-    url_for_parameters = request.app.router[
-        "_get_project_snapshot_parameters_handler"
-    ].url_for
+    url_for_snapshot = request.app.router["_get_snapshot_handler"].url_for
+    url_for_parameters = request.app.router["_get_snapshot_parameters_handler"].url_for
 
     for snp in snapshots:
         snp["url"] = url_for_snapshot(
@@ -74,8 +76,57 @@ async def _list_project_snapshots_handler(request: web.Request):
     return snapshots
 
 
+@routes.get(
+    f"/{api_version_prefix}/projects/{{project_id}}/snapshots/{{snapshot_id}}",
+    name="_get_snapshot_handler",
+)
+@handle_request_errors
+async def _get_snapshot_handler(request: web.Request):
+    user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
+
+    snapshot = await get_snapshot(
+        project_id=request.match_info["project_id"],  # type: ignore
+        snapshot_id=request.match_info["snapshot_id"],
+    )
+    return snapshot.json()
+
+
+@routes.post(
+    f"/{api_version_prefix}/projects/{{project_id}}/snapshots",
+    name="_create_snapshot_handler",
+)
+@handle_request_errors
+async def _create_snapshot_handler(request: web.Request):
+    user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
+
+    snapshot = await create_snapshot(
+        project_id=request.match_info["project_id"],  # type: ignore
+        snapshot_label=request.query.get("snapshot_label"),
+    )
+
+    return snapshot.json()
+
+
+@routes.get(
+    f"/{api_version_prefix}/projects/{{project_id}}/snapshots/{{snapshot_id}}/parameters",
+    name="_get_snapshot_parameters_handler",
+)
+@handle_request_errors
+async def _get_snapshot_parameters_handler(
+    request: web.Request,
+):
+    user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
+
+    params = await get_snapshot_parameters(
+        project_id=request.match_info["project_id"],  # type: ignore
+        snapshot_id=request.match_info["snapshot_id"],
+    )
+
+    return params
+
+
 @validate_arguments
-async def list_project_snapshots(project_id: UUID) -> List[Dict[str, Any]]:
+async def list_snapshots(project_id: UUID) -> List[Dict[str, Any]]:
     # project_id is param-project?
     # TODO: add pagination
     # TODO: optimizaiton will grow snapshots of a project with time!
@@ -89,7 +140,7 @@ async def list_project_snapshots(project_id: UUID) -> List[Dict[str, Any]]:
         "id": 0,
         "display_name": "snapshot 0",
         "parent_id": project_id,
-        "parameters": get_project_snapshot_parameters(project_id, snapshot_id=str(id)),
+        "parameters": get_snapshot_parameters(project_id, snapshot_id=str(id)),
     }
 
     return [
@@ -97,61 +148,23 @@ async def list_project_snapshots(project_id: UUID) -> List[Dict[str, Any]]:
     ]
 
 
-@routes.get(f"/{api_version_prefix}/projects/{{project_id}}/snapshots/{{snapshot_id}}")
-@handle_request_errors
-async def _get_project_snapshot_handler(request: web.Request):
-    """
-    Returns full project. Equivalent to /projects/{snapshot_project_id}
-    """
-    user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
-
-    prj_dict = await get_project_snapshot(
-        project_id=request.match_info["project_id"],  # type: ignore
-        snapshot_id=request.match_info["snapshot_id"],
-    )
-    return prj_dict  # ???
-
-
 @validate_arguments
-async def get_project_snapshot(project_id: UUID, snapshot_id: str) -> Dict[str, Any]:
+async def get_snapshot(project_id: UUID, snapshot_id: str) -> Snapshot:
     # TODO: create a fake project
     # - generate project_id
     # - define what changes etc...
-    project = Project()
-    return project.dict()
-
-
-@routes.get(
-    f"/{api_version_prefix}/projects/{{project_id}}/snapshots/{{snapshot_id}}/parameters"
-)
-@handle_request_errors
-async def _get_project_snapshot_parameters_handler(
-    request: web.Request,
-):
-    # GET /projects/{id}/snapshots/{id}/parametrization  -> {x:3, y:0, ...}
-    user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
-
-    params = await get_project_snapshot_parameters(
-        project_id=request.match_info["project_id"],  # type: ignore
-        snapshot_id=request.match_info["snapshot_id"],
-    )
-
-    return params
+    pass
 
 
 @validate_arguments
-async def get_project_snapshot_parameters(
-    project_id: UUID, snapshot_id: str
-) -> Dict[str, Any]:
+async def create_snapshot(
+    project_id: UUID,
+    snapshot_label: Optional[str] = None,
+) -> Snapshot:
+    pass
+
+
+@validate_arguments
+async def get_snapshot_parameters(project_id: UUID, snapshot_id: str):
     #
     return {"x": 4, "y": "yes"}
-
-
-# -------------------------------------
-assert routes  # nosec
-
-# NOTE: names all routes with handler's
-# TODO: override routes functions ?
-for route_def in routes:
-    assert isinstance(route_def, RouteDef)  # nosec
-    route_def.kwargs["name"] = route_def.handler.__name__
