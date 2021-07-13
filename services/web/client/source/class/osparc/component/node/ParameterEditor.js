@@ -106,7 +106,10 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
           });
           const commandEnter = new qx.ui.command.Command("Enter");
           control.setCommand(commandEnter);
-          control.addListener("execute", () => this.fireEvent("editParameter"));
+          control.addListener("execute", () => {
+            control.focus(); // unfocus to apply changes
+            this.fireEvent("editParameter");
+          });
           break;
         }
       }

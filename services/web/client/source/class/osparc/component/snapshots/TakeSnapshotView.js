@@ -73,7 +73,10 @@ qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
           });
           const commandEnter = new qx.ui.command.Command("Enter");
           control.setCommand(commandEnter);
-          control.addListener("execute", () => this.fireEvent("takeSnapshot"));
+          control.addListener("execute", () => {
+            commandEnter.focus();
+            this.fireEvent("takeSnapshot");
+          });
           break;
         }
       }
