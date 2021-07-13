@@ -48,7 +48,7 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
   },
 
   events: {
-    "ok": "qx.event.type.Event",
+    "editParameter": "qx.event.type.Event",
     "cancel": "qx.event.type.Event"
   },
 
@@ -95,6 +95,8 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
           control = new qx.ui.form.Button(this.tr("Cancel")).set({
             allowGrowX: false
           });
+          const commandEsc = new qx.ui.command.Command("Esc");
+          control.setCommand(commandEsc);
           control.addListener("execute", () => this.fireEvent("cancel"));
           break;
         }
@@ -102,7 +104,9 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
           control = new qx.ui.form.Button(this.tr("OK")).set({
             allowGrowX: false
           });
-          control.addListener("execute", () => this.fireEvent("ok"));
+          const commandEnter = new qx.ui.command.Command("Enter");
+          control.setCommand(commandEnter);
+          control.addListener("execute", () => this.fireEvent("editParameter"));
           break;
         }
       }

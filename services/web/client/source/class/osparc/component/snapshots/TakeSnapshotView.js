@@ -62,6 +62,8 @@ qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
           control = new qx.ui.form.Button(this.tr("Cancel")).set({
             allowGrowX: false
           });
+          const commandEsc = new qx.ui.command.Command("Enter");
+          control.setCommand(commandEsc);
           control.addListener("execute", () => this.fireEvent("cancel"));
           break;
         }
@@ -69,6 +71,8 @@ qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
           control = new qx.ui.form.Button(this.tr("OK")).set({
             allowGrowX: false
           });
+          const commandEnter = new qx.ui.command.Command("Enter");
+          control.setCommand(commandEnter);
           control.addListener("execute", () => this.fireEvent("takeSnapshot"));
           break;
         }
