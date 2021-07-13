@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from contextlib import contextmanager
@@ -6,6 +7,7 @@ from typing import Any, Dict
 import attr
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_utils import extract_and_validate
 
 from .access_layer import InvalidFileIdentifier
@@ -13,6 +15,7 @@ from .constants import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 from .db_tokens import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
 from .meta import __version__, api_vtag
+from .settings import Settings
 
 log = logging.getLogger(__name__)
 
@@ -220,21 +223,42 @@ async def get_file_metadata(request: web.Request):
 
 
 @routes.post(f"/{api_vtag}/locations/{{location_id}}:sync")  # type: ignore
-async def synchronise_meta_data_table(request: web.Request) -> Dict[str, Any]:
+async def synchronise_meta_data_table(request: web.Request):
     params, query, *_ = await extract_and_validate(request)
     assert query["dry_run"] is not None  # nosec
     assert params["location_id"]  # nosec
 
     with handle_storage_errors():
-        location_id = params["location_id"]
-        dry_run = query["dry_run"]
+        location_id: str = params["location_id"]
+        fire_and_forget: bool = query["fire_and_forget"]
+        dry_run: bool = query["dry_run"]
+
         dsm = await _prepare_storage_manager(params, query, request)
         location = dsm.location_from_id(location_id)
-        data_changed: Dict[str, Any] = await dsm.synchronise_meta_data_table(
-            location, dry_run
-        )
 
-    return {"error": None, "data": data_changed}
+        sync_results: Dict[str, Any] = {
+            "removed": [],
+        }
+        sync_coro = dsm.synchronise_meta_data_table(location, dry_run)
+
+        if fire_and_forget:
+            settings: Settings = request.app[APP_CONFIG_KEY]
+
+            async def _go():
+                timeout = settings.STORAGE_SYNC_METADATA_TIMEOUT
+                try:
+                    await asyncio.wait_for(sync_coro, timeout=timeout)
+                except asyncio.TimeoutError:
+                    log.error("Sync metadata table timedout (%s seconds)", timeout)
+
+            asyncio.create_task(_go(), name="f&f sync_task")
+        else:
+            sync_results = await sync_coro
+
+        sync_results["fire_and_forget"] = fire_and_forget
+        sync_results["dry_run"] = dry_run
+
+        return {"error": None, "data": sync_results}
 
 
 # DISABLED: @routes.patch(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}/metadata") # type: ignore
