@@ -82,7 +82,7 @@ def _create_parameter(param_type: str) -> ServiceDockerData:
         authors=[
             OM,
         ],
-        contact=OM["email"],
+        contact=OM.email,
         inputs={},
         outputs={
             "out_1": {
