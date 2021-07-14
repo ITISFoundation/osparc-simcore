@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
@@ -24,7 +24,9 @@ from ._base import BaseRepository
 logger = logging.getLogger(__name__)
 
 
-_FRONTEND_SERVICES_CATALOG = {meta.key: meta for meta in iter_service_docker_data()}
+_FRONTEND_SERVICES_CATALOG: Dict[str, ServiceDockerData] = {
+    meta.key: meta for meta in iter_service_docker_data()
+}
 
 
 async def _generate_tasks_list_from_project(

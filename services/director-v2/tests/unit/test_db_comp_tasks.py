@@ -11,7 +11,7 @@ from typing import Pattern, Set
 import pytest
 from models_library.services import SERVICE_KEY_RE, ServiceDockerData, ServiceKeyVersion
 from simcore_service_director_v2.modules.db.repositories.comp_tasks import (
-    _get_fake_service_details,
+    _FRONTEND_SERVICES_CATALOG,
 )
 
 
@@ -52,9 +52,11 @@ def test_only_filepicker_service_gets_some_service_details(
     for frontend_service in all_frontend_services:
         service_key_version = ServiceKeyVersion(key=frontend_service, version="24.34.5")
         # check that it does not assert
-        service_docker_data: ServiceDockerData = _get_fake_service_details(
-            service_key_version
-        )
-        if service_docker_data:
-            assert service_docker_data.key == "simcore/services/frontend/file-picker"
-            assert service_docker_data.outputs["outFile"].property_type == "data:*/*"
+        service_docker_data: ServiceDockerData = _FRONTEND_SERVICES_CATALOG[
+            service_key_version.key
+        ]
+
+        assert isinstance(service_docker_data, ServiceDockerData)
+        assert service_docker_data.key == "simcore/services/frontend/file-picker"
+        assert service_docker_data.outputs
+        assert service_docker_data.outputs["outFile"].property_type == "data:*/*"
