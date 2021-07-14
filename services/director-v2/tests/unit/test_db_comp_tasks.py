@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Pattern, Set
 
 import pytest
-from models_library.services import SERVICE_KEY_RE, ServiceDockerData, ServiceKeyVersion
+from models_library.services import SERVICE_KEY_RE, ServiceDockerData
 from simcore_service_director_v2.modules.db.repositories.comp_tasks import (
     _FRONTEND_SERVICES_CATALOG,
 )
