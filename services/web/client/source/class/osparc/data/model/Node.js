@@ -387,7 +387,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.__initParameter();
       }
 
-      this.applyReadOnly();
+      this.bindReadOnly();
     },
 
     populateNodeUIData: function(nodeUIData) {
@@ -656,10 +656,12 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    applyReadOnly: function() {
+    bindReadOnly: function() {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      if (study && study.isReadOnly() && this.getPropsForm()) {
-        this.getPropsForm().setEnabled(false);
+      if (this.getPropsForm()) {
+        study.bind("readOnly", this.getPropsForm(), "enabled", {
+          converter: readOnly => !readOnly
+        });
       }
     },
 

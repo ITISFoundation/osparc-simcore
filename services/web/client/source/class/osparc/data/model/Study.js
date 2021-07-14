@@ -242,15 +242,14 @@ qx.Class.define("osparc.data.model.Study", {
 
     initStudy: function() {
       this.getWorkbench().initWorkbench();
-
-      if (this.isSnapshot()) {
-        this.setReadOnly(true);
-      }
     },
 
     isSnapshot: function() {
-      const primaryStudyId = this.getSweeper().getPrimaryStudyId();
-      return primaryStudyId !== null;
+      if (this.getSweeper()) {
+        const primaryStudyId = this.getSweeper().getPrimaryStudyId();
+        return primaryStudyId !== null;
+      }
+      return false;
     },
 
     hasSnapshots: function() {
@@ -272,7 +271,7 @@ qx.Class.define("osparc.data.model.Study", {
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(myGid);
 
-      if (myGid) {
+      if (myGid && !this.isSnapshot()) {
         const canIWrite = osparc.component.permissions.Study.canGroupsWrite(value, orgIDs);
         this.setReadOnly(!canIWrite);
       } else {
