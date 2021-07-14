@@ -1,3 +1,9 @@
+"""
+    Catalog of i/o metadata for functions implemented in the front-end
+"""
+
+
+import functools
 from typing import Any, Dict, Iterator, List
 
 from fastapi import status
@@ -49,13 +55,51 @@ def create_node_group_service() -> ServiceDockerData:
     )
 
 
-def is_frontend_service(service_key) -> bool:
+def create_parameter(param_type: str) -> ServiceDockerData:
+    """
+    Represents a parameter (e.g. x=5) in a study
+
+    This is a parametrized node (or param-node in short)
+    """
+    assert param_type in ["number", "boolean", "integer"]  # nosec
+
+    label = f"{param_type.capitalize()} Parameter"
+    author = {"name": "Odei Maiz", "email": "maiz@itis.swiss"}
+
+    return ServiceDockerData(
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/{param_type}",
+        version="1.0.0",
+        type=ServiceType.FRONTEND,
+        name=label,
+        description=f"Parameter of type {param_type}",
+        authors=[
+            author,
+        ],
+        contact=author["email"],
+        inputs={},
+        outputs={
+            "out_1": {
+                "label": label,
+                "description": "",
+                "type": param_type,
+            }
+        },
+    )
+
+
+def is_frontend_service(service_key: str) -> bool:
     return service_key.startswith(FRONTEND_SERVICE_KEY_PREFIX + "/")
 
 
+_factory_functions = [create_file_picker_service, create_node_group_service,] + [
+    functools.partial(create_parameter, param_type=p)
+    for p in ["number", "boolean", "integer"]
+]
+
+
 def iter_service_docker_data() -> Iterator[ServiceDockerData]:
-    for factory in [create_file_picker_service, create_node_group_service]:
-        model_instance = factory()
+    for create in _factory_functions:
+        model_instance = create()
         yield model_instance
 
 

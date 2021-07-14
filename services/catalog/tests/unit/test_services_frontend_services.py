@@ -10,6 +10,8 @@ from simcore_service_catalog.models.schemas.services import (
 from simcore_service_catalog.services.frontend_services import (
     create_file_picker_service,
     create_node_group_service,
+    is_frontend_service,
+    iter_service_docker_data,
 )
 
 
@@ -34,3 +36,9 @@ def tests_create_node_group():
     ), "Expected a source node"
 
     service = ServiceOut.parse_obj(image_metadata.dict(by_alias=True))
+
+
+def test_create_frontend_services_metadata():
+    for meta in iter_service_docker_data():
+        assert isinstance(meta, ServiceDockerData)
+        assert is_frontend_service(meta.key)
