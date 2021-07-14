@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import os
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, Iterator
 
@@ -67,12 +68,12 @@ def project_env_devel_dict(project_slug_dir: Path) -> Dict[str, Any]:
 
 
 @pytest.fixture(scope="function")
-def project_env_devel_environment(project_env_devel_dict: Dict[str, Any], monkeypatch):
+def project_env_devel_environment(
+    project_env_devel_dict: Dict[str, Any], monkeypatch
+) -> Dict[str, Any]:
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
-    monkeypatch.setenv(
-        "DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:TEST_MOCKED_TAG_NOT_PRESENT"
-    )
+    return deepcopy(project_env_devel_dict)
 
 
 @pytest.fixture(scope="module")
@@ -83,6 +84,10 @@ def loop() -> asyncio.AbstractEventLoop:
 
 @pytest.fixture(scope="function")
 def mock_env(monkeypatch) -> None:
+    # TODO: PC-> ANE: Avoid using stand-alone environs setups and
+    # use instead mock_env_devel_environment or project_env_devel_environment
+    # which resemble real environment
+
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
