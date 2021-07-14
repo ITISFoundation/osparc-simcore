@@ -6,7 +6,6 @@
 import json
 import logging
 from pprint import pformat
-from typing import List
 
 from aiohttp import web
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
@@ -27,19 +26,16 @@ from .projects_db import setup_projects_db
 logger = logging.getLogger(__name__)
 
 
-def _create_routes(tag, handlers_module, specs, *, disable_login=False):
+def _create_routes(tag, specs, *handlers_module, disable_login=False):
     """
     :param disable_login: Disables login_required decorator for testing purposes defaults to False
     :type disable_login: bool, optional
     """
     # TODO: Remove 'disable_login' and use instead a mock.patch on the decorator!
 
-    if isinstance(handlers_module, List):
-        handlers = {}
-        for mod in handlers_module:
-            handlers.update(get_handlers_from_namespace(mod))
-    else:
-        handlers = get_handlers_from_namespace(handlers_module)
+    handlers = {}
+    for mod in handlers_module:
+        handlers.update(get_handlers_from_namespace(mod))
 
     if disable_login:
         handlers = {name: hnds.__wrapped__ for name, hnds in handlers.items()}
@@ -79,12 +75,11 @@ def setup_projects(app: web.Application) -> bool:
     setup_projects_db(app)
 
     app.router.add_routes(
-        _create_routes("project", [projects_handlers, projects_node_handlers], specs)
+        _create_routes("project", specs, projects_handlers, projects_node_handlers)
     )
 
     # FIXME: this uses some unimplemented handlers, do we really need to keep this in?
-    # routes = _create_routes("node", nodes_handlers, specs)
-    # app.router.add_routes(routes)
+    # app.router.add_routes( _create_routes("node", specs, nodes_handlers) )
 
     # json-schemas for projects datasets
     # FIXME: schemas are hard-coded to api/V0!!!

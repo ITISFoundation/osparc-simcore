@@ -729,7 +729,7 @@ async def _get_project_lock_state(
         )
     set_user_ids = {x for x, _ in user_session_id_list}
 
-    assert (
+    assert (  # nosec
         len(set_user_ids) <= 1
     )  # nosec  # NOTE: A project can only be opened by one user in one tab at the moment
 
