@@ -6,6 +6,7 @@
 import json
 import logging
 from pprint import pformat
+from typing import List
 
 from aiohttp import web
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
@@ -18,7 +19,7 @@ from servicelib.rest_routing import (
 
 from ..resources import resources
 from ..rest_config import APP_OPENAPI_SPECS_KEY
-from . import projects_handlers
+from . import projects_handlers, projects_node_handlers
 from .config import CONFIG_SECTION_NAME, assert_valid_config
 from .projects_access import setup_projects_access
 from .projects_db import setup_projects_db
@@ -32,7 +33,14 @@ def _create_routes(tag, handlers_module, specs, *, disable_login=False):
     :type disable_login: bool, optional
     """
     # TODO: Remove 'disable_login' and use instead a mock.patch on the decorator!
-    handlers = get_handlers_from_namespace(handlers_module)
+
+    if isinstance(handlers_module, List):
+        handlers = {}
+        for mod in handlers_module:
+            handlers.update(get_handlers_from_namespace(mod))
+    else:
+        handlers = get_handlers_from_namespace(handlers_module)
+
     if disable_login:
         handlers = {name: hnds.__wrapped__ for name, hnds in handlers.items()}
 
@@ -70,8 +78,9 @@ def setup_projects(app: web.Application) -> bool:
     # database API
     setup_projects_db(app)
 
-    routes = _create_routes("project", projects_handlers, specs)
-    app.router.add_routes(routes)
+    app.router.add_routes(
+        _create_routes("project", [projects_handlers, projects_node_handlers], specs)
+    )
 
     # FIXME: this uses some unimplemented handlers, do we really need to keep this in?
     # routes = _create_routes("node", nodes_handlers, specs)
