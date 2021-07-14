@@ -11,6 +11,7 @@ from fastapi.exceptions import HTTPException
 from models_library.services import ServiceDockerData, ServiceType
 
 FRONTEND_SERVICE_KEY_PREFIX = "simcore/services/frontend"
+OM = {"name": "Odei Maiz", "email": "maiz@itis.swiss"}
 
 
 def create_file_picker_service() -> ServiceDockerData:
@@ -20,8 +21,10 @@ def create_file_picker_service() -> ServiceDockerData:
         type=ServiceType.FRONTEND,
         name="File Picker",
         description="File Picker",
-        authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
-        contact="maiz@itis.swiss",
+        authors=[
+            OM,
+        ],
+        contact=OM["email"],
         inputs={},
         outputs={
             "outFile": {
@@ -41,8 +44,10 @@ def create_node_group_service() -> ServiceDockerData:
         type=ServiceType.FRONTEND,
         name="Group",
         description="Group of nodes",
-        authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
-        contact="maiz@itis.swiss",
+        authors=[
+            OM,
+        ],
+        contact=OM["email"],
         inputs={},
         outputs={
             "outFile": {
@@ -63,28 +68,32 @@ def create_parameter(param_type: str) -> ServiceDockerData:
     """
     assert param_type in ["number", "boolean", "integer"]  # nosec
 
-    label = f"{param_type.capitalize()} Parameter"
-    author = {"name": "Odei Maiz", "email": "maiz@itis.swiss"}
+    LABEL = f"{param_type.capitalize()} Parameter"
+    DESCRIPTION = (f"Parameter of type {param_type}",)
 
-    return ServiceDockerData(
+    meta = ServiceDockerData(
         key=f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/{param_type}",
         version="1.0.0",
         type=ServiceType.FRONTEND,
-        name=label,
-        description=f"Parameter of type {param_type}",
+        name=LABEL,
+        description=DESCRIPTION,
         authors=[
-            author,
+            OM,
         ],
-        contact=author["email"],
+        contact=OM["email"],
         inputs={},
         outputs={
             "out_1": {
-                "label": label,
-                "description": "",
+                "label": LABEL,
+                "description": DESCRIPTION,
                 "type": param_type,
             }
         },
     )
+
+    assert meta.outputs  # nosec
+    assert list(meta.outputs.keys()) == ["out_1"], "name used in front-end"  # nosec
+    return meta
 
 
 def is_frontend_service(service_key: str) -> bool:
