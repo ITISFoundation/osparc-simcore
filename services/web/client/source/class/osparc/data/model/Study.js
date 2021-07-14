@@ -236,12 +236,16 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
-    initStudy: function() {
-      this.getWorkbench().initWorkbench();
-    },
-
     buildWorkbench: function() {
       this.getWorkbench().buildWorkbench();
+    },
+
+    initStudy: function() {
+      this.getWorkbench().initWorkbench();
+
+      if (this.isSnapshot()) {
+        this.setReadOnly(true);
+      }
     },
 
     isSnapshot: function() {

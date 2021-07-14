@@ -386,6 +386,8 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.isParameter()) {
         this.__initParameter();
       }
+
+      this.applyReadOnly();
     },
 
     populateNodeUIData: function(nodeUIData) {
@@ -397,7 +399,6 @@ qx.Class.define("osparc.data.model.Node", {
     populateInputOutputData: function(nodeData) {
       this.setInputData(nodeData.inputs);
       this.setInputDataAccess(nodeData.inputAccess);
-      this.applyReadOnlyToForm();
       this.setOutputData(nodeData.outputs);
       this.addInputNodes(nodeData.inputNodes);
       this.addOutputNodes(nodeData.outputNodes);
@@ -655,7 +656,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    applyReadOnlyToForm: function() {
+    applyReadOnly: function() {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       if (study && study.isReadOnly() && this.getPropsForm()) {
         this.getPropsForm().setEnabled(false);
