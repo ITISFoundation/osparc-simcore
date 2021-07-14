@@ -210,6 +210,7 @@ class DaskSchedulerSettings(BaseCustomSettings):
 
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
+
     # docker environs
     SC_BOOT_MODE: Optional[BootModeEnum]
     SC_BOOT_TARGET: Optional[BuildTargetEnum]
