@@ -26,6 +26,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
   events: {
     "takeSnapshot": "qx.event.type.Event",
+    "convertToStudy": "qx.event.type.Event",
     "showParameters": "qx.event.type.Event",
     "showSnapshots": "qx.event.type.Event",
     "openPrimaryStudy": "qx.event.type.Data"
@@ -55,6 +56,17 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
           });
           control.addListener("execute", () => {
             this.fireDataEvent("takeSnapshot");
+          }, this);
+          this._add(control);
+          break;
+        }
+        case "convert-to-study-btn": {
+          control = new osparc.ui.form.FetchButton(this.tr("Convert To Study")).set({
+            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
+            allowGrowX: false
+          });
+          control.addListener("execute", () => {
+            this.fireDataEvent("convertToStudy");
           }, this);
           this._add(control);
           break;
@@ -97,7 +109,10 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       this._add(new qx.ui.core.Spacer(20));
 
       const takeSnapshotBtn = this.getChildControl("take-snapshot-btn");
-      takeSnapshotBtn.setVisibility(osparc.data.Permissions.getInstance().canDo("study.snapshot.create") ? "visible" : "excluded");
+      takeSnapshotBtn.exclude();
+
+      const convertToStudy = this.getChildControl("convert-to-study-btn");
+      convertToStudy.exclude();
 
       const primaryBtn = this.getChildControl("primary-study-btn");
       primaryBtn.exclude();
@@ -105,7 +120,8 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       const snapshotsBtn = this.getChildControl("snapshots-btn");
       snapshotsBtn.exclude();
 
-      this._startStopBtns = this.getChildControl("start-stop-btns");
+      const startStopBtns = this._startStopBtns = this.getChildControl("start-stop-btns");
+      startStopBtns.exclude();
     },
 
     // overriden
@@ -115,35 +131,42 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
         const nodeIds = study.getWorkbench().getPathIds(study.getUi().getCurrentNodeId());
         this._navNodes.populateButtons(nodeIds, "slash");
 
+        const takeSnapshotBtn = this.getChildControl("take-snapshot-btn");
+        const convertToStudyBtn = this.getChildControl("convert-to-study-btn");
         const primaryBtn = this.getChildControl("primary-study-btn");
-        primaryBtn.setVisibility(study.isSnapshot() ? "visible" : "excluded");
+        if (study.isSnapshot()) {
+          takeSnapshotBtn.exclude();
+          convertToStudyBtn.show();
+          primaryBtn.show();
+        } else {
+          takeSnapshotBtn.setVisibility(osparc.data.Permissions.getInstance().canDo("study.snapshot.create") ? "visible" : "excluded");
+          convertToStudyBtn.exclude();
+          primaryBtn.exclude();
+        }
 
-        study.getWorkbench().addListener("nNodesChanged", this.checkSnapshots, this);
-        this.checkSnapshots();
+        study.getWorkbench().addListener("nNodesChanged", this.evalSnapshotsBtn, this);
+        this.evalSnapshotsBtn();
+
+        study.isSnapshot() ? this._startStopBtns.exclude() : this._startStopBtns.show();
       }
     },
 
-    checkSnapshots: function() {
+    evalSnapshotsBtn: function() {
       const study = this.getStudy();
       if (study) {
         const allNodes = study.getWorkbench().getNodes(true);
         const hasIterators = Object.values(allNodes).some(node => node.isIterator());
+        const isSnapshot = study.isSnapshot();
         const snapshotsBtn = this.getChildControl("snapshots-btn");
-        snapshotsBtn.setVisibility(hasIterators ? "visible" : "excluded");
-        if (!hasIterators) {
-          study.hasSnapshots()
-            .then(hasSnapshots => snapshotsBtn.setVisibility(hasSnapshots ? "visible" : "excluded"));
-        }
+        (hasIterators && !isSnapshot) ? snapshotsBtn.show() : snapshotsBtn.exclude();
       }
     },
 
-    __workbenchSelectionChanged: function(msg) {
-      const selectedNodes = msg.getData();
-      this.getStartStopButtons().nodeSelectionChanged(selectedNodes);
-    },
-
     __attachEventHandlers: function() {
-      qx.event.message.Bus.subscribe("changeWorkbenchSelection", this.__workbenchSelectionChanged, this);
+      qx.event.message.Bus.subscribe("changeWorkbenchSelection", e => {
+        const selectedNodes = e.getData();
+        this.getStartStopButtons().nodeSelectionChanged(selectedNodes);
+      }, this);
     }
   }
 });
