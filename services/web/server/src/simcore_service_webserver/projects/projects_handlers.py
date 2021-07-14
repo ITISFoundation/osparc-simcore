@@ -72,7 +72,7 @@ async def create_projects(request: web.Request):
             )
             # clone user project as tempalte
             project, nodes_map = clone_project_document(
-                source_project, forced_copy_project_id=False
+                source_project, forced_copy_project_id=None
             )
             clone_data_coro = copy_data_folders_from_project(
                 request.app, source_project, project, nodes_map, user_id
@@ -86,7 +86,7 @@ async def create_projects(request: web.Request):
                 )
             # clone template as user project
             project, nodes_map = clone_project_document(
-                source_project, forced_copy_project_id=False
+                source_project, forced_copy_project_id=None
             )
             clone_data_coro = copy_data_folders_from_project(
                 request.app, source_project, project, nodes_map, user_id
