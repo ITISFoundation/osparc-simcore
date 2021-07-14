@@ -179,8 +179,10 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
 
 
 class DynamicServicesSettings(BaseCustomSettings):
-    DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED: bool = Field(
-        False, description="Enables/Disables the dynamic_sidecar submodule"
+    # TODO: PC->ANE: refactor dynamic-sidecar settings. One settings per app module
+    # WARNING: THIS IS NOT the same module as dynamic-sidecar
+    DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED: bool = Field(
+        True, description="Enables/Disables the dynamic_sidecar submodule"
     )
 
     # FIXME: PC -> ANE: this module was disabled since no default settings were provided and failed at startup
