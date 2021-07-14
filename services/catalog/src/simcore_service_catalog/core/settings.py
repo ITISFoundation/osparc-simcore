@@ -89,5 +89,10 @@ class AppSettings(BaseSettings):
     background_task_wait_after_failure: PositiveInt = 5  # secs
     access_rights_default_product_name: str = "osparc"
 
+    CATALOG_DEV_FEATURES_ENABLED: bool = Field(
+        False,
+        description="Enables development features. WARNING: make sure it is disabled in production .env file!",
+    )
+
     class Config(_CommonConfig):
         env_prefix = ""
