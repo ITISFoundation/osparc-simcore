@@ -21,50 +21,54 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
   construct: function(primaryStudy) {
     this.__primaryStudy = primaryStudy;
 
-    this.__initModel();
+    this.__cols = {};
+    const model = this.__initModel();
 
-    this.base(arguments, this.__model, {
-      tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj),
-      statusBarVisible: false,
-      initiallyHiddenColumns: [0]
+    this.base(arguments, model, {
+      initiallyHiddenColumns: [this.self().T_POS.ID.col],
+      statusBarVisible: false
     });
 
-    this.__updateTable();
+    this.setColumnWidth(this.self().T_POS.NAME.col, 200);
+    this.setColumnWidth(this.self().T_POS.DATE.col, 120);
+
+    // this.__populateTable();
   },
 
-  members: { // eslint-disable-line qx-rules/no-refs-in-members
-    __primaryStudy: null,
-    __model: null,
-
-    __cols: {
-      "id": {
+  statics: {
+    T_POS: {
+      ID: {
         col: 0,
         label: qx.locale.Manager.tr("StudyId")
       },
-      "name": {
+      NAME: {
         col: 1,
-        label: qx.locale.Manager.tr("Snapshot")
+        label: qx.locale.Manager.tr("Snapshot Name")
+      },
+      DATE: {
+        col: 2,
+        label: qx.locale.Manager.tr("Created at")
       }
-    },
+    }
+  },
+
+  members: {
+    __primaryStudy: null,
+    __cols: null,
 
     getRowData: function(rowIdx) {
-      return this.__model.getRowDataAsMap(rowIdx);
-    },
-
-    __cleanupCols: function() {
-      Object.keys(this.__cols).forEach(key => {
-        if (!["id", "name"].includes(key)) {
-          delete this.__cols[key];
-        }
-      });
+      return this.getTableModel().getRowDataAsMap(rowIdx);
     },
 
     __initModel: function() {
-      const model = this.__model = new qx.ui.table.model.Simple();
+      const model = new qx.ui.table.model.Simple();
 
-      // add data-iterators in columns
-      this.__cleanupCols();
-      const nextCol = this.__cols["name"].col + 1;
+      Object.keys(this.self().T_POS).forEach(colKey => {
+        this.__cols[colKey] = this.self().T_POS[colKey];
+      });
+
+      // add data-iterators to columns
+      const nextCol = Object.keys(this.__cols).length;
       const iterators = this.__primaryStudy.getIterators();
       for (let i=0; i<iterators.length; i++) {
         const dataIterator = iterators[i];
@@ -85,9 +89,11 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
       return model;
     },
 
-    __updateTable: function() {
+    __populateTable: function() {
       const columnModel = this.getTableColumnModel();
-      for (let i=2; i<Object.keys(this.__cols).length; i++) {
+      const initCols = Object.keys(this.self().T_POS).length;
+      const totalCols = Object.keys(this.__cols).length;
+      for (let i=initCols; i<totalCols; i++) {
         columnModel.setDataCellRenderer(i, new qx.ui.table.cellrenderer.Number());
       }
 
@@ -107,8 +113,10 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
               const row = [];
               row[this.__cols["id"].col] = secondaryStudy.uuid;
               row[this.__cols["name"].col] = secondaryStudy.name;
+              const date = row[this.__cols["createdAt"].col] = new Date(secondaryStudy.creationDate);
+              row[this.__cols["createdAt"].col] = osparc.utils.Utils.formatDateAndTime(date);
               // OM: hack for demo for
-              row[2] = i+1;
+              row[Object.keys(this.__cols).length] = i+1;
               rows.push(row);
             }
             this.getTableModel().setData(rows, false);

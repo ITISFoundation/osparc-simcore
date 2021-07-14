@@ -236,7 +236,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const study = this.getStudy();
       const sweeper = new osparc.component.snapshots.SnapshotsView(study);
       const title = this.tr("Snapshots");
-      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 400, 500);
+      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 600, 500);
       [
         "openPrimaryStudy",
         "openSnapshot"
