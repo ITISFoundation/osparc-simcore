@@ -49,14 +49,18 @@ def all_frontend_services(
 def test_only_filepicker_service_gets_some_service_details(
     all_frontend_services: Set[str],
 ):
-    for frontend_service in all_frontend_services:
-        service_key_version = ServiceKeyVersion(key=frontend_service, version="24.34.5")
-        # check that it does not assert
+    # FIXME: PC->SAN: this is ONLY for filepicker??
+    # It should also apply for other front-end functions, right?
+    for frontend_service_key in all_frontend_services:
+
+        if frontend_service_key == "simcore/services/frontend/nodes-group/macros/":
+            # FIXME: PC->OM: define ????
+            continue
+
         service_docker_data: ServiceDockerData = _FRONTEND_SERVICES_CATALOG[
-            service_key_version.key
+            frontend_service_key
         ]
 
         assert isinstance(service_docker_data, ServiceDockerData)
-        assert service_docker_data.key == "simcore/services/frontend/file-picker"
         assert service_docker_data.outputs
         assert service_docker_data.outputs["outFile"].property_type == "data:*/*"
