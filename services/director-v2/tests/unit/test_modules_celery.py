@@ -88,10 +88,10 @@ def test_create_task(
 
 @pytest.mark.parametrize("runtime_requirements", ["cpu", "gpu", "mpi", "gpu:mpi"])
 def test_send_computation_tasks(
-    minimal_celery_config: None,
+    minimal_celery_config,
     minimal_app: FastAPI,
     celery_app: Celery,
-    celery_worker_parameters: None,
+    celery_worker_parameters,
     celery_worker: TestWorkController,
     celery_configuration: CeleryConfig,
     user_id: PositiveInt,

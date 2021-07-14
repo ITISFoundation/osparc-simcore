@@ -57,20 +57,23 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings.DIRECTOR_V0.DIRECTOR_V0_ENABLED:
         director_v0.setup(app, settings.DIRECTOR_V0)
 
-    if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
-        dynamic_services.setup(app, settings.DYNAMIC_SERVICES)
-
     if settings.POSTGRES.DIRECTOR_V2_POSTGRES_ENABLED:
         db.setup(app, settings.POSTGRES)
-
-    if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED:
-        dynamic_sidecar.setup(app)
 
     if settings.CELERY.DIRECTOR_V2_CELERY_ENABLED:
         celery.setup(app, settings.CELERY)
 
     if settings.CELERY_SCHEDULER.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED:
         scheduler.setup(app)
+
+    if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
+        dynamic_services.setup(app, settings.DYNAMIC_SERVICES)
+
+    if settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR and (
+        settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
+        and settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED
+    ):
+        dynamic_sidecar.setup(app)
 
     # setup app --
     app.add_event_handler("startup", on_startup)
