@@ -125,6 +125,9 @@ async def _get_snapshot_parameters_handler(
     return params
 
 
+# API ROUTES HANDLERS ---------------------------------------------------------
+
+
 @validate_arguments
 async def list_snapshots(project_id: UUID) -> List[Dict[str, Any]]:
     # project_id is param-project?
