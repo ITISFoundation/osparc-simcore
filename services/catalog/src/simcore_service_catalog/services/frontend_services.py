@@ -149,7 +149,7 @@ def setup_frontend_services(app: FastAPI):
         catalog: List[Dict[str, Any]] = []
 
         if app.state.settings.CATALOG_DEV_FEATURES_ENABLED:
-            # TODO: Excludes parameter services. STILL UNDER DEVELOPMENT
+            # WARNING: Excludes parameter services. STILL UNDER DEVELOPMENT
             for metadata in iter_service_docker_data():
                 if not is_parameter_service(metadata.key):
                     catalog.append(_as_dict(metadata))
