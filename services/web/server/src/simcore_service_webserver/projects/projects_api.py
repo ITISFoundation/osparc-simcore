@@ -56,7 +56,7 @@ from ..storage_api import (
 from ..users_api import get_user_name, is_user_guest
 from .config import CONFIG_SECTION_NAME
 from .project_lock import ProjectLockError, get_project_locked_state, lock_project
-from .projects_db import APP_PROJECT_DBAPI
+from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 
 log = logging.getLogger(__name__)
 
@@ -86,7 +86,8 @@ async def get_project_for_user(
     :return: schema-compliant project data
     :rtype: Dict
     """
-    db = app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    assert db  # nosec
 
     project: Dict = {}
     is_template = False

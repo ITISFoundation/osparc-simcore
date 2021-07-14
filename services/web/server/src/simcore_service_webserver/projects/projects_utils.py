@@ -172,20 +172,20 @@ async def project_uses_available_services(
     return needed_services.issubset(available_services)
 
 
-def get_project_unavilable_services(
+def get_project_unavailable_services(
     project: Dict[str, Any], available_services: List[Dict[str, Any]]
 ) -> Set[Tuple[str, str]]:
     # get project services
-    needed_services: Set[Tuple[str, str]] = {
+    required: Set[Tuple[str, str]] = {
         (s["key"], s["version"]) for _, s in project["workbench"].items()
     }
 
     # get available services
-    available_services: Set[Tuple[str, str]] = {
+    available: Set[Tuple[str, str]] = {
         (s["key"], s["version"]) for s in available_services
     }
 
-    return needed_services - available_services
+    return required - available
 
 
 async def project_get_depending_nodes(
