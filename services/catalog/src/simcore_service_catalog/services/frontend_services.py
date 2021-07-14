@@ -2,119 +2,19 @@
     Catalog of i/o metadata for functions implemented in the front-end
 """
 
-
-import functools
-from typing import Any, Dict, Iterator, List
+from typing import Any, Dict, List
 
 from fastapi import status
 from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
-from models_library.services import ServiceDockerData, ServiceType
+from models_library.frontend_services_catalog import (
+    is_frontend_service,
+    is_parameter_service,
+    iter_service_docker_data,
+)
+from models_library.services import ServiceDockerData
 
-FRONTEND_SERVICE_KEY_PREFIX = "simcore/services/frontend"
-OM = {"name": "Odei Maiz", "email": "maiz@itis.swiss"}
-
-
-def _create_file_picker_service() -> ServiceDockerData:
-    return ServiceDockerData(
-        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/file-picker",
-        version="1.0.0",
-        type=ServiceType.FRONTEND,
-        name="File Picker",
-        description="File Picker",
-        authors=[
-            OM,
-        ],
-        contact=OM["email"],
-        inputs={},
-        outputs={
-            "outFile": {
-                "displayOrder": 0,
-                "label": "File",
-                "description": "Chosen File",
-                "type": "data:*/*",
-            }
-        },
-    )
-
-
-def _create_node_group_service() -> ServiceDockerData:
-    return ServiceDockerData(
-        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/nodes-group",
-        version="1.0.0",
-        type=ServiceType.FRONTEND,
-        name="Group",
-        description="Group of nodes",
-        authors=[
-            OM,
-        ],
-        contact=OM["email"],
-        inputs={},
-        outputs={
-            "outFile": {
-                "displayOrder": 0,
-                "label": "File",
-                "description": "Chosen File",
-                "type": "data:*/*",
-            }
-        },
-    )
-
-
-def _create_parameter(param_type: str) -> ServiceDockerData:
-    """
-    Represents a parameter (e.g. x=5) in a study
-
-    This is a parametrized node (or param-node in short)
-    """
-    assert param_type in ["number", "boolean", "integer"]  # nosec
-
-    LABEL = f"{param_type.capitalize()} Parameter"
-    DESCRIPTION = f"Parameter of type {param_type}"
-
-    meta = ServiceDockerData(
-        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/{param_type}",
-        version="1.0.0",
-        type=ServiceType.FRONTEND,
-        name=LABEL,
-        description=DESCRIPTION,
-        authors=[
-            OM,
-        ],
-        contact=OM["email"],
-        inputs={},
-        outputs={
-            "out_1": {
-                "label": LABEL,
-                "description": DESCRIPTION,
-                "type": param_type,
-            }
-        },
-    )
-
-    assert meta.outputs  # nosec
-    assert list(meta.outputs.keys()) == ["out_1"], "name used in front-end"  # nosec
-    return meta
-
-
-def is_frontend_service(service_key: str) -> bool:
-    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/")
-
-
-def is_parameter_service(service_key: str) -> bool:
-    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/")
-
-
-_FACTORY_FUNCTIONS = [_create_file_picker_service, _create_node_group_service,] + [
-    functools.partial(_create_parameter, param_type=p)
-    for p in ["number", "boolean", "integer"]
-]
-
-
-def iter_service_docker_data() -> Iterator[ServiceDockerData]:
-    for create in _FACTORY_FUNCTIONS:
-        model_instance = create()
-        yield model_instance
+__all__ = ["is_frontend_service", "get_frontend_service", "setup_frontend_services"]
 
 
 def _as_dict(model_instance: ServiceDockerData) -> Dict[str, Any]:

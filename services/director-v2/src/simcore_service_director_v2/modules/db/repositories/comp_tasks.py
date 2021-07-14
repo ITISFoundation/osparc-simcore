@@ -4,16 +4,12 @@ from typing import List, Optional
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
+from models_library.frontend_services_catalog import iter_service_docker_data
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
-from models_library.services import (
-    Author,
-    ServiceDockerData,
-    ServiceKeyVersion,
-    ServiceType,
-)
+from models_library.services import ServiceDockerData, ServiceKeyVersion
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
@@ -28,33 +24,7 @@ from ._base import BaseRepository
 logger = logging.getLogger(__name__)
 
 
-@log_decorator(logger=logger)
-def _get_fake_service_details(
-    service: ServiceKeyVersion,
-) -> Optional[ServiceDockerData]:
-
-    if "file-picker" in service.key:
-        file_picker_outputs = {
-            "outFile": {
-                "label": "File",
-                "displayOrder": 0,
-                "description": "Chosen File",
-                "type": "data:*/*",
-            }
-        }
-        return ServiceDockerData(
-            **service.dict(),
-            name="File Picker",
-            description="File Picker",
-            authors=[
-                Author(name="Odei Maiz", email="maiz@itis.swiss", affiliation="IT'IS")
-            ],
-            contact="maiz@itis.swiss",
-            inputs={},
-            outputs=file_picker_outputs,
-            type=ServiceType.FRONTEND,
-        )
-    return None
+_FRONTEND_SERVICES_CATALOG = {meta.key: meta for meta in iter_service_docker_data()}
 
 
 async def _generate_tasks_list_from_project(
@@ -73,17 +43,15 @@ async def _generate_tasks_list_from_project(
             version=node.version,
         )
         node_class = to_node_class(service_key_version.key)
-        node_details: ServiceDockerData = None
-        node_extras: ServiceExtras = None
+        node_details: Optional[ServiceDockerData] = None
+        node_extras: Optional[ServiceExtras] = None
         if node_class == NodeClass.FRONTEND:
-            node_details = _get_fake_service_details(service_key_version)
+            node_details = _FRONTEND_SERVICES_CATALOG.get(service_key_version.key, None)
         else:
             node_details = await director_client.get_service_details(
                 service_key_version
             )
-            node_extras: ServiceExtras = await director_client.get_service_extras(
-                service_key_version
-            )
+            node_extras = await director_client.get_service_extras(service_key_version)
         if not node_details:
             continue
 
