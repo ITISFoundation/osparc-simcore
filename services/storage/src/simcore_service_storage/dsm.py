@@ -1017,7 +1017,27 @@ class DataStorageManager:
         self, location: str, dry_run: bool
     ) -> Dict[str, Any]:
 
-        to_remove = []
+        PRUNE_CHUNK_SIZE = 20
+
+        removed: List[str] = []
+        to_remove: List[str] = []
+
+        async def _prune_db_table(conn):
+            if not dry_run:
+                await conn.execute(
+                    file_meta_data.delete().where(
+                        file_meta_data.c.object_name.in_(to_remove)
+                    )
+                )
+            logger.info(
+                "%s %s orphan items",
+                "Would have deleted" if dry_run else "Deleted",
+                len(to_remove),
+            )
+            removed.extend(to_remove)
+            to_remove.clear()
+
+        # ----------
 
         assert (  # nosec
             location == SIMCORE_S3_STR
@@ -1051,20 +1071,23 @@ class DataStorageManager:
                     response = await s3_client.list_objects_v2(
                         Bucket=self.simcore_bucket_name, Prefix=s3_key
                     )
-                    if response.get("KeyCount", 0) == 0:  # this file does not exist
+                    if response.get("KeyCount", 0) == 0:
+                        # this file does not exist in S3
                         to_remove.append(s3_key)
+
+                    if len(to_remove) >= PRUNE_CHUNK_SIZE:
+                        await _prune_db_table(conn)
+
+                if to_remove:
+                    await _prune_db_table(conn)
+
+                assert len(to_remove) == 0  # nosec
+                assert len(removed) <= number_of_rows_in_db  # nosec
 
                 logger.info(
                     "%s %d entries ",
                     "Would delete" if dry_run else "Deleting",
-                    len(to_remove),
+                    len(removed),
                 )
-                if not dry_run:
-                    await conn.execute(
-                        file_meta_data.delete().where(
-                            file_meta_data.c.object_name.in_(to_remove)
-                        )
-                    )
-                    logger.info("Deleted %s orphan items", len(to_remove))
 
-        return {"removed": to_remove}
+        return {"removed": removed}
