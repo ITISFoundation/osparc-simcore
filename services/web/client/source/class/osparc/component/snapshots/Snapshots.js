@@ -29,10 +29,10 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
       statusBarVisible: false
     });
 
-    this.setColumnWidth(this.self().T_POS.NAME.col, 200);
-    this.setColumnWidth(this.self().T_POS.DATE.col, 120);
+    this.setColumnWidth(this.self().T_POS.NAME.col, 220);
+    this.setColumnWidth(this.self().T_POS.DATE.col, 130);
 
-    // this.__populateTable();
+    this.__populateTable();
   },
 
   statics: {
@@ -47,7 +47,7 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
       },
       DATE: {
         col: 2,
-        label: qx.locale.Manager.tr("Created at")
+        label: qx.locale.Manager.tr("Created At")
       }
     }
   },
@@ -111,12 +111,12 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
                 continue;
               }
               const row = [];
-              row[this.__cols["id"].col] = secondaryStudy.uuid;
-              row[this.__cols["name"].col] = secondaryStudy.name;
-              const date = row[this.__cols["createdAt"].col] = new Date(secondaryStudy.creationDate);
-              row[this.__cols["createdAt"].col] = osparc.utils.Utils.formatDateAndTime(date);
+              row[this.self().T_POS.ID.col] = secondaryStudy.uuid;
+              row[this.self().T_POS.NAME.col] = secondaryStudy.name;
+              const date = new Date(secondaryStudy.creationDate);
+              row[this.self().T_POS.DATE.col] = osparc.utils.Utils.formatDateAndTime(date);
               // OM: hack for demo for
-              row[Object.keys(this.__cols).length] = i+1;
+              row[Object.keys(this.self().T_POS).length] = i+1;
               rows.push(row);
             }
             this.getTableModel().setData(rows, false);
