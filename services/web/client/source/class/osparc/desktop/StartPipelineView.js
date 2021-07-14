@@ -82,9 +82,11 @@ qx.Class.define("osparc.desktop.StartPipelineView", {
         allowGrowX: false
       });
       btnsLayout.add(startBtn);
-      startBtn.addListener("execute", () => this.fireDataEvent("startPipeline", {
-        "useCache": useCacheCB.getValue()
-      }));
+      startBtn.addListener("execute", () => {
+        this.fireDataEvent("startPipeline", {
+          "useCache": useCacheCB.getValue()
+        });
+      });
       this._add(btnsLayout);
     }
   }

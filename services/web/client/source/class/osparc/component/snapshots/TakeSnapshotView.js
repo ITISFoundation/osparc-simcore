@@ -73,7 +73,11 @@ qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
           });
           const commandEnter = new qx.ui.command.Command("Enter");
           control.setCommand(commandEnter);
-          control.addListener("execute", () => this.fireEvent("takeSnapshot"));
+          control.addListener("execute", () => {
+            // releaseCapture to make sure all changes are applied
+            this.__renderer.releaseCapture();
+            this.fireEvent("takeSnapshot");
+          });
           break;
         }
       }
@@ -82,7 +86,8 @@ qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
 
     __buildForm: function() {
       const form = this.__form = new qx.ui.form.Form();
-      this._add(new qx.ui.form.renderer.Single(form));
+      const renderer = this.__renderer = new qx.ui.form.renderer.Single(form);
+      this._add(renderer);
 
       const study = this.getStudy();
 

@@ -107,9 +107,9 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
           const commandEnter = new qx.ui.command.Command("Enter");
           control.setCommand(commandEnter);
           control.addListener("execute", () => {
-            control.focus(); // unfocus to apply changes
-            setTimeout(() => this.fireEvent("editParameter"), 10);
-            // this.fireEvent("editParameter");
+            // releaseCapture to make sure all changes are applied
+            this.__renderer.releaseCapture();
+            this.fireEvent("editParameter");
           });
           break;
         }
@@ -119,7 +119,8 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
 
     __buildForm: function() {
       const form = this.__form = new qx.ui.form.Form();
-      this._add(new qx.ui.form.renderer.Single(form));
+      const renderer = this.__renderer = new qx.ui.form.renderer.Single(form);
+      this._add(renderer);
 
       const node = this.getNode();
 
