@@ -103,7 +103,7 @@ async def upload_file(
         #  - Review timeout config (see api/dependencies/files.py)
         #
         async with httpx.AsyncClient(
-            timeout=httpx.Timeout(5.0, read=60.0, write=60.0)
+            timeout=httpx.Timeout(5.0, read=60.0, write=3600.0)
         ) as client:
             assert file_meta.content_type  # nosec
 
