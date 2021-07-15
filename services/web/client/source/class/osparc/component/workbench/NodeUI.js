@@ -140,9 +140,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     populateNodeLayout: function() {
       const node = this.getNode();
       node.bind("label", this, "caption");
-      if (node.isContainer()) {
-        this.setIcon("@FontAwesome5Solid/folder-open/14");
-      }
       const metaData = node.getMetaData();
       if ((metaData && metaData.inputs && Object.keys(metaData.inputs).length) || this.getNode().isContainer()) {
         this._createUIPorts(true);
@@ -153,12 +150,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (node.isComputational() || node.isFilePicker()) {
         node.getStatus().bind("progress", this.__progressBar, "value");
       }
-      /*
-      node.getStatus().bind("running", this, "decorator", {
-        // Paint borders
-        converter: state => osparc.utils.StatusUI.getBorderDecorator(state)
-      });
-      */
     },
 
     __hideExtraElements: function() {
