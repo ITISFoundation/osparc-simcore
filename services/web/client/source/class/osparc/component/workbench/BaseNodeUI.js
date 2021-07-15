@@ -106,18 +106,6 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       throw new Error("Abstract method called!");
     },
 
-    _turnIntoCircledUI: function(width, radius) {
-      this.set({
-        width: width,
-        maxWidth: width,
-        minWidth: width,
-        minHeight: 60
-      });
-      this.getContentElement().setStyles({
-        "border-radius": radius+"px"
-      });
-    },
-
     getInputPort: function() {
       return this._inputLayout;
     },

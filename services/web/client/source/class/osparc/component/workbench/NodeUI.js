@@ -57,6 +57,13 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       nullable: false
     },
 
+    type: {
+      check: ["normal", "file", "iterator", "iterator-iterated", "iterator-connected", "parameter"],
+      init: "normal",
+      nullable: false,
+      apply: "__applyType"
+    },
+
     thumbnail: {
       check: "String",
       nullable: true,
@@ -73,6 +80,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   members: {
     __progressBar: null,
     __thumbnail: null,
+    __svgWorkbenchCanvas: null,
 
     getNodeType: function() {
       return "service";
@@ -137,7 +145,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       chipContainer.add(nodeStatus);
     },
 
-    populateNodeLayout: function() {
+    populateNodeLayout: function(study, svgWorkbenchCanvas) {
       const node = this.getNode();
       node.bind("label", this, "caption");
       const metaData = node.getMetaData();
@@ -149,6 +157,19 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
       if (node.isComputational() || node.isFilePicker()) {
         node.getStatus().bind("progress", this.__progressBar, "value");
+      }
+
+      if (node.isFilePicker()) {
+        this.setType("file");
+      } else if (node.isParameter()) {
+        this.setType("parameter");
+      } else if (node.isIterator()) {
+        if (study.isSnapshot()) {
+          this.setType("iterator-iterated");
+        } else {
+          this.__svgWorkbenchCanvas = svgWorkbenchCanvas;
+          this.setType("iterator");
+        }
       }
     },
 
@@ -165,7 +186,36 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
     },
 
-    turnIntoFileUI: function() {
+    __applyType: function(type) {
+      switch (type) {
+        case "file":
+          this.__turnIntoFileUI();
+          break;
+        case "parameter":
+          this.__turnIntoParameterUI();
+          break;
+        case "iterator":
+          this.__turnIntoIteratorPrimary();
+          break;
+        case "iterator-iterated":
+          this.__turnIntoIteratorSnaphot();
+          break;
+      }
+    },
+
+    __turnIntoCircledUI: function(width, radius) {
+      this.set({
+        width: width,
+        maxWidth: width,
+        minWidth: width,
+        minHeight: 60
+      });
+      this.getContentElement().setStyles({
+        "border-radius": radius+"px"
+      });
+    },
+
+    __turnIntoFileUI: function() {
       const outputs = this.getNode().getOutputs();
       if ([null, ""].includes(osparc.file.FilePicker.getOutput(outputs))) {
         // no output selected
@@ -173,7 +223,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
 
       const width = 120;
-      this._turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
+      this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
       this.__hideExtraElements();
 
       // two lines
@@ -202,10 +252,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.fireEvent("nodeMoving");
     },
 
-    turnIntoParameterUI: function() {
+    __turnIntoParameterUI: function() {
       const width = 90;
       const radius = 32;
-      this._turnIntoCircledUI(width, radius);
+      this.__turnIntoCircledUI(width, radius);
       this.__hideExtraElements();
 
       const label = new qx.ui.basic.Label().set({
@@ -230,21 +280,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       });
     },
 
-    turnIntoIteratorPrimary: function(canvas) {
-      const width = 150;
-      this._turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
-
-      const nShadows = 2;
-      this.shadows = [];
-      for (let i=0; i<nShadows; i++) {
-        const nodeUIShadow = canvas.drawNodeUI(width, 62, this.self().CIRCLED_RADIUS);
-        this.shadows.push(nodeUIShadow);
-      }
-    },
-
-    turnIntoIteratorSnaphot: function() {
+    __turnIntoIteratorSnaphot: function() {
       const width = 120;
-      this._turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
+      this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
       this.__hideExtraElements();
 
       const firstOutput = this.getNode().getFirstOutput();
@@ -260,6 +298,20 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this._inputOutputLayout.addAt(label, 1, {
           flex: 1
         });
+      }
+    },
+
+    __turnIntoIteratorPrimary: function() {
+      const width = 150;
+      this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
+
+      if (this.__svgWorkbenchCanvas) {
+        const nShadows = 2;
+        this.shadows = [];
+        for (let i=0; i<nShadows; i++) {
+          const nodeUIShadow = this.__svgWorkbenchCanvas.drawNodeUI(width, 62, this.self().CIRCLED_RADIUS);
+          this.shadows.push(nodeUIShadow);
+        }
       }
     },
 

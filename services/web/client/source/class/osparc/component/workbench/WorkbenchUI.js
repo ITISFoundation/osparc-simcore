@@ -442,20 +442,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       const nodeUI = new osparc.component.workbench.NodeUI(node);
       this.bind("scale", nodeUI, "scale");
-      nodeUI.populateNodeLayout();
+      nodeUI.populateNodeLayout(this.getStudy(), this.__svgWidgetWorkbench);
       this.__createDragDropMechanism(nodeUI);
-
-      if (node.isFilePicker()) {
-        nodeUI.turnIntoFileUI();
-      } else if (node.isParameter()) {
-        nodeUI.turnIntoParameterUI();
-      } else if (node.isIterator()) {
-        if (this.getStudy().isSnapshot()) {
-          nodeUI.turnIntoIteratorSnaphot();
-        } else {
-          nodeUI.turnIntoIteratorPrimary(this.__svgWidgetWorkbench);
-        }
-      }
 
       return nodeUI;
     },
