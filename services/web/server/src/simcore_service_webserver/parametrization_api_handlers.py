@@ -9,7 +9,7 @@ from pydantic.decorator import validate_arguments
 from pydantic.error_wrappers import ValidationError
 from simcore_service_webserver.parametrization_models import Snapshot
 
-from ._meta import api_version_prefix
+from ._meta import api_version_prefix as vtag
 from .constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from .parametrization_models import Snapshot, SnapshotApiModel
 
@@ -46,7 +46,7 @@ routes = web.RouteTableDef()
 
 
 @routes.get(
-    f"/{api_version_prefix}/projects/{{project_id}}/snapshots",
+    f"/{vtag}/projects/{{project_id}}/snapshots",
     name="_list_snapshots_handler",
 )
 @handle_request_errors
@@ -77,7 +77,7 @@ async def _list_snapshots_handler(request: web.Request):
 
 
 @routes.get(
-    f"/{api_version_prefix}/projects/{{project_id}}/snapshots/{{snapshot_id}}",
+    f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}",
     name="_get_snapshot_handler",
 )
 @handle_request_errors
@@ -92,7 +92,7 @@ async def _get_snapshot_handler(request: web.Request):
 
 
 @routes.post(
-    f"/{api_version_prefix}/projects/{{project_id}}/snapshots",
+    f"/{vtag}/projects/{{project_id}}/snapshots",
     name="_create_snapshot_handler",
 )
 @handle_request_errors
@@ -108,7 +108,7 @@ async def _create_snapshot_handler(request: web.Request):
 
 
 @routes.get(
-    f"/{api_version_prefix}/projects/{{project_id}}/snapshots/{{snapshot_id}}/parameters",
+    f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}/parameters",
     name="_get_snapshot_parameters_handler",
 )
 @handle_request_errors
