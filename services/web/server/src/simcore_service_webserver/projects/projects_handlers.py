@@ -1,7 +1,6 @@
 """ Handlers for CRUD operations on /projects/
 
 """
-# pylint: disable=too-many-branches
 
 import json
 import logging
@@ -29,7 +28,7 @@ from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import (
     clone_project_document,
-    get_project_unavilable_services,
+    get_project_unavailable_services,
     project_uses_available_services,
 )
 
@@ -51,8 +50,8 @@ log = logging.getLogger(__name__)
 async def create_projects(request: web.Request):
     # TODO: keep here since is async and parser thinks it is a handler
 
-    user_id = request[RQT_USERID_KEY]
-    db = request.config_dict[APP_PROJECT_DBAPI]
+    user_id: int = request[RQT_USERID_KEY]
+    db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
 
     template_uuid = request.query.get("from_template")
     as_template = request.query.get("as_template")
@@ -73,7 +72,7 @@ async def create_projects(request: web.Request):
             )
             # clone user project as tempalte
             project, nodes_map = clone_project_document(
-                source_project, forced_copy_project_id=False
+                source_project, forced_copy_project_id=None
             )
             clone_data_coro = copy_data_folders_from_project(
                 request.app, source_project, project, nodes_map, user_id
@@ -87,7 +86,7 @@ async def create_projects(request: web.Request):
                 )
             # clone template as user project
             project, nodes_map = clone_project_document(
-                source_project, forced_copy_project_id=False
+                source_project, forced_copy_project_id=None
             )
             clone_data_coro = copy_data_folders_from_project(
                 request.app, source_project, project, nodes_map, user_id
@@ -212,12 +211,17 @@ async def get_project(request: web.Request):
     """Returns all projects accessible to a user (not necesarly owned)"""
     # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
+    try:
+        project_uuid = request.match_info["project_id"]
+    except KeyError as err:
+        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+
     user_available_services: List[
         Dict
     ] = await catalog.get_services_for_user_in_product(
         request.app, user_id, product_name, only_key_versions=True
     )
-    project_uuid = request.match_info.get("project_id")
+
     try:
         project = await projects_api.get_project_for_user(
             request.app,
@@ -227,7 +231,7 @@ async def get_project(request: web.Request):
             include_state=True,
         )
         if not await project_uses_available_services(project, user_available_services):
-            unavilable_services = get_project_unavilable_services(
+            unavilable_services = get_project_unavailable_services(
                 project, user_available_services
             )
             formatted_services = ", ".join(
@@ -267,14 +271,20 @@ async def replace_project(request: web.Request):
 
     :raises web.HTTPNotFound: cannot find project id in repository
     """
-    user_id = request[RQT_USERID_KEY]
-    project_uuid = request.match_info.get("project_id")
-    new_project = await request.json()
+    user_id: int = request[RQT_USERID_KEY]
+    try:
+        project_uuid = request.match_info["project_id"]
+        new_project = await request.json()
+
+    except KeyError as err:
+        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+    except json.JSONDecodeError as exc:
+        raise web.HTTPBadRequest(reason="Invalid request body") from exc
 
     # Prune state field (just in case)
     new_project.pop("state", None)
 
-    db = request.config_dict[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
     await check_permission(
         request,
         "project.update | project.workbench.node.inputs.update",
@@ -330,8 +340,12 @@ async def replace_project(request: web.Request):
 @permission_required("project.delete")
 async def delete_project(request: web.Request):
     # first check if the project exists
-    user_id = request[RQT_USERID_KEY]
-    project_uuid = request.match_info.get("project_id")
+    user_id: int = request[RQT_USERID_KEY]
+    try:
+        project_uuid = request.match_info["project_id"]
+    except KeyError as err:
+        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+
     try:
         await projects_api.get_project_for_user(
             request.app,
@@ -339,7 +353,7 @@ async def delete_project(request: web.Request):
             user_id=user_id,
             include_templates=True,
         )
-        project_users: Set[int] = {}
+        project_users: Set[int] = set()
         with managed_resource(user_id, None, request.app) as rt:
             project_users = {
                 uid
@@ -379,9 +393,15 @@ class HTTPLocked(web.HTTPClientError):
 @login_required
 @permission_required("project.open")
 async def open_project(request: web.Request) -> web.Response:
-    user_id = request[RQT_USERID_KEY]
-    project_uuid = request.match_info.get("project_id")
-    client_session_id = await request.json()
+    user_id: int = request[RQT_USERID_KEY]
+    try:
+        project_uuid = request.match_info["project_id"]
+        client_session_id = await request.json()
+    except KeyError as err:
+        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+    except json.JSONDecodeError as exc:
+        raise web.HTTPBadRequest(reason="Invalid request body") from exc
+
     try:
         project = await projects_api.get_project_for_user(
             request.app,
@@ -421,9 +441,15 @@ async def open_project(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.close")
 async def close_project(request: web.Request) -> web.Response:
-    user_id = request[RQT_USERID_KEY]
-    project_uuid = request.match_info.get("project_id")
-    client_session_id = await request.json()
+    user_id: int = request[RQT_USERID_KEY]
+    try:
+        project_uuid = request.match_info["project_id"]
+        client_session_id = await request.json()
+
+    except KeyError as err:
+        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+    except json.JSONDecodeError as exc:
+        raise web.HTTPBadRequest(reason="Invalid request body") from exc
 
     try:
         # ensure the project exists
@@ -447,11 +473,10 @@ async def close_project(request: web.Request) -> web.Response:
 async def state_project(request: web.Request) -> web.Response:
     from servicelib.rest_utils import extract_and_validate
 
-    user_id = request[RQT_USERID_KEY]
-    path, _, _ = await extract_and_validate(request)
+    user_id: int = request[RQT_USERID_KEY]
 
-    user_id = request[RQT_USERID_KEY]
-    project_uuid = path.get("project_id")
+    path, _, _ = await extract_and_validate(request)
+    project_uuid = path["project_id"]
 
     # check that project exists and queries state
     validated_project = await projects_api.get_project_for_user(
@@ -468,8 +493,13 @@ async def state_project(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.read")
 async def get_active_project(request: web.Request) -> web.Response:
-    user_id = request[RQT_USERID_KEY]
-    client_session_id = request.query["client_session_id"]
+    user_id: int = request[RQT_USERID_KEY]
+
+    try:
+        client_session_id = request.query["client_session_id"]
+
+    except KeyError as err:
+        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
 
     try:
         project = None
@@ -491,105 +521,3 @@ async def get_active_project(request: web.Request) -> web.Response:
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason="Project not found") from exc
-
-
-@login_required
-@permission_required("project.node.create")
-async def create_node(request: web.Request) -> web.Response:
-    user_id = request[RQT_USERID_KEY]
-    project_uuid = request.match_info.get("project_id")
-    body = await request.json()
-
-    try:
-        # ensure the project exists
-
-        await projects_api.get_project_for_user(
-            request.app,
-            project_uuid=project_uuid,
-            user_id=user_id,
-            include_templates=True,
-        )
-        data = {
-            "node_id": await projects_api.add_project_node(
-                request,
-                project_uuid,
-                user_id,
-                body["service_key"],
-                body["service_version"],
-                body["service_id"] if "service_id" in body else None,
-            )
-        }
-        return web.json_response({"data": data}, status=web.HTTPCreated.status_code)
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
-
-
-@login_required
-@permission_required("project.node.read")
-async def get_node(request: web.Request) -> web.Response:
-    user_id = request[RQT_USERID_KEY]
-    project_uuid = request.match_info.get("project_id")
-    node_uuid = request.match_info.get("node_id")
-    try:
-        # ensure the project exists
-
-        await projects_api.get_project_for_user(
-            request.app,
-            project_uuid=project_uuid,
-            user_id=user_id,
-            include_templates=True,
-        )
-
-        node_details = await projects_api.get_project_node(
-            request, project_uuid, user_id, node_uuid
-        )
-        return web.json_response({"data": node_details})
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
-
-
-@login_required
-@permission_required("project.node.delete")
-async def delete_node(request: web.Request) -> web.Response:
-    user_id = request[RQT_USERID_KEY]
-    project_uuid = request.match_info.get("project_id")
-    node_uuid = request.match_info.get("node_id")
-    try:
-        # ensure the project exists
-
-        await projects_api.get_project_for_user(
-            request.app,
-            project_uuid=project_uuid,
-            user_id=user_id,
-            include_templates=True,
-        )
-
-        await projects_api.delete_project_node(
-            request, project_uuid, user_id, node_uuid
-        )
-
-        raise web.HTTPNoContent(content_type="application/json")
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
-
-
-@login_required
-@permission_required("project.tag.*")
-async def add_tag(request: web.Request):
-    uid, db = request[RQT_USERID_KEY], request.config_dict[APP_PROJECT_DBAPI]
-    tag_id, study_uuid = (
-        request.match_info.get("tag_id"),
-        request.match_info.get("study_uuid"),
-    )
-    return await db.add_tag(project_uuid=study_uuid, user_id=uid, tag_id=int(tag_id))
-
-
-@login_required
-@permission_required("project.tag.*")
-async def remove_tag(request: web.Request):
-    uid, db = request[RQT_USERID_KEY], request.config_dict[APP_PROJECT_DBAPI]
-    tag_id, study_uuid = (
-        request.match_info.get("tag_id"),
-        request.match_info.get("study_uuid"),
-    )
-    return await db.remove_tag(project_uuid=study_uuid, user_id=uid, tag_id=int(tag_id))

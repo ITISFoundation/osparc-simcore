@@ -247,9 +247,13 @@ async def synchronise_meta_data_table(request: web.Request):
             async def _go():
                 timeout = settings.STORAGE_SYNC_METADATA_TIMEOUT
                 try:
-                    await asyncio.wait_for(sync_coro, timeout=timeout)
+                    result = await asyncio.wait_for(sync_coro, timeout=timeout)
+                    log.info(
+                        "Sync metadata table completed: %d entries removed",
+                        len(result.get("removed", [])),
+                    )
                 except asyncio.TimeoutError:
-                    log.error("Sync metadata table timedout (%s seconds)", timeout)
+                    log.error("Sync metadata table timed out (%s seconds)", timeout)
 
             asyncio.create_task(_go(), name="f&f sync_task")
         else:

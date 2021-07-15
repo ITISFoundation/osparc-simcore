@@ -1,72 +1,26 @@
-from typing import Any, Dict, Iterator, List
+"""
+    Catalog of i/o metadata for functions implemented in the front-end
+"""
+
+from typing import Any, Dict
 
 from fastapi import status
+from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
-from models_library.services import ServiceDockerData, ServiceType
+from models_library.frontend_services_catalog import (
+    is_frontend_service,
+    is_parameter_service,
+    iter_service_docker_data,
+)
+from models_library.services import ServiceDockerData
 
-FRONTEND_SERVICE_KEY_PREFIX = "simcore/services/frontend"
-
-
-def create_file_picker_service() -> ServiceDockerData:
-    return ServiceDockerData(
-        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/file-picker",
-        version="1.0.0",
-        type=ServiceType.FRONTEND,
-        name="File Picker",
-        description="File Picker",
-        authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
-        contact="maiz@itis.swiss",
-        inputs={},
-        outputs={
-            "outFile": {
-                "displayOrder": 0,
-                "label": "File",
-                "description": "Chosen File",
-                "type": "data:*/*",
-            }
-        },
-    )
+__all__ = ["is_frontend_service", "get_frontend_service", "setup_frontend_services"]
 
 
-def create_node_group_service() -> ServiceDockerData:
-    return ServiceDockerData(
-        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/nodes-group",
-        version="1.0.0",
-        type=ServiceType.FRONTEND,
-        name="Group",
-        description="Group of nodes",
-        authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
-        contact="maiz@itis.swiss",
-        inputs={},
-        outputs={
-            "outFile": {
-                "displayOrder": 0,
-                "label": "File",
-                "description": "Chosen File",
-                "type": "data:*/*",
-            }
-        },
-    )
-
-
-def is_frontend_service(service_key) -> bool:
-    return service_key.startswith(FRONTEND_SERVICE_KEY_PREFIX + "/")
-
-
-def iter_service_docker_data() -> Iterator[ServiceDockerData]:
-    for factory in [create_file_picker_service, create_node_group_service]:
-        model_instance = factory()
-        yield model_instance
-
-
-def as_dict(model_instance: ServiceDockerData) -> Dict[str, Any]:
+def _as_dict(model_instance: ServiceDockerData) -> Dict[str, Any]:
     # FIXME: In order to convert to ServiceOut, now we have to convert back to front-end service because of alias
     # FIXME: set the same policy for f/e and director datasets!
     return model_instance.dict(by_alias=True, exclude_unset=True)
-
-
-def list_frontend_services() -> List[Dict[str, Any]]:
-    return [as_dict(s) for s in iter_service_docker_data()]
 
 
 def get_frontend_service(key, version) -> Dict[str, Any]:
@@ -76,9 +30,35 @@ def get_frontend_service(key, version) -> Dict[str, Any]:
             for s in iter_service_docker_data()
             if s.key == key and s.version == version
         )
-        return as_dict(found)
+        return _as_dict(found)
     except StopIteration as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Frontend service '{key}:{version}' not found",
         ) from err
+
+
+def setup_frontend_services(app: FastAPI):
+    """
+    Setup entrypoint for this app module.
+
+    Used in core.application.init_app
+    """
+
+    def _on_startup() -> None:
+        def is_included(key) -> bool:
+            return (
+                app.state.settings.CATALOG_DEV_FEATURES_ENABLED
+                # STILL UNDER DEVELOPMENT
+                #  - Parameter services
+                or not is_parameter_service(key)
+            )
+
+        catalog = [
+            _as_dict(metadata)
+            for metadata in iter_service_docker_data()
+            if is_included(metadata.key)
+        ]
+        app.state.frontend_services_catalog = catalog
+
+    app.add_event_handler("startup", _on_startup)
