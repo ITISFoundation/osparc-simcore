@@ -11,9 +11,9 @@
 FIXME: Refactor to reduce modules coupling! See all TODO: .``from ...`` comments
 """
 import logging
-import uuid
 from functools import lru_cache
 from typing import Dict
+from uuid import UUID, uuid5
 
 from aiohttp import web
 from aiohttp_session import get_session
@@ -31,7 +31,7 @@ from .utils import compose_error_msg
 
 log = logging.getLogger(__name__)
 
-BASE_UUID = uuid.UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
+BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
 
 @lru_cache()
@@ -41,9 +41,7 @@ def compose_uuid(template_uuid, user_id, query="") -> str:
 
     Enforces a constraint: a user CANNOT have multiple copies of the same template
     """
-    new_uuid = str(
-        uuid.uuid5(BASE_UUID, str(template_uuid) + str(user_id) + str(query))
-    )
+    new_uuid = str(uuid5(BASE_UUID, str(template_uuid) + str(user_id) + str(query)))
     return new_uuid
 
 
@@ -172,7 +170,7 @@ async def copy_study_to_account(
     except ProjectNotFoundError:
         # New project cloned from template
         project, nodes_map = clone_project_document(
-            template_project, forced_copy_project_id=project_uuid
+            template_project, forced_copy_project_id=UUID(project_uuid)
         )
 
         # remove template access rights

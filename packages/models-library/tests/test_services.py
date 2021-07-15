@@ -189,7 +189,7 @@ def test_services_model_examples(model_cls, model_cls_examples):
         (SERVICE_KEY_RE, "node-meta-v0.0.1.json", ["key"]),
     ],
 )
-def test_regex_pattern_same_in_jsonschema_and_python(
+def test_same_regex_patterns_in_jsonschema_and_python(
     python_regex_pattern: str,
     json_schema_file_name: str,
     json_schema_entry_paths: List[str],

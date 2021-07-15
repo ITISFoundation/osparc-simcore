@@ -16,6 +16,7 @@ from ..api.errors.validation_error import http422_error_handler
 from ..api.root import router as api_router
 from ..api.routes.health import router as health_router
 from ..meta import api_version, api_vtag
+from ..services.frontend_services import setup_frontend_services
 from .events import (
     create_start_app_handler,
     create_stop_app_handler,
@@ -45,7 +46,10 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     )
 
     logger.debug("App settings:%s", settings.json(indent=2))
+
     app.state.settings = settings
+
+    setup_frontend_services(app)
 
     # events
     app.add_event_handler("startup", on_startup)
