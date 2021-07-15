@@ -41,7 +41,7 @@ async def _create_user(conn, name: str, group: RowProxy) -> RowProxy:
 
 async def test_user_group_uniqueness(make_engine):
     engine = await make_engine()
-    sync_engine = make_engine(False)
+    sync_engine = make_engine(is_async=False)
     metadata.drop_all(sync_engine)
     metadata.create_all(sync_engine)
 
@@ -68,7 +68,7 @@ async def test_user_group_uniqueness(make_engine):
 
 async def test_all_group(make_engine):
     engine = await make_engine()
-    sync_engine = make_engine(False)
+    sync_engine = make_engine(is_async=False)
     metadata.drop_all(sync_engine)
     metadata.create_all(sync_engine)
     async with engine.acquire() as conn:
@@ -119,7 +119,7 @@ async def test_all_group(make_engine):
 
 async def test_own_group(make_engine):
     engine = await make_engine()
-    sync_engine = make_engine(False)
+    sync_engine = make_engine(is_async=False)
     metadata.drop_all(sync_engine)
     metadata.create_all(sync_engine)
     async with engine.acquire() as conn:
@@ -165,7 +165,7 @@ async def test_own_group(make_engine):
 
 async def test_group(make_engine):
     engine = await make_engine()
-    sync_engine = make_engine(False)
+    sync_engine = make_engine(is_async=False)
     metadata.drop_all(sync_engine)
     metadata.create_all(sync_engine)
     async with engine.acquire() as conn:
