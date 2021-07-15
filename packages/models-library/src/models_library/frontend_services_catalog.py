@@ -40,7 +40,11 @@ def _create_file_picker_service() -> ServiceDockerData:
 
 
 def _create_node_group_service() -> ServiceDockerData:
-    return ServiceDockerData(
+    #
+    # NOTE: DO not mistake with simcore/services/frontend/nodes-group/macros/
+    #  which needs to be redefined.
+    #
+    meta = ServiceDockerData(
         key=f"{FRONTEND_SERVICE_KEY_PREFIX}/nodes-group",
         version="1.0.0",
         type=ServiceType.FRONTEND,
@@ -60,6 +64,9 @@ def _create_node_group_service() -> ServiceDockerData:
             }
         },
     )
+
+    assert list(meta.outputs.keys()) == ["outFile"], "name used in front-end"  # nosec
+    return meta
 
 
 def _create_parameter(param_type: str) -> ServiceDockerData:
