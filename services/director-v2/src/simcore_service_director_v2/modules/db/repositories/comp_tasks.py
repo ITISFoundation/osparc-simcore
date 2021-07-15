@@ -23,10 +23,23 @@ from ._base import BaseRepository
 
 logger = logging.getLogger(__name__)
 
-
+#
+# This is a catalog of front-end services that are translated as tasks
+#
+# The evaluation of this task is already done in the front-end
+# The front-end sets the outputs in the node payload and therefore
+# no evaluation is expected in the backend.
+#
+# Examples are nodes like file-picker or parameter/*
+#
 _FRONTEND_SERVICES_CATALOG: Dict[str, ServiceDockerData] = {
-    meta.key: meta for meta in iter_service_docker_data()
+    meta.key: meta
+    for meta in iter_service_docker_data()
+    if any(name in meta.key for name in ["file-picker", "parameter"])
 }
+assert (  # nosec
+    len(_FRONTEND_SERVICES_CATALOG) == 4
+), "If this fails, review filter above and update"  # nosec
 
 
 async def _generate_tasks_list_from_project(
@@ -62,6 +75,7 @@ async def _generate_tasks_list_from_project(
         if node_extras:
             requires_gpu = NodeRequirement.GPU in node_extras.node_requirements
             requires_mpi = NodeRequirement.MPI in node_extras.node_requirements
+
         image = Image(
             name=service_key_version.key,
             tag=service_key_version.version,
@@ -69,6 +83,7 @@ async def _generate_tasks_list_from_project(
             requires_mpi=requires_mpi,
         )
 
+        assert node.state is not None  # nosec
         task_state = node.state.current_status
         if node_id in published_nodes and node_class == NodeClass.COMPUTATIONAL:
             task_state = RunningState.PUBLISHED

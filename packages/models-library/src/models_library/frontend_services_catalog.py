@@ -40,7 +40,11 @@ def _create_file_picker_service() -> ServiceDockerData:
 
 
 def _create_node_group_service() -> ServiceDockerData:
-    return ServiceDockerData(
+    #
+    # NOTE: DO not mistake with simcore/services/frontend/nodes-group/macros/
+    #  which needs to be redefined.
+    #
+    meta = ServiceDockerData(
         key=f"{FRONTEND_SERVICE_KEY_PREFIX}/nodes-group",
         version="1.0.0",
         type=ServiceType.FRONTEND,
@@ -60,6 +64,10 @@ def _create_node_group_service() -> ServiceDockerData:
             }
         },
     )
+
+    assert meta.outputs is not None  # nosec
+    assert list(meta.outputs.keys()) == ["outFile"], "name used in front-end"  # nosec
+    return meta
 
 
 def _create_parameter(param_type: str) -> ServiceDockerData:
@@ -93,12 +101,12 @@ def _create_parameter(param_type: str) -> ServiceDockerData:
         },
     )
 
-    assert meta.outputs  # nosec
+    assert meta.outputs is not None  # nosec
     assert list(meta.outputs.keys()) == ["out_1"], "name used in front-end"  # nosec
     return meta
 
 
-def create_data_iterator_integer_service() -> ServiceDockerData:
+def _create_data_iterator_integer_service() -> ServiceDockerData:
     return ServiceDockerData(
         key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/number",
         version="1.0.0",
@@ -201,7 +209,10 @@ def is_parameter_service(service_key: str) -> bool:
     return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/")
 
 
-_FACTORY_FUNCTIONS = [_create_file_picker_service, _create_node_group_service,] + [
+_FACTORY_FUNCTIONS = [
+    _create_file_picker_service,
+    _create_node_group_service,
+    _create_data_iterator_integer_service,] + [
     functools.partial(_create_parameter, param_type=p)
     for p in ["number", "boolean", "integer"]
 ]
