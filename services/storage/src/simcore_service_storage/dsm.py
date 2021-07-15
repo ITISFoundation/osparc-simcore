@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import aiobotocore
 import attr
 import sqlalchemy as sa
+from aiobotocore.client import AioBaseClient
 from aiobotocore.session import AioSession, ClientCreatorContext
 from aiohttp import web
 from aiopg.sa import Engine
@@ -154,6 +155,8 @@ class DataStorageManager:
     def _create_client_context(self) -> ClientCreatorContext:
         assert hasattr(self.session, "create_client")
         # pylint: disable=no-member
+
+        # SEE API in https://botocore.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html
         return self.session.create_client(
             "s3",
             endpoint_url=self.s3_client.endpoint_url,
@@ -898,7 +901,7 @@ class DataStorageManager:
 
     async def delete_project_simcore_s3(
         self, user_id: str, project_id: str, node_id: Optional[str] = None
-    ) -> web.Response:
+    ) -> Optional[web.Response]:
 
         """Deletes all files from a given node in a project in simcore.s3 and updated db accordingly.
         If node_id is not given, then all the project files db entries are deleted.
@@ -1013,38 +1016,78 @@ class DataStorageManager:
     async def synchronise_meta_data_table(
         self, location: str, dry_run: bool
     ) -> Dict[str, Any]:
-        sync_results = {"removed": []}
+
+        PRUNE_CHUNK_SIZE = 20
+
+        removed: List[str] = []
+        to_remove: List[str] = []
+
+        async def _prune_db_table(conn):
+            if not dry_run:
+                await conn.execute(
+                    file_meta_data.delete().where(
+                        file_meta_data.c.object_name.in_(to_remove)
+                    )
+                )
+            logger.info(
+                "%s %s orphan items",
+                "Would have deleted" if dry_run else "Deleted",
+                len(to_remove),
+            )
+            removed.extend(to_remove)
+            to_remove.clear()
+
+        # ----------
+
+        assert (  # nosec
+            location == SIMCORE_S3_STR
+        ), "Only with s3, no other sync implemented"  # nosec
+
         if location == SIMCORE_S3_STR:
-            # NOTE: only valid for Simcore, since datcore data is not in the database table
+
+            # NOTE: only valid for simcore, since datcore data is not in the database table
             # let's get all the files in the table
             logger.warning(
                 "synchronisation of database/s3 storage started, this will take some time..."
             )
+
             async with self.engine.acquire() as conn, self._create_client_context() as s3_client:
-                number_of_rows_in_db = await conn.scalar(file_meta_data.count())
+
+                number_of_rows_in_db = await conn.scalar(file_meta_data.count()) or 0
                 logger.warning(
-                    "total number of entries to check %d",
+                    "Total number of entries to check %d",
                     number_of_rows_in_db,
                 )
 
-                async for row in conn.execute(file_meta_data.select()):
+                assert isinstance(s3_client, AioBaseClient)  # nosec
+
+                async for row in conn.execute(
+                    sa.select([file_meta_data.c.object_name])
+                ):
                     s3_key = row.object_name  # type: ignore
 
                     # now check if the file exists in S3
-                    try:
-                        await s3_client.get_object(
-                            Bucket=self.simcore_bucket_name,
-                            Key=s3_key,
-                        )
-                    except s3_client.exceptions.NoSuchKey:
-                        # this file does not exist
-                        sync_results["removed"].append(s3_key)
-
-                if not dry_run:
-                    await conn.execute(
-                        file_meta_data.delete().where(
-                            file_meta_data.c.object_name.in_(sync_results["removed"])
-                        )
+                    # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
+                    response = await s3_client.list_objects_v2(
+                        Bucket=self.simcore_bucket_name, Prefix=s3_key
                     )
+                    if response.get("KeyCount", 0) == 0:
+                        # this file does not exist in S3
+                        to_remove.append(s3_key)
 
-        return sync_results
+                    if len(to_remove) >= PRUNE_CHUNK_SIZE:
+                        await _prune_db_table(conn)
+
+                if to_remove:
+                    await _prune_db_table(conn)
+
+                assert len(to_remove) == 0  # nosec
+                assert len(removed) <= number_of_rows_in_db  # nosec
+
+                logger.info(
+                    "%s %d entries ",
+                    "Would delete" if dry_run else "Deleting",
+                    len(removed),
+                )
+
+        return {"removed": removed}

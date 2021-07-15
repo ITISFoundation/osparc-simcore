@@ -28,8 +28,6 @@ from models_library.projects_state import (
 )
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
-
-## PROJECT NODES -----------------------------------------------------
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_service_webserver.director import director_exceptions
@@ -58,7 +56,7 @@ from ..storage_api import (
 from ..users_api import get_user_name, is_user_guest
 from .config import CONFIG_SECTION_NAME
 from .project_lock import ProjectLockError, get_project_locked_state, lock_project
-from .projects_db import APP_PROJECT_DBAPI
+from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 
 log = logging.getLogger(__name__)
 
@@ -88,7 +86,8 @@ async def get_project_for_user(
     :return: schema-compliant project data
     :rtype: Dict
     """
-    db = app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    assert db  # nosec
 
     project: Dict = {}
     is_template = False
@@ -321,6 +320,9 @@ async def delete_project_from_db(
     await db.delete_user_project(user_id, project_uuid)
     # requests storage to delete all project's stored data
     await delete_data_folders_of_project(app, project_uuid, user_id)
+
+
+## PROJECT NODES -----------------------------------------------------
 
 
 async def add_project_node(
@@ -727,7 +729,7 @@ async def _get_project_lock_state(
         )
     set_user_ids = {x for x, _ in user_session_id_list}
 
-    assert (
+    assert (  # nosec
         len(set_user_ids) <= 1
     )  # nosec  # NOTE: A project can only be opened by one user in one tab at the moment
 

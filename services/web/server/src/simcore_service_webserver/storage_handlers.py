@@ -6,7 +6,7 @@ import logging
 import urllib
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from aiohttp import ClientTimeout, web
+from aiohttp import web
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
 from servicelib.rest_utils import extract_and_validate
@@ -157,7 +157,7 @@ async def delete_file(request: web.Request):
 @login_required
 @permission_required("storage.files.sync")
 async def synchronise_meta_data_table(request: web.Request):
-    payload = await _request_storage(request, "POST", timeout=ClientTimeout(total=300))
+    payload = await _request_storage(request, "POST")
     return payload
 
 

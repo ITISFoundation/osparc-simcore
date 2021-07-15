@@ -175,7 +175,8 @@ async def test_get_storage_locations(client, storage_server, logged_user, expect
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPForbidden),
         (UserRole.USER, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPForbidden),
+        (UserRole.ADMIN, web.HTTPOk),
     ],
 )
 async def test_sync_file_meta_table(client, storage_server, logged_user, expected):

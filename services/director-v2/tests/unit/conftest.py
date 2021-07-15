@@ -21,10 +21,11 @@ def simcore_services_network_name() -> str:
 def disable_dynamic_sidecar_scheduler_in_unit_tests(
     monkeypatch, simcore_services_network_name: str
 ) -> None:
-    monkeypatch.setenv("REGISTRY_auth", "false")
-    monkeypatch.setenv("REGISTRY_user", "test")
+    # FIXME: PC-> ANE: please avoid autouse!!!
+    monkeypatch.setenv("REGISTRY_AUTH", "false")
+    monkeypatch.setenv("REGISTRY_USER", "test")
     monkeypatch.setenv("REGISTRY_PW", "test")
-    monkeypatch.setenv("REGISTRY_ssl", "false")
+    monkeypatch.setenv("REGISTRY_SSL", "false")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", simcore_services_network_name)
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
