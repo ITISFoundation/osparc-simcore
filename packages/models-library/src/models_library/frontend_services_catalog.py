@@ -98,6 +98,101 @@ def _create_parameter(param_type: str) -> ServiceDockerData:
     return meta
 
 
+def create_data_iterator_integer_service() -> ServiceDockerData:
+    return ServiceDockerData(
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/number",
+        version="1.0.0",
+        type=ServiceType.FRONTEND,
+        name="Number Iterator",
+        description="Data Iterator - Number",
+        authors=[
+            OM,
+        ],
+        contact=OM.email,
+        inputs={
+            "iteration_type": {
+                "displayOrder": 0,
+                "label": "Iteration method",
+                "description": "Iteration method",
+                "defaultValue": "custom",
+                "type": "string",
+                "widget": {
+                    "type": "SelectBox",
+                    "details": {
+                        "structure": [{
+                            "key": "custom",
+                            "label": "Custom",
+                        }, {
+                            "key": "linspace",
+                            "label": "Linear Space",
+                        }, {
+                            "key": "random",
+                            "label": "Random",
+                        }]
+                    }
+                }
+            },
+            "custom_list": {
+                "displayOrder": 1,
+                "label": "Custom List",
+                "description": "Type your list of numbers (comma separated)",
+                "defaultValue": "",
+                "type": "string",
+            },
+            "linspace_start": {
+                "displayOrder": 2,
+                "label": "Start",
+                "description": "Linear space Start",
+                "defaultValue": 0,
+                "type": "number",
+            },
+            "linspace_stop": {
+                "displayOrder": 3,
+                "label": "Stop",
+                "description": "Linear space Stop",
+                "defaultValue": 1,
+                "type": "number",
+            },
+            "linspace_step": {
+                "displayOrder": 4,
+                "label": "Step",
+                "description": "Linear space Step",
+                "defaultValue": 1,
+                "type": "number",
+            },
+            "random_start": {
+                "displayOrder": 5,
+                "label": "Start",
+                "description": "Random Start",
+                "defaultValue": 0,
+                "type": "number",
+            },
+            "random_stop": {
+                "displayOrder": 6,
+                "label": "Stop",
+                "description": "Random Stop",
+                "defaultValue": 10,
+                "type": "number",
+            },
+            "random_vals": {
+                "displayOrder": 7,
+                "label": "N values",
+                "description": "N Random values",
+                "defaultValue": 5,
+                "type": "number",
+            },
+        },
+        outputs={
+            "out_1": {
+                "displayOrder": 0,
+                "label": "A Number",
+                "description": "A Number",
+                "type": "number",
+            }
+        },
+    )
+
+
 def is_frontend_service(service_key: str) -> bool:
     return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/")
 
