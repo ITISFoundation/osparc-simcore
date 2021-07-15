@@ -2,7 +2,7 @@
     Catalog of i/o metadata for functions implemented in the front-end
 """
 
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from fastapi import status
 from fastapi.applications import FastAPI
@@ -45,18 +45,20 @@ def setup_frontend_services(app: FastAPI):
     Used in core.application.init_app
     """
 
-    def on_startup() -> None:
-        catalog: List[Dict[str, Any]] = []
+    def _on_startup() -> None:
+        def is_included(key) -> bool:
+            return (
+                app.state.settings.CATALOG_DEV_FEATURES_ENABLED
+                # STILL UNDER DEVELOPMENT
+                #  - Parameter services
+                or not is_parameter_service(key)
+            )
 
-        if app.state.settings.CATALOG_DEV_FEATURES_ENABLED:
-            # WARNING: Excludes parameter services. STILL UNDER DEVELOPMENT
-            for metadata in iter_service_docker_data():
-                if not is_parameter_service(metadata.key):
-                    catalog.append(_as_dict(metadata))
-        else:
-            # all
-            catalog = [_as_dict(s) for s in iter_service_docker_data()]
-
+        catalog = [
+            _as_dict(metadata)
+            for metadata in iter_service_docker_data()
+            if is_included(metadata.key)
+        ]
         app.state.frontend_services_catalog = catalog
 
-    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("startup", _on_startup)
