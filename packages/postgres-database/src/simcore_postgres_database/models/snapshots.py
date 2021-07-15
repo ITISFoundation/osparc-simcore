@@ -24,15 +24,35 @@ snapshots = sa.Table(
     sa.Column(
         "parent_uuid",
         sa.String,
+        sa.ForeignKey(
+            "projects.uuid",
+            name="fk_snapshots_parent_uuid_projects",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        doc="UUID of the parent project",
+    ),
+    sa.Column(
+        "child_index",
+        sa.Integer,
         nullable=False,
         unique=True,
-        doc="UUID of the parent project",
+        doc="Number of child (as 0-based index: 0 being the oldest, 1, ...)"
+        "from the same parent_id",
     ),
     sa.Column(
         "project_uuid",
         sa.String,
+        sa.ForeignKey(
+            "projects.uuid",
+            name="fk_snapshots_project_uuid_projects",
+            ondelete="CASCADE",
+        ),
         nullable=False,
         unique=True,
         doc="UUID of the project associated to this snapshot",
     ),
 )
+
+
+# Snapshot : convert_to_pydantic(snapshot)
