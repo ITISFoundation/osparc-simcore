@@ -4,7 +4,7 @@
 
 from copy import deepcopy
 from pprint import pformat
-from typing import Any, Dict
+from typing import Any, Dict, Type
 from uuid import UUID
 
 import networkx as nx
@@ -19,7 +19,7 @@ from simcore_service_director_v2.models.domains.comp_pipelines import CompPipeli
     (CompPipelineAtDB,),
 )
 def test_computation_pipeline_model_examples(
-    model_cls: BaseModel, model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
@@ -32,7 +32,7 @@ def test_computation_pipeline_model_examples(
     (CompPipelineAtDB,),
 )
 def test_computation_pipeline_model_with_running_state_value_field(
-    model_cls: BaseModel, model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
         example["state"] = RunningState.RETRY.value  # this is a specific Runningstate
@@ -46,7 +46,7 @@ def test_computation_pipeline_model_with_running_state_value_field(
     (CompPipelineAtDB,),
 )
 def test_computation_pipeline_model_with_uuids_in_dag_field(
-    model_cls: BaseModel, model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
         old_dag_list = deepcopy(example["dag_adjacency_list"])
@@ -63,11 +63,13 @@ def test_computation_pipeline_model_with_uuids_in_dag_field(
     (CompPipelineAtDB,),
 )
 def test_computation_pipeline_model_get_graph(
-    model_cls: BaseModel, model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)
         assert model_instance, f"Failed with {name}"
+
+        assert isinstance(model_instance, CompPipelineAtDB)
         dag_graph = model_instance.get_graph()
         assert isinstance(dag_graph, nx.DiGraph)
