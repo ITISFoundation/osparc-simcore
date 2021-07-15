@@ -174,7 +174,7 @@ def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> D
 def make_engine(postgres_service: Dict) -> Callable:
     dsn = postgres_service["dsn"]  # session scope freezes dsn
 
-    def maker(is_async=True) -> Union[aiopg_sa_engine.Engine, sa_engine.Engine]:
+    def maker(*, is_async=True) -> Union[aiopg_sa_engine.Engine, sa_engine.Engine]:
         if is_async:
             return aiopg.sa.create_engine(dsn)
         return sa.create_engine(dsn)
@@ -198,7 +198,7 @@ def apply_migration(postgres_service: Dict, make_engine) -> Iterator[None]:
     pg_cli.downgrade.callback("base")
     pg_cli.clean.callback()
     # FIXME: deletes all because downgrade is not reliable!
-    engine = make_engine(False)
+    engine = make_engine(is_async=False)
     metadata.drop_all(engine)
 
 
