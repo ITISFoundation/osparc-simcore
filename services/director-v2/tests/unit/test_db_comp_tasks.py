@@ -51,16 +51,20 @@ def test_only_filepicker_service_gets_some_service_details(
 ):
     # FIXME: PC->SAN: this is ONLY for filepicker??
     # It should also apply for other front-end functions, right?
-    for frontend_service_key in all_frontend_services:
+    # At this point, parametrized nodes are also front-end functions that
+    # are evaluated at the front-end and, as the file-picker provides its output
+    # when it reaches the backend.
+    # SEE doc in _FRONTEND_SERVICES_CATALOG
 
-        if frontend_service_key == "simcore/services/frontend/nodes-group/macros/":
-            # FIXME: PC->OM: define ????
+    EXCLUDE = [
+        "simcore/services/frontend/nodes-group/macros/",  # FIXME: PC->OM: This front-end service needs to be re-defined
+        "simcore/services/frontend/nodes-group",
+    ]
+    for frontend_service_key in all_frontend_services:
+        if frontend_service_key in EXCLUDE:
             continue
 
-        service_docker_data: ServiceDockerData = _FRONTEND_SERVICES_CATALOG[
-            frontend_service_key
-        ]
+        service_docker_data = _FRONTEND_SERVICES_CATALOG[frontend_service_key]
 
         assert isinstance(service_docker_data, ServiceDockerData)
         assert service_docker_data.outputs
-        # assert service_docker_data.outputs["outFile"].property_type == "data:*/*"

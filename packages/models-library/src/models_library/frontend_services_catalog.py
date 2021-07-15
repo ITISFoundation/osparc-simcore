@@ -65,6 +65,7 @@ def _create_node_group_service() -> ServiceDockerData:
         },
     )
 
+    assert meta.outputs is not None  # nosec
     assert list(meta.outputs.keys()) == ["outFile"], "name used in front-end"  # nosec
     return meta
 
@@ -100,7 +101,7 @@ def _create_parameter(param_type: str) -> ServiceDockerData:
         },
     )
 
-    assert meta.outputs  # nosec
+    assert meta.outputs is not None  # nosec
     assert list(meta.outputs.keys()) == ["out_1"], "name used in front-end"  # nosec
     return meta
 
