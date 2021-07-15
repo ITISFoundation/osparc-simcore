@@ -98,11 +98,11 @@ async def upload_file(
 
     logger.info("Uploading %s to %s ...", file_meta, presigned_upload_link)
     #
-    # FIXME: TN was uploading files >1GB and would raise httpx.ReadTimeout.
+    # FIXME: TN was uploading files ~1GB and would raise httpx.ReadTimeout.
     #  - Review timeout config (see api/dependencies/files.py)
     #
     async with httpx.AsyncClient(
-        timeout=httpx.Timeout(5.0, read=30.0, write=3600.0)
+        timeout=httpx.Timeout(5.0, read=60.0, write=60.0)
     ) as client:
         assert file_meta.content_type  # nosec
 
