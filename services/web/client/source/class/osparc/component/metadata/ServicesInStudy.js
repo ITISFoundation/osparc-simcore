@@ -75,7 +75,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
 
       const params = {
         url: {
-          "projectId": this.__studyData["uuid"]
+          "studyId": this.__studyData["uuid"]
         },
         data: this.__studyData
       };

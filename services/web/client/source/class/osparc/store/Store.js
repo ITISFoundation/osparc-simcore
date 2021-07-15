@@ -230,7 +230,7 @@ qx.Class.define("osparc.store.Store", {
     getStudyState: function(pipelineId) {
       osparc.data.Resources.fetch("studies", "state", {
         url: {
-          projectId: pipelineId
+          "studyId": pipelineId
         }
       })
         .then(({state}) => {
@@ -256,7 +256,7 @@ qx.Class.define("osparc.store.Store", {
     deleteStudy: function(studyId) {
       const params = {
         url: {
-          projectId: studyId
+          "studyId": studyId
         }
       };
       return new Promise((resolve, reject) => {

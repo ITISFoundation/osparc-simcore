@@ -666,7 +666,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
           const isTemplate = osparc.utils.Resources.isTemplate(this.__copyResourceData);
           const params = {
             url: {
-              projectId: this.__copyResourceData["uuid"]
+              "studyId": this.__copyResourceData["uuid"]
             },
             data: this.__copyResourceData
           };

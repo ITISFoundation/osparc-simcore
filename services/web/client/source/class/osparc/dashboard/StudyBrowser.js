@@ -55,7 +55,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     reloadStudy: function(studyId) {
       const params = {
         url: {
-          "projectId": studyId
+          "studyId": studyId
         }
       };
       return osparc.data.Resources.getOne("studies", params)
@@ -218,7 +218,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getStudyAndStart: function(loadStudyId) {
       const params = {
         url: {
-          "projectId": loadStudyId
+          "studyId": loadStudyId
         }
       };
       osparc.data.Resources.getOne("studies", params)
@@ -676,7 +676,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const params = {
         url: {
-          projectId: studyData["uuid"]
+          "studyId": studyData["uuid"]
         },
         data: osparc.utils.Utils.getClientSessionID()
       };
@@ -763,7 +763,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const data = JSON.parse(req.responseText);
           const params = {
             url: {
-              "projectId": data["data"]["uuid"]
+              "studyId": data["data"]["uuid"]
             }
           };
           osparc.data.Resources.getOne("studies", params)
@@ -825,7 +825,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         osparc.component.permissions.Study.removeCollaborator(studyData, myGid);
         const params = {
           url: {
-            projectId: studyData.uuid
+            "studyId": studyData.uuid
           }
         };
         params["data"] = studyData;

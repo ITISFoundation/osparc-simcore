@@ -44,7 +44,19 @@ qx.Class.define("osparc.utils.Services", {
       container: {
         label: "Group of nodes",
         icon: "@FontAwesome5Solid/box-open/"
-      }
+      },
+      iterator: {
+        label: "Iterator",
+        icon: "@FontAwesome5Solid/copy/"
+      },
+
+      DATA_ITERATOR_TYPES: [
+        "integer",
+        "number",
+        "boolean",
+        "string",
+        "data"
+      ]
     },
 
     servicesCached: {},
@@ -231,6 +243,23 @@ qx.Class.define("osparc.utils.Services", {
 
     getFilePicker: function() {
       return this.self().getLatest(this.servicesCached, "simcore/services/frontend/file-picker");
+    },
+
+    getParametersMetadata: function() {
+      const parametersMetadata = [];
+      for (const key in this.servicesCached) {
+        if (key.includes("simcore/services/frontend/parameter/")) {
+          const latest = this.self().getLatest(this.servicesCached, key);
+          if (latest) {
+            parametersMetadata.push(latest);
+          }
+        }
+      }
+      return parametersMetadata;
+    },
+
+    getParameterMetadata: function(type) {
+      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/parameter/"+type);
     },
 
     getNodesGroup: function() {

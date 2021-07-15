@@ -217,6 +217,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         inputFont: "text-14",
         editable: osparc.data.Permissions.getInstance().canDo("study.node.rename")
       });
+      study.bind("readOnly", title, "editable", {
+        converter: readOnly => !readOnly
+      });
       title.addListener("editValue", evt => {
         if (evt.getData() !== this.__title.getValue()) {
           const node = this.getNode();
@@ -232,6 +235,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         const editAccessLevel = new qx.ui.form.Button(this.tr("Edit"), "@FontAwesome5Solid/edit/14");
         editAccessLevel.addListener("execute", () => this._openEditAccessLevel(), this);
         nodeEditLayout.add(editAccessLevel);
+        study.bind("readOnly", editAccessLevel, "visibility", {
+          converter: readOnly => readOnly ? "excluded" : "visible"
+        });
       }
       header.add(nodeEditLayout);
 

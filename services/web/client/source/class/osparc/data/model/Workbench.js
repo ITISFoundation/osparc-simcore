@@ -240,7 +240,42 @@ qx.Class.define("osparc.data.model.Workbench", {
           } = e.getData();
           this.__filePickerRequested(nodeId, portId);
         }, this);
+        node.addListener("parameterNodeRequested", e => {
+          const {
+            portId,
+            nodeId
+          } = e.getData();
+          this.__parameterNodeRequested(nodeId, portId);
+        }, this);
       }
+    },
+
+    __getFreeSpotPostition: function(node0) {
+      // do not overlap the new node with other nodes
+      const pos = node0.getPosition();
+      const nodeWidth = osparc.component.workbench.NodeUI.NODE_WIDTH;
+      const nodeHeight = osparc.component.workbench.NodeUI.NODE_HEIGHT;
+      const xPos = Math.max(0, pos.x-nodeWidth-30);
+      let yPos = pos.y;
+      const allNodes = this.getNodes();
+      const avoidY = [];
+      for (const nId in allNodes) {
+        const node = allNodes[nId];
+        if (node.getPosition().x >= xPos-nodeWidth && node.getPosition().x <= (xPos+nodeWidth)) {
+          avoidY.push(node.getPosition().y);
+        }
+      }
+      avoidY.sort((a, b) => a - b); // For ascending sort
+      avoidY.forEach(y => {
+        if (yPos >= y-nodeHeight && yPos <= (y+nodeHeight)) {
+          yPos = y+nodeHeight+20;
+        }
+      });
+
+      return {
+        x: xPos,
+        y: yPos
+      };
     },
 
     __filePickerRequested: function(nodeId, portId) {
@@ -272,39 +307,18 @@ qx.Class.define("osparc.data.model.Workbench", {
 
       if (link === null || isUsed) {
         // do not overlap the new FP with other nodes
-        const pos = requesterNode.getPosition();
-        const nodeWidth = osparc.component.workbench.NodeUI.NODE_WIDTH;
-        const nodeHeight = osparc.component.workbench.NodeUI.NODE_HEIGHT;
-        const xPos = Math.max(0, pos.x-nodeWidth-30);
-        let posY = pos.y;
-        const allNodes = this.getNodes();
-        const avoidY = [];
-        for (const nId in allNodes) {
-          const node = allNodes[nId];
-          if (node.getPosition().x >= xPos-nodeWidth && node.getPosition().x <= (xPos+nodeWidth)) {
-            avoidY.push(node.getPosition().y);
-          }
-        }
-        avoidY.sort((a, b) => a - b); // For ascending sort
-        avoidY.forEach(y => {
-          if (posY >= y-nodeHeight && posY <= (y+nodeHeight)) {
-            posY = y+nodeHeight+20;
-          }
-        });
+        const freePos = this.__getFreeSpotPostition(requesterNode);
 
         // create a new FP
         const fpMD = osparc.utils.Services.getFilePicker();
         const parentNodeId = requesterNode.getParentNodeId();
         const parent = parentNodeId ? this.getNode(parentNodeId) : null;
         const fp = this.createNode(fpMD["key"], fpMD["version"], null, parent);
-        fp.setPosition({
-          x: xPos,
-          y: posY
-        });
+        fp.setPosition(freePos);
 
         // remove old connection if any
         if (link !== null) {
-          requesterNode.getPropsForm().removeLink(portId);
+          requesterNode.getPropsForm().removePortLink(portId);
         }
 
         // create connection
@@ -326,6 +340,37 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
+    __parameterNodeRequested: function(nodeId, portId) {
+      const requesterNode = this.getNode(nodeId);
+
+      // create a new ParameterNode
+      const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["inputs"], portId);
+      const pmMD = osparc.utils.Services.getParameterMetadata(type);
+      if (pmMD) {
+        const parentNodeId = requesterNode.getParentNodeId();
+        const parent = parentNodeId ? this.getNode(parentNodeId) : null;
+        const pm = this.createNode(pmMD["key"], pmMD["version"], null, parent);
+
+        // do not overlap the new Parameter Node with other nodes
+        const freePos = this.__getFreeSpotPostition(requesterNode);
+        pm.setPosition(freePos);
+
+        // create connection
+        const pmId = pm.getNodeId();
+        requesterNode.addInputNode(pmId);
+        requesterNode.addPortLink(portId, pmId, "out_1")
+          .then(success => {
+            if (success) {
+              this.fireDataEvent("openNode", pmId);
+            } else {
+              this.removeNode(pmId);
+              const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
+              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            }
+          });
+      }
+    },
+
     addNode: function(node, parentNode) {
       const nodeId = node.getNodeId();
       if (parentNode) {
@@ -335,6 +380,12 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
       node.setParentNodeId(parentNode ? parentNode.getNodeId() : null);
       this.fireEvent("nNodesChanged");
+      if (node.isParameter()) {
+        const study = osparc.store.Store.getInstance().getCurrentStudy();
+        if (study) {
+          study.fireEvent("changeParameters");
+        }
+      }
     },
 
     moveNode: function(node, newParent, oldParent) {
