@@ -66,17 +66,21 @@ class ProjectCommons(BaseModel):
 
     @validator("thumbnail", always=True, pre=True)
     @classmethod
-    def convert_empty_str_to_none(v):
+    def convert_empty_str_to_none(cls, v):
         if isinstance(v, str) and v == "":
             return None
         return v
 
 
 class ProjectAtDB(ProjectCommons):
-    # specific DB fields
+    # Model used to READ from database
+
     id: int = Field(..., description="The table primary index")
+
     project_type: ProjectType = Field(..., alias="type", description="The project type")
+
     prj_owner: Optional[int] = Field(..., description="The project owner id")
+
     published: Optional[bool] = Field(
         False, description="Defines if a study is available publicly"
     )
