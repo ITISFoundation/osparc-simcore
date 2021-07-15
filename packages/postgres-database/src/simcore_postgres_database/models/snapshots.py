@@ -26,7 +26,7 @@ snapshots = sa.Table(
         sa.String,
         nullable=False,
         unique=True,
-        doc="Parent project's UUID",
+        doc="UUID of the parent project",
     ),
     sa.Column(
         "project_uuid",
