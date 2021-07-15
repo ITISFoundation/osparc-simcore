@@ -42,7 +42,7 @@ def postgres_service(docker_services, docker_ip, docker_compose_file) -> str:
 def make_engine(postgres_service: str) -> Callable:
     dsn = postgres_service
 
-    def maker(is_async=True) -> Union[Coroutine, Callable]:
+    def maker(*, is_async=True) -> Union[Coroutine, Callable]:
         return aiopg.sa.create_engine(dsn) if is_async else sa.create_engine(dsn)
 
     return maker
@@ -68,18 +68,22 @@ def db_metadata():
 
 @pytest.fixture
 async def pg_engine(loop, make_engine, db_metadata) -> Engine:
-    engine = await make_engine()
+    async_engine = await make_engine(is_async=True)
 
     # TODO: upgrade/downgrade
-    sync_engine = make_engine(False)
+    sync_engine = make_engine(is_async=False)
 
+    # NOTE: ALL is deleted before
     db_metadata.drop_all(sync_engine)
     db_metadata.create_all(sync_engine)
 
-    yield engine
+    yield async_engine
 
-    engine.terminate()
-    await engine.wait_closed()
+    # closes async-engine connections and terminates
+    async_engine.close()
+    await async_engine.wait_closed()
+    async_engine.terminate()
 
+    # NOTE: ALL is deleted after
     db_metadata.drop_all(sync_engine)
     sync_engine.dispose()
