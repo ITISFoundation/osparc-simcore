@@ -32,17 +32,18 @@ async def engine(pg_engine: Engine):
 
 
 async def test_creating_snapshots(engine: Engine):
+    exclude = {
+        "id",
+        "uuid",
+        "creation_date",
+        "last_change_date",
+        "hidden",
+        "published",
+    }
+
     async def _create_snapshot(child_index: int, parent_prj, conn) -> int:
         # copy
         # change uuid, and set to invisible
-        exclude = {
-            "id",
-            "uuid",
-            "creation_date",
-            "last_change_date",
-            "hidden",
-            "published",
-        }
         prj_dict = {c: deepcopy(parent_prj[c]) for c in parent_prj if c not in exclude}
 
         prj_dict["name"] += f" [snapshot {child_index}]"
@@ -114,16 +115,22 @@ async def test_creating_snapshots(engine: Engine):
         assert snapshot_one_id != snapshot_two_id
 
         # get project corresponding to snapshot 1
+        j = projects.join(snapshots, projects.c.uuid == snapshots.c.project_uuid)
         selected_snapshot_project = await (
             await conn.execute(
-                projects.select().where(snapshots.c.id == snapshot_two_id)
+                projects.select()
+                .select_from(j)
+                .where(snapshots.c.id == snapshot_two_id)
             )
         ).first()
 
         assert selected_snapshot_project
         assert selected_snapshot_project.description == updated_parent_prj.description
 
-        assert selected_snapshot_project.tuple() == updated_parent_prj.tuple()
+        def extract(t):
+            return {k: t[k] for k in t if k not in exclude.union({"name"})}
+
+        assert extract(selected_snapshot_project) == extract(updated_parent_prj)
 
 
 def test_deleting_snapshots():
