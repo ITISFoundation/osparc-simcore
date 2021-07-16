@@ -1203,7 +1203,7 @@ qx.Class.define("osparc.data.model.Node", {
         nodeEntry.progress = this.getStatus().getProgress();
       } else if (this.isParameter()) {
         const paramOutKey = "out_1";
-        if (this.getOutputData(paramOutKey)) {
+        if (this.getOutputData(paramOutKey) !== null) {
           const output = {};
           output[paramOutKey] = this.getOutputData(paramOutKey);
           nodeEntry.outputs = output;
