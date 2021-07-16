@@ -173,6 +173,10 @@ qx.Class.define("osparc.data.model.Study", {
     }
   },
 
+  events: {
+    "changeParameters": "qx.event.type.Event"
+  },
+
   statics: {
     createMyNewStudyObject: function() {
       let myNewStudyObject = {};
@@ -232,12 +236,12 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
-    initStudy: function() {
-      this.getWorkbench().initWorkbench();
-    },
-
     buildWorkbench: function() {
       this.getWorkbench().buildWorkbench();
+    },
+
+    initStudy: function() {
+      this.getWorkbench().initWorkbench();
     },
 
     __applyAccessRights: function(value) {
@@ -256,7 +260,7 @@ qx.Class.define("osparc.data.model.Study", {
     openStudy: function() {
       const params = {
         url: {
-          projectId: this.getUuid()
+          "studyId": this.getUuid()
         },
         data: osparc.utils.Utils.getClientSessionID()
       };
@@ -272,6 +276,17 @@ qx.Class.define("osparc.data.model.Study", {
       for (const node of Object.values(nodes)) {
         node.removeIFrame();
       }
+    },
+
+    getParameters: function() {
+      const parameters = [];
+      const nodes = this.getWorkbench().getNodes(true);
+      Object.values(nodes).forEach(node => {
+        if (node.isParameter()) {
+          parameters.push(node);
+        }
+      });
+      return parameters;
     },
 
     serialize: function() {
@@ -307,7 +322,7 @@ qx.Class.define("osparc.data.model.Study", {
       return new Promise(resolve => {
         osparc.data.Resources.fetch("studies", "put", {
           url: {
-            projectId: this.getUuid(),
+            "studyId": this.getUuid(),
             run
           },
           data: {

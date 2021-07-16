@@ -68,7 +68,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     openStudy: function(studyId) {
       const params = {
         url: {
-          projectId: studyId
+          "studyId": studyId
         },
         data: osparc.utils.Utils.getClientSessionID()
       };
@@ -94,7 +94,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     __nodeState: function() {
       const params = {
         url: {
-          projectId: this.getStudyId(),
+          "studyId": this.getStudyId(),
           nodeId: this.getNodeId()
         }
       };

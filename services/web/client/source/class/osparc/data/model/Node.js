@@ -137,7 +137,7 @@ qx.Class.define("osparc.data.model.Node", {
     outputs: {
       check: "Object",
       nullable: false,
-      apply: "__repopulateOutputPortData",
+      apply: "__applyOutputs",
       event: "changeOutputs"
     },
 
@@ -182,6 +182,7 @@ qx.Class.define("osparc.data.model.Node", {
   events: {
     "retrieveInputs": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
+    "parameterNodeRequested": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data",
     "outputListChanged": "qx.event.type.Event"
   },
@@ -189,6 +190,10 @@ qx.Class.define("osparc.data.model.Node", {
   statics: {
     isFilePicker: function(metaData) {
       return (metaData && metaData.key && metaData.key.includes("file-picker"));
+    },
+
+    isParameter: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("/parameter/"));
     },
 
     isContainer: function(metaData) {
@@ -236,6 +241,10 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.data.model.Node.isFilePicker(this.getMetaData());
     },
 
+    isParameter: function() {
+      return osparc.data.model.Node.isParameter(this.getMetaData());
+    },
+
     isContainer: function() {
       return osparc.data.model.Node.isContainer(this.getMetaData());
     },
@@ -273,6 +282,14 @@ qx.Class.define("osparc.data.model.Node", {
 
     getOutput: function(outputId) {
       return this.getOutputs()[outputId];
+    },
+
+    getFirstOutput: function() {
+      const outputs = this.getOutputs();
+      if (Object.keys(outputs).length) {
+        return outputs[Object.keys(outputs)[0]];
+      }
+      return null;
     },
 
     hasChildren: function() {
@@ -349,6 +366,10 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.isDynamic()) {
         this.__initIFrame();
       }
+
+      if (this.isParameter()) {
+        this.__initParameter();
+      }
     },
 
     populateNodeUIData: function(nodeUIData) {
@@ -410,7 +431,7 @@ qx.Class.define("osparc.data.model.Node", {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const params = {
         url: {
-          projectId: study.getUuid()
+          studyId: study.getUuid()
         },
         data: {
           "service_id": this.getNodeId(),
@@ -439,7 +460,7 @@ qx.Class.define("osparc.data.model.Node", {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const params = {
         url: {
-          projectId: study.getUuid(),
+          studyId: study.getUuid(),
           nodeId: this.getNodeId()
         }
       };
@@ -447,7 +468,7 @@ qx.Class.define("osparc.data.model.Node", {
         .catch(err => console.error(err));
     },
 
-    __repopulateOutputPortData: function() {
+    __applyOutputs: function() {
       if (this.__outputWidget) {
         this.__outputWidget.populatePortsData();
       }
@@ -512,13 +533,18 @@ qx.Class.define("osparc.data.model.Node", {
         this.callRetrieveInputs(portId);
       }, this);
 
-      propsForm.addListener("filePickerRequested", e => {
-        const portId = e.getData();
-        this.fireDataEvent("filePickerRequested", {
-          portId,
-          nodeId: this.getNodeId()
-        });
-      }, this);
+      [
+        "filePickerRequested",
+        "parameterNodeRequested"
+      ].forEach(nodeRequestSignal => {
+        propsForm.addListener(nodeRequestSignal, e => {
+          const portId = e.getData();
+          this.fireDataEvent(nodeRequestSignal, {
+            portId,
+            nodeId: this.getNodeId()
+          });
+        }, this);
+      });
     },
 
     __addSettingsEditor: function(inputs) {
@@ -553,7 +579,7 @@ qx.Class.define("osparc.data.model.Node", {
       for (const portId in inputs) {
         if (inputs[portId] && Object.prototype.hasOwnProperty.call(inputs[portId], "nodeUuid")) {
           if (inputs[portId]["nodeUuid"] === inputNodeId) {
-            this.getPropsForm().removeLink(portId);
+            this.getPropsForm().removePortLink(portId);
           }
         }
       }
@@ -591,19 +617,15 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.__settingsForm && inputs) {
         const inputData = {};
         const inputLinks = {};
-        const inputParameters = {};
         const inputsCopy = osparc.utils.Utils.deepCloneObject(inputs);
         for (let key in inputsCopy) {
           if (osparc.utils.Ports.isDataALink(inputsCopy[key])) {
             inputLinks[key] = inputsCopy[key];
-          } else if (osparc.utils.Ports.isDataAParameter(inputsCopy[key])) {
-            inputParameters[key] = inputsCopy[key];
           } else {
             inputData[key] = inputsCopy[key];
           }
         }
-        this.getPropsForm().addLinks(inputLinks);
-        this.getPropsForm().addParameters(inputParameters);
+        this.getPropsForm().addPortLinks(inputLinks);
         this.__settingsForm.setData(inputData);
       }
     },
@@ -645,22 +667,19 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
+    getOutputData: function(outputKey) {
+      const outputs = this.getOutputs();
+      if (outputKey in outputs && "value" in outputs[outputKey]) {
+        return outputs[outputKey]["value"];
+      }
+      return null;
+    },
+
     // post edge creation routine
     edgeAdded: function(edge) {
       const inputNode = this.getWorkbench().getNode(edge.getInputNodeId());
       const outputNode = this.getWorkbench().getNode(edge.getOutputNodeId());
       this.__createAutoPortConnection(inputNode, outputNode);
-
-      if (this.isInKey("multi-plot")) {
-        const innerNodes = Object.values(this.getInnerNodes());
-        for (let i=0; i<innerNodes.length; i++) {
-          const innerNode = innerNodes[i];
-          if (innerNode.addInputNode(inputNode.getNodeId())) {
-            this.__createAutoPortConnection(inputNode, innerNode);
-          }
-        }
-        this.callRetrieveInputs();
-      }
     },
 
     // Iterate over output ports and connect them to first compatible input port
@@ -694,7 +713,7 @@ qx.Class.define("osparc.data.model.Node", {
         osparc.utils.Ports.arePortsCompatible(fromNode, fromPortId, this, toPortId)
           .then(compatible => {
             if (compatible) {
-              resolve(this.getPropsForm().addLink(toPortId, fromNodeId, fromPortId));
+              resolve(this.getPropsForm().addPortLink(toPortId, fromNodeId, fromPortId));
             }
             resolve(false);
           });
@@ -850,6 +869,26 @@ qx.Class.define("osparc.data.model.Node", {
               this.setThumbnail(img.outerHTML);
             }
           }, false);
+        }
+      }
+    },
+
+    __initParameter: function() {
+      if (this.isParameter() && this.getOutputData("out_1") === null) {
+        const type = osparc.component.node.ParameterEditor.getParameterOutputType(this);
+        // set default values if none
+        let val = null;
+        switch (type) {
+          case "boolean":
+            val = true;
+            break;
+          case "number":
+          case "integer":
+            val = 1;
+            break;
+        }
+        if (val !== null) {
+          osparc.component.node.ParameterEditor.setParameterOutputValue(this, val);
         }
       }
     },
@@ -1018,7 +1057,7 @@ qx.Class.define("osparc.data.model.Node", {
 
       const params = {
         url: {
-          projectId: study.getUuid(),
+          studyId: study.getUuid(),
           nodeId: this.getNodeId()
         }
       };
@@ -1159,12 +1198,18 @@ qx.Class.define("osparc.data.model.Node", {
 
       if (this.isContainer()) {
         nodeEntry.outputNodes = this.getOutputNodes();
-      }
-
-      if (this.isFilePicker()) {
+      } else if (this.isFilePicker()) {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
+      } else if (this.isParameter()) {
+        const paramOutKey = "out_1";
+        if (this.getOutputData(paramOutKey)) {
+          const output = {};
+          output[paramOutKey] = this.getOutputData(paramOutKey);
+          nodeEntry.outputs = output;
+        }
       }
+
       // remove null entries from the payload
       let filteredNodeEntry = {};
       for (const key in nodeEntry) {

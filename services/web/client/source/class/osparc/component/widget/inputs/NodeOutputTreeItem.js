@@ -93,6 +93,16 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
     }
   },
 
+  statics: {
+    isNumber: function(n) {
+      return !isNaN(parseFloat(n)) && !isNaN(n - 0);
+    },
+
+    isBoolean: function(n) {
+      return typeof n == "boolean";
+    }
+  },
+
   members : {
     __label: null,
 
@@ -142,10 +152,12 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
         const locationId = value.store;
         const fileId = value.path;
         const filename = value.filename;
+        this.__labelLink.set({
+          value: filename
+        });
         const presignedLinkData = await osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId);
-        if ("presignedLink" in presignedLinkData) {
+        if ("presignedLink" in presignedLinkData && presignedLinkData.presignedLink) {
           this.__labelLink.set({
-            value: filename,
             url: presignedLinkData.presignedLink.link
           });
         }
@@ -159,10 +171,6 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
       } else {
         this.__label.setValue(value);
       }
-    },
-
-    __isNumber: function(n) {
-      return !isNaN(parseFloat(n)) && !isNaN(n - 0);
     },
 
     _transformValue: function(value) {
@@ -188,7 +196,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
       if (value.getLabel) {
         return value.getLabel();
       }
-      if (this.__isNumber(value)) {
+      if (this.self().isNumber(value) || this.self().isBoolean(value)) {
         return value.toString();
       }
       return value;

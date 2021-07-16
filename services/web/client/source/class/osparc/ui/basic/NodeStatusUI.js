@@ -19,8 +19,10 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       this.__setupFilepicker();
     } else if (node.isComputational()) {
       this.__setupComputational();
-    } else {
+    } else if (node.isDynamic()) {
       this.__setupInteractive();
+    } else {
+      this.__setupBlank();
     }
   },
 
@@ -170,6 +172,10 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
           return this.tr("Select a file");
         }
       });
+    },
+
+    __setupBlank: function() {
+      this.exclude();
     }
   }
 });

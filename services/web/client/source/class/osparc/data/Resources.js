@@ -83,29 +83,33 @@ qx.Class.define("osparc.data.Resources", {
           getOne: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects/{projectId}"
+            url: statics.API + "/projects/{studyId}"
           },
           getActive: {
             useCache: false,
             method: "GET",
             url: statics.API + "/projects/active?client_session_id={tabId}"
           },
+          postToTemplate: {
+            method: "POST",
+            url: statics.API + "/projects?as_template={study_id}"
+          },
           open: {
             method: "POST",
-            url: statics.API + "/projects/{projectId}:open"
+            url: statics.API + "/projects/{studyId}:open"
           },
           close: {
             method: "POST",
-            url: statics.API + "/projects/{projectId}:close"
+            url: statics.API + "/projects/{studyId}:close"
           },
           duplicate: {
             method: "POST",
-            url: statics.API + "/projects/{projectId}:duplicate"
+            url: statics.API + "/projects/{studyId}:duplicate"
           },
           state: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects/{projectId}/state"
+            url: statics.API + "/projects/{studyId}/state"
           },
           post: {
             method: "POST",
@@ -117,32 +121,32 @@ qx.Class.define("osparc.data.Resources", {
           },
           put: {
             method: "PUT",
-            url: statics.API + "/projects/{projectId}"
+            url: statics.API + "/projects/{studyId}"
           },
           delete: {
             method: "DELETE",
-            url: statics.API + "/projects/{projectId}"
+            url: statics.API + "/projects/{studyId}"
           },
           addNode: {
             method: "POST",
-            url: statics.API + "/projects/{projectId}/nodes"
+            url: statics.API + "/projects/{studyId}/nodes"
           },
           getNode: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects/{projectId}/nodes/{nodeId}"
+            url: statics.API + "/projects/{studyId}/nodes/{nodeId}"
           },
           deleteNode: {
             method: "DELETE",
-            url: statics.API + "/projects/{projectId}/nodes/{nodeId}"
+            url: statics.API + "/projects/{studyId}/nodes/{nodeId}"
           },
           addTag: {
             method: "PUT",
-            url: statics.API + "/projects/{studyUuid}/tags/{tagId}"
+            url: statics.API + "/projects/{studyId}/tags/{tagId}"
           },
           removeTag: {
             method: "DELETE",
-            url: statics.API + "/projects/{studyUuid}/tags/{tagId}"
+            url: statics.API + "/projects/{studyId}/tags/{tagId}"
           }
         }
       },
@@ -161,17 +165,13 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects?type=template&offset={offset}&limit={limit}"
           },
-          postToTemplate: {
-            method: "POST",
-            url: statics.API + "/projects?as_template={study_id}"
-          },
           put: {
             method: "PUT",
-            url: statics.API + "/projects/{projectId}"
+            url: statics.API + "/projects/{studyId}"
           },
           delete: {
             method: "DELETE",
-            url: statics.API + "/projects/{projectId}"
+            url: statics.API + "/projects/{studyId}"
           }
         }
       },

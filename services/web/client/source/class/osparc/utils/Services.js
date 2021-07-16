@@ -233,6 +233,23 @@ qx.Class.define("osparc.utils.Services", {
       return this.self().getLatest(this.servicesCached, "simcore/services/frontend/file-picker");
     },
 
+    getParametersMetadata: function() {
+      const parametersMetadata = [];
+      for (const key in this.servicesCached) {
+        if (key.includes("simcore/services/frontend/parameter/")) {
+          const latest = this.self().getLatest(this.servicesCached, key);
+          if (latest) {
+            parametersMetadata.push(latest);
+          }
+        }
+      }
+      return parametersMetadata;
+    },
+
+    getParameterMetadata: function(type) {
+      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/parameter/"+type);
+    },
+
     getNodesGroup: function() {
       return this.self().getLatest(this.servicesCached, "simcore/services/frontend/nodes-group");
     },

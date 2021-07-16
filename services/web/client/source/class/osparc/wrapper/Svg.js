@@ -69,7 +69,7 @@ qx.Class.define("osparc.wrapper.Svg", {
 
       osparc.wrapper.Svg.curateCurveControls(controls);
 
-      const path = draw.path()
+      const edge = draw.path()
         .M(controls[0].x, controls[0].y)
         .C(controls[1], controls[2], controls[3])
         .fill("none")
@@ -79,21 +79,21 @@ qx.Class.define("osparc.wrapper.Svg", {
           dasharray: dashed ? 5 : 0
         });
 
-      const marker1 = draw.marker(portSphereDiameter, portSphereDiameter, function(add) {
+      const portSphere = draw.marker(portSphereDiameter, portSphereDiameter, add => {
         add.circle(portSphereDiameter).fill(edgeColor);
       });
-      path.marker("start", marker1);
+      edge.marker("start", portSphere);
 
-      const marker2 = draw.marker(arrowSize, arrowSize, function(add) {
+      const portArrow = draw.marker(arrowSize, arrowSize, add => {
         add.path("M 0 0 V 4 L 2 2 Z")
           .fill(edgeColor)
           .size(arrowSize, arrowSize);
       });
-      path.marker("end", marker2);
+      edge.marker("end", portArrow);
 
-      path.markers = [marker1, marker2];
+      edge.markers = [portSphere, portArrow];
 
-      return path;
+      return edge;
     },
 
     updateCurve: function(curve, controls) {

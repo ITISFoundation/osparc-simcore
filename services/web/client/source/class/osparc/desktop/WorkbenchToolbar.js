@@ -88,13 +88,11 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       }
     },
 
-    __workbenchSelectionChanged: function(msg) {
-      const selectedNodes = msg.getData();
-      this.getStartStopButtons().nodeSelectionChanged(selectedNodes);
-    },
-
     __attachEventHandlers: function() {
-      qx.event.message.Bus.subscribe("changeWorkbenchSelection", this.__workbenchSelectionChanged, this);
+      qx.event.message.Bus.subscribe("changeWorkbenchSelection", e => {
+        const selectedNodes = e.getData();
+        this.getStartStopButtons().nodeSelectionChanged(selectedNodes);
+      }, this);
     }
   }
 });
