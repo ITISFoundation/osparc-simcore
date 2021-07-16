@@ -125,7 +125,6 @@ async def test_creating_snapshots(engine: Engine):
         ).first()
 
         assert selected_snapshot_project
-        assert selected_snapshot_project.description == updated_parent_prj.description
 
         def extract(t):
             return {k: t[k] for k in t if k not in exclude.union({"name"})}
