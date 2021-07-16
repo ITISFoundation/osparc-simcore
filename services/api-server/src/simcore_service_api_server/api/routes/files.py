@@ -35,7 +35,7 @@ router = APIRouter()
 #
 
 common_error_responses = {
-    404: {"description": "File not found"},
+    status.HTTP_404_NOT_FOUND: {"description": "File not found"},
 }
 
 
@@ -44,7 +44,7 @@ async def list_files(
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
     user_id: int = Depends(get_current_user_id),
 ):
-    """ Lists all files stored in the system  """
+    """Lists all files stored in the system"""
 
     stored_files: List[StorageFileMetaData] = await storage_client.list_files(user_id)
 
@@ -97,11 +97,25 @@ async def upload_file(
     )
 
     logger.info("Uploading %s to %s ...", file_meta, presigned_upload_link)
-    async with httpx.AsyncClient(timeout=httpx.Timeout(5.0, write=3600)) as client:
-        assert file_meta.content_type  # nosec
+    try:
+        #
+        # FIXME: TN was uploading files ~1GB and would raise httpx.ReadTimeout.
+        #  - Review timeout config (see api/dependencies/files.py)
+        #
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(5.0, read=60.0, write=3600.0)
+        ) as client:
+            assert file_meta.content_type  # nosec
 
-        resp = await client.put(presigned_upload_link, data=await file.read())
-        resp.raise_for_status()
+            resp = await client.put(presigned_upload_link, data=await file.read())
+            resp.raise_for_status()
+
+    except httpx.TimeoutException as err:
+        # SEE https://httpstatuses.com/504
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail=f"Uploading file reached maximum time limit. Details: {file_meta}",
+        ) from err
 
     # update checksum
     entity_tag = json.loads(resp.headers.get("Etag"))
@@ -111,7 +125,7 @@ async def upload_file(
 
 # DISABLED @router.post(":upload-multiple", response_model=List[FileMetadata])
 async def upload_files(files: List[UploadFile] = FileParam(...)):
-    """ Uploads multiple files to the system """
+    """Uploads multiple files to the system"""
     # MaG suggested a single function that can upload one or multiple files instead of having
     # two of them. Tried something like upload_file( files: Union[List[UploadFile], File] ) but it
     # produces an error in the generated openapi.json
@@ -134,7 +148,7 @@ async def get_file(
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
     user_id: int = Depends(get_current_user_id),
 ):
-    """ Gets metadata for a given file resource """
+    """Gets metadata for a given file resource"""
 
     try:
         stored_files: List[StorageFileMetaData] = await storage_client.search_files(
