@@ -59,6 +59,8 @@ qx.Theme.define("osparc.theme.Decoration", {
     "window-small-cap": {
       include: "service-window",
       style: {
+        shadowBlurRadius: 0,
+        shadowLength: 0,
         width: 0,
         radius: 3,
         transitionProperty: "opacity",
