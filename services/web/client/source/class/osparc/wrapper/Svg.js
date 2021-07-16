@@ -63,7 +63,7 @@ qx.Class.define("osparc.wrapper.Svg", {
 
     drawCurve: function(draw, controls, dashed) {
       const edgeWidth = 3;
-      const portSphereDiameter = 4;
+      const portSphereDiameter = 5;
       const arrowSize = 4;
       const edgeColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-comp-active"];
 
