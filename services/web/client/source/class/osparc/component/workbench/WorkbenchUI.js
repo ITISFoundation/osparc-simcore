@@ -934,11 +934,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           this.__addNodeUIToWorkbench(nodeUI, node.getPosition());
         }
 
+        // create edges
         for (const nodeId in nodes) {
           const node = nodes[nodeId];
-          const inputNodes = node.getInputNodes();
-          for (let i = 0; i < inputNodes.length; i++) {
-            let inputNodeId = inputNodes[i];
+          const inputNodeIDs = node.getInputNodes();
+          inputNodeIDs.forEach(inputNodeId => {
             if (inputNodeId in nodes) {
               this.__createEdgeBetweenNodes({
                 nodeId: inputNodeId
@@ -952,7 +952,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
                 nodeId: nodeId
               });
             }
-          }
+          });
         }
 
         if (isContainer) {
