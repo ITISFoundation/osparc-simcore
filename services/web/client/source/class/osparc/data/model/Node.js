@@ -159,6 +159,18 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: true
     },
 
+    inputConnected: {
+      check: "Boolean",
+      init: false,
+      nullable: true
+    },
+
+    outputConnected: {
+      check: "Boolean",
+      init: false,
+      nullable: true
+    },
+
     loadingPage: {
       check: "osparc.ui.message.Loading",
       init: null,
@@ -725,20 +737,20 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__inputNodes;
     },
 
-    addInputNodes: function(inputNodes) {
-      if (inputNodes) {
-        inputNodes.forEach(inputNode => {
-          this.addInputNode(inputNode);
-        });
-      }
-    },
-
     addInputNode: function(inputNodeId) {
       if (!this.__inputNodes.includes(inputNodeId)) {
         this.__inputNodes.push(inputNodeId);
         return true;
       }
       return false;
+    },
+
+    addInputNodes: function(inputNodes) {
+      if (inputNodes) {
+        inputNodes.forEach(inputNode => {
+          this.addInputNode(inputNode);
+        });
+      }
     },
 
     removeInputNode: function(inputNodeId) {
