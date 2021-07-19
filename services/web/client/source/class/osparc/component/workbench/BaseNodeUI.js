@@ -61,7 +61,10 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
   },
 
   statics: {
-    PORT_HEIGHT: 16,
+    PORT_HEIGHT: 18,
+    NODE_CONNECTED: "@FontAwesome5Regular/dot-circle/18",
+    NODE_DISCONNECTED: "@FontAwesome5Regular/circle/18",
+
     captionHeight: function() {
       return osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().height ||
         osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
@@ -123,17 +126,21 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
 
     _createUIPortLabel: function(isInput) {
       const width = this.self().PORT_HEIGHT;
-      const source = (isInput ? "@FontAwesome5Regular/circle/" : "@FontAwesome5Solid/circle/") + width;
-      const uiPort = new qx.ui.basic.Image(source).set({
+      const uiPort = new qx.ui.basic.Image().set({
+        source: this.self().NODE_DISCONNECTED, // disconnected by default
         height: width,
         draggable: true,
         droppable: true,
         width: width,
         alignY: "middle",
-        marginLeft: isInput ? -parseInt(width/2) : 0,
-        marginRight: isInput ? 0 : -parseInt(width/2)
+        marginLeft: isInput ? -(parseInt(width/3)+1) : 0,
+        marginRight: isInput ? 0 : -(parseInt(width/3)+1),
+        backgroundColor: "background-main"
       });
       uiPort.setCursor("pointer");
+      uiPort.getContentElement().setStyles({
+        "border-radius": width+"px"
+      });
       return uiPort;
     },
 

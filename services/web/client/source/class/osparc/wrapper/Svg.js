@@ -63,7 +63,6 @@ qx.Class.define("osparc.wrapper.Svg", {
 
     drawCurve: function(draw, controls, dashed) {
       const edgeWidth = 3;
-      const portSphereDiameter = 5.2;
       const arrowSize = 4;
       const edgeColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-comp-active"];
 
@@ -79,11 +78,6 @@ qx.Class.define("osparc.wrapper.Svg", {
           dasharray: dashed ? 5 : 0
         });
 
-      const portSphere = draw.marker(portSphereDiameter, portSphereDiameter, add => {
-        add.circle(portSphereDiameter).fill(edgeColor);
-      });
-      edge.marker("start", portSphere);
-
       const portArrow = draw.marker(arrowSize, arrowSize, add => {
         add.path("M 0 0 V 4 L 2 2 Z")
           .fill(edgeColor)
@@ -91,7 +85,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       });
       edge.marker("end", portArrow);
 
-      edge.markers = [portSphere, portArrow];
+      edge.markers = [portArrow];
 
       return edge;
     },
