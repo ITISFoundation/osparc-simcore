@@ -166,7 +166,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
 
       if (this._inputLayout && "ui" in this._inputLayout) {
-        this._inputLayout.ui.exclude();
+        this._inputLayout.exclude();
       }
     },
 
@@ -260,10 +260,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     // overridden
     _createUIPorts: function(isInput) {
       const portLabel = this._createUIPortLabel(isInput);
-      const label = {
-        isInput: isInput,
-        ui: portLabel
-      };
       if (isInput) {
         this.getNode().getStatus().bind("dependencies", portLabel, "textColor", {
           converter: dependencies => {
@@ -272,6 +268,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
             }
             return osparc.utils.StatusUI.getColor();
           }
+        });
+        this.getNode().bind("inputConnected", portLabel, "source", {
+          converter: isConnected => isConnected ? osparc.component.workbench.BaseNodeUI.NODE_CONNECTED : osparc.component.workbench.BaseNodeUI.NODE_DISCONNECTED
         });
       } else {
         this.getNode().getStatus().bind("output", portLabel, "textColor", {
@@ -288,24 +287,23 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
             }
           }
         });
+        this.getNode().bind("outputConnected", portLabel, "source", {
+          converter: isConnected => isConnected ? osparc.component.workbench.BaseNodeUI.NODE_CONNECTED : osparc.component.workbench.BaseNodeUI.NODE_DISCONNECTED
+        });
       }
-      label.ui.isInput = isInput;
-      this._addDragDropMechanism(label.ui, isInput);
+
+      this._addDragDropMechanism(portLabel, isInput);
       if (isInput) {
-        this._inputLayout = label;
-        this._inputOutputLayout.addAt(label.ui, 0, {
+        this._inputLayout = portLabel;
+        this._inputOutputLayout.addAt(portLabel, 0, {
           flex: 1
         });
       } else {
-        this._outputLayout = label;
+        this._outputLayout = portLabel;
         const nElements = this._inputOutputLayout.getChildren().length;
-        this._inputOutputLayout.addAt(label.ui, nElements, {
+        this._inputOutputLayout.addAt(portLabel, nElements, {
           flex: 1
         });
-        label.ui.addListener("tap", e => {
-          this.__openNodeDataManager();
-          e.preventDefault();
-        }, this);
       }
     },
 
@@ -316,15 +314,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         nodeId: this.getNodeId(),
         isInput: isInput
       };
-    },
-
-    __openNodeDataManager: function() {
-      const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode());
-      const win = osparc.ui.window.Window.popUpInWindow(nodeDataManager, this.getNode().getLabel(), 900, 600).set({
-        appearance: "service-window"
-      });
-      const closeBtn = win.getChildControl("close-button");
-      osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
     },
 
     // override qx.ui.core.MMovable

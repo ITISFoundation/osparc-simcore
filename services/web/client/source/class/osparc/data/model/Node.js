@@ -162,13 +162,15 @@ qx.Class.define("osparc.data.model.Node", {
     inputConnected: {
       check: "Boolean",
       init: false,
-      nullable: true
+      nullable: true,
+      event: "changeInputConnected"
     },
 
     outputConnected: {
       check: "Boolean",
       init: false,
-      nullable: true
+      nullable: true,
+      event: "changeOutputConnected"
     },
 
     loadingPage: {

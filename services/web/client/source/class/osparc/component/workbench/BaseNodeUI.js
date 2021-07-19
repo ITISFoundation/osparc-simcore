@@ -141,6 +141,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       uiPort.getContentElement().setStyles({
         "border-radius": width+"px"
       });
+      uiPort.isInput = isInput;
       return uiPort;
     },
 
