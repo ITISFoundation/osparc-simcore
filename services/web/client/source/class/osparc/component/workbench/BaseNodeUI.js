@@ -123,12 +123,12 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
 
     _createUIPortLabel: function(isInput) {
       const width = this.self().PORT_HEIGHT;
-      const source = "@FontAwesome5Solid/circle/"+width;
+      const source = (isInput ? "@FontAwesome5Regular/circle/" : "@FontAwesome5Solid/circle/") + width;
       const uiPort = new qx.ui.basic.Image(source).set({
         height: width,
         draggable: true,
         droppable: true,
-        width: width+2,
+        width: width,
         alignY: "middle",
         marginLeft: isInput ? -parseInt(width/2) : 0,
         marginRight: isInput ? 0 : -parseInt(width/2)
@@ -161,7 +161,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
     getEdgePoint: function(port) {
       const bounds = this.getCurrentBounds();
       const captionHeight = Math.max(this.getChildControl("captionbar").getSizeHint().height, this.self().captionHeight());
-      const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width;
+      const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width - 1;
       let y = bounds.top + captionHeight + this.self().PORT_HEIGHT/2;
       return [x, y];
     },
