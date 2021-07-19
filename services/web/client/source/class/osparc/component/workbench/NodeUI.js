@@ -260,6 +260,15 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     // overridden
     _createUIPorts: function(isInput) {
       const portLabel = this._createUIPortLabel(isInput);
+      portLabel.addListener("mouseover", () => {
+        portLabel.setSource(osparc.component.workbench.BaseNodeUI.NODE_CONNECTED);
+      }, this);
+      portLabel.addListener("mouseout", () => {
+        const isConnected = isInput ? this.getNode().getInputConnected() : this.getNode().getOutputConnected();
+        portLabel.set({
+          source: isConnected ? osparc.component.workbench.BaseNodeUI.NODE_CONNECTED : osparc.component.workbench.BaseNodeUI.NODE_DISCONNECTED
+        });
+      }, this);
       if (isInput) {
         this.getNode().getStatus().bind("dependencies", portLabel, "textColor", {
           converter: dependencies => {

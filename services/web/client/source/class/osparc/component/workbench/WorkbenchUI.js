@@ -805,6 +805,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       } else {
         osparc.component.workbench.SvgWidget.updateCurve(this.__tempEdgeRepr, x1, y1, x2, y2);
       }
+      const portLabel = port.isInput ? nodeUI.getInputPort() : nodeUI.getOutputPort();
+      portLabel.setSource(osparc.component.workbench.BaseNodeUI.NODE_CONNECTED);
 
       if (!this.__tempEdgeIsInput) {
         const modified = nodeUI.getNode().getStatus().getModified();
@@ -817,8 +819,19 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__tempEdgeRepr !== null) {
         osparc.component.workbench.SvgWidget.removeCurve(this.__tempEdgeRepr);
       }
+
+      const nodeUI = this.getNodeUI(this.__tempEdgeNodeId);
+      if (nodeUI) {
+        const isConnected = this.__tempEdgeIsInput ? nodeUI.getNode().getInputConnected() : nodeUI.getNode().getOutputConnected();
+        const portLabel = this.__tempEdgeIsInput ? nodeUI.getInputPort() : nodeUI.getOutputPort();
+        portLabel.set({
+          source: isConnected ? osparc.component.workbench.BaseNodeUI.NODE_CONNECTED : osparc.component.workbench.BaseNodeUI.NODE_DISCONNECTED
+        });
+      }
+
       this.__tempEdgeRepr = null;
       this.__tempEdgeNodeId = null;
+      this.__tempEdgeIsInput = null;
       this.__pointerPos = null;
     },
 
