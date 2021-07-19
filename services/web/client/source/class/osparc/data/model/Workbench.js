@@ -665,14 +665,14 @@ qx.Class.define("osparc.data.model.Workbench", {
       brotherNodes.forEach(brotherNode => {
         if (brotherNode.isInputNode(nodesGroup.getNodeId())) {
           brotherNode.removeInputNode(nodesGroup.getNodeId());
-          brotherNode.addInputNodes(nodesGroup.getOutputNodes());
+          brotherNode.addInputNodes(nodesGroup.getExposedNodeIDs());
 
           if (brotherNode.isContainer()) {
             const broInnerNodes = Object.values(brotherNode.getInnerNodes(true));
             broInnerNodes.forEach(broInnerNode => {
               if (broInnerNode.isInputNode(nodesGroup.getNodeId())) {
                 broInnerNode.removeInputNode(nodesGroup.getNodeId());
-                broInnerNode.addInputNodes(nodesGroup.getOutputNodes());
+                broInnerNode.addInputNodes(nodesGroup.getExposedNodeIDs());
               }
             });
           }
@@ -683,7 +683,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (currentModel.isContainer()) {
         if (currentModel.isOutputNode(nodesGroup.getNodeId())) {
           currentModel.removeOutputNode(nodesGroup.getNodeId());
-          currentModel.addOutputNodes(nodesGroup.getOutputNodes());
+          currentModel.addOutputNodes(nodesGroup.getExposedNodeIDs());
         }
       }
 

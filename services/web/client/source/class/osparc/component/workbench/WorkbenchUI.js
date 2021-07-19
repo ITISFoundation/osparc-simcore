@@ -956,14 +956,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         }
 
         if (isContainer) {
-          const outputNodes = model.getOutputNodes();
-          for (let i=0; i<outputNodes.length; i++) {
+          const exposedNodeIDs = model.getExposedNodeIDs();
+          exposedNodeIDs.forEach(exposedNodeID => {
             this.__createEdgeBetweenNodes({
-              nodeId: outputNodes[i]
+              nodeId: exposedNodeID
             }, {
               nodeId: model.getNodeId()
             });
-          }
+          });
         }
       }
     },
