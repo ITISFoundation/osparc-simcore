@@ -180,15 +180,15 @@ qx.Class.define("osparc.data.model.Workbench", {
       const node1Id = edge.getInputNodeId();
       const node2Id = edge.getOutputNodeId();
 
-      const nodeLeft = this.getNode(node1Id);
-      const nodeRight = this.getNode(node2Id);
-      nodeLeft.setOutputConnected(true);
-      nodeRight.setInputConnected(true);
-
       const exists = this.getEdge(edgeId, node1Id, node2Id);
       if (!exists) {
         this.__edges[edgeId] = edge;
       }
+
+      const nodeLeft = this.getNode(node1Id);
+      const nodeRight = this.getNode(node2Id);
+      nodeLeft.setOutputConnected(true);
+      nodeRight.setInputConnected(true);
     },
 
     createNode: function(key, version, uuid, parent) {
@@ -465,6 +465,17 @@ qx.Class.define("osparc.data.model.Workbench", {
           node.removeInputNode(inputNodeId);
           node.removeNodePortConnections(inputNodeId);
           delete this.__edges[edgeId];
+
+          const edges = Object.values(this.__edges);
+          if (edges.findIndex(edg => edg.getInputNodeId() === inputNodeId) === -1) {
+            const nodeLeft = this.getNode(inputNodeId);
+            nodeLeft.setOutputConnected(false);
+          }
+          if (edges.findIndex(edg => edg.getOutputNodeId() === outputNodeId) === -1) {
+            const nodeRight = this.getNode(outputNodeId);
+            nodeRight.setInputConnected(false);
+          }
+
           return true;
         }
       }
