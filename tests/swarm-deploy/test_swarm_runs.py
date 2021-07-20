@@ -148,6 +148,7 @@ def test_core_service_running(
             "Expected running, got instead"
             f"\n{pformat(task)}"
             f"\n{get_failed_tasks_logs(service, docker_client)}"
+            f"\n{service.logs()}"
         )
 
 
