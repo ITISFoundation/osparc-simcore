@@ -24,7 +24,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
   construct: function() {
     this.base();
 
-    const grid = new qx.ui.layout.Grid(4, 4);
+    const grid = new qx.ui.layout.Grid(4, 1);
     grid.setColumnFlex(1, 1);
 
     this.set({
@@ -40,12 +40,14 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
 
     this.subscribeToFilterGroup("workbench");
 
-    this.getChildControl("captionbar").setCursor("move");
+    this.getChildControl("captionbar").set({
+      cursor: "move",
+      paddingLeft: this.self().PORT_WIDTH
+    });
 
     const captionTitle = this.getChildControl("title");
     captionTitle.set({
-      cursor: "move",
-      textAlign: "center"
+      cursor: "move"
     });
     captionTitle.addListener("appear", () => {
       qx.event.Timer.once(() => {
@@ -54,7 +56,6 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
         // eslint-disable-next-line no-underscore-dangle
         const width = captionTitle.__contentSize.width;
         if (width > maxWidth) {
-          console.log("Doesn't fit", this.getNode().getLabel());
           captionTitle.setToolTipText(this.getNode().getLabel());
         }
       }, this, 50);
@@ -76,6 +77,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
 
   statics: {
     PORT_HEIGHT: 18,
+    PORT_WIDTH: 11,
     NODE_CONNECTED: "@FontAwesome5Regular/dot-circle/18",
     NODE_DISCONNECTED: "@FontAwesome5Regular/circle/18",
 
@@ -123,10 +125,11 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
     _createPort: function(isInput, placeholder = false) {
       let port = null;
       const width = this.self().PORT_HEIGHT;
+      const portMargin = this.self().PORT_HEIGHT - this.self().PORT_WIDTH;
       if (placeholder) {
         port = new qx.ui.core.Spacer(width, width).set({
-          marginLeft: isInput ? -(parseInt(width/3)+1) : 0,
-          marginRight: isInput ? 0 : -(parseInt(width/3)+1)
+          marginLeft: isInput ? -portMargin : 0,
+          marginRight: isInput ? 0 : -portMargin
         });
       } else {
         port = new qx.ui.basic.Image().set({
