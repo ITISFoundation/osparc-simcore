@@ -24,7 +24,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
   construct: function() {
     this.base();
 
-    const grid = new qx.ui.layout.Grid(3, 1);
+    const grid = new qx.ui.layout.Grid(4, 4);
     grid.setColumnFlex(1, 1);
 
     this.set({

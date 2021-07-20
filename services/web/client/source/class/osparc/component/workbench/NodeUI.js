@@ -219,7 +219,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         const fileImage = new osparc.ui.basic.Thumbnail(imageSrc).set({
           padding: 12
         });
-        this.add(fileImage, 1, {
+        this.add(fileImage, {
           row: 0,
           column: 1
         });
@@ -342,7 +342,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           height: 100
         });
       }
-      this.addAt(this.__thumbnail, 0);
+      this.add(this.__thumbnail, {
+        row: 0,
+        column: 1
+      });
     },
 
     // implement osparc.component.filter.IFilterable
