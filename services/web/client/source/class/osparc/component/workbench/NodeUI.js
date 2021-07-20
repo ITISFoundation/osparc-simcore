@@ -178,7 +178,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
     },
 
-    __turnIntoCircledUI: function(width, radius) {
+    __turnIntoCircledUI: function(width) {
       this.set({
         width: width,
         maxWidth: width,
@@ -186,7 +186,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         minHeight: 60
       });
       this.getContentElement().setStyles({
-        "border-radius": radius+"px"
+        "border-radius": this.self().CIRCLED_RADIUS+"px"
       });
     },
 
@@ -197,7 +197,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
 
       const width = 120;
-      this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
+      this.__turnIntoCircledUI(width);
       this.__hideExtraElements();
 
       // two lines
@@ -229,8 +229,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     __turnIntoParameterUI: function() {
       const width = 100;
-      const radius = 32;
-      this.__turnIntoCircledUI(width, radius);
+      this.__turnIntoCircledUI(width);
       this.__hideExtraElements();
 
       const label = new qx.ui.basic.Label().set({
