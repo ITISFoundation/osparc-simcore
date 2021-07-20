@@ -41,9 +41,23 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
     this.subscribeToFilterGroup("workbench");
 
     this.getChildControl("captionbar").setCursor("move");
-    this.getChildControl("title").set({
+
+    const captionTitle = this.getChildControl("title");
+    captionTitle.set({
       cursor: "move",
       textAlign: "center"
+    });
+    captionTitle.addListener("appear", () => {
+      qx.event.Timer.once(() => {
+        const labelDom = captionTitle.getContentElement().getDomElement();
+        const maxWidth = parseInt(labelDom.style.width);
+        // eslint-disable-next-line no-underscore-dangle
+        const width = captionTitle.__contentSize.width;
+        if (width > maxWidth) {
+          console.log("Doesn't fit", this.getNode().getLabel());
+          captionTitle.setToolTipText(this.getNode().getLabel());
+        }
+      }, this, 50);
     });
   },
 
