@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 from pprint import pformat
-from typing import Any, Dict
+from typing import Any, Dict, Type
 
 import pytest
 from models_library.projects_state import RunningState
@@ -16,7 +16,7 @@ from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
     (CompRunsAtDB,),
 )
 def test_computation_run_model_examples(
-    model_cls: BaseModel, model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
@@ -29,7 +29,7 @@ def test_computation_run_model_examples(
     (CompRunsAtDB,),
 )
 def test_computation_run_model_with_run_result_value_field(
-    model_cls: BaseModel, model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
         example["result"] = RunningState.RETRY.value

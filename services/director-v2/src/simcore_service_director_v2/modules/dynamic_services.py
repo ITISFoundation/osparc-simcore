@@ -8,14 +8,10 @@ from dataclasses import dataclass
 import httpx
 from fastapi import FastAPI, Response
 
-# Module's business logic ---------------------------------------------
 from ..core.settings import DynamicServicesSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
-
-
-# Module's setup logic ---------------------------------------------
 
 
 def setup(app: FastAPI, settings: DynamicServicesSettings):

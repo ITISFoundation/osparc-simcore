@@ -12,9 +12,7 @@ from ._meta import api_version, app_name
 from .constants import APP_SETTINGS_KEY
 from .utils import snake_to_camel
 
-
 log = logging.getLogger(__name__)
-
 
 
 class ApplicationSettings(BaseSettings):
@@ -48,6 +46,11 @@ class ApplicationSettings(BaseSettings):
     # CONTAINER RUN  ---
     # settings defined from environs defined when container runs
 
+    WEBSERVER_DEV_FEATURES_ENABLED: bool = Field(
+        False,
+        env="WEBSERVER_DEV_FEATURES_ENABLED",
+        description="Enables development features. WARNING: make sure it is disabled in production .env file!",
+    )
 
     class Config:
         env_prefix = "WEBSERVER_"
@@ -57,7 +60,7 @@ class ApplicationSettings(BaseSettings):
     # ---
 
     def public_dict(self) -> Dict:
-        """ Data publicaly available  """
+        """Data publicaly available"""
         return self.dict(
             include={"app_name", "api_version", "vcs_url", "vcs_ref", "build_date"},
             exclude_none=True,

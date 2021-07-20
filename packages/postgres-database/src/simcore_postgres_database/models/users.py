@@ -14,7 +14,7 @@ from .base import metadata
 
 
 class UserRole(Enum):
-    """ SORTED enumeration of user roles
+    """SORTED enumeration of user roles
 
     A role defines a set of privileges the user can perform
     Roles are sorted from lower to highest privileges
@@ -25,6 +25,7 @@ class UserRole(Enum):
     USER      : Registered user. Basic permissions to use the platform [default]
     TESTER    : Upgraded user. First level of super-user with privileges to test the framework.
                 Can use everything but does not have an effect in other users or actual data
+    ADMIN     : Framework admin.
 
     See security_access.py
     """
@@ -33,6 +34,7 @@ class UserRole(Enum):
     GUEST = "GUEST"
     USER = "USER"
     TESTER = "TESTER"
+    ADMIN = "ADMIN"
 
     @classmethod
     def super_users(cls):
@@ -43,9 +45,9 @@ class UserRole(Enum):
 
 class UserStatus(Enum):
     """
-        pending: user registered but not confirmed
-        active: user is confirmed and can use the platform
-        banned: user is not authorized
+    pending: user registered but not confirmed
+    active: user is confirmed and can use the platform
+    banned: user is not authorized
     """
 
     CONFIRMATION_PENDING = "PENDING"
@@ -99,7 +101,7 @@ DROP TRIGGER IF EXISTS user_modification on users;
 CREATE TRIGGER user_modification
 AFTER INSERT OR UPDATE OR DELETE ON users
     FOR EACH ROW
-    EXECUTE PROCEDURE set_user_groups();    
+    EXECUTE PROCEDURE set_user_groups();
 """
 )
 
@@ -130,5 +132,7 @@ END; $$ LANGUAGE 'plpgsql';
 
 sa.event.listen(users, "after_create", set_user_groups_procedure)
 sa.event.listen(
-    users, "after_create", new_user_trigger,
+    users,
+    "after_create",
+    new_user_trigger,
 )

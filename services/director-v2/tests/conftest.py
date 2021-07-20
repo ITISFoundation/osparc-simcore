@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import os
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, Iterator
 
@@ -29,6 +30,7 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.environment_configs",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.rabbit_service",
@@ -67,12 +69,12 @@ def project_env_devel_dict(project_slug_dir: Path) -> Dict[str, Any]:
 
 
 @pytest.fixture(scope="function")
-def project_env_devel_environment(project_env_devel_dict: Dict[str, Any], monkeypatch):
+def project_env_devel_environment(
+    project_env_devel_dict: Dict[str, Any], monkeypatch
+) -> Dict[str, Any]:
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
-    monkeypatch.setenv(
-        "DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:TEST_MOCKED_TAG_NOT_PRESENT"
-    )
+    return deepcopy(project_env_devel_dict)
 
 
 @pytest.fixture(scope="module")
@@ -83,6 +85,10 @@ def loop() -> asyncio.AbstractEventLoop:
 
 @pytest.fixture(scope="function")
 def mock_env(monkeypatch) -> None:
+    # TODO: PC-> ANE: Avoid using stand-alone environs setups and
+    # use instead mock_env_devel_environment or project_env_devel_environment
+    # which resemble real environment
+
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
@@ -90,13 +96,18 @@ def mock_env(monkeypatch) -> None:
     image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
 
     image_name = f"{registry}/dynamic-sidecar:{image_tag}".strip("/")
+
     logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", image_name)
 
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
+
+    # DISABLE dynamic-service app module
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv("DYNAMIC_SCHEDULER", "null")
+    monkeypatch.setenv("DYNAMIC_SIDECAR", "null")
 
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
