@@ -25,7 +25,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
     this.base();
 
     const grid = new qx.ui.layout.Grid(3, 1);
-    grid.setColumnFlex(0, 1);
+    grid.setColumnFlex(1, 1);
 
     this.set({
       layout: grid,
@@ -81,26 +81,8 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
   },
 
   members: {
-    _inputOutputLayout: null,
     _inputLayout: null,
     _outputLayout: null,
-
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "input-output":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-          control.add(new qx.ui.core.Spacer(), {
-            flex: 1
-          });
-          this.add(control, {
-            row: 0,
-            column: 0
-          });
-          break;
-      }
-      return control || this.base(arguments, id);
-    },
 
     /**
       * @abstract
@@ -120,29 +102,51 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
     /**
       * @abstract
       */
-    _createUIPorts: function() {
+    _createPorts: function() {
       throw new Error("Abstract method called!");
     },
 
-    _createUIPortLabel: function(isInput) {
+    _createPort: function(isInput, placeholder = false) {
+      let port = null;
       const width = this.self().PORT_HEIGHT;
-      const uiPort = new qx.ui.basic.Image().set({
-        source: this.self().NODE_DISCONNECTED, // disconnected by default
-        height: width,
-        draggable: true,
-        droppable: true,
-        width: width,
-        alignY: "middle",
-        marginLeft: isInput ? -(parseInt(width/3)+1) : 0,
-        marginRight: isInput ? 0 : -(parseInt(width/3)+1),
-        backgroundColor: "background-main"
-      });
-      uiPort.setCursor("pointer");
-      uiPort.getContentElement().setStyles({
-        "border-radius": width+"px"
-      });
-      uiPort.isInput = isInput;
-      return uiPort;
+      if (placeholder) {
+        port = new qx.ui.core.Spacer(width, width).set({
+          marginLeft: isInput ? -(parseInt(width/3)+1) : 0,
+          marginRight: isInput ? 0 : -(parseInt(width/3)+1)
+        });
+      } else {
+        port = new qx.ui.basic.Image().set({
+          source: this.self().NODE_DISCONNECTED, // disconnected by default
+          height: width,
+          draggable: true,
+          droppable: true,
+          width: width,
+          alignY: "top",
+          marginLeft: isInput ? -(parseInt(width/3)+1) : 0,
+          marginRight: isInput ? 0 : -(parseInt(width/3)+1),
+          backgroundColor: "background-main"
+        });
+        port.setCursor("pointer");
+        port.getContentElement().setStyles({
+          "border-radius": width+"px"
+        });
+        port.isInput = isInput;
+      }
+
+      if (isInput) {
+        this._inputLayout = port;
+        this.add(port, {
+          row: 0,
+          column: 0
+        });
+      } else {
+        this._outputLayout = port;
+        this.add(port, {
+          row: 0,
+          column: 2
+        });
+      }
+      return port;
     },
 
     /**
