@@ -127,10 +127,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       const width = this.self().PORT_HEIGHT;
       const portMargin = this.self().PORT_HEIGHT - this.self().PORT_WIDTH;
       if (placeholder) {
-        port = new qx.ui.core.Spacer(width, width).set({
-          marginLeft: isInput ? -portMargin : 0,
-          marginRight: isInput ? 0 : -portMargin
-        });
+        port = new qx.ui.core.Spacer(width, width);
       } else {
         port = new qx.ui.basic.Image().set({
           source: this.self().NODE_DISCONNECTED, // disconnected by default
@@ -139,8 +136,6 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
           droppable: true,
           width: width,
           alignY: "top",
-          marginLeft: isInput ? -(parseInt(width/3)+1) : 0,
-          marginRight: isInput ? 0 : -(parseInt(width/3)+1),
           backgroundColor: "background-main"
         });
         port.setCursor("pointer");
@@ -149,20 +144,22 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
         });
         port.isInput = isInput;
       }
+      port.set({
+        marginLeft: isInput ? -portMargin : 0,
+        marginRight: isInput ? 0 : -portMargin
+      });
+
+      this.add(port, {
+        row: 0,
+        column: isInput ? 0 : 2
+      });
 
       if (isInput) {
         this._inputLayout = port;
-        this.add(port, {
-          row: 0,
-          column: 0
-        });
       } else {
         this._outputLayout = port;
-        this.add(port, {
-          row: 0,
-          column: 2
-        });
       }
+
       return port;
     },
 
@@ -173,14 +170,14 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       throw new Error("Abstract method called!");
     },
 
-    _addDragDropMechanism: function(uiPort, isInput) {
+    _addDragDropMechanism: function(port, isInput) {
       [
         ["dragstart", "edgeDragStart"],
         ["dragover", "edgeDragOver"],
         ["drop", "edgeDrop"],
         ["dragend", "edgeDragEnd"]
       ].forEach(eventPair => {
-        uiPort.addListener(eventPair[0], e => {
+        port.addListener(eventPair[0], e => {
           const eData = this._createDragDropEventData(e, isInput);
           this.fireDataEvent(eventPair[1], eData);
         }, this);
