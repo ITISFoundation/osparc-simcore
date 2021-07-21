@@ -331,12 +331,13 @@ qx.Class.define("osparc.file.FilePicker", {
       outputs["outFile"]["value"] = outputValue;
       this.getNode().setOutputs({});
       this.getNode().setOutputs(outputs);
+      this.getNode().getStatus().setHasOutputs(true);
+      this.getNode().getStatus().setModified(false);
       const outLabel = this.self().getOutputLabel(outputs);
       if (outLabel) {
         this.getNode().setLabel(outputValue.label);
       }
       this.getNode().getStatus().setProgress(100);
-
     },
 
     __setOutputValueFromStore: function(store, dataset, path, label) {
