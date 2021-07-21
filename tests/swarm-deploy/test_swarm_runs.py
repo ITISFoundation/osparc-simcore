@@ -5,9 +5,10 @@
 import logging
 import sys
 import time
+from collections import deque
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Dict, List
+from typing import Any, Deque, Dict, List, Set
 
 import pytest
 import requests
@@ -20,15 +21,12 @@ logger = logging.getLogger(__name__)
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
+SEPARATOR_LINE = "-" * 50
 
 WAIT_TIME_SECS = 40
 RETRY_COUNT = 7
 MAX_WAIT_TIME = 240
 
-
-# wait if running pre-state
-# https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
-SWARM_TASK_PRE_STATES = ["NEW", "PENDING", "ASSIGNED", "PREPARING", "STARTING"]
 
 SWARM_TASK_FAILED_STATES = [
     "COMPLETE",
@@ -118,37 +116,73 @@ def test_core_service_running(
     # ID                  NAME                     IMAGE                     NODE                DESIRED STATE       CURRENT STATE            ERROR                       PORTS
     # puiaevvmtbs1        simcore_storage.1       simcore_storage:latest   crespo-wkstn        Running             Running 18 minutes ago
     # j5xtlrnn684y         \_ simcore_storage.1   simcore_storage:latest   crespo-wkstn        Shutdown            Failed 18 minutes ago    "task: non-zero exit (1)"
-    tasks = service.tasks()
-    num_tasks = get_replicas(service_config)
 
-    assert len(tasks) == num_tasks, (
-        f"Expected a {num_tasks} task(s) for '{service_name}', got instead"
-        f"\n{ get_tasks_summary(tasks) }"
-        f"\n{ get_failed_tasks_logs(service, docker_client) }"
+    expected_replicas = get_replicas(service_config)
+
+    # assert number of slots equals number of expected services
+    tasks = service.tasks()
+    slots: Set[int] = {t["Slot"] for t in tasks}
+    slot_count = len(slots)
+
+    assert slot_count == expected_replicas, (
+        f"Expected to have {expected_replicas} slot(s), "
+        f"instead {slot_count} slot(s) were found."
+        f"\n{get_tasks_summary(tasks)}"
+        f"\n{get_failed_tasks_logs(service, docker_client)}"
     )
 
-    for i in range(num_tasks):
-        task: Dict[str, Any] = service.tasks()[i]
+    def _get_tasks_by_slots() -> Dict[int, Deque[Dict[str, Any]]]:
+        results: Dict[int, Deque[Dict[str, Any]]] = {}
 
-        for n in range(RETRY_COUNT):
-            task = service.tasks()[i]
+        for task in service.tasks():
+            slot = task["Slot"]
+            if slot not in results:
+                results[slot] = deque()
+            results[slot].append(task)
 
-            if task["Status"]["State"].upper() in SWARM_TASK_PRE_STATES:
-                print(
-                    "Waiting [{}/{}] ...\n{}".format(
-                        n, RETRY_COUNT, get_tasks_summary(tasks)
-                    )
+        return results
+
+    def _are_any_tasks_running(slot_tasks: Deque[Dict[str, Any]]) -> bool:
+        running_tasks = [
+            t for t in slot_tasks if t["Status"]["State"].upper() == "RUNNING"
+        ]
+        return len(running_tasks) > 0
+
+    # check at least one service in per slot is in running mode else raise error
+    tasks_by_slot: Dict[int, Deque[Dict[str, Any]]] = {}
+    running_service_by_slot: Dict[int, bool] = {s: False for s in slots}
+    for _ in range(RETRY_COUNT):
+        tasks_by_slot = _get_tasks_by_slots()
+        assert len(tasks_by_slot) == expected_replicas
+
+        for slot, slot_tasks in tasks_by_slot.items():
+            if _are_any_tasks_running(slot_tasks):
+                running_service_by_slot[slot] = True
+
+        # if all services for all states are running then
+        if all(running_service_by_slot.values()):
+            break
+        else:
+            time.sleep(WAIT_TIME_SECS)
+
+    # expecting no error, otherwise a nice error message is welcomed
+    error_message = ""
+    for slot, slot_tasks in tasks_by_slot.items():
+        if not _are_any_tasks_running(slot_tasks):
+            message = (
+                f"Expected running service for slot {slot}, "
+                f"but got instead\n{SEPARATOR_LINE}"
+            )
+            for task in slot_tasks:
+                message += (
+                    f"\n{get_task_logs(task, service.name, docker_client)}"
+                    f"\n{pformat(task)}"
+                    f"\n{get_task_logs(task, service.name, docker_client)}"
+                    f"\n{SEPARATOR_LINE}"
                 )
-                time.sleep(WAIT_TIME_SECS)
-            else:
-                break
+                error_message += f"{message}\n"
 
-        # should be running
-        assert task["Status"]["State"].upper() == "RUNNING", (
-            "Expected running, got instead"
-            f"\n{pformat(task)}"
-            f"\n{get_failed_tasks_logs(service, docker_client)}"
-        )
+    assert error_message == ""
 
 
 @pytest.mark.parametrize(
@@ -210,21 +244,26 @@ def get_tasks_summary(tasks):
     return msg
 
 
+def get_task_logs(task, service_name, docker_client):
+    task_logs = ""
+
+    cid = task["Status"]["ContainerStatus"]["ContainerID"]
+    task_logs += "{2} {0} - {1} BEGIN {2}\n".format(service_name, task["ID"], "=" * 10)
+    if cid:
+        container = docker_client.containers.get(cid)
+        task_logs += container.logs().decode("utf-8")
+    else:
+        task_logs += "  log unavailable. container does not exists\n"
+    task_logs += "{2} {0} - {1} END {2}\n".format(service_name, task["ID"], "=" * 10)
+
+    return task_logs
+
+
 def get_failed_tasks_logs(service, docker_client):
     failed_logs = ""
+
     for t in service.tasks():
         if t["Status"]["State"].upper() in SWARM_TASK_FAILED_STATES:
-            cid = t["Status"]["ContainerStatus"]["ContainerID"]
-            failed_logs += "{2} {0} - {1} BEGIN {2}\n".format(
-                service.name, t["ID"], "=" * 10
-            )
-            if cid:
-                container = docker_client.containers.get(cid)
-                failed_logs += container.logs().decode("utf-8")
-            else:
-                failed_logs += "  log unavailable. container does not exists\n"
-            failed_logs += "{2} {0} - {1} END {2}\n".format(
-                service.name, t["ID"], "=" * 10
-            )
+            failed_logs += get_task_logs(t, service.name, docker_client)
 
     return failed_logs
