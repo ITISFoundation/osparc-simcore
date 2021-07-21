@@ -259,18 +259,18 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this._createPort(isInput, true);
         return;
       }
-      const portLabel = this._createPort(isInput);
-      portLabel.addListener("mouseover", () => {
-        portLabel.setSource(osparc.component.workbench.BaseNodeUI.NODE_CONNECTED);
+      const port = this._createPort(isInput);
+      port.addListener("mouseover", () => {
+        port.setSource(osparc.component.workbench.BaseNodeUI.NODE_CONNECTED);
       }, this);
-      portLabel.addListener("mouseout", () => {
+      port.addListener("mouseout", () => {
         const isConnected = isInput ? this.getNode().getInputConnected() : this.getNode().getOutputConnected();
-        portLabel.set({
+        port.set({
           source: isConnected ? osparc.component.workbench.BaseNodeUI.NODE_CONNECTED : osparc.component.workbench.BaseNodeUI.NODE_DISCONNECTED
         });
       }, this);
       if (isInput) {
-        this.getNode().getStatus().bind("dependencies", portLabel, "textColor", {
+        this.getNode().getStatus().bind("dependencies", port, "textColor", {
           converter: dependencies => {
             if (dependencies !== null) {
               return osparc.utils.StatusUI.getColor(dependencies.length ? "modified" : "ready");
@@ -278,11 +278,11 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
             return osparc.utils.StatusUI.getColor();
           }
         });
-        this.getNode().bind("inputConnected", portLabel, "source", {
+        this.getNode().bind("inputConnected", port, "source", {
           converter: isConnected => isConnected ? osparc.component.workbench.BaseNodeUI.NODE_CONNECTED : osparc.component.workbench.BaseNodeUI.NODE_DISCONNECTED
         });
       } else {
-        this.getNode().getStatus().bind("output", portLabel, "textColor", {
+        this.getNode().getStatus().bind("output", port, "textColor", {
           converter: output => {
             switch (output) {
               case "up-to-date":
@@ -296,12 +296,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
             }
           }
         });
-        this.getNode().bind("outputConnected", portLabel, "source", {
+        this.getNode().bind("outputConnected", port, "source", {
           converter: isConnected => isConnected ? osparc.component.workbench.BaseNodeUI.NODE_CONNECTED : osparc.component.workbench.BaseNodeUI.NODE_DISCONNECTED
         });
       }
 
-      this._addDragDropMechanism(portLabel, isInput);
+      this._addDragDropMechanism(port, isInput);
     },
 
     // overridden
