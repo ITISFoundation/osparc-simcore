@@ -125,6 +125,7 @@ def test_core_service_running(
         f"Expected a {num_tasks} task(s) for '{service_name}', got instead"
         f"\n{ get_tasks_summary(tasks) }"
         f"\n{ get_failed_tasks_logs(service, docker_client) }"
+        f"\n{service.logs()}"
     )
 
     for i in range(num_tasks):
