@@ -72,6 +72,9 @@ qx.Class.define("osparc.wrapper.Svg", {
         .M(controls[0].x, controls[0].y)
         .C(controls[1], controls[2], controls[3])
         .fill("none")
+        .style({
+          cursor: "pointer"
+        })
         .stroke({
           width: edgeWidth,
           color: edgeColor,
