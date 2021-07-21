@@ -111,6 +111,10 @@ services:
       - "15672:15672"
       - "15692"
 
+  migration:
+    ports:
+      - "8000"
+
   redis:
     ports:
       - "6379"

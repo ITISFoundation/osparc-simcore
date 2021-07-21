@@ -56,6 +56,7 @@ from yarl import URL
 log = logging.getLogger(__name__)
 
 pytest_simcore_core_services_selection = [
+    "migration",
     "redis",
     "rabbit",
     "catalog",

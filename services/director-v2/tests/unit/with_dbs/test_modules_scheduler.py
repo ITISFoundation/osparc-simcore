@@ -26,7 +26,7 @@ from simcore_service_director_v2.modules.scheduler import (
     scheduler_task,
 )
 
-pytest_simcore_core_services_selection = ["postgres", "redis", "rabbit"]
+pytest_simcore_core_services_selection = ["migration", "postgres", "redis", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer", "redis-commander"]
 
 

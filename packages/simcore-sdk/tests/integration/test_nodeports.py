@@ -17,7 +17,7 @@ from simcore_sdk.node_ports import exceptions
 from simcore_sdk.node_ports._item import ItemConcreteValue
 from simcore_sdk.node_ports.nodeports import Nodeports
 
-pytest_simcore_core_services_selection = ["postgres", "storage"]
+pytest_simcore_core_services_selection = ["migration", "postgres", "storage"]
 
 pytest_simcore_ops_services_selection = [
     "minio",

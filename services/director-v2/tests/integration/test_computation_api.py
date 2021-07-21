@@ -38,6 +38,7 @@ from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_rand
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
+    "migration",
     "director",
     "redis",
     "rabbit",

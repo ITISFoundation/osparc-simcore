@@ -39,6 +39,7 @@ API_VERSION = "v0"
 
 # Selection of core and tool services started in this swarm fixture (integration)
 pytest_simcore_core_services_selection = [
+    "migration",
     "catalog",
     "director",
     "postgres",
