@@ -2,9 +2,9 @@
 
     Typically dumped in statics.json
 """
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
-from pydantic import AnyHttpUrl, BaseSettings, Field, HttpUrl
+from pydantic import AnyHttpUrl, BaseSettings, Field, HttpUrl, BaseModel
 
 from .utils import snake_to_camel
 
@@ -16,6 +16,27 @@ FRONTEND_APPS_AVAILABLE = frozenset({"osparc", "tis", "s4l"})
 FRONTEND_APP_DEFAULT = "osparc"
 
 assert FRONTEND_APP_DEFAULT in FRONTEND_APPS_AVAILABLE
+
+
+class OsparcService(BaseModel):
+    name: str
+    version: str
+    url: AnyHttpUrl
+
+
+def discover_osparc_services() -> List[OsparcService]:
+    return [
+        OsparcService(name="adminer", version="4.8.0", url="https://www.adminer.org/"),
+        OsparcService(name="postgres", version="10.11", url="https://www.postgresql.org/"),
+        OsparcService(name="flower", version="0.9.5", url="https://github.com/mher/flower"),
+        OsparcService(name="celery", version="-", url="https://docs.celeryproject.org/en/stable/"),
+        OsparcService(name="dask", version="-", url="https://docs.dask.org/en/latest/scheduler-overview.html"),
+        OsparcService(name="minio", version="-", url="https://min.io/"),
+        OsparcService(name="portainer", version="-", url="https://www.portainer.io/"),
+        OsparcService(name="redis", version="-", url="https://redis.io/"),
+        OsparcService(name="docker", version="-", url="https://www.docker.com/"),
+        OsparcService(name="docker registry", version="-", url="https://docs.docker.com/registry/"),
+    ]
 
 
 class FrontEndAppSettings(BaseSettings):
@@ -35,6 +56,10 @@ class FrontEndAppSettings(BaseSettings):
     fogbugz_newcase_url: Optional[HttpUrl] = None
     s4l_fogbugz_newcase_url: Optional[HttpUrl] = None
     tis_fogbugz_newcase_url: Optional[HttpUrl] = None
+
+    osparc_services: List[OsparcService] = Field(
+        default_factory=discover_osparc_services
+    )
 
     class Config:
         case_sensitive = False

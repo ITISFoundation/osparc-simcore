@@ -85,10 +85,13 @@ qx.Class.define("osparc.About", {
     },
 
     __populateBackendEntries: function(page) {
-      this.__getBackendLibs().forEach(lib => {
-        const entry = this.__createEntry(lib.name, lib.version, lib.url);
-        page.add(entry);
-      });
+      osparc.utils.LibVersions.getBackendLibs()
+        .then(libs => {
+          libs.forEach(lib => {
+            const entry = this.__createEntry(lib.name, lib.version, lib.url);
+            page.add(entry);
+          });
+        });
     },
 
     __createEntries: function(libs) {
@@ -122,50 +125,6 @@ qx.Class.define("osparc.About", {
       entryLayout.add(entryVersion);
 
       return entryLayout;
-    },
-
-    __getBackendLibs: function() {
-      return [{
-        name: "adminer",
-        version: "4.8.0",
-        url: "https://www.adminer.org/"
-      }, {
-        name: "postgres",
-        version: "10.11",
-        url: "https://www.postgresql.org/"
-      }, {
-        name: "flower",
-        version: "0.9.5",
-        url: "https://github.com/mher/flower"
-      }, {
-        name: "celery",
-        version: "-",
-        url: "https://docs.celeryproject.org/en/stable/"
-      }, {
-        name: "dask",
-        version: "-",
-        url: "https://docs.dask.org/en/latest/scheduler-overview.html"
-      }, {
-        name: "minio",
-        version: "-",
-        url: "https://min.io/"
-      }, {
-        name: "portainer",
-        version: "-",
-        url: "https://www.portainer.io/"
-      }, {
-        name: "redis",
-        version: "-",
-        url: "https://redis.io/"
-      }, {
-        name: "docker",
-        version: "-",
-        url: "https://www.docker.com/"
-      }, {
-        name: "docker registry",
-        version: "-",
-        url: "https://docs.docker.com/registry/"
-      }];
     }
   }
 });
