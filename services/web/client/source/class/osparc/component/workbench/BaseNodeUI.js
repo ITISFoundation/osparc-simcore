@@ -47,6 +47,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
 
     const captionTitle = this.getChildControl("title");
     captionTitle.set({
+      rich: true,
       cursor: "move"
     });
     captionTitle.addListener("appear", () => {

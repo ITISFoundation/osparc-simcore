@@ -170,7 +170,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     __applyType: function(type) {
       switch (type) {
         case "file":
-          this.__turnIntoFileUI();
+          this.__checkTurnIntoFileUI();
           break;
         case "parameter":
           this.__turnIntoParameterUI();
@@ -190,25 +190,32 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       });
     },
 
-    __turnIntoFileUI: function() {
+    __checkTurnIntoFileUI: function() {
       const outputs = this.getNode().getOutputs();
       if ([null, ""].includes(osparc.file.FilePicker.getOutput(outputs))) {
-        return;
+        this.getNode().addListener("changeOutputs", () => {
+          this.__checkTurnIntoFileUI();
+        }, this);
+      } else {
+        this.__turnIntoFileUI();
       }
+    },
 
+    __turnIntoFileUI: function() {
       const width = 120;
       this.__turnIntoCircledUI(width);
       this.__hideExtraElements();
 
       // two lines
-      this.getChildControl("title").set({
-        rich: true,
+      const title = this.getChildControl("title");
+      title.set({
         wrap: true,
         maxHeight: 28,
         minWidth: width-16,
         maxWidth: width-16
       });
 
+      const outputs = this.getNode().getOutputs();
       let imageSrc = null;
       if (osparc.file.FilePicker.isOutputFromStore(outputs)) {
         imageSrc = "@FontAwesome5Solid/file-alt/34";
@@ -216,13 +223,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         imageSrc = "@FontAwesome5Solid/link/34";
       }
       if (imageSrc) {
-        const fileImage = new osparc.ui.basic.Thumbnail(imageSrc).set({
-          padding: 12
-        });
-        this.add(fileImage, {
-          row: 0,
-          column: 1
-        });
+        this.setThumbnail(imageSrc);
       }
       this.fireEvent("nodeMoving");
     },
@@ -335,8 +336,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           scale: true
         });
       } else {
-        this.__thumbnail = new qx.ui.embed.Html(thumbnail).set({
-          height: 100
+        this.__thumbnail = new osparc.ui.basic.Thumbnail(thumbnail).set({
+          padding: 12
         });
       }
       this.add(this.__thumbnail, {
