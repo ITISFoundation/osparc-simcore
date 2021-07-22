@@ -49,6 +49,7 @@ qx.Class.define("osparc.About", {
         contentPaddingTop: 10,
         barPosition: "top"
       });
+      tabView.getChildControl("pane").setBackgroundColor("material-button-background");
       this.add(tabView, {
         flex: 1
       });
@@ -65,19 +66,17 @@ qx.Class.define("osparc.About", {
       tabView.add(backendPage);
       this.__populateFrontendEntries(frontendPage);
       this.__populateBackendEntries(backendPage);
-
-      tabView.getChildControl("pane").setBackgroundColor("material-button-background");
     },
 
     __populateFrontendEntries: function(page) {
       [
-        this.__createFEEntries([osparc.utils.LibVersions.getPlatformVersion()]),
-        this.__createFEEntries([osparc.utils.LibVersions.getUIVersion()]),
+        this.__createEntries([osparc.utils.LibVersions.getPlatformVersion()]),
+        this.__createEntries([osparc.utils.LibVersions.getUIVersion()]),
         [new qx.ui.core.Spacer(null, 10)],
-        this.__createFEEntries([osparc.utils.LibVersions.getQxCompiler()]),
-        this.__createFEEntries(osparc.utils.LibVersions.getQxLibraryInfoMap()),
+        this.__createEntries([osparc.utils.LibVersions.getQxCompiler()]),
+        this.__createEntries(osparc.utils.LibVersions.getQxLibraryInfoMap()),
         [new qx.ui.core.Spacer(null, 10)],
-        this.__createFEEntries(osparc.utils.LibVersions.get3rdPartyLibs())
+        this.__createEntries(osparc.utils.LibVersions.get3rdPartyLibs())
       ].forEach(entries => {
         entries.forEach(entry => {
           page.add(entry);
@@ -92,7 +91,7 @@ qx.Class.define("osparc.About", {
       });
     },
 
-    __createFEEntries: function(libs) {
+    __createEntries: function(libs) {
       const entries = [];
       libs.forEach(lib => {
         entries.push(this.__createEntry(lib.name, lib.version, lib.url));
