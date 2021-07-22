@@ -24,18 +24,18 @@ class OsparcDependency(BaseModel):
     url: AnyHttpUrl
 
 
-def discover_osparc_services() -> List[OsparcService]:
+def discover_osparc_dependencies() -> List[OsparcDependency]:
     return [
-        OsparcService(name="adminer", version="4.8.0", url="https://www.adminer.org/"),
-        OsparcService(name="postgres", version="10.11", url="https://www.postgresql.org/"),
-        OsparcService(name="flower", version="0.9.5", url="https://github.com/mher/flower"),
-        OsparcService(name="celery", version="-", url="https://docs.celeryproject.org/en/stable/"),
-        OsparcService(name="dask", version="-", url="https://docs.dask.org/en/latest/scheduler-overview.html"),
-        OsparcService(name="minio", version="-", url="https://min.io/"),
-        OsparcService(name="portainer", version="-", url="https://www.portainer.io/"),
-        OsparcService(name="redis", version="-", url="https://redis.io/"),
-        OsparcService(name="docker", version="-", url="https://www.docker.com/"),
-        OsparcService(name="docker registry", version="-", url="https://docs.docker.com/registry/"),
+        OsparcDependency(name="adminer", version="4.8.0", url="https://www.adminer.org/"),
+        OsparcDependency(name="postgres", version="10.11", url="https://www.postgresql.org/"),
+        OsparcDependency(name="flower", version="0.9.5", url="https://github.com/mher/flower"),
+        OsparcDependency(name="celery", version="-", url="https://docs.celeryproject.org/en/stable/"),
+        OsparcDependency(name="dask", version="-", url="https://docs.dask.org/en/latest/scheduler-overview.html"),
+        OsparcDependency(name="minio", version="-", url="https://min.io/"),
+        OsparcDependency(name="portainer", version="-", url="https://www.portainer.io/"),
+        OsparcDependency(name="redis", version="-", url="https://redis.io/"),
+        OsparcDependency(name="docker", version="-", url="https://www.docker.com/"),
+        OsparcDependency(name="docker registry", version="-", url="https://docs.docker.com/registry/"),
     ]
 
 
@@ -57,8 +57,8 @@ class FrontEndAppSettings(BaseSettings):
     s4l_fogbugz_newcase_url: Optional[HttpUrl] = None
     tis_fogbugz_newcase_url: Optional[HttpUrl] = None
 
-    osparc_services: List[OsparcService] = Field(
-        default_factory=discover_osparc_services
+    osparc_dependencies: List[OsparcDependency] = Field(
+        default_factory=discover_osparc_dependencies
     )
 
     class Config:
