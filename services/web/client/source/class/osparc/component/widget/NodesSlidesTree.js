@@ -27,13 +27,13 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this.__tree = this._createChildControlImpl("tree");
-    const disable = this._createChildControlImpl("disable");
+    this.__tree = this.getChildControl("tree");
+    const disable = this.getChildControl("disable");
     disable.addListener("execute", () => this.__disableSlides(), this);
-    const enable = this._createChildControlImpl("enable");
+    const enable = this.getChildControl("enable");
     enable.addListener("execute", () => this.__enableSlides(), this);
 
-    const model = this.__initTree();
+    const model = this.__initRoot();
     this.__tree.setModel(model);
 
     this.__populateTree();
@@ -133,7 +133,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       return tree;
     },
 
-    __initTree: function() {
+    __initRoot: function() {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const topLevelNodes = study.getWorkbench().getNodes();
       let rootData = {
@@ -198,6 +198,19 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
             child.setSkipNode(true);
           }
         });
+        children.sort((a, b) => {
+          const aPos = a.getPosition();
+          const bPos = b.getPosition();
+          if (aPos === -1) {
+            return 1;
+          }
+          if (bPos === -1) {
+            return -1;
+          }
+          return aPos - bPos;
+        });
+        // tree needs to be refreshed
+        console.log(children);
       }
     },
 
@@ -276,8 +289,8 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       this.__tree.refresh();
     },
 
-    __enableSlides: function() {
-      let slideshow = {};
+    __serialize: function() {
+      const slideshow = {};
       const model = this.__tree.getModel();
       const children = model.getChildren().toArray();
       children.forEach(child => {
@@ -287,6 +300,11 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           };
         }
       });
+      return slideshow;
+    },
+
+    __enableSlides: function() {
+      const slideshow = this.__serialize();
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       study.getUi().setSlideshow(slideshow);
       this.fireEvent("finished");
