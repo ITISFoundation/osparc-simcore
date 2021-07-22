@@ -18,7 +18,7 @@ FRONTEND_APP_DEFAULT = "osparc"
 assert FRONTEND_APP_DEFAULT in FRONTEND_APPS_AVAILABLE
 
 
-class OsparcService(BaseModel):
+class OsparcDependency(BaseModel):
     name: str
     version: str
     url: AnyHttpUrl
