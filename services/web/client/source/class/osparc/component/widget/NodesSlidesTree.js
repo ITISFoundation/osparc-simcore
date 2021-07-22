@@ -209,8 +209,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           }
           return aPos - bPos;
         });
-        // tree needs to be refreshed
-        console.log(children);
+        this.__tree.refresh();
       }
     },
 
