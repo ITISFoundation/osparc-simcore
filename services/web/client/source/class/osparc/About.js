@@ -23,8 +23,8 @@ qx.Class.define("osparc.About", {
   construct: function() {
     this.base(arguments, this.tr("About"));
     this.set({
-      layout: new qx.ui.layout.VBox(),
-      contentPadding: 20,
+      layout: new qx.ui.layout.VBox(5),
+      contentPadding: 15,
       showMaximize: false,
       showMinimize: false,
       resizable: false,
@@ -34,39 +34,73 @@ qx.Class.define("osparc.About", {
     });
     const closeBtn = this.getChildControl("close-button");
     osparc.utils.Utils.setIdToWidget(closeBtn, "aboutWindowCloseBtn");
-    this.__populateEntries();
+
+    this.__buildLayout();
   },
 
   members: {
-    __populateEntries: function() {
-      const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
-      this.__createEntries([platformVersion]);
+    __buildLayout: function() {
+      this.add(new qx.ui.basic.Label(this.tr("oSPARC is powered by:")).set({
+        font: "text-14"
+      }));
 
-      const uiVersion = osparc.utils.LibVersions.getUIVersion();
-      this.__createEntries([uiVersion]);
+      const tabView = new qx.ui.tabview.TabView().set({
+        contentPadding: 5,
+        contentPaddingTop: 10,
+        barPosition: "top"
+      });
+      this.add(tabView, {
+        flex: 1
+      });
 
-      this.add(new qx.ui.core.Spacer(null, 10));
+      const frontendPage = new qx.ui.tabview.Page(this.tr("Front-end")).set({
+        layout: new qx.ui.layout.VBox(),
+        backgroundColor: "material-button-background"
+      });
+      const backendPage = new qx.ui.tabview.Page(this.tr("Back-end")).set({
+        layout: new qx.ui.layout.VBox(),
+        backgroundColor: "material-button-background"
+      });
+      tabView.add(frontendPage);
+      tabView.add(backendPage);
+      this.__populateFrontendEntries(frontendPage);
+      this.__populateBackendEntries(backendPage);
 
-      const qxCompiler = osparc.utils.LibVersions.getQxCompiler();
-      this.__createEntries([qxCompiler]);
-
-      const libsInfo = osparc.utils.LibVersions.getQxLibraryInfoMap();
-      this.__createEntries(libsInfo);
-
-      this.add(new qx.ui.core.Spacer(null, 10));
-
-      const libs = osparc.utils.LibVersions.get3rdPartyLibs();
-      this.__createEntries(libs);
+      tabView.getChildControl("pane").setBackgroundColor("material-button-background");
     },
 
-    __createEntries: function(libs) {
-      for (let i=0; i<libs.length; i++) {
-        const lib = libs[i];
-        this.add(this.__createEntry(lib.name, lib.version, lib.url));
-      }
+    __populateFrontendEntries: function(page) {
+      [
+        this.__createFEEntries([osparc.utils.LibVersions.getPlatformVersion()]),
+        this.__createFEEntries([osparc.utils.LibVersions.getUIVersion()]),
+        [new qx.ui.core.Spacer(null, 10)],
+        this.__createFEEntries([osparc.utils.LibVersions.getQxCompiler()]),
+        this.__createFEEntries(osparc.utils.LibVersions.getQxLibraryInfoMap()),
+        [new qx.ui.core.Spacer(null, 10)],
+        this.__createFEEntries(osparc.utils.LibVersions.get3rdPartyLibs())
+      ].forEach(entries => {
+        entries.forEach(entry => {
+          page.add(entry);
+        });
+      });
     },
 
-    __createEntry: function(item = "unknown-library", vers = "unknown-version", url) {
+    __populateBackendEntries: function(page) {
+      this.__getBackendLibs().forEach(lib => {
+        const entry = this.__createEntry(lib.name, lib.version, lib.url);
+        page.add(entry);
+      });
+    },
+
+    __createFEEntries: function(libs) {
+      const entries = [];
+      libs.forEach(lib => {
+        entries.push(this.__createEntry(lib.name, lib.version, lib.url));
+      });
+      return entries;
+    },
+
+    __createEntry: function(item = "unknown-library", vers = "-", url) {
       let entryLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         marginBottom: 4
       });
@@ -89,6 +123,50 @@ qx.Class.define("osparc.About", {
       entryLayout.add(entryVersion);
 
       return entryLayout;
+    },
+
+    __getBackendLibs: function() {
+      return [{
+        name: "adminer",
+        version: "4.8.0",
+        url: "https://www.adminer.org/"
+      }, {
+        name: "postgres",
+        version: "10.11",
+        url: "https://www.postgresql.org/"
+      }, {
+        name: "flower",
+        version: "0.9.5",
+        url: "https://github.com/mher/flower"
+      }, {
+        name: "celery",
+        version: "-",
+        url: "https://docs.celeryproject.org/en/stable/"
+      }, {
+        name: "dask",
+        version: "-",
+        url: "https://docs.dask.org/en/latest/scheduler-overview.html"
+      }, {
+        name: "minio",
+        version: "-",
+        url: "https://min.io/"
+      }, {
+        name: "portainer",
+        version: "-",
+        url: "https://www.portainer.io/"
+      }, {
+        name: "redis",
+        version: "-",
+        url: "https://redis.io/"
+      }, {
+        name: "docker",
+        version: "-",
+        url: "https://www.docker.com/"
+      }, {
+        name: "docker registry",
+        version: "-",
+        url: "https://docs.docker.com/registry/"
+      }];
     }
   }
 });
