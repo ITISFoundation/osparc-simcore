@@ -140,7 +140,11 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     populateNodeLayout: function() {
       const node = this.getNode();
-      node.bind("label", this, "caption");
+      node.bind("label", this, "caption", {
+        onUpdate: () => {
+          setTimeout(() => this.fireEvent("nodeMoving"), 50);
+        }
+      });
       const metaData = node.getMetaData();
       this._createPorts(true, Boolean((metaData && metaData.inputs && Object.keys(metaData.inputs).length) || this.getNode().isContainer()));
       this._createPorts(false, Boolean((metaData && metaData.outputs && Object.keys(metaData.outputs).length) || this.getNode().isContainer()));
@@ -252,6 +256,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         const newVal = updatedOutputs["out_1"];
         label.setValue(String(newVal["value"]));
       });
+      this.fireEvent("nodeMoving");
     },
 
     // overridden
