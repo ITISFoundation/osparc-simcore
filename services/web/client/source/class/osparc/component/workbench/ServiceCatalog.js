@@ -85,9 +85,8 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
 
   members: {
     __allServicesList: null,
-    __allServicesObj: null,
+    __filteredServicesObj: null,
     __textfield: null,
-    __showAll: null,
     __contextNodeId: null,
     __contextPort: null,
     __versionsBox: null,
@@ -104,16 +103,6 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       const filters = new osparc.component.filter.group.ServiceFilterGroup("serviceCatalog");
       this.__textfield = filters.getTextFilter().getChildControl("textfield", true);
       filterPart.add(filters);
-      const showAllCheckbox = this.__showAll = new qx.ui.form.CheckBox(this.tr("Show all"));
-      showAllCheckbox.set({
-        value: false,
-        // FIXME: Backend should do the filtering
-        visibility: osparc.data.Permissions.getInstance().canDo("test") ? "visible" : "excluded"
-      });
-      showAllCheckbox.addListener("changeValue", e => {
-        this.__updateList();
-      }, this);
-      filterPart.add(showAllCheckbox);
       toolbar.add(filterPart);
 
       toolbar.addSpacer();
@@ -130,7 +119,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     __createListLayout: function() {
       // Services list
       this.__allServicesList = [];
-      this.__allServicesObj = {};
+      this.__filteredServicesObj = {};
 
       const services = this.__serviceBrowser = new osparc.component.service.ServiceList("serviceCatalog").set({
         width: 568,
@@ -213,41 +202,43 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
 
     __addNewData: function(newData) {
       this.__allServicesList = osparc.utils.Services.convertObjectToArray(newData);
-      this.__updateList(this.__allServicesList);
+      this.__updateList();
     },
 
     __updateList: function() {
-      let filteredServices = [];
-      for (let i = 0; i < this.__allServicesList.length; i++) {
-        const service = this.__allServicesList[i];
-        if (this.__showAll.getValue() || !service.key.includes("demodec")) {
+      const filteredServices = [];
+      this.__allServicesList.forEach(service => {
+        if (this.__contextPort === null) {
           filteredServices.push(service);
+        } else {
+          // filter out services that can't be connected
+          const isInput = this.__contextPort.isInput;
+          const connectable = Object.keys(isInput ? service.outputs : service.inputs).length;
+          if (connectable) {
+            filteredServices.push(service);
+          }
         }
-      }
+      });
 
-      let groupedServices = this.__allServicesObj = osparc.utils.Services.convertArrayToObject(filteredServices);
+      const filteredServicesObj = this.__filteredServicesObj = osparc.utils.Services.convertArrayToObject(filteredServices);
 
-      let groupedServicesList = [];
-      for (const key in groupedServices) {
-        let service = osparc.utils.Services.getLatest(groupedServices, key);
+      const groupedServicesList = [];
+      for (const key in filteredServicesObj) {
+        let service = osparc.utils.Services.getLatest(filteredServicesObj, key);
         service = osparc.utils.Utils.deepCloneObject(service);
         osparc.utils.Services.removeFileToKeyMap(service);
-        let newModel = qx.data.marshal.Json.createModel(service);
-        groupedServicesList.push(newModel);
+        groupedServicesList.push(qx.data.marshal.Json.createModel(service));
       }
 
-
-      let newModel = new qx.data.Array(groupedServicesList);
-
-      this.__serviceBrowser.setModel(newModel);
+      this.__serviceBrowser.setModel(new qx.data.Array(groupedServicesList));
     },
 
     __changedSelection: function(key) {
       if (this.__versionsBox) {
         let selectBox = this.__versionsBox;
         selectBox.removeAll();
-        if (key in this.__allServicesObj) {
-          let versions = osparc.utils.Services.getVersions(this.__allServicesObj, key);
+        if (key in this.__filteredServicesObj) {
+          let versions = osparc.utils.Services.getVersions(this.__filteredServicesObj, key);
           const latest = new qx.ui.form.ListItem(this.self(arguments).LATEST);
           selectBox.add(latest);
           for (let i = versions.length; i--;) {
