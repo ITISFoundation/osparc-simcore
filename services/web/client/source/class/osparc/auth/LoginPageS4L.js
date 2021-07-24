@@ -40,17 +40,14 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
     // overriden
     _buildLayout: function() {
       const layout = new qx.ui.layout.Grid(20, 20);
-      layout.setColumnMaxWidth(0, 800);
       layout.setRowFlex(1, 1);
       this._setLayout(layout);
 
       this.setBackgroundColor("#025887");
-
-      const image = new osparc.ui.basic.Thumbnail("osparc/s4l_splitimage.jpeg");
-      this._add(image, {
-        row: 0,
-        column: 0,
-        rowSpan: 2
+      this.getContentElement().setStyles({
+        "background-image": "url(resource/osparc/s4l_splitimage.jpeg)",
+        "background-repeat": "no-repeat",
+        "background-size": "auto 100%"
       });
 
       const pages = this._getLoginStack();
