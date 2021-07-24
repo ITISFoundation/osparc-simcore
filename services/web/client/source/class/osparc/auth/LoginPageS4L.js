@@ -72,6 +72,14 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
       loginLayout.add(pages);
 
       const versionLink = this._getVersionLink();
+      versionLink.set({
+        textColor: "text"
+      });
+      versionLink.getChildren().forEach(page => {
+        page.set({
+          textColor: "text"
+        });
+      });
       loginLayout.add(versionLink);
 
       loginLayout.add(new qx.ui.core.Spacer(), {
