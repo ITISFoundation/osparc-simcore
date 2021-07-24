@@ -45,7 +45,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       layout.setRowFlex(1, 1);
       this._setLayout(layout);
 
-      const image = this.__getLogoWPlatform();
+      const image = this._getLogoWPlatform();
       this._add(image, {
         row: 0,
         column: 0
@@ -64,7 +64,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       });
     },
 
-    __getLogoWPlatform: function() {
+    _getLogoWPlatform: function() {
       const image = new osparc.ui.basic.LogoWPlatform();
       image.setSize({
         width: 250,
