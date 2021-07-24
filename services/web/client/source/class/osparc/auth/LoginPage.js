@@ -21,7 +21,7 @@
  */
 
 qx.Class.define("osparc.auth.LoginPage", {
-  extend : qx.ui.core.Widget,
+  extend: qx.ui.core.Widget,
 
   /*
   *****************************************************************************
@@ -31,29 +31,7 @@ qx.Class.define("osparc.auth.LoginPage", {
   construct: function() {
     this.base(arguments);
 
-    // Layout guarantees it gets centered in parent's page
-    const layout = new qx.ui.layout.Grid(20, 20);
-    layout.setRowFlex(1, 1);
-    layout.setColumnFlex(0, 1);
-    this._setLayout(layout);
-
-    const image = this._getLogoWPlatform();
-    this._add(image, {
-      row: 0,
-      column: 0
-    });
-
-    const pages = this._getLoginStack();
-    this._add(pages, {
-      row: 1,
-      column: 0
-    });
-
-    const versionLink = this._getVersionLink();
-    this._add(versionLink, {
-      row: 2,
-      column: 0
-    });
+    this._buildLayout();
   },
 
   events: {
@@ -61,10 +39,35 @@ qx.Class.define("osparc.auth.LoginPage", {
   },
 
   members: {
-    _getLogoWPlatform: function() {
+    _buildLayout: function() {
+      // Layout guarantees it gets centered in parent's page
+      const layout = new qx.ui.layout.Grid(20, 20);
+      layout.setRowFlex(1, 1);
+      this._setLayout(layout);
+
+      const image = this.__getLogoWPlatform();
+      this._add(image, {
+        row: 0,
+        column: 0
+      });
+
+      const pages = this._getLoginStack();
+      this._add(pages, {
+        row: 1,
+        column: 0
+      });
+
+      const versionLink = this._getVersionLink();
+      this._add(versionLink, {
+        row: 2,
+        column: 0
+      });
+    },
+
+    __getLogoWPlatform: function() {
       const image = new osparc.ui.basic.LogoWPlatform();
       image.setSize({
-        width: qx.core.Environment.get("product.name") === "s4l" ? 150 : 250,
+        width: 250,
         height: 150
       });
       image.setFont("text-18");
