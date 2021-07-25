@@ -69,32 +69,9 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
       loginLayout.add(image);
 
       const pages = this._getLoginStack();
-      pages.getChildren().forEach(page => {
-        page.getChildren().forEach(child => {
-          child.set({
-            textColor: "text"
-          });
-          if (child.getContentElement().getNodeName() === "input") {
-            // text fields
-            child.set({
-              backgroundColor: "#025887"
-            });
-          }
-        });
-      });
       loginLayout.add(pages);
 
       const versionLink = this._getVersionLink();
-      // the double semicolon
-      versionLink.set({
-        textColor: "text"
-      });
-      // the two texts
-      versionLink.getChildren().forEach(page => {
-        page.set({
-          textColor: "text"
-        });
-      });
       loginLayout.add(versionLink);
 
       loginLayout.add(new qx.ui.core.Spacer(), {
