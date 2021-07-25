@@ -77,6 +77,30 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
       loginLayout.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
+
+      // styling
+      pages.getChildren().forEach(page => {
+        page.getChildren().forEach(child => {
+          if ("getChildren" in child) {
+            child.getChildren().forEach(chil => {
+              // "Create account" and "Forgot password"
+              chil.set({
+                textColor: "#ddd"
+              });
+            });
+          };
+        });
+      });
+      // the double semicolon
+      versionLink.set({
+        textColor: "#bbb"
+      });
+      // the two texts
+      versionLink.getChildren().forEach(page => {
+        page.set({
+          textColor: "#bbb"
+        });
+      });
     }
   }
 });
