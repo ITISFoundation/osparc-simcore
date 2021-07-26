@@ -37,7 +37,7 @@
     },
     {
       "class": "osparc.Application",
-      "theme": "osparc.theme.ThemeBlue",
+      "theme": "osparc.theme.ThemeLightBlue",
       "name": "s4l",
       "title": "Sim4Life",
       "include": [

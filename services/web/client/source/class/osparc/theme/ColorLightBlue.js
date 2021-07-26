@@ -1,4 +1,4 @@
-qx.Theme.define("osparc.theme.ColorBlue", {
+qx.Theme.define("osparc.theme.ColorLightBlue", {
   extend: osparc.theme.osparcblue.Color,
   include: osparc.theme.mixin.Color,
   colors: {
