@@ -89,6 +89,7 @@ def mock_env(monkeypatch) -> None:
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
     registry = os.environ.get("DOCKER_REGISTRY", "local")
+    registry = "itisfoundation" if registry == "" else registry
     image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
 
     image_name = f"{registry}/dynamic-sidecar:{image_tag}".strip("/")
