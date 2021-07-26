@@ -18,7 +18,7 @@ from settings_library.base import BaseCustomSettings
 
 @pytest.mark.parametrize("env_file", (".env-sample", ".env-fails"))
 def test_settigs_with_modules_settings(
-    env_file: str, mock_environment: Dict, mocks_folder: Path, settings_cls
+    env_file: str, mock_environment: Dict, settings_cls
 ):
 
     assert all(
