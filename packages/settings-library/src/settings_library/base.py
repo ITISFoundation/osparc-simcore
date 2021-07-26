@@ -1,4 +1,5 @@
 import logging
+import os
 from functools import cached_property
 from typing import List, Tuple, Type
 
@@ -43,10 +44,13 @@ class BaseCustomSettings(BaseSettings):
                     (
                         "Could not validate '%s', field '%s' "
                         "contains errors, see below:\n%s"
+                        "\n======ENV_VARS=====\n%s"
+                        "\n==================="
                     ),
                     cls.__name__,
                     default_cls.__name__,
                     str(e),
+                    "\n".join(f"{k}={v}" for k, v in os.environ.items()),
                 )
                 raise e
 
