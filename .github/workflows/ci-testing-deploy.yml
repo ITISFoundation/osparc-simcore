@@ -1538,7 +1538,7 @@ jobs:
 
   integration-test-director-v2-01:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[int] director-v2"
+    name: "[int] director-v2 01"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
