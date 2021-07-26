@@ -27,11 +27,17 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
         filter_by_state=SCHEDULED_STATES
     )
 
+    logger.debug(
+        "Following scheduled comp_runs found still to be scheduled: %s",
+        runs if runs else "NONE",
+    )
+
     # check which scheduler to start
     if (
         app.state.settings.CELERY_SCHEDULER.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED
         and not app.state.settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
     ):
+        logger.info("Creating Celery-based scheduler...")
         from ..celery import CeleryClient
         from .celery_scheduler import CeleryScheduler
 
@@ -45,7 +51,7 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
     from ..dask_client import DaskClient
     from .dask_scheduler import DaskScheduler
 
-    logger.info("DaskScheduler creation with %s runs being scheduled", len(runs))
+    logger.info("Creating Dask-based scheduler...")
     return DaskScheduler(
         settings=app.state.settings.DASK_SCHEDULER,
         dask_client=DaskClient.instance(app),
