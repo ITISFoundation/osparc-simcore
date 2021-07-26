@@ -17,7 +17,7 @@ def test_settings_with_project_env_devel(project_env_devel_environment):
     settings = AppSettings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))
 
-    assert settings.SC_BOOT_MODE == BootModeEnum.DEBUG
+    assert settings.SC_BOOT_MODE == BootModeEnum.DEFAULT
     assert settings.LOG_LEVEL == LogLevel.DEBUG
 
     assert settings.POSTGRES.dsn == "postgresql://test:test@localhost:5432/test"
