@@ -152,7 +152,7 @@ lazy-object-proxy==1.6.0
     # via astroid
 mako==1.1.4
     # via alembic
-markupsafe==2.0.1
+markupsafe==1.1.1
     # via
     #   -c requirements/_base.txt
     #   mako
