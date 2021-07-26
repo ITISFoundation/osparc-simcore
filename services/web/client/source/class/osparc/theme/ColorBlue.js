@@ -2,145 +2,148 @@ qx.Theme.define("osparc.theme.ColorBlue", {
   extend: osparc.theme.osparcblue.Color,
   include: osparc.theme.mixin.Color,
   colors: {
+    "c00": "#FFFFFF", // L=100
+    "c01": "#EFEFEF", // L=94
+    "c02": "#7AE6FF", // L=75
+    "c03": "#60CCFF", // L=69
+    "c04": "#51BDF0", // L=63
+    "c05": "#41ADE0", // L=56
+    "c06": "#808080", // L=50
+    "c07": "#707070", // L=44
+    "c08": "#606060", // L=38
+    "c09": "#505050", // L=31
+    "c10": "#404040", // L=25
+    "c11": "#303030", // L=19
+    "c12": "#202020", // L=13
+    "c13": "#101010", // L=06
+    "c14": "#000000", // L=00
+
+    "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
+    "invalid-red": "#a04040",
+
+
     // main
-    "background-main": "#ffffff",
-    "background-main-lighter": "#8F8CFF",
-    "background-main-lighter+": "#A8A5FF",
-    "contrasted-background": "#C2BFFF",
-    "contrasted-background+": "#DBD8FF",
+    "background-main": "c01",
+    "background-main-lighter": "c02",
+    "background-main-lighter+": "c03",
+    "contrasted-background": "c04",
+    "contrasted-background+": "c05",
+    "contrasted-background++": "c06",
 
     // text
-    "text": "#202020",
-    "text-disabled": "#303030",
-    "text-selected": "#0F0F0F",
-    "text-placeholder": "text-disabled",
-    "text-darker": "text-disabled",
-    "contrasted-text-dark": "#DDDDDD",
-    "contrasted-text-light": "#111111",
-    "link": "#aaaaaa",
+    "text": "c11",
+    "text-disabled": "c07",
+    "text-selected": "c12",
+    "text-placeholder": "c07",
+    "text-darker": "c07",
+    "contrasted-text-dark": "c01",
+    "contrasted-text-light": "c12",
+    "link": "c08",
 
     // shadows
-    "bg-shadow": "#999999",
-    "shadow": qx.core.Environment.get("css.rgba") ? "rgba(255, 255, 255, 0.4)" : "bg-shadow",
+    "bg-shadow": "c06",
+    "shadow": qx.core.Environment.get("css.rgba") ? "a-bit-transparent" : "bg-shadow",
 
     // window
-    "window-caption-background": "background-main",
-    "window-caption-background-active": "contrasted-background",
-    "window-caption-text": "text",
-    "window-caption-text-active": "text-selected",
+    "window-caption-background": "c01",
+    "window-caption-background-active": "c04",
+    "window-caption-text": "c11",
+    "window-caption-text-active": "c12",
 
     // material-button
-    "material-button-background": "background-main-lighter+",
-    "material-button-background-hovered": "background-main-lighter",
-    "material-button-background-pressed": "contrasted-background",
-    "material-button-background-disabled": "contrasted-background",
-    "material-button-text-disabled": "text-disabled",
-    "material-button-text": "text",
-
-
-
-
-
-    "primary-color": "background-main-lighter",
-    "primary-color-light": "#6993dc",
-    "primary-color-dark": "#003c7a",
-    "secondary-color": "#cfd8dc",
-    "secondary-color-light": "#ffffff",
-    "secondary-color-dark": "#9ea7aa",
-    "invalid-color": "#a04040",
+    "material-button-background": "c03",
+    "material-button-background-disabled": "c02",
+    "material-button-background-hovered": "c05",
+    "material-button-background-pressed": "c05",
+    "material-button-text-disabled": "c07",
+    "material-button-text": "c11",
 
     // material-textfield
-    "material-textfield": "primary-color",
-    "material-textfield-focused": "primary-color-light",
-    "material-textfield-disabled": "secondary-color",
-    "material-textfield-invalid": "invalid-color",
+    "material-textfield": "c07",
+    "material-textfield-focused": "c11",
+    "material-textfield-disabled": "c05",
+    "material-textfield-invalid": "invalid-red",
+    "invalid": "invalid-red",
 
     // backgrounds
-    "background-selected": "primary-color",
-    "background-selected-disabled": "secondary-color-dark",
-    "background-selected-dark": "primary-color-dark",
-    "background-disabled": "background-main",
-    "background-disabled-checked": "contrasted-background",
-    "background-pane": "contrasted-background",
+    "background-selected": "c05",
+    "background-selected-disabled": "c02",
+    "background-selected-dark": "c04",
+    "background-disabled": "c01",
+    "background-disabled-checked": "c02",
+    "background-pane": "c01",
 
     // tabview
-    "tabview-unselected": "#1866B5",
-    "tabview-button-border": "#134983",
-    "tabview-label-active-disabled": "#D9D9D9",
-    "tabview-pane-background": "background-main",
+    "tabview-unselected": "c14",
+    "tabview-button-border": "c14",
+    "tabview-label-active-disabled": "c10",
+    "tabview-pane-background": "c01",
     "tabview-button-background": "transparent",
 
     // scrollbar
-    "scrollbar-passive": "#efefef",
-    "scrollbar-active": "#e0e0e0",
+    "scrollbar-passive": "c02",
+    "scrollbar-active": "c04",
 
     // form
-    "button": "material-button-background",
-    "button-border": "bg-shadow",
-    "button-border-hovered": "material-button-background-hovered",
-    "invalid": "invalid-color",
-    "button-box": "material-button-background",
-    "button-box-pressed": "material-button-background-pressed",
-    "border-lead": "primary-color",
+    "button": "c05",
+    "button-border": "c06",
+    "button-border-hovered": "c07",
+    "button-box": "c04",
+    "button-box-pressed": "c05",
+    "border-lead": "c07",
 
     // window
-    "window-border": "secondary-color",
-    "window-border-inner": "secondary-color",
+    "window-border": "c04",
+    "window-border-inner": "c01",
 
     // group box
-    "white-box-border": "rgba(0,0,0,0.2)",
+    "white-box-border": "c03",
 
     // borders
     // 'border-main' is an alias of 'background-selected' (compatibility reasons)
-    "border": "secondary-color",
-    "border-focused": "primary-color-light",
-    "border-invalid": "material-textfield-invalid",
-    "border-disabled": "material-button-text-disabled",
+    "border": "c04",
+    "border-focused": "c09",
+    "border-invalid": "invalid-red",
+    "border-disabled": "c01",
 
     // separator
-    "border-separator": "#808080",
+    "border-separator": "c07",
 
     // tooltip
-    "tooltip": "primary-color-light",
-    "tooltip-text": "#f0f0f0",
+    "tooltip": "c07",
+    "tooltip-text": "c12",
 
     // table
-    "table-header": "contrasted-background",
-    "table-header-foreground": "text",
-    "table-header-border":  "primary-color-dark",
-    "table-focus-indicator": "primary-color-dark",
+    "table-header": "c01",
+    "table-header-foreground": "c09",
+    "table-header-border": "c07",
+    "table-focus-indicator": "c06",
 
     // used in table code
-    "table-header-cell": "contrasted-background",
-    "table-row-background-focused-selected": "primary-color",
-    "table-row-background-focused": "primary-color",
-    "table-row-background-selected": "primary-color-light",
-    "table-row-background-even": "secondary-color",
-    "table-row-background-odd": "contrasted-background",
+    "table-header-cell": "c01",
+    "table-row-background-focused-selected": "c05",
+    "table-row-background-focused": "c04",
+    "table-row-background-selected": "c05",
+    "table-row-background-even": "c01",
+    "table-row-background-odd": "c01",
 
     // foreground
-    "table-row-selected": "#ffffff",
-    "table-row": "text",
+    "table-row-selected": "c12",
+    "table-row": "c09",
 
     // table grid color
-    "table-row-line": "secondary-color",
-    "table-column-line": "secondary-color",
+    "table-row-line": "c01",
+    "table-column-line": "c01",
 
     // used in progressive code
-    "progressive-table-header": "#AAAAAA",
-    "progressive-table-row-background-even": "#202020",
-    "progressive-table-row-background-odd": "#303030",
-    "progressive-progressbar-background": "#000",
-    "progressive-progressbar-indicator-done": "#222",
-    "progressive-progressbar-indicator-undone": "#333",
-    "progressive-progressbar-percent-background": "#000",
-    "progressive-progressbar-percent-text": "#333",
-
-
-
-
-
-
+    "progressive-table-header": "c08",
+    "progressive-table-row-background-even": "c01",
+    "progressive-table-row-background-odd": "c01",
+    "progressive-progressbar-background": "c00",
+    "progressive-progressbar-indicator-done": "c01",
+    "progressive-progressbar-indicator-undone": "c02",
+    "progressive-progressbar-percent-background": "c00",
+    "progressive-progressbar-percent-text": "c02",
 
 
     "workbench-edge-comp-active": "#888888",
