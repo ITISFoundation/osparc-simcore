@@ -51,6 +51,15 @@ else
   DASK_WORKER_VERSION=$(dask-worker --version)
   DASK_SCHEDULER_ADDRESS="tcp://${DASK_SCHEDULER_HOST}:8786"
 
+  #
+  # by default a dask worker will use as many threads as there are CPUs on the machine regardless of what limit the
+  # the docker container has set (e.g. if the docker container is limited to 4 CPUs out of 10, dask will still use 10 threads by default)
+  # so for now we lock the number of threads to 1, so that only 1 job is done by 1 sidecar, thus --nthreads 1.
+
+  #
+  # 'daemonic processes are not allowed to have children' arises when running the sidecar.cli
+  # setting --no-nanny fixes this: see https://github.com/dask/distributed/issues/2142
+
   echo "$INFO" "Starting as a ${DASK_WORKER_VERSION} -> ${DASK_SCHEDULER_ADDRESS} ..."
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
 
@@ -60,6 +69,7 @@ else
       --preload simcore_service_dask_sidecar.tasks \
       --reconnect \
       --no-nanny \
+      --nthreads 1 \
       --dashboard-address 8787
 
   else
@@ -69,6 +79,7 @@ else
       --preload simcore_service_dask_sidecar.tasks \
       --reconnect \
       --no-nanny \
+      --nthreads 1 \
       --dashboard-address 8787
 
   fi
