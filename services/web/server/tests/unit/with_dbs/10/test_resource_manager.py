@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 
-from asyncio import sleep, Future
 import asyncio
 import json
 import logging
@@ -21,8 +20,6 @@ from aiohttp.test_utils import TestClient
 from aioredis import Redis
 from aioresponses import aioresponses
 from pytest_mock.plugin import MockerFixture
-from tenacity import after_log, retry_if_exception_type, stop_after_attempt, wait_fixed
-
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject
 from servicelib.application import create_safe_application
@@ -47,6 +44,7 @@ from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.users import setup_users
+from tenacity import after_log, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 logger = logging.getLogger(__name__)
 

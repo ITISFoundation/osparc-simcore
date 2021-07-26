@@ -35,6 +35,7 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from yarl import URL
 
 from ..director_v2 import (
+    _DirectorServiceError,
     delete_pipeline,
     get_computation_task,
     get_services,
@@ -42,7 +43,6 @@ from ..director_v2 import (
     start_service,
     stop_service,
     stop_services,
-    _DirectorServiceError,
 )
 from ..resource_manager.websocket_manager import (
     PROJECT_ID_KEY,

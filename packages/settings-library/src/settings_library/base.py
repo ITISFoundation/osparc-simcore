@@ -1,9 +1,8 @@
+import logging
 from functools import cached_property
 from typing import List, Tuple, Type
 
 from pydantic import BaseSettings, Extra, SecretStr, ValidationError
-
-import logging
 
 logger = logging.getLogger(__name__)
 

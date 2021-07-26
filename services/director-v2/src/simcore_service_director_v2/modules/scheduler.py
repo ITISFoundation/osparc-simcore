@@ -20,7 +20,6 @@ from typing import Callable, Dict, List, Set, Tuple, Type
 import networkx as nx
 from aiopg.sa.engine import Engine
 from fastapi import FastAPI
-from networkx.algorithms.operators import product
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
