@@ -10,8 +10,12 @@ import uuid
 
 import docker
 import pytest
-
 from simcore_service_director import config, exceptions, producer
+
+from services.director.src.simcore_service_director.config import (
+    CPU_RESOURCE_LIMIT_KEY,
+    MEM_RESOURCE_LIMIT_KIT,
+)
 
 
 @pytest.fixture
@@ -171,6 +175,9 @@ async def test_service_assigned_env_variables(run_services, user_id, project_id)
         assert envs_dict["SIMCORE_NODE_BASEPATH"] == service["service_basepath"]
         assert "SIMCORE_HOST_NAME" in envs_dict
         assert envs_dict["SIMCORE_HOST_NAME"] == docker_service.name
+
+        assert MEM_RESOURCE_LIMIT_KIT in envs_dict
+        assert CPU_RESOURCE_LIMIT_KEY in envs_dict
 
 
 async def test_interactive_service_published_port(run_services):
