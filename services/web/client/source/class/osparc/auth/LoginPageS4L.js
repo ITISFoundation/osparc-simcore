@@ -88,7 +88,7 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
                 textColor: "#ddd"
               });
             });
-          };
+          }
         });
       });
       // the double semicolon
