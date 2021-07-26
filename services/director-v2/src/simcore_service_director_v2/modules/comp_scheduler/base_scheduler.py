@@ -14,8 +14,9 @@ The sidecar will then change the state to STARTED, then to SUCCESS or FAILED.
 import asyncio
 import logging
 from abc import ABC, abstractmethod
+from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import networkx as nx
 from aiopg.sa.engine import Engine
@@ -55,6 +56,20 @@ class BaseCompScheduler(ABC):
         self.scheduled_pipelines.add((user_id, project_id, new_run.iteration))
         # ensure the scheduler starts right away
         self._wake_up_scheduler_now()
+
+    async def stop_pipeline(
+        self, user_id: UserID, project_id: ProjectID, iteration: Optional[int] = None
+    ) -> None:
+        if not iteration:
+            # find the latest one in the list
+            possible_iterations = {
+                it
+                for u_id, p_id, it in self.scheduled_pipelines
+                if u_id == user_id and p_id == project_id
+            }
+            iteration = max(possible_iterations)
+        with suppress(KeyError):
+            self.scheduled_pipelines.remove((user_id, project_id, iteration))
 
     async def schedule_all_pipelines(self) -> None:
         self.wake_up_event.clear()
@@ -108,7 +123,6 @@ class BaseCompScheduler(ABC):
 
         pipeline_state_from_tasks = get_pipeline_state_from_task_states(
             list(pipeline_tasks.values()),
-            100000000000000,
         )
 
         comp_runs_repo: CompRunsRepository = get_repository(
@@ -131,6 +145,10 @@ class BaseCompScheduler(ABC):
         comp_tasks: Dict[str, CompTaskAtDB],
         tasks: List[NodeID],
     ) -> None:
+        pass
+
+    @abstractmethod
+    async def _stop_task(self, tasks: List[NodeID]) -> None:
         pass
 
     async def _schedule_pipeline(

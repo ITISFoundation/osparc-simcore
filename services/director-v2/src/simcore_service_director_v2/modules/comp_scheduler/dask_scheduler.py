@@ -46,3 +46,6 @@ class DaskScheduler(BaseCompScheduler):
             single_tasks=dask_tasks,
             _callback=self._wake_up_scheduler_now,
         )
+
+    async def _stop_task(self, tasks: List[NodeID]) -> None:
+        pass

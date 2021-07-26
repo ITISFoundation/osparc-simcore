@@ -48,3 +48,6 @@ class CeleryScheduler(BaseCompScheduler):
             single_tasks=celery_tasks,
             callback=self._wake_up_scheduler_now,
         )
+
+    async def _stop_task(self, tasks: List[NodeID]) -> None:
+        pass
