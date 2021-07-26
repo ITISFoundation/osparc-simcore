@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class DaskScheduler(BaseCompScheduler):
-    settings: Optional[DaskSchedulerSettings] = None
-    dask_client: Optional[DaskClient] = None
+    settings: DaskSchedulerSettings
+    dask_client: DaskClient
 
     async def _start_tasks(
         self,

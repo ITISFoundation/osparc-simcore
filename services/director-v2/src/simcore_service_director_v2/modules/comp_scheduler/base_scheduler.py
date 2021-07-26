@@ -14,7 +14,7 @@ The sidecar will then change the state to STARTED, then to SUCCESS or FAILED.
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Set, Tuple
 
 import networkx as nx
@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 class BaseCompScheduler(ABC):
     scheduled_pipelines: Set[Tuple[UserID, ProjectID, Iteration]]
     db_engine: Engine
-    wake_up_event: asyncio.Event = asyncio.Event()
+    wake_up_event: asyncio.Event = field(default=asyncio.Event(), init=False)
 
     async def run_new_pipeline(self, user_id: UserID, project_id: ProjectID) -> None:
         runs_repo: CompRunsRepository = get_repository(

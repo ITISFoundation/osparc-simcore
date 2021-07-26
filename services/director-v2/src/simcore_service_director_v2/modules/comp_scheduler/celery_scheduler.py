@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class CeleryScheduler(BaseCompScheduler):
-    settings: Optional[CelerySchedulerSettings] = None
-    celery_client: Optional[CeleryClient] = None
+    settings: CelerySchedulerSettings
+    celery_client: CeleryClient
 
     async def _start_tasks(
         self,
