@@ -1,9 +1,11 @@
-from typing import Iterator
-
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
+
+
+from typing import Iterator
+
 import pytest
 import respx
 from fastapi import FastAPI

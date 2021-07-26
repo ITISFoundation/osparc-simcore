@@ -1,4 +1,7 @@
-# WARNING: manually disabled urllib3 contraint to upgrade minio
+#
+# Specifies dependencies required by 'storage' service
+#
+
 --constraint ../../../requirements/constraints.txt
 
 --requirement ../../../packages/models-library/requirements/_base.in
@@ -6,21 +9,19 @@
 --requirement ../../../packages/service-library/requirements/_base.in
 --requirement ../../../packages/settings-library/requirements/_base.in
 
-
-aiobotocore
-
+# server
 aiohttp
 aiohttp-swagger[performance]
 
+# s3 storage
+aiobotocore
+minio
+
+# i/o + db
 aiofiles
 aiopg[sa]
 
-tenacity
+# misc
 semantic_version
+tenacity
 typer
-minio
-urllib3
-
-#
-# FIXME: pip copiling these requirements wil fail due to incompatible contraints on urllib3 (ongoing in weekely mainteinance)
-#

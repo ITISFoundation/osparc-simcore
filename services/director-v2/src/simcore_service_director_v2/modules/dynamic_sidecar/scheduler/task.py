@@ -367,7 +367,7 @@ async def setup_scheduler(app: FastAPI):
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
     if not settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED:
-        logger.warning("Scheduler will not be started!!!")
+        logger.warning("dynamic-sidecar scheduler will not be started!!!")
         return
 
     await dynamic_sidecars_scheduler.start()

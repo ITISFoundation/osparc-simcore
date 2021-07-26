@@ -20,13 +20,9 @@ from starlette.requests import Request
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
 from ...models.schemas.services import ServiceOut, ServiceUpdate
-from ...services.frontend_services import (
-    get_frontend_service,
-    is_frontend_service,
-    list_frontend_services,
-)
-from ...utils.requests_decorators import cancellable_request
+from ...services.frontend_services import get_frontend_service, is_frontend_service
 from ...utils.pools import non_blocking_process_pool_executor
+from ...utils.requests_decorators import cancellable_request
 from ..dependencies.database import get_repository
 from ..dependencies.director import DirectorApi, get_director_api
 
@@ -156,6 +152,9 @@ async def list_services(
     #    service from the database, adding also the access rights and the owner as email address instead of gid
     # NOTE: this final step runs in a process pool so that it runs asynchronously and does not block in any way
     with non_blocking_process_pool_executor(max_workers=2) as pool:
+        _target_services = (
+            request.app.state.frontend_services_catalog + services_in_registry
+        )
         services_details = await asyncio.gather(
             *[
                 asyncio.get_event_loop().run_in_executor(
@@ -168,7 +167,7 @@ async def list_services(
                         services_in_db[s["key"], s["version"]].owner
                     ),
                 )
-                for s in list_frontend_services() + services_in_registry
+                for s in _target_services
                 if (s.get("key"), s.get("version")) in services_in_db
             ]
         )

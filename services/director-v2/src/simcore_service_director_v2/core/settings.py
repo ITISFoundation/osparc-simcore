@@ -179,17 +179,14 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
 
 
 class DynamicServicesSettings(BaseCustomSettings):
+    # TODO: PC->ANE: refactor dynamic-sidecar settings. One settings per app module
+    # WARNING: THIS IS NOT the same module as dynamic-sidecar
     DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED: bool = Field(
-        True, description="Enables/Disables connection with service"
-    )
-    DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED: bool = Field(
         True, description="Enables/Disables the dynamic_sidecar submodule"
     )
 
-    # dynamic sidecar
     DYNAMIC_SIDECAR: DynamicSidecarSettings
 
-    # dynamic services scheduler
     DYNAMIC_SCHEDULER: DynamicServicesSchedulerSettings
 
 
@@ -211,7 +208,8 @@ class DaskSchedulerSettings(BaseCustomSettings):
 
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
-    # DOCKER
+
+    # docker environs
     SC_BOOT_MODE: Optional[BootModeEnum]
     SC_BOOT_TARGET: Optional[BuildTargetEnum]
 
@@ -219,21 +217,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         LogLevel.INFO.value,
         env=["DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
-
-    # CELERY submodule
-    CELERY: CelerySettings
-
-    # DIRECTOR submodule
-    DIRECTOR_V0: DirectorV0Settings
-
-    # Dynamic Services submodule
-    DYNAMIC_SERVICES: DynamicServicesSettings
-
-    # POSTGRES
-    POSTGRES: PGSettings
-
-    # STORAGE
-    STORAGE_ENDPOINT: str = Field("storage:8080", env="STORAGE_ENDPOINT")
 
     # for passing self-signed certificate to spawned services
     # TODO: fix these variables once the timeout-minutes: 30 is able to start dynamic services
@@ -246,13 +229,11 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     PUBLISHED_HOSTS_NAME: str = Field("", env="PUBLISHED_HOSTS_NAME")
     SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
 
-    #
     NODE_SCHEMA_LOCATION: str = Field(
         f"{API_ROOT}/{api_vtag}/schemas/node-meta-v0.0.1.json",
         description="used when in devel mode vs release mode",
     )
 
-    #
     SIMCORE_SERVICES_NETWORK_NAME: Optional[str] = Field(
         None,
         description="used to find the right network name",
@@ -261,9 +242,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         "simcore/services",
         description="useful when developing with an alternative registry namespace",
     )
-
-    # traefik
-    TRAEFIK_SIMCORE_ZONE: str = Field("internal_simcore_stack")
 
     # monitoring
     MONITORING_ENABLED: bool = False
@@ -275,6 +253,20 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_V2_REMOTE_DEBUG_PORT: PortInt = 3000
 
     CLIENT_REQUEST: ClientRequestSettings
+
+    # App modules settings ---------------------
+
+    CELERY: CelerySettings
+
+    DIRECTOR_V0: DirectorV0Settings
+
+    DYNAMIC_SERVICES: DynamicServicesSettings
+
+    POSTGRES: PGSettings
+
+    STORAGE_ENDPOINT: str = Field("storage:8080", env="STORAGE_ENDPOINT")
+
+    TRAEFIK_SIMCORE_ZONE: str = Field("internal_simcore_stack")
 
     CELERY_SCHEDULER: CelerySchedulerSettings
 

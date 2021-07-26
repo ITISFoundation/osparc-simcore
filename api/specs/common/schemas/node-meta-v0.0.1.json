@@ -180,12 +180,9 @@
           ],
           "properties": {
             "displayOrder": {
-              "type": "number",
-              "description": "use this to numerically sort the properties for display",
-              "examples": [
-                1,
-                -0.2
-              ]
+            "description": "DEPRECATED: new display order is taken from the item position. This property will be removed.",
+            "deprecated": true,
+            "type": "number"
             },
             "label": {
               "type": "string",

@@ -7,6 +7,8 @@ from models_library.settings.postgres import PostgresSettings
 from pydantic import BaseSettings, Field, validator
 from pydantic.types import PositiveInt
 
+logger = logging.getLogger(__name__)
+
 
 class BootModeEnum(str, Enum):
     DEBUG = "debug-ptvsd"
@@ -88,6 +90,17 @@ class AppSettings(BaseSettings):
     background_task_rest_time: PositiveInt = 60
     background_task_wait_after_failure: PositiveInt = 5  # secs
     access_rights_default_product_name: str = "osparc"
+
+    CATALOG_DEV_FEATURES_ENABLED: bool = Field(
+        False,
+        description="Enables development features. WARNING: make sure it is disabled in production .env file!",
+    )
+
+    @validator("CATALOG_DEV_FEATURES_ENABLED")
+    def _warn_dev_features_enabled(cls, v):
+        if v:
+            logger.warning("Development features are ENABLED")
+        return v
 
     class Config(_CommonConfig):
         env_prefix = ""
