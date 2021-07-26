@@ -22,7 +22,7 @@ echo "$INFO" "pip : $(command -v pip)"
 
 
 #
-# DEVELOPMENT MODE 
+# DEVELOPMENT MODE
 # - expects docker run ... -v $(pwd):$SC_DEVEL_MOUNT
 # - mounts source folders
 # - deduces host's uid/gip and assigns to user within docker

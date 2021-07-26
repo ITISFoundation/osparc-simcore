@@ -22,9 +22,5 @@ class RetrieveDataOutEnveloped(BaseModel):
     data: RetrieveDataOut
 
 
-class DynamicServiceCreate(ServiceDetails):
-    pass
-
-
-class DynamicServiceOut(RunningDynamicServiceDetails):
-    pass
+DynamicServiceCreate = ServiceDetails
+DynamicServiceOut = RunningDynamicServiceDetails

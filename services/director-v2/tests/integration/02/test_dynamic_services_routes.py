@@ -14,12 +14,12 @@ from async_timeout import timeout
 from fastapi import FastAPI
 from pydantic import PositiveInt
 from simcore_service_director_v2.core.application import init_app
-from simcore_service_director_v2.core.settings import AppSettings, BootModeEnum
+from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.monitor import (
-    DynamicSidecarsMonitor,
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
+    DynamicSidecarsScheduler,
 )
 
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 20
@@ -115,17 +115,24 @@ def start_request_data(
 @pytest.fixture
 async def test_client(
     loop: asyncio.BaseEventLoop,
-    dynamic_sidecar_image: None,
+    mock_env: None,
     network_name: str,
     monkeypatch,
 ) -> TestClient:
-    monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "True")
+    monkeypatch.setenv("SC_BOOT_MODE", "production")
+    monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "true")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", network_name)
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "true")
 
-    settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
-    settings.postgres.enabled = False
-    settings.scheduler.enabled = False
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
+    monkeypatch.setenv("POSTGRES_USER", "mocked_user")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
+    monkeypatch.setenv("POSTGRES_DB", "mocked_db")
+    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
+
+    settings = AppSettings.create_from_envs()
 
     app = init_app(settings)
 
@@ -192,15 +199,15 @@ async def _patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> None:
 
                 await asyncio.sleep(1)
 
-    # patch the endppoint inside the monitor
-    monitor: DynamicSidecarsMonitor = app.state.dynamic_sidecar_monitor
-    async with monitor._lock:  # pylint: disable=protected-access
-        for entry in monitor._to_monitor.values():  # pylint: disable=protected-access
-            if entry.monitor_data.service_name == service_name:
-                entry.monitor_data.dynamic_sidecar.hostname = "172.17.0.1"
-                entry.monitor_data.dynamic_sidecar.port = port
+    # patch the endppoint inside the scheduler
+    scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
+    async with scheduler._lock:  # pylint: disable=protected-access
+        for entry in scheduler._to_observe.values():  # pylint: disable=protected-access
+            if entry.scheduler_data.service_name == service_name:
+                entry.scheduler_data.dynamic_sidecar.hostname = "172.17.0.1"
+                entry.scheduler_data.dynamic_sidecar.port = port
 
-                endpoint = entry.monitor_data.dynamic_sidecar.endpoint
+                endpoint = entry.scheduler_data.dynamic_sidecar.endpoint
                 assert endpoint == f"http://172.17.0.1:{port}"
                 break
 

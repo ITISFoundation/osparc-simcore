@@ -191,7 +191,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     },
 
     __createEvents: function() {
-      this.__serviceBrowser.addListener("serviceadd", e => {
+      this.__serviceBrowser.addListener("serviceAdd", e => {
         this.__onAddService(e.getData());
       }, this);
     },
@@ -230,6 +230,8 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       let groupedServicesList = [];
       for (const key in groupedServices) {
         let service = osparc.utils.Services.getLatest(groupedServices, key);
+        service = osparc.utils.Utils.deepCloneObject(service);
+        osparc.utils.Services.removeFileToKeyMap(service);
         let newModel = qx.data.marshal.Json.createModel(service);
         groupedServicesList.push(newModel);
       }
@@ -270,9 +272,14 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
         return;
       }
 
-      const service = model || this.__getSelectedService();
-      if (service) {
-        const serviceModel = qx.data.marshal.Json.createModel(service);
+      let serviceModel = model;
+      if (!serviceModel) {
+        let service = this.__getSelectedService();
+        service = osparc.utils.Utils.deepCloneObject(service);
+        osparc.utils.Services.removeFileToKeyMap(service);
+        serviceModel = qx.data.marshal.Json.createModel(service);
+      }
+      if (serviceModel) {
         const eData = {
           service: serviceModel,
           contextNodeId: this.__contextNodeId,

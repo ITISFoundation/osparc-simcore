@@ -247,6 +247,21 @@ qx.Class.define("osparc.utils.Services", {
       });
     },
 
+    removeFileToKeyMap: function(service) {
+      [
+        "inputs",
+        "outputs"
+      ].forEach(inOut => {
+        if (inOut in service) {
+          for (const key in service[inOut]) {
+            if ("fileToKeyMap" in service[inOut][key]) {
+              delete service[inOut][key]["fileToKeyMap"];
+            }
+          }
+        }
+      });
+    },
+
     getUniqueServicesFromWorkbench: function(workbench) {
       const services = [];
       Object.values(workbench).forEach(node => {

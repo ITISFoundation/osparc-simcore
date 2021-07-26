@@ -3,7 +3,7 @@
 
 """
 import logging
-import urllib
+import urllib.parse
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -43,10 +43,11 @@ def setup(app: FastAPI, settings: DirectorV0Settings):
         DirectorV0Client.create(
             app,
             client=httpx.AsyncClient(
-                base_url=settings.base_url(include_tag=True),
-                timeout=app.state.settings.client_request.total_timeout,
+                base_url=f"{settings.endpoint}",
+                timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
             ),
         )
+        logger.debug("created client for director-v0: %s", settings.endpoint)
 
     async def on_shutdown() -> None:
         client = DirectorV0Client.instance(app).client

@@ -2,7 +2,11 @@
 # Specifies third-party dependencies for 'services/director-v2/src'
 #
 # NOTE: ALL version constraints MUST be commented
--c ../../../requirements/constraints.txt
+--constraint ../../../requirements/constraints.txt
+
+--requirement ../../../packages/models-library/requirements/_base.in
+--requirement ../../../packages/settings-library/requirements/_base.in
+--requirement ../../../packages/postgres-database/requirements/_base.in
 
 # fastapi and extensions
 fastapi[all]

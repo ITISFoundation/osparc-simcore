@@ -1,5 +1,5 @@
--c ../../../requirements/constraints.txt
--c _base.txt
+--constraint ../../../requirements/constraints.txt
+--constraint _base.txt
 
 pytest
 pytest-cov

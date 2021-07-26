@@ -13,7 +13,7 @@ def mock_service_envs(mock_env_devel_environment, monkeypatch):
     monkeypatch.setenv("SC_BOOT_MODE", "debug-ptvsd")
 
     # Variables  passed upon start via services/docker-compose.yml file under dask-sidecar/scheduler
-    monkeypatch.setenv("DASK_SCHEDULER_ADDRESS", "tcp://dask-scheduler:8786")
+    monkeypatch.setenv("DASK_START_AS_SCHEDULER", "1")
 
     monkeypatch.setenv("SWARM_STACK_NAME", "simcore")
     monkeypatch.setenv("SIDECAR_LOGLEVEL", "WARNING")
@@ -23,9 +23,10 @@ def mock_service_envs(mock_env_devel_environment, monkeypatch):
 
 def test_settings(mock_service_envs, monkeypatch):
 
+    monkeypatch.delenv("DASK_START_AS_SCHEDULER")
     settings = Settings.create_from_envs()
     assert settings.as_worker()
 
-    monkeypatch.delenv("DASK_SCHEDULER_ADDRESS")
+    monkeypatch.setenv("DASK_START_AS_SCHEDULER", "1")
     settings = Settings.create_from_envs()
     assert settings.as_scheduler()

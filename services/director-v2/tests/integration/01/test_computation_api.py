@@ -15,6 +15,7 @@ from uuid import UUID
 
 import pytest
 import sqlalchemy as sa
+from _pytest.monkeypatch import MonkeyPatch
 from httpx import AsyncClient
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeState
@@ -25,11 +26,11 @@ from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from pydantic.networks import AnyHttpUrl
 from pydantic.types import PositiveInt
+from requests.models import Response
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from starlette import status
-from starlette.responses import Response
 from starlette.testclient import TestClient
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
 from yarl import URL
@@ -42,7 +43,7 @@ pytest_simcore_core_services_selection = [
     "storage",
     "postgres",
 ]
-pytest_simcore_ops_services_selection = ["minio", "adminer"]
+pytest_simcore_ops_services_selection = ["minio", "adminer", "flower"]
 
 COMPUTATION_URL: str = "v2/computations"
 
@@ -94,7 +95,7 @@ def _create_pipeline(
     project: ProjectAtDB,
     user_id: PositiveInt,
     start_pipeline: bool,
-    expected_response_status_code: status,
+    expected_response_status_code: int,
     **kwargs,
 ) -> Response:
     response = client.post(
@@ -135,6 +136,16 @@ def _assert_computation_task_out_obj(
 # FIXTURES ---------------------------------------
 
 
+@pytest.fixture(scope="function")
+def mock_env(monkeypatch: MonkeyPatch) -> None:
+    # used by the client fixture
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
+    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
+    monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
+
+
 @pytest.fixture(autouse=True)
 def minimal_configuration(
     sleeper_service: Dict[str, str],
@@ -144,9 +155,8 @@ def minimal_configuration(
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitConfig,
     simcore_services: Dict[str, URL],
-    monkeypatch,
 ):
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
+    pass
 
 
 @pytest.fixture

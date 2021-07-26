@@ -73,9 +73,9 @@ then
 fi
 
 
-if [ -z ${DASK_SCHEDULER_ADDRESS+x} ]; then
+if [ ${DASK_START_AS_SCHEDULER+x} ]; then
 
-  echo "$INFO Starting $* as SCHEDULER..."
+  echo "$INFO Starting $* as SCHEDULER ..."
   echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
   echo "  local dir : $(ls -al)"
 
@@ -107,7 +107,7 @@ else
   chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_LOG_FOLDER}"
 
 
-  echo "$INFO Starting $* as WORKER..."
+  echo "$INFO Starting $* as WORKER ..."
   echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
   echo "  local dir : $(ls -al)"
   echo "  input dir : $(ls -al "${SIDECAR_INPUT_FOLDER}")"

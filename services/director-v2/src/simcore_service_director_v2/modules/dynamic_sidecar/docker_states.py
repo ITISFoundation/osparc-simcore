@@ -8,12 +8,14 @@ from ...models.schemas.dynamic_services import ServiceState
 
 logger = logging.getLogger(__name__)
 
-TASK_STATES_FAILED: Set[str] = {"failed", "rejected"}
-TASK_STATES_PENDING: Set[str] = {"pending"}
-TASK_STATES_PULLING: Set[str] = {"assigned", "accepted", "preparing"}
+# For all available task states SEE
+# https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
+TASK_STATES_FAILED: Set[str] = {"failed", "rejected", "orphaned"}
+TASK_STATES_PENDING: Set[str] = {"new", "assigned", "accepted", "pending"}
+TASK_STATES_PULLING: Set[str] = {"preparing"}
 TASK_STATES_STARTING: Set[str] = {"ready", "starting"}
 TASK_STATES_RUNNING: Set[str] = {"running"}
-TASK_STATES_COMPLETE: Set[str] = {"complete", "shutdown"}
+TASK_STATES_COMPLETE: Set[str] = {"complete", "shutdown", "remove"}
 
 
 TASK_STATES_ALL: Set[str] = (
@@ -27,56 +29,36 @@ TASK_STATES_ALL: Set[str] = (
 
 
 # mapping container states into 4 categories
-CONTAINER_STATES_FAILED: Set[str] = {"restarting", "dead", "paused"}
-CONTAINER_STATES_PENDING: Set[str] = {"pending"}  # fake state
-CONTAINER_STATES_PULLING: Set[str] = {"pulling"}  # fake state
-CONTAINER_STATES_STARTING: Set[str] = {"created"}
-CONTAINER_STATES_RUNNING: Set[str] = {"running"}
-CONTAINER_STATES_COMPLETE: Set[str] = {"removing", "exited"}
+# For all avaliable containerstates SEE
+# https://github.com/moby/moby/blob/master/container/state.go#L140
+CONTAINER_STATUSES_FAILED: Set[str] = {"restarting", "dead", "paused"}
+CONTAINER_STATUSES_STARTING: Set[str] = {"created"}
+CONTAINER_STATUSES_RUNNING: Set[str] = {"running"}
+CONTAINER_STATUSES_COMPLETE: Set[str] = {"removing", "exited"}
 
 
-def _docker_task_state_to_service_state(state: str) -> ServiceState:
-    last_state = ServiceState.STARTING  # default
-
-    if state in TASK_STATES_FAILED:
-        last_state = ServiceState.FAILED
-    elif state in TASK_STATES_PENDING:
-        last_state = ServiceState.PENDING
-    elif state in TASK_STATES_PULLING:
-        last_state = ServiceState.PULLING
-    elif state in TASK_STATES_STARTING:
-        last_state = ServiceState.STARTING
-    elif state in TASK_STATES_RUNNING:
-        last_state = ServiceState.RUNNING
-    elif state in TASK_STATES_COMPLETE:
-        last_state = ServiceState.COMPLETE
-
-    return last_state
+_TASK_STATE_TO_SERVICE_STATE: Dict[str, ServiceState] = {
+    **dict.fromkeys(TASK_STATES_FAILED, ServiceState.FAILED),
+    **dict.fromkeys(TASK_STATES_PENDING, ServiceState.PENDING),
+    **dict.fromkeys(TASK_STATES_PULLING, ServiceState.PULLING),
+    **dict.fromkeys(TASK_STATES_STARTING, ServiceState.STARTING),
+    **dict.fromkeys(TASK_STATES_RUNNING, ServiceState.RUNNING),
+    **dict.fromkeys(TASK_STATES_COMPLETE, ServiceState.COMPLETE),
+}
 
 
-def _docker_container_state_to_service_state(state: str) -> ServiceState:
-    last_state = ServiceState.STARTING  # default
-
-    if state in CONTAINER_STATES_FAILED:
-        last_state = ServiceState.FAILED
-    elif state in CONTAINER_STATES_PENDING:
-        last_state = ServiceState.PENDING
-    elif state in CONTAINER_STATES_PULLING:
-        last_state = ServiceState.PULLING
-    elif state in CONTAINER_STATES_STARTING:
-        last_state = ServiceState.STARTING
-    elif state in CONTAINER_STATES_RUNNING:
-        last_state = ServiceState.RUNNING
-    elif state in CONTAINER_STATES_COMPLETE:
-        last_state = ServiceState.COMPLETE
-
-    return last_state
+_CONTAINER_STATE_TO_SERVICE_STATE: Dict[str, ServiceState] = {
+    **dict.fromkeys(CONTAINER_STATUSES_FAILED, ServiceState.FAILED),
+    **dict.fromkeys(CONTAINER_STATUSES_STARTING, ServiceState.STARTING),
+    **dict.fromkeys(CONTAINER_STATUSES_RUNNING, ServiceState.RUNNING),
+    **dict.fromkeys(CONTAINER_STATUSES_COMPLETE, ServiceState.COMPLETE),
+}
 
 
 def extract_task_state(task_status: Dict[str, str]) -> Tuple[ServiceState, str]:
     last_task_error_msg = task_status["Err"] if "Err" in task_status else ""
 
-    task_state = _docker_task_state_to_service_state(state=task_status["State"])
+    task_state = _TASK_STATE_TO_SERVICE_STATE[task_status["State"]]
     return (task_state, last_task_error_msg)
 
 
@@ -87,15 +69,18 @@ def _extract_container_status(
         container_status["Error"] if "Error" in container_status else ""
     )
 
-    container_state = _docker_container_state_to_service_state(
-        state=container_status["Status"]
-    )
+    container_state = _CONTAINER_STATE_TO_SERVICE_STATE[container_status["Status"]]
     return (container_state, last_task_error_msg)
 
 
 def extract_containers_minimim_statuses(
     containers_status: Dict[str, Dict[str, str]]
 ) -> Tuple[ServiceState, str]:
+    """
+    Because more then one container can be started by the dynamic-sidecar,
+    the lowest (considered worst) state will be forwarded to the frontend.
+    `ServiceState` defines the order of the states.
+    """
     logger.info("containers_status=%s", containers_status)
     remapped_service_statuses = {
         k: _extract_container_status(value)

@@ -21,8 +21,14 @@ from simcore_service_director_v2.models.domains.dynamic_services import (
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     RunningDynamicServiceDetails,
 )
+from simcore_service_director_v2.modules.dynamic_sidecar.client_api import (
+    setup_api_client,
+)
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
+    setup_scheduler,
 )
 from starlette import status
 from starlette.testclient import TestClient
@@ -53,18 +59,18 @@ def mocked_director_v0_service_api(
     minimal_app: FastAPI, service: Dict[str, Any], service_labels: Dict[str, Any]
 ):
     with respx.mock(
-        base_url=minimal_app.state.settings.director_v0.base_url(include_tag=False),
+        base_url=minimal_app.state.settings.DIRECTOR_V0.endpoint,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
         # get services labels
         respx_mock.get(
-            f"/v0/services/{urllib.parse.quote_plus(service['key'])}/{service['version']}/labels",
+            f"/services/{urllib.parse.quote_plus(service['key'])}/{service['version']}/labels",
             name="service labels",
         ).respond(json={"data": service_labels})
 
         respx_mock.get(
-            f"/v0/running_interactive_services/{service['node_uuid']}",
+            f"/running_interactive_services/{service['node_uuid']}",
             name="running interactive service",
         ).respond(json={"data": {}})
 
@@ -72,7 +78,7 @@ def mocked_director_v0_service_api(
 
 
 @pytest.fixture
-def mocked_director_v2_monitor(mocker: MockerFixture, exp_status_code: int) -> None:
+def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) -> None:
     """because the monitor is disabled some functionality needs to be mocked"""
 
     # MOCKING get_stack_status
@@ -85,20 +91,20 @@ def mocked_director_v2_monitor(mocker: MockerFixture, exp_status_code: int) -> N
         )
 
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.monitor.task.DynamicSidecarsMonitor.get_stack_status",
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler.get_stack_status",
         side_effect=get_stack_status,
     )
 
-    # MOCKING remove_service_from_monitor
-    def remove_service_from_monitor(
+    # MOCKING remove_service_to_observe
+    def remove_service_to_observe(
         node_uuid: NodeID, save_state: Optional[bool]
     ) -> None:
         if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
             raise DynamicSidecarNotFoundError(node_uuid)
 
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.monitor.task.DynamicSidecarsMonitor.remove_service_from_monitor",
-        side_effect=remove_service_from_monitor,
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler.remove_service_to_observe",
+        side_effect=remove_service_to_observe,
     )
 
 
@@ -131,14 +137,18 @@ def mocked_director_v2_monitor(mocker: MockerFixture, exp_status_code: int) -> N
         ),
     ],
 )
-def test_create_dynamic_services(
+async def test_create_dynamic_services(
     mocked_director_v0_service_api,
     docker_swarm: None,
+    mocked_director_v2_scheduler: None,
     client: TestClient,
     dynamic_sidecar_headers: Dict[str, str],
     service: Dict[str, Any],
     exp_status_code: int,
 ):
+    # dynamic-sidecar components
+    await setup_scheduler(client.app)
+    await setup_api_client(client.app)
 
     post_data = DynamicServiceCreate(**service)
 
@@ -198,13 +208,16 @@ def test_create_dynamic_services(
         ),
     ],
 )
-def test_get_service_status(
+async def test_get_service_status(
     mocked_director_v0_service_api,
-    mocked_director_v2_monitor: None,
+    mocked_director_v2_scheduler: None,
     client: TestClient,
     service: Dict[str, Any],
     exp_status_code: int,
 ):
+    # dynamic-sidecar components
+    await setup_scheduler(client.app)
+
     url = URL(f"/v2/dynamic_services/{service['node_uuid']}")
 
     response = client.get(str(url), allow_redirects=False)
@@ -255,15 +268,17 @@ def test_get_service_status(
 @pytest.mark.parametrize(
     "save_state, exp_save_state", [(None, True), (True, True), (False, False)]
 )
-def test_delete_service(
+async def test_delete_service(
     mocked_director_v0_service_api,
-    mocked_director_v2_monitor: None,
+    mocked_director_v2_scheduler: None,
     client: TestClient,
     service: Dict[str, Any],
     exp_status_code: int,
     save_state: Optional[bool],
     exp_save_state: bool,
 ):
+    # dynamic-sidecar components
+    await setup_scheduler(client.app)
 
     url = URL(f"/v2/dynamic_services/{service['node_uuid']}")
     if save_state is not None:

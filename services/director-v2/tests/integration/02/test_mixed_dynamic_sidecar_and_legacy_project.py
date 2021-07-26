@@ -10,8 +10,9 @@ import aiodocker
 import httpx
 import pytest
 import sqlalchemy as sa
+from _pytest.monkeypatch import MonkeyPatch
 from async_timeout import timeout
-from models_library.projects import ProjectAtDB
+from models_library.projects import Node, ProjectAtDB
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from yarl import URL
@@ -39,8 +40,14 @@ def minimal_configuration(
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitConfig,
     simcore_services: None,
+    monkeypatch: MonkeyPatch,
 ):
-    pass
+    monkeypatch.setenv(
+        "DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:TEST_MOCKED_TAG_NOT_PRESENT"
+    )
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_services_network_name")
+    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
+    monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
 
 
 def _str_uuid() -> str:
@@ -127,7 +134,7 @@ async def ensure_services_stopped(dy_static_file_server_project: ProjectAtDB) ->
 
 
 async def _handle_307_if_required(
-    director_v2_client: httpx.AsyncClient, director_v0_url: str, result: httpx.Response
+    director_v2_client: httpx.AsyncClient, director_v0_url: URL, result: httpx.Response
 ) -> httpx.Response:
     if result.next_request is not None:
         # replace url endpoint for director-v0 in redirect
@@ -145,7 +152,7 @@ async def _handle_307_if_required(
 
 async def _assert_start_service(
     director_v2_client: httpx.AsyncClient,
-    director_v0_url: str,
+    director_v0_url: URL,
     user_id: int,
     project_id: str,
     service_key: str,
@@ -175,9 +182,9 @@ async def _assert_start_service(
 
 async def _get_service_state(
     director_v2_client: httpx.AsyncClient,
-    director_v0_url: str,
+    director_v0_url: URL,
     service_uuid: str,
-    node_data: str,
+    node_data: Node,
 ) -> str:
     result = await director_v2_client.get(
         f"/dynamic_services/{service_uuid}", allow_redirects=False
@@ -192,7 +199,7 @@ async def _get_service_state(
 
 
 async def _assert_stop_service(
-    director_v2_client: httpx.AsyncClient, director_v0_url: str, service_uuid: str
+    director_v2_client: httpx.AsyncClient, director_v0_url: URL, service_uuid: str
 ) -> None:
     result = await director_v2_client.delete(
         f"/dynamic_services/{service_uuid}", allow_redirects=False

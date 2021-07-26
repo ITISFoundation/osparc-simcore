@@ -92,9 +92,10 @@ services:
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
       - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
       - DYNAMIC_SIDECAR_IMAGE=${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
+      - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX:-undefined}
+      - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
       - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
-      - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
     env_file:
       - ../.env
     volumes:
@@ -241,8 +242,7 @@ services:
     volumes: *sidecar-volumes
     environment:
       <<: *sidecar-environment
-      DASK_SCHEDULER_ADDRESS: "tcp://dask-scheduler:8786"
-
+      DASK_SCHEDULER_HOST: ${DASK_SCHEDULER_HOST:-dask-scheduler}
     networks:
       - computational_services_subnet
 
@@ -250,15 +250,25 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: dask-scheduler
-    environment: *sidecar-environment
+    environment:
+      <<: *sidecar-environment
+      DASK_START_AS_SCHEDULER: 1
+
     networks:
       - interactive_services_subnet
       - computational_services_subnet
+
+  datcore-adapter:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    networks:
+      - storage_subnet
 
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
+      - DATCORE_ADAPTER_HOST=${DATCORE_ADAPTER_HOST:-datcore-adapter}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -284,6 +294,7 @@ services:
       - default
       - interactive_services_subnet
       - computational_services_subnet
+      - storage_subnet
 
   rabbit:
     image: itisfoundation/rabbitmq:3.8.0-management
@@ -448,6 +459,8 @@ volumes:
 
 networks:
   default:
+    attachable: true
+  storage_subnet:
     attachable: true
   interactive_services_subnet:
     driver: overlay

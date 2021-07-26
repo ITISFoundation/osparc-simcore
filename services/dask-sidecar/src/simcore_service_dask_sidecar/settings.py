@@ -43,16 +43,23 @@ class Settings(BaseCustomSettings):
 
     # dask config ----
 
-    DASK_SCHEDULER_ADDRESS: Optional[str] = Field(
+    DASK_START_AS_SCHEDULER: Optional[bool] = Field(
+        False, description="If this env is set, then the app boots as scheduler"
+    )
+
+    DASK_SCHEDULER_HOST: Optional[str] = Field(
         None,
         description="Address of the scheduler to register (only if started as worker )",
     )
 
     def as_scheduler(self) -> bool:
-        return self.DASK_SCHEDULER_ADDRESS is None
+        return bool(self.DASK_START_AS_SCHEDULER)
 
     def as_worker(self) -> bool:
-        return not self.as_scheduler()
+        as_worker = not self.as_scheduler()
+        if as_worker:
+            assert self.DASK_SCHEDULER_HOST is not None  # nosec
+        return as_worker
 
     @classmethod
     def create_from_envs(cls) -> "Settings":

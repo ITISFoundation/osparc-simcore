@@ -20,6 +20,7 @@ from typing import Callable, Dict, List, Set, Tuple, Type
 import networkx as nx
 from aiopg.sa.engine import Engine
 from fastapi import FastAPI
+from networkx.algorithms.operators import product
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -32,6 +33,7 @@ from ..models.domains.comp_tasks import CompTaskAtDB
 from ..models.schemas.constants import UserID
 from ..modules.celery import CeleryClient, CeleryTaskIn
 from ..utils.computations import get_pipeline_state_from_task_states
+from ..utils.exceptions import PipelineNotFoundError
 from .db.repositories import BaseRepository
 from .db.repositories.comp_pipelines import CompPipelinesRepository
 from .db.repositories.comp_runs import CompRunsRepository
@@ -66,7 +68,7 @@ class CeleryScheduler:
     scheduled_pipelines: Set[Tuple[UserID, ProjectID, Iteration]]
     db_engine: Engine
     celery_client: CeleryClient
-    wake_up_event: asyncio.Event = asyncio.Event()
+    wake_up_event: asyncio.Event
 
     @classmethod
     async def create_from_db(cls, app: FastAPI) -> "CeleryScheduler":
@@ -88,6 +90,7 @@ class CeleryScheduler:
             scheduled_pipelines={
                 (r.user_id, r.project_uuid, r.iteration) for r in runs
             },
+            wake_up_event=asyncio.Event(),
         )  # type: ignore
 
     async def run_new_pipeline(self, user_id: UserID, project_id: ProjectID) -> None:
@@ -153,7 +156,7 @@ class CeleryScheduler:
 
         pipeline_state_from_tasks = get_pipeline_state_from_task_states(
             list(pipeline_tasks.values()),
-            self.celery_client.settings.publication_timeout,
+            self.celery_client.settings.CELERY_PUBLICATION_TIMEOUT,
         )
 
         comp_runs_repo: CompRunsRepository = _get_repository(
@@ -204,24 +207,33 @@ class CeleryScheduler:
             user_id,
         )
 
-        pipeline_dag: nx.DiGraph = await self._get_pipeline_dag(project_id)
-        pipeline_tasks: Dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(
-            project_id, pipeline_dag
-        )
+        pipeline_dag = nx.DiGraph()
+        pipeline_tasks: Dict[str, CompTaskAtDB] = {}
+        pipeline_result: RunningState = RunningState.UNKNOWN
+        try:
+            pipeline_dag = await self._get_pipeline_dag(project_id)
+            pipeline_tasks: Dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(
+                project_id, pipeline_dag
+            )
 
-        # filter out the tasks with what were already completed
-        pipeline_dag.remove_nodes_from(
-            {
-                node_id
-                for node_id, t in pipeline_tasks.items()
-                if t.state in _COMPLETED_STATES
-            }
-        )
+            # filter out the tasks with what were already completed
+            pipeline_dag.remove_nodes_from(
+                {
+                    node_id
+                    for node_id, t in pipeline_tasks.items()
+                    if t.state in _COMPLETED_STATES
+                }
+            )
 
-        # update the current status of the run
-        pipeline_result: RunningState = await self._update_run_result(
-            user_id, project_id, iteration, pipeline_tasks
-        )
+            # update the current status of the run
+            pipeline_result = await self._update_run_result(
+                user_id, project_id, iteration, pipeline_tasks
+            )
+        except PipelineNotFoundError:
+            logger.warning(
+                "pipeline %s does not exist in comp_pipeline table, it will be removed from scheduler",
+                project_id,
+            )
 
         if not pipeline_dag.nodes():
             # there is nothing left, the run is completed, we're done here

@@ -5,7 +5,9 @@
 
 from asyncio import sleep, Future
 import asyncio
+import json
 import logging
+from asyncio import Future, sleep
 from copy import deepcopy
 from typing import Any, Callable, Dict
 from unittest.mock import call
@@ -18,6 +20,9 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioredis import Redis
 from aioresponses import aioresponses
+from pytest_mock.plugin import MockerFixture
+from tenacity import after_log, retry_if_exception_type, stop_after_attempt, wait_fixed
+
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject
 from servicelib.application import create_safe_application
@@ -40,13 +45,8 @@ from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_socketio
+from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.users import setup_users
-from tenacity import (
-    after_log,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_fixed,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -279,7 +279,9 @@ async def test_websocket_multiple_connections(
         sid = sio.sid
         await sio.disconnect()
         # need to attend the disconnect event to pass through the socketio internal queues
-        await asyncio.sleep(0.1)  # must be >= 0.01 to work without issues, added some padding
+        await asyncio.sleep(
+            0.1
+        )  # must be >= 0.01 to work without issues, added some padding
         assert not sio.sid
         assert not await socket_registry.find_keys(("socket_id", sio.sid))
         assert not sid in await socket_registry.find_resources(
@@ -421,6 +423,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     client_session_id_factory: Callable[[], str],
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     exp_save_state: bool,
+    mocker: MockerFixture,
 ):
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
 
@@ -440,9 +443,36 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     client_session_id2 = client_session_id_factory()
     sio2 = await socketio_client_factory(client_session_id2)
     assert sio.sid != sio2.sid
+    socket_project_state_update_mock_callable = mocker.Mock()
+    sio2.on(
+        SOCKET_IO_PROJECT_UPDATED_EVENT,
+        handler=socket_project_state_update_mock_callable,
+    )
     # disconnect first websocket
+    # NOTE: since the service deletion delay is set to 1 second for the test, we should not sleep as long here, or the user will be deleted
+    # We have no mock-up for the heatbeat...
     await sio.disconnect()
     assert not sio.sid
+    await asyncio.sleep(0.1)  # let the thread call the method
+    socket_project_state_update_mock_callable.assert_called_with(
+        json.dumps(
+            {
+                "project_uuid": empty_user_project["uuid"],
+                "data": {
+                    "locked": {
+                        "value": False,
+                        "owner": {
+                            "user_id": logged_user["id"],
+                            "first_name": logged_user["name"],
+                            "last_name": "",
+                        },
+                        "status": "OPENED",
+                    },
+                    "state": {"value": "NOT_STARTED"},
+                },
+            }
+        )
+    )
     # open project in second client
     await open_project(client, empty_user_project["uuid"], client_session_id2)
     # ensure sufficient time is wasted here

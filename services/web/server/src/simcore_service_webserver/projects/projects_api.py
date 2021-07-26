@@ -15,7 +15,7 @@ from collections import defaultdict
 from contextlib import suppress
 from pprint import pformat
 from typing import Any, Dict, List, Optional, Set, Tuple
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from aiohttp import web
 from models_library.projects_state import (
@@ -28,6 +28,9 @@ from models_library.projects_state import (
 )
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
+
+## PROJECT NODES -----------------------------------------------------
+from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 from yarl import URL
 
@@ -41,11 +44,16 @@ from ..director_v2 import (
     stop_services,
     _DirectorServiceError,
 )
-from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
+from ..resource_manager.websocket_manager import (
+    PROJECT_ID_KEY,
+    UserSessionID,
+    managed_resource,
+)
 from ..socketio.events import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
     post_group_messages,
+    post_messages,
 )
 from ..storage_api import (
     delete_data_folders_of_project,
@@ -195,14 +203,34 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
     fire_and_forget_task(remove_services_and_data())
 
 
-## PROJECT NODES -----------------------------------------------------
+@observe(event="SIGNAL_USER_DISCONNECTED")
+async def user_disconnected(
+    user_id: int, client_session_id: str, app: web.Application
+) -> None:
+    # check if there is a project resource
+    with managed_resource(user_id, client_session_id, app) as rt:
+        list_projects: List[str] = await rt.find(PROJECT_ID_KEY)
+
+    await logged_gather(
+        *[
+            retrieve_and_notify_project_locked_state(
+                user_id, prj, app, notify_only_prj_user=True
+            )
+            for prj in list_projects
+        ]
+    )
 
 
 async def retrieve_and_notify_project_locked_state(
-    user_id: int, project_uuid: str, app: web.Application
+    user_id: int,
+    project_uuid: str,
+    app: web.Application,
+    notify_only_prj_user: bool = False,
 ):
     project = await get_project_for_user(app, project_uuid, user_id, include_state=True)
-    await notify_project_state_update(app, project)
+    await notify_project_state_update(
+        app, project, notify_only_user=user_id if notify_only_prj_user else None
+    )
 
 
 @contextlib.asynccontextmanager
@@ -502,11 +530,11 @@ async def is_node_id_present_in_any_project_workbench(
     return node_id in await db.get_all_node_ids_from_workbenches()
 
 
-async def notify_project_state_update(app: web.Application, project: Dict) -> None:
-    rooms_to_notify = [
-        f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
-    ]
-
+async def notify_project_state_update(
+    app: web.Application,
+    project: Dict,
+    notify_only_user: Optional[int] = None,
+) -> None:
     messages = {
         SOCKET_IO_PROJECT_UPDATED_EVENT: {
             "project_uuid": project["uuid"],
@@ -514,8 +542,16 @@ async def notify_project_state_update(app: web.Application, project: Dict) -> No
         }
     }
 
-    for room in rooms_to_notify:
-        await post_group_messages(app, room, messages)
+    if notify_only_user:
+        await post_messages(app, user_id=str(notify_only_user), messages=messages)
+    else:
+        rooms_to_notify = [
+            f"{gid}"
+            for gid, rights in project["accessRights"].items()
+            if rights["read"]
+        ]
+        for room in rooms_to_notify:
+            await post_group_messages(app, room, messages)
 
 
 async def notify_project_node_update(
@@ -578,7 +614,7 @@ async def trigger_connected_service_retrieve(
 
 
 async def _user_has_another_client_open(
-    user_session_id_list: List[Tuple[int, str]], app: web.Application
+    user_session_id_list: List[UserSessionID], app: web.Application
 ) -> bool:
     # NOTE if there is an active socket in use, that means the client is active
     for user_id, client_session_id in user_session_id_list:
@@ -653,7 +689,7 @@ async def try_close_project_for_user(
     app: web.Application,
 ):
     with managed_resource(user_id, client_session_id, app) as rt:
-        user_to_session_ids: List[Tuple(int, str)] = await rt.find_users_of_resource(
+        user_to_session_ids: List[UserSessionID] = await rt.find_users_of_resource(
             PROJECT_ID_KEY, project_uuid
         )
         # first check we have it opened now
@@ -671,7 +707,7 @@ async def try_close_project_for_user(
         )
         await rt.remove(PROJECT_ID_KEY)
     # check it is not opened by someone else
-    user_to_session_ids.remove((user_id, client_session_id))
+    user_to_session_ids.remove(UserSessionID(user_id, client_session_id))
     log.debug("remaining user_to_session_ids: %s", user_to_session_ids)
     if not user_to_session_ids:
         # NOTE: depending on the garbage collector speed, it might already be removing it
@@ -707,7 +743,7 @@ async def _get_project_lock_state(
 
     # let's now check if anyone has the project in use somehow
     with managed_resource(user_id, None, app) as rt:
-        user_session_id_list: List[Tuple[int, str]] = await rt.find_users_of_resource(
+        user_session_id_list: List[UserSessionID] = await rt.find_users_of_resource(
             PROJECT_ID_KEY, project_uuid
         )
     set_user_ids = {x for x, _ in user_session_id_list}
@@ -764,7 +800,7 @@ async def get_project_states_for_user(
     running_state = RunningState.UNKNOWN
     lock_state, computation_task = await logged_gather(
         _get_project_lock_state(user_id, project_uuid, app),
-        get_computation_task(app, user_id, project_uuid),
+        get_computation_task(app, user_id, UUID(project_uuid)),
     )
     if computation_task:
         # get the running state

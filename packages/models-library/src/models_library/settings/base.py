@@ -1,7 +1,14 @@
+import warnings
 from contextlib import suppress
 from typing import List, Tuple, Type
 
 from pydantic import BaseSettings, Extra, SecretStr, ValidationError
+
+warnings.warn(
+    "models_library.settings will be mostly replaced by settings_library in future versions. "
+    "SEE https://github.com/ITISFoundation/osparc-simcore/pull/2395 for details",
+    DeprecationWarning,
+)
 
 
 class BaseCustomSettings(BaseSettings):

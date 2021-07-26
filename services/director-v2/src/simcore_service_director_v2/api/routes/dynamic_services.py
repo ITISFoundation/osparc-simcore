@@ -21,18 +21,18 @@ from ...models.domains.dynamic_services import (
     RetrieveDataOutEnveloped,
 )
 from ...models.schemas.constants import UserID
-from ...models.schemas.dynamic_services import MonitorData
+from ...models.schemas.dynamic_services import SchedulerData
 from ...modules.dynamic_sidecar.docker_api import (
     is_dynamic_service_running,
     list_dynamic_sidecar_services,
 )
 from ...modules.dynamic_sidecar.errors import DynamicSidecarNotFoundError
-from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor
+from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 from ...utils.logging_utils import log_decorator
 from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
 from ..dependencies.dynamic_services import (
     ServicesClient,
-    get_monitor,
+    get_scheduler,
     get_service_base_url,
     get_services_client,
     get_settings,
@@ -57,7 +57,7 @@ async def list_running_dynamic_services(
     project_id: Optional[ProjectID] = None,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_services_settings: DynamicServicesSettings = Depends(get_settings),
-    monitor: DynamicSidecarsMonitor = Depends(get_monitor),
+    scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> List[DynamicServiceOut]:
     legacy_running_services: List[DynamicServiceOut] = cast(
         List[DynamicServiceOut],
@@ -65,9 +65,9 @@ async def list_running_dynamic_services(
     )
 
     get_stack_statuse_tasks: List[Coroutine] = [
-        monitor.get_stack_status(UUID(service["Spec"]["Labels"]["uuid"]))
+        scheduler.get_stack_status(UUID(service["Spec"]["Labels"]["uuid"]))
         for service in await list_dynamic_sidecar_services(
-            dynamic_services_settings.dynamic_sidecar, user_id, project_id
+            dynamic_services_settings.DYNAMIC_SIDECAR, user_id, project_id
         )
     ]
     dynamic_sidecar_running_services: List[DynamicServiceOut] = cast(
@@ -90,7 +90,7 @@ async def create_dynamic_service(
     x_dynamic_sidecar_request_scheme: str = Header(...),
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_services_settings: DynamicServicesSettings = Depends(get_settings),
-    monitor: DynamicSidecarsMonitor = Depends(get_monitor),
+    scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> Union[DynamicServiceOut, RedirectResponse]:
     simcore_service_labels: SimcoreServiceLabels = (
         await director_v0_client.get_service_labels(
@@ -114,19 +114,19 @@ async def create_dynamic_service(
         return RedirectResponse(str(redirect_url_with_query))
 
     if not await is_dynamic_service_running(
-        service.node_uuid, dynamic_services_settings.dynamic_sidecar
+        service.node_uuid, dynamic_services_settings.DYNAMIC_SIDECAR
     ):
-        # services where successfully started and they can be monitored
-        monitor_data = MonitorData.from_http_request(
+        # services where successfully started and they observed
+        scheduler_data = SchedulerData.from_http_request(
             service=service,
             simcore_service_labels=simcore_service_labels,
-            port=dynamic_services_settings.dynamic_sidecar.DYNAMIC_SIDECAR_PORT,
+            port=dynamic_services_settings.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PORT,
             request_dns=x_dynamic_sidecar_request_dns,
             request_scheme=x_dynamic_sidecar_request_scheme,
         )
-        await monitor.add_service_to_monitor(monitor_data)
+        await scheduler.add_service_to_observe(scheduler_data)
 
-    return cast(DynamicServiceOut, await monitor.get_stack_status(service.node_uuid))
+    return cast(DynamicServiceOut, await scheduler.get_stack_status(service.node_uuid))
 
 
 @router.get(
@@ -137,11 +137,11 @@ async def create_dynamic_service(
 async def get_dynamic_sidecar_status(
     node_uuid: NodeID,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
-    monitor: DynamicSidecarsMonitor = Depends(get_monitor),
+    scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> Union[DynamicServiceOut, RedirectResponse]:
 
     try:
-        return cast(DynamicServiceOut, await monitor.get_stack_status(node_uuid))
+        return cast(DynamicServiceOut, await scheduler.get_stack_status(node_uuid))
     except DynamicSidecarNotFoundError:
         # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0
@@ -162,11 +162,11 @@ async def stop_dynamic_service(
     node_uuid: NodeID,
     save_state: Optional[bool] = True,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
-    monitor: DynamicSidecarsMonitor = Depends(get_monitor),
+    scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> Union[None, RedirectResponse]:
 
     try:
-        await monitor.remove_service_from_monitor(node_uuid, save_state)
+        await scheduler.remove_service_to_observe(node_uuid, save_state)
     except DynamicSidecarNotFoundError:
         # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0

@@ -7,7 +7,7 @@ from starlette.datastructures import URL
 from ...core.settings import DynamicServicesSettings
 from ...models.schemas.services import RunningServiceDetails
 from ...modules.dynamic_services import ServicesClient
-from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor
+from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 from ...utils.logging_utils import log_decorator
 from .director_v0 import DirectorV0Client, get_director_v0_client
 
@@ -41,8 +41,8 @@ def get_services_client(
 
 
 def get_settings(request: Request) -> DynamicServicesSettings:
-    return request.app.state.settings.dynamic_services
+    return request.app.state.settings.DYNAMIC_SERVICES
 
 
-def get_monitor(request: Request) -> DynamicSidecarsMonitor:
-    return request.app.state.dynamic_sidecar_monitor
+def get_scheduler(request: Request) -> DynamicSidecarsScheduler:
+    return request.app.state.dynamic_sidecar_scheduler

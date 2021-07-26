@@ -1,7 +1,7 @@
 import json
 import logging
 from contextlib import contextmanager
-from typing import Dict
+from typing import Any, Dict
 
 import attr
 from aiohttp import web
@@ -29,7 +29,6 @@ async def _prepare_storage_manager(
 
     INIT_STR = "init"
     dsm: DataStorageManager = request.app[APP_DSM_KEY]
-
     user_id = query.get("user_id")
     location_id = params.get("location_id")
     location = (
@@ -41,7 +40,7 @@ async def _prepare_storage_manager(
         # re-query when needed.
 
         # updates from db
-        token_info = await get_api_token_and_secret(request.app, user_id)
+        token_info = await get_api_token_and_secret(request.app, int(user_id))
         if all(token_info):
             dsm.datcore_tokens[user_id] = DatCoreApiToken(*token_info)
         else:
@@ -220,6 +219,24 @@ async def get_file_metadata(request: web.Request):
         }
 
 
+@routes.post(f"/{api_vtag}/locations/{{location_id}}:sync")  # type: ignore
+async def synchronise_meta_data_table(request: web.Request) -> Dict[str, Any]:
+    params, query, *_ = await extract_and_validate(request)
+    assert query["dry_run"] is not None  # nosec
+    assert params["location_id"]  # nosec
+
+    with handle_storage_errors():
+        location_id = params["location_id"]
+        dry_run = query["dry_run"]
+        dsm = await _prepare_storage_manager(params, query, request)
+        location = dsm.location_from_id(location_id)
+        data_changed: Dict[str, Any] = await dsm.synchronise_meta_data_table(
+            location, dry_run
+        )
+
+    return {"error": None, "data": data_changed}
+
+
 # DISABLED: @routes.patch(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}/metadata") # type: ignore
 async def update_file_meta_data(request: web.Request):
     params, query, body = await extract_and_validate(request)
@@ -263,7 +280,7 @@ async def download_file(request: web.Request):
         if location == SIMCORE_S3_STR:
             link = await dsm.download_link_s3(file_uuid, user_id)
         else:
-            link, _filename = await dsm.download_link_datcore(user_id, file_uuid)
+            link = await dsm.download_link_datcore(user_id, file_uuid)
 
         return {"error": None, "data": {"link": link}}
 

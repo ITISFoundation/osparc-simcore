@@ -75,12 +75,3 @@ def project(postgres_db: sa.engine.Engine, user_db: Dict) -> Callable:
     with postgres_db.connect() as con:
         for pid in created_project_ids:
             con.execute(projects.delete().where(projects.c.uuid == str(pid)))
-
-
-@pytest.fixture(autouse=True)
-def mock_dynamic_sidecar_settings(monkeypatch) -> None:
-    monkeypatch.setenv(
-        "DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:TEST_MOCKED_TAG_NOT_PRESENT"
-    )
-    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
-    monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")

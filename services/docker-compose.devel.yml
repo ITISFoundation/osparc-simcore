@@ -21,8 +21,17 @@ services:
       - SC_BOOT_MODE=debug-ptvsd
       - LOG_LEVEL=debug
       - DEBUG=true
+      - DYNAMIC_SIDECAR_MOUNT_PATH_DEV=${PWD}/services/dynamic-sidecar
     volumes:
       - ./catalog:/devel/services/catalog
+      - ../packages:/devel/packages
+
+  datcore-adapter:
+    environment:
+      - SC_BOOT_MODE=debug-ptvsd
+      - DATCORE_ADAPTER_LOG_LEVEL=DEBUG
+    volumes:
+      - ./datcore-adapter:/devel/services/datcore-adapter
       - ../packages:/devel/packages
 
   director:

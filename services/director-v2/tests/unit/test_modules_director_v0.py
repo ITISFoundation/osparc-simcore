@@ -27,14 +27,19 @@ MOCK_SERVICE_KEY = "simcore/services/dynamic/myservice"
 MOCK_SERVICE_VERSION = "1.3.4"
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def minimal_director_config(project_env_devel_environment, monkeypatch):
     """set a minimal configuration for testing the director connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "1")
     monkeypatch.setenv("POSTGRES_ENABLED", "0")
     monkeypatch.setenv("CELERY_ENABLED", "0")
     monkeypatch.setenv("REGISTRY_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_SCHEDULER_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
+    monkeypatch.setenv("DIRECTOR_V0_ENABLED", "1")
+    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
 
 
 @pytest.fixture
@@ -42,7 +47,7 @@ def mocked_director_v0_service_api(
     minimal_app, entrypoint, exp_data: Dict, resp_alias: str
 ):
     with respx.mock(
-        base_url=minimal_app.state.settings.director_v0.base_url(include_tag=False),
+        base_url=minimal_app.state.settings.DIRECTOR_V0.endpoint,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
@@ -68,19 +73,19 @@ ForwardToDirectorParams = namedtuple(
 def _get_list_services_calls() -> List[ForwardToDirectorParams]:
     return [
         ForwardToDirectorParams(
-            entrypoint="/v0/services",
+            entrypoint="services",
             exp_status=status.HTTP_200_OK,
             exp_data={"data": ["service1", "service2"]},
             resp_alias="list_all_services",
         ),
         ForwardToDirectorParams(
-            entrypoint="/v0/services?service_type=computational",
+            entrypoint="services?service_type=computational",
             exp_status=status.HTTP_200_OK,
             exp_data={"data": ["service1", "service2"]},
             resp_alias="list_computational_services",
         ),
         ForwardToDirectorParams(
-            entrypoint="/v0/services?service_type=dynamic",
+            entrypoint="services?service_type=dynamic",
             exp_status=status.HTTP_200_OK,
             exp_data={"data": ["service1", "service2"]},
             resp_alias="list_dynamic_services",
@@ -93,7 +98,7 @@ def _get_service_version_calls() -> List[ForwardToDirectorParams]:
     quoted_key = urllib.parse.quote_plus(MOCK_SERVICE_KEY)
     return [
         ForwardToDirectorParams(
-            entrypoint=f"/v0/services/{quoted_key}/{MOCK_SERVICE_VERSION}",
+            entrypoint=f"/services/{quoted_key}/{MOCK_SERVICE_VERSION}",
             exp_status=status.HTTP_200_OK,
             exp_data={"data": ["stuff about my service"]},
             resp_alias="get_service_version",
@@ -106,7 +111,7 @@ def _get_service_version_extras_calls() -> List[ForwardToDirectorParams]:
     quoted_key = urllib.parse.quote_plus(MOCK_SERVICE_KEY)
     return [
         ForwardToDirectorParams(
-            entrypoint=f"/v0/services/{quoted_key}/{MOCK_SERVICE_VERSION}/extras",
+            entrypoint=f"/services/{quoted_key}/{MOCK_SERVICE_VERSION}/extras",
             exp_status=status.HTTP_200_OK,
             exp_data={"data": "extra stuff about my service"},
             resp_alias="get_service_extras",
@@ -121,6 +126,7 @@ def _get_service_version_extras_calls() -> List[ForwardToDirectorParams]:
     + _get_service_version_extras_calls(),
 )
 def test_forward_to_director(
+    minimal_director_config: None,
     client,
     mocked_director_v0_service_api,
     entrypoint,
@@ -128,7 +134,7 @@ def test_forward_to_director(
     exp_data: Dict,
     resp_alias,
 ):
-    response = client.get(entrypoint)
+    response = client.get(f"v0/{entrypoint}")
 
     assert response.status_code == exp_status
     assert response.json() == exp_data
@@ -172,7 +178,7 @@ def mocked_director_service_fcts(
     fake_running_service_details: RunningDynamicServiceDetails,
 ):
     with respx.mock(
-        base_url=minimal_app.state.settings.director_v0.base_url(include_tag=False),
+        base_url=minimal_app.state.settings.DIRECTOR_V0.endpoint,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
@@ -180,20 +186,20 @@ def mocked_director_service_fcts(
         version = mock_service_key_version.version
 
         respx_mock.get(
-            f"/v0/services/{quoted_key}/{version}", name="get_service_version"
+            f"/services/{quoted_key}/{version}", name="get_service_version"
         ).respond(json={"data": [fake_service_details.dict(by_alias=True)]})
 
         respx_mock.get(
-            f"/v0/service_extras/{quoted_key}/{version}", name="get_service_extras"
+            f"/service_extras/{quoted_key}/{version}", name="get_service_extras"
         ).respond(json={"data": fake_service_extras.dict(by_alias=True)})
 
         respx_mock.get(
-            f"/v0/services/{quoted_key}/{version}/labels", name="get_service_labels"
+            f"/services/{quoted_key}/{version}/labels", name="get_service_labels"
         ).respond(json={"data": fake_service_labels})
 
         respx_mock.get(
             re.compile(
-                r"v0/running_interactive_services/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                r"running_interactive_services/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
             ),
             name="get_running_service_details",
         ).respond(
@@ -204,6 +210,7 @@ def mocked_director_service_fcts(
 
 
 async def test_get_service_details(
+    minimal_director_config: None,
     minimal_app: FastAPI,
     mocked_director_service_fcts,
     mock_service_key_version: ServiceKeyVersion,
@@ -213,11 +220,13 @@ async def test_get_service_details(
     service_details: ServiceDockerData = await director_client.get_service_details(
         mock_service_key_version
     )
+
     assert mocked_director_service_fcts["get_service_version"].called
     assert fake_service_details == service_details
 
 
 async def test_get_service_extras(
+    minimal_director_config: None,
     minimal_app: FastAPI,
     mocked_director_service_fcts,
     mock_service_key_version: ServiceKeyVersion,

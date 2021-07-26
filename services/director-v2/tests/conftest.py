@@ -11,14 +11,19 @@ from typing import Any, Dict, Iterator
 
 import dotenv
 import httpx
+import nest_asyncio
 import pytest
 import simcore_service_director_v2
+from aiohttp.test_utils import loop_context
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.projects import Node, Workbench
 from simcore_service_director_v2.core.application import init_app
-from simcore_service_director_v2.core.settings import AppSettings, BootModeEnum
+from simcore_service_director_v2.core.settings import AppSettings
 from starlette.testclient import TestClient
+
+nest_asyncio.apply()
+
 
 pytest_plugins = [
     "pytest_simcore.docker_compose",
@@ -70,8 +75,14 @@ def project_env_devel_environment(project_env_devel_dict: Dict[str, Any], monkey
     )
 
 
+@pytest.fixture(scope="module")
+def loop() -> asyncio.AbstractEventLoop:
+    with loop_context() as loop:
+        yield loop
+
+
 @pytest.fixture(scope="function")
-def dynamic_sidecar_image(monkeypatch) -> None:
+def mock_env(monkeypatch) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
@@ -82,31 +93,33 @@ def dynamic_sidecar_image(monkeypatch) -> None:
     logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", image_name)
 
-    monkeypatch.setenv("REGISTRY_auth", "false")
-    monkeypatch.setenv("REGISTRY_user", "test")
-    monkeypatch.setenv("REGISTRY_PW", "test")
-    monkeypatch.setenv("REGISTRY_ssl", "false")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
+
+    monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
+    monkeypatch.setenv("POSTGRES_USER", "mocked_user")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
+    monkeypatch.setenv("POSTGRES_DB", "mocked_db")
+    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
 
 
 @pytest.fixture(scope="function")
-def client(loop: asyncio.BaseEventLoop, dynamic_sidecar_image) -> TestClient:
-    settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
-    settings.dynamic_services.enabled = False
-    settings.dynamic_services.monitoring.monitoring_enabled = False
+def client(loop: asyncio.AbstractEventLoop, mock_env: None) -> TestClient:
+    settings = AppSettings.create_from_envs()
     app = init_app(settings)
 
-    # NOTE: this way we ensure the events are run in the application
-    # since it starts the app on a test server
+    # NOTE: using a contextmanagers ensures
+    # on_startup and on_shutdown events run
     with TestClient(app, raise_server_exceptions=True) as client:
         yield client
 
 
 @pytest.fixture(scope="function")
 async def initialized_app() -> Iterator[FastAPI]:
-    settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
+    settings = AppSettings.create_from_envs()
     app = init_app(settings)
     async with LifespanManager(app):
         yield app

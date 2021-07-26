@@ -12,9 +12,9 @@ from models_library.service_settings_labels import (
 from models_library.services import ServiceKeyVersion
 
 from ...api.dependencies.director_v0 import DirectorV0Client
-from ...core.settings import DynamicSidecarSettings, ServiceType
+from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
-from ...models.schemas.dynamic_services import MonitorData
+from ...models.schemas.dynamic_services import SchedulerData, ServiceType
 from .errors import DynamicSidecarError
 
 # Notes on below env var names:
@@ -40,7 +40,7 @@ def extract_service_port_from_compose_start_spec(
 
 
 async def dyn_proxy_entrypoint_assembly(
-    monitor_data: MonitorData,
+    scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
@@ -66,23 +66,23 @@ async def dyn_proxy_entrypoint_assembly(
             "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,
             "traefik.docker.network": swarm_network_name,
             "traefik.enable": "true",
-            f"traefik.http.middlewares.{monitor_data.proxy_service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {monitor_data.request_dns}",
-            f"traefik.http.middlewares.{monitor_data.proxy_service_name}-security-headers.headers.accesscontrolallowmethods": "GET,OPTIONS,PUT,POST,DELETE,PATCH,HEAD",
-            f"traefik.http.middlewares.{monitor_data.proxy_service_name}-security-headers.headers.accessControlAllowOriginList": f"{monitor_data.request_scheme}://{monitor_data.request_dns}",
-            f"traefik.http.middlewares.{monitor_data.proxy_service_name}-security-headers.headers.accesscontrolmaxage": "100",
-            f"traefik.http.middlewares.{monitor_data.proxy_service_name}-security-headers.headers.addvaryheader": "true",
-            f"traefik.http.services.{monitor_data.proxy_service_name}.loadbalancer.server.port": "80",
-            f"traefik.http.routers.{monitor_data.proxy_service_name}.entrypoints": "http",
-            f"traefik.http.routers.{monitor_data.proxy_service_name}.priority": "10",
-            f"traefik.http.routers.{monitor_data.proxy_service_name}.rule": f"hostregexp(`{monitor_data.node_uuid}.services.{{host:.+}}`)",
-            f"traefik.http.routers.{monitor_data.proxy_service_name}.middlewares": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}_gzip@docker, {monitor_data.proxy_service_name}-security-headers",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {scheduler_data.request_dns}",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolallowmethods": "GET,OPTIONS,PUT,POST,DELETE,PATCH,HEAD",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accessControlAllowOriginList": f"{scheduler_data.request_scheme}://{scheduler_data.request_dns}",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolmaxage": "100",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.addvaryheader": "true",
+            f"traefik.http.services.{scheduler_data.proxy_service_name}.loadbalancer.server.port": "80",
+            f"traefik.http.routers.{scheduler_data.proxy_service_name}.entrypoints": "http",
+            f"traefik.http.routers.{scheduler_data.proxy_service_name}.priority": "10",
+            f"traefik.http.routers.{scheduler_data.proxy_service_name}.rule": f"hostregexp(`{scheduler_data.node_uuid}.services.{{host:.+}}`)",
+            f"traefik.http.routers.{scheduler_data.proxy_service_name}.middlewares": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}_gzip@docker, {scheduler_data.proxy_service_name}-security-headers",
             "type": ServiceType.DEPENDENCY.value,
             "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
-            "study_id": f"{monitor_data.project_id}",
-            "user_id": f"{monitor_data.user_id}",
-            "uuid": f"{monitor_data.node_uuid}",  # needed for removal when project is closed
+            "study_id": f"{scheduler_data.project_id}",
+            "user_id": f"{scheduler_data.user_id}",
+            "uuid": f"{scheduler_data.node_uuid}",  # needed for removal when project is closed
         },
-        "name": monitor_data.proxy_service_name,
+        "name": scheduler_data.proxy_service_name,
         "networks": [swarm_network_id, dynamic_sidecar_network_id],
         "task_template": {
             "ContainerSpec": {
@@ -98,11 +98,11 @@ async def dyn_proxy_entrypoint_assembly(
                     "--entryPoints.http.address=:80",
                     "--entryPoints.http.forwardedHeaders.insecure",
                     "--providers.docker.endpoint=unix:///var/run/docker.sock",
-                    f"--providers.docker.network={monitor_data.dynamic_sidecar_network_name}",
+                    f"--providers.docker.network={scheduler_data.dynamic_sidecar_network_name}",
                     "--providers.docker.exposedByDefault=false",
-                    f"--providers.docker.constraints=Label(`io.simcore.zone`, `{monitor_data.simcore_traefik_zone}`)",
+                    f"--providers.docker.constraints=Label(`io.simcore.zone`, `{scheduler_data.simcore_traefik_zone}`)",
                     # inject basic auth https://doc.traefik.io/traefik/v2.0/middlewares/basicauth/
-                    # TODO: attach new auth_url to the service and make it available in the monitor
+                    # TODO: attach new auth_url to the service and make it available in the scheduler
                 ],
                 "Mounts": mounts,
             },
@@ -477,7 +477,7 @@ async def merge_settings_before_use(
 
 
 async def dynamic_sidecar_assembly(
-    monitor_data: MonitorData,
+    scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
@@ -535,40 +535,38 @@ async def dynamic_sidecar_assembly(
         ]
 
     # used for the container name to avoid collisions for started containers on the same node
-    compose_namespace = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{monitor_data.node_uuid}"
+    compose_namespace = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{scheduler_data.node_uuid}"
 
     create_service_params = {
-        # TODO: we might want to have the dynamic-sidecar in the internal registry instead of dockerhub?
-        # "auth": {"password": "adminadmin", "username": "admin"},   # maybe not needed together with registry
         "endpoint_spec": endpint_spec,
         "labels": {
             # TODO: let's use a pydantic model with descriptions
-            "io.simcore.zone": monitor_data.simcore_traefik_zone,
+            "io.simcore.zone": scheduler_data.simcore_traefik_zone,
             "port": f"{dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT}",
-            "study_id": f"{monitor_data.project_id}",
-            "traefik.docker.network": monitor_data.dynamic_sidecar_network_name,  # also used for monitoring
+            "study_id": f"{scheduler_data.project_id}",
+            "traefik.docker.network": scheduler_data.dynamic_sidecar_network_name,  # also used for scheduling
             "traefik.enable": "true",
-            f"traefik.http.routers.{monitor_data.service_name}.entrypoints": "http",
-            f"traefik.http.routers.{monitor_data.service_name}.priority": "10",
-            f"traefik.http.routers.{monitor_data.service_name}.rule": "PathPrefix(`/`)",
-            f"traefik.http.services.{monitor_data.service_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT}",
+            f"traefik.http.routers.{scheduler_data.service_name}.entrypoints": "http",
+            f"traefik.http.routers.{scheduler_data.service_name}.priority": "10",
+            f"traefik.http.routers.{scheduler_data.service_name}.rule": "PathPrefix(`/`)",
+            f"traefik.http.services.{scheduler_data.service_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT}",
             "type": ServiceType.MAIN.value,  # required to be listed as an interactive service and be properly cleaned up
-            "user_id": f"{monitor_data.user_id}",
-            # the following are used for monitoring
-            "uuid": f"{monitor_data.node_uuid}",  # also needed for removal when project is closed
+            "user_id": f"{scheduler_data.user_id}",
+            # the following are used for scheduling
+            "uuid": f"{scheduler_data.node_uuid}",  # also needed for removal when project is closed
             "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,
-            "service_key": monitor_data.service_key,
-            "service_tag": monitor_data.service_tag,
-            "paths_mapping": monitor_data.paths_mapping.json(),
-            "compose_spec": json.dumps(monitor_data.compose_spec),
-            "container_http_entry": monitor_data.container_http_entry,
+            "service_key": scheduler_data.key,
+            "service_tag": scheduler_data.version,
+            "paths_mapping": scheduler_data.paths_mapping.json(),
+            "compose_spec": json.dumps(scheduler_data.compose_spec),
+            "container_http_entry": scheduler_data.container_http_entry,
         },
-        "name": monitor_data.service_name,
+        "name": scheduler_data.service_name,
         "networks": [swarm_network_id, dynamic_sidecar_network_id],
         "task_template": {
             "ContainerSpec": {
                 "Env": {
-                    "SIMCORE_HOST_NAME": monitor_data.service_name,
+                    "SIMCORE_HOST_NAME": scheduler_data.service_name,
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
                     **{
                         e: v

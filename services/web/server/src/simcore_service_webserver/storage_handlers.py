@@ -4,16 +4,16 @@
 """
 import logging
 import urllib
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from aiohttp import web
+from aiohttp import ClientTimeout, web
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
 from servicelib.rest_utils import extract_and_validate
 from yarl import URL
 
 from .login.decorators import login_required
-from .security_api import check_permission
+from .security_decorators import permission_required
 from .storage_config import get_client_session, get_storage_config
 
 log = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ def _resolve_storage_url(request: web.Request) -> URL:
     return url
 
 
-async def _request_storage(request: web.Request, method: str):
+async def _request_storage(request: web.Request, method: str, **kwargs):
     await extract_and_validate(request)
 
     url = _resolve_storage_url(request)
@@ -57,12 +57,16 @@ async def _request_storage(request: web.Request, method: str):
         body = await request.json()
 
     session = get_client_session(request.app)
-    async with session.request(method.upper(), url, ssl=False, json=body) as resp:
+    async with session.request(
+        method.upper(), url, ssl=False, json=body, **kwargs
+    ) as resp:
         payload = await resp.json()
         return payload
 
 
-async def safe_unwrap(resp: web.Response) -> Tuple[Optional[Dict], Optional[Dict]]:
+async def safe_unwrap(
+    resp: web.Response,
+) -> Tuple[Optional[Union[Dict[str, Any], List[Dict[str, Any]]]], Optional[Dict]]:
     if resp.status != 200:
         body = await resp.text()
         raise web.HTTPException(reason=f"Unexpected response: '{body}'")
@@ -87,67 +91,86 @@ def extract_link(data: Optional[Dict]) -> str:
 
 
 @login_required
+@permission_required("storage.files.*")
 async def get_storage_locations(request: web.Request):
-    await check_permission(request, "storage.locations.*")
     payload = await _request_storage(request, "GET")
     return payload
 
 
 @login_required
+@permission_required("storage.files.*")
 async def get_datasets_metadata(request: web.Request):
-    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, "GET")
     return payload
 
 
 @login_required
+@permission_required("storage.files.*")
 async def get_files_metadata(request: web.Request):
-    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, "GET")
     return payload
 
 
 @login_required
+@permission_required("storage.files.*")
 async def get_files_metadata_dataset(request: web.Request):
-    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, "GET")
     return payload
 
 
 @login_required
+@permission_required("storage.files.*")
 async def get_file_metadata(request: web.Request):
-    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, "GET")
     return payload
 
 
 @login_required
+@permission_required("storage.files.*")
 async def update_file_meta_data(request: web.Request):
-    await check_permission(request, "storage.files.*")
     raise NotImplementedError
     # payload = await _request_storage(request, 'PATCH' or 'PUT'???) See projects
     # return payload
 
 
 @login_required
+@permission_required("storage.files.*")
 async def download_file(request: web.Request):
-    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, "GET")
     return payload
 
 
 @login_required
+@permission_required("storage.files.*")
 async def upload_file(request: web.Request):
-    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, "PUT")
     return payload
 
 
 @login_required
+@permission_required("storage.files.*")
 async def delete_file(request: web.Request):
-    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, "DELETE")
     return payload
+
+
+@login_required
+@permission_required("storage.files.sync")
+async def synchronise_meta_data_table(request: web.Request):
+    payload = await _request_storage(request, "POST", timeout=ClientTimeout(total=300))
+    return payload
+
+
+async def get_storage_locations_for_user(
+    app: web.Application, user_id: int
+) -> List[Dict[str, Any]]:
+    session = get_client_session(app)
+
+    url: URL = _get_base_storage_url(app) / "locations"
+    params = dict(user_id=user_id)
+    async with session.get(url, ssl=False, params=params) as resp:
+        data, _ = cast(List[Dict[str, Any]], await safe_unwrap(resp))
+        return data
 
 
 async def get_project_files_metadata(

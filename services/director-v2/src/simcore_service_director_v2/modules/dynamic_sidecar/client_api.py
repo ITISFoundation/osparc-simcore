@@ -6,13 +6,10 @@ import httpx
 from fastapi import FastAPI
 
 from ...core.settings import DynamicSidecarSettings
-from ...models.schemas.dynamic_services import MonitorData
-from .errors import MonitorException
+from ...models.schemas.dynamic_services import SchedulerData
+from .errors import DynamicSchedulerException
 
 logger = logging.getLogger(__name__)
-
-
-KEY_DYNAMIC_SIDECAR_API_CLIENT = f"{__name__}.DynamicSidecarClient"
 
 
 def get_url(dynamic_sidecar_endpoint: str, postfix: str) -> str:
@@ -39,17 +36,17 @@ class DynamicSidecarClient:
     """Will handle connections to the service sidecar"""
 
     def __init__(self, app: FastAPI):
-        self._app = app
-        self._heatlth_request_timeout = httpx.Timeout(1.0, connect=1.0)
+        self._app: FastAPI = app
+        self._heatlth_request_timeout: httpx.Timeout = httpx.Timeout(1.0, connect=1.0)
 
         dynamic_sidecar_settings: DynamicSidecarSettings = (
-            app.state.settings.dynamic_services.dynamic_sidecar
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
 
         self.httpx_client = httpx.AsyncClient(
             timeout=httpx.Timeout(
                 dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
-                connect=1.0,
+                connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
             )
         )
 
@@ -57,15 +54,14 @@ class DynamicSidecarClient:
         await self.httpx_client.aclose()
 
     async def is_healthy(self, dynamic_sidecar_endpoint: str) -> bool:
-        """retruns True if service is UP and running else False"""
+        """returns True if service is UP and running else False"""
         url = get_url(dynamic_sidecar_endpoint, "/health")
         try:
             # this request uses a very short timeout
             response = await self.httpx_client.get(
                 url=url, timeout=self._heatlth_request_timeout
             )
-            if response.status_code != 200:
-                return False
+            response.raise_for_status()
 
             return response.json()["is_healthy"]
         except httpx.HTTPError:
@@ -126,7 +122,7 @@ class DynamicSidecarClient:
                     f"status={response.status_code}, body={response.text}"
                 )
                 logging.warning(message)
-                raise MonitorException(message)
+                raise DynamicSchedulerException(message)
 
             # request was ok
             logger.info("Spec submit result %s", response.text)
@@ -145,7 +141,7 @@ class DynamicSidecarClient:
                     f"status={response.status_code}, body={response.text}"
                 )
                 logging.warning(message)
-                raise MonitorException(message)
+                raise DynamicSchedulerException(message)
 
             logger.info("Compose down result %s", response.text)
         except httpx.HTTPError as e:
@@ -169,12 +165,12 @@ def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:
 
 
 async def update_dynamic_sidecar_health(
-    app: FastAPI, monitor_data: MonitorData
+    app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
 
     api_client = get_dynamic_sidecar_client(app)
-    service_endpoint = monitor_data.dynamic_sidecar.endpoint
+    service_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
     # update service health
     is_healthy = await api_client.is_healthy(service_endpoint)
-    monitor_data.dynamic_sidecar.is_available = is_healthy
+    scheduler_data.dynamic_sidecar.is_available = is_healthy

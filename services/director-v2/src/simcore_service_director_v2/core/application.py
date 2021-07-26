@@ -31,14 +31,15 @@ logger = logging.getLogger(__name__)
 
 def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings is None:
-        settings = AppSettings.create_from_env()
+        settings = AppSettings.create_from_envs()
 
-    logging.basicConfig(level=settings.loglevel)
-    logging.root.setLevel(settings.loglevel)
+    logging.basicConfig(level=settings.LOG_LEVEL.value)
+    logging.root.setLevel(settings.LOG_LEVEL.value)
     logger.debug(settings.json(indent=2))
 
     app = FastAPI(
-        debug=settings.debug,
+        debug=settings.SC_BOOT_MODE
+        in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
         title=project_name,
         description=summary,
         version=api_version,
@@ -47,26 +48,28 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         redoc_url=None,  # default disabled
     )
 
+    logger.debug(settings)
     app.state.settings = settings
 
-    if settings.boot_mode == BootModeEnum.DEBUG:
+    if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug.setup(app)
 
-    if settings.director_v0.enabled:
-        director_v0.setup(app, settings.director_v0)
+    if settings.DIRECTOR_V0.DIRECTOR_V0_ENABLED:
+        director_v0.setup(app, settings.DIRECTOR_V0)
 
-    if settings.dynamic_services.enabled:
-        dynamic_services.setup(app, settings.dynamic_services)
+    if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
+        dynamic_services.setup(app, settings.DYNAMIC_SERVICES)
 
-    if settings.postgres.enabled:
-        db.setup(app, settings.postgres)
+    if settings.POSTGRES.DIRECTOR_V2_POSTGRES_ENABLED:
+        db.setup(app, settings.POSTGRES)
 
-    if settings.celery.enabled:
-        celery.setup(app, settings.celery)
+    if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED:
+        dynamic_sidecar.setup(app)
 
-    dynamic_sidecar.setup(app)
+    if settings.CELERY.DIRECTOR_V2_CELERY_ENABLED:
+        celery.setup(app, settings.CELERY)
 
-    if settings.scheduler.enabled:
+    if settings.CELERY_SCHEDULER.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED:
         scheduler.setup(app)
 
     # setup app --

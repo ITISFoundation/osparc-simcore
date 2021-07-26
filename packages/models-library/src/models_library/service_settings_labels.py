@@ -1,5 +1,6 @@
 # pylint: disable=unsubscriptable-object
 import json
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -7,7 +8,8 @@ from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
 
 
 class _BaseConfig:
-    extra = Extra.ignore
+    extra = Extra.forbid
+    keep_untouched = (cached_property,)
 
 
 class SimcoreServiceSettingLabelEntry(BaseModel):
@@ -75,23 +77,22 @@ class SimcoreServiceSettingsLabel(BaseModel):
     def __getitem__(self, item):
         return self.__root__[item]
 
+    def __len__(self):
+        return len(self.__root__)
 
-class PathsMappingLabel(BaseModel):
+
+class PathMappingsLabel(BaseModel):
     inputs_path: Path = Field(
-        ..., description="path where the service expects all the inputs folder"
+        ..., description="folder path where the service expects all the inputs"
     )
     outputs_path: Path = Field(
-        ..., description="path where the service expects all the outputs folder"
+        ...,
+        description="folder path where the service is expected to provide all its outputs",
     )
     state_paths: List[Path] = Field(
         [],
-        description="optional list of path which contents need to be saved and restored",
+        description="optional list of paths which contents need to be persisted",
     )
-
-    @validator("state_paths", always=True)
-    @classmethod
-    def convert_none_to_empty_list(cls, v):
-        return [] if v is None else v
 
     class Config(_BaseConfig):
         schema_extra = {
@@ -106,7 +107,59 @@ class PathsMappingLabel(BaseModel):
 ComposeSpecLabel = Optional[Dict[str, Any]]
 
 
-class SimcoreServiceLabels(BaseModel):
+class DynamicSidecarServiceLabels(BaseModel):
+    paths_mapping: Optional[Json[PathMappingsLabel]] = Field(
+        None,
+        alias="simcore.service.paths-mapping",
+        description=(
+            "json encoded, determines how the folders are mapped in "
+            "the service. Required by dynamic-sidecar."
+        ),
+    )
+
+    compose_spec: Optional[Json[ComposeSpecLabel]] = Field(
+        None,
+        alias="simcore.service.compose-spec",
+        description=(
+            "json encoded docker-compose specifications. see "
+            "https://docs.docker.com/compose/compose-file/, "
+            "only used by dynamic-sidecar."
+        ),
+    )
+    container_http_entry: Optional[str] = Field(
+        None,
+        alias="simcore.service.container-http-entrypoint",
+        description=(
+            "When a docker-compose specifications is provided, "
+            "the container where the traffic must flow has to be "
+            "specified. Required by dynamic-sidecar when "
+            "compose_spec is set."
+        ),
+    )
+
+    @cached_property
+    def needs_dynamic_sidecar(self) -> bool:
+        """if paths mapping is present the service needs to be ran via dynamic-sidecar"""
+        return self.paths_mapping is not None
+
+    @validator("container_http_entry", always=True)
+    @classmethod
+    def compose_spec_requires_container_http_entry(cls, v, values):
+        if v is None and values.get("compose_spec") is not None:
+            raise ValueError(
+                "Field `container_http_entry` must be defined but is missing"
+            )
+        if v is not None and values.get("compose_spec") is None:
+            raise ValueError(
+                "`container_http_entry` not allowed if `compose_spec` is missing"
+            )
+        return v
+
+    class Config(_BaseConfig):
+        pass
+
+
+class SimcoreServiceLabels(DynamicSidecarServiceLabels):
     """
     Validate all the simcores.services.* labels on a service.
 
@@ -126,46 +179,14 @@ class SimcoreServiceLabels(BaseModel):
         ...,
         alias="simcore.service.settings",
         description=(
-            "Contains setting like environment variables and "
-            "resource constraints which are required by the service"
+            "Json encoded. Contains setting like environment variables and "
+            "resource constraints which are required by the service. "
+            "Should be compatible with Docker REST API."
         ),
     )
-
-    paths_mapping: Optional[Json[PathsMappingLabel]] = Field(
-        None,
-        alias="simcore.service.paths-mapping",
-        description="json encoded, determines where the outputs and inputs directories are",
-    )
-
-    compose_spec: Optional[Json[ComposeSpecLabel]] = Field(
-        None,
-        alias="simcore.service.compose-spec",
-        description="json encoded docker-compose spec",
-    )
-    container_http_entry: Optional[str] = Field(
-        None,
-        alias="simcore.service.container-http-entrypoint",
-        description=(
-            "When a compose spec is provided, a container where the proxy "
-            "needs to send http traffic must be specified"
-        ),
-    )
-
-    @property
-    def needs_dynamic_sidecar(self) -> bool:
-        """if paths mapping is present the service needs to be ran via dynamic-sidecar"""
-        return self.paths_mapping is not None
-
-    @validator("container_http_entry", always=True)
-    @classmethod
-    def compose_spec_requires_container_http_entry(cls, v, values):
-        if v is None and values.get("compose_spec") is not None:
-            raise ValueError(
-                "Field `container_http_entry` must be defined but is missing"
-            )
-        return v
 
     class Config(_BaseConfig):
+        extra = Extra.allow
         schema_extra = {
             "examples": [
                 # legacy service
@@ -180,7 +201,7 @@ class SimcoreServiceLabels(BaseModel):
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
                     "simcore.service.paths-mapping": json.dumps(
-                        PathsMappingLabel.Config.schema_extra["examples"]
+                        PathMappingsLabel.Config.schema_extra["examples"]
                     ),
                 },
                 # dynamic-service with compose spec
@@ -189,7 +210,7 @@ class SimcoreServiceLabels(BaseModel):
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
                     "simcore.service.paths-mapping": json.dumps(
-                        PathsMappingLabel.Config.schema_extra["examples"]
+                        PathMappingsLabel.Config.schema_extra["examples"]
                     ),
                     "simcore.service.compose-spec": json.dumps(
                         {

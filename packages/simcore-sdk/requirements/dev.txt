@@ -7,16 +7,16 @@
 #
 
 # installs requirements
--r _base.txt
--r _test.txt
--r _tools.txt
+--requirement _base.txt
+--requirement _test.txt
+--requirement _tools.txt
 
 # installs this repo's packages
--e ../postgres-database/[migration]
--e ../service-library/
--e ../pytest-simcore/
--e ../models-library/
+--editable ../postgres-database/[migration]
+--editable ../service-library/
+--editable ../pytest-simcore/
+--editable ../models-library/
 ../../services/storage/client-sdk/python/ # Needed ONLY for testing
 
 # installs current package
--e .
+--editable .
