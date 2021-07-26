@@ -48,7 +48,7 @@ def mocks_folder(project_tests_dir: Path) -> Path:
 @pytest.fixture
 def env_file():
     """Name of env file under tests/mocks folder. Override to change default"""
-    return ".env-compact"
+    return ".env-sample"
 
 
 @pytest.fixture

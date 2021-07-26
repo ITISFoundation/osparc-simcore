@@ -16,12 +16,9 @@ from pydantic.env_settings import BaseSettings
 from settings_library.base import BaseCustomSettings
 
 
-@pytest.mark.parametrize(
-    "env_file",
-    (".env-compact", ".env-granular", ".env-fails", ".env-mixed", ".env-sample"),
-)
+@pytest.mark.parametrize("env_file", (".env-sample", ".env-fails"))
 def test_settigs_with_modules_settings(
-    env_file: str, mock_environment: Dict, settings_cls
+    env_file: str, mock_environment: Dict, mocks_folder: Path, settings_cls
 ):
 
     assert all(
