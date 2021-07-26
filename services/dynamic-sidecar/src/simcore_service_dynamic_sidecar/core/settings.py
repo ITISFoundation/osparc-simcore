@@ -2,7 +2,6 @@ import logging
 from typing import Any, Optional
 
 from models_library.basic_types import BootModeEnum, PortInt
-from models_library.settings.docker_registry import RegistrySettings
 from pydantic import BaseSettings, Field, PositiveInt, validator
 from settings_library.docker_registry import RegistrySettings
 
