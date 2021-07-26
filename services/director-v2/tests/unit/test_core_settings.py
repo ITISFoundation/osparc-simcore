@@ -24,7 +24,6 @@ def test_settings_with_project_env_devel(project_env_devel_environment):
 
 
 def test_settings_with_env_devel(mock_env_devel_environment, monkeypatch):
-    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
     settings = AppSettings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))
     assert settings
@@ -39,6 +38,8 @@ def test_settings_with_env_devel(mock_env_devel_environment, monkeypatch):
         "itisfoundation/dynamic-sidecar:1.0.0",
         "local/dynamic-sidecar:0.0.1",
         "dynamic-sidecar:production",
+        "/dynamic-sidecar:latest",
+        "/local/dynamic-sidecar:latest",
     ],
 )
 def test_dynamic_sidecar_settings(image: str) -> None:
@@ -56,4 +57,8 @@ def test_dynamic_sidecar_settings(image: str) -> None:
         ),
     )
     settings = DynamicSidecarSettings(**required_kwards)
-    assert settings.DYNAMIC_SIDECAR_IMAGE == image
+
+    assert (
+        settings.DYNAMIC_SIDECAR_IMAGE
+        == DynamicSidecarSettings.strip_leading_slashes(image)
+    )
