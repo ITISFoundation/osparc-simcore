@@ -302,6 +302,16 @@ class Executor:
 
         resource_limitations = await _get_resource_limitations()
 
+        nano_cpus_limit = resource_limitations["NanoCPUs"]
+        mem_limit = resource_limitations["NanoCPUs"]
+
+        env_vars.update(
+            {
+                config.CPU_RESOURCE_LIMIT_KEY: str(nano_cpus_limit),
+                config.MEM_RESOURCE_LIMIT_KIT: str(mem_limit),
+            }
+        )
+
         docker_container_config = {
             "Env": env_vars,
             "Cmd": "run",
@@ -310,12 +320,12 @@ class Executor:
                 "user_id": str(self.user_id),
                 "study_id": str(self.task.project_id),
                 "node_id": str(self.task.node_id),
-                "nano_cpus_limit": str(resource_limitations["NanoCPUs"]),
-                "mem_limit": str(resource_limitations["Memory"]),
+                "nano_cpus_limit": str(nano_cpus_limit),
+                "mem_limit": str(mem_limit),
             },
             "HostConfig": {
-                "Memory": resource_limitations["Memory"],
-                "NanoCPUs": resource_limitations["NanoCPUs"],
+                "Memory": mem_limit,
+                "NanoCPUs": nano_cpus_limit,
                 "Init": True,
                 "AutoRemove": False,
                 "Binds": [
