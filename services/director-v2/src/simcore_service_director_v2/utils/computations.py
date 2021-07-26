@@ -12,23 +12,15 @@ from ..modules.db.tables import NodeClass
 log = logging.getLogger(__file__)
 
 
-def get_pipeline_state_from_task_states(
-    tasks: List[CompTaskAtDB], publication_timeout: int
-) -> RunningState:
+def get_pipeline_state_from_task_states(tasks: List[CompTaskAtDB]) -> RunningState:
 
     # compute pipeline state from task states
-    now = datetime.utcnow()
     if tasks:
         # put in a set of unique values
         set_states: Set[RunningState] = {task.state for task in tasks}
-        last_update = max([t.submit for t in tasks])
         if len(set_states) == 1:
             # this is typically for success, pending, published
             the_state = next(iter(set_states))
-            if the_state == RunningState.PUBLISHED:
-                # FIXME: this should be done automatically after the timeout!!
-                if (now - last_update).seconds > publication_timeout:
-                    the_state = RunningState.NOT_STARTED
             return the_state
 
         if set_states.issubset(

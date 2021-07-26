@@ -89,7 +89,6 @@ async def create_computation(
     computation_tasks: CompTasksRepository = Depends(
         get_repository(CompTasksRepository)
     ),
-    celery_client: CeleryClient = Depends(get_celery_client),
     director_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: BaseCompScheduler = Depends(get_scheduler),
 ) -> ComputationTaskOut:
@@ -107,9 +106,7 @@ async def create_computation(
         comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             job.project_id
         )
-        pipeline_state = get_pipeline_state_from_task_states(
-            comp_tasks, celery_client.settings.CELERY_PUBLICATION_TIMEOUT
-        )
+        pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
         if is_pipeline_running(pipeline_state):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -187,7 +184,6 @@ async def get_computation(
     computation_tasks: CompTasksRepository = Depends(
         get_repository(CompTasksRepository)
     ),
-    celery_client: CeleryClient = Depends(get_celery_client),
 ) -> ComputationTaskOut:
     log.debug("User %s getting computation status for project %s", user_id, project_id)
     try:
@@ -212,9 +208,7 @@ async def get_computation(
         filtered_tasks = [
             t for t in all_comp_tasks if str(t.node_id) in list(pipeline_dag.nodes())
         ]
-        pipeline_state = get_pipeline_state_from_task_states(
-            filtered_tasks, celery_client.settings.CELERY_PUBLICATION_TIMEOUT
-        )
+        pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 
         log.debug(
             "Computational task status by user %s for project %s is %s",
@@ -257,6 +251,7 @@ async def stop_computation_project(
     computation_tasks: CompTasksRepository = Depends(
         get_repository(CompTasksRepository)
     ),
+    scheduler: BaseCompScheduler = Depends(get_scheduler),
     celery_client: CeleryClient = Depends(get_celery_client),
 ) -> ComputationTaskOut:
     log.debug(
@@ -280,11 +275,10 @@ async def stop_computation_project(
         filtered_tasks = [
             t for t in tasks if str(t.node_id) in list(pipeline_dag.nodes())
         ]
-        pipeline_state = get_pipeline_state_from_task_states(
-            filtered_tasks, celery_client.settings.CELERY_PUBLICATION_TIMEOUT
-        )
+        pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 
         if is_pipeline_running(pipeline_state):
+            await scheduler.stop_pipeline(comp_task_stop.user_id, project_id)
             await _abort_pipeline_tasks(
                 project, filtered_tasks, computation_tasks, celery_client
             )
@@ -326,9 +320,7 @@ async def delete_pipeline(
         comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             project_id
         )
-        pipeline_state = get_pipeline_state_from_task_states(
-            comp_tasks, celery_client.settings.CELERY_PUBLICATION_TIMEOUT
-        )
+        pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
         if is_pipeline_running(pipeline_state):
             if not comp_task_stop.force:
                 raise HTTPException(
@@ -358,7 +350,6 @@ async def delete_pipeline(
                 )
                 pipeline_state = get_pipeline_state_from_task_states(
                     comp_tasks,
-                    celery_client.settings.CELERY_PUBLICATION_TIMEOUT,
                 )
                 return is_pipeline_stopped(pipeline_state)
 
