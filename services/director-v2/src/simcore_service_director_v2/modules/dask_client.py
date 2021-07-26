@@ -72,14 +72,19 @@ class DaskClient:
         single_tasks: List[DaskTaskIn],
         _callback: Callable,
     ):
-        def sidecar_fun(job_id: str, user_id: str, project_id: str, node_id: str):
+        def sidecar_fun(user_id: str, project_id: str, node_id: str):
+            from uuid import uuid4
+
             from simcore_service_sidecar.cli import run_sidecar
+            from simcore_service_sidecar.config import SIDECAR_HOST_HOSTNAME_PATH
             from simcore_service_sidecar.utils import wrap_async_call
 
+            host_name = SIDECAR_HOST_HOSTNAME_PATH.read_text()
+            job_id = f"dask_{host_name}_{uuid4()}"
             wrap_async_call(run_sidecar(job_id, user_id, project_id, node_id))
 
         for task in single_tasks:
             task_future = self.client.submit(
-                sidecar_fun, "dask", f"{user_id}", f"{project_id}", f"{task.node_id}"
+                sidecar_fun, f"{user_id}", f"{project_id}", f"{task.node_id}"
             )
             fire_and_forget(task_future)
