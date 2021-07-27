@@ -71,20 +71,19 @@ qx.Class.define("osparc.wrapper.Html2canvas", {
     },
 
     takeScreenshot: function(element) {
-      const bgColor = qx.theme.manager.Color.getInstance().resolve("background-main");
-      html2canvas(element, {
-        allowTaint: true,
-        useCORS: true,
-        backgroundColor: bgColor
-      })
-        .then(canvas => {
-          const quality = 0.9;
-          const image = canvas.toDataURL("image/png", quality);
-          const a = document.createElement("a");
-          a.href = image;
-          a.download = "somefilename.jpg";
-          a.click();
-        });
+      return new Promise(resolve => {
+        const bgColor = qx.theme.manager.Color.getInstance().resolve("background-main");
+        html2canvas(element, {
+          allowTaint: true,
+          useCORS: true,
+          backgroundColor: bgColor
+        })
+          .then(canvas => {
+            const quality = 0.5;
+            const image = canvas.toDataURL("image/png", quality);
+            resolve(image);
+          });
+      });
     }
   }
 });
