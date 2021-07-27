@@ -48,4 +48,4 @@ class DaskScheduler(BaseCompScheduler):
         )
 
     async def _stop_tasks(self, tasks: List[CompTaskAtDB]) -> None:
-        pass
+        self.dask_client.abort_computation_tasks([str(t.job_id) for t in tasks])
