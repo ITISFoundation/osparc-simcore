@@ -1,6 +1,5 @@
 import logging
 import re
-from datetime import datetime
 from typing import List, Set
 
 from models_library.projects_state import RunningState
@@ -53,7 +52,9 @@ _STR_TO_NODECLASS = {
 def to_node_class(service_key: str) -> NodeClass:
     match = _node_key_re.match(service_key)
     if match:
-        return _STR_TO_NODECLASS.get(match.group(3))
+        node_class = _STR_TO_NODECLASS.get(match.group(3))
+        if node_class:
+            return node_class
     raise ValueError
 
 
