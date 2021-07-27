@@ -22,20 +22,70 @@ class OsparcDependency(BaseModel):
     name: str
     version: str
     url: AnyHttpUrl
+    thumbnail: Optional[AnyHttpUrl] = None
 
 
 def discover_osparc_dependencies() -> List[OsparcDependency]:
     return [
-        OsparcDependency(name="adminer", version="4.8.0", url="https://www.adminer.org/"),
-        OsparcDependency(name="postgres", version="10.11", url="https://www.postgresql.org/"),
-        OsparcDependency(name="flower", version="0.9.5", url="https://github.com/mher/flower"),
-        OsparcDependency(name="celery", version="-", url="https://docs.celeryproject.org/en/stable/"),
-        OsparcDependency(name="dask", version="-", url="https://docs.dask.org/en/latest/scheduler-overview.html"),
-        OsparcDependency(name="minio", version="-", url="https://min.io/"),
-        OsparcDependency(name="portainer", version="-", url="https://www.portainer.io/"),
-        OsparcDependency(name="redis", version="-", url="https://redis.io/"),
-        OsparcDependency(name="docker", version="-", url="https://www.docker.com/"),
-        OsparcDependency(name="docker registry", version="-", url="https://docs.docker.com/registry/"),
+        OsparcDependency(
+            name="adminer",
+            version="4.8.0",
+            url="https://www.adminer.org/",
+            thumbnail="https://www.adminer.org/static/images/logo.png",
+        ),
+        OsparcDependency(
+            name="celery",
+            version="-",
+            url="https://docs.celeryproject.org/en/stable/",
+            thumbnail="https://www.fullstackpython.com/img/logos/celery.png",
+        ),
+        OsparcDependency(
+            name="dask",
+            version="-",
+            url="https://docs.dask.org/en/latest/scheduler-overview.html",
+            thumbnail="https://dask.org/_images/dask_horizontal_white_no_pad.svg",
+        ),
+        OsparcDependency(
+            name="docker",
+            version="-",
+            url="https://www.docker.com/",
+            thumbnail="https://www.docker.com/sites/default/files/d8/2019-07/horizontal-logo-monochromatic-white.png",
+        ),
+        OsparcDependency(
+            name="flower",
+            version="0.9.5",
+            url="https://github.com/mher/flower",
+        ),
+        OsparcDependency(
+            name="github",
+            version="-",
+            url="https://github.com/",
+            thumbnail="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Octicons-mark-github.svg/2048px-Octicons-mark-github.svg.png",
+        ),
+        OsparcDependency(
+            name="minio",
+            version="-",
+            url="https://min.io/",
+            thumbnail="https://min.io/resources/img/logo.svg",
+        ),
+        OsparcDependency(
+            name="portainer",
+            version="-",
+            url="https://www.portainer.io/",
+            thumbnail="https://www.portainer.io/hubfs/Brand%20Assets/Logos/Portainer%20Logo%20Solid%20All%20-%20Blue%20no%20padding.svg",
+        ),
+        OsparcDependency(
+            name="postgres",
+            version="10.11",
+            url="https://www.postgresql.org/",
+            thumbnail="https://www.postgresql.org/media/img/about/press/elephant.png",
+        ),
+        OsparcDependency(
+            name="redis",
+            version="-",
+            url="https://redis.io/",
+            thumbnail="https://redis.io/images/redis-white.png",
+        ),
     ]
 
 
