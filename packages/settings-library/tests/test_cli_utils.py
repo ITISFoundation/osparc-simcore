@@ -152,6 +152,7 @@ def test_unsupported_env_format(
         # if support for this test is ever added (meaning this test will fail)
         # please redefine the below files inside the mocks directory
         # ".env-compact", ".env-granular", ".env-fails", ".env-mixed", ".env-sample"
+        # removed by https://github.com/ITISFoundation/osparc-simcore/pull/2438
 
         # parse compact format
         with mocked_environment(setting_env_content_compact):
