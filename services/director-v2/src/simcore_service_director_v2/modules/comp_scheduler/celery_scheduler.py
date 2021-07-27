@@ -49,5 +49,5 @@ class CeleryScheduler(BaseCompScheduler):
             callback=self._wake_up_scheduler_now,
         )
 
-    async def _stop_task(self, tasks: List[NodeID]) -> None:
-        pass
+    async def _stop_tasks(self, tasks: List[CompTaskAtDB]) -> None:
+        self.celery_client.abort_computation_tasks([str(t.job_id) for t in tasks])

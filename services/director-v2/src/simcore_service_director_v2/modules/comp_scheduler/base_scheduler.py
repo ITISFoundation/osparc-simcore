@@ -14,9 +14,8 @@ The sidecar will then change the state to STARTED, then to SUCCESS or FAILED.
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import networkx as nx
 from aiopg.sa.engine import Engine
@@ -41,8 +40,15 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
+class ScheduledPipelineParams:
+    mark_for_cancellation: bool = False
+
+
+@dataclass
 class BaseCompScheduler(ABC):
-    scheduled_pipelines: Set[Tuple[UserID, ProjectID, Iteration]]
+    scheduled_pipelines: Dict[
+        Tuple[UserID, ProjectID, Iteration], ScheduledPipelineParams
+    ]
     db_engine: Engine
     wake_up_event: asyncio.Event = field(default=asyncio.Event(), init=False)
 
@@ -53,7 +59,9 @@ class BaseCompScheduler(ABC):
         new_run: CompRunsAtDB = await runs_repo.create(
             user_id=user_id, project_id=project_id
         )
-        self.scheduled_pipelines.add((user_id, project_id, new_run.iteration))
+        self.scheduled_pipelines[
+            (user_id, project_id, new_run.iteration)
+        ] = ScheduledPipelineParams()
         # ensure the scheduler starts right away
         self._wake_up_scheduler_now()
 
@@ -61,23 +69,41 @@ class BaseCompScheduler(ABC):
         self, user_id: UserID, project_id: ProjectID, iteration: Optional[int] = None
     ) -> None:
         if not iteration:
-            # find the latest one in the list
+            # if no iteration given find the latest one in the list
             possible_iterations = {
                 it
                 for u_id, p_id, it in self.scheduled_pipelines
                 if u_id == user_id and p_id == project_id
             }
+            if not possible_iterations:
+                raise SchedulerError(
+                    f"There are no pipeline scheduled for {user_id}:{project_id}"
+                )
             iteration = max(possible_iterations)
-        with suppress(KeyError):
-            self.scheduled_pipelines.remove((user_id, project_id, iteration))
+
+        # mark the scheduled pipeline for stopping
+        self.scheduled_pipelines[
+            (user_id, project_id, iteration)
+        ].mark_for_cancellation = True
+        # ensure the scheduler starts right away
+        self._wake_up_scheduler_now()
 
     async def schedule_all_pipelines(self) -> None:
         self.wake_up_event.clear()
         # if one of the task throws, the other are NOT cancelled which is what we want
         await asyncio.gather(
             *[
-                self._schedule_pipeline(user_id, project_id, iteration)
-                for user_id, project_id, iteration in self.scheduled_pipelines
+                self._schedule_pipeline(
+                    user_id,
+                    project_id,
+                    iteration,
+                    pipeline_params.mark_for_cancellation,
+                )
+                for (
+                    user_id,
+                    project_id,
+                    iteration,
+                ), pipeline_params in self.scheduled_pipelines.items()
             ]
         )
 
@@ -143,11 +169,15 @@ class BaseCompScheduler(ABC):
         pass
 
     @abstractmethod
-    async def _stop_task(self, tasks: List[NodeID]) -> None:
+    async def _stop_tasks(self, tasks: List[CompTaskAtDB]) -> None:
         pass
 
     async def _schedule_pipeline(
-        self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        iteration: PositiveInt,
+        marked_for_stopping: bool,
     ) -> None:
         logger.debug(
             "checking run of project [%s:%s] for user [%s]",
@@ -186,12 +216,28 @@ class BaseCompScheduler(ABC):
 
         if not pipeline_dag.nodes():
             # there is nothing left, the run is completed, we're done here
-            self.scheduled_pipelines.remove((user_id, project_id, iteration))
+            self.scheduled_pipelines.pop((user_id, project_id, iteration))
             logger.info(
                 "pipeline %s scheduling completed with result %s",
                 project_id,
                 pipeline_result,
             )
+            return
+
+        if marked_for_stopping:
+            # get any running task and stop them
+            comp_tasks_repo: CompTasksRepository = get_repository(
+                self.db_engine, CompTasksRepository
+            )  # type: ignore
+            await comp_tasks_repo.mark_project_tasks_as_aborted(project_id)
+            # stop any remaining running task
+            running_tasks = [
+                t
+                for t in pipeline_tasks.values()
+                if t.state in [RunningState.STARTED, RunningState.RETRY]
+            ]
+            await self._stop_tasks(running_tasks)
+            # the scheduled pipeline will be removed in the next iteration
             return
 
         # find the next tasks that should be run now,

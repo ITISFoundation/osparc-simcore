@@ -7,7 +7,7 @@ from ...core.errors import ConfigurationError
 from ...models.domains.comp_runs import CompRunsAtDB
 from ...utils.scheduler import SCHEDULED_STATES, get_repository
 from ..db.repositories.comp_runs import CompRunsRepository
-from .base_scheduler import BaseCompScheduler
+from .base_scheduler import BaseCompScheduler, ScheduledPipelineParams
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,8 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
         runs if runs else "NONE",
     )
 
+    # TODO: here we need to persist the pipeline stopping part
+
     # check which scheduler to start
     if (
         app.state.settings.CELERY_SCHEDULER.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED
@@ -46,7 +48,10 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
             db_engine=db_engine,
             celery_client=CeleryClient.instance(app),
             scheduled_pipelines={
-                (r.user_id, r.project_uuid, r.iteration) for r in runs
+                (r.user_id, r.project_uuid, r.iteration): ScheduledPipelineParams(
+                    mark_for_cancellation=False
+                )
+                for r in runs
             },
         )
     from ..dask_client import DaskClient
@@ -57,5 +62,10 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
         settings=app.state.settings.DASK_SCHEDULER,
         dask_client=DaskClient.instance(app),
         db_engine=db_engine,
-        scheduled_pipelines={(r.user_id, r.project_uuid, r.iteration) for r in runs},
+        scheduled_pipelines={
+            (r.user_id, r.project_uuid, r.iteration): ScheduledPipelineParams(
+                mark_for_cancellation=False
+            )
+            for r in runs
+        },
     )

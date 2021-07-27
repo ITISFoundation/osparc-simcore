@@ -1,6 +1,7 @@
 # pylint: disable=too-many-arguments
 
 import logging
+from contextlib import suppress
 from typing import Any, List
 
 import networkx as nx
@@ -17,6 +18,7 @@ from tenacity import (
     wait_random,
 )
 
+from ...core.errors import SchedulerError
 from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_tasks import CompTaskAtDB
 from ...models.schemas.comp_tasks import (
@@ -289,6 +291,8 @@ async def stop_computation_project(
 
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    except SchedulerError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
 @router.delete(
@@ -324,7 +328,14 @@ async def delete_pipeline(
                     detail=f"Projet {project_id} is currently running and cannot be deleted, current state is {pipeline_state}",
                 )
             # abort the pipeline first
-            await scheduler.stop_pipeline(comp_task_stop.user_id, project_id)
+            try:
+                await scheduler.stop_pipeline(comp_task_stop.user_id, project_id)
+            except SchedulerError as e:
+                log.warning(
+                    "Project %s could not be stopped properly.\n reason: %s",
+                    project_id,
+                    e,
+                )
 
             def return_last_value(retry_state: Any) -> Any:
                 """return the result of the last call attempt"""
