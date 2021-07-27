@@ -204,13 +204,13 @@ class CompTasksRepository(BaseRepository):
             return inserted_comp_tasks_db
 
     @log_decorator(logger=logger)
-    async def mark_project_tasks_as_aborted(self, project: ProjectAtDB) -> None:
+    async def mark_project_tasks_as_aborted(self, project_id: ProjectID) -> None:
         # block all pending tasks, so the sidecars stop taking them
         async with self.db_engine.acquire() as conn:
             await conn.execute(
                 sa.update(comp_tasks)
                 .where(
-                    (comp_tasks.c.project_id == str(project.uuid))
+                    (comp_tasks.c.project_id == str(project_id))
                     & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                     & (
                         (comp_tasks.c.state == StateType.PUBLISHED)

@@ -63,7 +63,7 @@ async def _abort_pipeline_tasks(
     computation_tasks: CompTasksRepository,
     celery_client: CeleryClient,
 ) -> None:
-    await computation_tasks.mark_project_tasks_as_aborted(project)
+    await computation_tasks.mark_project_tasks_as_aborted(project.uuid)
     celery_client.abort_computation_tasks([str(t.job_id) for t in tasks])
     log.debug(
         "Computational task stopped for project %s",
