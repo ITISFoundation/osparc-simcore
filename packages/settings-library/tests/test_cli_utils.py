@@ -149,6 +149,10 @@ def test_unsupported_env_format(
     # The compact format is not parsable directly by Pydantic.
     # Also removed compact and mixed compact mocks .env files
     with pytest.raises(ValidationError):
+        # if support for this test is ever added (meaning this test will fail)
+        # please redefine the below files inside the mocks directory
+        # ".env-compact", ".env-granular", ".env-fails", ".env-mixed", ".env-sample"
+
         # parse compact format
         with mocked_environment(setting_env_content_compact):
             settings_object = settings_cls.create_from_envs()
