@@ -21,7 +21,7 @@
  */
 
 qx.Class.define("osparc.auth.LoginPage", {
-  extend : qx.ui.core.Widget,
+  extend: qx.ui.core.Widget,
 
   /*
   *****************************************************************************
@@ -31,94 +31,115 @@ qx.Class.define("osparc.auth.LoginPage", {
   construct: function() {
     this.base(arguments);
 
-    // Layout guarantees it gets centered in parent's page
-    const layout = new qx.ui.layout.Grid();
-    layout.setRowFlex(0, 1);
-    layout.setColumnFlex(0, 1);
-    this._setLayout(layout);
-
-    // Pages
-    let pages = new qx.ui.container.Stack().set({
-      allowGrowX: false,
-      allowGrowY: false,
-      alignX: "center"
-    });
-
-    let login = new osparc.auth.ui.LoginView();
-    let register = new osparc.auth.ui.RegistrationView();
-    let resetRequest = new osparc.auth.ui.ResetPassRequestView();
-    let reset = new osparc.auth.ui.ResetPassView();
-
-    pages.add(login);
-    pages.add(register);
-    pages.add(resetRequest);
-    pages.add(reset);
-
-    this._add(pages, {
-      row:0,
-      column:0
-    });
-
-    const page = osparc.auth.core.Utils.findParameterInFragment("page");
-    const code = osparc.auth.core.Utils.findParameterInFragment("code");
-    if (page === "reset-password" && code !== null) {
-      pages.setSelection([reset]);
-    }
-
-    const urlFragment = osparc.utils.Utils.parseURLFragment();
-    if (urlFragment.nav && urlFragment.nav.length) {
-      if (urlFragment.nav[0] === "registration") {
-        pages.setSelection([register]);
-      } else if (urlFragment.nav[0] === "reset-password") {
-        pages.setSelection([reset]);
-      }
-    } else if (urlFragment.params && urlFragment.params.registered) {
-      osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Your account has been created.<br>You can now use your credentials to login."));
-    }
-
-    // Transitions between pages
-    login.addListener("done", msg => {
-      login.resetValues();
-      this.fireDataEvent("done", msg);
-    }, this);
-
-    login.addListener("toReset", e => {
-      pages.setSelection([resetRequest]);
-      login.resetValues();
-    }, this);
-
-    login.addListener("toRegister", e => {
-      pages.setSelection([register]);
-      login.resetValues();
-    }, this);
-
-    register.addListener("done", msg => {
-      osparc.utils.Utils.cookie.deleteCookie("user");
-      this.fireDataEvent("done", msg);
-    });
-
-    [resetRequest, reset].forEach(srcPage => {
-      srcPage.addListener("done", msg => {
-        pages.setSelection([login]);
-        srcPage.resetValues();
-      }, this);
-    });
-
-    this.__addVersionLink();
+    this._buildLayout();
   },
-
-  /*
-  *****************************************************************************
-     EVENTS
-  *****************************************************************************
-  */
 
   events: {
     "done": "qx.event.type.Data"
   },
 
   members: {
-    __addVersionLink: function() {
+    _buildLayout: function() {
+      // Layout guarantees it gets centered in parent's page
+      const layout = new qx.ui.layout.Grid(20, 20);
+      layout.setRowFlex(1, 1);
+      this._setLayout(layout);
+
+      const image = this._getLogoWPlatform();
+      this._add(image, {
+        row: 0,
+        column: 0
+      });
+
+      const pages = this._getLoginStack();
+      this._add(pages, {
+        row: 1,
+        column: 0
+      });
+
+      const versionLink = this._getVersionLink();
+      this._add(versionLink, {
+        row: 2,
+        column: 0
+      });
+    },
+
+    _getLogoWPlatform: function() {
+      const image = new osparc.ui.basic.LogoWPlatform();
+      image.setSize({
+        width: 250,
+        height: 150
+      });
+      image.setFont("text-18");
+      return image;
+    },
+
+    _getLoginStack: function() {
+      const pages = new qx.ui.container.Stack().set({
+        allowGrowX: false,
+        allowGrowY: false,
+        alignX: "center"
+      });
+
+      const login = new osparc.auth.ui.LoginView();
+      const register = new osparc.auth.ui.RegistrationView();
+      const resetRequest = new osparc.auth.ui.ResetPassRequestView();
+      const reset = new osparc.auth.ui.ResetPassView();
+
+      pages.add(login);
+      pages.add(register);
+      pages.add(resetRequest);
+      pages.add(reset);
+
+      const page = osparc.auth.core.Utils.findParameterInFragment("page");
+      const code = osparc.auth.core.Utils.findParameterInFragment("code");
+      if (page === "reset-password" && code !== null) {
+        pages.setSelection([reset]);
+      }
+
+      const urlFragment = osparc.utils.Utils.parseURLFragment();
+      if (urlFragment.nav && urlFragment.nav.length) {
+        if (urlFragment.nav[0] === "registration") {
+          pages.setSelection([register]);
+        } else if (urlFragment.nav[0] === "reset-password") {
+          pages.setSelection([reset]);
+        }
+      } else if (urlFragment.params && urlFragment.params.registered) {
+        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Your account has been created.<br>You can now use your credentials to login."));
+      }
+
+      // Transitions between pages
+      login.addListener("done", msg => {
+        login.resetValues();
+        this.fireDataEvent("done", msg);
+      }, this);
+
+      login.addListener("toReset", e => {
+        pages.setSelection([resetRequest]);
+        login.resetValues();
+      }, this);
+
+      login.addListener("toRegister", e => {
+        pages.setSelection([register]);
+        login.resetValues();
+      }, this);
+
+      register.addListener("done", msg => {
+        osparc.utils.Utils.cookie.deleteCookie("user");
+        this.fireDataEvent("done", msg);
+      });
+
+      [resetRequest, reset].forEach(srcPage => {
+        srcPage.addListener("done", msg => {
+          pages.setSelection([login]);
+          srcPage.resetValues();
+        }, this);
+      });
+
+      return pages;
+    },
+
+    _getVersionLink: function() {
       const versionLinkLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "center"
       })).set({
@@ -149,10 +170,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       });
       versionLinkLayout.add(organizationLink);
 
-      this._add(versionLinkLayout, {
-        row: 1,
-        column: 0
-      });
+      return versionLinkLayout;
     }
   }
 });
