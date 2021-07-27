@@ -450,6 +450,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
     },
 
+    takeScreenshot: function() {
+      const html2canvas = osparc.wrapper.Html2canvas.getInstance();
+      const iframes = Array.from(document.getElementsByTagName("iframe"));
+      const visibleIframe = iframes.find(iframe => iframe.offsetTop >= 0);
+      const elem = visibleIframe === undefined ? this.getContentElement().getDomElement() : visibleIframe.contentDocument.body;
+      html2canvas.takeScreenshot(elem);
+    },
+
     closeEditor: function() {
       this.__stopAutoSaveTimer();
       if (this.getStudy()) {
