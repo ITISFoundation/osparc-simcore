@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
