@@ -58,7 +58,4 @@ def test_dynamic_sidecar_settings(image: str) -> None:
     )
     settings = DynamicSidecarSettings(**required_kwards)
 
-    assert (
-        settings.DYNAMIC_SIDECAR_IMAGE
-        == DynamicSidecarSettings.strip_leading_slashes(image)
-    )
+    assert settings.DYNAMIC_SIDECAR_IMAGE == image.lstrip("/")
