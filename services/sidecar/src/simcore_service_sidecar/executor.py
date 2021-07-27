@@ -18,6 +18,7 @@ from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from packaging import version
 from pydantic import BaseModel
 from servicelib.logging_utils import log_decorator
+from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_sdk import node_data, node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager
@@ -307,8 +308,8 @@ class Executor:
 
         env_vars.extend(
             [
-                f"{config.CPU_RESOURCE_LIMIT_KEY} = {str(nano_cpus_limit)}"
-                f"{config.MEM_RESOURCE_LIMIT_KIT} = {str(mem_limit)}",
+                f"{CPU_RESOURCE_LIMIT_KEY} = {str(nano_cpus_limit)}"
+                f"{MEM_RESOURCE_LIMIT_KEY} = {str(mem_limit)}",
             ]
         )
 

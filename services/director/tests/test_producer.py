@@ -171,7 +171,7 @@ async def test_service_assigned_env_variables(run_services, user_id, project_id)
         assert "SIMCORE_HOST_NAME" in envs_dict
         assert envs_dict["SIMCORE_HOST_NAME"] == docker_service.name
 
-        assert config.MEM_RESOURCE_LIMIT_KIT in envs_dict
+        assert config.MEM_RESOURCE_LIMIT_KEY in envs_dict
         assert config.CPU_RESOURCE_LIMIT_KEY in envs_dict
 
 

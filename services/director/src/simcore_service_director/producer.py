@@ -20,7 +20,7 @@ from . import config, docker_utils, exceptions, registry_proxy
 from .config import (
     APP_CLIENT_SESSION_KEY,
     CPU_RESOURCE_LIMIT_KEY,
-    MEM_RESOURCE_LIMIT_KIT,
+    MEM_RESOURCE_LIMIT_KEY,
 )
 from .services_common import ServicesCommonSettings
 from .system_utils import get_system_extra_hosts_raw
@@ -334,7 +334,7 @@ async def _create_docker_service_params(
     # and make the container aware of them via env variables
     resource_limits = {
         CPU_RESOURCE_LIMIT_KEY: nano_cpus_limit,
-        MEM_RESOURCE_LIMIT_KIT: mem_limit,
+        MEM_RESOURCE_LIMIT_KEY: mem_limit,
     }
     docker_params["task_template"]["ContainerSpec"]["Env"].update(resource_limits)
 
