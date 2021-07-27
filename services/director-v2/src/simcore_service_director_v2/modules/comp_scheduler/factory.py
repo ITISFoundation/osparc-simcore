@@ -42,6 +42,7 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
         from .celery_scheduler import CeleryScheduler
 
         return CeleryScheduler(
+            settings=app.state.settings.CELERY_SCHEDULER,
             db_engine=db_engine,
             celery_client=CeleryClient.instance(app),
             scheduled_pipelines={
