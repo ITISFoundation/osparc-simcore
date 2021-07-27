@@ -80,14 +80,20 @@ class DaskClient:
     ):
         def sidecar_fun(job_id: str, user_id: str, project_id: str, node_id: str):
 
+            from dask.distributed import get_worker
             from simcore_service_sidecar.cli import run_sidecar
-
-            # from simcore_service_sidecar.config import SIDECAR_HOST_HOSTNAME_PATH
             from simcore_service_sidecar.utils import wrap_async_call
 
-            # host_name = SIDECAR_HOST_HOSTNAME_PATH.read_text()
-            # job_id = f"dask_{host_name}_{uuid4()}"
-            wrap_async_call(run_sidecar(job_id, user_id, project_id, node_id))
+            def _is_aborted_cb() -> bool:
+                w = get_worker()
+                t = w.tasks.get(w.get_current_task())
+                return t is None
+
+            wrap_async_call(
+                run_sidecar(
+                    job_id, user_id, project_id, node_id, is_aborted_cb=_is_aborted_cb
+                )
+            )
 
         def _done_callback(dask_future: Future):
             logger.debug("Dask future %s completed", dask_future.key)
