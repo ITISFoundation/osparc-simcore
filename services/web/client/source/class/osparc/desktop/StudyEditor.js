@@ -455,7 +455,35 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const iframes = Array.from(document.getElementsByTagName("iframe"));
       const visibleIframe = iframes.find(iframe => iframe.offsetTop >= 0);
       const elem = visibleIframe === undefined ? this.getContentElement().getDomElement() : visibleIframe.contentDocument.body;
-      html2canvas.takeScreenshot(elem);
+      html2canvas.takeScreenshot(elem)
+        .then(screenshot => {
+          const filename = "screenshot.png";
+          screenshot.name = filename;
+          const fileUuid = this.getStudy().getUuid() +"/screenshots/"+ filename;
+          const dataStore = osparc.store.Data.getInstance();
+          dataStore.getPresignedLink(false, 0, fileUuid)
+            .then(presignedLinkData => {
+              if (presignedLinkData.presignedLink) {
+                const url = presignedLinkData.presignedLink.link;
+                // this.__uploadFile(screenshot, presignedLinkData);
+                const xhr = new XMLHttpRequest();
+                xhr.onload = () => {
+                  if (xhr.status == 200) {
+                    console.log("Uploaded", screenshot.name);
+                    this.getStudy().setThumbnail(url);
+                  }
+                };
+                xhr.open("PUT", url, true);
+                xhr.send(screenshot);
+              }
+            });
+          /*
+          const a = document.createElement("a");
+          a.href = screenshot;
+          a.download = filename;
+          a.click();
+          */
+        });
     },
 
     closeEditor: function() {
