@@ -5,19 +5,21 @@
 import json
 import logging
 from io import StringIO
-from typing import Dict, Type
+from typing import Callable, ContextManager, Dict, Type
 
 import pytest
 import typer
 from dotenv import dotenv_values
+from pydantic import ValidationError
 from settings_library.base import BaseCustomSettings
 from settings_library.cli_utils import create_settings_command
+from typer.testing import CliRunner
 
 log = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def cli(settings_cls: Type[BaseCustomSettings]):
+def cli(settings_cls: Type[BaseCustomSettings]) -> typer.Typer:
     main = typer.Typer(name="app")
 
     @main.command()
@@ -84,6 +86,10 @@ def test_settings_as_json(cli, settings_cls, mock_environment, cli_runner):
 
 
 def test_settings_as_env_file(cli, settings_cls, mock_environment, cli_runner):
+    # ANE -> PC: this test will be left in place but the feature will
+    # not be considered for parsing settings via Pudantic as there
+    # is no out of the box support
+
     result = cli_runner.invoke(cli, ["settings", "--compact"])
     print(result.stdout)
 
@@ -98,3 +104,52 @@ def test_settings_as_env_file(cli, settings_cls, mock_environment, cli_runner):
             pass
 
     assert settings_cls.parse_obj(settings)
+
+
+def test_supported_parsable_env_formats(
+    cli: typer.Typer,
+    settings_cls: Type[BaseCustomSettings],
+    cli_runner: CliRunner,
+    mocked_settings_cls_env: str,
+    mocked_environment: Callable[[str], ContextManager[None]],
+) -> None:
+    with mocked_environment(mocked_settings_cls_env):
+        settings_object = settings_cls.create_from_envs()
+        assert settings_object
+
+        setting_env_content = cli_runner.invoke(
+            cli,
+            ["settings"],
+        ).stdout
+        print(setting_env_content)
+
+    # parse standard format
+    with mocked_environment(setting_env_content):
+        settings_object = settings_cls.create_from_envs()
+        assert settings_object
+
+
+def test_unsupported_env_format(
+    cli: typer.Typer,
+    settings_cls: Type[BaseCustomSettings],
+    cli_runner: CliRunner,
+    mocked_settings_cls_env: str,
+    mocked_environment: Callable[[str], ContextManager[None]],
+) -> None:
+    with mocked_environment(mocked_settings_cls_env):
+        settings_object = settings_cls.create_from_envs()
+        assert settings_object
+
+        setting_env_content_compact = cli_runner.invoke(
+            cli,
+            ["settings", "--compact"],
+        ).stdout
+        print(setting_env_content_compact)
+
+    # The compact format is not parsable directly by Pydantic.
+    # Also removed compact and mixed compact mocks .env files
+    with pytest.raises(ValidationError):
+        # parse compact format
+        with mocked_environment(setting_env_content_compact):
+            settings_object = settings_cls.create_from_envs()
+            assert settings_object
