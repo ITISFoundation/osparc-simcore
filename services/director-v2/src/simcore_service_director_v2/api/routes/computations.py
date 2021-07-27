@@ -1,7 +1,6 @@
 # pylint: disable=too-many-arguments
 
 import logging
-from contextlib import suppress
 from typing import Any, List
 
 import networkx as nx
