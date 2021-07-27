@@ -42,7 +42,8 @@
       "title": "Sim4Life",
       "include": [
         "iconfont.material.Load",
-        "iconfont.fontawesome5.Load"
+        "iconfont.fontawesome5.Load",
+        "osparc.theme.ThemeDark"
       ],
       "environment": {
         "product.name": "s4l"
