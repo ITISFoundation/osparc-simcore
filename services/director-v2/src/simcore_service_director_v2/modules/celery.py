@@ -125,3 +125,4 @@ class CeleryClient:
             task_result = AbortableAsyncResult(task_id)
             if task_result:
                 task_result.abort()
+                logger.info("Aborted celery task %s", task_id)
