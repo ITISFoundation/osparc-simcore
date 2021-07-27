@@ -89,11 +89,6 @@ class BaseCompScheduler(ABC):
             project_id
         )
         pipeline_dag = pipeline_at_db.get_graph()
-        if not pipeline_dag.nodes():
-            # this should not happen
-            raise SchedulerError(
-                f"The pipeline of project {project_id} does not contain an adjacency list! Please check."
-            )
         return pipeline_dag
 
     async def _get_pipeline_tasks(
