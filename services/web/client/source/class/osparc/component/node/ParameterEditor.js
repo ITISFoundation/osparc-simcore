@@ -87,6 +87,10 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
           break;
         case "integer":
           control = new qx.ui.form.Spinner();
+          control.set({
+            maximum: 10000,
+            minimum: -10000
+          });
           break;
         case "boolean":
           control = new qx.ui.form.CheckBox();
@@ -104,11 +108,7 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
           control = new qx.ui.form.Button(this.tr("OK")).set({
             allowGrowX: false
           });
-          const commandEnter = new qx.ui.command.Command("Enter");
-          control.setCommand(commandEnter);
           control.addListener("execute", () => {
-            // releaseCapture to make sure all changes are applied
-            this.__renderer.releaseCapture();
             this.fireEvent("editParameter");
           });
           break;
@@ -161,7 +161,8 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
     },
 
     getValue: function() {
-      return this.__form.getItem("value").getValue();
+      const item = this.__form.getItem("value");
+      return item.getValue();
     }
   }
 });
