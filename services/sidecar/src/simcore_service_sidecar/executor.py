@@ -305,11 +305,11 @@ class Executor:
         nano_cpus_limit = resource_limitations["NanoCPUs"]
         mem_limit = resource_limitations["NanoCPUs"]
 
-        env_vars.update(
-            {
-                config.CPU_RESOURCE_LIMIT_KEY: str(nano_cpus_limit),
-                config.MEM_RESOURCE_LIMIT_KIT: str(mem_limit),
-            }
+        env_vars.extend(
+            [
+                f"{config.CPU_RESOURCE_LIMIT_KEY} = {str(nano_cpus_limit)}"
+                f"{config.MEM_RESOURCE_LIMIT_KIT} = {str(mem_limit)}",
+            ]
         )
 
         docker_container_config = {
