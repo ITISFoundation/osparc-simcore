@@ -47,7 +47,7 @@ qx.Class.define("osparc.About", {
   members: {
     __buildLayout: function() {
       this.add(new qx.ui.basic.Label(this.tr("oSPARC is built upon a number of open-source \
-      resources - we can't do it alone! Some of the technologies that we leverage include:")).set({
+      resources - we can't do it all alone! Some of the technologies that we leverage include:")).set({
         font: "text-14",
         maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
         rich: true,
