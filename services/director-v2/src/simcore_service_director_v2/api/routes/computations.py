@@ -46,7 +46,6 @@ from ...utils.dags import (
     find_computational_node_cycles,
 )
 from ...utils.exceptions import PipelineNotFoundError, ProjectNotFoundError
-from ..dependencies.celery import get_celery_client
 from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
 from ..dependencies.scheduler import get_scheduler
@@ -252,7 +251,6 @@ async def stop_computation_project(
         get_repository(CompTasksRepository)
     ),
     scheduler: BaseCompScheduler = Depends(get_scheduler),
-    celery_client: CeleryClient = Depends(get_celery_client),
 ) -> ComputationTaskOut:
     log.debug(
         "User %s stopping computation for project %s",
@@ -260,8 +258,8 @@ async def stop_computation_project(
         project_id,
     )
     try:
-        # get the project
-        project: ProjectAtDB = await project_repo.get_project(project_id)
+        # check the project exists
+        await project_repo.get_project(project_id)
         # get the project pipeline
         pipeline_at_db: CompPipelineAtDB = await computation_pipelines.get_pipeline(
             project_id
@@ -279,9 +277,7 @@ async def stop_computation_project(
 
         if is_pipeline_running(pipeline_state):
             await scheduler.stop_pipeline(comp_task_stop.user_id, project_id)
-            await _abort_pipeline_tasks(
-                project, filtered_tasks, computation_tasks, celery_client
-            )
+
         return ComputationTaskOut(
             id=project_id,
             state=pipeline_state,
@@ -311,7 +307,7 @@ async def delete_pipeline(
     computation_tasks: CompTasksRepository = Depends(
         get_repository(CompTasksRepository)
     ),
-    celery_client: CeleryClient = Depends(get_celery_client),
+    scheduler: BaseCompScheduler = Depends(get_scheduler),
 ) -> None:
     try:
         # get the project
@@ -328,9 +324,7 @@ async def delete_pipeline(
                     detail=f"Projet {project_id} is currently running and cannot be deleted, current state is {pipeline_state}",
                 )
             # abort the pipeline first
-            await _abort_pipeline_tasks(
-                project, comp_tasks, computation_tasks, celery_client
-            )
+            await scheduler.stop_pipeline(comp_task_stop.user_id, project_id)
 
             def return_last_value(retry_state: Any) -> Any:
                 """return the result of the last call attempt"""
