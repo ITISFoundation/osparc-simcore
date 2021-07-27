@@ -1,7 +1,9 @@
-from dataclasses import dataclass
-from typing import Callable, List
+import logging
+from dataclasses import dataclass, field
+from typing import Callable, Dict, List
+from uuid import uuid4
 
-from dask.distributed import Client, fire_and_forget
+from dask.distributed import Client, Future, fire_and_forget
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -10,6 +12,8 @@ from ..core.errors import ConfigurationError
 from ..core.settings import DaskSchedulerSettings
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.constants import UserID
+
+logger = logging.getLogger(__name__)
 
 
 def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
@@ -52,6 +56,8 @@ class DaskClient:
     client: Client
     settings: DaskSchedulerSettings
 
+    _taskid_to_future_map: Dict[str, Future] = field(default_factory=dict)
+
     @classmethod
     def create(cls, app: FastAPI, *args, **kwargs) -> "DaskClient":
         app.state.dask_client = cls(*args, **kwargs)
@@ -72,19 +78,40 @@ class DaskClient:
         single_tasks: List[DaskTaskIn],
         _callback: Callable,
     ):
-        def sidecar_fun(user_id: str, project_id: str, node_id: str):
-            from uuid import uuid4
+        def sidecar_fun(job_id: str, user_id: str, project_id: str, node_id: str):
 
             from simcore_service_sidecar.cli import run_sidecar
-            from simcore_service_sidecar.config import SIDECAR_HOST_HOSTNAME_PATH
+
+            # from simcore_service_sidecar.config import SIDECAR_HOST_HOSTNAME_PATH
             from simcore_service_sidecar.utils import wrap_async_call
 
-            host_name = SIDECAR_HOST_HOSTNAME_PATH.read_text()
-            job_id = f"dask_{host_name}_{uuid4()}"
+            # host_name = SIDECAR_HOST_HOSTNAME_PATH.read_text()
+            # job_id = f"dask_{host_name}_{uuid4()}"
             wrap_async_call(run_sidecar(job_id, user_id, project_id, node_id))
 
+        def _done_callback(dask_future: Future):
+            logger.debug("Dask future %s completed", dask_future.key)
+            _callback()
+
         for task in single_tasks:
+            job_id = f"dask_{uuid4()}"
             task_future = self.client.submit(
-                sidecar_fun, f"{user_id}", f"{project_id}", f"{task.node_id}"
+                sidecar_fun,
+                job_id,
+                f"{user_id}",
+                f"{project_id}",
+                f"{task.node_id}",
+                key=job_id,
             )
-            fire_and_forget(task_future)
+            task_future.add_done_callback(_done_callback)
+            self._taskid_to_future_map[job_id] = task_future
+            fire_and_forget(task_future)  # this should ensure the task will run
+
+    def abort_computation_tasks(self, task_ids: List[str]) -> None:
+        # current_dask_tasks = self.client.processing()
+        # logger.warning("current dask tasks: %s", current_dask_tasks)
+
+        for task_id in task_ids:
+            task_future = self._taskid_to_future_map.pop(task_id, None)
+            if task_future:
+                task_future.cancel()
