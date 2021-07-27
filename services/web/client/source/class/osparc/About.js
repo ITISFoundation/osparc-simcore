@@ -24,7 +24,8 @@ qx.Class.define("osparc.About", {
     this.base(arguments, this.tr("About"));
     this.set({
       layout: new qx.ui.layout.VBox(5),
-      contentPadding: 15,
+      maxWidth: this.self().MAX_WIDTH,
+      contentPadding: this.self().PADDING,
       showMaximize: false,
       showMinimize: false,
       resizable: false,
@@ -38,15 +39,24 @@ qx.Class.define("osparc.About", {
     this.__buildLayout();
   },
 
+  statics: {
+    MAX_WIDTH: 320,
+    PADDING: 15
+  },
+
   members: {
     __buildLayout: function() {
-      this.add(new qx.ui.basic.Label(this.tr("oSPARC is powered by:")).set({
-        font: "text-14"
+      this.add(new qx.ui.basic.Label(this.tr("oSPARC is built upon a number of open-source \
+      resources - we can't do it alone! Some of the technologies that we leverage include:")).set({
+        font: "text-14",
+        maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
+        rich: true,
+        wrap: true
       }));
 
       const tabView = new qx.ui.tabview.TabView().set({
-        contentPadding: 5,
         contentPaddingTop: 10,
+        contentPaddingLeft: 0,
         barPosition: "top"
       });
       tabView.getChildControl("pane").setBackgroundColor("material-button-background");
@@ -55,11 +65,11 @@ qx.Class.define("osparc.About", {
       });
 
       const frontendPage = new qx.ui.tabview.Page(this.tr("Front-end")).set({
-        layout: new qx.ui.layout.VBox(),
+        layout: new qx.ui.layout.VBox(5),
         backgroundColor: "material-button-background"
       });
       const backendPage = new qx.ui.tabview.Page(this.tr("Back-end")).set({
-        layout: new qx.ui.layout.VBox(),
+        layout: new qx.ui.layout.VBox(5),
         backgroundColor: "material-button-background"
       });
       tabView.add(frontendPage);
@@ -88,7 +98,7 @@ qx.Class.define("osparc.About", {
       osparc.utils.LibVersions.getBackendLibs()
         .then(libs => {
           libs.forEach(lib => {
-            const entry = this.__createEntry(lib.name, lib.version, lib.url);
+            const entry = this.__createEntry(lib);
             page.add(entry);
           });
         });
@@ -97,21 +107,43 @@ qx.Class.define("osparc.About", {
     __createEntries: function(libs) {
       const entries = [];
       libs.forEach(lib => {
-        entries.push(this.__createEntry(lib.name, lib.version, lib.url));
+        entries.push(this.__createEntry(lib));
       });
       return entries;
     },
 
-    __createEntry: function(item = "unknown-library", vers = "-", url) {
-      let entryLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        marginBottom: 4
-      });
+    __createEntry: function(lib) {
+      const label = lib.name || "unknown-library";
+      const version = lib.version || "-";
+      const url = lib.url || null;
+      const thumbnail = lib.thumbnail || null;
 
+      if (thumbnail) {
+        const image = new qx.ui.basic.Image(thumbnail).set({
+          height: 30,
+          maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
+          scale: true,
+          toolTipText: label + (version === "-" ? "" : (" " + version))
+        });
+        image.getContentElement().setStyles({
+          "object-fit": "contain",
+          "object-position": "left"
+        });
+        if (url) {
+          image.set({
+            cursor: "pointer"
+          });
+          image.addListener("tap", () => window.open(url));
+        }
+        return image;
+      }
+
+      const entryLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       let entryLabel = null;
       if (url) {
-        entryLabel = new osparc.ui.basic.LinkLabel(item, url);
+        entryLabel = new osparc.ui.basic.LinkLabel(label, url);
       } else {
-        entryLabel = new qx.ui.basic.Label(item);
+        entryLabel = new qx.ui.basic.Label(label);
       }
       entryLayout.set({
         font: "title-14"
@@ -119,11 +151,10 @@ qx.Class.define("osparc.About", {
       entryLayout.add(entryLabel);
 
       let entryVersion = new qx.ui.basic.Label().set({
-        value: vers,
+        value: version,
         font: "text-14"
       });
       entryLayout.add(entryVersion);
-
       return entryLayout;
     }
   }
