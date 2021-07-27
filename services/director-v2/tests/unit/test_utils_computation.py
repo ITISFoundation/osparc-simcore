@@ -33,11 +33,6 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
     return CompTaskAtDB.parse_file(fake_task_file)
 
 
-@pytest.fixture(scope="session")
-def publication_timeout() -> int:
-    return 60
-
-
 CELERY_PUBLICATION_TIMEOUT = 120
 
 
@@ -74,18 +69,6 @@ def configure_celery_timeout(monkeypatch):
                 (RunningState.PUBLISHED, "datetime.utcnow()-timedelta(seconds=155)"),
             ],
             RunningState.PUBLISHED,
-        ),
-        (
-            # pipeline is published if any of the node is published AND time is within publication timeout
-            [
-                (
-                    RunningState.PUBLISHED,
-                    "datetime.utcnow()-timedelta(seconds=CELERY_PUBLICATION_TIMEOUT + 75)",
-                ),
-                (RunningState.PUBLISHED, "datetime.utcnow()-timedelta(seconds=145)"),
-                (RunningState.PUBLISHED, "datetime.utcnow()-timedelta(seconds=1555)"),
-            ],
-            RunningState.NOT_STARTED,
         ),
         (
             # not started pipeline (all nodes are in non started mode)
@@ -164,16 +147,13 @@ def test_get_pipeline_state_from_task_states(
     task_states: List[RunningState],
     exp_pipeline_state: RunningState,
     fake_task: CompTaskAtDB,
-    publication_timeout: int,
 ):
     tasks: List[CompTaskAtDB] = [
         fake_task.copy(deep=True, update={"state": s, "submit": _lazy_evaluate_time(t)})
         for s, t in task_states
     ]
 
-    pipeline_state: RunningState = get_pipeline_state_from_task_states(
-        tasks, publication_timeout
-    )
+    pipeline_state: RunningState = get_pipeline_state_from_task_states(tasks)
     assert (
         pipeline_state == exp_pipeline_state
     ), f"task states are: {task_states}, got {pipeline_state} instead of {exp_pipeline_state}"
