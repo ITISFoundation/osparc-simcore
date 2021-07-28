@@ -365,15 +365,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       nodeUI.addListener("nodeStoppedMoving", () => {
         this.__updateWorkbenchBounds();
 
-        //  After moving a nodeUI, a new element appears on the DOM tree and prevents from clicking
+        // After moving a nodeUI, a new element with z-index 100001 appears on the DOM tree and prevents from clicking
         // elsewhere. Here we go through the children of the qx.desktop and remove the undesired element
-        if (this.__desktop.getChildren().length !== this.__desktop.getContentElement().getChildren().length) {
-          this.__desktop.getContentElement().getChildren().forEach(child => {
-            if (child.getAttribute("qxClass") === null) {
-              console.warn("removing undesired element after node move");
-              this.__desktop.getContentElement().remove(child);
-            }
-          });
+        const allChildren = Array.from(this.getContentElement().getDomElement().getElementsByTagName("*"));
+        const suspicious = allChildren.find(child => child.style.zIndex === "100001");
+        if (suspicious) {
+          console.warn("moving undesired element to background");
+          suspicious.style.zIndex = "1";
         }
       }, this);
 
