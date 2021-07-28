@@ -10,7 +10,7 @@ from settings_library.postgres import PostgresSettings
 
 @pytest.fixture
 def env_file():
-    return ".env-granular"
+    return ".env-sample"
 
 
 def test_cached_property_dsn(mock_environment: Dict):

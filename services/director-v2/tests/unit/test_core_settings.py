@@ -38,6 +38,8 @@ def test_settings_with_env_devel(mock_env_devel_environment):
         "itisfoundation/dynamic-sidecar:1.0.0",
         "local/dynamic-sidecar:0.0.1",
         "dynamic-sidecar:production",
+        "/dynamic-sidecar:latest",
+        "/local/dynamic-sidecar:latest",
     ],
 )
 def test_dynamic_sidecar_settings(image: str) -> None:
@@ -55,4 +57,5 @@ def test_dynamic_sidecar_settings(image: str) -> None:
         ),
     )
     settings = DynamicSidecarSettings(**required_kwards)
-    assert settings.DYNAMIC_SIDECAR_IMAGE == image
+
+    assert settings.DYNAMIC_SIDECAR_IMAGE == image.lstrip("/")
