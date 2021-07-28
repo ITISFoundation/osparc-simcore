@@ -308,7 +308,7 @@ class Executor:
 
         env_vars.extend(
             [
-                f"{CPU_RESOURCE_LIMIT_KEY} = {str(nano_cpus_limit)}"
+                f"{CPU_RESOURCE_LIMIT_KEY} = {str(nano_cpus_limit)}",
                 f"{MEM_RESOURCE_LIMIT_KEY} = {str(mem_limit)}",
             ]
         )
