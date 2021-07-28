@@ -288,7 +288,7 @@ async def remove_project_interactive_services(
                 # here director exceptions are suppressed. in case the service is not found to preserve old behavior
                 await stop_services(
                     app=app,
-                    user_id=user_id,
+                    user_id=str(user_id),
                     project_id=project_uuid,
                     save_state=not await is_user_guest(app, user_id)
                     if user_id
