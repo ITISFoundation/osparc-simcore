@@ -215,7 +215,7 @@ qx.Class.define("osparc.store.Data", {
       });
     },
 
-    uploadScreenshot: function(file) {
+    uploadScreenshotToImgur: function(file) {
       return new Promise((resolve, reject) => {
         const formdata = new FormData();
         formdata.append("image", file.replace("data:image/png;base64,", ""));

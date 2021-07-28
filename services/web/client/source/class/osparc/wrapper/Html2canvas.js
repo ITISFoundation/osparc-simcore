@@ -76,7 +76,9 @@ qx.Class.define("osparc.wrapper.Html2canvas", {
         html2canvas(element, {
           allowTaint: true,
           useCORS: true,
-          backgroundColor: bgColor
+          backgroundColor: bgColor,
+          width: 1440,
+          height: 900
         })
           .then(canvas => {
             const quality = 0.5;
