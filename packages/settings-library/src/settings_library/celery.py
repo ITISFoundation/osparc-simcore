@@ -1,4 +1,7 @@
+from functools import cached_property
+
 from pydantic import Field, PositiveInt
+from pydantic.networks import RedisDsn
 
 from .base import BaseCustomSettings
 from .rabbit import RabbitSettings
@@ -18,10 +21,22 @@ class CelerySettings(BaseCustomSettings):
 
     CELERY_PUBLICATION_TIMEOUT: PositiveInt = 60
 
-    @property
+    CELERY_REDIS_DB: int = 2
+
+    @cached_property
     def broker_url(self):
         return self.CELERY_RABBIT.dsn
 
-    @property
+    @cached_property
     def result_backend(self):
-        return self.CELERY_REDIS.dsn
+        # is of type
+        return RedisDsn.build(
+            scheme="redis",
+            user=self.CELERY_REDIS.REDIS_USER or None,
+            password=self.CELERY_REDIS.REDIS_PASSWORD.get_secret_value()
+            if self.CELERY_REDIS.REDIS_PASSWORD
+            else None,
+            host=self.CELERY_REDIS.REDIS_HOST,
+            port=f"{self.CELERY_REDIS.REDIS_PORT}",
+            path=f"/{self.CELERY_REDIS_DB}",
+        )
