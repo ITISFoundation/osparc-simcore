@@ -33,7 +33,6 @@ class BaseCustomSettings(BaseSettings):
 
         # Builds defaults at this point
         for name, default_cls in default_fields:
-            # TODO: SELF note: revert me back, will be addressed BY https://github.com/ITISFoundation/osparc-simcore/pull/2438
             try:
                 default = default_cls.create_from_envs()
                 field_obj = cls.__fields__[name]

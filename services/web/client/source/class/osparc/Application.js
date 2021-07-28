@@ -313,11 +313,20 @@ qx.Class.define("osparc.Application", {
 
     __loadLoginPage: function() {
       this.__disconnectWebSocket();
-      const view = new osparc.auth.LoginPage();
+      let view = null;
+      switch (qx.core.Environment.get("product.name")) {
+        case "s4l":
+          view = new osparc.auth.LoginPageS4L();
+          this.__loadView(view);
+          break;
+        default:
+          view = new osparc.auth.LoginPage();
+          this.__loadView(view, {
+            top: "10%"
+          });
+          break;
+      }
       view.addListener("done", () => this.__restart(), this);
-      this.__loadView(view, {
-        top: "10%"
-      });
     },
 
     __loadMainPage: function() {
