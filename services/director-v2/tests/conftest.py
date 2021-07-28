@@ -15,6 +15,7 @@ import httpx
 import nest_asyncio
 import pytest
 import simcore_service_director_v2
+from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.test_utils import loop_context
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
@@ -84,7 +85,7 @@ def loop() -> asyncio.AbstractEventLoop:
 
 
 @pytest.fixture(scope="function")
-def mock_env(monkeypatch) -> None:
+def mock_env(monkeypatch: MonkeyPatch) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
@@ -121,7 +122,13 @@ def client(loop: asyncio.AbstractEventLoop, mock_env: None) -> TestClient:
 
 
 @pytest.fixture(scope="function")
-async def initialized_app() -> Iterator[FastAPI]:
+async def initialized_app(monkeypatch: MonkeyPatch) -> Iterator[FastAPI]:
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "itisfoundation/dynamic-sidecar:MOCK")
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
+    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
+    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
+
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
     async with LifespanManager(app):
