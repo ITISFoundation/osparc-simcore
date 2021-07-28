@@ -1,8 +1,11 @@
-from contextlib import suppress
+import logging
+import os
 from functools import cached_property
 from typing import List, Tuple, Type
 
 from pydantic import BaseSettings, Extra, SecretStr, ValidationError
+
+logger = logging.getLogger(__name__)
 
 
 class BaseCustomSettings(BaseSettings):
@@ -30,12 +33,26 @@ class BaseCustomSettings(BaseSettings):
 
         # Builds defaults at this point
         for name, default_cls in default_fields:
-            with suppress(ValidationError):
+            try:
                 default = default_cls.create_from_envs()
                 field_obj = cls.__fields__[name]
                 field_obj.default = default
                 field_obj.field_info.default = default
                 field_obj.required = False
+            except ValidationError as e:
+                logger.error(
+                    (
+                        "Could not validate '%s', field '%s' "
+                        "contains errors, see below:\n%s"
+                        "\n======ENV_VARS=====\n%s"
+                        "\n==================="
+                    ),
+                    cls.__name__,
+                    default_cls.__name__,
+                    str(e),
+                    "\n".join(f"{k}={v}" for k, v in os.environ.items()),
+                )
+                raise e
 
     @classmethod
     def create_from_envs(cls):

@@ -161,6 +161,11 @@ class DynamicSidecarSettings(BaseCustomSettings):
 
     REGISTRY: RegistrySettings
 
+    @validator("DYNAMIC_SIDECAR_IMAGE", pre=True)
+    @classmethod
+    def strip_leading_slashes(cls, v) -> str:
+        return v.lstrip("/")
+
 
 class DynamicServicesSchedulerSettings(BaseCustomSettings):
     DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED: bool = True
