@@ -15,6 +15,7 @@ import sqlalchemy as sa
 from models_library.settings.celery import CeleryConfig
 from models_library.settings.rabbit import RabbitConfig
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
+from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from simcore_postgres_database.storage_models import projects, users
 from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
 from simcore_service_sidecar import config, utils
@@ -378,6 +379,22 @@ PYTHON_RUNNER_STUDY = (
     },
 )
 
+PYTHON_ENV_PRINTER = (
+    "itisfoundation/osparc-python-runner",
+    "1.0.0",
+    {
+        "a13d197a-bf8c-4e11-8a15-44a9894cbbe8": {
+            "next": [],
+            "inputs": {
+                "input_1": {
+                    "store": SIMCORE_S3_ID,
+                    "path": "osparc_python_print_env.py",
+                }
+            },
+        },
+    },
+)
+
 
 # FIXME: input schema in osparc-python-executor service is wrong
 PYTHON_RUNNER_FACTORY_STUDY = (
@@ -410,7 +427,9 @@ PYTHON_RUNNER_FACTORY_STUDY = (
     [
         SLEEPERS_STUDY,
         PYTHON_RUNNER_STUDY,
+        PYTHON_ENV_PRINTER,
     ],
+    ids=["sleepers", "python-runner-study", "python-env-printer"],
 )
 async def test_run_services(
     loop,
@@ -452,7 +471,7 @@ async def test_run_services(
         await cli.run_sidecar(job_id, user_id, pipeline.project_id, node_id)
 
     await asyncio.sleep(15)  # wait a little bit for logs to come in
-    await _assert_incoming_data_logs(
+    _sidecar_logs, tasks_logs, _progress_logs = await _assert_incoming_data_logs(
         list(pipeline_cfg.keys()),
         incoming_data,
         user_id,
@@ -465,6 +484,12 @@ async def test_run_services(
     assert not list(config.SIDECAR_INPUT_FOLDER.glob("**/*"))
     assert not list(config.SIDECAR_OUTPUT_FOLDER.glob("**/*"))
     assert not list(config.SIDECAR_LOG_FOLDER.glob("**/*"))
+
+    # The python env printer should print what he sees in the environment
+    if pipeline_cfg == PYTHON_ENV_PRINTER[2]:
+        logs = json.dumps(tasks_logs)
+        assert CPU_RESOURCE_LIMIT_KEY in logs
+        assert MEM_RESOURCE_LIMIT_KEY in logs
 
 
 def print_module_variables(module):
