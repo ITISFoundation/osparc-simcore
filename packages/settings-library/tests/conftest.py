@@ -2,12 +2,17 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-import
 
+import os
 import sys
+import textwrap
+from collections import deque
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Dict, Type, Union
+from typing import Callable, ContextManager, Deque, Dict, Generator, Tuple, Type, Union
 
 import pytest
 import settings_library
+from _pytest.monkeypatch import MonkeyPatch
 from dotenv import dotenv_values
 from pydantic import Field
 from settings_library.base import BaseCustomSettings
@@ -48,7 +53,7 @@ def mocks_folder(project_tests_dir: Path) -> Path:
 @pytest.fixture
 def env_file():
     """Name of env file under tests/mocks folder. Override to change default"""
-    return ".env-compact"
+    return ".env-sample"
 
 
 @pytest.fixture
@@ -93,3 +98,55 @@ def settings_cls() -> Type[BaseCustomSettings]:
         APP_MODULE_2: AnotherModuleSettings
 
     return Settings
+
+
+@pytest.fixture
+def mocked_settings_cls_env() -> str:
+    # reflects all expected env vars inside the above defined
+    # settings_cls fixture
+    return """
+        APP_HOST=localhost
+        APP_PORT=80
+        POSTGRES_HOST=localhost
+        POSTGRES_PORT=5432
+        POSTGRES_USER=foo
+        POSTGRES_PASSWORD=**********
+        POSTGRES_DB=foodb
+        POSTGRES_MINSIZE=1
+        POSTGRES_MAXSIZE=50
+        POSTGRES_CLIENT_NAME=None
+        MYMODULE_VALUE=10
+        MYMODULE2_SOME_OTHER_VALUE=33
+    """
+
+
+@pytest.fixture
+def mocked_environment(
+    monkeypatch: MonkeyPatch,
+) -> Callable[[str], ContextManager[None]]:
+    @contextmanager
+    def ctx_mngr(env_formatted_string: str) -> Generator[None, None, None]:
+        SAMPLE_ENV = textwrap.dedent(env_formatted_string).strip()
+        env_vars: Deque[Tuple[str, str]] = deque()
+        for line in SAMPLE_ENV.split("\n"):
+            key, value = line.split("=")
+            env_vars.append((key, value))
+
+        # ensure env_vars are not already defined
+        for key, value in env_vars:
+            assert os.environ.get(key, None) is None
+
+        with monkeypatch.context() as m:
+            for key, value in env_vars:
+                m.setenv(key, value)
+
+            for key, value in env_vars:
+                assert os.environ[key] == value
+
+            yield
+
+        # ensure env_vars are not longer present
+        for key, value in env_vars:
+            assert os.environ.get(key, None) is None
+
+    yield ctx_mngr
