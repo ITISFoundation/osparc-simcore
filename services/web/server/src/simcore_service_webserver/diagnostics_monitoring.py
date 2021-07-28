@@ -7,7 +7,7 @@ from typing import Callable, Coroutine
 
 import prometheus_client
 from aiohttp import web
-from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram
+from prometheus_client import CONTENT_TYPE_LATEST, Counter
 from prometheus_client.registry import CollectorRegistry
 from servicelib.monitor_services import add_instrumentation
 
@@ -15,9 +15,26 @@ from .diagnostics_core import DelayWindowProbe, is_sensing_enabled, kLATENCY_PRO
 
 log = logging.getLogger(__name__)
 
+
+#
+# CAUTION CAUTION CAUTION NOTE:
+# Be very careful with metrics. pay attention to metrics cardinatity.
+# Each time series takes about 3kb of overhead in Prometheus
+#
+# CAUTION: every unique combination of key-value label pairs represents a new time series
+#
+# If a metrics is not needed, don't add it!! It will collapse the application AND prometheus
+#
+# references:
+# https://prometheus.io/docs/practices/naming/
+# https://www.robustperception.io/cardinality-is-key
+# https://www.robustperception.io/why-does-prometheus-use-so-much-ram
+# https://promcon.io/2019-munich/slides/containing-your-cardinality.pdf
+#
+
+# TODO: the endpoint label on the http_requests_total Counter is a candidate to be removed. as endpoints also contain all kind of UUIDs
+
 kSTART_TIME = f"{__name__}.start_time"
-kREQUEST_IN_PROGRESS = f"{__name__}.request_in_progress"
-kREQUEST_LATENCY = f"{__name__}.request_latency"
 kREQUEST_COUNT = f"{__name__}.request_count"
 kCANCEL_COUNT = f"{__name__}.cancel_count"
 
@@ -50,9 +67,6 @@ def middleware_factory(app_name: str) -> Coroutine:
 
         try:
             request[kSTART_TIME] = time.time()
-            request.app[kREQUEST_IN_PROGRESS].labels(
-                app_name, request.path, request.method
-            ).inc()
 
             resp = await handler(request)
 
@@ -93,14 +107,6 @@ def middleware_factory(app_name: str) -> Coroutine:
                 request.app[kLATENCY_PROBE].observe(resp_time_secs)
 
             # prometheus probes
-            request.app[kREQUEST_LATENCY].labels(app_name, request.path).observe(
-                resp_time_secs
-            )
-
-            request.app[kREQUEST_IN_PROGRESS].labels(
-                app_name, request.path, request.method
-            ).dec()
-
             request.app[kREQUEST_COUNT].labels(
                 app_name, request.method, request.path, resp.status, exc_name
             ).inc()
@@ -135,22 +141,6 @@ def setup_monitoring(app: web.Application):
         name="http_requests_total",
         documentation="Total Request Count",
         labelnames=["app_name", "method", "endpoint", "http_status", "exception"],
-        registry=reg,
-    )
-
-    # Latency of a request in seconds
-    app[kREQUEST_LATENCY] = Histogram(
-        name="http_request_latency_seconds",
-        documentation="Request latency",
-        labelnames=["app_name", "endpoint"],
-        registry=reg,
-    )
-
-    # Number of requests in progress
-    app[kREQUEST_IN_PROGRESS] = Gauge(
-        name="http_requests_in_progress_total",
-        documentation="Requests in progress",
-        labelnames=["app_name", "endpoint", "method"],
         registry=reg,
     )
 
