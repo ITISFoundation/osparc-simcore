@@ -12,11 +12,11 @@ import pkg_resources
 
 @attr.s(frozen=True, auto_attribs=True)
 class ResourcesFacade:
-    """ Facade to access data resources installed with a distribution
+    """Facade to access data resources installed with a distribution
 
-        - Built on top of pkg_resources
+    - Built on top of pkg_resources
 
-        Resources are read-only files/folders
+    Resources are read-only files/folders
     """
 
     package_name: str
@@ -37,10 +37,10 @@ class ResourcesFacade:
         return pkg_resources.resource_isdir(self.package_name, resource_name)
 
     def get_path(self, resource_name: str) -> Path:
-        """ Returns a path to a resource
+        """Returns a path to a resource
 
-            WARNING: existence of file is not guaranteed. Use resources.exists
-            WARNING: resource files are supposed to be used as read-only!
+        WARNING: existence of file is not guaranteed. Use resources.exists
+        WARNING: resource files are supposed to be used as read-only!
         """
         resource_path = pathlib.Path(
             pkg_resources.resource_filename(self.package_name, resource_name)
@@ -56,7 +56,7 @@ class ResourcesFacade:
 @attr.s(auto_attribs=True)
 class FileResource:
     """
-        TODO: lazy evaluation of attribs
+    TODO: lazy evaluation of attribs
     """
 
     name: str
@@ -65,3 +65,8 @@ class FileResource:
 class PackageResources:
     def get_configfile(self, name: str) -> FileResource:
         raise NotImplementedError("Should be implemented in subclass")
+
+
+# resources env keys
+CPU_RESOURCE_LIMIT_KEY = "SIMCORE_NANO_CPUS_LIMIT"
+MEM_RESOURCE_LIMIT_KEY = "SIMCORE_MEMORY_BYTES_LIMIT"
