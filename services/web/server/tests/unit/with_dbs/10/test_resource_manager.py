@@ -451,7 +451,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     # We have no mock-up for the heatbeat...
     await sio.disconnect()
     assert not sio.sid
-    await asyncio.sleep(0.1)  # let the thread call the method
+    await asyncio.sleep(0.5)  # let the thread call the method
     socket_project_state_update_mock_callable.assert_called_with(
         json.dumps(
             {
