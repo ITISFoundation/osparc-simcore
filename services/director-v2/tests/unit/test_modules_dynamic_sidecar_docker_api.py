@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 from uuid import UUID, uuid4
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from settings_library.docker_registry import RegistrySettings
@@ -48,10 +49,8 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-def dynamic_sidecar_settings(monkeypatch) -> DynamicSidecarSettings:
-    monkeypatch.setenv(
-        "DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:TEST_MOCKED_TAG_NOT_PRESENT"
-    )
+def dynamic_sidecar_settings(monkeypatch: MonkeyPatch) -> DynamicSidecarSettings:
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
     return DynamicSidecarSettings(REGISTRY=RegistrySettings())
 
 
@@ -251,6 +250,19 @@ async def _count_services_in_stack(
 
 
 # TESTS
+
+
+@pytest.mark.parametrize(
+    "simcore_services_network_name",
+    ("n", "network", "with_underscore", "with-dash", "with-dash_with_underscore"),
+)
+def test_valid_network_names(
+    simcore_services_network_name: str, monkeypatch: MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", simcore_services_network_name)
+    dynamic_sidecar_settings = DynamicSidecarSettings(REGISTRY=RegistrySettings())
+    assert dynamic_sidecar_settings
 
 
 async def test_failed_docker_client_request(
