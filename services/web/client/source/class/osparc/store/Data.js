@@ -14,6 +14,9 @@
      * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
+/**
+  * @ignore(fetch)
+  */
 
 /**
  * Singleton class that is used as entrypoint to the webserver.
@@ -209,6 +212,29 @@ qx.Class.define("osparc.store.Data", {
             console.error(err);
             reject([]);
           });
+      });
+    },
+
+    uploadScreenshot: function(file) {
+      return new Promise((resolve, reject) => {
+        const formdata = new FormData();
+        formdata.append("image", file.replace("data:image/png;base64,", ""));
+        formdata.append("type", "base64");
+        formdata.append("title", "screenshot.png");
+
+        const clientId = "xxxxx";
+        fetch("https://api.imgur.com/3/image/", {
+          method: "POST",
+          headers: {
+            Authorization: "Client-ID " + clientId,
+            Accept: "application/json"
+          },
+          body: formdata
+        }).then(data => data.json()).then(data => {
+          console.log(data);
+          console.log(data.data.link);
+          resolve(data.data.link);
+        });
       });
     },
 
