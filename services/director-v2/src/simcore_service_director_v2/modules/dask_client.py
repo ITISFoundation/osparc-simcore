@@ -80,16 +80,17 @@ class DaskClient:
     ):
         def sidecar_fun(job_id: str, user_id: str, project_id: str, node_id: str):
 
+            import asyncio
+
             from dask.distributed import get_worker
             from simcore_service_sidecar.cli import run_sidecar
-            from simcore_service_sidecar.utils import wrap_async_call
 
             def _is_aborted_cb() -> bool:
                 w = get_worker()
                 t = w.tasks.get(w.get_current_task())
                 return t is None
 
-            wrap_async_call(
+            asyncio.run(
                 run_sidecar(
                     job_id, user_id, project_id, node_id, is_aborted_cb=_is_aborted_cb
                 )
@@ -112,12 +113,12 @@ class DaskClient:
             task_future.add_done_callback(_done_callback)
             self._taskid_to_future_map[job_id] = task_future
             fire_and_forget(task_future)  # this should ensure the task will run
+            logger.debug("Dask task %s started", task_future.key)
 
     def abort_computation_tasks(self, task_ids: List[str]) -> None:
-        # current_dask_tasks = self.client.processing()
-        # logger.warning("current dask tasks: %s", current_dask_tasks)
 
         for task_id in task_ids:
             task_future = self._taskid_to_future_map.pop(task_id, None)
             if task_future:
                 task_future.cancel()
+                logger.debug("Dask task %s cancelled", task_future.key)
