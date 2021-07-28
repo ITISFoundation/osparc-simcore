@@ -34,6 +34,7 @@ log = logging.getLogger(__name__)
 # https://www.robustperception.io/cardinality-is-key
 # https://www.robustperception.io/why-does-prometheus-use-so-much-ram
 # https://promcon.io/2019-munich/slides/containing-your-cardinality.pdf
+# https://grafana.com/docs/grafana-cloud/how-do-i/control-prometheus-metrics-usage/usage-analysis-explore/
 #
 
 
