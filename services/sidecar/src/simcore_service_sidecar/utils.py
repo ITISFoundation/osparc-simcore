@@ -118,12 +118,14 @@ def cancel_task(task_name: str) -> None:
         if task.get_name() == task_name:
             logger.warning("canceling task %s....................", task)
             task.cancel()
+            break
 
 
 def cancel_task_by_fct_name(fct_name: str) -> None:
     tasks = asyncio.all_tasks()
     logger.debug("running tasks: %s", tasks)
     for task in tasks:
-        if task.get_coro().__name__ == fct_name:
+        if task.get_coro().__name__ == fct_name:  # type: ignore
             logger.warning("canceling task %s....................", task)
             task.cancel()
+            break
