@@ -407,7 +407,7 @@ def _merge_resources_in_settings(
     return result
 
 
-def _inject_target_service_into_env_vars(
+def _patch_target_service_into_env_vars(
     settings: Deque[SimcoreServiceSettingLabelEntry],
 ) -> Deque[SimcoreServiceSettingLabelEntry]:
     """NOTE: this method will modify settings in place"""
@@ -477,7 +477,7 @@ async def merge_settings_before_use(
         )
 
     settings = _merge_resources_in_settings(settings)
-    settings = _inject_target_service_into_env_vars(settings)
+    settings = _patch_target_service_into_env_vars(settings)
 
     return SimcoreServiceSettingsLabel.parse_obj(settings)
 
