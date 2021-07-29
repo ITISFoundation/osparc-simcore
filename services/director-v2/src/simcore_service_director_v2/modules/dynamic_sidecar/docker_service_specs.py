@@ -1,9 +1,10 @@
 import json
 import logging
 from collections import deque
-from typing import Any, Deque, Dict, List
+from typing import Any, Deque, Dict, List, cast
 
 from models_library.service_settings_labels import (
+    ComposeSpecLabel,
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
@@ -276,13 +277,14 @@ async def _extract_osparc_involved_service_labels(
     docker_image_name_by_services: Dict[str, SimcoreServiceLabels] = {
         _assemble_key(service_key=service_key, service_tag=service_tag): service_labels
     }
-    if service_labels.compose_spec is None:
+    compose_spec: ComposeSpecLabel = cast(ComposeSpecLabel, service_labels.compose_spec)
+    if compose_spec is None:
         return docker_image_name_by_services
 
     # maps form image_name to compose_spec key
     reverse_mapping: Dict[str, str] = {}
 
-    compose_spec_services = service_labels.compose_spec.get("services", {})
+    compose_spec_services = compose_spec.get("services", {})
     image = None
     for compose_service_key, service_data in compose_spec_services.items():
         image = service_data.get("image", None)
@@ -468,7 +470,9 @@ async def merge_settings_before_use(
     # merge the settings from the all the involved services
     settings: Deque[SimcoreServiceSettingLabelEntry] = deque()  # TODO: fix typing here
     for compose_spec_key, service_labels in labels_for_involved_services.items():
-        service_settings: SimcoreServiceSettingsLabel = service_labels.settings
+        service_settings: SimcoreServiceSettingsLabel = cast(
+            SimcoreServiceSettingsLabel, service_labels.settings
+        )
 
         settings.extend(
             # inject compose spec key, used to target container specific services
