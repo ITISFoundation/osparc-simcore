@@ -59,6 +59,7 @@ class Status(BaseModel):
         self._update(DynamicSidecarStatus.OK, info)
 
     def update_failing_status(self, info: str) -> None:
+        logger.error(info)
         self._update(DynamicSidecarStatus.FAILING, info)
 
     def __eq__(self, other: "Status") -> bool:
