@@ -40,7 +40,7 @@ def get_services_client(
     return client
 
 
-def get_settings(request: Request) -> DynamicServicesSettings:
+def get_dynamic_services_settings(request: Request) -> DynamicServicesSettings:
     return request.app.state.settings.DYNAMIC_SERVICES
 
 

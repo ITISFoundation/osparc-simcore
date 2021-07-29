@@ -32,10 +32,10 @@ from ...utils.logging_utils import log_decorator
 from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
 from ..dependencies.dynamic_services import (
     ServicesClient,
+    get_dynamic_services_settings,
     get_scheduler,
     get_service_base_url,
     get_services_client,
-    get_settings,
 )
 
 router = APIRouter()
@@ -56,7 +56,9 @@ async def list_running_dynamic_services(
     user_id: Optional[UserID] = None,
     project_id: Optional[ProjectID] = None,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
-    dynamic_services_settings: DynamicServicesSettings = Depends(get_settings),
+    dynamic_services_settings: DynamicServicesSettings = Depends(
+        get_dynamic_services_settings
+    ),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> List[DynamicServiceOut]:
     legacy_running_services: List[DynamicServiceOut] = cast(
@@ -89,7 +91,9 @@ async def create_dynamic_service(
     x_dynamic_sidecar_request_dns: str = Header(...),
     x_dynamic_sidecar_request_scheme: str = Header(...),
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
-    dynamic_services_settings: DynamicServicesSettings = Depends(get_settings),
+    dynamic_services_settings: DynamicServicesSettings = Depends(
+        get_dynamic_services_settings
+    ),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> Union[DynamicServiceOut, RedirectResponse]:
     simcore_service_labels: SimcoreServiceLabels = (
