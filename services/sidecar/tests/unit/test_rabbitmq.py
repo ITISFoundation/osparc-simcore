@@ -53,7 +53,7 @@ async def test_rabbitmq(
     await rabbit_queue.consume(rabbit_message_handler, exclusive=True, no_ack=True)
 
     async with RabbitMQ() as rabbitmq:
-        assert rabbitmq.connection.ready
+        assert rabbitmq._connection.ready  # pylint: disable=protected-access
 
         await rabbitmq.post_log_message(user_id, project_id, node_id, log_msg)
         await rabbitmq.post_log_message(user_id, project_id, node_id, log_messages)
