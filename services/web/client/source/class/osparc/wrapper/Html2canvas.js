@@ -71,7 +71,7 @@ qx.Class.define("osparc.wrapper.Html2canvas", {
     },
 
     takeScreenshot: function(element) {
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         const bgColor = qx.theme.manager.Color.getInstance().resolve("background-main");
         html2canvas(element, {
           allowTaint: true,
@@ -84,7 +84,8 @@ qx.Class.define("osparc.wrapper.Html2canvas", {
             const quality = 0.5;
             const image = canvas.toDataURL("image/png", quality);
             resolve(image);
-          });
+          })
+          .catch(err => reject(err));
       });
     }
   }

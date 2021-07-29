@@ -450,11 +450,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
     },
 
-    takeScreenshot: function() {
+    takeScreenshot: function(screenshotBtn) {
       const html2canvas = osparc.wrapper.Html2canvas.getInstance();
       const iframes = Array.from(document.getElementsByTagName("iframe"));
       const visibleIframe = iframes.find(iframe => iframe.offsetTop >= 0);
       const elem = visibleIframe === undefined ? this.getContentElement().getDomElement() : visibleIframe.contentDocument.body;
+      screenshotBtn.setFetching(true);
       html2canvas.takeScreenshot(elem)
         .then(screenshot => {
           const filename = "screenshot.png";
@@ -464,7 +465,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             .then(link => {
               this.getStudy().setThumbnail(link);
             });
-        });
+        })
+        .finally(() => screenshotBtn.setFetching(false));
     },
 
     closeEditor: function() {

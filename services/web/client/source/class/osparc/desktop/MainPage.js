@@ -89,6 +89,12 @@ qx.Class.define("osparc.desktop.MainPage", {
         }
       }, this);
 
+      navBar.addListener("takeScreenshot", () => {
+        if (this.__studyEditor) {
+          this.__studyEditor.takeScreenshot(navBar.getChildControl("screenshot-button"));
+        }
+      });
+
       navBar.addListener("slidesStart", () => {
         if (this.__studyEditor) {
           navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[2]);

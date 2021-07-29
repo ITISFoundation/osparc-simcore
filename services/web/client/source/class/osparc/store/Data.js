@@ -231,10 +231,9 @@ qx.Class.define("osparc.store.Data", {
           },
           body: formdata
         }).then(data => data.json()).then(data => {
-          console.log(data);
-          console.log(data.data.link);
           resolve(data.data.link);
-        });
+        })
+          .catch(err => reject(err));
       });
     },
 

@@ -63,6 +63,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
   events: {
     "dashboardPressed": "qx.event.type.Event",
+    "takeScreenshot": "qx.event.type.Event",
     "slidesStart": "qx.event.type.Event",
     "slidesStop": "qx.event.type.Event"
   },
@@ -119,6 +120,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       });
 
       this._add(new qx.ui.core.Spacer(20));
+
+      this.getChildControl("screenshot-button");
 
       this.getChildControl("read-only-icon");
 
@@ -177,6 +180,14 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           control = new qx.ui.basic.Label(this.tr("Dashboard")).set({
             font: "text-16"
           });
+          this._add(control);
+          break;
+        case "screenshot-button":
+          control = new osparc.ui.form.FetchButton(null, "@FontAwesome5Solid/camera/16").set({
+            ...this.self().BUTTON_OPTIONS
+          });
+          osparc.utils.Utils.setIdToWidget(control, "takeScreenshotBtn");
+          control.addListener("execute", () => this.fireEvent("takeScreenshot"), this);
           this._add(control);
           break;
         case "read-only-icon":
@@ -239,6 +250,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "dashboard":
           this.getChildControl("dashboard-label").show();
           this.getChildControl("dashboard-button").exclude();
+          this.getChildControl("screenshot-button").exclude();
           this.getChildControl("read-only-icon").exclude();
           this.__resetSlidesBtnsVis(false);
           this.getChildControl("study-title").exclude();
@@ -480,6 +492,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     _applyStudy: function(study) {
       if (study) {
         study.bind("name", this.getChildControl("study-title"), "value");
+        study.bind("readOnly", this.getChildControl("screenshot-button"), "visibility", {
+          converter: value => value ? "excluded" : "visible"
+        });
         study.bind("readOnly", this.getChildControl("read-only-icon"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
