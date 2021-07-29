@@ -22,9 +22,9 @@ from ..docker_api import (
 )
 from ..docker_compose_specs import assemble_spec
 from ..docker_service_specs import (
-    dyn_proxy_entrypoint_assembly,
-    dynamic_sidecar_assembly,
     extract_service_port_from_compose_start_spec,
+    get_dynamic_proxy_spec,
+    get_dynamic_sidecar_spec,
     merge_settings_before_use,
 )
 from .abc import DynamicSchedulerEvent
@@ -102,7 +102,7 @@ class CreateServices(DynamicSchedulerEvent):
         swarm_network_name: str = swarm_network["Name"]
 
         # start dynamic-sidecar and run the proxy on the same node
-        dynamic_sidecar_create_service_params = await dynamic_sidecar_assembly(
+        dynamic_sidecar_create_service_params = await get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
             dynamic_sidecar_network_id=dynamic_sidecar_network_id,
@@ -122,15 +122,13 @@ class CreateServices(DynamicSchedulerEvent):
             dynamic_sidecar_id, dynamic_sidecar_settings
         )
 
-        dynamic_sidecar_proxy_create_service_params = (
-            await dyn_proxy_entrypoint_assembly(
-                scheduler_data=scheduler_data,
-                dynamic_sidecar_settings=dynamic_sidecar_settings,
-                dynamic_sidecar_network_id=dynamic_sidecar_network_id,
-                swarm_network_id=swarm_network_id,
-                swarm_network_name=swarm_network_name,
-                dynamic_sidecar_node_id=dynamic_sidecar_node_id,
-            )
+        dynamic_sidecar_proxy_create_service_params = await get_dynamic_proxy_spec(
+            scheduler_data=scheduler_data,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            dynamic_sidecar_network_id=dynamic_sidecar_network_id,
+            swarm_network_id=swarm_network_id,
+            swarm_network_name=swarm_network_name,
+            dynamic_sidecar_node_id=dynamic_sidecar_node_id,
         )
         logger.debug(
             "dynamic-sidecar-proxy create_service_params %s",

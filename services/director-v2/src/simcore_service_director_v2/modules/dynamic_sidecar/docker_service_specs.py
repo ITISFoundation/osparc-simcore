@@ -39,7 +39,7 @@ def extract_service_port_from_compose_start_spec(
     return create_service_params["labels"]["service_port"]
 
 
-async def dyn_proxy_entrypoint_assembly(
+async def get_dynamic_proxy_spec(
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_network_id: str,
@@ -47,7 +47,12 @@ async def dyn_proxy_entrypoint_assembly(
     swarm_network_name: str,
     dynamic_sidecar_node_id: str,
 ) -> Dict[str, Any]:
-    """This is the entrypoint to the network and needs to be configured properly"""
+    """
+    The Treafik proxy is the entrypoint which forwards
+    all the network requests to dynamic service.
+    The proxy is used to create network isolation
+    from the rest of the platform.
+    """
 
     mounts = [
         # docker socket needed to use the docker api
@@ -110,7 +115,7 @@ async def dyn_proxy_entrypoint_assembly(
             },
             "Placement": {
                 "Constraints": [
-                    "node.platform.os == linux",  # TODO: ask SAN should this be removed?
+                    "node.platform.os == linux",
                     f"node.id == {dynamic_sidecar_node_id}",
                 ]
             },
@@ -478,14 +483,18 @@ async def merge_settings_before_use(
     return SimcoreServiceSettingsLabel.parse_obj(settings)
 
 
-async def dynamic_sidecar_assembly(
+async def get_dynamic_sidecar_spec(
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
     settings: SimcoreServiceSettingsLabel,
 ) -> Dict[str, Any]:
-    """This service contains the dynamic-sidecar which will spawn the dynamic service itself"""
+    """
+    The dynamic-sidecar is responsible for managing the lifecycle
+    of the dynamic service. The director-v2 directly coordinates with
+    the dynamic-sidecar for this purpose.
+    """
     mounts = [
         # docker socket needed to use the docker api
         {
@@ -570,11 +579,7 @@ async def dynamic_sidecar_assembly(
                 "Env": {
                     "SIMCORE_HOST_NAME": scheduler_data.service_name,
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-                    **{
-                        e: v
-                        for e, v in os.environ.items()
-                        if str(e).startswith("REGISTRY_")
-                    },
+                    **dynamic_sidecar_settings.REGISTRY.dynamic_sidecar_env_vars,
                 },
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
