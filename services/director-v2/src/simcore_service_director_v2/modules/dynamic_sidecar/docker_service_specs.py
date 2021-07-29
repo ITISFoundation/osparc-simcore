@@ -12,7 +12,7 @@ from models_library.service_settings_labels import (
 from models_library.services import ServiceKeyVersion
 
 from ...api.dependencies.director_v0 import DirectorV0Client
-from ...core.settings import DynamicSidecarSettings
+from ...core.settings import DynamicSidecarSettings, DynamicSidecarTraefikSettings
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 from ...models.schemas.dynamic_services import SchedulerData, ServiceType
 from .errors import DynamicSidecarError
@@ -58,9 +58,11 @@ async def dyn_proxy_entrypoint_assembly(
             "ReadOnly": True,
         }
     ]
+    traefik_settings: DynamicSidecarTraefikSettings = (
+        dynamic_sidecar_settings.TRAEFIK_SETTINGS
+    )
 
     return {
-        # TODO: use a pydantic model, make the traefik version a setting, log level, etc...
         "labels": {
             "io.simcore.zone": f"{dynamic_sidecar_settings.TRAEFIK_SIMCORE_ZONE}",
             "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,
@@ -88,13 +90,13 @@ async def dyn_proxy_entrypoint_assembly(
             "ContainerSpec": {
                 "Env": {},
                 "Hosts": [],
-                "Image": f"traefik:{dynamic_sidecar_settings.DYNAMIC_SIDECAR_TRAEFIK_VERSION}",
+                "Image": f"traefik:{traefik_settings.DYNAMIC_SIDECAR_TRAEFIK_VERSION}",
                 "Init": True,
                 "Labels": {},
                 "Command": [
                     "traefik",
-                    "--log.level=DEBUG",
-                    "--accesslog=true",
+                    f"--log.level={traefik_settings.DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL}",
+                    f"--accesslog={traefik_settings.access_log_as_string}",
                     "--entryPoints.http.address=:80",
                     "--entryPoints.http.forwardedHeaders.insecure",
                     "--providers.docker.endpoint=unix:///var/run/docker.sock",

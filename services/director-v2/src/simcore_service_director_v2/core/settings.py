@@ -3,7 +3,7 @@ from functools import cached_property
 # pylint: disable=no-self-argument
 # pylint: disable=no-self-use
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional, Set
 
 from models_library.basic_types import (
     BootModeEnum,
@@ -30,11 +30,13 @@ SERVICE_RUNTIME_SETTINGS: str = "simcore.service.settings"
 SERVICE_REVERSE_PROXY_SETTINGS: str = "simcore.service.reverse-proxy-settings"
 SERVICE_RUNTIME_BOOTSETTINGS: str = "simcore.service.bootsettings"
 
-ORG_LABELS_TO_SCHEMA_LABELS = {
+ORG_LABELS_TO_SCHEMA_LABELS: Dict[str, str] = {
     "org.label-schema.build-date": "build_date",
     "org.label-schema.vcs-ref": "vcs_ref",
     "org.label-schema.vcs-url": "vcs_url",
 }
+
+SUPPORTED_TRAEFIK_LOG_LEVELS: Set[str] = {"info", "debug", "warn", "error"}
 
 
 class ClientRequestSettings(BaseCustomSettings):
@@ -89,6 +91,34 @@ class CelerySettings(BaseCelerySettings):
         True, description="Enables/Disables connection with service"
     )
     CELERY_PUBLICATION_TIMEOUT: int = 60
+
+
+class DynamicSidecarTraefikSettings(BaseCustomSettings):
+    DYNAMIC_SIDECAR_TRAEFIK_VERSION: str = Field(
+        "v2.2.1",
+        description="current version of the Traefik image to be pulled and used from dockerhub",
+    )
+    DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL: str = Field(
+        "warn", description="set Treafik's loglevel to be used"
+    )
+
+    DYNAMIC_SIDECAR_TRAEFIK_ACCESS_LOG: bool = Field(
+        False, description="enables or disables access log"
+    )
+
+    @validator("DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL", pre=True)
+    @classmethod
+    def validate_log_level(cls, v) -> str:
+        if v not in SUPPORTED_TRAEFIK_LOG_LEVELS:
+            message = (
+                "Got log level '{v}', expected one of '{SUPPORTED_TRAEFIK_LOG_LEVELS}'"
+            )
+            raise ValueError(message)
+        return v
+
+    @cached_property
+    def access_log_as_string(self) -> str:
+        return str(self.DYNAMIC_SIDECAR_TRAEFIK_ACCESS_LOG).lower()
 
 
 class DynamicSidecarSettings(BaseCustomSettings):
@@ -149,15 +179,12 @@ class DynamicSidecarSettings(BaseCustomSettings):
         description="Names the traefik zone for services that must be accessible from platform http entrypoint",
     )
 
-    DYNAMIC_SIDECAR_TRAEFIK_VERSION: str = Field(
-        "v2.2.1",
-        description="current version of the Traefik image to be pulled and used from dockerhub",
-    )
-
     SWARM_STACK_NAME: str = Field(
         ...,
         description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
     )
+
+    TRAEFIK_SETTINGS: DynamicSidecarTraefikSettings
 
     REGISTRY: RegistrySettings
 
