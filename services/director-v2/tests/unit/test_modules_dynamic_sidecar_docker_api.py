@@ -10,7 +10,6 @@ import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from settings_library.docker_registry import RegistrySettings
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
@@ -51,7 +50,7 @@ pytestmark = pytest.mark.asyncio
 @pytest.fixture
 def dynamic_sidecar_settings(monkeypatch: MonkeyPatch) -> DynamicSidecarSettings:
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
-    return DynamicSidecarSettings(REGISTRY=RegistrySettings())
+    return DynamicSidecarSettings.create_from_envs()
 
 
 @pytest.fixture
@@ -138,7 +137,7 @@ def dynamic_sidecar_service_spec(
             "service_key": "simcore/services/dynamic/3dviewer",
             "service_tag": "2.4.5",
             "paths_mapping": sample["paths_mapping"].json(),
-            "compose_spec": json.dumps(sample["compose_spec"]),
+            "compose_spec": sample["compose_spec"],
             "container_http_entry": sample["container_http_entry"],
             "traefik.docker.network": "",
             "io.simcore.zone": "",
@@ -261,7 +260,7 @@ def test_valid_network_names(
 ) -> None:
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", simcore_services_network_name)
-    dynamic_sidecar_settings = DynamicSidecarSettings(REGISTRY=RegistrySettings())
+    dynamic_sidecar_settings = DynamicSidecarSettings.create_from_envs()
     assert dynamic_sidecar_settings
 
 

@@ -197,7 +197,7 @@ class ServiceLabelsStoredData(CommonServiceDetails, DynamicSidecarServiceLabels)
             user_id=int(labels["user_id"]),
         )
         if "compose_spec" in labels:
-            params["compose_spec"] = json.loads(labels["compose_spec"])
+            params["compose_spec"] = labels["compose_spec"]
         if "container_http_entry" in labels:
             params["container_http_entry"] = labels["container_http_entry"]
 
