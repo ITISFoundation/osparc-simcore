@@ -215,6 +215,58 @@ qx.Class.define("osparc.store.Data", {
       });
     },
 
+    uploadScreenshotToS3: function(screenshot, studyId) {
+      return new Promise((resolve, reject) => {
+        const nodeId = "00000000-0000-0000-0000-000000000000";
+        const fileUuid = studyId +"/"+ nodeId +"/screenshot.png";
+        const dataStore = osparc.store.Data.getInstance();
+        // get link for upload
+        dataStore.getPresignedLink(false, 0, fileUuid)
+          .then(presignedPostData => {
+            if (presignedPostData.presignedLink) {
+              const formData = new FormData();
+              formData.append("Content-Type", "image/png");
+              formData.append("Content-Disposition", "inline");
+              formData.append("body", screenshot);
+
+              // post to link
+              const url = presignedPostData.presignedLink.link;
+              const xhr = new XMLHttpRequest();
+              xhr.open("PUT", url, true);
+              xhr.onload = () => {
+                if (xhr.status == 200 || xhr.status == 204) {
+                  console.log(xhr);
+
+                  const params = {
+                    url: {
+                      nodeId: encodeURIComponent(nodeId)
+                    }
+                  };
+                  osparc.data.Resources.fetch("storageFiles", "getByNode", params)
+                    .then(files => {
+                      console.log(files);
+                    });
+
+                  /*
+                  // get link for download
+                  dataStore.getPresignedLink(true, 0, fileUuid)
+                    .then(data => {
+                      if (data.presignedLink) {
+                        resolve(data.presignedLink.link);
+                      }
+                    });
+                  */
+                } else {
+                  console.log(xhr.response);
+                }
+              };
+              xhr.send(formData);
+            }
+          })
+          .catch(err => reject(err));
+      });
+    },
+
     uploadScreenshotToImgur: function(file) {
       return new Promise((resolve, reject) => {
         const formdata = new FormData();
