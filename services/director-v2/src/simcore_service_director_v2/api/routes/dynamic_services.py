@@ -39,7 +39,7 @@ from ..dependencies.dynamic_services import (
 )
 
 router = APIRouter()
-log = logging.getLogger(__file__)
+logger = logging.getLogger(__file__)
 
 
 @router.get(
@@ -85,7 +85,7 @@ async def list_running_dynamic_services(
     status_code=status.HTTP_201_CREATED,
     response_model=DynamicServiceOut,
 )
-@log_decorator(logger=log)
+@log_decorator(logger=logger)
 async def create_dynamic_service(
     service: DynamicServiceCreate,
     x_dynamic_sidecar_request_dns: str = Header(...),
@@ -114,7 +114,7 @@ async def create_dynamic_service(
                 "service_basepath": f"{service.basepath}",
             },
         )
-        log.debug("Redirecting %s", redirect_url_with_query)
+        logger.debug("Redirecting %s", redirect_url_with_query)
         return RedirectResponse(str(redirect_url_with_query))
 
     if not await is_dynamic_service_running(
@@ -188,7 +188,7 @@ async def stop_dynamic_service(
     response_model=RetrieveDataOutEnveloped,
     status_code=status.HTTP_200_OK,
 )
-@log_decorator(logger=log)
+@log_decorator(logger=logger)
 async def service_retrieve_data_on_ports(
     retrieve_settings: RetrieveDataIn,
     service_base_url: URL = Depends(get_service_base_url),
