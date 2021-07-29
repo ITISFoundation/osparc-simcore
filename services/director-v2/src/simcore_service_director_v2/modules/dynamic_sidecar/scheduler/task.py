@@ -6,6 +6,7 @@ from copy import deepcopy
 from typing import Deque, Dict, Optional
 from uuid import UUID
 
+import httpx
 from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
@@ -165,9 +166,14 @@ class DynamicSidecarsScheduler:
 
             current: LockWithSchedulerData = self._to_observe[service_name]
             dynamic_sidecar_endpoint = current.scheduler_data.dynamic_sidecar.endpoint
-            await dynamic_sidecar_client.begin_service_destruction(
-                dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
-            )
+            try:
+                await dynamic_sidecar_client.begin_service_destruction(
+                    dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
+                )
+            except httpx.HTTPError:
+                logger.warning(
+                    "Could not send docker-compose down request to %s", service_name
+                )
 
             dynamic_sidecar_settings: DynamicSidecarSettings = (
                 self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
