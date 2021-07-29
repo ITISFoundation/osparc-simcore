@@ -1,7 +1,7 @@
 from functools import cached_property
 from typing import Dict, Optional
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, validator
 
 from .base import BaseCustomSettings
 
@@ -23,6 +23,11 @@ class RegistrySettings(BaseCustomSettings):
     )
     REGISTRY_SSL: bool = Field(..., description="access to registry through ssl")
 
+    @validator("REGISTRY_PATH", pre=True)
+    @classmethod
+    def escape_none_string(cls, v) -> Optional[str]:
+        return None if v == "None" else v
+
     @cached_property
     def resolved_registry_url(self) -> str:
         return self.REGISTRY_PATH or self.REGISTRY_URL
@@ -38,6 +43,6 @@ class RegistrySettings(BaseCustomSettings):
             "REGISTRY_PATH": str(self.REGISTRY_PATH),
             "REGISTRY_URL": str(self.REGISTRY_URL),
             "REGISTRY_USER": str(self.REGISTRY_USER),
-            "REGISTRY_PW": str(self.REGISTRY_PW),
+            "REGISTRY_PW": str(self.REGISTRY_PW.get_secret_value()),
             "REGISTRY_SSL": str(self.REGISTRY_SSL),
         }
