@@ -68,6 +68,7 @@ async def get_dynamic_proxy_spec(
 
     return {
         "labels": {
+            # TODO: let's use a pydantic model with descriptions
             "io.simcore.zone": f"{dynamic_sidecar_settings.TRAEFIK_SIMCORE_ZONE}",
             "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,
             "traefik.docker.network": swarm_network_name,
