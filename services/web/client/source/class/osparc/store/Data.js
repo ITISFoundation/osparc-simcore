@@ -239,10 +239,11 @@ qx.Class.define("osparc.store.Data", {
 
                   const params = {
                     url: {
-                      nodeId: encodeURIComponent(nodeId)
+                      locationId: 0,
+                      datasetId: studyId
                     }
                   };
-                  osparc.data.Resources.fetch("storageFiles", "getByNode", params)
+                  osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
                     .then(files => {
                       console.log(files);
                     });
