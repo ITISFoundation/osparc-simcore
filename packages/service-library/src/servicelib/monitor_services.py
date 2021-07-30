@@ -5,6 +5,25 @@ from aiohttp import web
 from prometheus_client import Counter
 from prometheus_client.registry import CollectorRegistry
 
+#
+# CAUTION CAUTION CAUTION NOTE:
+# Be very careful with metrics. pay attention to metrics cardinatity.
+# Each time series takes about 3kb of overhead in Prometheus
+#
+# CAUTION: every unique combination of key-value label pairs represents a new time series
+#
+# If a metrics is not needed, don't add it!! It will collapse the application AND prometheus
+#
+# references:
+# https://prometheus.io/docs/practices/naming/
+# https://www.robustperception.io/cardinality-is-key
+# https://www.robustperception.io/why-does-prometheus-use-so-much-ram
+# https://promcon.io/2019-munich/slides/containing-your-cardinality.pdf
+# https://grafana.com/docs/grafana-cloud/how-do-i/control-prometheus-metrics-usage/usage-analysis-explore/
+#
+
+# TODO: the user_id label on the http_requests_total Counter is a candidate to be removed. as endpoints also contain all kind of UUIDs
+
 kSERVICE_STARTED = f"{__name__}.services_started"
 kSERVICE_STOPPED = f"{__name__}.services_stopped"
 
