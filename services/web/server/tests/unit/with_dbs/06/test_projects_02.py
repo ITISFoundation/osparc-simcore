@@ -637,7 +637,7 @@ async def test_close_project(
             # call(client.server.app, user_id=None, project_id=user_project["uuid"]),    # TODO: was disabled, SAN is this still viable?
             call(
                 client.server.app,
-                user_id=logged_user["id"],
+                user_id=str(logged_user["id"]),
                 project_id=user_project["uuid"],
             ),
         ]
