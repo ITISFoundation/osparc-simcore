@@ -244,20 +244,6 @@ qx.Class.define("osparc.store.Data", {
 
               xhr.onload = () => {
                 if (xhr.status == 200 || xhr.status == 204) {
-                  console.log(xhr);
-
-                  const params = {
-                    url: {
-                      locationId: 0,
-                      datasetId: studyId
-                    }
-                  };
-                  osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
-                    .then(files => {
-                      console.log(files);
-                    });
-
-                  /*
                   // get link for download
                   dataStore.getPresignedLink(true, 0, fileUuid)
                     .then(data => {
@@ -265,7 +251,6 @@ qx.Class.define("osparc.store.Data", {
                         resolve(data.presignedLink.link);
                       }
                     });
-                  */
                 } else {
                   console.log(xhr.response);
                 }
@@ -273,28 +258,6 @@ qx.Class.define("osparc.store.Data", {
               xhr.send(blobData);
             }
           })
-          .catch(err => reject(err));
-      });
-    },
-
-    uploadScreenshotToImgur: function(file) {
-      return new Promise((resolve, reject) => {
-        const formdata = new FormData();
-        formdata.append("image", file.replace("data:image/png;base64,", ""));
-        formdata.append("type", "base64");
-        formdata.append("title", "screenshot.png");
-
-        const clientId = "xxxxx";
-        fetch("https://api.imgur.com/3/image/", {
-          method: "POST",
-          headers: {
-            Authorization: "Client-ID " + clientId,
-            Accept: "application/json"
-          },
-          body: formdata
-        }).then(data => data.json()).then(data => {
-          resolve(data.data.link);
-        })
           .catch(err => reject(err));
       });
     },

@@ -461,7 +461,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           const filename = "screenshot.png";
           screenshot.name = filename;
           const dataStore = osparc.store.Data.getInstance();
-          dataStore.uploadScreenshotToImgur(screenshot)
+          dataStore.uploadScreenshotToS3(screenshot, this.getStudy().getUuid())
             .then(link => {
               this.getStudy().setThumbnail(link);
             });
