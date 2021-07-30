@@ -10,6 +10,7 @@ import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import LocalCluster
 from fastapi.applications import FastAPI
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import ConfigurationError
@@ -38,16 +39,6 @@ def minimal_dask_config(
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "0")
 
 
-@pytest.fixture
-def mocked_dask_cluster(monkeypatch: MonkeyPatch) -> LocalCluster:
-    cluster = LocalCluster(n_workers=2, threads_per_worker=1)
-    scheduler_address = URL(cluster.scheduler_address)
-    monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host)
-    monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
-    yield cluster
-    cluster.close()
-
-
 def test_dask_client_missing_raises_configuration_error(
     mock_env: None, minimal_dask_config: None, monkeypatch: MonkeyPatch
 ):
@@ -60,11 +51,45 @@ def test_dask_client_missing_raises_configuration_error(
             DaskClient.instance(client.app)
 
 
-def test_dask_client_creation(
+@pytest.fixture
+def mocked_dask_cluster(monkeypatch: MonkeyPatch) -> LocalCluster:
+    cluster = LocalCluster(n_workers=2, threads_per_worker=1)
+    scheduler_address = URL(cluster.scheduler_address)
+    monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
+    monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
+    yield cluster
+    cluster.close()
+
+
+@pytest.fixture
+def dask_client(
     minimal_dask_config: None, mocked_dask_cluster: LocalCluster, minimal_app: FastAPI
-):
+) -> DaskClient:
     client = DaskClient.instance(minimal_app)
     assert client
+    yield client
+
+
+def test_dask_client_is_created(dask_client: DaskClient):
+    pass
+
+
+def test_local_dask_cluster_through_client(dask_client: DaskClient):
+    def test_fct_add(x: int, y: int) -> int:
+        return x + y
+
+    future = dask_client.client.submit(test_fct_add, 2, 5)
+    assert future
+    result = future.result(timeout=2)
+    assert result == 7
+
+
+def test_send_computation_task(dask_client: DaskClient):
+    job_id = "a_fake_job_id"
+    user_id = 12
+    project_id = ProjectID(uuid4())
+    node_id = NodeID(uuid4())
+    pass
 
 
 @pytest.mark.parametrize(
