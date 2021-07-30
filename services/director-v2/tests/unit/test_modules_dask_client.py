@@ -6,7 +6,6 @@
 from typing import Any, Dict
 from uuid import uuid4
 
-import dask
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import LocalCluster
@@ -16,11 +15,7 @@ from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import ConfigurationError
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.comp_tasks import Image
-from simcore_service_director_v2.modules.dask_client import (
-    DaskClient,
-    DaskTaskIn,
-    comp_sidecar_fct,
-)
+from simcore_service_director_v2.modules.dask_client import DaskClient, DaskTaskIn
 from starlette.testclient import TestClient
 from yarl import URL
 
