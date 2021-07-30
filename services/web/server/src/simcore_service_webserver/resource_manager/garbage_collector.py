@@ -10,11 +10,10 @@ from aiopg.sa.result import RowProxy
 from aioredlock import Aioredlock
 from servicelib.utils import logged_gather
 
-
 from .. import users_exceptions
-from ..director_v2 import get_services, stop_service
 from ..db_models import GroupType
 from ..director.director_exceptions import DirectorException, ServiceNotFoundError
+from ..director_v2 import get_services, stop_service
 from ..groups_api import get_group_from_gid
 from ..projects.projects_api import (
     delete_project_from_db,
@@ -370,7 +369,17 @@ async def remove_orphaned_services(
         node_ids = await get_workbench_node_ids_from_project_uuid(app, project_uuid)
         currently_opened_projects_node_ids.update(node_ids)
 
-    running_interactive_services: List[Dict[str, Any]] = await get_services(app)
+    running_interactive_services: List[Dict[str, Any]] = []
+    try:
+        running_interactive_services = await get_services(app)
+    except Exception:  # pylint: disable=broad-except
+        logger.exception(
+            (
+                "Normally this is not an issue. GC could not recover services "
+                "from director-v2, see error for details."
+            )
+        )
+
     logger.info(
         "Will collect the following: %s",
         [
