@@ -215,6 +215,15 @@ qx.Class.define("osparc.store.Data", {
       });
     },
 
+    dataURItoBlob: function(dataURI, type = "image/png") {
+      const binary = atob(dataURI.split(",")[1]);
+      const array = [];
+      for (let i = 0; i < binary.length; i++) {
+        array.push(binary.charCodeAt(i));
+      }
+      return new Blob([new Uint8Array(array)], {type: type});
+    },
+
     uploadScreenshotToS3: function(screenshot, studyId) {
       return new Promise((resolve, reject) => {
         const nodeId = "00000000-0000-0000-0000-000000000000";
@@ -224,15 +233,15 @@ qx.Class.define("osparc.store.Data", {
         dataStore.getPresignedLink(false, 0, fileUuid)
           .then(presignedPostData => {
             if (presignedPostData.presignedLink) {
-              const formData = new FormData();
-              formData.append("Content-Type", "image/png");
-              formData.append("Content-Disposition", "inline");
-              formData.append("body", screenshot);
-
               // post to link
               const url = presignedPostData.presignedLink.link;
               const xhr = new XMLHttpRequest();
               xhr.open("PUT", url, true);
+
+              const blobData = this.dataURItoBlob(screenshot);
+              xhr.setRequestHeader("Content-Encoding", "base64");
+              xhr.setRequestHeader("Content-Type", "image/png");
+
               xhr.onload = () => {
                 if (xhr.status == 200 || xhr.status == 204) {
                   console.log(xhr);
@@ -261,7 +270,7 @@ qx.Class.define("osparc.store.Data", {
                   console.log(xhr.response);
                 }
               };
-              xhr.send(formData);
+              xhr.send(blobData);
             }
           })
           .catch(err => reject(err));
