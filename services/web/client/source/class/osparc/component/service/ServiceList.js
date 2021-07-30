@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * This is a view to display the available services in a flowing fashion. Creates a ServiceJumbo button
+ * This is a view to display the available services in a flowing fashion. Creates a ServiceButtonSmall button
  * for every service in the model and subscribes it to the filter group.
  */
 qx.Class.define("osparc.component.service.ServiceList", {
@@ -25,7 +25,7 @@ qx.Class.define("osparc.component.service.ServiceList", {
   /**
    * If the optional parameter is given, the elements will be subscribed to the filter group of the given id.
    *
-   * @param {String} [filterGroupId] Id of the filter group the service Jumbo buttons will be subscribed to.
+   * @param {String} [filterGroupId] Id of the filter group the ServiceButtonSmall buttons will be subscribed to.
    */
   construct: function(filterGroupId) {
     this.base(arguments);
