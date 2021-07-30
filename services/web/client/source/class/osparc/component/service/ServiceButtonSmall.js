@@ -53,12 +53,21 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
 
     __applyResourceData: function(serviceModel) {
       serviceModel.bind("name", this.getChildControl("title"), "value");
-      serviceModel.bind("thumbnail", this.getChildControl("icon").getChildControl("image"), "source", {
-        converter: value => value === null ? this.self().SERVICE_ICON : value
-      });
-      this.getChildControl("icon").set({
-        maxWidth: this.self().ITEM_WIDTH - 2*osparc.dashboard.StudyBrowserButtonBase.PADDING
-      });
+      if (serviceModel.getThumbnail()) {
+        serviceModel.bind("thumbnail", this.getChildControl("icon").getChildControl("image"), "source", {
+          converter: value => value === null ? this.self().SERVICE_ICON : value
+        });
+        this.getChildControl("icon").set({
+          maxWidth: this.self().ITEM_WIDTH - 2*osparc.dashboard.StudyBrowserButtonBase.PADDING
+        });
+      } else {
+        serviceModel.bind("description", this.getChildControl("subtitle-text"), "value");
+        this.getChildControl("subtitle-text").set({
+          rich: true,
+          wrap: true,
+          allowGrowY: true
+        });
+      }
 
       const hint = new osparc.ui.hint.Hint(this, serviceModel.getDescription()).set({
         active: false
