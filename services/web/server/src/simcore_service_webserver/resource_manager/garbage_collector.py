@@ -451,12 +451,13 @@ async def remove_orphaned_services(
 
     # if there are multiple dynamic services to stop,
     # this ensures they are being stopped in parallel
-    await asyncio.gather(
+    tasks = [
         _remove_single_orphaned_service(
             app, interactive_service, currently_opened_projects_node_ids
         )
         for interactive_service in running_interactive_services
-    )
+    ]
+    await logged_gather(*tasks, reraise=False)
 
     logger.debug("Finished orphaned services removal")
 
