@@ -1658,7 +1658,6 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: cache docker layers
@@ -1720,7 +1719,6 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: cache docker layers
@@ -1746,6 +1744,13 @@ jobs:
             ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
+      # if the build happens on a push event it may help to pull first the last version
+      - name: build stack
+        if: github.event_name == 'push'
+        run: ./ci/github/integration-testing/webserver.bash build pull
+      - name: build stack
+        if: github.event_name == 'pull_request'
+        run: ./ci/github/integration-testing/webserver.bash build
       - name: test
         run: ./ci/github/integration-testing/webserver.bash test 01
       - name: upload failed tests logs
@@ -1799,7 +1804,6 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: cache docker layers
@@ -1825,6 +1829,13 @@ jobs:
             ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
+      # if the build happens on a push event it may help to pull first the last version
+      - name: build stack
+        if: github.event_name == 'push'
+        run: ./ci/github/integration-testing/webserver.bash build pull
+      - name: build stack
+        if: github.event_name == 'pull_request'
+        run: ./ci/github/integration-testing/webserver.bash build
       - name: test
         run: ./ci/github/integration-testing/webserver.bash test 02
       - name: upload failed tests logs
@@ -1904,6 +1915,13 @@ jobs:
             ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/director-v2.bash install
+      # if the build happens on a push event it may help to pull first the last version
+      - name: build stack
+        if: github.event_name == 'push'
+        run: ./ci/github/integration-testing/director-v2.bash build pull
+      - name: build stack
+        if: github.event_name == 'pull_request'
+        run: ./ci/github/integration-testing/director-v2.bash build
       - name: test
         run: ./ci/github/integration-testing/director-v2.bash test
       - name: upload failed tests logs
@@ -1983,6 +2001,13 @@ jobs:
             ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/sidecar.bash install
+      # if the build happens on a push event it may help to pull first the last version
+      - name: build stack
+        if: github.event_name == 'push'
+        run: ./ci/github/integration-testing/sidecar.bash build pull
+      - name: build stack
+        if: github.event_name == 'pull_request'
+        run: ./ci/github/integration-testing/sidecar.bash build
       - name: test
         run: ./ci/github/integration-testing/sidecar.bash test
       - name: upload failed tests logs
@@ -2062,6 +2087,13 @@ jobs:
             ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/simcore-sdk.bash install
+      # if the build happens on a push event it may help to pull first the last version
+      - name: build stack
+        if: github.event_name == 'push'
+        run: ./ci/github/integration-testing/simcore-sdk.bash build pull
+      - name: build stack
+        if: github.event_name == 'pull_request'
+        run: ./ci/github/integration-testing/simcore-sdk.bash build
       - name: test
         run: ./ci/github/integration-testing/simcore-sdk.bash test
       - name: upload failed tests logs
@@ -2142,6 +2174,13 @@ jobs:
             ${{ runner.os }}-
       - name: install
         run: ./ci/github/system-testing/public-api.bash install
+      # if the build happens on a push event it may help to pull first the last version
+      - name: build stack
+        if: github.event_name == 'push'
+        run: ./ci/github/integration-testing/public-api.bash build pull
+      - name: build stack
+        if: github.event_name == 'pull_request'
+        run: ./ci/github/integration-testing/public-api.bash build
       - name: test
         run: ./ci/github/system-testing/public-api.bash test
       - name: cleanup
@@ -2196,6 +2235,13 @@ jobs:
             ${{ runner.os }}-
       - name: install
         run: ./ci/github/system-testing/swarm-deploy.bash install
+      # if the build happens on a push event it may help to pull first the last version
+      - name: build stack
+        if: github.event_name == 'push'
+        run: ./ci/github/integration-testing/swarm-deploy.bash build pull
+      - name: build stack
+        if: github.event_name == 'pull_request'
+        run: ./ci/github/integration-testing/swarm-deploy.bash build
       - name: test
         run: ./ci/github/system-testing/swarm-deploy.bash test
       - name: cleanup

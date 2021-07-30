@@ -21,9 +21,17 @@ install() {
   pip3 install -r requirements/ci.txt
   pip freeze
   popd
-  make pull-version || (make build tag-version)
-  make .env
   pip list -v
+}
+
+build() {
+  value=${1:-}
+  if
+    [ "$value" ] && [ "$value" == "pull" ]
+  then
+    make pull-version || true
+  fi
+  make build tag-version
   make info-images
 }
 
