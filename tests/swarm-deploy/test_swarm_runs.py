@@ -41,9 +41,6 @@ SWARM_TASK_FAILED_STATES = [
 ]
 
 
-@pytest.mark.skip(
-    reason="this test is constantly failing because the postgres/migration is not available when other services are starting"
-)
 @pytest.fixture
 def core_services_running(
     docker_client: DockerClient, core_stack_name: str
@@ -77,6 +74,7 @@ def test_all_services_up(
         for service_name in core_stack_compose["services"].keys()
     }
     assert running_services_names == expected_services_names
+
 
 @pytest.mark.skip(
     reason="this test is constantly failing because the postgres/migration is not available when other services are starting"
@@ -165,6 +163,7 @@ def test_core_service_running(
     ],
 )
 def test_product_frontend_app_served(
+    deployed_simcore_stack: List[Service],
     traefik_service: URL,
     test_url: str,
     expected_in_content: str,
