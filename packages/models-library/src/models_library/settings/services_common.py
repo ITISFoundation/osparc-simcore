@@ -31,14 +31,6 @@ class ServicesCommonSettings(BaseSettings):
         ),
     )
 
-    director_v2_get_services_timeout: PositiveInt = Field(
-        2 * _MINUTE,
-        description=(
-            "Listing service may generally take longer than expected."
-            "When the stack has lots of services this interval can be quite big"
-        ),
-    )
-
     class Config:
         env_prefix = "SERVICES_COMMON_"
         case_sensitive = False

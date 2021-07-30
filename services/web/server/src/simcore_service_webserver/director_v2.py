@@ -315,15 +315,9 @@ async def get_services(
 
     director2_settings: Directorv2Settings = get_settings(app)
     backend_url = URL(director2_settings.endpoint) / "dynamic_services"
-    timeout = ServicesCommonSettings().director_v2_get_services_timeout
 
     return await _request_director_v2(
-        app,
-        "GET",
-        backend_url,
-        params=params,
-        expected_status=web.HTTPOk,
-        timeout=timeout,
+        app, "GET", backend_url, params=params, expected_status=web.HTTPOk
     )
 
 
