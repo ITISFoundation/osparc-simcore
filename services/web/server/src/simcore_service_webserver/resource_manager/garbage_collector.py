@@ -451,6 +451,9 @@ async def remove_orphaned_services(
 
     # if there are multiple dynamic services to stop,
     # this ensures they are being stopped in parallel
+    # when the user is timed out and the GC needs to close
+    # a big study with logs of heavy projects, this will
+    # ensure it gets done in parallel
     tasks = [
         _remove_single_orphaned_service(
             app, interactive_service, currently_opened_projects_node_ids
