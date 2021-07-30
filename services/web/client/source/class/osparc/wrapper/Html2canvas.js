@@ -81,8 +81,7 @@ qx.Class.define("osparc.wrapper.Html2canvas", {
           height: 900
         })
           .then(canvas => {
-            const quality = 0.5;
-            const image = canvas.toDataURL("image/png", quality);
+            const image = canvas.toDataURL("image/png");
             resolve(image);
           })
           .catch(err => reject(err));
