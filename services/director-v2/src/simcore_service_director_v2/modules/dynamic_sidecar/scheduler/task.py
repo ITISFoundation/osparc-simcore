@@ -198,83 +198,80 @@ class DynamicSidecarsScheduler:
             logger.debug("Removed service '%s' from scheduler", service_name)
 
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
-        async with self._lock:
-            if node_uuid not in self._inverse_search_mapping:
-                raise DynamicSidecarNotFoundError(node_uuid)
-            service_name = self._inverse_search_mapping[node_uuid]
+        if node_uuid not in self._inverse_search_mapping:
+            raise DynamicSidecarNotFoundError(node_uuid)
+        service_name = self._inverse_search_mapping[node_uuid]
 
-            scheduler_data: SchedulerData = self._to_observe[
-                service_name
-            ].scheduler_data
+        scheduler_data: SchedulerData = self._to_observe[service_name].scheduler_data
 
-            # check if there was an error picked up by the scheduler
-            # and marked this service as failing
-            if scheduler_data.dynamic_sidecar.status.current != DynamicSidecarStatus.OK:
-                return RunningDynamicServiceDetails.from_scheduler_data(
-                    node_uuid=node_uuid,
-                    scheduler_data=scheduler_data,
-                    service_state=ServiceState.FAILED,
-                    service_message=scheduler_data.dynamic_sidecar.status.info,
-                )
-
-            dynamic_sidecar_settings: DynamicSidecarSettings = (
-                self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-            )
-            dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-                self._app
-            )
-
-            service_state, service_message = await get_dynamic_sidecar_state(
-                # the service_name is unique and will not collide with other names
-                # it can be used in place of the service_id here, as the docker API accepts both
-                service_id=scheduler_data.service_name,
-                dynamic_sidecar_settings=dynamic_sidecar_settings,
-            )
-
-            # while the dynamic-sidecar state is not RUNNING report it's state
-            if service_state != ServiceState.RUNNING:
-                return RunningDynamicServiceDetails.from_scheduler_data(
-                    node_uuid=node_uuid,
-                    scheduler_data=scheduler_data,
-                    service_state=service_state,
-                    service_message=service_message,
-                )
-
-            docker_statuses: Optional[
-                Dict[str, Dict[str, str]]
-            ] = await dynamic_sidecar_client.containers_docker_status(
-                dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
-            )
-
-            # error fetching docker_statues, probably someone should check
-            if docker_statuses is None:
-                return RunningDynamicServiceDetails.from_scheduler_data(
-                    node_uuid=node_uuid,
-                    scheduler_data=scheduler_data,
-                    service_state=ServiceState.STARTING,
-                    service_message="There was an error while trying to fetch the stautes form the contianers",
-                )
-
-            # wait for containers to start
-            if len(docker_statuses) == 0:
-                # marks status as waiting for containers
-                return RunningDynamicServiceDetails.from_scheduler_data(
-                    node_uuid=node_uuid,
-                    scheduler_data=scheduler_data,
-                    service_state=ServiceState.STARTING,
-                    service_message="",
-                )
-
-            # compute composed containers states
-            container_state, container_message = extract_containers_minimim_statuses(
-                docker_statuses
-            )
+        # check if there was an error picked up by the scheduler
+        # and marked this service as failing
+        if scheduler_data.dynamic_sidecar.status.current != DynamicSidecarStatus.OK:
             return RunningDynamicServiceDetails.from_scheduler_data(
                 node_uuid=node_uuid,
                 scheduler_data=scheduler_data,
-                service_state=container_state,
-                service_message=container_message,
+                service_state=ServiceState.FAILED,
+                service_message=scheduler_data.dynamic_sidecar.status.info,
             )
+
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
+        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
+            self._app
+        )
+
+        service_state, service_message = await get_dynamic_sidecar_state(
+            # the service_name is unique and will not collide with other names
+            # it can be used in place of the service_id here, as the docker API accepts both
+            service_id=scheduler_data.service_name,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+        )
+
+        # while the dynamic-sidecar state is not RUNNING report it's state
+        if service_state != ServiceState.RUNNING:
+            return RunningDynamicServiceDetails.from_scheduler_data(
+                node_uuid=node_uuid,
+                scheduler_data=scheduler_data,
+                service_state=service_state,
+                service_message=service_message,
+            )
+
+        docker_statuses: Optional[
+            Dict[str, Dict[str, str]]
+        ] = await dynamic_sidecar_client.containers_docker_status(
+            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
+        )
+
+        # error fetching docker_statues, probably someone should check
+        if docker_statuses is None:
+            return RunningDynamicServiceDetails.from_scheduler_data(
+                node_uuid=node_uuid,
+                scheduler_data=scheduler_data,
+                service_state=ServiceState.STARTING,
+                service_message="There was an error while trying to fetch the stautes form the contianers",
+            )
+
+        # wait for containers to start
+        if len(docker_statuses) == 0:
+            # marks status as waiting for containers
+            return RunningDynamicServiceDetails.from_scheduler_data(
+                node_uuid=node_uuid,
+                scheduler_data=scheduler_data,
+                service_state=ServiceState.STARTING,
+                service_message="",
+            )
+
+        # compute composed containers states
+        container_state, container_message = extract_containers_minimim_statuses(
+            docker_statuses
+        )
+        return RunningDynamicServiceDetails.from_scheduler_data(
+            node_uuid=node_uuid,
+            scheduler_data=scheduler_data,
+            service_state=container_state,
+            service_message=container_message,
+        )
 
     async def _runner(self) -> None:
         """This code runs under a lock and can safely change the SchedulerData of all entries"""
