@@ -44,7 +44,8 @@ def mocked_dask_cluster(monkeypatch: MonkeyPatch) -> LocalCluster:
     scheduler_address = URL(cluster.scheduler_address)
     monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host)
     monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
-    return cluster
+    yield cluster
+    cluster.close()
 
 
 def test_dask_client_missing_raises_configuration_error(
