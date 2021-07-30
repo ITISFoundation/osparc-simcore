@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import Any, Dict, List, Optional, Set, Union
 from uuid import UUID
@@ -12,6 +11,7 @@ from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import log_decorator
 from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
+from servicelib.utils import logged_gather
 from yarl import URL
 
 from .director_v2_settings import (
@@ -382,7 +382,7 @@ async def stop_services(
         )
         for service in running_dynamic_services
     ]
-    await asyncio.gather(*services_to_stop)
+    await logged_gather(*services_to_stop)
 
 
 @log_decorator(logger=log)
