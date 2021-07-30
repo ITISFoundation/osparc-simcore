@@ -64,7 +64,7 @@ qx.Class.define("osparc.component.service.ServiceList", {
       model.toArray()
         .sort((a, b) => a.getName().localeCompare(b.getName()))
         .forEach(service => {
-          const button = new osparc.component.service.ServiceJumbo(service);
+          const button = new osparc.component.service.ServiceButtonSmall(service);
           if (this.__filterGroup !== null) {
             button.subscribeToFilterGroup(this.__filterGroup);
           }
