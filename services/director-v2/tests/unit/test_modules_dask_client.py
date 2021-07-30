@@ -9,7 +9,11 @@ import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import LocalCluster
 from fastapi.applications import FastAPI
+from simcore_service_director_v2.core.application import init_app
+from simcore_service_director_v2.core.errors import ConfigurationError
+from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dask_client import DaskClient
+from starlette.testclient import TestClient
 from yarl import URL
 
 
@@ -23,7 +27,7 @@ def minimal_dask_config(
     monkeypatch.setenv("CELERY_ENABLED", "0")
     monkeypatch.setenv("REGISTRY_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V0_ENABLED", "1")
+    monkeypatch.setenv("DIRECTOR_V0_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_CELERY_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
@@ -38,6 +42,18 @@ def mocked_dask_cluster(monkeypatch: MonkeyPatch) -> LocalCluster:
     monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host)
     monkeypatch.setenv("DASK_SCHEDULER_PORT", scheduler_address.port)
     return cluster
+
+
+def test_dask_client_missing_raises_configuration_error(
+    mock_env: None, minimal_dask_config: None, monkeypatch: MonkeyPatch
+):
+    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "0")
+    settings = AppSettings.create_from_envs()
+    app = init_app(settings)
+
+    with TestClient(app, raise_server_exceptions=True) as client:
+        with pytest.raises(ConfigurationError):
+            DaskClient.instance(client.app)
 
 
 def test_dask_client_creation(
