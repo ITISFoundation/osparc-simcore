@@ -3,18 +3,23 @@
 # pylint:disable=too-many-arguments
 
 import asyncio
-from typing import Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 from uuid import uuid4
 
 import aiodocker
 import httpx
 import pytest
 import sqlalchemy as sa
-from _pytest.monkeypatch import MonkeyPatch
+import tenacity
 from async_timeout import timeout
 from models_library.projects import Node, ProjectAtDB
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
+from pydantic.types import PositiveInt
+from simcore_service_director_v2.models.schemas.constants import (
+    DYNAMIC_PROXY_SERVICE_PREFIX,
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
+)
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
@@ -29,6 +34,8 @@ pytest_simcore_core_services_selection = [
 HTTPX_CLIENT_TIMOUT = 10
 SERVICES_ARE_READY_TIMEOUT = 10 * 60
 
+# FIXTURES
+
 
 @pytest.fixture(autouse=True)
 def minimal_configuration(
@@ -40,14 +47,8 @@ def minimal_configuration(
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitConfig,
     simcore_services: None,
-    monkeypatch: MonkeyPatch,
 ):
-    monkeypatch.setenv(
-        "DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:TEST_MOCKED_TAG_NOT_PRESENT"
-    )
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_services_network_name")
-    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
-    monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
+    pass
 
 
 def _str_uuid() -> str:
@@ -133,6 +134,9 @@ async def ensure_services_stopped(dy_static_file_server_project: ProjectAtDB) ->
                     assert delete_result is True
 
 
+# UTILS
+
+
 async def _handle_307_if_required(
     director_v2_client: httpx.AsyncClient, director_v0_url: URL, result: httpx.Response
 ) -> httpx.Response:
@@ -180,12 +184,16 @@ async def _assert_start_service(
     assert result.status_code == 201, result.text
 
 
-async def _get_service_state(
+def _is_legacy(node_data: Node) -> bool:
+    return node_data.label == "LEGACY"
+
+
+async def _get_service_data(
     director_v2_client: httpx.AsyncClient,
     director_v0_url: URL,
     service_uuid: str,
     node_data: Node,
-) -> str:
+) -> Dict[str, Any]:
     result = await director_v2_client.get(
         f"/dynamic_services/{service_uuid}", allow_redirects=False
     )
@@ -193,7 +201,19 @@ async def _get_service_state(
     assert result.status_code == 200, result.text
 
     payload = result.json()
-    data = payload["data"] if node_data.label == "LEGACY" else payload
+    data = payload["data"] if _is_legacy(node_data) else payload
+    return data
+
+
+async def _get_service_state(
+    director_v2_client: httpx.AsyncClient,
+    director_v0_url: URL,
+    service_uuid: str,
+    node_data: Node,
+) -> str:
+    data = await _get_service_data(
+        director_v2_client, director_v0_url, service_uuid, node_data
+    )
     print("STATUS_RESULT", node_data.label, data["service_state"])
     return data["service_state"]
 
@@ -207,6 +227,74 @@ async def _assert_stop_service(
     result = await _handle_307_if_required(director_v2_client, director_v0_url, result)
     assert result.status_code == 204
     assert result.text == ""
+
+
+async def _run_command(command: str) -> str:
+    """Runs a command and expects to"""
+    proc = await asyncio.create_subprocess_shell(
+        command,
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+    )
+
+    stdout, _ = await proc.communicate()
+    decoded_stdout = stdout.decode()
+    print(f"'{command}' result:\n{decoded_stdout}")
+    assert proc.returncode == 0, decoded_stdout
+
+    return decoded_stdout
+
+
+async def _port_forward_service(
+    service_name: str, is_legacy: bool, internal_port: PositiveInt
+) -> PositiveInt:
+    """Updates the service configuration and makes it so it can be used"""
+    # By updating the service spec the container will be recreated.
+    # It works in this case, since we do not care about the internal
+    # state of the application
+    target_service = service_name
+
+    if is_legacy:
+        # Legacy services are started --endpoint-mode dnsrr, it needs to
+        # be changed to vip otherwise the port forward will not work
+        await _run_command(f"docker service update {service_name} --endpoint-mode=vip")
+    else:
+        # For a non legacy service, the service_name points to the dynamic-sidecar,
+        # but traffic is handeled by the proxy,
+        target_service = service_name.replace(
+            DYNAMIC_SIDECAR_SERVICE_PREFIX, DYNAMIC_PROXY_SERVICE_PREFIX
+        )
+
+    # Finally forward the port on a random assigned port.
+    await _run_command(
+        f"docker service update {target_service} --publish-add :{internal_port}"
+    )
+
+    # inspect service and fetch the port
+    async with aiodocker.Docker() as docker_client:
+        service_details = await docker_client.services.inspect(target_service)
+        ports = service_details["Endpoint"]["Ports"]
+
+        assert len(ports) == 1, service_details
+        exposed_port = ports[0]["PublishedPort"]
+        return exposed_port
+
+
+async def _assert_service_is_available(exposed_port: PositiveInt) -> None:
+    service_address = f"http://localhost:{exposed_port}"
+    print(f"checking service @ {service_address}")
+
+    async for attempt in tenacity.AsyncRetrying(
+        wait=tenacity.wait_exponential(), stop=tenacity.stop_after_delay(10)
+    ):
+        with attempt:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(service_address)
+                assert response.status_code == 200
+
+
+# TESTS
 
 
 async def test_legacy_and_dynamic_sidecar_run(
@@ -263,6 +351,31 @@ async def test_legacy_and_dynamic_sidecar_run(
             not_all_services_running = not all(are_services_running)
             # let the services boot
             await asyncio.sleep(1.0)
+
+    # query the service directly and check if it responding accordingly
+    for (
+        dynamic_service_uuid,
+        node_data,
+    ) in dy_static_file_server_project.workbench.items():
+        service_data = await _get_service_data(
+            director_v2_client=director_v2_client,
+            director_v0_url=director_v0_url,
+            service_uuid=dynamic_service_uuid,
+            node_data=node_data,
+        )
+        print(
+            "Checking running service availability",
+            dynamic_service_uuid,
+            node_data,
+            service_data,
+        )
+        exposed_port = await _port_forward_service(
+            service_name=service_data["service_host"],
+            is_legacy=_is_legacy(node_data),
+            internal_port=service_data["service_port"],
+        )
+
+        await _assert_service_is_available(exposed_port)
 
     # finally stop the started services
     services_to_stop = []
