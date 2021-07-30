@@ -4,15 +4,18 @@
 # pylint:disable=protected-access
 
 from typing import Any, Dict
+from uuid import uuid4
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import LocalCluster
 from fastapi.applications import FastAPI
+from models_library.projects_nodes_io import NodeID
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import ConfigurationError
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.modules.dask_client import DaskClient
+from simcore_service_director_v2.models.domains.comp_tasks import Image
+from simcore_service_director_v2.modules.dask_client import DaskClient, DaskTaskIn
 from starlette.testclient import TestClient
 from yarl import URL
 
@@ -40,7 +43,7 @@ def mocked_dask_cluster(monkeypatch: MonkeyPatch) -> LocalCluster:
     cluster = LocalCluster(n_workers=2, threads_per_worker=1)
     scheduler_address = URL(cluster.scheduler_address)
     monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host)
-    monkeypatch.setenv("DASK_SCHEDULER_PORT", scheduler_address.port)
+    monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
     return cluster
 
 
@@ -61,3 +64,52 @@ def test_dask_client_creation(
 ):
     client = DaskClient.instance(minimal_app)
     assert client
+
+
+@pytest.mark.parametrize(
+    "image, exp_requirements_str",
+    [
+        (
+            Image(
+                name="simcore/services/comp/itis/sleeper",
+                tag="1.0.0",
+                requires_gpu=False,
+                requires_mpi=False,
+            ),
+            "cpu",
+        ),
+        (
+            Image(
+                name="simcore/services/comp/itis/sleeper",
+                tag="1.0.0",
+                requires_gpu=True,
+                requires_mpi=False,
+            ),
+            "gpu",
+        ),
+        (
+            Image(
+                name="simcore/services/comp/itis/sleeper",
+                tag="1.0.0",
+                requires_gpu=False,
+                requires_mpi=True,
+            ),
+            "mpi",
+        ),
+        (
+            Image(
+                name="simcore/services/comp/itis/sleeper",
+                tag="1.0.0",
+                requires_gpu=True,
+                requires_mpi=True,
+            ),
+            "gpu:mpi",
+        ),
+    ],
+)
+def test_dask_task_in_model(image: Image, exp_requirements_str: str):
+    node_id = uuid4()
+    dask_task = DaskTaskIn.from_node_image(node_id, image)
+    assert dask_task
+    assert dask_task.node_id == node_id
+    assert dask_task.runtime_requirements == exp_requirements_str
