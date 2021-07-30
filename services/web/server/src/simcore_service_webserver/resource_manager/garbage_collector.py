@@ -388,25 +388,25 @@ async def remove_orphaned_services(
         ],
     )
     for interactive_service in running_interactive_services:
+        service_host = interactive_service["service_host"]
         # if not present in DB or not part of currently opened projects, can be removed
-        node_id = interactive_service["service_uuid"]
+        service_uuid = interactive_service["service_uuid"]
         # if the node does not exist in any project in the db
         # they can be safely remove it without saving any state
-        if not await is_node_id_present_in_any_project_workbench(app, node_id):
-            service_host = interactive_service["service_host"]
+        if not await is_node_id_present_in_any_project_workbench(app, service_uuid):
             message = (
                 "Will remove orphaned service without saving state since "
                 f"this service is not part of any project {service_host}"
             )
             logger.info(message)
             try:
-                await stop_service(app, node_id, save_state=False)
+                await stop_service(app, service_uuid, save_state=False)
             except (ServiceNotFoundError, DirectorException) as err:
                 logger.warning("Error while stopping service: %s", err)
             continue
 
         # if the node is not present in any of the currently opened project it shall be closed
-        if node_id not in currently_opened_projects_node_ids:
+        if service_uuid not in currently_opened_projects_node_ids:
             if interactive_service.get("service_state") in [
                 "pulling",
                 "starting",
@@ -439,7 +439,7 @@ async def remove_orphaned_services(
                 user_id = int(interactive_service.get("user_id", 0))
 
                 save_state = not await is_user_guest(app, user_id) if user_id else True
-                await stop_service(app, node_id, save_state)
+                await stop_service(app, service_uuid, save_state)
             except (ServiceNotFoundError, DirectorException) as err:
                 logger.warning("Error while stopping service: %s", err)
 
