@@ -1694,8 +1694,10 @@ jobs:
         if: github.event_name == 'push'
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: show system environs
+        if: github.event_name == 'push'
         run: ./ci/helpers/show_system_versions.bash
       - name: build images
+        if: github.event_name == 'push'
         run: ./ci/build/test-images.bash build_images
       - name: set owner variable
         if: github.event_name == 'push'
