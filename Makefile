@@ -105,7 +105,7 @@ SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),N
 
 define _docker_compose_build
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,production);\
-pushd services; docker buildx bake --file docker-compose-build.yml $(if $(target),$(target),); popd;
+pushd services && docker buildx bake --file docker-compose-build.yml $(if $(target),$(target),) && popd;
 endef
 
 rebuild: build-nc # alias
