@@ -240,6 +240,9 @@ class DaskSchedulerSettings(BaseCustomSettings):
     DIRECTOR_V2_DASK_SCHEDULER_ENABLED: bool = Field(
         False,
     )
+    DIRECTOR_V2_DASK_CLIENT_ENABLED: bool = Field(
+        False,
+    )
     DASK_SCHEDULER_HOST: str = Field(
         "dask-scheduler",
         description="Address of the scheduler to register (only if started as worker )",

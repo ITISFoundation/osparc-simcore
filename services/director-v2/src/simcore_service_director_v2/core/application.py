@@ -75,7 +75,8 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         dynamic_sidecar.setup(app)
 
     if (
-        settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_SCHEDULER_ENABLED
+        settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_CLIENT_ENABLED
+        or settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_SCHEDULER_ENABLED
         or settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
     ):
         dask_client.setup(app, settings.DASK_SCHEDULER)

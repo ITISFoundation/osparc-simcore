@@ -27,7 +27,7 @@ def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
         )
 
     async def on_shutdown() -> None:
-        del app.state.dask_client
+        del app.state.dask_client  # type: ignore
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
