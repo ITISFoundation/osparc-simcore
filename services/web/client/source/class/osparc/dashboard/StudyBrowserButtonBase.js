@@ -98,7 +98,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           control = new qx.ui.basic.Label().set({
             margin: [5, 0],
             font: "title-14",
-            maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING - osparc.dashboard.StudyBrowserButtonItem.MENU_BTN_WIDTH,
+            maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
             maxHeight: 34, // two lines
             rich: true,
             wrap: true,
