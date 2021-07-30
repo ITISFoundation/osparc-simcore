@@ -108,16 +108,6 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
         return true;
       }
       return false;
-    },
-
-    _shouldReactToFilter: function(data) {
-      if (data.text && data.text.length > 1) {
-        return true;
-      }
-      if (data.tags && data.tags.length) {
-        return true;
-      }
-      return false;
     }
   }
 });
