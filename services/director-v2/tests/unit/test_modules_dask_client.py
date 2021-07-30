@@ -6,17 +6,21 @@
 from typing import Any, Dict
 from uuid import uuid4
 
+import dask
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import LocalCluster
 from fastapi.applications import FastAPI
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
+from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import ConfigurationError
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.comp_tasks import Image
-from simcore_service_director_v2.modules.dask_client import DaskClient, DaskTaskIn
+from simcore_service_director_v2.modules.dask_client import (
+    DaskClient,
+    DaskTaskIn,
+    comp_sidecar_fct,
+)
 from starlette.testclient import TestClient
 from yarl import URL
 
@@ -52,7 +56,7 @@ def test_dask_client_missing_raises_configuration_error(
 
 
 @pytest.fixture
-def mocked_dask_cluster(monkeypatch: MonkeyPatch) -> LocalCluster:
+def mocked_dask_scheduler(monkeypatch: MonkeyPatch) -> LocalCluster:
     cluster = LocalCluster(n_workers=2, threads_per_worker=1)
     scheduler_address = URL(cluster.scheduler_address)
     monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
@@ -63,7 +67,7 @@ def mocked_dask_cluster(monkeypatch: MonkeyPatch) -> LocalCluster:
 
 @pytest.fixture
 def dask_client(
-    minimal_dask_config: None, mocked_dask_cluster: LocalCluster, minimal_app: FastAPI
+    minimal_dask_config: None, mocked_dask_scheduler: LocalCluster, minimal_app: FastAPI
 ) -> DaskClient:
     client = DaskClient.instance(minimal_app)
     assert client
@@ -84,12 +88,61 @@ def test_local_dask_cluster_through_client(dask_client: DaskClient):
     assert result == 7
 
 
-def test_send_computation_task(dask_client: DaskClient):
-    job_id = "a_fake_job_id"
+def test_send_computation_task(
+    dask_client: DaskClient, mocked_dask_scheduler: LocalCluster, mocker: MockerFixture
+):
     user_id = 12
-    project_id = ProjectID(uuid4())
-    node_id = NodeID(uuid4())
-    pass
+    project_id = uuid4()
+    node_id = uuid4()
+    fake_task = DaskTaskIn(node_id=node_id, runtime_requirements="cpu")
+    mocked_done_callback_fct = mocker.Mock()
+
+    def fake_sidecar_fct(job_id: str, u_id: str, prj_id: str, n_id: str) -> int:
+        assert u_id == f"{user_id}"
+        assert prj_id == f"{project_id}"
+        assert n_id == f"{node_id}"
+        return 123
+
+    mocker.patch(
+        "simcore_service_director_v2.modules.dask_client.comp_sidecar_fct",
+        fake_sidecar_fct,
+    )
+
+    # start a computation
+    dask_client.send_computation_tasks(
+        user_id=user_id,
+        project_id=project_id,
+        single_tasks=[fake_task],
+        callback=mocked_done_callback_fct,
+    )
+
+    # we have 1 future in the map now
+    assert len(dask_client._taskid_to_future_map) == 1
+    # let's get the future
+    job_id, future = list(dask_client._taskid_to_future_map.items())[0]
+    # this waits for the computation to run
+    task_result = future.result(timeout=2)
+    # we shall have the results defined above
+    assert task_result == 123
+    assert future.key == job_id
+    mocked_done_callback_fct.assert_called_once()
+
+    # start another computation that will be aborted
+    dask_client.send_computation_tasks(
+        user_id=user_id,
+        project_id=project_id,
+        single_tasks=[fake_task],
+        callback=mocked_done_callback_fct,
+    )
+
+    # we have 1 future in the map now
+    assert len(dask_client._taskid_to_future_map) == 2
+    job_id, future = list(dask_client._taskid_to_future_map.items())[1]
+    # now let's abort the computation
+    assert future.key == job_id
+    dask_client.abort_computation_tasks([job_id])
+    assert future.cancelled() == True
+    mocked_done_callback_fct.assert_called_once()
 
 
 @pytest.mark.parametrize(

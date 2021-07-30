@@ -44,7 +44,7 @@ class DaskScheduler(BaseCompScheduler):
             user_id=user_id,
             project_id=project_id,
             single_tasks=dask_tasks,
-            _callback=self._wake_up_scheduler_now,
+            callback=self._wake_up_scheduler_now,
         )
 
     async def _stop_tasks(self, tasks: List[CompTaskAtDB]) -> None:

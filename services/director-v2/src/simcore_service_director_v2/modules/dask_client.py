@@ -52,6 +52,22 @@ class DaskTaskIn:
         return cls(node_id=node_id, runtime_requirements=req or "cpu")
 
 
+def comp_sidecar_fct(job_id: str, user_id: str, project_id: str, node_id: str) -> None:
+    import asyncio
+
+    from dask.distributed import get_worker
+    from simcore_service_sidecar.cli import run_sidecar
+
+    def _is_aborted_cb() -> bool:
+        w = get_worker()
+        t = w.tasks.get(w.get_current_task())
+        return t is None
+
+    asyncio.run(
+        run_sidecar(job_id, user_id, project_id, node_id, is_aborted_cb=_is_aborted_cb)
+    )
+
+
 @dataclass
 class DaskClient:
     client: Client
@@ -77,41 +93,23 @@ class DaskClient:
         user_id: UserID,
         project_id: ProjectID,
         single_tasks: List[DaskTaskIn],
-        _callback: Callable,
+        callback: Callable[[], None],
     ):
-        def sidecar_fun(job_id: str, user_id: str, project_id: str, node_id: str):
-
-            import asyncio
-
-            from dask.distributed import get_worker
-            from simcore_service_sidecar.cli import run_sidecar
-
-            def _is_aborted_cb() -> bool:
-                w = get_worker()
-                t = w.tasks.get(w.get_current_task())
-                return t is None
-
-            asyncio.run(
-                run_sidecar(
-                    job_id, user_id, project_id, node_id, is_aborted_cb=_is_aborted_cb
-                )
-            )
-
-        def _done_callback(dask_future: Future):
+        def _done_dask_callback(dask_future: Future):
             logger.debug("Dask future %s completed", dask_future.key)
-            _callback()
+            callback()
 
         for task in single_tasks:
             job_id = f"dask_{uuid4()}"
             task_future = self.client.submit(
-                sidecar_fun,
+                comp_sidecar_fct,
                 job_id,
                 f"{user_id}",
                 f"{project_id}",
                 f"{task.node_id}",
                 key=job_id,
             )
-            task_future.add_done_callback(_done_callback)
+            task_future.add_done_callback(_done_dask_callback)
             self._taskid_to_future_map[job_id] = task_future
             fire_and_forget(task_future)  # this should ensure the task will run
             logger.debug("Dask task %s started", task_future.key)
