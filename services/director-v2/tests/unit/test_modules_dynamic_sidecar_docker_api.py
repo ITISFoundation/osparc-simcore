@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-import json
 from asyncio import BaseEventLoop
 from typing import Any, Dict, List
 from uuid import UUID, uuid4
