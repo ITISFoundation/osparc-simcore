@@ -16,6 +16,17 @@ install() {
   popd
 }
 
+build() {
+  value=${1:-}
+  if
+    [ "$value" ] && [ "$value" == "pull" ]
+  then
+    make pull-version || true
+  fi
+  make build tag-version
+  make info-images
+}
+
 test() {
   pushd tests/e2e
   make test
