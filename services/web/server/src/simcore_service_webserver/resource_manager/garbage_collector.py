@@ -344,6 +344,67 @@ async def remove_users_manually_marked_as_guests(
         )
 
 
+async def _remove_single_orphaned_service(
+    app: web.Application,
+    interactive_service: Dict[str, Any],
+    currently_opened_projects_node_ids: Set[str],
+) -> None:
+    service_host = interactive_service["service_host"]
+    # if not present in DB or not part of currently opened projects, can be removed
+    service_uuid = interactive_service["service_uuid"]
+    # if the node does not exist in any project in the db
+    # they can be safely remove it without saving any state
+    if not await is_node_id_present_in_any_project_workbench(app, service_uuid):
+        message = (
+            "Will remove orphaned service without saving state since "
+            f"this service is not part of any project {service_host}"
+        )
+        logger.info(message)
+        try:
+            await stop_service(app, service_uuid, save_state=False)
+        except (ServiceNotFoundError, DirectorException) as err:
+            logger.warning("Error while stopping service: %s", err)
+        return
+
+    # if the node is not present in any of the currently opened project it shall be closed
+    if service_uuid not in currently_opened_projects_node_ids:
+        if interactive_service.get("service_state") in [
+            "pulling",
+            "starting",
+        ]:
+            # Services returned in running_interactive_services
+            # might be still pulling its image and when stop_service is
+            # called, will cancel the pull operation as well.
+            # This enforces next run to start again by pulling the image
+            # which is costly and sometimes the cause of timeout and
+            # service malfunction.
+            # For that reason, we prefer here to allow the image to
+            # be completely pulled and stop it instead at the next gc round
+            #
+            # This should eventually be responsibility of the director, but
+            # the functionality is in the old service which is frozen.
+            #
+            # a service state might be one of [pending, pulling, starting, running, complete, failed]
+            logger.warning(
+                "Skipping %s since image is in %s",
+                service_host,
+                interactive_service.get("service_state", "unknown"),
+            )
+            return
+
+        logger.info("Will remove service %s", service_host)
+        try:
+            # let's be conservative here.
+            # 1. opened project disappeared from redis?
+            # 2. something bad happened when closing a project?
+            user_id = int(interactive_service.get("user_id", 0))
+
+            save_state = not await is_user_guest(app, user_id) if user_id else True
+            await stop_service(app, service_uuid, save_state)
+        except (ServiceNotFoundError, DirectorException) as err:
+            logger.warning("Error while stopping service: %s", err)
+
+
 async def remove_orphaned_services(
     registry: RedisResourceRegistry, app: web.Application
 ) -> None:
@@ -358,7 +419,7 @@ async def remove_orphaned_services(
     """
     logger.debug("Starting orphaned services removal...")
 
-    currently_opened_projects_node_ids = set()
+    currently_opened_projects_node_ids: Set[str] = set()
     alive_keys, _ = await registry.get_all_resource_keys()
     for alive_key in alive_keys:
         resources = await registry.get_resources(alive_key)
@@ -387,61 +448,15 @@ async def remove_orphaned_services(
             for x in running_interactive_services
         ],
     )
-    for interactive_service in running_interactive_services:
-        service_host = interactive_service["service_host"]
-        # if not present in DB or not part of currently opened projects, can be removed
-        service_uuid = interactive_service["service_uuid"]
-        # if the node does not exist in any project in the db
-        # they can be safely remove it without saving any state
-        if not await is_node_id_present_in_any_project_workbench(app, service_uuid):
-            message = (
-                "Will remove orphaned service without saving state since "
-                f"this service is not part of any project {service_host}"
-            )
-            logger.info(message)
-            try:
-                await stop_service(app, service_uuid, save_state=False)
-            except (ServiceNotFoundError, DirectorException) as err:
-                logger.warning("Error while stopping service: %s", err)
-            continue
 
-        # if the node is not present in any of the currently opened project it shall be closed
-        if service_uuid not in currently_opened_projects_node_ids:
-            if interactive_service.get("service_state") in [
-                "pulling",
-                "starting",
-            ]:
-                # Services returned in running_interactive_services
-                # might be still pulling its image and when stop_service is
-                # called, will cancel the pull operation as well.
-                # This enforces next run to start again by pulling the image
-                # which is costly and sometimes the cause of timeout and
-                # service malfunction.
-                # For that reason, we prefer here to allow the image to
-                # be completely pulled and stop it instead at the next gc round
-                #
-                # This should eventually be responsibility of the director, but
-                # the functionality is in the old service which is frozen.
-                #
-                # a service state might be one of [pending, pulling, starting, running, complete, failed]
-                logger.warning(
-                    "Skipping %s since image is in %s",
-                    service_host,
-                    interactive_service.get("service_state", "unknown"),
-                )
-                continue
-
-            logger.info("Will remove service %s", service_host)
-            try:
-                # let's be conservative here.
-                # 1. opened project disappeared from redis?
-                # 2. something bad happened when closing a project?
-                user_id = int(interactive_service.get("user_id", 0))
-
-                save_state = not await is_user_guest(app, user_id) if user_id else True
-                await stop_service(app, service_uuid, save_state)
-            except (ServiceNotFoundError, DirectorException) as err:
-                logger.warning("Error while stopping service: %s", err)
+    # if there are multiple dynamic services to stop,
+    # this ensures they are being stopped in parallel
+    await asyncio.gather(
+        _remove_single_orphaned_service(
+            app, interactive_service, currently_opened_projects_node_ids
+        )
+        for interactive_service in running_interactive_services
+    )
 
     logger.debug("Finished orphaned services removal")
 
