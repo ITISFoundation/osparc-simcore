@@ -31,8 +31,8 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
     this.base(arguments);
 
     this.set({
-      width: 180,
-      height: 150
+      width: this.self().ITEM_WIDTH,
+      height: this.self().ITEM_HEIGHT
     });
 
     if (serviceModel) {
@@ -49,6 +49,8 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
   },
 
   statics: {
+    ITEM_WIDTH: 180,
+    ITEM_HEIGHT: 150,
     SERVICE_ICON: "@FontAwesome5Solid/paw/50"
   },
 
@@ -58,6 +60,9 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
       serviceModel.bind("name", this.getChildControl("title"), "value");
       serviceModel.bind("thumbnail", this.getChildControl("icon").getChildControl("image"), "source", {
         converter: value => value === null ? this.self().SERVICE_ICON : value
+      });
+      this.getChildControl("icon").set({
+        maxWidth: this.self().ITEM_WIDTH - 2*osparc.dashboard.StudyBrowserButtonBase.PADDING
       });
 
       const hint = new osparc.ui.hint.Hint(this, serviceModel.getDescription()).set({
