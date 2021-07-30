@@ -1,6 +1,7 @@
 from pydantic import BaseSettings, Field, PositiveInt
 
-_BASE_TIMEOUT_FOR_STOPPING_SERVICES = 60 * 60
+_MINUTE = 60
+_BASE_TIMEOUT_FOR_STOPPING_SERVICES = 60 * _MINUTE
 
 
 class ServicesCommonSettings(BaseSettings):
@@ -21,12 +22,20 @@ class ServicesCommonSettings(BaseSettings):
         ),
     )
     storage_service_upload_download_timeout: PositiveInt = Field(
-        60 * 60,
+        _MINUTE * _MINUTE,
         description=(
             "When dynamic services upload and download data from storage, "
             "sometimes very big payloads are involved. In order to handle "
             "such payloads it is required to have long timeouts which "
             "allow the service to finish the operation."
+        ),
+    )
+
+    director_v2_get_services_timeout: PositiveInt = Field(
+        2 * _MINUTE,
+        description=(
+            "Listing service may generally take longer than expected."
+            "When the stack has lots of services this interval can be quite big"
         ),
     )
 

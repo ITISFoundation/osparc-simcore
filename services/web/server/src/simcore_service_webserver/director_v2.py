@@ -4,9 +4,9 @@ from typing import Any, Dict, List, Optional, Set, Union
 from uuid import UUID
 
 from aiohttp import ClientError, ClientTimeout, web
+from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.settings.services_common import ServicesCommonSettings
-from models_library.projects import ProjectID
 from pydantic.types import PositiveInt
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import log_decorator
@@ -306,7 +306,7 @@ async def get_services(
     app: web.Application,
     user_id: Optional[str] = None,
     project_id: Optional[str] = None,
-):
+) -> List[Dict[str, Any]]:
     params = {}
     if user_id:
         params["user_id"] = user_id
@@ -315,9 +315,15 @@ async def get_services(
 
     director2_settings: Directorv2Settings = get_settings(app)
     backend_url = URL(director2_settings.endpoint) / "dynamic_services"
+    timeout = ServicesCommonSettings().director_v2_get_services_timeout
 
     return await _request_director_v2(
-        app, "GET", backend_url, params=params, expected_status=web.HTTPOk
+        app,
+        "GET",
+        backend_url,
+        params=params,
+        expected_status=web.HTTPOk,
+        timeout=timeout,
     )
 
 
