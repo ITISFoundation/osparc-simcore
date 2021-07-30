@@ -135,10 +135,10 @@ ifeq ($(target),)
 	# Building services
 	$(_docker_compose_build)
 else
-# ifeq ($(findstring static-webserver,$(target)),static-webserver)
-# 	# Compiling front-end
-# 	$(MAKE_C) services/static-webserver/client touch compile-dev
-# endif
+ifeq ($(findstring static-webserver,$(target)),static-webserver)
+	# Compiling front-end
+	$(MAKE_C) services/static-webserver/client touch compile-dev
+endif
 	# Building service $(target)
 	@$(_docker_compose_build)
 endif
