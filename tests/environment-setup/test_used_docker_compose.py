@@ -8,7 +8,7 @@ import subprocess
 import sys
 from itertools import chain
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Set, Tuple
 
 import pytest
 import yaml
@@ -31,19 +31,30 @@ def docker_compose_in_requirement_files(
 
 
 @pytest.fixture(scope="module")
-def docker_compose_in_ci_script(osparc_simcore_root_dir: Path) -> Tuple[Path, str]:
-    setup_ci = osparc_simcore_root_dir / "ci/github/helpers/setup_docker_compose.bash"
+def docker_compose_in_ci_scripts(osparc_simcore_root_dir: Path) -> Tuple[Path, str]:
+    ci_workflows_path = osparc_simcore_root_dir / ".github/workflows"
+    versions_in_workflow_files: Set[str] = set()
+    for workflow_file in ci_workflows_path.rglob("*.yml"):
+        versions_in_file: Set[str] = {
+            found.group(1)
+            for found in re.finditer(
+                r"docker_compose: \[([\d\.]+)\]", workflow_file.read_text()
+            )
+        }
+        assert (
+            len(versions_in_file) == 1
+        ), f"found different docker_compose versions in {workflow_file}, versions found {versions_in_file}, please check!"
 
-    found = re.search(r"DOCKER_COMPOSE_VERSION=\"([\d\.]+)\"", setup_ci.read_text())
-    assert found, f"Expected DOCKER_COMPOSE_VERSION=x.x.x in {setup_ci}"
-
-    version = found.group(1)
-    return (setup_ci, version)
+        versions_in_workflow_files.update(versions_in_file)
+    assert (
+        len(versions_in_workflow_files) == 1
+    ), f"found different docker_compose versions in workflow files: {versions_in_workflow_files}, please check {list(ci_workflows_path.rglob('*.yml'))}!"
+    return (ci_workflows_path, versions_in_workflow_files.pop())
 
 
 def test_all_docker_compose_have_same_version(
     docker_compose_in_requirement_files,
-    docker_compose_in_ci_script,
+    docker_compose_in_ci_scripts,
     osparc_simcore_root_dir,
 ):
     previous = docker_compose_in_requirement_files[0]
@@ -57,13 +68,13 @@ def test_all_docker_compose_have_same_version(
         previous = (req_path, docker_compose_version)
 
     print(
-        str(docker_compose_in_ci_script[0].relative_to(osparc_simcore_root_dir)),
+        str(docker_compose_in_ci_scripts[0].relative_to(osparc_simcore_root_dir)),
         "->",
-        docker_compose_in_ci_script[1],
+        docker_compose_in_ci_scripts[1],
     )
     assert (
-        docker_compose_in_ci_script[1] == previous[1]
-    ), f"CI installs {docker_compose_in_ci_script[1]}=!{previous[1]} (see {docker_compose_in_ci_script[0]}"
+        docker_compose_in_ci_scripts[1] == previous[1]
+    ), f"CI installs {docker_compose_in_ci_scripts[1]}=!{previous[1]} (see {docker_compose_in_ci_scripts[0]}"
 
 
 @pytest.fixture
@@ -118,8 +129,8 @@ def test_validate_compose_file(
     assert compose["version"] == "3.8"
 
 
-def test_installed_docker_compose(docker_compose_in_ci_script):
-    setup_ci_path, ci_version = docker_compose_in_ci_script
+def test_installed_docker_compose(docker_compose_in_ci_scripts):
+    setup_ci_path, ci_version = docker_compose_in_ci_scripts
 
     which = subprocess.run(
         "which docker-compose",
