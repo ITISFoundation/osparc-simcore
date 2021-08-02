@@ -180,13 +180,14 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
 
     __fitIconHeight: function() {
       const iconLayout = this.getChildControl("icon");
-      let maxHeight = this.self().ITEM_HEIGHT - 2*this.self().PADDING;
+      let maxHeight = this.getHeight() - this.getPaddingTop() - this.getPaddingBottom();
       // eslint-disable-next-line no-underscore-dangle
       this._mainLayout._getChildren().forEach(child => {
         if (child.getSubcontrolId() !== "icon" && child.getBounds()) {
           maxHeight -= (child.getBounds().height + 6);
         }
       });
+      iconLayout.getChildControl("image").setMaxHeight(maxHeight);
       iconLayout.setMaxHeight(maxHeight);
       iconLayout.recheckSize();
     },
