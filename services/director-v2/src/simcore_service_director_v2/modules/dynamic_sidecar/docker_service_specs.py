@@ -49,7 +49,7 @@ async def get_dynamic_proxy_spec(
     dynamic_sidecar_node_id: str,
 ) -> Dict[str, Any]:
     """
-    The Treafik proxy is the entrypoint which forwards
+    The Traefik proxy is the entrypoint which forwards
     all the network requests to dynamic service.
     The proxy is used to create network isolation
     from the rest of the platform.

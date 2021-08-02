@@ -41,7 +41,7 @@ def _inject_traefik_configuration(
     container_networks.append(dynamic_sidecar_network_name)
     target_container_spec["networks"] = container_networks
 
-    # expose spaned container to the internet
+    # expose spawned container to the internet
     labels = target_container_spec.get("labels", [])
     labels.extend(
         [
