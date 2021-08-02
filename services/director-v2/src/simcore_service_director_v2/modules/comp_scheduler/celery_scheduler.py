@@ -10,8 +10,9 @@ from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
 )
 
 from ...models.domains.comp_tasks import CompTaskAtDB
+from ...models.schemas.comp_scheduler import TaskIn
 from ...models.schemas.constants import UserID
-from ...modules.celery import CeleryClient, CeleryTaskIn
+from ...modules.celery import CeleryClient
 from ...utils.scheduler import get_repository
 from ..db.repositories.comp_tasks import CompTasksRepository
 
@@ -31,8 +32,8 @@ class CeleryScheduler(BaseCompScheduler):
         tasks: List[NodeID],
     ):
         # get tasks runtime requirements
-        celery_tasks: List[CeleryTaskIn] = [
-            CeleryTaskIn.from_node_image(node_id, comp_tasks[f"{node_id}"].image)
+        celery_tasks: List[TaskIn] = [
+            TaskIn.from_node_image(node_id, comp_tasks[f"{node_id}"].image)
             for node_id in tasks
         ]
 

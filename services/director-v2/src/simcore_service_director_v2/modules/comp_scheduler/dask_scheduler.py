@@ -7,8 +7,9 @@ from models_library.projects_nodes_io import NodeID
 
 from ...core.settings import DaskSchedulerSettings
 from ...models.domains.comp_tasks import CompTaskAtDB
+from ...models.schemas.comp_scheduler import TaskIn
 from ...models.schemas.constants import UserID
-from ...modules.dask_client import DaskClient, DaskTaskIn
+from ...modules.dask_client import DaskClient
 from ...utils.scheduler import get_repository
 from ..db.repositories.comp_tasks import CompTasksRepository
 from .base_scheduler import BaseCompScheduler
@@ -29,8 +30,8 @@ class DaskScheduler(BaseCompScheduler):
         tasks: List[NodeID],
     ):
         # get tasks runtime requirements
-        dask_tasks: List[DaskTaskIn] = [
-            DaskTaskIn.from_node_image(node_id, comp_tasks[f"{node_id}"].image)
+        dask_tasks: List[TaskIn] = [
+            TaskIn.from_node_image(node_id, comp_tasks[f"{node_id}"].image)
             for node_id in tasks
         ]
 

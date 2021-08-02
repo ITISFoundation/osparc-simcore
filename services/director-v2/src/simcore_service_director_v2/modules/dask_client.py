@@ -6,11 +6,10 @@ from uuid import uuid4
 from dask.distributed import Client, Future, fire_and_forget
 from fastapi import FastAPI
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
+from simcore_service_director_v2.models.schemas.comp_scheduler import TaskIn
 
 from ..core.errors import ConfigurationError
 from ..core.settings import DaskSchedulerSettings
-from ..models.domains.comp_tasks import Image
 from ..models.schemas.constants import UserID
 
 logger = logging.getLogger(__name__)
@@ -32,24 +31,6 @@ def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
-
-
-@dataclass
-class DaskTaskIn:
-    node_id: NodeID
-    runtime_requirements: str
-
-    @classmethod
-    def from_node_image(cls, node_id: NodeID, node_image: Image) -> "DaskTaskIn":
-        # NOTE: to keep compatibility the queues are currently defined as .cpu, .gpu, .mpi.
-        reqs = []
-        if node_image.requires_gpu:
-            reqs.append("gpu")
-        if node_image.requires_mpi:
-            reqs.append("mpi")
-        req = ":".join(reqs)
-
-        return cls(node_id=node_id, runtime_requirements=req or "cpu")
 
 
 def comp_sidecar_fct(job_id: str, user_id: str, project_id: str, node_id: str) -> None:
@@ -92,7 +73,7 @@ class DaskClient:
         self,
         user_id: UserID,
         project_id: ProjectID,
-        single_tasks: List[DaskTaskIn],
+        single_tasks: List[TaskIn],
         callback: Callable[[], None],
     ):
         def _done_dask_callback(dask_future: Future):
