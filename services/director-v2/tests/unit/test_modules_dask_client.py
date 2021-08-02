@@ -83,13 +83,17 @@ def test_local_dask_cluster_through_client(dask_client: DaskClient):
     assert result == 7
 
 
+@pytest.mark.parametrize("runtime_requirements", ["cpu", "gpu", "mpi", "gpu:mpi"])
 def test_send_computation_task(
-    dask_client: DaskClient, mocked_dask_scheduler: LocalCluster, mocker: MockerFixture
+    dask_client: DaskClient,
+    mocked_dask_scheduler: LocalCluster,
+    runtime_requirements: str,
+    mocker: MockerFixture,
 ):
     user_id = 12
     project_id = uuid4()
     node_id = uuid4()
-    fake_task = TaskIn(node_id=node_id, runtime_requirements="cpu")
+    fake_task = TaskIn(node_id=node_id, runtime_requirements=runtime_requirements)
     mocked_done_callback_fct = mocker.Mock()
 
     def fake_sidecar_fct(job_id: str, u_id: str, prj_id: str, n_id: str) -> int:
