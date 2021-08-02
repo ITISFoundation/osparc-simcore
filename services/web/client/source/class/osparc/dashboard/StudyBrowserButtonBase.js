@@ -50,8 +50,15 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
       left: 0
     });
 
-    this.addListener("pointerover", this._onPointerOver, this);
-    this.addListener("pointerout", this._onPointerOut, this);
+    [
+      "pointerover",
+      "focus"
+    ].forEach(e => this.addListener(e, this._onPointerOver, this));
+
+    [
+      "pointerout",
+      "focusout"
+    ].forEach(e => this.addListener(e, this._onPointerOut, this));
   },
 
   statics: {
