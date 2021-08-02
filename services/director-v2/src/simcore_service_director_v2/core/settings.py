@@ -184,7 +184,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
         description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
     )
 
-    TRAEFIK_SETTINGS: DynamicSidecarTraefikSettings
+    DYNAMIC_SIDECAR_TRAEFIK_SETTINGS: DynamicSidecarTraefikSettings
 
     REGISTRY: RegistrySettings
 

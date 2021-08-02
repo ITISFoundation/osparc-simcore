@@ -64,7 +64,7 @@ async def get_dynamic_proxy_spec(
         }
     ]
     traefik_settings: DynamicSidecarTraefikSettings = (
-        dynamic_sidecar_settings.TRAEFIK_SETTINGS
+        dynamic_sidecar_settings.DYNAMIC_SIDECAR_TRAEFIK_SETTINGS
     )
 
     return {
