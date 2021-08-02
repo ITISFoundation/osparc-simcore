@@ -36,8 +36,8 @@ from starlette.testclient import TestClient
 ServiceParams = namedtuple("ServiceParams", "service, service_labels, exp_status_code")
 
 
-@pytest.fixture(autouse=True)
-def minimal_director_config(project_env_devel_environment, monkeypatch):
+@pytest.fixture
+def minimal_director_config(project_env_devel_environment, monkeypatch) -> None:
     """set a minimal configuration for testing the director connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "1")
     monkeypatch.setenv("POSTGRES_ENABLED", "0")
@@ -136,6 +136,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
     ],
 )
 async def test_create_dynamic_services(
+    minimal_director_config: None,
     mocked_director_v0_service_api,
     docker_swarm: None,
     mocked_director_v2_scheduler: None,

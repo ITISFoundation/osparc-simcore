@@ -119,7 +119,7 @@ async def director_v2_client(services_endpoint: Dict[str, URL]) -> httpx.AsyncCl
         yield client
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 async def ensure_services_stopped(dy_static_file_server_project: ProjectAtDB) -> None:
     yield
     # ensure service cleanup when done testing
@@ -303,6 +303,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     user_db: Dict,
     services_endpoint: Dict[str, URL],
     director_v2_client: httpx.AsyncClient,
+    ensure_services_stopped: None,
 ):
     """
     The test will start 3 dynamic services in the same project and check
