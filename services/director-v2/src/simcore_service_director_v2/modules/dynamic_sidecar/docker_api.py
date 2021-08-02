@@ -137,7 +137,7 @@ async def _extract_task_data_from_service_for_state(
     """Waits until the dynamic-sidecar task is in one of the target_statuses
     and then returns the task"""
 
-    async def sleep_or_error(started: float, task: Dict):
+    async def _sleep_or_error(started: float, task: Dict):
         await asyncio.sleep(1.0)
         elapsed = time.time() - started
         if (
@@ -152,9 +152,8 @@ async def _extract_task_data_from_service_for_state(
             )
 
     async with docker_client() as client:
-        # both of the below states will get overwritten
         service_state: Optional[str] = None
-        task = {}
+        task: Dict[str, Any] = {}
 
         started = time.time()
 
@@ -167,7 +166,7 @@ async def _extract_task_data_from_service_for_state(
 
             # the service could not be started yet, let's wait for the next iteration?
             if service_container_count == 0:
-                await sleep_or_error(started=started, task={})
+                await _sleep_or_error(started=started, task={})
                 continue
 
             # The service might have more then one task because the previous might have died out
@@ -178,7 +177,12 @@ async def _extract_task_data_from_service_for_state(
             task = sorted_tasks[-1]
             service_state = task["Status"]["State"]
 
-            await sleep_or_error(started=started, task=task)
+            # avoids waiting 1 extra second when the container is already
+            # up, this will be the case the majority of times
+            if service_state in target_statuses:
+                continue
+
+            await _sleep_or_error(started=started, task=task)
 
         return task
 
@@ -207,16 +211,25 @@ async def get_node_id_from_task_for_service(
     return task["NodeID"]
 
 
-async def get_dynamic_sidecar_state(
-    service_id: str, dynamic_sidecar_settings: DynamicSidecarSettings
-) -> Tuple[ServiceState, str]:
+async def get_dynamic_sidecar_state(service_id: str) -> Tuple[ServiceState, str]:
+    def _make_pending() -> Tuple[ServiceState, str]:
+        pending_task_state = {"State": ServiceState.PENDING.value}
+        return extract_task_state(task_status=pending_task_state)
 
     try:
-        last_task = await _extract_task_data_from_service_for_state(
-            service_id=service_id,
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
-            target_statuses=TASK_STATES_ALL,
-        )
+        async with docker_client() as client:
+            running_services = await client.tasks.list(
+                filters={"service": f"{service_id}"}
+            )
+
+        service_container_count = len(running_services)
+
+        if service_container_count == 0:
+            # if the service is nor present, return pending
+            return _make_pending()
+
+        last_task = running_services[0]
+
     # GenericDockerError
     except GenericDockerError as e:
         if e.original_exception.message != f"service {service_id} not found":
@@ -224,8 +237,7 @@ async def get_dynamic_sidecar_state(
 
         # because the service is not there yet return a pending state
         # it is looking for a service or something with no error message
-        pending_task_state = {"State": ServiceState.PENDING.value}
-        return extract_task_state(task_status=pending_task_state)
+        return _make_pending()
 
     task_status = last_task["Status"]
     service_state, message = extract_task_state(task_status=task_status)
