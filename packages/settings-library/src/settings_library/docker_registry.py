@@ -35,14 +35,3 @@ class RegistrySettings(BaseCustomSettings):
     @cached_property
     def api_url(self) -> str:
         return f"{self.REGISTRY_URL}/v2"
-
-    @cached_property
-    def dynamic_sidecar_env_vars(self) -> Dict[str, str]:
-        return {
-            "REGISTRY_AUTH": str(self.REGISTRY_AUTH),
-            "REGISTRY_PATH": str(self.REGISTRY_PATH),
-            "REGISTRY_URL": str(self.REGISTRY_URL),
-            "REGISTRY_USER": str(self.REGISTRY_USER),
-            "REGISTRY_PW": str(self.REGISTRY_PW.get_secret_value()),
-            "REGISTRY_SSL": str(self.REGISTRY_SSL),
-        }

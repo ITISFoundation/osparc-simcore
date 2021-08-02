@@ -15,6 +15,7 @@ from ...api.dependencies.director_v0 import DirectorV0Client
 from ...core.settings import DynamicSidecarSettings, DynamicSidecarTraefikSettings
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 from ...models.schemas.dynamic_services import SchedulerData, ServiceType
+from ...utils.registry import get_dynamic_sidecar_env_vars
 from .errors import DynamicSidecarError
 
 # Notes on below env var names:
@@ -583,7 +584,7 @@ async def get_dynamic_sidecar_spec(
                 "Env": {
                     "SIMCORE_HOST_NAME": scheduler_data.service_name,
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-                    **dynamic_sidecar_settings.REGISTRY.dynamic_sidecar_env_vars,
+                    **get_dynamic_sidecar_env_vars(dynamic_sidecar_settings.REGISTRY),
                 },
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
