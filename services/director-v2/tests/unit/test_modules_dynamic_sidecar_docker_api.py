@@ -360,9 +360,7 @@ async def test_dynamic_sidecar_in_running_state_and_node_id_is_recovered(
 
     # after the node_id is recovered the service
     # will be in a running state
-    dynamic_sidecar_state = await get_dynamic_sidecar_state(
-        service_id, dynamic_sidecar_settings
-    )
+    dynamic_sidecar_state = await get_dynamic_sidecar_state(service_id)
     assert dynamic_sidecar_state == (ServiceState.RUNNING, "")
 
 

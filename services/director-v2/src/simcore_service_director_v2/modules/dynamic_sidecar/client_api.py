@@ -35,32 +35,33 @@ def log_httpx_http_error(url: str, method: str, formatted_traceback: str) -> Non
 class DynamicSidecarClient:
     """Will handle connections to the service sidecar"""
 
-    def __init__(self, app: FastAPI):
-        self._app: FastAPI = app
-        self._heatlth_request_timeout: httpx.Timeout = httpx.Timeout(1.0, connect=1.0)
+    # NOTE: Since this module is accesse concurrently and httpx uses Locks
+    # interally, it is not possible to share a single client instace.
+    # For each request a separate client will be created.
+    # The previous implementation (with a shared client) raised
+    # RuntimeErrors because resources were already locked.
 
+    def __init__(self, app: FastAPI):
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
 
-        self.httpx_client = httpx.AsyncClient(
-            timeout=httpx.Timeout(
-                dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
-                connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
-            )
+        self._app: FastAPI = app
+        self._heatlth_request_timeout: httpx.Timeout = httpx.Timeout(1.0, connect=1.0)
+        self._base_timeout = httpx.Timeout(
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
+            connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
-
-    async def close(self):
-        await self.httpx_client.aclose()
 
     async def is_healthy(self, dynamic_sidecar_endpoint: str) -> bool:
         """returns True if service is UP and running else False"""
         url = get_url(dynamic_sidecar_endpoint, "/health")
         try:
             # this request uses a very short timeout
-            response = await self.httpx_client.get(
-                url=url, timeout=self._heatlth_request_timeout
-            )
+            async with httpx.AsyncClient(
+                timeout=self._heatlth_request_timeout
+            ) as client:
+                response = await client.get(url=url)
             response.raise_for_status()
 
             return response.json()["is_healthy"]
@@ -73,7 +74,8 @@ class DynamicSidecarClient:
         """returns: None in case of error, otherwise a dict will be returned"""
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
         try:
-            response = await self.httpx_client.get(url=url)
+            async with httpx.AsyncClient(timeout=self._base_timeout) as client:
+                response = await client.get(url=url)
             if response.status_code != 200:
                 logging.warning(
                     "error during request status=%s, body=%s",
@@ -93,9 +95,8 @@ class DynamicSidecarClient:
         """returns: None in case of error, otherwise a dict will be returned"""
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
         try:
-            response = await self.httpx_client.get(
-                url=url, params=dict(only_status=True)
-            )
+            async with httpx.AsyncClient(timeout=self._base_timeout) as client:
+                response = await client.get(url=url, params=dict(only_status=True))
             if response.status_code != 200:
                 logging.warning(
                     "error during request status=%s, body=%s",
@@ -115,7 +116,8 @@ class DynamicSidecarClient:
         """returns: True if the compose up was submitted correctly"""
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
         try:
-            response = await self.httpx_client.post(url, data=compose_spec)
+            async with httpx.AsyncClient(timeout=self._base_timeout) as client:
+                response = await client.post(url, data=compose_spec)
             if response.status_code != 202:
                 message = (
                     f"ERROR during service creation request: "
@@ -134,7 +136,8 @@ class DynamicSidecarClient:
         """runs docker compose down on the started spec"""
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers:down")
         try:
-            response = await self.httpx_client.post(url)
+            async with httpx.AsyncClient(timeout=self._base_timeout) as client:
+                response = await client.post(url)
             if response.status_code != 200:
                 message = (
                     f"ERROR during service destruction request: "
@@ -154,10 +157,8 @@ async def setup_api_client(app: FastAPI) -> None:
     app.state.dynamic_sidecar_api_client = DynamicSidecarClient(app)
 
 
-async def shutdown_api_client(app: FastAPI) -> None:
+async def shutdown_api_client(app: FastAPI) -> None:  # pylint: disable=unused-argument
     logger.debug("dynamic-sidecar api client shutdown")
-    dynamic_sidecar_api_client = app.state.dynamic_sidecar_api_client
-    await dynamic_sidecar_api_client.close()
 
 
 def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:
