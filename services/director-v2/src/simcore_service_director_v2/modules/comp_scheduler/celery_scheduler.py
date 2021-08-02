@@ -1,9 +1,8 @@
 import logging
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Callable, List
 
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
 from simcore_service_director_v2.core.settings import CelerySchedulerSettings
 from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
     BaseCompScheduler,
@@ -13,8 +12,6 @@ from ...models.domains.comp_tasks import CompTaskAtDB
 from ...models.schemas.comp_scheduler import TaskIn
 from ...models.schemas.constants import UserID
 from ...modules.celery import CeleryClient
-from ...utils.scheduler import get_repository
-from ..db.repositories.comp_tasks import CompTasksRepository
 
 logger = logging.getLogger(__name__)
 
@@ -28,26 +25,15 @@ class CeleryScheduler(BaseCompScheduler):
         self,
         user_id: UserID,
         project_id: ProjectID,
-        comp_tasks: Dict[str, CompTaskAtDB],
-        tasks: List[NodeID],
+        scheduled_tasks: List[TaskIn],
+        callback: Callable[[], None],
     ):
-        # get tasks runtime requirements
-        celery_tasks: List[TaskIn] = [
-            TaskIn.from_node_image(node_id, comp_tasks[f"{node_id}"].image)
-            for node_id in tasks
-        ]
-
-        # The sidecar only pick up tasks that are in PENDING state
-        comp_tasks_repo: CompTasksRepository = get_repository(
-            self.db_engine, CompTasksRepository
-        )  # type: ignore
-        await comp_tasks_repo.mark_project_tasks_as_pending(project_id, tasks)
         # notify the sidecar they should start now
         self.celery_client.send_computation_tasks(
             user_id=user_id,
             project_id=project_id,
-            single_tasks=celery_tasks,
-            callback=self._wake_up_scheduler_now,
+            single_tasks=scheduled_tasks,
+            callback=callback,
         )
 
     async def _stop_tasks(self, tasks: List[CompTaskAtDB]) -> None:

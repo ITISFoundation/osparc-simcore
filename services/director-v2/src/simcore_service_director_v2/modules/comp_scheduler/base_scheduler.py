@@ -15,7 +15,7 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import networkx as nx
 from aiopg.sa.engine import Engine
@@ -23,6 +23,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
+from simcore_service_director_v2.models.schemas.comp_scheduler import TaskIn
 
 from ...core.errors import SchedulerError
 from ...models.domains.comp_pipelines import CompPipelineAtDB
@@ -163,8 +164,8 @@ class BaseCompScheduler(ABC):
         self,
         user_id: UserID,
         project_id: ProjectID,
-        comp_tasks: Dict[str, CompTaskAtDB],
-        tasks: List[NodeID],
+        scheduled_tasks: List[TaskIn],
+        callback: Callable[[], None],
     ) -> None:
         pass
 
@@ -252,7 +253,31 @@ class BaseCompScheduler(ABC):
             return
 
         # let's schedule the tasks, mark them as PENDING so the sidecar will take them
-        await self._start_tasks(user_id, project_id, pipeline_tasks, next_tasks)
+        await self._schedule_tasks(user_id, project_id, pipeline_tasks, next_tasks)
+
+    async def _schedule_tasks(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        comp_tasks: Dict[str, CompTaskAtDB],
+        tasks: List[NodeID],
+    ):
+        # get tasks runtime requirements
+        scheduled_tasks: List[TaskIn] = [
+            TaskIn.from_node_image(node_id, comp_tasks[f"{node_id}"].image)
+            for node_id in tasks
+        ]
+
+        # The sidecar only pick up tasks that are in PENDING state
+        comp_tasks_repo: CompTasksRepository = get_repository(
+            self.db_engine, CompTasksRepository
+        )  # type: ignore
+        await comp_tasks_repo.mark_project_tasks_as_pending(project_id, tasks)
+
+        # now start the tasks
+        await self._start_tasks(
+            user_id, project_id, scheduled_tasks, self._wake_up_scheduler_now
+        )
 
     def _wake_up_scheduler_now(self) -> None:
         self.wake_up_event.set()
