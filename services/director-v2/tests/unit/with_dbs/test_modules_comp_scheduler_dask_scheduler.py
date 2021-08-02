@@ -34,7 +34,7 @@ def minimal_dask_scheduler_config(
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "1")
 
 
-def test_scheduler_starts_correctly(
+def test_scheduler_gracefully_starts_and_stops(
     minimal_dask_scheduler_config: None,
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
     dask_scheduler_service: None,

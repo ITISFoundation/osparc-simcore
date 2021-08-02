@@ -38,7 +38,7 @@ def minimal_celery_scheduler_config(
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "0")
 
 
-def test_scheduler_starts_correctly(
+def test_scheduler_gracefully_starts_and_stops(
     minimal_celery_scheduler_config: None,
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
     minimal_app: FastAPI,
