@@ -51,7 +51,9 @@ def parse_containers_inspect(
     return list(results)
 
 
-class CreateServices(DynamicSchedulerEvent):
+class CreateSidecars(DynamicSchedulerEvent):
+    """create the dynamic-sidecar and the proxy"""
+
     @classmethod
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
         # the are_services_missing is expensive, if the proxy
@@ -139,7 +141,7 @@ class CreateServices(DynamicSchedulerEvent):
         await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
 
         # update service_port and assing it to the status
-        # needed by RunDockerComposeUp action
+        # needed by CreateUserServices action
         scheduler_data.service_port = extract_service_port_from_compose_start_spec(
             dynamic_sidecar_create_service_params
         )
@@ -148,7 +150,7 @@ class CreateServices(DynamicSchedulerEvent):
         scheduler_data.dynamic_sidecar.were_services_created = True
 
 
-class ServicesInspect(DynamicSchedulerEvent):
+class GetStatus(DynamicSchedulerEvent):
     """
     Inspects the dynamic-sidecar, and store some information about the contaiers.
     """
@@ -184,7 +186,7 @@ class ServicesInspect(DynamicSchedulerEvent):
         )
 
 
-class RunDockerComposeUp(DynamicSchedulerEvent):
+class CreateUserServices(DynamicSchedulerEvent):
     """Runs the docker-compose up command when and composes the spec if a service requires it"""
 
     @classmethod
@@ -227,7 +229,7 @@ class RunDockerComposeUp(DynamicSchedulerEvent):
 # register all handlers defined in this module here
 # A list is essential to guarantee execution order
 REGISTERED_EVENTS: List[Type[DynamicSchedulerEvent]] = [
-    CreateServices,
-    ServicesInspect,
-    RunDockerComposeUp,
+    CreateSidecars,
+    GetStatus,
+    CreateUserServices,
 ]
