@@ -50,7 +50,7 @@ class BaseCompScheduler(ABC):
         Tuple[UserID, ProjectID, Iteration], ScheduledPipelineParams
     ]
     db_engine: Engine
-    wake_up_event: asyncio.Event = field(default=asyncio.Event(), init=False)
+    wake_up_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
 
     async def run_new_pipeline(self, user_id: UserID, project_id: ProjectID) -> None:
         runs_repo: CompRunsRepository = get_repository(
