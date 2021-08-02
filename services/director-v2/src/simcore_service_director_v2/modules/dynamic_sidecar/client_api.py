@@ -91,7 +91,7 @@ class DynamicSidecarClient:
 
     async def containers_docker_status(
         self, dynamic_sidecar_endpoint: str
-    ) -> Optional[Dict[str, Dict[str, str]]]:
+    ) -> Dict[str, Dict[str, str]]:
         """returns: None in case of error, otherwise a dict will be returned"""
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
         try:
@@ -103,12 +103,12 @@ class DynamicSidecarClient:
                     response.status_code,
                     response.text,
                 )
-                return None
+                return {}
 
             return response.json()
         except httpx.HTTPError:
             log_httpx_http_error(url, "GET", traceback.format_exc())
-            return None
+            raise
 
     async def start_service_creation(
         self, dynamic_sidecar_endpoint: str, compose_spec: str

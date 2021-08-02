@@ -171,9 +171,7 @@ class DynamicSidecarsScheduler:
                     dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
                 )
             except httpx.HTTPError:
-                logger.warning(
-                    "Could not send docker-compose down request to %s", service_name
-                )
+                logger.warning("Could not begin destruction of %s", service_name)
 
             dynamic_sidecar_settings: DynamicSidecarSettings = (
                 self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
@@ -233,14 +231,14 @@ class DynamicSidecarsScheduler:
             self._app
         )
 
-        docker_statuses: Optional[
-            Dict[str, Dict[str, str]]
-        ] = await dynamic_sidecar_client.containers_docker_status(
-            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
-        )
-
-        # error fetching docker_statues, probably someone should check
-        if docker_statuses is None:
+        try:
+            docker_statuses: Optional[
+                Dict[str, Dict[str, str]]
+            ] = await dynamic_sidecar_client.containers_docker_status(
+                dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
+            )
+        except httpx.HTTPError:
+            # error fetching docker_statues, probably someone should check
             return RunningDynamicServiceDetails.from_scheduler_data(
                 node_uuid=node_uuid,
                 scheduler_data=scheduler_data,
