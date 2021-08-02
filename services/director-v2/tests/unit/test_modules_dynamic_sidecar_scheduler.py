@@ -8,7 +8,7 @@ import re
 from asyncio import BaseEventLoop
 from contextlib import asynccontextmanager, contextmanager
 from importlib import reload
-from typing import AsyncGenerator, Callable, Iterator, List, Type
+from typing import AsyncGenerator, Callable, Iterator, List, Type, Union
 from unittest.mock import AsyncMock
 
 import httpx
@@ -62,8 +62,15 @@ log = logging.getLogger(__name__)
 
 @contextmanager
 def _mock_containers_docker_status(
-    scheduler_data: SchedulerData, expected_response: httpx.Response
+    scheduler_data: SchedulerData,
+    expected_response: Union[httpx.Response, httpx.HTTPError],
 ) -> Iterator[MockRouter]:
+    mocked_params = {}
+    if isinstance(expected_response, httpx.Response):
+        mocked_params["return_value"] = expected_response
+    else:
+        mocked_params["side_effect"] = expected_response
+
     service_endpoint = scheduler_data.dynamic_sidecar.endpoint
     with respx.mock as mock:
         mock.get(
@@ -71,7 +78,7 @@ def _mock_containers_docker_status(
                 fr"^http://{scheduler_data.service_name}:{scheduler_data.dynamic_sidecar.port}/v1/containers\?only_status=true"
             ),
             name="containers_docker_status",
-        ).mock(return_value=expected_response)
+        ).mock(**mocked_params)
 
         mock.post(
             get_url(service_endpoint, "/v1/containers:down"),
@@ -86,7 +93,7 @@ async def _assert_get_dynamic_services_mocked(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mock_service_running: AsyncMock,
-    expected_response: httpx.Response,
+    expected_response: Union[httpx.Response, httpx.HTTPError],
 ) -> AsyncGenerator[RunningDynamicServiceDetails, None]:
     with _mock_containers_docker_status(scheduler_data, expected_response):
         await scheduler.add_service(scheduler_data)
@@ -390,7 +397,7 @@ async def test_get_stack_status_report_missing_statuses(
         scheduler,
         scheduler_data,
         mock_service_running,
-        expected_response=httpx.Response(400),
+        expected_response=httpx.HTTPError("Mock raised error"),
     ) as stack_status:
         assert stack_status == RunningDynamicServiceDetails.from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
