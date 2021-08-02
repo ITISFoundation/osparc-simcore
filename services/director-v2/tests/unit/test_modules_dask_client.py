@@ -121,6 +121,7 @@ def test_send_computation_task(
     assert task_result == 123
     assert future.key == job_id
     mocked_done_callback_fct.assert_called_once()
+    mocked_done_callback_fct.reset()
 
     # start another computation that will be aborted
     dask_client.send_computation_tasks(
@@ -130,7 +131,7 @@ def test_send_computation_task(
         callback=mocked_done_callback_fct,
     )
 
-    # we have 1 future in the map now
+    # we have 2 futures in the map now
     assert len(dask_client._taskid_to_future_map) == 2
     job_id, future = list(dask_client._taskid_to_future_map.items())[1]
     # now let's abort the computation
