@@ -110,8 +110,8 @@ async def get_dynamic_proxy_spec(
                     f"--providers.docker.network={scheduler_data.dynamic_sidecar_network_name}",
                     "--providers.docker.exposedByDefault=false",
                     f"--providers.docker.constraints=Label(`io.simcore.zone`, `{scheduler_data.simcore_traefik_zone}`)",
-                    # inject basic auth https://doc.traefik.io/traefik/v2.0/middlewares/basicauth/
-                    # TODO: attach new auth_url to the service and make it available in the scheduler
+                    # TODO: add authentication once a middleware is in place
+                    # something like https://doc.traefik.io/traefik/middlewares/forwardauth/
                 ],
                 "Mounts": mounts,
             },
