@@ -26,7 +26,6 @@ from models_library.projects_state import (
     ProjectStatus,
     RunningState,
 )
-from projects_utils import extract_dns_without_default_port
 from pydantic.types import PositiveInt
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
@@ -54,6 +53,7 @@ from ..users_api import get_user_name, is_user_guest
 from .config import CONFIG_SECTION_NAME
 from .project_lock import ProjectLockError, get_project_locked_state, lock_project
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
+from .projects_utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)
 
