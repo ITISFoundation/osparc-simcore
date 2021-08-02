@@ -50,15 +50,12 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
   },
 
   members: {
-
     __applyResourceData: function(serviceModel) {
       serviceModel.bind("name", this.getChildControl("title"), "value");
       if (serviceModel.getThumbnail()) {
-        serviceModel.bind("thumbnail", this.getChildControl("icon").getChildControl("image"), "source", {
-          converter: value => value === null ? this.self().SERVICE_ICON : value
-        });
+        this.setIcon(serviceModel.getThumbnail());
         this.getChildControl("icon").set({
-          maxWidth: this.self().ITEM_WIDTH - 2*osparc.dashboard.StudyBrowserButtonBase.PADDING
+          maxWidth: this.getWidth() - this.getPaddingLeft() - this.getPaddingRight()
         });
 
         const hint = new osparc.ui.hint.Hint(this, serviceModel.getDescription()).set({
