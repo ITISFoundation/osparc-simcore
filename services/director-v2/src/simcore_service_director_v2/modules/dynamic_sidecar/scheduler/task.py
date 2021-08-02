@@ -214,18 +214,10 @@ class DynamicSidecarsScheduler:
                 service_message=scheduler_data.dynamic_sidecar.status.info,
             )
 
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-        )
-        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self._app
-        )
-
         service_state, service_message = await get_dynamic_sidecar_state(
             # the service_name is unique and will not collide with other names
             # it can be used in place of the service_id here, as the docker API accepts both
-            service_id=scheduler_data.service_name,
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            service_id=scheduler_data.service_name
         )
 
         # while the dynamic-sidecar state is not RUNNING report it's state
@@ -236,6 +228,10 @@ class DynamicSidecarsScheduler:
                 service_state=service_state,
                 service_message=service_message,
             )
+
+        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
+            self._app
+        )
 
         docker_statuses: Optional[
             Dict[str, Dict[str, str]]
