@@ -60,6 +60,19 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
         this.getChildControl("icon").set({
           maxWidth: this.self().ITEM_WIDTH - 2*osparc.dashboard.StudyBrowserButtonBase.PADDING
         });
+
+        const hint = new osparc.ui.hint.Hint(this, serviceModel.getDescription()).set({
+          active: false
+        });
+        const showHint = () => {
+          hint.show();
+        };
+        const hideHint = () => {
+          hint.exclude();
+        };
+        this.addListener("mouseover", showHint);
+        this.addListener("mouseout", hideHint);
+        this.addListener("disappear", hideHint);
       } else {
         serviceModel.bind("description", this.getChildControl("subtitle-text"), "value");
         this.getChildControl("subtitle-text").set({
@@ -68,18 +81,6 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
           allowGrowY: true
         });
       }
-
-      const hint = new osparc.ui.hint.Hint(this, serviceModel.getDescription()).set({
-        active: false
-      });
-      const showHint = () => {
-        hint.show();
-      };
-      const hideHint = () => {
-        hint.exclude();
-      };
-      this.addListener("mouseover", showHint);
-      this.addListener("mouseout", hideHint);
     },
 
     __filterText: function(text) {
