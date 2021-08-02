@@ -2,11 +2,12 @@
 
 """
 
-import json
 import logging
+from typing import Dict, List, Union
 
 from aiohttp import web
 
+from .. import director_v2
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
 from . import projects_api
@@ -19,15 +20,9 @@ log = logging.getLogger(__name__)
 @login_required
 @permission_required("project.node.create")
 async def create_node(request: web.Request) -> web.Response:
-    user_id: int = request[RQT_USERID_KEY]
-
-    try:
-        project_uuid = request.match_info["project_id"]
-        body = await request.json()
-    except KeyError as err:
-        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
-    except json.JSONDecodeError as exc:
-        raise web.HTTPBadRequest(reason="Invalid request body") from exc
+    user_id = request[RQT_USERID_KEY]
+    project_uuid = request.match_info.get("project_id")
+    body = await request.json()
 
     try:
         # ensure the project exists
@@ -56,15 +51,9 @@ async def create_node(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.node.read")
 async def get_node(request: web.Request) -> web.Response:
-    user_id: int = request[RQT_USERID_KEY]
-
-    try:
-        project_uuid = request.match_info["project_id"]
-        node_uuid = request.match_info["node_id"]
-
-    except KeyError as err:
-        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
-
+    user_id = request[RQT_USERID_KEY]
+    project_uuid = request.match_info.get("project_id")
+    node_uuid = request.match_info.get("node_id")
     try:
         # ensure the project exists
 
@@ -75,10 +64,17 @@ async def get_node(request: web.Request) -> web.Response:
             include_templates=True,
         )
 
-        node_details = await projects_api.get_project_node(
-            request, project_uuid, user_id, node_uuid
+        # NOTE: for legacy services a redirect to director-v0 is made
+        reply: Union[Dict, List] = await director_v2.get_service_state(
+            app=request.app, node_uuid=node_uuid
         )
-        return web.json_response({"data": node_details})
+
+        if "data" not in reply:
+            # dynamic-service NODE STATE
+            return web.json_response({"data": reply})
+
+        # LEGACY-service NODE STATE
+        return web.json_response({"data": reply["data"]})
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
@@ -86,15 +82,9 @@ async def get_node(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.node.delete")
 async def delete_node(request: web.Request) -> web.Response:
-    user_id: int = request[RQT_USERID_KEY]
-
-    try:
-        project_uuid = request.match_info["project_id"]
-        node_uuid = request.match_info["node_id"]
-
-    except KeyError as err:
-        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
-
+    user_id = request[RQT_USERID_KEY]
+    project_uuid = request.match_info.get("project_id")
+    node_uuid = request.match_info.get("node_id")
     try:
         # ensure the project exists
 
