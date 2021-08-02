@@ -9,7 +9,7 @@ class TaskIn(BaseModel):
     runtime_requirements: str
 
     @classmethod
-    def from_node_image(cls, node_id: NodeID, node_image: Image) -> "CeleryTaskIn":
+    def from_node_image(cls, node_id: NodeID, node_image: Image) -> "TaskIn":
         # NOTE: to keep compatibility the queues are currently defined as .cpu, .gpu, .mpi.
         reqs = []
         if node_image.requires_gpu:

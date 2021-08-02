@@ -14,8 +14,8 @@ from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import ConfigurationError
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.models.domains.comp_tasks import Image
-from simcore_service_director_v2.modules.dask_client import DaskClient, DaskTaskIn
+from simcore_service_director_v2.models.schemas.comp_scheduler import TaskIn
+from simcore_service_director_v2.modules.dask_client import DaskClient
 from starlette.testclient import TestClient
 from yarl import URL
 
@@ -89,7 +89,7 @@ def test_send_computation_task(
     user_id = 12
     project_id = uuid4()
     node_id = uuid4()
-    fake_task = DaskTaskIn(node_id=node_id, runtime_requirements="cpu")
+    fake_task = TaskIn(node_id=node_id, runtime_requirements="cpu")
     mocked_done_callback_fct = mocker.Mock()
 
     def fake_sidecar_fct(job_id: str, u_id: str, prj_id: str, n_id: str) -> int:
@@ -139,52 +139,3 @@ def test_send_computation_task(
     dask_client.abort_computation_tasks([job_id])
     assert future.cancelled() == True
     mocked_done_callback_fct.assert_called_once()
-
-
-@pytest.mark.parametrize(
-    "image, exp_requirements_str",
-    [
-        (
-            Image(
-                name="simcore/services/comp/itis/sleeper",
-                tag="1.0.0",
-                requires_gpu=False,
-                requires_mpi=False,
-            ),
-            "cpu",
-        ),
-        (
-            Image(
-                name="simcore/services/comp/itis/sleeper",
-                tag="1.0.0",
-                requires_gpu=True,
-                requires_mpi=False,
-            ),
-            "gpu",
-        ),
-        (
-            Image(
-                name="simcore/services/comp/itis/sleeper",
-                tag="1.0.0",
-                requires_gpu=False,
-                requires_mpi=True,
-            ),
-            "mpi",
-        ),
-        (
-            Image(
-                name="simcore/services/comp/itis/sleeper",
-                tag="1.0.0",
-                requires_gpu=True,
-                requires_mpi=True,
-            ),
-            "gpu:mpi",
-        ),
-    ],
-)
-def test_dask_task_in_model(image: Image, exp_requirements_str: str):
-    node_id = uuid4()
-    dask_task = DaskTaskIn.from_node_image(node_id, image)
-    assert dask_task
-    assert dask_task.node_id == node_id
-    assert dask_task.runtime_requirements == exp_requirements_str
