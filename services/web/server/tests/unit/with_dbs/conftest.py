@@ -14,10 +14,10 @@ import os
 import sys
 import textwrap
 from copy import deepcopy
+from importlib import reload
 from pathlib import Path
 from typing import Callable, Dict, Iterator, List
 from uuid import uuid4
-from importlib import reload
 
 import aioredis
 import pytest
@@ -246,34 +246,7 @@ def asyncpg_storage_system_mock(mocker):
 
 
 @pytest.fixture
-def mocked_director_subsystem(mocker):
-    mock_director_api = {
-        "director_v2.get_service_state": mocker.patch(
-            "simcore_service_webserver.director_v2.get_service_state",
-            return_value={},
-        ),
-        "director_v2.get_services": mocker.patch(
-            "simcore_service_webserver.director_v2.get_services",
-            return_value="",
-        ),
-        "director_v2.start_service": mocker.patch(
-            "simcore_service_webserver.director_v2.start_service",
-            return_value="",
-        ),
-        "director_v2.stop_service": mocker.patch(
-            "simcore_service_webserver.director_v2.stop_service",
-            return_value="",
-        ),
-    }
-
-    reload(simcore_service_webserver.projects.projects_api)
-    reload(simcore_service_webserver.projects.projects_handlers)
-
-    return mock_director_api
-
-
-@pytest.fixture
-async def mocked_director_api(loop, mocker):
+async def mocked_director_v2_api(loop, mocker):
     mocks = {
         "director_v2.get_service_state": mocker.patch(
             "simcore_service_webserver.director_v2.get_service_state",
@@ -300,7 +273,7 @@ async def mocked_director_api(loop, mocker):
 
 
 @pytest.fixture
-async def mocked_dynamic_service(loop, client, mocked_director_api):
+async def mocked_dynamic_service(loop, client, mocked_director_v2_api):
     services = []
 
     async def create(user_id, project_id) -> Dict:
@@ -326,7 +299,7 @@ async def mocked_dynamic_service(loop, client, mocked_director_api):
 
         services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
-        mocked_director_api["director_v2.get_services"].return_value = services
+        mocked_director_v2_api["director_v2.get_services"].return_value = services
         return running_service_dict
 
     return create
