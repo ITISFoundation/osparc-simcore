@@ -15,9 +15,30 @@ import time
 
 import prometheus_client
 from aiohttp import web
-from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram
+from prometheus_client import CONTENT_TYPE_LATEST, Counter
 
 log = logging.getLogger(__name__)
+
+
+#
+# CAUTION CAUTION CAUTION NOTE:
+# Be very careful with metrics. pay attention to metrics cardinatity.
+# Each time series takes about 3kb of overhead in Prometheus
+#
+# CAUTION: every unique combination of key-value label pairs represents a new time series
+#
+# If a metrics is not needed, don't add it!! It will collapse the application AND prometheus
+#
+# references:
+# https://prometheus.io/docs/practices/naming/
+# https://www.robustperception.io/cardinality-is-key
+# https://www.robustperception.io/why-does-prometheus-use-so-much-ram
+# https://promcon.io/2019-munich/slides/containing-your-cardinality.pdf
+# https://grafana.com/docs/grafana-cloud/how-do-i/control-prometheus-metrics-usage/usage-analysis-explore/
+#
+
+
+# TODO: the endpoint label on the http_requests_total Counter is a candidate to be removed. as endpoints also contain all kind of UUIDs
 
 
 async def metrics_handler(_request: web.Request):
@@ -35,9 +56,6 @@ def middleware_factory(app_name):
         resp = None
         try:
             request["start_time"] = time.time()
-            request.app["REQUEST_IN_PROGRESS"].labels(
-                app_name, request.path, request.method
-            ).inc()
 
             resp = await handler(request)
 
@@ -65,15 +83,6 @@ def middleware_factory(app_name):
 
         finally:
             # metrics on the same request
-            resp_time = time.time() - request["start_time"]
-            request.app["REQUEST_LATENCY"].labels(app_name, request.path).observe(
-                resp_time
-            )
-
-            request.app["REQUEST_IN_PROGRESS"].labels(
-                app_name, request.path, request.method
-            ).dec()
-
             if resp:
                 request.app["REQUEST_COUNT"].labels(
                     app_name, request.method, request.path, resp.status
@@ -119,18 +128,6 @@ def setup_monitoring(app: web.Application, app_name: str):
         "http_requests_total",
         "Total Request Count",
         ["app_name", "method", "endpoint", "http_status"],
-    )
-
-    # Latency of a request in seconds
-    app["REQUEST_LATENCY"] = Histogram(
-        "http_request_latency_seconds", "Request latency", ["app_name", "endpoint"]
-    )
-
-    # Number of requests in progress
-    app["REQUEST_IN_PROGRESS"] = Gauge(
-        "http_requests_in_progress_total",
-        "Requests in progress",
-        ["app_name", "endpoint", "method"],
     )
 
     # ensures is first layer but cannot guarantee the order setup is applied
