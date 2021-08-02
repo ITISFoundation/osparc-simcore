@@ -2,6 +2,7 @@
 
 """
 
+import json
 import logging
 from typing import Dict, List, Union
 
@@ -20,9 +21,15 @@ log = logging.getLogger(__name__)
 @login_required
 @permission_required("project.node.create")
 async def create_node(request: web.Request) -> web.Response:
-    user_id = request[RQT_USERID_KEY]
-    project_uuid = request.match_info.get("project_id")
-    body = await request.json()
+    user_id: int = request[RQT_USERID_KEY]
+
+    try:
+        project_uuid = request.match_info["project_id"]
+        body = await request.json()
+    except KeyError as err:
+        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+    except json.JSONDecodeError as exc:
+        raise web.HTTPBadRequest(reason="Invalid request body") from exc
 
     try:
         # ensure the project exists
@@ -51,9 +58,15 @@ async def create_node(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.node.read")
 async def get_node(request: web.Request) -> web.Response:
-    user_id = request[RQT_USERID_KEY]
-    project_uuid = request.match_info.get("project_id")
-    node_uuid = request.match_info.get("node_id")
+    user_id: int = request[RQT_USERID_KEY]
+
+    try:
+        project_uuid = request.match_info["project_id"]
+        node_uuid = request.match_info["node_id"]
+
+    except KeyError as err:
+        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+
     try:
         # ensure the project exists
 
@@ -82,9 +95,15 @@ async def get_node(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.node.delete")
 async def delete_node(request: web.Request) -> web.Response:
-    user_id = request[RQT_USERID_KEY]
-    project_uuid = request.match_info.get("project_id")
-    node_uuid = request.match_info.get("node_id")
+    user_id: int = request[RQT_USERID_KEY]
+
+    try:
+        project_uuid = request.match_info["project_id"]
+        node_uuid = request.match_info["node_id"]
+
+    except KeyError as err:
+        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+
     try:
         # ensure the project exists
 
