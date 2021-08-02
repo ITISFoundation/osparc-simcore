@@ -416,7 +416,7 @@ def _patch_target_service_into_env_vars(
 ) -> Deque[SimcoreServiceSettingLabelEntry]:
     """NOTE: this method will modify settings in place"""
 
-    def _forma_env_var(env_var: str, destination_container: str) -> str:
+    def _format_env_var(env_var: str, destination_container: str) -> str:
         var_name, var_payload = env_var.split("=")
         json_encoded = json.dumps(
             dict(destination_container=destination_container, env_var=var_payload)
@@ -436,7 +436,7 @@ def _patch_target_service_into_env_vars(
             # from `ENV_VAR=PAYLOAD`
             # to   `ENV_VAR={"destination_container": "destination_container", "env_var": "PAYLOAD"}`
             entry.value = [
-                _forma_env_var(x, destination_container) for x in list_of_env_vars
+                _format_env_var(x, destination_container) for x in list_of_env_vars
             ]
 
     return settings
