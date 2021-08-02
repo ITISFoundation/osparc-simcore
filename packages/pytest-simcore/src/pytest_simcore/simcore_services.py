@@ -16,7 +16,12 @@ from .helpers.utils_docker import get_service_published_port
 log = logging.getLogger(__name__)
 
 SERVICES_TO_SKIP = ["sidecar", "postgres", "redis", "rabbit"]
-SERVICE_HEALTHCHECK_ENTRYPOINT = {"director-v2": "/"}
+SERVICE_PUBLISHED_PORT = {}
+SERVICE_HEALTHCHECK_ENTRYPOINT = {
+    "director-v2": "/",
+    "dask-scheduler": "/health",
+    "dask-sidecar": "/health",
+}
 
 
 @pytest.fixture(scope="module")
@@ -30,7 +35,7 @@ def services_endpoint(
         assert f"{stack_name}_{service}" in docker_stack["services"]
         if not service in SERVICES_TO_SKIP:
             endpoint = URL(
-                f"http://127.0.0.1:{get_service_published_port(service, [8080, 8000])}"
+                f"http://127.0.0.1:{get_service_published_port(service, [8080, 8000, 8787])}"
             )
             services_endpoint[service] = endpoint
     return services_endpoint
@@ -42,7 +47,7 @@ async def simcore_services(services_endpoint: Dict[str, URL], monkeypatch) -> No
     # waits for all services to be responsive
     wait_tasks = [
         wait_till_service_responsive(
-            f"{endpoint}{SERVICE_HEALTHCHECK_ENTRYPOINT.get(service, '/v0/')}"
+            URL(f"{endpoint}{SERVICE_HEALTHCHECK_ENTRYPOINT.get(service, '/v0/')}")
         )
         for service, endpoint in services_endpoint.items()
     ]
@@ -53,6 +58,17 @@ async def simcore_services(services_endpoint: Dict[str, URL], monkeypatch) -> No
         env_prefix = service.upper().replace("-", "_")
         monkeypatch.setenv(f"{env_prefix}_HOST", endpoint.host)
         monkeypatch.setenv(f"{env_prefix}_PORT", str(endpoint.port))
+
+
+@pytest.fixture(scope="function")
+async def dask_scheduler_service(simcore_services, monkeypatch) -> None:
+    # the dask scheduler has a UI for the dashboard and a secondary port for the API
+    # simcore_services fixture already ensure the dask-scheduler is up and running
+    dask_scheduler_api_port = get_service_published_port(
+        "dask-scheduler", target_ports=[8786]
+    )
+    # override the port
+    monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{dask_scheduler_api_port}")
 
 
 # HELPERS --
