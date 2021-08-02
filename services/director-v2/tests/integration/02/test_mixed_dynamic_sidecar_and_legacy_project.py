@@ -37,7 +37,7 @@ SERVICES_ARE_READY_TIMEOUT = 10 * 60
 # FIXTURES
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def minimal_configuration(
     dy_static_file_server_service: Dict,
     dy_static_file_server_dynamic_sidecar_service: Dict,
@@ -72,6 +72,7 @@ def uuid_dynamic_sidecar_compose() -> str:
 
 @pytest.fixture
 async def dy_static_file_server_project(
+    minimal_configuration: None,
     project: Callable,
     redis_service: RedisConfig,
     postgres_db: sa.engine.Engine,
