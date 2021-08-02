@@ -8,6 +8,7 @@ import logging
 import os
 from copy import deepcopy
 from pathlib import Path
+from pprint import pformat
 from typing import Any, Dict, Iterator
 
 import dotenv
@@ -114,9 +115,9 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
 def client(loop: asyncio.AbstractEventLoop, mock_env: None) -> TestClient:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
-
-    # NOTE: using a contextmanagers ensures
-    # on_startup and on_shutdown events run
+    print("Application settings\n", pformat(settings))
+    # NOTE: this way we ensure the events are run in the application
+    # since it starts the app on a test server
     with TestClient(app, raise_server_exceptions=True) as client:
         yield client
 
