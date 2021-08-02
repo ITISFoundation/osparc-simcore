@@ -261,7 +261,7 @@ async def request_retrieve_dyn_service(
 @log_decorator(logger=log)
 async def start_service(
     app: web.Application,
-    user_id: str,
+    user_id: PositiveInt,
     project_id: str,
     service_key: str,
     service_version: str,
@@ -304,7 +304,7 @@ async def start_service(
 @log_decorator(logger=log)
 async def get_services(
     app: web.Application,
-    user_id: Optional[str] = None,
+    user_id: Optional[PositiveInt] = None,
     project_id: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     params = {}
@@ -361,7 +361,7 @@ async def list_running_dynamic_services(
 @log_decorator(logger=log)
 async def stop_services(
     app: web.Application,
-    user_id: Optional[str] = None,
+    user_id: Optional[PositiveInt] = None,
     project_id: Optional[str] = None,
     save_state: Optional[bool] = True,
 ) -> None:

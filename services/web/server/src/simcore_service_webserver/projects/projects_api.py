@@ -27,6 +27,7 @@ from models_library.projects_state import (
     RunningState,
 )
 from projects_utils import extract_dns_without_default_port
+from pydantic.types import PositiveInt
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
@@ -129,7 +130,7 @@ async def get_project_for_user(
 
 
 async def start_project_interactive_services(
-    request: web.Request, project: Dict, user_id: str
+    request: web.Request, project: Dict, user_id: PositiveInt
 ) -> None:
     # first get the services if they already exist
     log.debug(
@@ -277,7 +278,7 @@ async def remove_project_interactive_services(
                 # here director exceptions are suppressed. in case the service is not found to preserve old behavior
                 await director_v2.stop_services(
                     app=app,
-                    user_id=str(user_id),
+                    user_id=user_id,
                     project_id=project_uuid,
                     save_state=not await is_user_guest(app, user_id)
                     if user_id
