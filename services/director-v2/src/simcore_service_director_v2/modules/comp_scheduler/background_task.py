@@ -26,7 +26,7 @@ async def scheduler_task(scheduler: BaseCompScheduler) -> None:
         except CancelledError:
             logger.info("scheduler task cancelled")
             raise
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             logger.exception(
                 "Unexpected error in scheduler task, restarting scheduler now..."
             )
