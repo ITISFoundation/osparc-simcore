@@ -163,8 +163,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
     },
 
     _applyIcon: function(value, old) {
-      const iconLayout = this.getChildControl("icon");
-      const image = iconLayout.getChildControl("image");
+      const image = this.getChildControl("icon").getChildControl("image");
       image.set({
         source: value
       });
@@ -174,17 +173,22 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
         "loaded"
       ].forEach(eventName => {
         image.addListener(eventName, () => {
-          let maxHeight = this.self().ITEM_HEIGHT - 2*this.self().PADDING;
-          // eslint-disable-next-line no-underscore-dangle
-          this._mainLayout._getChildren().forEach(child => {
-            if (child.getSubcontrolId() !== "icon" && child.getBounds()) {
-              maxHeight -= (child.getBounds().height + 6);
-            }
-          });
-          iconLayout.setMaxHeight(maxHeight);
-          iconLayout.recheckSize();
+          this.__fitIconHeight();
         }, this);
       });
+    },
+
+    __fitIconHeight: function() {
+      const iconLayout = this.getChildControl("icon");
+      let maxHeight = this.self().ITEM_HEIGHT - 2*this.self().PADDING;
+      // eslint-disable-next-line no-underscore-dangle
+      this._mainLayout._getChildren().forEach(child => {
+        if (child.getSubcontrolId() !== "icon" && child.getBounds()) {
+          maxHeight -= (child.getBounds().height + 6);
+        }
+      });
+      iconLayout.setMaxHeight(maxHeight);
+      iconLayout.recheckSize();
     },
 
     /**
