@@ -40,7 +40,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
         task = asyncio.create_task(
             scheduler_task(scheduler), name="comp. services scheduler"
         )
-        app.state.dask_scheduler_task = task
+        app.state.scheduler_task = task
         logger.info("Computational services Scheduler started")
 
     return start_scheduler
