@@ -17,7 +17,7 @@ from ...models.schemas.dynamic_services import (
     ServiceState,
     ServiceType,
 )
-from .docker_states import TASK_STATES_ALL, TASK_STATES_RUNNING, extract_task_state
+from .docker_states import TASK_STATES_RUNNING, extract_task_state
 from .errors import DynamicSidecarError, GenericDockerError
 
 NO_PENDING_OVERWRITE = {
