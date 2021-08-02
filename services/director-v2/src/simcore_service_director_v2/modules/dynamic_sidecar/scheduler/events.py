@@ -169,11 +169,14 @@ class ServicesInspect(DynamicSchedulerEvent):
             Dict[str, Any]
         ] = await dynamic_sidecar_client.containers_inspect(dynamic_sidecar_endpoint)
         if containers_inspect is None:
-            # this means that the service was degrated and we need to do something?
-            scheduler_data.dynamic_sidecar.status.update_failing_status(
-                f"Could not get containers_inspect for {scheduler_data.service_name}. "
-                "Ask and admin to check director logs for details."
+            # After the service creation it takes a bit of time for the container to start
+            # If the same message appears in the log multiple times in a row (for the same
+            # service) something might be wrong with the service.
+            logger.warning(
+                "No container present for %s. Usually not an issue.",
+                scheduler_data.service_name,
             )
+            return
 
         # parse and store data from container
         scheduler_data.dynamic_sidecar.containers_inspect = parse_containers_inspect(
