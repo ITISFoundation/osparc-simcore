@@ -26,11 +26,11 @@ from models_library.projects_state import (
     ProjectStatus,
     RunningState,
 )
+from projects_utils import extract_dns_without_default_port
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
-from yarl import URL
 
 from .. import director_v2
 from ..director_v2 import _DirectorServiceError
@@ -128,11 +128,6 @@ async def get_project_for_user(
 #     return updated_project
 
 
-def _extract_dns_without_default_port(url: URL) -> str:
-    port = "" if url.port == 80 else f":{url.port}"
-    return f"{url.host}{port}"
-
-
 async def start_project_interactive_services(
     request: web.Request, project: Dict, user_id: str
 ) -> None:
@@ -165,7 +160,7 @@ async def start_project_interactive_services(
             service_key=service["key"],
             service_version=service["version"],
             service_uuid=service_uuid,
-            request_dns=_extract_dns_without_default_port(request.url),
+            request_dns=extract_dns_without_default_port(request.url),
             request_scheme=request.url.scheme,
         )
         for service_uuid, service in project_needed_services.items()
@@ -352,7 +347,7 @@ async def add_project_node(
             service_key=service_key,
             service_version=service_version,
             service_uuid=node_uuid,
-            request_dns=_extract_dns_without_default_port(request.url),
+            request_dns=extract_dns_without_default_port(request.url),
             request_scheme=request.url.scheme,
         )
     return node_uuid
