@@ -120,7 +120,6 @@ async def create_dynamic_service(
     if not await is_dynamic_service_running(
         service.node_uuid, dynamic_services_settings.DYNAMIC_SIDECAR
     ):
-        # services where successfully started and they observed
         scheduler_data = SchedulerData.from_http_request(
             service=service,
             simcore_service_labels=simcore_service_labels,
