@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
+import asyncio
 from typing import Any, Dict
 from uuid import uuid4
 
@@ -84,7 +85,7 @@ def test_local_dask_cluster_through_client(dask_client: DaskClient):
 
 
 @pytest.mark.parametrize("runtime_requirements", ["cpu", "gpu", "mpi", "gpu:mpi"])
-def test_send_computation_task(
+async def test_send_computation_task(
     dask_client: DaskClient,
     mocked_dask_scheduler: LocalCluster,
     runtime_requirements: str,
@@ -102,17 +103,13 @@ def test_send_computation_task(
         assert n_id == f"{node_id}"
         return 123
 
-    mocker.patch(
-        "simcore_service_director_v2.modules.dask_client.comp_sidecar_fct",
-        fake_sidecar_fct,
-    )
-
     # start a computation
     dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
         single_tasks=[fake_task],
         callback=mocked_done_callback_fct,
+        remote_fct=fake_sidecar_fct,
     )
 
     # we have 1 future in the map now
@@ -125,7 +122,7 @@ def test_send_computation_task(
     assert task_result == 123
     assert future.key == job_id
     mocked_done_callback_fct.assert_called_once()
-    mocked_done_callback_fct.reset()
+    mocked_done_callback_fct.reset_mock()
 
     # start another computation that will be aborted
     dask_client.send_computation_tasks(
@@ -133,6 +130,7 @@ def test_send_computation_task(
         project_id=project_id,
         single_tasks=[fake_task],
         callback=mocked_done_callback_fct,
+        remote_fct=fake_sidecar_fct,
     )
 
     # we have 2 futures in the map now
@@ -142,4 +140,5 @@ def test_send_computation_task(
     assert future.key == job_id
     dask_client.abort_computation_tasks([job_id])
     assert future.cancelled() == True
+    await asyncio.sleep(2)
     mocked_done_callback_fct.assert_called_once()
