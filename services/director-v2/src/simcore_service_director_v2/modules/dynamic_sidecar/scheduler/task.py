@@ -65,7 +65,7 @@ async def _apply_observation_cycle(
         logger.warning(
             "Removing service %s from observation", scheduler_data.service_name
         )
-        await scheduler.remove_service_to_observe(
+        await scheduler.remove_service(
             node_uuid=scheduler_data.node_uuid,
             save_state=scheduler_data.dynamic_sidecar.can_save_state,
         )
@@ -116,7 +116,7 @@ class DynamicSidecarsScheduler:
         self._inverse_search_mapping: Dict[UUID, str] = dict()
         self._scheduler_task: Optional[Task] = None
 
-    async def add_service_to_observe(self, scheduler_data: SchedulerData) -> None:
+    async def add_service(self, scheduler_data: SchedulerData) -> None:
         """Invoked before the service is started
 
         Because we do not have all items require to compute the service_name the node_uuid is used to
@@ -147,7 +147,7 @@ class DynamicSidecarsScheduler:
             )
             logger.debug("Added service '%s' to observe", scheduler_data.service_name)
 
-    async def remove_service_to_observe(
+    async def remove_service(
         self, node_uuid: NodeID, save_state: Optional[bool]
     ) -> None:
         """Handles the removal cycle of the services, saving states etc..."""
@@ -345,7 +345,7 @@ class DynamicSidecarsScheduler:
                 service_labels_stored_data=service_to_observe,
                 port=dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
             )
-            await self.add_service_to_observe(scheduler_data)
+            await self.add_service(scheduler_data)
 
     async def shutdown(self):
         logging.info("Shutting down dynamic-sidecar scheduler")

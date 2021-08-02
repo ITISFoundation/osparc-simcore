@@ -127,7 +127,7 @@ async def create_dynamic_service(
             request_dns=x_dynamic_sidecar_request_dns,
             request_scheme=x_dynamic_sidecar_request_scheme,
         )
-        await scheduler.add_service_to_observe(scheduler_data)
+        await scheduler.add_service(scheduler_data)
 
     return cast(DynamicServiceOut, await scheduler.get_stack_status(service.node_uuid))
 
@@ -169,7 +169,7 @@ async def stop_dynamic_service(
 ) -> Union[None, RedirectResponse]:
 
     try:
-        await scheduler.remove_service_to_observe(node_uuid, save_state)
+        await scheduler.remove_service(node_uuid, save_state)
     except DynamicSidecarNotFoundError:
         # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0

@@ -95,16 +95,14 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
         side_effect=get_stack_status,
     )
 
-    # MOCKING remove_service_to_observe
-    def remove_service_to_observe(
-        node_uuid: NodeID, save_state: Optional[bool]
-    ) -> None:
+    # MOCKING remove_service
+    def remove_service(node_uuid: NodeID, save_state: Optional[bool]) -> None:
         if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
             raise DynamicSidecarNotFoundError(node_uuid)
 
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler.remove_service_to_observe",
-        side_effect=remove_service_to_observe,
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler.remove_service",
+        side_effect=remove_service,
     )
 
 
