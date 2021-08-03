@@ -37,8 +37,9 @@ ServiceParams = namedtuple("ServiceParams", "service, service_labels, exp_status
 
 
 @pytest.fixture
-def minimal_director_config(project_env_devel_environment, monkeypatch) -> None:
+def minimal_config(project_env_devel_environment, monkeypatch) -> None:
     """set a minimal configuration for testing the director connection only"""
+    monkeypatch.setenv("SC_BOOT_MODE", "default")
     monkeypatch.setenv("DIRECTOR_ENABLED", "1")
     monkeypatch.setenv("POSTGRES_ENABLED", "0")
     monkeypatch.setenv("CELERY_ENABLED", "0")
@@ -136,7 +137,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
     ],
 )
 async def test_create_dynamic_services(
-    minimal_director_config: None,
+    minimal_config: None,
     mocked_director_v0_service_api,
     docker_swarm: None,
     mocked_director_v2_scheduler: None,
