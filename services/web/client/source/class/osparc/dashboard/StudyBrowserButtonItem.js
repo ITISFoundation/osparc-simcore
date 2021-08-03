@@ -147,7 +147,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "menu-button":
+        case "menu-button": {
+          this.getChildControl("title").set({
+            maxWidth: osparc.dashboard.StudyBrowserButtonBase.ITEM_WIDTH - 2*osparc.dashboard.StudyBrowserButtonBase.PADDING - this.self().MENU_BTN_WIDTH
+          });
           control = new qx.ui.form.MenuButton().set({
             width: this.self().MENU_BTN_WIDTH,
             height: this.self().MENU_BTN_WIDTH,
@@ -160,6 +163,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             right: -2
           });
           break;
+        }
         case "tick-unselected":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16");
           this._add(control, {

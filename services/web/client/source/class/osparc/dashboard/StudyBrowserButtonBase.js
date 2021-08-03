@@ -50,8 +50,15 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
       left: 0
     });
 
-    this.addListener("pointerover", this._onPointerOver, this);
-    this.addListener("pointerout", this._onPointerOut, this);
+    [
+      "pointerover",
+      "focus"
+    ].forEach(e => this.addListener(e, this._onPointerOver, this));
+
+    [
+      "pointerout",
+      "focusout"
+    ].forEach(e => this.addListener(e, this._onPointerOut, this));
   },
 
   statics: {
@@ -98,7 +105,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           control = new qx.ui.basic.Label().set({
             margin: [5, 0],
             font: "title-14",
-            maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING - osparc.dashboard.StudyBrowserButtonItem.MENU_BTN_WIDTH,
+            maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
             maxHeight: 34, // two lines
             rich: true,
             wrap: true,
@@ -163,8 +170,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
     },
 
     _applyIcon: function(value, old) {
-      const iconLayout = this.getChildControl("icon");
-      const image = iconLayout.getChildControl("image");
+      const image = this.getChildControl("icon").getChildControl("image");
       image.set({
         source: value
       });
@@ -174,17 +180,23 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
         "loaded"
       ].forEach(eventName => {
         image.addListener(eventName, () => {
-          let maxHeight = this.self().ITEM_HEIGHT - 2*this.self().PADDING;
-          // eslint-disable-next-line no-underscore-dangle
-          this._mainLayout._getChildren().forEach(child => {
-            if (child.getSubcontrolId() !== "icon" && child.getBounds()) {
-              maxHeight -= (child.getBounds().height + 6);
-            }
-          });
-          iconLayout.setMaxHeight(maxHeight);
-          iconLayout.recheckSize();
+          this.__fitIconHeight();
         }, this);
       });
+    },
+
+    __fitIconHeight: function() {
+      const iconLayout = this.getChildControl("icon");
+      let maxHeight = this.getHeight() - this.getPaddingTop() - this.getPaddingBottom();
+      // eslint-disable-next-line no-underscore-dangle
+      this._mainLayout._getChildren().forEach(child => {
+        if (child.getSubcontrolId() !== "icon" && child.getBounds()) {
+          maxHeight -= (child.getBounds().height + 6);
+        }
+      });
+      iconLayout.getChildControl("image").setMaxHeight(maxHeight);
+      iconLayout.setMaxHeight(maxHeight);
+      iconLayout.recheckSize();
     },
 
     /**
