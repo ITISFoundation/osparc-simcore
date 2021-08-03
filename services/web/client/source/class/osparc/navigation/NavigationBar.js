@@ -64,6 +64,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   events: {
     "dashboardPressed": "qx.event.type.Event",
     "slidesStart": "qx.event.type.Event",
+    "slidesFullStart": "qx.event.type.Event",
     "slidesStop": "qx.event.type.Event"
   },
 
@@ -75,7 +76,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     pageContext: {
-      check: ["dashboard", "workbench", "slideshow"],
+      check: ["dashboard", "workbench", "slideshow", "fullSlideshow"],
       nullable: false,
       apply: "_applyPageContext"
     }
@@ -94,7 +95,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     PAGE_CONTEXT: {
       0: "dashboard",
       1: "workbench",
-      2: "slideshow"
+      2: "slideshow",
+      3: "fullSlideshow"
     }
   },
 
@@ -245,6 +247,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "workbench":
         case "slideshow":
+        case "fullSlideshow":
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
           this.__resetSlidesBtnsVis(true);
@@ -255,11 +258,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
     __resetSlidesBtnsVis: function() {
       const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
-      const context = ["workbench", "slideshow"].includes(this.getPageContext());
+      const context = ["workbench", "slideshow", "fullSlideshow"].includes(this.getPageContext());
       if (areSlidesEnabled && context) {
         const study = this.getStudy();
         if (study && Object.keys(study.getUi().getSlideshow()).length) {
-          if (this.getPageContext() === "slideshow") {
+          if (["slideshow", "fullSlideshow"].inclues(this.getPageContext())) {
             this.getChildControl("slideshow-start").exclude();
             this.getChildControl("slideshow-stop").show();
           } else if (this.getPageContext() === "workbench") {
@@ -274,12 +277,19 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __createSlideStartBtn: function() {
-      const startBtn = new qx.ui.form.Button(this.tr("Guided Mode"), "@FontAwesome5Solid/caret-square-right/16").set({
+      const startBtn = new qx.ui.form.SplitButton(this.tr("Guided Mode"), "@FontAwesome5Solid/caret-square-right/16").set({
         ...this.self().BUTTON_OPTIONS
       });
       startBtn.addListener("execute", () => {
         this.fireEvent("slidesStart");
       }, this);
+      const splitButtonMenu = new qx.ui.menu.Menu();
+      const startFullButton = new qx.ui.menu.Button(this.tr("Full Guided Mode"));
+      startFullButton.addListener("execute", () => {
+        this.fireEvent("slidesFullStart");
+      });
+      splitButtonMenu.add(startFullButton);
+      startBtn.setMenu(splitButtonMenu);
       return startBtn;
     },
 

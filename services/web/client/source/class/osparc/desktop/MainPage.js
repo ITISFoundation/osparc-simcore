@@ -96,6 +96,13 @@ qx.Class.define("osparc.desktop.MainPage", {
         }
       }, this);
 
+      navBar.addListener("slidesFullStart", () => {
+        if (this.__studyEditor) {
+          navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[3]);
+          this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[3]);
+        }
+      }, this);
+
       navBar.addListener("slidesStop", () => {
         if (this.__studyEditor) {
           navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
@@ -281,17 +288,12 @@ qx.Class.define("osparc.desktop.MainPage", {
       osparc.data.Resources.fetch("studies", "close", params);
     },
 
-    __syncStudyEditor: function(pageContext) {
+    __syncStudyEditor: function(pageContext = "workbench") {
       const studyEditor = this.__studyEditor;
       const study = studyEditor.getStudy();
       this.__navBar.setStudy(study);
-      if (pageContext === "slideshow") {
-        this.__navBar.setPageContext("slideshow");
-        studyEditor.setPageContext("slideshow");
-      } else {
-        this.__navBar.setPageContext("workbench");
-        studyEditor.setPageContext("workbench");
-      }
+      this.__navBar.setPageContext(pageContext);
+      studyEditor.setPageContext(pageContext);
 
       this.__studyEditor.addListener("forceBackToDashboard", () => {
         this.__showDashboard();

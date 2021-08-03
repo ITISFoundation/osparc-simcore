@@ -71,7 +71,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     pageContext: {
-      check: ["workbench", "slideshow"],
+      check: ["workbench", "slideshow", "fullSlideshow"],
       nullable: false,
       apply: "_applyPageContext"
     }
@@ -144,6 +144,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
           switch (this.getPageContext()) {
             case "slideshow":
+            case "fullSlideshow":
               this.__slideshowView.startSlides();
               break;
             default:
@@ -382,6 +383,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__workbenchView.nodeSelected(this.getStudy().getUi().getCurrentNodeId());
           break;
         case "slideshow":
+        case "fullSlideshow":
           this.__viewsStack.setSelection([this.__slideshowView]);
           this.__slideshowView.startSlides();
           break;
