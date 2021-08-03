@@ -28,7 +28,7 @@ from .security_decorators import permission_required
 log = logging.getLogger(__file__)
 
 
-class _DirectorServiceError(Exception):
+class DirectorServiceError(Exception):
     """Basic exception for errors raised by director"""
 
     def __init__(self, status: int, reason: str):
@@ -60,17 +60,17 @@ async def _request_director_v2(
             )
 
             if response.status != expected_status.status_code:
-                raise _DirectorServiceError(response.status, payload)
+                raise DirectorServiceError(response.status, payload)
 
             return payload
 
     except TimeoutError as err:
-        raise _DirectorServiceError(
+        raise DirectorServiceError(
             web.HTTPServiceUnavailable.status_code,
             reason=f"request to director-v2 timed-out: {err}",
         ) from err
     except ClientError as err:
-        raise _DirectorServiceError(
+        raise DirectorServiceError(
             web.HTTPServiceUnavailable.status_code,
             reason=f"request to director-v2 service unexpected error {err}",
         ) from err
@@ -109,7 +109,7 @@ async def create_or_update_pipeline(
         )
         return computation_task_out
 
-    except _DirectorServiceError as exc:
+    except DirectorServiceError as exc:
         log.error("could not create pipeline from project %s: %s", project_id, exc)
 
 
@@ -130,7 +130,7 @@ async def get_computation_task(
         )
         task_out = ComputationTask.parse_obj(computation_task_out_dict)
         return task_out
-    except _DirectorServiceError as exc:
+    except DirectorServiceError as exc:
         if exc.status == web.HTTPNotFound.status_code:
             # the pipeline might not exist and that is ok
             return
@@ -188,7 +188,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
         return web.json_response(
             data=wrap_as_envelope(data=data), status=web.HTTPCreated.status_code
         )
-    except _DirectorServiceError as exc:
+    except DirectorServiceError as exc:
         return web.json_response(
             data=wrap_as_envelope(error=exc.reason), status=exc.status
         )
@@ -221,7 +221,7 @@ async def stop_pipeline(request: web.Request) -> web.Response:
         return web.json_response(
             data=wrap_as_envelope(data=data), status=web.HTTPNoContent.status_code
         )
-    except _DirectorServiceError as exc:
+    except DirectorServiceError as exc:
         return web.json_response(
             data=wrap_as_envelope(error=exc.reason), status=exc.status
         )
@@ -248,7 +248,7 @@ async def request_retrieve_dyn_service(
         await _request_director_v2(
             app, "POST", backend_url, data=body, timeout=client_timeout
         )
-    except _DirectorServiceError as exc:
+    except DirectorServiceError as exc:
         log.warning(
             "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s:%s]",
             service_uuid,

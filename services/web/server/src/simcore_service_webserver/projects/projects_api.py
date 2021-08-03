@@ -33,7 +33,6 @@ from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import director_v2
-from ..director_v2 import _DirectorServiceError
 from ..resource_manager.websocket_manager import (
     PROJECT_ID_KEY,
     UserSessionID,
@@ -274,7 +273,7 @@ async def remove_project_interactive_services(
                 )
 
             # save the state if the user is not a guest. if we do not know we save in any case.
-            with suppress(_DirectorServiceError):
+            with suppress(director_v2.DirectorServiceError):
                 # here director exceptions are suppressed. in case the service is not found to preserve old behavior
                 await director_v2.stop_services(
                     app=app,
