@@ -1,13 +1,13 @@
 import logging
 import traceback
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import httpx
 from fastapi import FastAPI
 
 from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.dynamic_services import SchedulerData
-from .errors import DynamicSchedulerException
+from .errors import DynamicSchedulerException, DynamicSidecarNetworkError
 
 logger = logging.getLogger(__name__)
 
@@ -68,26 +68,27 @@ class DynamicSidecarClient:
         except httpx.HTTPError:
             return False
 
-    async def containers_inspect(
-        self, dynamic_sidecar_endpoint: str
-    ) -> Optional[Dict[str, Any]]:
-        """returns: None in case of error, otherwise a dict will be returned"""
+    async def containers_inspect(self, dynamic_sidecar_endpoint: str) -> Dict[str, Any]:
+        """
+        returns dict containing docker inspect result form
+        all dynamic-sidecar started containers
+        """
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:
                 response = await client.get(url=url)
             if response.status_code != 200:
-                logging.warning(
-                    "error during request status=%s, body=%s",
-                    response.status_code,
-                    response.text,
+                message = (
+                    f"error during request status={response.status_code}, "
+                    f"body={response.text}"
                 )
-                return None
+                logging.warning(message)
+                raise DynamicSidecarNetworkError(message)
 
             return response.json()
         except httpx.HTTPError:
             log_httpx_http_error(url, "GET", traceback.format_exc())
-            return None
+            raise
 
     async def containers_docker_status(
         self, dynamic_sidecar_endpoint: str

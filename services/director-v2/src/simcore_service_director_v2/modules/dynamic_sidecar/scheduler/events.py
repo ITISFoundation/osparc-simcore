@@ -3,6 +3,7 @@ from collections import deque
 from pprint import pformat
 from typing import Any, Deque, Dict, List, Optional, Type
 
+import httpx
 from fastapi import FastAPI
 
 from ....core.settings import DynamicSidecarSettings
@@ -27,6 +28,7 @@ from ..docker_service_specs import (
     get_dynamic_sidecar_spec,
     merge_settings_before_use,
 )
+from ..errors import DynamicSidecarNetworkError
 from .abc import DynamicSchedulerEvent
 
 logger = logging.getLogger(__name__)
@@ -170,10 +172,13 @@ class GetStatus(DynamicSchedulerEvent):
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
-        containers_inspect: Optional[
-            Dict[str, Any]
-        ] = await dynamic_sidecar_client.containers_inspect(dynamic_sidecar_endpoint)
-        if containers_inspect is None:
+        try:
+            containers_inspect: Dict[
+                str, Any
+            ] = await dynamic_sidecar_client.containers_inspect(
+                dynamic_sidecar_endpoint
+            )
+        except (httpx.HTTPError, DynamicSidecarNetworkError):
             # After the service creation it takes a bit of time for the container to start
             # If the same message appears in the log multiple times in a row (for the same
             # service) something might be wrong with the service.

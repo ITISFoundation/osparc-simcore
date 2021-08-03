@@ -27,3 +27,7 @@ class DynamicSchedulerException(DirectorException):
     Used to signal that something was wrong with during
     the service's observation.
     """
+
+
+class DynamicSidecarNetworkError(DirectorException):
+    """Used to signal that there was an issue with a request"""
