@@ -62,6 +62,16 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "running":
           return "@FontAwesome5Solid/circle-notch/12";
 
+        // outputs
+        case "busy":
+          return "@FontAwesome5Solid/circle-notch/12";
+        case "out-of-date":
+          return "@FontAwesome5Solid/exclamation-circle/12";
+          /*
+        case "up-to-date":
+          return "@FontAwesome5Solid/check/12";
+          */
+
         default:
           return "";
       }
@@ -94,7 +104,7 @@ qx.Class.define("osparc.utils.StatusUI", {
 
     getColor: function(state) {
       switch (state) {
-        // computationals
+        // computationals "running"
         case "UNKNOWN":
         case "NOT_STARTED":
           return "text";
@@ -109,7 +119,7 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "ABORTED":
           return "failed-red";
 
-        // dynamics
+        // dynamics "interactive"
         case "idle":
           return "text";
         case "ready":
@@ -127,6 +137,15 @@ qx.Class.define("osparc.utils.StatusUI", {
           return "busy-orange";
         case "up-to-date":
           return "ready-green";
+
+        // outputs
+        case "busy":
+        case "out-of-date":
+          return "busy-orange";
+          /*
+        case "up-to-date":
+          return "ready-green";
+          */
 
         default:
           return "text";
