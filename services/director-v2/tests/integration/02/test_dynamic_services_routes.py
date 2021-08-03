@@ -21,6 +21,7 @@ from simcore_service_director_v2.models.schemas.constants import (
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
 )
+from utils import ensure_network_cleanup
 
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 20
 SERVICE_IS_READY_TIMEOUT = 2 * 60
@@ -41,43 +42,6 @@ def minimal_configuration(
 @pytest.fixture
 def node_uuid() -> str:
     return str(uuid4())
-
-
-@pytest.fixture
-def network_name() -> str:
-    return "test_swarm_network_name"
-
-
-@pytest.fixture
-async def ensure_swarm_and_networks(network_name: str, docker_swarm: None) -> None:
-    """
-    Make sure to always have a docker swarm network.
-    If one is not present crete one. There can not be more then one.
-    """
-
-    async with aiodocker.Docker() as docker_client:
-        # if network dose not exist create and remove it
-        create_and_remove_network = True
-        for network_data in await docker_client.networks.list():
-            if network_data["Name"] == network_name:
-                create_and_remove_network = False
-                break
-
-        if create_and_remove_network:
-            network_config = {
-                "Name": network_name,
-                "Driver": "overlay",
-                "Attachable": True,
-                "Internal": False,
-                "Scope": "swarm",
-            }
-            docker_network = await docker_client.networks.create(network_config)
-
-        yield
-
-        if create_and_remove_network:
-            network = await docker_client.networks.get(docker_network.id)
-            assert await network.delete() is True
 
 
 @pytest.fixture
@@ -155,22 +119,7 @@ async def ensure_services_stopped(start_request_data: Dict[str, Any]) -> None:
                 delete_result = await docker_client.services.delete(service_name)
                 assert delete_result is True
 
-        network_names = {x["Name"] for x in await docker_client.networks.list()}
-
-        for network_name in network_names:
-            if project_id in network_name:
-                network = await docker_client.networks.get(network_name)
-                try:
-                    # if there is an error this cleansup the environament
-                    # useful for development, avoids leaving too many
-                    # hanging networks
-                    delete_result = await network.delete()
-                    assert delete_result is True
-                except aiodocker.exceptions.DockerError as e:
-                    # if the tests succeeds the network will nto exists
-                    str_error = str(e)
-                    assert "network" in str_error
-                    assert "not found" in str_error
+        await ensure_network_cleanup(docker_client, project_id)
 
 
 async def _patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> None:
