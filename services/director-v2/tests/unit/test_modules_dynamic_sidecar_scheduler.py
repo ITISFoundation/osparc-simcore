@@ -30,7 +30,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar import module_setup
 from simcore_service_director_v2.modules.dynamic_sidecar.client_api import (
     get_url,
     setup_api_client,
-    shutdown_api_client,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarError,
@@ -177,7 +176,6 @@ async def mocked_app(
         yield app
 
     finally:
-        await shutdown_api_client(app)
         await shutdown_scheduler(app)
 
 

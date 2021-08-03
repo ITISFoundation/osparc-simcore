@@ -52,7 +52,7 @@ def parse_containers_inspect(
 
 
 class CreateSidecars(DynamicSchedulerEvent):
-    """create the dynamic-sidecar and the proxy"""
+    """Created the dynamic-sidecar and the proxy."""
 
     @classmethod
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
@@ -152,7 +152,10 @@ class CreateSidecars(DynamicSchedulerEvent):
 
 class GetStatus(DynamicSchedulerEvent):
     """
-    Inspects the dynamic-sidecar, and store some information about the contaiers.
+    Triggered after CreateSidecars.action() runs.
+    Requests the dynamic-sidecar for all "self started running containers"
+    docker inspect result.
+    Parses and stores the result for usage by other components.
     """
 
     @classmethod
@@ -187,7 +190,11 @@ class GetStatus(DynamicSchedulerEvent):
 
 
 class CreateUserServices(DynamicSchedulerEvent):
-    """Runs the docker-compose up command when and composes the spec if a service requires it"""
+    """
+    Triggered when the dynamic-sidecar is responding to http requests.
+    The docker compose spec for the service is assembled.
+    The dynamic-sidecar is asked to start a service for that service spec.
+    """
 
     @classmethod
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:

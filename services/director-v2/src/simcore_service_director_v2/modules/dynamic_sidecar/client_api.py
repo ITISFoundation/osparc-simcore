@@ -92,7 +92,6 @@ class DynamicSidecarClient:
     async def containers_docker_status(
         self, dynamic_sidecar_endpoint: str
     ) -> Dict[str, Dict[str, str]]:
-        """returns: None in case of error, otherwise a dict will be returned"""
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:
@@ -155,10 +154,6 @@ class DynamicSidecarClient:
 async def setup_api_client(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client setup")
     app.state.dynamic_sidecar_api_client = DynamicSidecarClient(app)
-
-
-async def shutdown_api_client(app: FastAPI) -> None:  # pylint: disable=unused-argument
-    logger.debug("dynamic-sidecar api client shutdown")
 
 
 def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:
