@@ -10,10 +10,9 @@ from aiopg.sa.result import RowProxy
 from aioredlock import Aioredlock
 from servicelib.utils import logged_gather
 
-from .. import users_exceptions
+from .. import director_v2, users_exceptions
 from ..db_models import GroupType
 from ..director.director_exceptions import DirectorException, ServiceNotFoundError
-from ..director_v2 import get_services, stop_service
 from ..groups_api import get_group_from_gid
 from ..projects.projects_api import (
     delete_project_from_db,
@@ -361,7 +360,7 @@ async def _remove_single_orphaned_service(
         )
         logger.info(message)
         try:
-            await stop_service(app, service_uuid, save_state=False)
+            await director_v2.stop_service(app, service_uuid, save_state=False)
         except (ServiceNotFoundError, DirectorException) as err:
             logger.warning("Error while stopping service: %s", err)
         return
@@ -432,14 +431,9 @@ async def remove_orphaned_services(
 
     running_interactive_services: List[Dict[str, Any]] = []
     try:
-        running_interactive_services = await get_services(app)
-    except Exception:  # pylint: disable=broad-except
-        logger.exception(
-            (
-                "Normally this is not an issue. GC could not recover services "
-                "from director-v2, see error for details."
-            )
-        )
+        running_interactive_services = await director_v2.get_services(app)
+    except director_v2.DirectorServiceError:
+        logger.debug(("Could not fetch running_interactive_services"))
 
     logger.info(
         "Will collect the following: %s",
