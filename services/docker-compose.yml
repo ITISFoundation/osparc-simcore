@@ -238,9 +238,8 @@ services:
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    deploy:
-      mode: replicated
-      replicas: 2
+    deploy: &dask-sidecar-deploy
+      mode: global
       endpoint_mode: dnsrr
       resources:
         reservations:
