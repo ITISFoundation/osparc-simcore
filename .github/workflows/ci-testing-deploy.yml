@@ -52,7 +52,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -96,7 +95,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -153,7 +151,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -216,7 +213,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -278,7 +274,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -335,7 +330,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -396,7 +390,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -453,7 +446,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -510,7 +502,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -569,7 +560,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - uses: actions/setup-node@v1
@@ -607,7 +597,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -651,7 +640,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -709,7 +697,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -766,7 +753,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -823,7 +809,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -880,7 +865,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -937,7 +921,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -994,7 +977,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1051,7 +1033,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1109,7 +1090,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1167,7 +1147,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1225,7 +1204,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1283,7 +1261,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1341,7 +1318,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1399,7 +1375,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1457,7 +1432,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1515,7 +1489,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1573,7 +1546,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1631,7 +1603,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1882,7 +1853,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1956,7 +1926,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -2030,7 +1999,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -2104,7 +2072,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -2159,7 +2126,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -2215,7 +2181,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -2301,7 +2266,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -2441,7 +2405,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
-
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: set owner variable
