@@ -1,4 +1,3 @@
-from abc import abstractclassmethod
 from typing import Dict
 
 from _pytest.monkeypatch import MonkeyPatch
