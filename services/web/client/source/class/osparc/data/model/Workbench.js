@@ -367,10 +367,18 @@ qx.Class.define("osparc.data.model.Workbench", {
       let node = this.getNode(nodeId);
       if (node) {
         node.removeNode();
+
         const isTopLevel = Object.prototype.hasOwnProperty.call(this.__rootNodes, nodeId);
         if (isTopLevel) {
           delete this.__rootNodes[nodeId];
         }
+
+        // remove it from slideshow
+        const study = osparc.store.Store.getInstance().getCurrentStudy();
+        if (nodeId in study.getUi().getSlideshow()) {
+          delete study.getUi().getSlideshow()[nodeId];
+        }
+
         this.fireEvent("nNodesChanged");
         return true;
       }
