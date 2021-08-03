@@ -93,6 +93,7 @@ qx.Class.define("osparc.Application", {
       this.__loadCommonCss();
 
       this.__updateTabName();
+      this.__updateFavicon();
       this.__checkCookiesAccepted();
 
       // onload, load, DOMContentLoaded, appear... didn't work
@@ -254,6 +255,16 @@ qx.Class.define("osparc.Application", {
         });
     },
 
+    __updateFavicon: function() {
+      let link = document.querySelector("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.getElementsByTagName("head")[0].appendChild(link);
+      }
+      link.href = "resource/osparc/favicon-"+qx.core.Environment.get("product.name")+".png";
+    },
+
     __checkCookiesAccepted: function() {
       osparc.utils.LibVersions.getPlatformName()
         .then(platformName => {
@@ -277,14 +288,6 @@ qx.Class.define("osparc.Application", {
             }
           }
         });
-    },
-
-    __updateFavicon: function() {
-      const link = document.querySelector("link[rel*='icon']") || document.createElement("link");
-      link.type = "image/x-icon";
-      link.rel = "shortcut icon";
-      link.href = "resource/osparc/favicon-osparc.png";
-      document.getElementsByTagName("head")[0].appendChild(link);
     },
 
     __restart: function() {
