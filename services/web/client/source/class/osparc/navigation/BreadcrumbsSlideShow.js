@@ -56,35 +56,13 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
         });
 
         const statusIcon = new qx.ui.basic.Image();
-        node.getStatus().bind("output", statusIcon, "source", {
-          converter: output => {
-            switch (output) {
-              case "up-to-date":
-                return osparc.utils.StatusUI.getIconSource("up-to-date");
-              case "out-of-date":
-                return osparc.utils.StatusUI.getIconSource("modified");
-              case "busy":
-                return osparc.utils.StatusUI.getIconSource("running");
-              case "not-available":
-              default:
-                return osparc.utils.StatusUI.getIconSource();
-            }
-          },
-          onUpdate: (source, target) => (source.getOutput() === "busy") ? target.getContentElement().addClass("rotate") : target.getContentElement().removeClass("rotate")
+        const check = node.isDynamic() ? "interactive" : "output";
+        node.getStatus().bind(check, statusIcon, "source", {
+          converter: output => osparc.utils.StatusUI.getIconSource(output),
+          onUpdate: (source, target) => (["busy", "starting", "pulling", "pending", "connecting"].includes(source.get(check))) ? target.getContentElement().addClass("rotate") : target.getContentElement().removeClass("rotate")
         });
-        node.getStatus().bind("output", statusIcon, "textColor", {
-          converter: output => {
-            switch (output) {
-              case "up-to-date":
-                return osparc.utils.StatusUI.getColor("ready");
-              case "out-of-date":
-              case "busy":
-                return osparc.utils.StatusUI.getColor("modified");
-              case "not-available":
-              default:
-                return osparc.utils.StatusUI.getColor();
-            }
-          }
+        node.getStatus().bind(check, statusIcon, "textColor", {
+          converter: output => osparc.utils.StatusUI.getColor(output)
         }, this);
         // eslint-disable-next-line no-underscore-dangle
         btn._add(statusIcon);

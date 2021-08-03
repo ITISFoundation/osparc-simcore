@@ -138,7 +138,7 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "up-to-date":
           return "ready-green";
 
-        // outputs
+        // output
         case "busy":
         case "out-of-date":
           return "busy-orange";

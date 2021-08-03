@@ -279,18 +279,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         });
       } else {
         this.getNode().getStatus().bind("output", portLabel, "textColor", {
-          converter: output => {
-            switch (output) {
-              case "up-to-date":
-                return osparc.utils.StatusUI.getColor("ready");
-              case "out-of-date":
-              case "busy":
-                return osparc.utils.StatusUI.getColor("modified");
-              case "not-available":
-              default:
-                return osparc.utils.StatusUI.getColor();
-            }
-          }
+          converter: output => osparc.utils.StatusUI.getColor(output)
         });
       }
       label.ui.isInput = isInput;
