@@ -43,7 +43,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       autoDestroy: true,
       caption: this.tr("Service catalog"),
       showMinimize: false,
-      minWidth: 400,
+      minWidth: 490,
       width: this.self().Width,
       minHeight: 400,
       height: this.self().Height,
