@@ -281,7 +281,7 @@ async def _port_forward_service(
 
 
 async def _assert_service_is_available(exposed_port: PositiveInt) -> None:
-    service_address = f"http://localhost:{exposed_port}"
+    service_address = f"http://172.17.0.1:{exposed_port}"
     print(f"checking service @ {service_address}")
 
     async for attempt in tenacity.AsyncRetrying(
