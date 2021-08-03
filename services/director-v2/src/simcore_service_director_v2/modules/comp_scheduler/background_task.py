@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 _DEFAULT_TIMEOUT_S: int = 5
 
 
-async def scheduler_task(scheduler: BaseCompScheduler) -> None:
-    while True:
+async def scheduler_task(scheduler: BaseCompScheduler, run_scheduler: bool) -> None:
+    while run_scheduler:
         try:
             logger.debug("scheduler task running...")
             await scheduler.schedule_all_pipelines()
@@ -36,11 +36,11 @@ async def scheduler_task(scheduler: BaseCompScheduler) -> None:
 
 def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
     async def start_scheduler() -> None:
+        app.state.comp_scheduler_running = run_scheduler = True
         app.state.scheduler = scheduler = await factory.create_from_db(app)
-        task = asyncio.create_task(
-            scheduler_task(scheduler), name="comp. services scheduler"
+        app.state.scheduler_task = asyncio.create_task(
+            scheduler_task(scheduler, run_scheduler), name="comp. services scheduler"
         )
-        app.state.scheduler_task = task
         logger.info("Computational services Scheduler started")
 
     return start_scheduler
@@ -48,6 +48,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
 
 def on_app_shutdown(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
     async def stop_scheduler() -> None:
+        app.state.comp_scheduler_running = False
         task = app.state.scheduler_task
         app.state.scheduler = None
         with suppress(CancelledError):
