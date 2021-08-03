@@ -3,6 +3,7 @@
 # pylint:disable=too-many-arguments
 
 import asyncio
+import os
 from typing import Any, Callable, Dict, Optional
 from uuid import uuid4
 
@@ -230,21 +231,14 @@ async def _assert_stop_service(
     assert result.text == ""
 
 
-async def _run_command(command: str) -> str:
-    """Runs a command and expects to"""
-    proc = await asyncio.create_subprocess_shell(
-        command,
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
-    )
+def _run_command(command: str) -> str:
+    # using asyncio.create_subprocess_shell is slower
+    # and sometimes ir randomly hangs forever
 
-    stdout, _ = await proc.communicate()
-    decoded_stdout = stdout.decode()
-    print(f"'{command}' result:\n{decoded_stdout}")
-    assert proc.returncode == 0, decoded_stdout
-
-    return decoded_stdout
+    print(f"Running: '{command}'")
+    command_result = os.popen(command).read()
+    print(command_result)
+    return command_result
 
 
 async def _port_forward_service(
@@ -259,7 +253,10 @@ async def _port_forward_service(
     if is_legacy:
         # Legacy services are started --endpoint-mode dnsrr, it needs to
         # be changed to vip otherwise the port forward will not work
-        await _run_command(f"docker service update {service_name} --endpoint-mode=vip")
+        result = _run_command(
+            f"docker service update {service_name} --endpoint-mode=vip"
+        )
+        assert "verify: Service converged" in result
     else:
         # For a non legacy service, the service_name points to the dynamic-sidecar,
         # but traffic is handeled by the proxy,
@@ -268,9 +265,10 @@ async def _port_forward_service(
         )
 
     # Finally forward the port on a random assigned port.
-    await _run_command(
+    result = _run_command(
         f"docker service update {target_service} --publish-add :{internal_port}"
     )
+    assert "verify: Service converged" in result
 
     # inspect service and fetch the port
     async with aiodocker.Docker() as docker_client:
