@@ -60,6 +60,11 @@ else
   # 'daemonic processes are not allowed to have children' arises when running the sidecar.cli
   # setting --no-nanny fixes this: see https://github.com/dask/distributed/issues/2142
 
+  num_gpus=$(docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi --list-gpus 2> /dev/null | wc --lines || echo 0)
+  resources="CPU=1"
+  if [ "$num_gpus" -gt 0 ] ; then
+    resources="$resources,GPU=$num_gpus"
+  fi
   echo "$INFO" "Starting as a ${DASK_WORKER_VERSION} -> ${DASK_SCHEDULER_ADDRESS} ..."
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
 
@@ -70,7 +75,8 @@ else
       --reconnect \
       --no-nanny \
       --nthreads 1 \
-      --dashboard-address 8787
+      --dashboard-address 8787 \
+      --resources "$resources"
 
   else
 
@@ -80,7 +86,8 @@ else
       --reconnect \
       --no-nanny \
       --nthreads 1 \
-      --dashboard-address 8787
+      --dashboard-address 8787 \
+      --resources "$resources"
 
   fi
 fi
