@@ -125,4 +125,8 @@ TRACING_ZIPKIN_ENDPOINT: str = os.environ.get(
     "TRACING_ZIPKIN_ENDPOINT", "http://jaeger:9411"
 )
 
+# resources: not taken from servicelib.resources since the director uses a fixed hash of that library
+CPU_RESOURCE_LIMIT_KEY = "SIMCORE_NANO_CPUS_LIMIT"
+MEM_RESOURCE_LIMIT_KEY = "SIMCORE_MEMORY_BYTES_LIMIT"
+
 __all__ = ["APP_CLIENT_SESSION_KEY"]

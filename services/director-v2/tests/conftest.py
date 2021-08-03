@@ -95,7 +95,7 @@ def mock_env(monkeypatch) -> None:
     registry = os.environ.get("DOCKER_REGISTRY", "local")
     image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
 
-    image_name = f"{registry}/dynamic-sidecar:{image_tag}".strip("/")
+    image_name = f"{registry}/dynamic-sidecar:{image_tag}"
 
     logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", image_name)

@@ -23,8 +23,9 @@ qx.Class.define("osparc.About", {
   construct: function() {
     this.base(arguments, this.tr("About"));
     this.set({
-      layout: new qx.ui.layout.VBox(),
-      contentPadding: 20,
+      layout: new qx.ui.layout.VBox(5),
+      maxWidth: this.self().MAX_WIDTH,
+      contentPadding: this.self().PADDING,
       showMaximize: false,
       showMinimize: false,
       resizable: false,
@@ -34,48 +35,115 @@ qx.Class.define("osparc.About", {
     });
     const closeBtn = this.getChildControl("close-button");
     osparc.utils.Utils.setIdToWidget(closeBtn, "aboutWindowCloseBtn");
-    this.__populateEntries();
+
+    this.__buildLayout();
+  },
+
+  statics: {
+    MAX_WIDTH: 320,
+    PADDING: 15
   },
 
   members: {
-    __populateEntries: function() {
-      const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
-      this.__createEntries([platformVersion]);
+    __buildLayout: function() {
+      this.add(new qx.ui.basic.Label(this.tr("oSPARC is built upon a number of open-source \
+      resources - we can't do it all alone! Some of the technologies that we leverage include:")).set({
+        font: "text-14",
+        maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
+        rich: true,
+        wrap: true
+      }));
 
-      const uiVersion = osparc.utils.LibVersions.getUIVersion();
-      this.__createEntries([uiVersion]);
+      const tabView = new qx.ui.tabview.TabView().set({
+        contentPaddingTop: 10,
+        contentPaddingLeft: 0,
+        barPosition: "top"
+      });
+      tabView.getChildControl("pane").setBackgroundColor("material-button-background");
+      this.add(tabView, {
+        flex: 1
+      });
 
-      this.add(new qx.ui.core.Spacer(null, 10));
+      const frontendPage = new qx.ui.tabview.Page(this.tr("Front-end")).set({
+        layout: new qx.ui.layout.VBox(5),
+        backgroundColor: "material-button-background"
+      });
+      const backendPage = new qx.ui.tabview.Page(this.tr("Back-end")).set({
+        layout: new qx.ui.layout.VBox(5),
+        backgroundColor: "material-button-background"
+      });
+      tabView.add(frontendPage);
+      tabView.add(backendPage);
+      this.__populateFrontendEntries(frontendPage);
+      this.__populateBackendEntries(backendPage);
+    },
 
-      const qxCompiler = osparc.utils.LibVersions.getQxCompiler();
-      this.__createEntries([qxCompiler]);
+    __populateFrontendEntries: function(page) {
+      [
+        this.__createEntries([osparc.utils.LibVersions.getPlatformVersion()]),
+        this.__createEntries([osparc.utils.LibVersions.getUIVersion()]),
+        [new qx.ui.core.Spacer(null, 10)],
+        this.__createEntries([osparc.utils.LibVersions.getQxCompiler()]),
+        this.__createEntries(osparc.utils.LibVersions.getQxLibraryInfoMap()),
+        [new qx.ui.core.Spacer(null, 10)],
+        this.__createEntries(osparc.utils.LibVersions.get3rdPartyLibs())
+      ].forEach(entries => {
+        entries.forEach(entry => {
+          page.add(entry);
+        });
+      });
+    },
 
-      const libsInfo = osparc.utils.LibVersions.getQxLibraryInfoMap();
-      this.__createEntries(libsInfo);
-
-      this.add(new qx.ui.core.Spacer(null, 10));
-
-      const libs = osparc.utils.LibVersions.get3rdPartyLibs();
-      this.__createEntries(libs);
+    __populateBackendEntries: function(page) {
+      osparc.utils.LibVersions.getBackendLibs()
+        .then(libs => {
+          libs.forEach(lib => {
+            const entry = this.__createEntry(lib);
+            page.add(entry);
+          });
+        });
     },
 
     __createEntries: function(libs) {
-      for (let i=0; i<libs.length; i++) {
-        const lib = libs[i];
-        this.add(this.__createEntry(lib.name, lib.version, lib.url));
-      }
+      const entries = [];
+      libs.forEach(lib => {
+        entries.push(this.__createEntry(lib));
+      });
+      return entries;
     },
 
-    __createEntry: function(item = "unknown-library", vers = "unknown-version", url) {
-      let entryLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        marginBottom: 4
-      });
+    __createEntry: function(lib) {
+      const label = lib.name || "unknown-library";
+      const version = lib.version || "-";
+      const url = lib.url || null;
+      const thumbnail = lib.thumbnail || null;
 
+      if (thumbnail) {
+        const image = new qx.ui.basic.Image(thumbnail).set({
+          height: 30,
+          maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
+          scale: true,
+          toolTipText: label + (version === "-" ? "" : (" " + version))
+        });
+        image.getContentElement().setStyles({
+          "object-fit": "contain",
+          "object-position": "left"
+        });
+        if (url) {
+          image.set({
+            cursor: "pointer"
+          });
+          image.addListener("tap", () => window.open(url));
+        }
+        return image;
+      }
+
+      const entryLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       let entryLabel = null;
       if (url) {
-        entryLabel = new osparc.ui.basic.LinkLabel(item, url);
+        entryLabel = new osparc.ui.basic.LinkLabel(label, url);
       } else {
-        entryLabel = new qx.ui.basic.Label(item);
+        entryLabel = new qx.ui.basic.Label(label);
       }
       entryLayout.set({
         font: "title-14"
@@ -83,11 +151,10 @@ qx.Class.define("osparc.About", {
       entryLayout.add(entryLabel);
 
       let entryVersion = new qx.ui.basic.Label().set({
-        value: vers,
+        value: version,
         font: "text-14"
       });
       entryLayout.add(entryVersion);
-
       return entryLayout;
     }
   }
