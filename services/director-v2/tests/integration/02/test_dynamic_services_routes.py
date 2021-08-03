@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 pytest_simcore_core_services_selection = ["director"]
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def minimal_configuration(
     dy_static_file_server_dynamic_sidecar_service: Dict,
     simcore_services: None,
@@ -114,6 +114,7 @@ def start_request_data(
 
 @pytest.fixture
 async def test_client(
+    minimal_configuration: None,
     loop: asyncio.BaseEventLoop,
     mock_env: None,
     network_name: str,
@@ -140,7 +141,7 @@ async def test_client(
         yield client
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 async def ensure_services_stopped(start_request_data: Dict[str, Any]) -> None:
     yield
     # ensure service cleanup when done testing
@@ -213,7 +214,10 @@ async def _patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> None:
 
 
 async def test_start_status_stop(
-    test_client: TestClient, node_uuid: str, start_request_data: Dict[str, Any]
+    test_client: TestClient,
+    node_uuid: str,
+    start_request_data: Dict[str, Any],
+    ensure_services_stopped: None,
 ):
     # starting the service
     headers = {
