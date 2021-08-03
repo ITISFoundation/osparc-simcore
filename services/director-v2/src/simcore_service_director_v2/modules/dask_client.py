@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Union
 from uuid import uuid4
 
 from dask.distributed import Client, Future, fire_and_forget
@@ -90,6 +90,12 @@ class DaskClient:
         if remote_fct is None:
             remote_fct = comp_sidecar_fct
 
+        def _from_task_in_to_dask_resource(
+            task: TaskIn,
+        ) -> Dict[str, Union[int, float]]:
+            reqs = task.runtime_requirements.upper().split(":")
+            return {r: 1 for r in reqs}
+
         for task in single_tasks:
             job_id = f"dask_{uuid4()}"
             task_future = self.client.submit(
@@ -99,6 +105,7 @@ class DaskClient:
                 f"{project_id}",
                 f"{task.node_id}",
                 key=job_id,
+                resources=_from_task_in_to_dask_resource(task),
             )
             task_future.add_done_callback(_done_dask_callback)
             self._taskid_to_future_map[job_id] = task_future

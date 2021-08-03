@@ -10,6 +10,7 @@ from uuid import uuid4
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import LocalCluster
+from distributed.deploy.spec import SpecCluster
 from fastapi.applications import FastAPI
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
@@ -18,7 +19,6 @@ from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.schemas.comp_scheduler import TaskIn
 from simcore_service_director_v2.modules.dask_client import DaskClient
 from starlette.testclient import TestClient
-from yarl import URL
 
 
 @pytest.fixture
@@ -52,18 +52,8 @@ def test_dask_client_missing_raises_configuration_error(
 
 
 @pytest.fixture
-def mocked_dask_scheduler(monkeypatch: MonkeyPatch) -> LocalCluster:
-    cluster = LocalCluster(n_workers=2, threads_per_worker=1)
-    scheduler_address = URL(cluster.scheduler_address)
-    monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
-    monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
-    yield cluster
-    cluster.close()
-
-
-@pytest.fixture
 def dask_client(
-    minimal_dask_config: None, mocked_dask_scheduler: LocalCluster, minimal_app: FastAPI
+    minimal_dask_config: None, dask_spec_cluster: SpecCluster, minimal_app: FastAPI
 ) -> DaskClient:
     client = DaskClient.instance(minimal_app)
     assert client
@@ -87,7 +77,6 @@ def test_local_dask_cluster_through_client(dask_client: DaskClient):
 @pytest.mark.parametrize("runtime_requirements", ["cpu", "gpu", "mpi", "gpu:mpi"])
 async def test_send_computation_task(
     dask_client: DaskClient,
-    mocked_dask_scheduler: LocalCluster,
     runtime_requirements: str,
     mocker: MockerFixture,
 ):
