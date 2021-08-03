@@ -262,7 +262,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       if (areSlidesEnabled && context) {
         const study = this.getStudy();
         if (study && Object.keys(study.getUi().getSlideshow()).length) {
-          if (["slideshow", "fullSlideshow"].inclues(this.getPageContext())) {
+          if (["slideshow", "fullSlideshow"].includes(this.getPageContext())) {
             this.getChildControl("slideshow-start").exclude();
             this.getChildControl("slideshow-stop").show();
           } else if (this.getPageContext() === "workbench") {
