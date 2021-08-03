@@ -59,7 +59,15 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
         const check = node.isDynamic() ? "interactive" : "output";
         node.getStatus().bind(check, statusIcon, "source", {
           converter: output => osparc.utils.StatusUI.getIconSource(output),
-          onUpdate: (source, target) => (["busy", "starting", "pulling", "pending", "connecting"].includes(source.get(check))) ? target.getContentElement().addClass("rotate") : target.getContentElement().removeClass("rotate")
+          onUpdate: (source, target) => {
+            const elem = target.getContentElement();
+            const state = source.get(check);
+            if (["busy", "starting", "pulling", "pending", "connecting"].includes(state)) {
+              elem.addClass("rotate");
+            } else {
+              elem.removeClass("rotate");
+            }
+          }
         });
         node.getStatus().bind(check, statusIcon, "textColor", {
           converter: output => osparc.utils.StatusUI.getColor(output)
