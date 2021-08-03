@@ -1146,7 +1146,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-02:
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 02"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1928,7 +1928,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-director-v2-02:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] director-v2 02"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
