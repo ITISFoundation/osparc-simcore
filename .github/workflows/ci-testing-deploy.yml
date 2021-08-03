@@ -1608,6 +1608,7 @@ jobs:
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
+          python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - uses: actions/cache@v2
