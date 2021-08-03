@@ -399,7 +399,7 @@ async def _remove_single_orphaned_service(
             user_id = int(interactive_service.get("user_id", 0))
 
             save_state = not await is_user_guest(app, user_id) if user_id else True
-            await stop_service(app, service_uuid, save_state)
+            await director_v2.stop_service(app, service_uuid, save_state)
         except (ServiceNotFoundError, DirectorException) as err:
             logger.warning("Error while stopping service: %s", err)
 
