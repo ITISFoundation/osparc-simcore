@@ -9,7 +9,6 @@ from uuid import uuid4
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
-from dask.distributed import LocalCluster
 from distributed.deploy.spec import SpecCluster
 from fastapi.applications import FastAPI
 from pytest_mock.plugin import MockerFixture

@@ -4,7 +4,6 @@
 # pylint:disable=no-value-for-parameter
 
 
-import asyncio
 from typing import Dict, Iterator
 
 import aiopg
@@ -15,9 +14,6 @@ from fastapi.applications import FastAPI
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import ConfigurationError
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.modules.comp_scheduler.background_task import (
-    _DEFAULT_TIMEOUT_S,
-)
 from starlette.testclient import TestClient
 
 pytest_simcore_core_services_selection = ["postgres"]
