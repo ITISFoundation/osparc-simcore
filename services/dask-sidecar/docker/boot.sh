@@ -58,14 +58,15 @@ else
 
   #
   # 'daemonic processes are not allowed to have children' arises when running the sidecar.cli
+  # because multi-processing library is used by the sidecar and the nanny does not like it
   # setting --no-nanny fixes this: see https://github.com/dask/distributed/issues/2142
-
-  num_gpus=$(docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi --list-gpus 2> /dev/null | wc --lines || echo 0)
+  num_gpus=$(python -c "from simcore_service_sidecar.utils import num_available_gpus; print(num_available_gpus());")
   resources="CPU=1"
-  if [ "$num_gpus" -gt 0 ] ; then
+  if [ "$num_gpus" -gt 0 ]; then
     resources="$resources,GPU=$num_gpus"
   fi
   echo "$INFO" "Starting as a ${DASK_WORKER_VERSION} -> ${DASK_SCHEDULER_ADDRESS} ..."
+  echo "$INFO" "Worker resources set as: $resources"
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
 
     exec watchmedo auto-restart --recursive --pattern="*.py" -- \
