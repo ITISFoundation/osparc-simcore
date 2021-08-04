@@ -156,4 +156,4 @@ async def test_start_status_stop(
         f"/v2/dynamic_services/{node_uuid}", json=start_request_data
     )
     assert response.status_code == 204, response.text
-    assert response.text is None
+    assert response.text == ""
