@@ -110,7 +110,6 @@ SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),N
 define _docker_compose_build
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,production);\
 pushd services &&\
-docker buildx create --name osparc-builder --use || true &&\
 docker buildx bake \
 	$(if $(findstring -devel,$@),,\
 	$(foreach service, $(SERVICES_LIST),\
@@ -120,16 +119,19 @@ docker buildx bake \
 	)\
 	--set *.output="type=docker,push=false" \
 	--file docker-compose-build.yml $(if $(target),$(target),) &&\
-popd &&\
-docker buildx rm osparc-builder
+popd
 endef
 
+.PHONY: .docker-buildx-builder
+.docker-buildx-builder:
+	# create docker buildkit builder
+	docker buildx create --name osparc-builder --use || true
+
 rebuild: build-nc # alias
-build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
+build build-nc: .docker-buildx-builder .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
 ifeq ($(target),)
 	# Compiling front-end
 	$(MAKE_C) services/web/client compile
-
 	# Building services
 	$(_docker_compose_build)
 else
@@ -142,7 +144,7 @@ endif
 endif
 
 
-build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
+build-devel build-devel-nc: .docker-buildx-builder .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
 ifeq ($(target),)
 	# Building services
 	$(_docker_compose_build)

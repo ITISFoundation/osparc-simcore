@@ -50,11 +50,13 @@ compile: ## qx compiles host' 'source' -> image's 'build-output'
 		--build-arg VCS_REF_CLIENT=${VCS_REF_CLIENT} \
 		--build-arg VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT} \
 		--build-arg VCS_URL=${VCS_URL} \
+		--load \
 		--target=build-client .
+
 
 touch: ## minimal image build with /project/output-build inside
 	# touch /project/output-build such that multi-stage 'services/web/Dockerfile' can build development target (fixes #1097)
-	@docker buildx build --file $(docker_file) --tag $(docker_image) --build-arg tag=${QOOXDOO_KIT_TAG} --target=touch .
+	@docker buildx build --file $(docker_file) --tag $(docker_image) --build-arg tag=${QOOXDOO_KIT_TAG} --load --target=touch .
 
 upgrade: ## upgrade to official version of the tool
 	# upgrading to ${QOOXDOO_KIT_TAG}
