@@ -195,17 +195,19 @@ define _show_endpoints
 set -o allexport; \
 source $(CURDIR)/.env; \
 set +o allexport; \
-separator=------------------------------------------;\
+separator=------------------------------------------------------------------------------------;\
 separator=$${separator}$${separator}$${separator};\
-rows="%-22s | %80s | %12s | %12s\n";\
+rows="%-22s | %90s | %12s | %12s\n";\
 TableWidth=140;\
-printf "%22s | %80s | %12s | %12s\n" Name Endpoint User Password;\
+printf "%22s | %90s | %12s | %12s\n" Name Endpoint User Password;\
 printf "%.$${TableWidth}s\n" "$$separator";\
-printf "$$rows" 'oSparc platform' "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9081";\
-printf "$$rows" 'Postgres DB' "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18080/?pgsql=postgres&username=$${POSTGRES_USER}&db=$${POSTGRES_DB}&ns=public" $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
-printf "$$rows" Portainer "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9000" admin adminadmin;\
-printf "$$rows" Redis-commander "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18081";\
-printf "$$rows" "Docker Registry" "$${REGISTRY_URL}" $${REGISTRY_USER} $${REGISTRY_PW}
+printf "$$rows" 'oSparc platform' 'http://$(get_my_ip).nip.io:9081';\
+printf "$$rows" 'Postgres DB' 'http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username='$${POSTGRES_USER}'&db='$${POSTGRES_DB}'&ns=public' $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
+printf "$$rows" Portainer 'http://$(get_my_ip).nip.io:9000' admin adminadmin;\
+printf "$$rows" Redis 'http://$(get_my_ip).nip.io:18081';\
+printf "$$rows" 'Docker Registry' $${REGISTRY_URL} $${REGISTRY_USER} $${REGISTRY_PW};\
+echo "⚠️ if a DNS is not used (as displayed above), the interactive services started via dynamic-sidecar"
+echo "⚠️ will not be shown. The frontend accesses them via the uuid.services.YOUR_IP.nip.io:9081"
 endef
 
 show-endpoints:

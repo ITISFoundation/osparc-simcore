@@ -10,12 +10,12 @@ import json
 from collections import namedtuple
 from copy import deepcopy
 from pathlib import Path
-from random import randint
 from typing import Any, Callable, Dict, List
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 import sqlalchemy as sa
+from _pytest.monkeypatch import MonkeyPatch
 from httpx import AsyncClient
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeState
@@ -26,13 +26,11 @@ from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from pydantic.networks import AnyHttpUrl
 from pydantic.types import PositiveInt
+from requests.models import Response
 from simcore_postgres_database.models.comp_tasks import comp_tasks
-from simcore_postgres_database.models.projects import ProjectType, projects
-from simcore_postgres_database.models.users import UserRole, UserStatus, users
+from simcore_postgres_database.models.projects import projects
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
-from sqlalchemy import literal_column
 from starlette import status
-from starlette.responses import Response
 from starlette.testclient import TestClient
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
 from yarl import URL
@@ -45,7 +43,7 @@ pytest_simcore_core_services_selection = [
     "storage",
     "postgres",
 ]
-pytest_simcore_ops_services_selection = ["minio", "adminer"]
+pytest_simcore_ops_services_selection = ["minio", "adminer", "flower"]
 
 COMPUTATION_URL: str = "v2/computations"
 
@@ -97,7 +95,7 @@ def _create_pipeline(
     project: ProjectAtDB,
     user_id: PositiveInt,
     start_pipeline: bool,
-    expected_response_status_code: status,
+    expected_response_status_code: int,
     **kwargs,
 ) -> Response:
     response = client.post(
@@ -138,6 +136,17 @@ def _assert_computation_task_out_obj(
 # FIXTURES ---------------------------------------
 
 
+@pytest.fixture(scope="function")
+def mock_env(monkeypatch: MonkeyPatch) -> None:
+    # used by the client fixture
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "itisfoundation/dynamic-sidecar:MOCKED")
+
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
+    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
+    monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
+
+
 @pytest.fixture(autouse=True)
 def minimal_configuration(
     sleeper_service: Dict[str, str],
@@ -147,37 +156,8 @@ def minimal_configuration(
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitConfig,
     simcore_services: Dict[str, URL],
-    monkeypatch,
 ):
     pass
-
-
-@pytest.fixture
-def user_id() -> PositiveInt:
-    return randint(0, 10000)
-
-
-@pytest.fixture
-def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Dict:
-    with postgres_db.connect() as con:
-        result = con.execute(
-            users.insert()
-            .values(
-                id=user_id,
-                name="test user",
-                email="test@user.com",
-                password_hash="testhash",
-                status=UserStatus.ACTIVE,
-                role=UserRole.USER,
-            )
-            .returning(literal_column("*"))
-        )
-
-        user = result.first()
-
-        yield dict(user)
-
-        con.execute(users.delete().where(users.c.id == user["id"]))
 
 
 @pytest.fixture
@@ -190,41 +170,6 @@ def fake_workbench_without_outputs(
         data["outputs"] = {}
 
     return workbench
-
-
-@pytest.fixture
-def project(postgres_db: sa.engine.Engine, user_db: Dict) -> Callable:
-    created_project_ids = []
-
-    def creator(**overrides) -> ProjectAtDB:
-        project_config = {
-            "uuid": uuid4(),
-            "name": "my test project",
-            "type": ProjectType.STANDARD.name,
-            "description": "my test description",
-            "prj_owner": user_db["id"],
-            "access_rights": {"1": {"read": True, "write": True, "delete": True}},
-            "thumbnail": "",
-            "workbench": {},
-        }
-        project_config.update(**overrides)
-        with postgres_db.connect() as con:
-            result = con.execute(
-                projects.insert()
-                .values(**project_config)
-                .returning(literal_column("*"))
-            )
-
-            project = ProjectAtDB.parse_obj(result.first())
-            created_project_ids.append(project.uuid)
-            return project
-
-    yield creator
-
-    # cleanup
-    with postgres_db.connect() as con:
-        for pid in created_project_ids:
-            con.execute(projects.delete().where(projects.c.uuid == str(pid)))
 
 
 @pytest.fixture

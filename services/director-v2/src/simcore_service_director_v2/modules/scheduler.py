@@ -67,7 +67,7 @@ class CeleryScheduler:
     scheduled_pipelines: Set[Tuple[UserID, ProjectID, Iteration]]
     db_engine: Engine
     celery_client: CeleryClient
-    wake_up_event: asyncio.Event = asyncio.Event()
+    wake_up_event: asyncio.Event
 
     @classmethod
     async def create_from_db(cls, app: FastAPI) -> "CeleryScheduler":
@@ -89,6 +89,7 @@ class CeleryScheduler:
             scheduled_pipelines={
                 (r.user_id, r.project_uuid, r.iteration) for r in runs
             },
+            wake_up_event=asyncio.Event(),
         )  # type: ignore
 
     async def run_new_pipeline(self, user_id: UserID, project_id: ProjectID) -> None:
@@ -284,7 +285,7 @@ async def scheduler_task(scheduler: CeleryScheduler) -> None:
 def on_app_startup(app: FastAPI) -> Callable:
     async def start_scheduler() -> None:
         app.state.scheduler = scheduler = await CeleryScheduler.create_from_db(app)
-        task = asyncio.get_event_loop().create_task(scheduler_task(scheduler))
+        task = asyncio.create_task(scheduler_task(scheduler))
         app.state.scheduler_task = task
         logger.info("CeleryScheduler started")
 
