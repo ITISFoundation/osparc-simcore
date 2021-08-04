@@ -26,7 +26,11 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
     this.base(arguments);
 
     this.addListener("changeEditMode", () => {
-      this.populateButtons(this.__nodesIds);
+      if (this.getEditMode()) {
+        this.__buildEditMode();
+      } else {
+        this.populateButtons(this.__nodesIds);
+      }
     }, this);
   },
 
@@ -48,7 +52,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const currentNodeId = study.getUi().getCurrentNodeId();
       nodesIds.forEach(nodeId => {
-        const btn = this.__createBtns(nodeId);
+        const btn = this.__createBtn(nodeId);
         if (nodeId === currentNodeId) {
           btn.setValue(true);
         }
@@ -61,7 +65,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
       }
     },
 
-    __createBtns: function(nodeId) {
+    __createBtn: function(nodeId) {
       const btn = this._createNodeBtn(nodeId);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const slideShow = study.getUi().getSlideshow();
@@ -105,6 +109,59 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
         });
       }
       return btn;
+    },
+
+    __createNewServiceBtn: function() {
+      let newServiceBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/plus-circle/18").set({
+        ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
+        maxWidth: 200
+      });
+      newServiceBtn.addListener("execute", () => {
+        console.log(newServiceBtn.leftNodeId);
+        console.log(newServiceBtn.rightNodeId);
+      });
+      return newServiceBtn;
+    },
+
+    __createEditNodeMenu: function() {
+      const menu = new qx.ui.menu.Menu();
+      const menuItemButton = new qx.ui.menu.Button("Blah");
+      menu.add(menuItemButton);
+      return menu;
+    },
+
+    __buildEditMode: function() {
+      this._removeAll();
+
+      let newServiceBtn = this.__createNewServiceBtn();
+      this._add(newServiceBtn);
+
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const slideShow = study.getUi().getSlideshow();
+
+      this.__nodesIds.forEach(nodeId => {
+        const node = study.getWorkbench().getNode(nodeId);
+        if (node && nodeId in slideShow) {
+          const btn = new qx.ui.toolbar.MenuButton().set({
+            marginLeft: 0,
+            marginRight: 0
+          });
+          this._add(btn);
+
+          const pos = slideShow[nodeId].position;
+          node.bind("label", btn, "label", {
+            converter: val => `${pos+1}- ${val}`
+          });
+
+          const menu = this.__createEditNodeMenu();
+          btn.setMenu(menu);
+
+          newServiceBtn.rightNodeId = nodeId;
+          newServiceBtn = this.__createNewServiceBtn(nodeId);
+          newServiceBtn.leftNodeId = nodeId;
+          this._add(newServiceBtn);
+        }
+      });
     }
   }
 });
