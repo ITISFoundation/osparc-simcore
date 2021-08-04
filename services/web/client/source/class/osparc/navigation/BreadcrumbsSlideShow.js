@@ -112,10 +112,14 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
     },
 
     __createNewServiceBtn: function() {
-      let newServiceBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/plus-circle/18").set({
+      const newServiceBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/plus-circle/24").set({
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-        maxWidth: 200
+        textColor: "ready-green"
       });
+      newServiceBtn.getContentElement()
+        .setStyles({
+          "border-radius": "24px"
+        });
       newServiceBtn.addListener("execute", () => {
         console.log(newServiceBtn.leftNodeId);
         console.log(newServiceBtn.rightNodeId);
@@ -125,8 +129,13 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
 
     __createEditNodeMenu: function() {
       const menu = new qx.ui.menu.Menu();
-      const menuItemButton = new qx.ui.menu.Button("Blah");
-      menu.add(menuItemButton);
+
+      const deleteButton = new qx.ui.menu.Button("Delete");
+      menu.add(deleteButton);
+
+      const renameButton = new qx.ui.menu.Button("Rename");
+      menu.add(renameButton);
+
       return menu;
     },
 
@@ -143,8 +152,8 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
         const node = study.getWorkbench().getNode(nodeId);
         if (node && nodeId in slideShow) {
           const btn = new qx.ui.toolbar.MenuButton().set({
-            marginLeft: 0,
-            marginRight: 0
+            marginLeft: 1,
+            marginRight: 1
           });
           this._add(btn);
 
