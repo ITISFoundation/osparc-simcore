@@ -40,6 +40,12 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       check: "osparc.data.model.Study",
       apply: "_applyStudy",
       nullable: false
+    },
+
+    pageContext: {
+      check: ["slideshow", "fullSlideshow"],
+      nullable: false,
+      init: "slideshow"
     }
   },
 
@@ -117,7 +123,8 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       this.getStartStopButtons().nodeSelectionChanged([nodeId]);
     },
 
-    startSlides: function() {
+    startSlides: function(context = "slideshow") {
+      this.setContext(context);
       const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
       const study = this.getStudy();
       const slideShow = study.getUi().getSlideshow();
