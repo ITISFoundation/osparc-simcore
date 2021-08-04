@@ -45,7 +45,7 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           break;
         }
         case "breadcrumb-navigation": {
-          const breadcrumbNavigation = new osparc.navigation.BreadcrumbsSlideShow();
+          const breadcrumbNavigation = this.__navNodes = new osparc.navigation.BreadcrumbsSlideShow();
           breadcrumbNavigation.addListener("nodeSelected", e => {
             this.fireDataEvent("nodeSelected", e.getData());
           }, this);
