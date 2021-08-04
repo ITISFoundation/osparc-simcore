@@ -33,9 +33,11 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
           });
           editBtn.addListener("execute", () => {
+            this.__navNodes.setEditMode(true);
             control.setSelection([saveBtn]);
           }, this);
           saveBtn.addListener("execute", () => {
+            this.__navNodes.setEditMode(false);
             control.setSelection([editBtn]);
           }, this);
           control.add(editBtn);

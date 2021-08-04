@@ -22,20 +22,43 @@
 qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
   extend: osparc.navigation.BreadcrumbNavigation,
 
+  construct: function() {
+    this.base(arguments);
+
+    this.addListener("changeEditMode", () => {
+      this.populateButtons(this.__nodesIds);
+    }, this);
+  },
+
+  properties: {
+    editMode: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeEditMode"
+    }
+  },
+
   members: {
+    __nodesIds: null,
+
     populateButtons: function(nodesIds = []) {
+      this.__nodesIds = nodesIds;
       const btns = [];
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const currentNodeId = study.getUi().getCurrentNodeId();
-      for (let i=0; i<nodesIds.length; i++) {
-        const nodeId = nodesIds[i];
+      nodesIds.forEach(nodeId => {
         const btn = this.__createBtns(nodeId);
         if (nodeId === currentNodeId) {
           btn.setValue(true);
         }
         btns.push(btn);
+      });
+      if (this.getEditMode()) {
+        this._buttonsToBreadcrumb(btns, "plusBtn");
+      } else {
+        this._buttonsToBreadcrumb(btns, "arrow");
       }
-      this._buttonsToBreadcrumb(btns, "arrow");
     },
 
     __createBtns: function(nodeId) {

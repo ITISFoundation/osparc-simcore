@@ -51,7 +51,7 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
     },
 
     shape: {
-      check: ["slash", "arrow"],
+      check: ["slash", "arrow", "plusBtn"],
       nullable: true,
       init: "slash"
     },
@@ -123,6 +123,16 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
         [w, h/2],
         [0, h]
       ];
+    },
+
+    getPlusBtnControlsLeft: function(w = 16, h = 32) {
+      // return `M0 0 M0 0 L8 0 L8 8 A8 8 0 1 0 8 24 L8 32 L0 32 L0 0`;
+      return `M0 0 M0 0 L${w/2} 0 L${w/2} ${h/4} A${w/2} ${h/4} 0 1 0 ${w/2} ${h*3/4} L${w/2} ${h} L0 ${h} L0 0`;
+    },
+
+    getPlusBtnControlsRight: function(w = 16, h = 32) {
+      // return `M0 0 M${w/2} 0 L${w} 0 L${w} ${h} L0 ${h} L0 ${h*3/4} A${w/2} ${h/4} 0 1 0 0 ${h/4} L0 0`;
+      return `M0 0 M8 0 L16 0 L16 32 L8 32 L8 24 A8 8 0 1 0 8 8 L8 0`;
     }
   },
 
@@ -161,9 +171,18 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
           controls = this.self().getArrowControlsLeft(16, bounds.height);
           break;
         }
+        case "plusBtn": {
+          controls = this.self().getPlusBtnControlsLeft(16, bounds.height);
+          break;
+        }
       }
       if (controls) {
-        this.__leftPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controls);
+        if (this.getShape() === "plusBtn") {
+          this.__leftPart = osparc.wrapper.Svg.drawPath(this.__canvas, controls);
+        } else {
+          this.__leftPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controls);
+        }
+
         const color = this.__getBGColor(leftWidget.getDecorator());
         if (color) {
           osparc.wrapper.Svg.updatePolygonColor(this.__leftPart, color);
@@ -194,9 +213,17 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
           controls = this.self().getArrowControlsRight(16, bounds.height);
           break;
         }
+        case "plusBtn": {
+          controls = this.self().getPlusBtnControlsRight(16, bounds.height);
+          break;
+        }
       }
       if (controls) {
-        this.__rightPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controls);
+        if (this.getShape() === "plusBtn") {
+          this.__rightPart = osparc.wrapper.Svg.drawPath(this.__canvas, controls);
+        } else {
+          this.__rightPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controls);
+        }
         const color = this.__getBGColor(rightWidget.getDecorator());
         if (color) {
           osparc.wrapper.Svg.updatePolygonColor(this.__rightPart, color);

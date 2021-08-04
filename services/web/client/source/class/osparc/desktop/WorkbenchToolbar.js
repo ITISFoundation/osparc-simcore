@@ -86,7 +86,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       const study = this.getStudy();
       if (study) {
         const nodeIds = study.getWorkbench().getPathIds(study.getUi().getCurrentNodeId());
-        this.__navNodes.populateButtons(nodeIds, "slash");
+        this.__navNodes.populateButtons(nodeIds);
       }
     },
 
