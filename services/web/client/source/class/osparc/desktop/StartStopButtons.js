@@ -66,9 +66,12 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       this.__stopButton.setEnabled(running);
     },
 
-    nodeSelectionChanged: function(selectedNodes) {
+    nodeSelectionChanged: function(selectedNodeIds) {
       if (!this.__startButton.isFetching()) {
-        const runnableNodes = selectedNodes;
+        const runnableNodes = [];
+        selectedNodeIds.forEach(selectedNodeId => {
+          runnableNodes.push(this.getStudy().getWorkbench().getNode(selectedNodeId));
+        });
         const isSelectionRunnable = runnableNodes.some(node => node.isComputational());
         if (isSelectionRunnable) {
           this.__startButton.exclude();
