@@ -102,7 +102,7 @@ qx.Class.define("osparc.component.study.SaveAsTemplate", {
         },
         data: this.__formData
       };
-      osparc.data.Resources.fetch("templates", "postToTemplate", params)
+      osparc.data.Resources.fetch("studies", "postToTemplate", params)
         .then(template => {
           this.fireDataEvent("finished", template);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Study successfully saved as template."), "INFO");

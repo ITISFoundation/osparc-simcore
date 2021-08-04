@@ -436,7 +436,7 @@ class TutorialBase {
     const resp = await this.__page.evaluate(async function(studyId) {
       return await osparc.data.Resources.fetch('studies', 'delete', {
         url: {
-          projectId: studyId
+          "studyId": studyId
         }
       }, studyId);
     }, studyId);

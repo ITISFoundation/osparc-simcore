@@ -148,7 +148,7 @@ qx.Class.define("osparc.component.metadata.ClassifiersEditor", {
         this.__studyData["classifiers"] = this.__classifiersTree.getCheckedClassifierIDs();
         const params = {
           url: {
-            "projectId": this.__studyData["uuid"]
+            "studyId": this.__studyData["uuid"]
           },
           data: this.__studyData
         };

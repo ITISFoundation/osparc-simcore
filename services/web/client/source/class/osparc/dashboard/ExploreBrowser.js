@@ -46,7 +46,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     _reloadTemplate: function(templateId) {
       const params = {
         url: {
-          "projectId": templateId
+          "studyId": templateId
         }
       };
       osparc.data.Resources.getOne("studies", params)
@@ -672,7 +672,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
       const params = {
         url: {
-          projectId: studyData.uuid
+          "studyId": studyData.uuid
         }
       };
       let operationPromise = null;
