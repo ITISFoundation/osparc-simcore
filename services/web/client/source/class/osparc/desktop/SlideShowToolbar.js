@@ -19,13 +19,31 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
   extend: osparc.desktop.Toolbar,
 
   members: {
-    __prevNextBtns: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "edit-slideshow-buttons": {
+          control = new qx.ui.container.Stack();
+          const editBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/14").set({
+            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
+          });
+          const saveBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/check/14").set({
+            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
+          });
+          editBtn.addListener("execute", () => {
+            control.setSelection([saveBtn]);
+          }, this);
+          saveBtn.addListener("execute", () => {
+            control.setSelection([editBtn]);
+          }, this);
+          control.add(editBtn);
+          control.add(saveBtn);
+          control.setSelection([editBtn]);
+          this._add(control);
+          break;
+        }
         case "breadcrumb-navigation": {
-          const breadcrumbNavigation = this._navNodes = new osparc.navigation.BreadcrumbsSlideShow();
+          const breadcrumbNavigation = new osparc.navigation.BreadcrumbsSlideShow();
           breadcrumbNavigation.addListener("nodeSelected", e => {
             this.fireDataEvent("nodeSelected", e.getData());
           }, this);
@@ -50,8 +68,9 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
 
     // overriden
     _buildLayout: function() {
+      this.getChildControl("edit-slideshow-buttons");
       this.getChildControl("breadcrumb-navigation");
-      this.__prevNextBtns = this.getChildControl("prev-next-btns");
+      this.getChildControl("prev-next-btns");
 
       this._add(new qx.ui.core.Spacer(20));
 
@@ -62,6 +81,9 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
     _populateNodesNavigationLayout: function() {
       const study = this.getStudy();
       if (study) {
+        const editSlideshowButtons = this.getChildControl("edit-slideshow-buttons");
+        osparc.data.model.Study.isOwner(study) ? editSlideshowButtons.show() : editSlideshowButtons.exclude();
+
         const slideShow = study.getUi().getSlideshow();
         const nodes = [];
         for (let nodeId in slideShow) {
@@ -77,8 +99,8 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           nodeIds.push(node.nodeId);
         });
 
-        this._navNodes.populateButtons(nodeIds, "arrow");
-        this.__prevNextBtns.populateButtons(nodeIds);
+        this.getChildControl("breadcrumb-navigation").populateButtons(nodeIds);
+        this.getChildControl("prev-next-btns").populateButtons(nodeIds);
       }
     }
   }
