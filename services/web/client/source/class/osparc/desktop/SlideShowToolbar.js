@@ -19,6 +19,8 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
   extend: osparc.desktop.Toolbar,
 
   members: {
+    __navNodes: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -99,7 +101,7 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           nodeIds.push(node.nodeId);
         });
 
-        this.getChildControl("breadcrumb-navigation").populateButtons(nodeIds);
+        this.__navNodes.populateButtons(nodeIds);
         this.getChildControl("prev-next-btns").populateButtons(nodeIds);
       }
     }

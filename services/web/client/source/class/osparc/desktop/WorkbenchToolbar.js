@@ -29,11 +29,13 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
   },
 
   members: {
+    __navNodes: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "breadcrumb-navigation": {
-          const breadcrumbNavigation = new osparc.navigation.BreadcrumbsWorkbench();
+          const breadcrumbNavigation = this.__navNodes = new osparc.navigation.BreadcrumbsWorkbench();
           breadcrumbNavigation.addListener("nodeSelected", e => {
             this.fireDataEvent("nodeSelected", e.getData());
           }, this);
@@ -84,7 +86,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       const study = this.getStudy();
       if (study) {
         const nodeIds = study.getWorkbench().getPathIds(study.getUi().getCurrentNodeId());
-        this.getChildControl("breadcrumb-navigation").populateButtons(nodeIds, "slash");
+        this.__navNodes.populateButtons(nodeIds, "slash");
       }
     },
 
