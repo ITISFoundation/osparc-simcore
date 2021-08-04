@@ -4,16 +4,22 @@
 # pylint:disable=no-value-for-parameter
 
 
-from typing import Dict, Iterator
+import asyncio
+from typing import Callable, Dict, Iterator
 
 import aiopg
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import LocalCluster
 from fastapi.applications import FastAPI
+from models_library.projects import ProjectAtDB
+from pydantic import PositiveInt
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import ConfigurationError
 from simcore_service_director_v2.core.settings import AppSettings
+from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
+    BaseCompScheduler,
+)
 from starlette.testclient import TestClient
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -69,3 +75,28 @@ def test_scheduler_raises_exception_for_missing_dependencies(
     with pytest.raises(ConfigurationError):
         with TestClient(app, raise_server_exceptions=True) as _:
             pass
+
+
+@pytest.fixture
+def scheduler(
+    minimal_dask_scheduler_config: None,
+    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    dask_local_cluster: LocalCluster,
+    minimal_app: FastAPI,
+) -> BaseCompScheduler:
+    assert minimal_app.state.scheduler is not None
+    return minimal_app.state.scheduler
+
+
+async def test_pipeline_runs(
+    scheduler: BaseCompScheduler,
+    user_id: PositiveInt,
+    project: Callable[..., ProjectAtDB],
+):
+    empty_project = project()
+
+    # an empty pipeline should be removed from the scheduled pipelines
+    await scheduler.run_new_pipeline(user_id=user_id, project_id=empty_project.uuid)
+    assert (user_id, empty_project.uuid, 1) in scheduler.scheduled_pipelines
+    await asyncio.sleep(1)
+    assert scheduler.scheduled_pipelines == {}

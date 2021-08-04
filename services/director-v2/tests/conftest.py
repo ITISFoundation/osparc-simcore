@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint:disable=no-value-for-parameter
 
 import asyncio
 import json
@@ -9,20 +10,27 @@ import os
 from copy import deepcopy
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Dict, Iterator
+from random import randint
+from typing import Any, Callable, Dict, Iterator
+from uuid import uuid4
 
 import dotenv
 import httpx
 import nest_asyncio
 import pytest
 import simcore_service_director_v2
+import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.test_utils import loop_context
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
-from models_library.projects import Node, Workbench
+from models_library.projects import Node, ProjectAtDB, Workbench
+from pydantic.types import PositiveInt
+from simcore_postgres_database.models.projects import ProjectType, projects
+from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
+from sqlalchemy import literal_column
 from starlette.testclient import TestClient
 
 nest_asyncio.apply()
@@ -219,3 +227,66 @@ def fake_workbench_complete_adjacency(
     fake_workbench_complete_adjacency_file: Path,
 ) -> Dict[str, Any]:
     return json.loads(fake_workbench_complete_adjacency_file.read_text())
+
+
+@pytest.fixture(scope="session")
+def user_id() -> PositiveInt:
+    return randint(0, 10000)
+
+
+@pytest.fixture(scope="module")
+def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Dict:
+    with postgres_db.connect() as con:
+        result = con.execute(
+            users.insert()
+            .values(
+                id=user_id,
+                name="test user",
+                email="test@user.com",
+                password_hash="testhash",
+                status=UserStatus.ACTIVE,
+                role=UserRole.USER,
+            )
+            .returning(literal_column("*"))
+        )
+
+        user = result.first()
+
+        yield dict(user)
+
+        con.execute(users.delete().where(users.c.id == user["id"]))
+
+
+@pytest.fixture
+def project(postgres_db: sa.engine.Engine, user_db: Dict) -> Callable[..., ProjectAtDB]:
+    created_project_ids = []
+
+    def creator(**overrides) -> ProjectAtDB:
+        project_config = {
+            "uuid": uuid4(),
+            "name": "my test project",
+            "type": ProjectType.STANDARD.name,
+            "description": "my test description",
+            "prj_owner": user_db["id"],
+            "access_rights": {"1": {"read": True, "write": True, "delete": True}},
+            "thumbnail": "",
+            "workbench": {},
+        }
+        project_config.update(**overrides)
+        with postgres_db.connect() as con:
+            result = con.execute(
+                projects.insert()
+                .values(**project_config)
+                .returning(literal_column("*"))
+            )
+
+            project = ProjectAtDB.parse_obj(result.first())
+            created_project_ids.append(project.uuid)
+            return project
+
+    yield creator
+
+    # cleanup
+    with postgres_db.connect() as con:
+        for pid in created_project_ids:
+            con.execute(projects.delete().where(projects.c.uuid == str(pid)))
