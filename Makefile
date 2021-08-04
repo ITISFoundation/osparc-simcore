@@ -60,6 +60,10 @@ export DATCORE_ADAPTER_API_VERSION    := $(shell cat $(CURDIR)/services/datcore-
 export WEBSERVER_API_VERSION  := $(shell cat $(CURDIR)/services/web/server/VERSION)
 
 
+# docker buildx cache location
+DOCKER_BUILDX_CACHE_FROM ?= /tmp/.buildx-cache
+DOCKER_BUILDX_CACHE_TO ?= /tmp/.buildx-cache
+
 # swarm stacks
 export SWARM_STACK_NAME ?= master-simcore
 export SWARM_STACK_NAME_NO_HYPHEN = $(subst -,_,$(SWARM_STACK_NAME))
@@ -105,7 +109,19 @@ SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),N
 
 define _docker_compose_build
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,production);\
-pushd services && docker buildx bake --file docker-compose-build.yml $(if $(target),$(target),) && popd;
+pushd services &&\
+docker buildx create --name osparc-builder --use || true; &&\
+docker buildx bake \
+	$(if $(findstring -devel,$@),,\
+	$(foreach service, $(SERVICES_LIST),\
+		--set $(service).cache-from="type=local,src=$(DOCKER_BUILDX_CACHE_FROM)/$(service)" \
+		--set $(service).cache-to="type=local,mode=max,dest=$(DOCKER_BUILDX_CACHE_TO)/$(service)" \
+	)\
+	)\
+	--set *.output="type=docker,push=false" \
+	--file docker-compose-build.yml $(if $(target),$(target),) &&\
+popd &&\
+docker buildx rm osparc-builder;
 endef
 
 rebuild: build-nc # alias

@@ -50,7 +50,7 @@ endef
 
 .PHONY: install-ci install-prod clean-up
 install-ci install-prod: ## install e2e testing framework and start simcore/registry
-	@$(_build_simcore_images)
+	@$(if $(findstring -ci,$@),,$(_build_simcore_images))
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
 	@$(_up_simcore)
 	@$(_setup_test_environment)

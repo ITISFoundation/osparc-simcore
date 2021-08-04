@@ -14,10 +14,17 @@ install() {
   pip3 install -r requirements/ci.txt
   popd
   pip list -v
-  # pull the test images if registry is set up, else build the images
-  make pull-version || (make build tag-version)
+}
+
+build() {
+  value=${1:-}
+  if
+    [ "$value" ] && [ "$value" == "pull" ]
+  then
+    make pull-version || true
+  fi
+  make build tag-version
   make info-images
-  # pip3 install services/storage/client-sdk/python
 }
 
 test() {
