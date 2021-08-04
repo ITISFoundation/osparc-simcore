@@ -4,23 +4,28 @@
 
 import asyncio
 import os
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Union
 from uuid import uuid4
 
 import aiodocker
 import httpx
 import pytest
+import requests
 import sqlalchemy as sa
 import tenacity
+from asgi_lifespan import LifespanManager
 from async_timeout import timeout
 from models_library.projects import Node, ProjectAtDB
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from pydantic.types import PositiveInt
+from simcore_service_director_v2.core.application import init_app
+from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
+from utils import ensure_network_cleanup, patch_dynamic_service_url
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
@@ -29,7 +34,6 @@ pytest_simcore_core_services_selection = [
     "rabbit",
     "catalog",
     "director",
-    "director-v2",
 ]
 
 HTTPX_CLIENT_TIMOUT = 10
@@ -48,6 +52,7 @@ def minimal_configuration(
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitConfig,
     simcore_services: None,
+    ensure_swarm_and_networks: None,
 ):
     pass
 
@@ -112,12 +117,35 @@ async def dy_static_file_server_project(
 
 
 @pytest.fixture
-async def director_v2_client(services_endpoint: Dict[str, URL]) -> httpx.AsyncClient:
-    base_url = services_endpoint["director-v2"] / "v2"
-    async with httpx.AsyncClient(
-        base_url=str(base_url), timeout=HTTPX_CLIENT_TIMOUT
-    ) as client:
-        yield client
+async def director_v2_client(
+    minimal_configuration: None,
+    loop: asyncio.BaseEventLoop,
+    mock_env: None,
+    network_name: str,
+    monkeypatch,
+) -> httpx.AsyncClient:
+    monkeypatch.setenv("SC_BOOT_MODE", "production")
+    monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "true")
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", network_name)
+    monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
+
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
+    monkeypatch.setenv("POSTGRES_USER", "mocked_user")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
+    monkeypatch.setenv("POSTGRES_DB", "mocked_db")
+    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
+
+    settings = AppSettings.create_from_envs()
+
+    app = init_app(settings)
+
+    async with LifespanManager(app):
+        async with httpx.AsyncClient(
+            app=app, base_url="http://testserver/v2"
+        ) as client:
+            yield client
 
 
 @pytest.fixture
@@ -135,24 +163,51 @@ async def ensure_services_stopped(dy_static_file_server_project: ProjectAtDB) ->
                     delete_result = await docker_client.services.delete(service_name)
                     assert delete_result is True
 
+        project_id = f"{dy_static_file_server_project.uuid}"
+        await ensure_network_cleanup(docker_client, project_id)
+
 
 # UTILS
 
 
 async def _handle_307_if_required(
     director_v2_client: httpx.AsyncClient, director_v0_url: URL, result: httpx.Response
-) -> httpx.Response:
+) -> Union[httpx.Response, requests.Response]:
+    def _debug_print(
+        result: Union[httpx.Response, requests.Response], heading_text: str
+    ) -> None:
+        print(
+            (
+                f"{heading_text}\n>>>\n{result.request.method}\n"
+                f"{result.request.url}\n{result.request.headers}\n"
+                f"<<<\n{result.status_code}\n{result.headers}\n{result.text}\n"
+            )
+        )
+
     if result.next_request is not None:
+        _debug_print(result, "REDIRECTING[1/2] DV2")
+
         # replace url endpoint for director-v0 in redirect
-        print("REDIRECTING[1/3]", result, result.headers, result.text)
         result.next_request.url = httpx.URL(
             str(result.next_request.url).replace(
                 "http://director:8080", str(director_v0_url)
             )
         )
-        print("REDIRECTING[2/3]", result.next_request.url)
-        result = await director_v2_client.send(result.next_request)
-        print("REDIRECTING[3/3]", result, result.headers, result.text)
+
+        # when both director-v0 and director-v2 were running in containers
+        # it was possible to use httpx for GET requests as well
+        # since director-v2 is now started on the host directly,
+        # a 405 Method Not Allowed is returned
+        # using requests is workaround for the issue
+        if result.request.method == "GET":
+            redirect_result = requests.get(str(result.next_request.url))
+        else:
+            redirect_result = await director_v2_client.send(result.next_request)
+
+        _debug_print(redirect_result, "REDIRECTING[2/2] DV0")
+
+        return redirect_result
+
     return result
 
 
@@ -285,12 +340,16 @@ async def _assert_service_is_available(exposed_port: PositiveInt) -> None:
     print(f"checking service @ {service_address}")
 
     async for attempt in tenacity.AsyncRetrying(
-        wait=tenacity.wait_exponential(), stop=tenacity.stop_after_delay(10)
+        wait=tenacity.wait_exponential(), stop=tenacity.stop_after_delay(15)
     ):
         with attempt:
             async with httpx.AsyncClient() as client:
                 response = await client.get(service_address)
                 assert response.status_code == 200
+
+
+def _get_director_v0_patched_url(url: URL) -> URL:
+    return URL(str(url).replace("127.0.0.1", "172.17.0.1"))
 
 
 # TESTS
@@ -312,7 +371,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     - dy-static-file-server-dynamic-sidecar
     - dy-static-file-server-dynamic-sidecar-compose
     """
-    director_v0_url = services_endpoint["director"]
+    director_v0_url = _get_director_v0_patched_url(services_endpoint["director"])
 
     services_to_start = []
     for service_uuid, node in dy_static_file_server_project.workbench.items():
@@ -325,10 +384,20 @@ async def test_legacy_and_dynamic_sidecar_run(
                 service_key=node.key,
                 service_version=node.version,
                 service_uuid=service_uuid,
-                basepath=f"/x/{service_uuid}" if node.label == "LEGACY" else None,
+                basepath=f"/x/{service_uuid}" if _is_legacy(node) else None,
             )
         )
     await asyncio.gather(*services_to_start)
+
+    for service_uuid, node in dy_static_file_server_project.workbench.items():
+        if _is_legacy(node):
+            continue
+
+        await patch_dynamic_service_url(
+            # pylint: disable=protected-access
+            app=director_v2_client._transport.app,
+            node_uuid=service_uuid,
+        )
 
     assert len(dy_static_file_server_project.workbench) == 3
 
