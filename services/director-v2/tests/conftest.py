@@ -15,6 +15,7 @@ import httpx
 import nest_asyncio
 import pytest
 import simcore_service_director_v2
+from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.test_utils import loop_context
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
@@ -84,11 +85,7 @@ def loop() -> asyncio.AbstractEventLoop:
 
 
 @pytest.fixture(scope="function")
-def mock_env(monkeypatch) -> None:
-    # TODO: PC-> ANE: Avoid using stand-alone environs setups and
-    # use instead mock_env_devel_environment or project_env_devel_environment
-    # which resemble real environment
-
+def mock_env(monkeypatch: MonkeyPatch) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
@@ -103,28 +100,35 @@ def mock_env(monkeypatch) -> None:
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
-
-    # DISABLE dynamic-service app module
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
-    monkeypatch.setenv("DYNAMIC_SCHEDULER", "null")
-    monkeypatch.setenv("DYNAMIC_SIDECAR", "null")
 
-    monkeypatch.setenv("SC_BOOT_MODE", "production")
+    monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
+    monkeypatch.setenv("POSTGRES_USER", "mocked_user")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
+    monkeypatch.setenv("POSTGRES_DB", "mocked_db")
+    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
 
 
 @pytest.fixture(scope="function")
-def client(loop: asyncio.AbstractEventLoop, mock_env) -> TestClient:
+def client(loop: asyncio.AbstractEventLoop, mock_env: None) -> TestClient:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
 
-    # NOTE: this way we ensure the events are run in the application
-    # since it starts the app on a test server
+    # NOTE: using a contextmanagers ensures
+    # on_startup and on_shutdown events run
     with TestClient(app, raise_server_exceptions=True) as client:
         yield client
 
 
 @pytest.fixture(scope="function")
-async def initialized_app() -> Iterator[FastAPI]:
+async def initialized_app(monkeypatch: MonkeyPatch) -> Iterator[FastAPI]:
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "itisfoundation/dynamic-sidecar:MOCK")
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
+    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
+    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
+
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
     async with LifespanManager(app):

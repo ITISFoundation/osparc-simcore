@@ -6,6 +6,7 @@ from pprint import pformat
 from typing import Any, Dict, Tuple
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
+from pydantic.types import PositiveInt
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
 
@@ -77,7 +78,7 @@ async def delete_data_folders_of_project(app, project_id, user_id):
 
 
 async def delete_data_folders_of_project_node(
-    app, project_id: str, node_id: str, user_id: str
+    app, project_id: str, node_id: str, user_id: PositiveInt
 ):
     # SEE api/specs/storage/v0/openapi.yaml
     session, api_endpoint = _get_storage_client(app)

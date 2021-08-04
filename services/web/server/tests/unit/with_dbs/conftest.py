@@ -14,6 +14,7 @@ import os
 import sys
 import textwrap
 from copy import deepcopy
+from importlib import reload
 from pathlib import Path
 from typing import Callable, Dict, Iterator, List
 from unittest.mock import patch
@@ -258,28 +259,34 @@ def asyncpg_storage_system_mock(mocker):
 
 
 @pytest.fixture
-async def mocked_director_api(loop, mocker):
-    # NOTE: patches are done at 'simcore_service_webserver.director.director_api'
-    #
-    #  Read carefully "where to patch" in https://docs.python.org/3/library/unittest.mock.html#id6
-    #
-    mocks = {}
-    for func_name, fake_return in [
-        ("get_running_interactive_services", []),
-        ("start_service", []),
-        ("stop_service", None),
-    ]:
-        mocks[func_name] = mocker.patch(
-            f"simcore_service_webserver.director.director_api.{func_name}",
-            return_value=fake_return,
-            name=f"{__name__}.mocked_director_api::director_api.{func_name}",
-        )
+async def mocked_director_v2_api(loop, mocker):
+    mocks = {
+        "director_v2.get_service_state": mocker.patch(
+            "simcore_service_webserver.director_v2.get_service_state",
+            return_value={},
+        ),
+        "director_v2.get_services": mocker.patch(
+            "simcore_service_webserver.director_v2.get_services",
+            return_value="",
+        ),
+        "director_v2.start_service": mocker.patch(
+            "simcore_service_webserver.director_v2.start_service",
+            return_value="",
+        ),
+        "director_v2.stop_service": mocker.patch(
+            "simcore_service_webserver.director_v2.stop_service",
+            return_value="",
+        ),
+    }
+
+    reload(simcore_service_webserver.projects.projects_api)
+    reload(simcore_service_webserver.projects.projects_handlers)
 
     return mocks
 
 
 @pytest.fixture
-async def mocked_dynamic_service(loop, client, mocked_director_api):
+async def mocked_dynamic_service(loop, client, mocked_director_v2_api):
     services = []
 
     async def create(user_id, project_id) -> Dict:
@@ -305,7 +312,7 @@ async def mocked_dynamic_service(loop, client, mocked_director_api):
 
         services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
-        mocked_director_api["get_running_interactive_services"].return_value = services
+        mocked_director_v2_api["director_v2.get_services"].return_value = services
         return running_service_dict
 
     return create

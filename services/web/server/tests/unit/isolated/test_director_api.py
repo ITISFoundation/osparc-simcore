@@ -389,6 +389,8 @@ async def test_director_workflow(
             service_key,
             service_version,
             service_uuid,
+            "localhost",
+            "http",
         )
 
         # now is running
