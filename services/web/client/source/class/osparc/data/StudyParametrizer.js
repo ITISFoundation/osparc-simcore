@@ -95,7 +95,7 @@ qx.Class.define("osparc.data.StudyParametrizer", {
               },
               data: templatePrimaryStudyData
             };
-            osparc.data.Resources.fetch("templates", "postToTemplate", params)
+            osparc.data.Resources.fetch("studies", "postToTemplate", params)
               .then(temporaryTemplate => {
                 const promisesCreateSecs = [];
                 for (let i=0; i<combinations.length; i++) {
@@ -138,7 +138,7 @@ qx.Class.define("osparc.data.StudyParametrizer", {
                       };
                       const paramsUpdateSec = {
                         url: {
-                          "projectId": secondaryStudyData["uuid"]
+                          "studyId": secondaryStudyData["uuid"]
                         },
                         data: secondaryStudyData
                       };
@@ -148,7 +148,7 @@ qx.Class.define("osparc.data.StudyParametrizer", {
                       .then(updatedSecondaryStudiesData => {
                         const paramsTemp = {
                           url: {
-                            projectId: temporaryTemplate.uuid
+                            "studyId": temporaryTemplate.uuid
                           }
                         };
                         osparc.data.Resources.fetch("templates", "delete", paramsTemp, temporaryTemplate.uuid)

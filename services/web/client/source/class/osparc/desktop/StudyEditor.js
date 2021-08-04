@@ -99,7 +99,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         // Before starting a study, make sure the latest version is fetched
         const params = {
           url: {
-            "projectId": studyData.uuid
+            "studyId": studyData.uuid
           }
         };
         const promises = [

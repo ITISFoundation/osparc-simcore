@@ -63,37 +63,34 @@ qx.Class.define("osparc.wrapper.Svg", {
 
     drawCurve: function(draw, controls, dashed) {
       const edgeWidth = 3;
-      const portSphereDiameter = 4;
       const arrowSize = 4;
       const edgeColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-comp-active"];
 
       osparc.wrapper.Svg.curateCurveControls(controls);
 
-      const path = draw.path()
+      const edge = draw.path()
         .M(controls[0].x, controls[0].y)
         .C(controls[1], controls[2], controls[3])
         .fill("none")
+        .style({
+          cursor: "pointer"
+        })
         .stroke({
           width: edgeWidth,
           color: edgeColor,
           dasharray: dashed ? 5 : 0
         });
 
-      const marker1 = draw.marker(portSphereDiameter, portSphereDiameter, function(add) {
-        add.circle(portSphereDiameter).fill(edgeColor);
-      });
-      path.marker("start", marker1);
-
-      const marker2 = draw.marker(arrowSize, arrowSize, function(add) {
+      const portArrow = draw.marker(arrowSize, arrowSize, add => {
         add.path("M 0 0 V 4 L 2 2 Z")
           .fill(edgeColor)
           .size(arrowSize, arrowSize);
       });
-      path.marker("end", marker2);
+      edge.marker("end", portArrow);
 
-      path.markers = [marker1, marker2];
+      edge.markers = [portArrow];
 
-      return path;
+      return edge;
     },
 
     updateCurve: function(curve, controls) {

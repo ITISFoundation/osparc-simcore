@@ -189,13 +189,6 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       throw new Error("Abstract method called!");
     },
 
-    /**
-      * @abstract
-      */
-    addParameter: function() {
-      throw new Error("Abstract method called!");
-    },
-
     _createInfoWHint: function(hint) {
       const infoWHint = new osparc.ui.hint.InfoHint(hint);
       return infoWHint;

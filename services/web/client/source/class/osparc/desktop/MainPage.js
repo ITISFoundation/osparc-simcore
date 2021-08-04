@@ -231,7 +231,7 @@ qx.Class.define("osparc.desktop.MainPage", {
 
       const params = {
         url: {
-          "projectId": studyId
+          "studyId": studyId
         }
       };
       osparc.data.Resources.getOne("studies", params)
@@ -281,7 +281,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     __closeStudy: function(studyId) {
       const params = {
         url: {
-          projectId: studyId
+          "studyId": studyId
         },
         data: osparc.utils.Utils.getClientSessionID()
       };
