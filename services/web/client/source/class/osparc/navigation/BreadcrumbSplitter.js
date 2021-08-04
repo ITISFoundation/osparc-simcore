@@ -126,8 +126,8 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
     },
 
     getPlusBtnControlsLeft: function(w = 16, h = 32) {
-      // return `M0 0 M0 0 L8 0 L8 8 A8 8 0 1 0 8 24 L8 32 L0 32 L0 0`;
-      return `M0 0 M0 0 L${w/2} 0 L${w/2} ${h/4} A${w/2} ${h/4} 0 1 0 ${w/2} ${h*3/4} L${w/2} ${h} L0 ${h} L0 0`;
+      // return `M0 0 M0 0 L${w/2} 0 L${w/2} ${h/4} A${w/2} ${h/4} 0 1 0 ${w/2} ${h*3/4} L${w/2} ${h} L0 ${h} L0 0`;
+      return `M0 0 M0 0 L8 0 L8 8 A8 8 0 1 0 8 24 L8 32 L0 32 L0 0`;
     },
 
     getPlusBtnControlsRight: function(w = 16, h = 32) {
