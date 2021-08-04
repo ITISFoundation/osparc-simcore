@@ -22,6 +22,7 @@ pytest_simcore_ops_services_selection = ["adminer"]
 
 @pytest.fixture
 def minimal_dask_scheduler_config(
+    mock_env: None,
     postgres_host_config: Dict[str, str],
     monkeypatch: MonkeyPatch,
 ) -> None:
@@ -54,7 +55,6 @@ async def test_scheduler_gracefully_starts_and_stops(
 )
 def test_scheduler_raises_exception_for_missing_dependencies(
     minimal_dask_scheduler_config: None,
-    mock_env: None,
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
     dask_local_cluster: LocalCluster,
     monkeypatch: MonkeyPatch,
