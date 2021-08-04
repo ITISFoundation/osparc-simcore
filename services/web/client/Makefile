@@ -50,7 +50,6 @@ compile: ## qx compiles host' 'source' -> image's 'build-output'
 		--build-arg VCS_REF_CLIENT=${VCS_REF_CLIENT} \
 		--build-arg VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT} \
 		--build-arg VCS_URL=${VCS_URL} \
-		--load \
 		--target=build-client .
 
 
