@@ -195,8 +195,6 @@ define _show_endpoints
 set -o allexport; \
 source $(CURDIR)/.env; \
 set +o allexport; \
-yellow=$(tput setaf 3); \
-normal=$(tput sgr0); \
 separator=------------------------------------------------------------------------------------;\
 separator=$${separator}$${separator}$${separator};\
 rows="%-22s | %90s | %12s | %12s\n";\
@@ -208,9 +206,9 @@ printf "$$rows" 'Postgres DB' 'http://$(get_my_ip).nip.io:18080/?pgsql=postgres&
 printf "$$rows" Portainer 'http://$(get_my_ip).nip.io:9000' admin adminadmin;\
 printf "$$rows" Redis 'http://$(get_my_ip).nip.io:18081';\
 printf "$$rows" 'Docker Registry' $${REGISTRY_URL} $${REGISTRY_USER} $${REGISTRY_PW};\
-printf "$$rows" "Dask Dashboard" "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):8787"
-printf "%s\n" "⚠️ ${yellow}if a DNS is not used (as displayed above), the interactive services started via dynamic-sidecar${normal}"
-echo "⚠️ ${yellow}will not be shown. The frontend accesses them via the uuid.services.YOUR_IP.nip.io:9081${normal}"
+printf "$$rows" "Dask Dashboard" "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1).nip.io:8787";
+printf "\n%s\n" "⚠️ if a DNS is not used (as displayed above), the interactive services started via dynamic-sidecar";\
+echo "⚠️ will not be shown. The frontend accesses them via the uuid.services.YOUR_IP.nip.io:9081";
 endef
 
 show-endpoints:
