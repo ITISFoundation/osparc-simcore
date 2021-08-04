@@ -29,6 +29,7 @@ from ...modules.dynamic_sidecar.docker_api import (
 from ...modules.dynamic_sidecar.errors import DynamicSidecarNotFoundError
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 from ...utils.logging_utils import log_decorator
+from ...utils.routes import NoContentResponse
 from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
 from ..dependencies.dynamic_services import (
     ServicesClient,
@@ -157,8 +158,7 @@ async def get_dynamic_sidecar_status(
 
 @router.delete(
     "/{node_uuid}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    response_model=None,
+    responses={204: {"model": None}},
     summary="stops previously spawned dynamic-sidecar",
 )
 async def stop_dynamic_service(
@@ -166,8 +166,7 @@ async def stop_dynamic_service(
     save_state: Optional[bool] = True,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
-) -> Union[None, RedirectResponse]:
-
+) -> Union[NoContentResponse, RedirectResponse]:
     try:
         await scheduler.remove_service(node_uuid, save_state)
     except DynamicSidecarNotFoundError:
@@ -179,6 +178,8 @@ async def stop_dynamic_service(
         )
 
         return RedirectResponse(str(redirection_url))
+
+    return NoContentResponse()
 
 
 @router.post(
