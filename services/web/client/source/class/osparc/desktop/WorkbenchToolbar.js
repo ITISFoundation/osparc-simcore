@@ -90,8 +90,8 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
     __attachEventHandlers: function() {
       qx.event.message.Bus.subscribe("changeWorkbenchSelection", e => {
-        const selectedNodes = e.getData();
-        this.getStartStopButtons().nodeSelectionChanged(selectedNodes);
+        const selectedNodeIds = e.getData();
+        this.getStartStopButtons().nodeSelectionChanged(selectedNodeIds);
       }, this);
     }
   }

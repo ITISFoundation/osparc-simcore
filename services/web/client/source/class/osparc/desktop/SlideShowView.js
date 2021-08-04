@@ -124,7 +124,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     },
 
     startSlides: function(context = "slideshow") {
-      this.setContext(context);
+      this.setPageContext(context);
       const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
       const study = this.getStudy();
       const slideShow = study.getUi().getSlideshow();
