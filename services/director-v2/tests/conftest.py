@@ -110,6 +110,8 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("POSTGRES_DB", "mocked_db")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
 
+    monkeypatch.setenv("SC_BOOT_MODE", "production")
+
 
 @pytest.fixture(scope="function")
 def client(loop: asyncio.AbstractEventLoop, mock_env: None) -> TestClient:
