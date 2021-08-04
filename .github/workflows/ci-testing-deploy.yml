@@ -50,20 +50,27 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: setup docker buildx
-        if: github.event_name == 'push'
         id: buildx
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
       - name: setup docker-compose
-        if: github.event_name == 'push'
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: cache docker layers
+        # if we are on master we do not want the cache, we build from scratch
+        if: github.ref != 'refs/heads/master'
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      - name: set docker builx cache environs
+        run: echo "DOCKER_BUILDX_CACHE_TO=/tmp/.buildx-cache-new" >> $GITHUB_ENV
       - name: show system environs
-        if: github.event_name == 'push'
         run: ./ci/helpers/show_system_versions.bash
       - name: build images
-        if: github.event_name == 'push'
         run: ./ci/build/test-images.bash build_images
       - name: set owner variable
         if: github.event_name == 'push'
@@ -72,6 +79,14 @@ jobs:
         # only pushes have access to the docker credentials
         if: github.event_name == 'push'
         run: ./ci/deploy/dockerhub-test-images.bash
+        # Temp fix: The docker cache is piling up and hits the 5GB limit in Github workflows, so we copy the cache over here
+        # see a good refence [here](https://evilmartians.com/chronicles/build-images-on-github-actions-with-docker-layer-caching)
+        # https://github.com/docker/build-push-action/issues/252
+        # https://github.com/moby/buildkit/issues/1896
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   unit-test-api:
     timeout-minutes: 14 # if this timeout gets too small, then split the tests
@@ -1722,6 +1737,13 @@ jobs:
           driver: docker
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: cache docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1859,6 +1881,13 @@ jobs:
           driver: docker
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: cache docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1876,6 +1905,13 @@ jobs:
             ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
+      - name: cache docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: test
         run: ./ci/github/integration-testing/webserver.bash test 02
       - name: upload failed tests logs
@@ -1949,6 +1985,13 @@ jobs:
             ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/director-v2.bash install
+      # if the build happens on a push event it may help to pull first the last version
+      - name: build stack
+        if: github.event_name == 'push'
+        run: ./ci/github/integration-testing/director-v2.bash build pull
+      - name: build stack
+        if: github.event_name == 'pull_request'
+        run: ./ci/github/integration-testing/director-v2.bash build
       - name: test
         run: ./ci/github/integration-testing/director-v2.bash test 01
       - name: upload failed tests logs
@@ -2079,6 +2122,13 @@ jobs:
           driver: docker
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: cache docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -2096,6 +2146,13 @@ jobs:
             ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/sidecar.bash install
+      # if the build happens on a push event it may help to pull first the last version
+      - name: build stack
+        if: github.event_name == 'push'
+        run: ./ci/github/integration-testing/sidecar.bash build pull
+      - name: build stack
+        if: github.event_name == 'pull_request'
+        run: ./ci/github/integration-testing/sidecar.bash build
       - name: test
         run: ./ci/github/integration-testing/sidecar.bash test
       - name: upload failed tests logs
@@ -2152,6 +2209,13 @@ jobs:
           driver: docker
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: cache docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -2169,6 +2233,13 @@ jobs:
             ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/simcore-sdk.bash install
+      # if the build happens on a push event it may help to pull first the last version
+      - name: build stack
+        if: github.event_name == 'push'
+        run: ./ci/github/integration-testing/simcore-sdk.bash build pull
+      - name: build stack
+        if: github.event_name == 'pull_request'
+        run: ./ci/github/integration-testing/simcore-sdk.bash build
       - name: test
         run: ./ci/github/integration-testing/simcore-sdk.bash test
       - name: upload failed tests logs
@@ -2225,6 +2296,13 @@ jobs:
           driver: docker
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: cache docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -2242,6 +2320,13 @@ jobs:
             ${{ runner.os }}-
       - name: install
         run: ./ci/github/system-testing/public-api.bash install
+      # if the build happens on a push event it may help to pull first the last version
+      - name: build stack
+        if: github.event_name == 'push'
+        run: ./ci/github/system-testing/public-api.bash build pull
+      - name: build stack
+        if: github.event_name == 'pull_request'
+        run: ./ci/github/system-testing/public-api.bash build
       - name: test
         run: ./ci/github/system-testing/public-api.bash test
       - name: cleanup
@@ -2279,6 +2364,13 @@ jobs:
           driver: docker
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: cache docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -2296,6 +2388,13 @@ jobs:
             ${{ runner.os }}-
       - name: install
         run: ./ci/github/system-testing/swarm-deploy.bash install
+      # if the build happens on a push event it may help to pull first the last version
+      - name: build stack
+        if: github.event_name == 'push'
+        run: ./ci/github/system-testing/swarm-deploy.bash build pull
+      - name: build stack
+        if: github.event_name == 'pull_request'
+        run: ./ci/github/system-testing/swarm-deploy.bash build
       - name: test
         run: ./ci/github/system-testing/swarm-deploy.bash test
       - name: cleanup
@@ -2334,6 +2433,13 @@ jobs:
           driver: docker
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: cache docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -2361,6 +2467,13 @@ jobs:
             ${{ runner.os }}-node-
       - name: setup
         run: ./ci/github/system-testing/e2e.bash install
+      # if the build happens on a push event it may help to pull first the last version
+      - name: build stack
+        if: github.event_name == 'push'
+        run: ./ci/github/system-testing/e2e.bash build pull
+      - name: build stack
+        if: github.event_name == 'pull_request'
+        run: ./ci/github/system-testing/e2e.bash build
       - name: test
         run: ./ci/github/system-testing/e2e.bash test
       - name: recover docker logs
