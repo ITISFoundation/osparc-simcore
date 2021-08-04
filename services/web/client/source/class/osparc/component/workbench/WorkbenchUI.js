@@ -364,6 +364,17 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       nodeUI.addListener("nodeStoppedMoving", () => {
         this.__updateWorkbenchBounds();
+
+        // After moving a nodeUI, a new element with z-index 100000+ appears on the DOM tree and prevents from clicking
+        // elsewhere. Here we go through every the children of the WorkbenchUI and remove the undesired element
+        const allChildren = Array.from(this.getContentElement().getDomElement().getElementsByTagName("*"));
+        const nodesAndSuspicious = allChildren.filter(child => parseInt(child.style.zIndex) >= 100000);
+        nodesAndSuspicious.forEach(child => {
+          if (child.className !== "qx-window-small-cap") {
+            console.warn("moving undesired element to background");
+            child.style.zIndex = "1";
+          }
+        });
       }, this);
 
       nodeUI.addListener("appear", () => {
@@ -700,7 +711,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __updateAllEdges: function() {
       this.__nodesUI.forEach(nodeUI => {
-        this.__updateEdges(nodeUI);
+        this.__updateNodeUIPos(nodeUI);
       });
     },
 
@@ -821,6 +832,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       } else {
         osparc.component.workbench.SvgWidget.updateCurve(this.__tempEdgeRepr, x1, y1, x2, y2);
       }
+      const portLabel = port.isInput ? nodeUI.getInputPort() : nodeUI.getOutputPort();
+      portLabel.setSource(osparc.component.workbench.BaseNodeUI.NODE_CONNECTED);
 
       if (!this.__tempEdgeIsInput) {
         const modified = nodeUI.getNode().getStatus().getModified();
@@ -833,8 +846,19 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__tempEdgeRepr !== null) {
         osparc.component.workbench.SvgWidget.removeCurve(this.__tempEdgeRepr);
       }
+
+      const nodeUI = this.getNodeUI(this.__tempEdgeNodeId);
+      if (nodeUI) {
+        const isConnected = this.__tempEdgeIsInput ? nodeUI.getNode().getInputConnected() : nodeUI.getNode().getOutputConnected();
+        const portLabel = this.__tempEdgeIsInput ? nodeUI.getInputPort() : nodeUI.getOutputPort();
+        portLabel.set({
+          source: isConnected ? osparc.component.workbench.BaseNodeUI.NODE_CONNECTED : osparc.component.workbench.BaseNodeUI.NODE_DISCONNECTED
+        });
+      }
+
       this.__tempEdgeRepr = null;
       this.__tempEdgeNodeId = null;
+      this.__tempEdgeIsInput = null;
       this.__pointerPos = null;
     },
 
@@ -956,11 +980,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           this.__addNodeUIToWorkbench(nodeUI, node.getPosition());
         }
 
+        // create edges
         for (const nodeId in nodes) {
           const node = nodes[nodeId];
-          const inputNodes = node.getInputNodes();
-          for (let i = 0; i < inputNodes.length; i++) {
-            let inputNodeId = inputNodes[i];
+          const inputNodeIDs = node.getInputNodes();
+          inputNodeIDs.forEach(inputNodeId => {
             if (inputNodeId in nodes) {
               this.__createEdgeBetweenNodes({
                 nodeId: inputNodeId
@@ -974,18 +998,18 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
                 nodeId: nodeId
               });
             }
-          }
+          });
         }
 
         if (isContainer) {
-          const outputNodes = model.getOutputNodes();
-          for (let i=0; i<outputNodes.length; i++) {
+          const exposedNodeIDs = model.getExposedNodeIDs();
+          exposedNodeIDs.forEach(exposedNodeID => {
             this.__createEdgeBetweenNodes({
-              nodeId: outputNodes[i]
+              nodeId: exposedNodeID
             }, {
               nodeId: model.getNodeId()
             });
-          }
+          });
         }
       }
     },

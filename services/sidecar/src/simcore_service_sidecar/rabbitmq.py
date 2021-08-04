@@ -7,8 +7,10 @@ from typing import Any, Dict, List, Optional, Union
 import aio_pika
 import tenacity
 from models_library.settings.celery import CeleryConfig
-from pydantic import BaseModel  # pylint: disable=no-name-in-module
-from servicelib.logging_utils import log_decorator
+from models_library.settings.rabbit import (  # pylint: disable=no-name-in-module
+    RabbitDsn,
+)
+from pydantic import BaseModel, PrivateAttr
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 
 from . import config
@@ -26,8 +28,6 @@ def _close_callback(sender: Any, exc: Optional[BaseException]):
                 sender,
                 exc_info=True,
             )
-    else:
-        log.info("Rabbit connection closed from %s", sender)
 
 
 def _channel_close_callback(sender: Any, exc: Optional[BaseException]):
@@ -35,42 +35,41 @@ def _channel_close_callback(sender: Any, exc: Optional[BaseException]):
         log.error(
             "Rabbit channel closed with exception from %s:", sender, exc_info=True
         )
-    else:
-        log.info("Rabbit channel closed from %s", sender)
 
 
 class RabbitMQ(BaseModel):
-    celery_config: CeleryConfig = None
-    connection: aio_pika.Connection = None
-    channel: aio_pika.Channel = None
-    logs_exchange: aio_pika.Exchange = None
-    instrumentation_exchange: aio_pika.Exchange = None
+    celery_config: Optional[CeleryConfig] = None
+    _connection: aio_pika.Connection = PrivateAttr()
+    _channel: aio_pika.Channel = PrivateAttr()
+    _logs_exchange: aio_pika.Exchange = PrivateAttr()
+    _instrumentation_exchange: aio_pika.Exchange = PrivateAttr()
 
     class Config:
         # see https://pydantic-docs.helpmanual.io/usage/types/#arbitrary-types-allowed
         arbitrary_types_allowed = True
 
-    @log_decorator(logger=log)
     async def connect(self):
         if not self.celery_config:
             self.celery_config = config.CELERY_CONFIG
         url = self.celery_config.rabbit.dsn
+        if not url:
+            raise ValueError("Rabbit DSN not set")
         log.debug("Connecting to %s", url)
         await _wait_till_rabbit_responsive(url)
 
         # NOTE: to show the connection name in the rabbitMQ UI see there [https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url]
-        self.connection = await aio_pika.connect(
+        self._connection = await aio_pika.connect(
             url + f"?name={__name__}_{id(socket.gethostname())}",
             client_properties={"connection_name": "sidecar connection"},
         )
-        self.connection.add_close_callback(_close_callback)
+        self._connection.add_close_callback(_close_callback)
 
         log.debug("Creating channel")
-        self.channel = await self.connection.channel(publisher_confirms=False)
-        self.channel.add_close_callback(_channel_close_callback)
+        self._channel = await self._connection.channel(publisher_confirms=False)
+        self._channel.add_close_callback(_channel_close_callback)
 
         log.debug("Declaring %s exchange", self.celery_config.rabbit.channels["log"])
-        self.logs_exchange = await self.channel.declare_exchange(
+        self._logs_exchange = await self._channel.declare_exchange(
             self.celery_config.rabbit.channels["log"], aio_pika.ExchangeType.FANOUT
         )
 
@@ -78,17 +77,15 @@ class RabbitMQ(BaseModel):
             "Declaring %s exchange",
             self.celery_config.rabbit.channels["instrumentation"],
         )
-        self.instrumentation_exchange = await self.channel.declare_exchange(
+        self._instrumentation_exchange = await self._channel.declare_exchange(
             self.celery_config.rabbit.channels["instrumentation"],
             aio_pika.ExchangeType.FANOUT,
         )
 
-    @log_decorator(logger=log)
     async def close(self):
-        await self.channel.close()
-        await self.connection.close()
+        await self._channel.close()
+        await self._connection.close()
 
-    @log_decorator(logger=log)
     async def _post_message(
         self, exchange: aio_pika.Exchange, data: Dict[str, Union[str, Any]]
     ):
@@ -104,7 +101,7 @@ class RabbitMQ(BaseModel):
         log_msg: Union[str, List[str]],
     ):
         await self._post_message(
-            self.logs_exchange,
+            self._logs_exchange,
             data={
                 "Channel": "Log",
                 "Node": node_id,
@@ -118,7 +115,7 @@ class RabbitMQ(BaseModel):
         self, user_id: str, project_id: str, node_id: str, progress_msg: str
     ):
         await self._post_message(
-            self.logs_exchange,
+            self._logs_exchange,
             data={
                 "Channel": "Progress",
                 "Node": node_id,
@@ -133,7 +130,7 @@ class RabbitMQ(BaseModel):
         instrumentation_data: Dict,
     ):
         await self._post_message(
-            self.instrumentation_exchange,
+            self._instrumentation_exchange,
             data=instrumentation_data,
         )
 
@@ -146,7 +143,7 @@ class RabbitMQ(BaseModel):
 
 
 @tenacity.retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
-async def _wait_till_rabbit_responsive(url: str):
+async def _wait_till_rabbit_responsive(url: RabbitDsn):
     connection = await aio_pika.connect(url)
     await connection.close()
     return True

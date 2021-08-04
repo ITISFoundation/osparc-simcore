@@ -68,7 +68,9 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
 
     nodeSelectionChanged: function(selectedNodes) {
       if (!this.__startButton.isFetching()) {
-        if (selectedNodes.length) {
+        const runnableNodes = selectedNodes;
+        const isSelectionRunnable = runnableNodes.some(node => node.isComputational());
+        if (isSelectionRunnable) {
           this.__startButton.exclude();
           this.__startSelectionButton.show();
         } else {
@@ -110,7 +112,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __createStartSplitButton: function() {
-      const startSelectionButton = this.__startSelectionButton = new osparc.ui.toolbar.FetchSplitButton(this.tr("Run Node"), "@FontAwesome5Solid/play/14");
+      const startSelectionButton = this.__startSelectionButton = new osparc.ui.toolbar.FetchSplitButton(this.tr("Run Selection"), "@FontAwesome5Solid/play/14");
       startSelectionButton.addListener("execute", () => {
         this.fireEvent("startPartialPipeline");
       }, this);

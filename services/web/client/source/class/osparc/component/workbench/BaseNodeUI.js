@@ -24,8 +24,8 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
   construct: function() {
     this.base();
 
-    const grid = new qx.ui.layout.Grid(3, 1);
-    grid.setColumnFlex(0, 1);
+    const grid = new qx.ui.layout.Grid(4, 1);
+    grid.setColumnFlex(1, 1);
 
     this.set({
       layout: grid,
@@ -40,10 +40,26 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
 
     this.subscribeToFilterGroup("workbench");
 
-    this.getChildControl("captionbar").setCursor("move");
-    this.getChildControl("title").set({
+    this.getChildControl("captionbar").set({
       cursor: "move",
-      textAlign: "center"
+      paddingLeft: this.self().PORT_WIDTH
+    });
+
+    const captionTitle = this.getChildControl("title");
+    captionTitle.set({
+      rich: true,
+      cursor: "move"
+    });
+    captionTitle.addListener("appear", () => {
+      qx.event.Timer.once(() => {
+        const labelDom = captionTitle.getContentElement().getDomElement();
+        const maxWidth = parseInt(labelDom.style.width);
+        // eslint-disable-next-line no-underscore-dangle
+        const width = captionTitle.__contentSize.width;
+        if (width > maxWidth) {
+          captionTitle.setToolTipText(this.getNode().getLabel());
+        }
+      }, this, 50);
     });
   },
 
@@ -61,7 +77,11 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
   },
 
   statics: {
-    PORT_HEIGHT: 16,
+    PORT_HEIGHT: 18,
+    PORT_WIDTH: 11,
+    NODE_CONNECTED: "@FontAwesome5Regular/dot-circle/18",
+    NODE_DISCONNECTED: "@FontAwesome5Regular/circle/18",
+
     captionHeight: function() {
       return osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().height ||
         osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
@@ -78,26 +98,8 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
   },
 
   members: {
-    _inputOutputLayout: null,
     _inputLayout: null,
     _outputLayout: null,
-
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "input-output":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-          control.add(new qx.ui.core.Spacer(), {
-            flex: 1
-          });
-          this.add(control, {
-            row: 0,
-            column: 0
-          });
-          break;
-      }
-      return control || this.base(arguments, id);
-    },
 
     /**
       * @abstract
@@ -117,24 +119,49 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
     /**
       * @abstract
       */
-    _createUIPorts: function() {
+    _createPorts: function() {
       throw new Error("Abstract method called!");
     },
 
-    _createUIPortLabel: function(isInput) {
-      const labelText = isInput ? "in" : "out";
-      const alignX = isInput ? "left" : "right";
-      const uiPort = new qx.ui.basic.Label(labelText).set({
-        height: this.self().PORT_HEIGHT,
-        draggable: true,
-        droppable: true,
-        textAlign: alignX,
-        width: 30,
-        paddingLeft: 5,
-        paddingRight: 5
+    _createPort: function(isInput, placeholder = false) {
+      let port = null;
+      const width = this.self().PORT_HEIGHT;
+      const portMargin = this.self().PORT_HEIGHT - this.self().PORT_WIDTH;
+      if (placeholder) {
+        port = new qx.ui.core.Spacer(width, width);
+      } else {
+        port = new qx.ui.basic.Image().set({
+          source: this.self().NODE_DISCONNECTED, // disconnected by default
+          height: width,
+          draggable: true,
+          droppable: true,
+          width: width,
+          alignY: "top",
+          backgroundColor: "background-main"
+        });
+        port.setCursor("pointer");
+        port.getContentElement().setStyles({
+          "border-radius": width+"px"
+        });
+        port.isInput = isInput;
+      }
+      port.set({
+        marginLeft: isInput ? -portMargin : 0,
+        marginRight: isInput ? 0 : -portMargin
       });
-      uiPort.setCursor("pointer");
-      return uiPort;
+
+      this.add(port, {
+        row: 0,
+        column: isInput ? 0 : 2
+      });
+
+      if (isInput) {
+        this._inputLayout = port;
+      } else {
+        this._outputLayout = port;
+      }
+
+      return port;
     },
 
     /**
@@ -144,14 +171,14 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       throw new Error("Abstract method called!");
     },
 
-    _addDragDropMechanism: function(uiPort, isInput) {
+    _addDragDropMechanism: function(port, isInput) {
       [
         ["dragstart", "edgeDragStart"],
         ["dragover", "edgeDragOver"],
         ["drop", "edgeDrop"],
         ["dragend", "edgeDragEnd"]
       ].forEach(eventPair => {
-        uiPort.addListener(eventPair[0], e => {
+        port.addListener(eventPair[0], e => {
           const eData = this._createDragDropEventData(e, isInput);
           this.fireDataEvent(eventPair[1], eData);
         }, this);
@@ -161,8 +188,8 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
     getEdgePoint: function(port) {
       const bounds = this.getCurrentBounds();
       const captionHeight = Math.max(this.getChildControl("captionbar").getSizeHint().height, this.self().captionHeight());
-      const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width;
-      let y = bounds.top + captionHeight + this.self().PORT_HEIGHT/2 + 1;
+      const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width - 1;
+      let y = bounds.top + captionHeight + this.self().PORT_HEIGHT/2;
       return [x, y];
     },
 

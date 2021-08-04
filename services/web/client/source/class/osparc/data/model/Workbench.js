@@ -153,22 +153,22 @@ qx.Class.define("osparc.data.model.Workbench", {
       return null;
     },
 
-    createEdge: function(edgeId, node1Id, node2Id) {
-      const existingEdge = this.getEdge(edgeId, node1Id, node2Id);
+    createEdge: function(edgeId, nodeLeftId, nodeRightId) {
+      const existingEdge = this.getEdge(edgeId, nodeLeftId, nodeRightId);
       if (existingEdge) {
         return existingEdge;
       }
       if (!osparc.data.Permissions.getInstance().canDo("study.edge.create", true)) {
         return null;
       }
-      const node1 = this.getNode(node1Id);
-      const node2 = this.getNode(node2Id);
-      if (node1 && node2) {
-        const edge = new osparc.data.model.Edge(edgeId, node1, node2);
+      const nodeLeft = this.getNode(nodeLeftId);
+      const nodeRight = this.getNode(nodeRightId);
+      if (nodeLeft && nodeRight) {
+        const edge = new osparc.data.model.Edge(edgeId, nodeLeft, nodeRight);
         this.addEdge(edge);
 
         // post edge creation
-        this.getNode(node2Id).edgeAdded(edge);
+        this.getNode(nodeRightId).edgeAdded(edge);
 
         return edge;
       }
@@ -179,10 +179,16 @@ qx.Class.define("osparc.data.model.Workbench", {
       const edgeId = edge.getEdgeId();
       const node1Id = edge.getInputNodeId();
       const node2Id = edge.getOutputNodeId();
+
       const exists = this.getEdge(edgeId, node1Id, node2Id);
       if (!exists) {
         this.__edges[edgeId] = edge;
       }
+
+      const nodeLeft = this.getNode(node1Id);
+      const nodeRight = this.getNode(node2Id);
+      nodeLeft.setOutputConnected(true);
+      nodeRight.setInputConnected(true);
     },
 
     createNode: function(key, version, uuid, parent) {
@@ -248,6 +254,34 @@ qx.Class.define("osparc.data.model.Workbench", {
           this.__parameterNodeRequested(nodeId, portId);
         }, this);
       }
+    },
+
+    __getFreeSpotPostition: function(node0) {
+      // do not overlap the new node with other nodes
+      const pos = node0.getPosition();
+      const nodeWidth = osparc.component.workbench.NodeUI.NODE_WIDTH;
+      const nodeHeight = osparc.component.workbench.NodeUI.NODE_HEIGHT;
+      const xPos = Math.max(0, pos.x-nodeWidth-30);
+      let yPos = pos.y;
+      const allNodes = this.getNodes();
+      const avoidY = [];
+      for (const nId in allNodes) {
+        const node = allNodes[nId];
+        if (node.getPosition().x >= xPos-nodeWidth && node.getPosition().x <= (xPos+nodeWidth)) {
+          avoidY.push(node.getPosition().y);
+        }
+      }
+      avoidY.sort((a, b) => a - b); // For ascending sort
+      avoidY.forEach(y => {
+        if (yPos >= y-nodeHeight && yPos <= (y+nodeHeight)) {
+          yPos = y+nodeHeight+20;
+        }
+      });
+
+      return {
+        x: xPos,
+        y: yPos
+      };
     },
 
     __getFreeSpotPostition: function(node0) {
@@ -460,6 +494,17 @@ qx.Class.define("osparc.data.model.Workbench", {
           node.removeInputNode(inputNodeId);
           node.removeNodePortConnections(inputNodeId);
           delete this.__edges[edgeId];
+
+          const edges = Object.values(this.__edges);
+          if (edges.findIndex(edg => edg.getInputNodeId() === inputNodeId) === -1) {
+            const nodeLeft = this.getNode(inputNodeId);
+            nodeLeft.setOutputConnected(false);
+          }
+          if (edges.findIndex(edg => edg.getOutputNodeId() === outputNodeId) === -1) {
+            const nodeRight = this.getNode(outputNodeId);
+            nodeRight.setInputConnected(false);
+          }
+
           return true;
         }
       }
@@ -666,14 +711,14 @@ qx.Class.define("osparc.data.model.Workbench", {
       brotherNodes.forEach(brotherNode => {
         if (brotherNode.isInputNode(nodesGroup.getNodeId())) {
           brotherNode.removeInputNode(nodesGroup.getNodeId());
-          brotherNode.addInputNodes(nodesGroup.getOutputNodes());
+          brotherNode.addInputNodes(nodesGroup.getExposedNodeIDs());
 
           if (brotherNode.isContainer()) {
             const broInnerNodes = Object.values(brotherNode.getInnerNodes(true));
             broInnerNodes.forEach(broInnerNode => {
               if (broInnerNode.isInputNode(nodesGroup.getNodeId())) {
                 broInnerNode.removeInputNode(nodesGroup.getNodeId());
-                broInnerNode.addInputNodes(nodesGroup.getOutputNodes());
+                broInnerNode.addInputNodes(nodesGroup.getExposedNodeIDs());
               }
             });
           }
@@ -684,7 +729,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (currentModel.isContainer()) {
         if (currentModel.isOutputNode(nodesGroup.getNodeId())) {
           currentModel.removeOutputNode(nodesGroup.getNodeId());
-          currentModel.addOutputNodes(nodesGroup.getOutputNodes());
+          currentModel.addOutputNodes(nodesGroup.getExposedNodeIDs());
         }
       }
 

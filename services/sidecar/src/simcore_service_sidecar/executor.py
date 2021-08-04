@@ -18,6 +18,7 @@ from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from packaging import version
 from pydantic import BaseModel
 from servicelib.logging_utils import log_decorator
+from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_sdk import node_data, node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager
@@ -302,6 +303,15 @@ class Executor:
 
         resource_limitations = await _get_resource_limitations()
 
+        nano_cpus_limit = resource_limitations["NanoCPUs"]
+        mem_limit = resource_limitations["Memory"]
+
+        env_vars.extend(
+            [
+                f"{CPU_RESOURCE_LIMIT_KEY}={str(nano_cpus_limit)}",
+                f"{MEM_RESOURCE_LIMIT_KEY}={str(mem_limit)}",
+            ]
+        )
         docker_container_config = {
             "Env": env_vars,
             "Cmd": "run",
@@ -310,12 +320,12 @@ class Executor:
                 "user_id": str(self.user_id),
                 "study_id": str(self.task.project_id),
                 "node_id": str(self.task.node_id),
-                "nano_cpus_limit": str(resource_limitations["NanoCPUs"]),
-                "mem_limit": str(resource_limitations["Memory"]),
+                "nano_cpus_limit": str(nano_cpus_limit),
+                "mem_limit": str(mem_limit),
             },
             "HostConfig": {
-                "Memory": resource_limitations["Memory"],
-                "NanoCPUs": resource_limitations["NanoCPUs"],
+                "Memory": mem_limit,
+                "NanoCPUs": nano_cpus_limit,
                 "Init": True,
                 "AutoRemove": False,
                 "Binds": [

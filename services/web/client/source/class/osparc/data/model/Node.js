@@ -56,7 +56,7 @@ qx.Class.define("osparc.data.model.Node", {
     this.setOutputs({});
 
     this.__inputNodes = [];
-    this.__outputNodes = [];
+    this.__exposedNodes = [];
 
     this.set({
       key,
@@ -159,6 +159,20 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: true
     },
 
+    inputConnected: {
+      check: "Boolean",
+      init: false,
+      nullable: true,
+      event: "changeInputConnected"
+    },
+
+    outputConnected: {
+      check: "Boolean",
+      init: false,
+      nullable: true,
+      event: "changeOutputConnected"
+    },
+
     loadingPage: {
       check: "osparc.ui.message.Loading",
       init: null,
@@ -200,6 +214,10 @@ qx.Class.define("osparc.data.model.Node", {
       return (metaData && metaData.key && metaData.key.includes("/parameter/"));
     },
 
+    isParameter: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("/parameter/"));
+    },
+
     isContainer: function(metaData) {
       return (metaData && metaData.key && metaData.key.includes("nodes-group"));
     },
@@ -221,7 +239,7 @@ qx.Class.define("osparc.data.model.Node", {
     __metaData: null,
     __innerNodes: null,
     __inputNodes: null,
-    __outputNodes: null,
+    __exposedNodes: null,
     __settingsForm: null,
     __inputs: null,
     __inputsDefault: null,
@@ -343,8 +361,8 @@ qx.Class.define("osparc.data.model.Node", {
       const workbench = this.getWorkbench();
 
       let outputNodes = [];
-      for (let i=0; i<this.__outputNodes.length; i++) {
-        const outputNode = workbench.getNode(this.__outputNodes[i]);
+      for (let i=0; i<this.__exposedNodes.length; i++) {
+        const outputNode = workbench.getNode(this.__exposedNodes[i]);
         if (outputNode.isContainer()) {
           let myOutputNodes = outputNode.getExposedInnerNodes();
           outputNodes = outputNodes.concat(myOutputNodes);
@@ -681,7 +699,7 @@ qx.Class.define("osparc.data.model.Node", {
         }
         this.getStatus().setHasOutputs(hasOutputs);
 
-        if (hasOutputs && (this.isFilePicker() || this.isDynamic())) {
+        if (hasOutputs && (this.isFilePicker() || this.isParameter() || this.isDynamic())) {
           this.getStatus().setModified(false);
         }
 
@@ -747,20 +765,20 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__inputNodes;
     },
 
-    addInputNodes: function(inputNodes) {
-      if (inputNodes) {
-        inputNodes.forEach(inputNode => {
-          this.addInputNode(inputNode);
-        });
-      }
-    },
-
     addInputNode: function(inputNodeId) {
       if (!this.__inputNodes.includes(inputNodeId)) {
         this.__inputNodes.push(inputNodeId);
         return true;
       }
       return false;
+    },
+
+    addInputNodes: function(inputNodes) {
+      if (inputNodes) {
+        inputNodes.forEach(inputNode => {
+          this.addInputNode(inputNode);
+        });
+      }
     },
 
     removeInputNode: function(inputNodeId) {
@@ -781,7 +799,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     // ----- Output Nodes -----
     getOutputNodes: function() {
-      return this.__outputNodes;
+      return this.__exposedNodes;
     },
 
     addOutputNodes: function(outputNodes) {
@@ -793,8 +811,8 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     addOutputNode: function(outputNodeId) {
-      if (!this.__outputNodes.includes(outputNodeId)) {
-        this.__outputNodes.push(outputNodeId);
+      if (!this.__exposedNodes.includes(outputNodeId)) {
+        this.__exposedNodes.push(outputNodeId);
         this.fireEvent("outputListChanged");
         return true;
       }
@@ -802,17 +820,17 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     removeOutputNode: function(outputNodeId) {
-      const index = this.__outputNodes.indexOf(outputNodeId);
+      const index = this.__exposedNodes.indexOf(outputNodeId);
       if (index > -1) {
         // remove node connection
-        this.__outputNodes.splice(index, 1);
+        this.__exposedNodes.splice(index, 1);
         this.fireEvent("outputListChanged");
       }
       return false;
     },
 
     isOutputNode: function(outputNodeId) {
-      const index = this.__outputNodes.indexOf(outputNodeId);
+      const index = this.__exposedNodes.indexOf(outputNodeId);
       return (index > -1);
     },
     // !---- Output Nodes -----
@@ -1219,13 +1237,13 @@ qx.Class.define("osparc.data.model.Node", {
       };
 
       if (this.isContainer()) {
-        nodeEntry.outputNodes = this.getOutputNodes();
+        nodeEntry.outputNodes = this.getExposedNodeIDs();
       } else if (this.isFilePicker()) {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
       } else if (this.isParameter()) {
         const paramOutKey = "out_1";
-        if (this.getOutputData(paramOutKey)) {
+        if (this.getOutputData(paramOutKey) !== null) {
           const output = {};
           output[paramOutKey] = this.getOutputData(paramOutKey);
           nodeEntry.outputs = output;

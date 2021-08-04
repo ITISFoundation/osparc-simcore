@@ -116,7 +116,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
       const prevNodeId = this.__currentNodeId;
       this.__currentNodeId = nodeId;
-      this.getStudy().getUi().setCurrentNodeId(nodeId);
+      study.getUi().setCurrentNodeId(nodeId);
 
       if (node === null || nodeId === study.getUuid()) {
         this.__showInMainView(this.__workbenchUI, study.getUuid());
