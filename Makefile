@@ -110,7 +110,7 @@ SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),N
 define _docker_compose_build
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,production);\
 pushd services &&\
-docker buildx create --name osparc-builder --use || true; &&\
+docker buildx create --name osparc-builder --use || true &&\
 docker buildx bake \
 	$(if $(findstring -devel,$@),,\
 	$(foreach service, $(SERVICES_LIST),\
@@ -121,7 +121,7 @@ docker buildx bake \
 	--set *.output="type=docker,push=false" \
 	--file docker-compose-build.yml $(if $(target),$(target),) &&\
 popd &&\
-docker buildx rm osparc-builder;
+docker buildx rm osparc-builder
 endef
 
 rebuild: build-nc # alias
