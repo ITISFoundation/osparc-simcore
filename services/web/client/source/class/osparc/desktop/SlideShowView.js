@@ -108,6 +108,10 @@ qx.Class.define("osparc.desktop.SlideShowView", {
           view.populateLayout();
           view.getInputsView().exclude();
           view.getOutputsView().exclude();
+          if (this.getPageContext() === "fullSlideshow" && !node.isComputational()) {
+            view.getHeaderLayout().exclude();
+            view.getSettingsLayout().exclude();
+          }
           this._add(view, {
             flex: 1
           });
