@@ -65,6 +65,11 @@ else
   if [ "$num_gpus" -gt 0 ]; then
     resources="$resources,GPU=$num_gpus"
   fi
+  if [ ${TARGET_MPI_NODE_CPU_COUNT+x} ]; then
+    if [ $(nproc) -eq ${TARGET_MPI_NODE_CPU_COUNT} ]; then
+      resources="$resources,MPI=1"
+    fi
+  fi
   echo "$INFO" "Starting as a ${DASK_WORKER_VERSION} -> ${DASK_SCHEDULER_ADDRESS} ..."
   echo "$INFO" "Worker resources set as: $resources"
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
