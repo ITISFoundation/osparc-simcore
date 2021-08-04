@@ -23,6 +23,7 @@ pytest_simcore_ops_services_selection = ["adminer", "redis-commander"]
 
 @pytest.fixture
 def minimal_celery_scheduler_config(
+    mock_env: None,
     postgres_host_config: Dict[str, str],
     redis_service: RedisConfig,
     rabbit_service: RabbitConfig,
@@ -55,7 +56,6 @@ def test_scheduler_gracefully_starts_and_stops(
 )
 def test_scheduler_raises_exception_for_missing_dependencies(
     minimal_celery_scheduler_config: None,
-    mock_env: None,
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
     monkeypatch: MonkeyPatch,
     missing_dependency: str,
