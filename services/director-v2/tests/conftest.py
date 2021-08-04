@@ -129,6 +129,7 @@ async def initialized_app(monkeypatch: MonkeyPatch) -> Iterator[FastAPI]:
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv("SC_BOOT_MODE", "production")
 
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
