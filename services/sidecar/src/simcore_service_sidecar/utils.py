@@ -53,6 +53,13 @@ def is_gpu_node() -> bool:
                 )
 
                 container_data = await container.wait(timeout=30)
+                logger.debug(
+                    "testing for GPU presence with docker run %s %s completed with status code %s:\nlogs:\n%s",
+                    spec_config["Image"],
+                    spec_config["Cmd"],
+                    container_data["StatusCode"],
+                    await container.log(stdout=True, stderr=True),
+                )
                 return container_data["StatusCode"] == 0
             except aiodocker.exceptions.DockerError as err:
                 logger.debug(
