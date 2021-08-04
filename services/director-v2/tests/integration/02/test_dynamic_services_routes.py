@@ -11,19 +11,11 @@ import pytest
 from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
 from async_timeout import timeout
-from fastapi import FastAPI
 from pydantic import PositiveInt
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.models.schemas.constants import (
-    DYNAMIC_SIDECAR_SERVICE_PREFIX,
-)
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
-    DynamicSidecarsScheduler,
-)
-from utils import ensure_network_cleanup
+from utils import ensure_network_cleanup, patch_dynamic_service_url
 
-SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 20
 SERVICE_IS_READY_TIMEOUT = 2 * 60
 
 logger = logging.getLogger(__name__)
@@ -122,46 +114,6 @@ async def ensure_services_stopped(start_request_data: Dict[str, Any]) -> None:
         await ensure_network_cleanup(docker_client, project_id)
 
 
-async def _patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> None:
-    """
-    Normally director-v2 talks via docker-netwoks with the dynamic-sidecar.
-    Since the director-v2 was started outside docker and is not
-    running in a container, the service port needs to be exposed and the
-    url needs to be changed to localhost
-
-    returns: the local endpoint
-    """
-    service_name = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{node_uuid}"
-    port = None
-
-    async with aiodocker.Docker() as docker_client:
-        async with timeout(SERVICE_WAS_CREATED_BY_DIRECTOR_V2):
-            # it takes a bit of time for the port to be auto generated
-            # keep trying until it is there
-            while port is None:
-                services = await docker_client.services.list()
-                for service in services:
-                    if service["Spec"]["Name"] == service_name:
-                        ports = service["Endpoint"].get("Ports", [])
-                        if len(ports) == 1:
-                            port = ports[0]["PublishedPort"]
-                            break
-
-                await asyncio.sleep(1)
-
-    # patch the endppoint inside the scheduler
-    scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
-    async with scheduler._lock:  # pylint: disable=protected-access
-        for entry in scheduler._to_observe.values():  # pylint: disable=protected-access
-            if entry.scheduler_data.service_name == service_name:
-                entry.scheduler_data.dynamic_sidecar.hostname = "172.17.0.1"
-                entry.scheduler_data.dynamic_sidecar.port = port
-
-                endpoint = entry.scheduler_data.dynamic_sidecar.endpoint
-                assert endpoint == f"http://172.17.0.1:{port}"
-                break
-
-
 async def test_start_status_stop(
     test_client: TestClient,
     node_uuid: str,
@@ -178,7 +130,7 @@ async def test_start_status_stop(
     )
     assert response.status_code == 201, response.text
 
-    await _patch_dynamic_service_url(app=test_client.application, node_uuid=node_uuid)
+    await patch_dynamic_service_url(app=test_client.application, node_uuid=node_uuid)
 
     # awaiting for service to be running
     async with timeout(SERVICE_IS_READY_TIMEOUT):
