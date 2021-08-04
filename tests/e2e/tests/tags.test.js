@@ -65,7 +65,7 @@ describe('tags testing', () => {
     await page.evaluate(async function(studyId, tagId) {
       await osparc.data.Resources.fetch('studies', 'delete', {
         url: {
-          projectId: studyId
+          "studyId": studyId
         }
       }, studyId);
       await osparc.data.Resources.fetch('tags', 'delete', {

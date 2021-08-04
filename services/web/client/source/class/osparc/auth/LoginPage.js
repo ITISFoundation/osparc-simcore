@@ -43,6 +43,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       // Layout guarantees it gets centered in parent's page
       const layout = new qx.ui.layout.Grid(20, 20);
       layout.setRowFlex(1, 1);
+      layout.setColumnFlex(0, 1);
       this._setLayout(layout);
 
       const image = this._getLogoWPlatform();
