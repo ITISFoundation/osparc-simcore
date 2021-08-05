@@ -22,32 +22,8 @@
 qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
   extend: osparc.navigation.BreadcrumbNavigation,
 
-  construct: function() {
-    this.base(arguments);
-
-    this.addListener("changeEditMode", () => {
-      if (this.getEditMode()) {
-        this.__buildEditMode();
-      } else {
-        this.populateButtons(this.__nodesIds);
-      }
-    }, this);
-  },
-
-  properties: {
-    editMode: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeEditMode"
-    }
-  },
-
   members: {
-    __nodesIds: null,
-
     populateButtons: function(nodesIds = []) {
-      this.__nodesIds = nodesIds;
       const btns = [];
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const currentNodeId = study.getUi().getCurrentNodeId();
@@ -58,11 +34,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
         }
         btns.push(btn);
       });
-      if (this.getEditMode()) {
-        this._buttonsToBreadcrumb(btns, "plusBtn");
-      } else {
-        this._buttonsToBreadcrumb(btns, "arrow");
-      }
+      this._buttonsToBreadcrumb(btns, "arrow");
     },
 
     __createBtn: function(nodeId) {
@@ -109,68 +81,6 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
         });
       }
       return btn;
-    },
-
-    __createNewServiceBtn: function() {
-      const newServiceBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/plus-circle/24").set({
-        ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-        textColor: "ready-green"
-      });
-      newServiceBtn.getContentElement()
-        .setStyles({
-          "border-radius": "24px"
-        });
-      newServiceBtn.addListener("execute", () => {
-        console.log(newServiceBtn.leftNodeId);
-        console.log(newServiceBtn.rightNodeId);
-      });
-      return newServiceBtn;
-    },
-
-    __createEditNodeMenu: function() {
-      const menu = new qx.ui.menu.Menu();
-
-      const deleteButton = new qx.ui.menu.Button("Delete");
-      menu.add(deleteButton);
-
-      const renameButton = new qx.ui.menu.Button("Rename");
-      menu.add(renameButton);
-
-      return menu;
-    },
-
-    __buildEditMode: function() {
-      this._removeAll();
-
-      let newServiceBtn = this.__createNewServiceBtn();
-      this._add(newServiceBtn);
-
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const slideShow = study.getUi().getSlideshow();
-
-      this.__nodesIds.forEach(nodeId => {
-        const node = study.getWorkbench().getNode(nodeId);
-        if (node && nodeId in slideShow) {
-          const btn = new qx.ui.toolbar.MenuButton().set({
-            marginLeft: 1,
-            marginRight: 1
-          });
-          this._add(btn);
-
-          const pos = slideShow[nodeId].position;
-          node.bind("label", btn, "label", {
-            converter: val => `${pos+1}- ${val}`
-          });
-
-          const menu = this.__createEditNodeMenu();
-          btn.setMenu(menu);
-
-          newServiceBtn.rightNodeId = nodeId;
-          newServiceBtn = this.__createNewServiceBtn(nodeId);
-          newServiceBtn.leftNodeId = nodeId;
-          this._add(newServiceBtn);
-        }
-      });
     }
   }
 });

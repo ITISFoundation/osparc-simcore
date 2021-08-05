@@ -28,6 +28,12 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       const nodeId = e.getData();
       this.nodeSelected(nodeId);
     }, this);
+    slideShowToolbar.addListener("addServiceBetween", e => {
+      console.log(e.getData());
+    }, this);
+    slideShowToolbar.addListener("removeServiceBetween", e => {
+      console.log(e.getData());
+    }, this);
     this._add(slideShowToolbar);
   },
 

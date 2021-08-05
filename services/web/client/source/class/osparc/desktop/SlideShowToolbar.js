@@ -18,9 +18,12 @@
 qx.Class.define("osparc.desktop.SlideShowToolbar", {
   extend: osparc.desktop.Toolbar,
 
-  members: {
-    __navNodes: null,
+  events: {
+    "addServiceBetween": "qx.event.type.Data",
+    "removeServiceBetween": "qx.event.type.Data"
+  },
 
+  members: {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -33,11 +36,13 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
           });
           editBtn.addListener("execute", () => {
-            this.__navNodes.setEditMode(true);
+            this.getChildControl("breadcrumb-navigation").exclude();
+            this.getChildControl("breadcrumb-navigation-edit").show();
             control.setSelection([saveBtn]);
           }, this);
           saveBtn.addListener("execute", () => {
-            this.__navNodes.setEditMode(false);
+            this.getChildControl("breadcrumb-navigation").show();
+            this.getChildControl("breadcrumb-navigation-edit").exclude();
             control.setSelection([editBtn]);
           }, this);
           control.add(editBtn);
@@ -46,16 +51,31 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           this._add(control);
           break;
         }
-        case "breadcrumb-navigation": {
-          const breadcrumbNavigation = this.__navNodes = new osparc.navigation.BreadcrumbsSlideShow();
-          breadcrumbNavigation.addListener("nodeSelected", e => {
-            this.fireDataEvent("nodeSelected", e.getData());
-          }, this);
+        case "breadcrumbs-scroll":
           control = new qx.ui.container.Scroll();
-          control.add(breadcrumbNavigation);
           this._add(control, {
             flex: 1
           });
+          break;
+        case "breadcrumb-navigation": {
+          control = new osparc.navigation.BreadcrumbsSlideShow();
+          control.addListener("nodeSelected", e => {
+            this.fireDataEvent("nodeSelected", e.getData());
+          }, this);
+          const scroll = this.getChildControl("breadcrumbs-scroll");
+          scroll.add(control);
+          break;
+        }
+        case "breadcrumb-navigation-edit": {
+          control = new osparc.navigation.BreadcrumbsSlideShowEdit();
+          control.addListener("addServiceBetween", e => {
+            this.fireDataEvent("addServiceBetween", e.getData());
+          }, this);
+          control.addListener("removeServiceBetween", e => {
+            this.fireDataEvent("removeServiceBetween", e.getData());
+          }, this);
+          const scroll = this.getChildControl("breadcrumbs-scroll");
+          scroll.add(control);
           break;
         }
         case "prev-next-btns": {
@@ -103,7 +123,9 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           nodeIds.push(node.nodeId);
         });
 
-        this.__navNodes.populateButtons(nodeIds);
+        this.getChildControl("breadcrumb-navigation").populateButtons(nodeIds);
+        this.getChildControl("breadcrumb-navigation-edit").populateButtons(nodeIds);
+        this.getChildControl("breadcrumb-navigation-edit").exclude();
         this.getChildControl("prev-next-btns").populateButtons(nodeIds);
       }
     }
