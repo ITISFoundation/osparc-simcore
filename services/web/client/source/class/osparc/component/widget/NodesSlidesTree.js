@@ -49,25 +49,6 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
   },
 
   statics: {
-    convertModel: function(nodes) {
-      let children = [];
-      for (let nodeId in nodes) {
-        const node = nodes[nodeId];
-        let nodeInTree = {
-          label: "",
-          nodeId: node.getNodeId(),
-          skipNode: false,
-          position: -1
-        };
-        nodeInTree.label = node.getLabel();
-        if (node.isContainer()) {
-          nodeInTree.children = this.convertModel(node.getInnerNodes());
-        }
-        children.push(nodeInTree);
-      }
-      return children;
-    },
-
     getItemsInTree: function(itemMdl, children = []) {
       children.push(itemMdl);
       for (let i=0; itemMdl.getChildren && i<itemMdl.getChildren().length; i++) {
@@ -138,10 +119,9 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
 
     __initRoot: function() {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const topLevelNodes = study.getWorkbench().getNodes();
       let rootData = {
         label: study.getName(),
-        children: this.self().convertModel(topLevelNodes),
+        children: [],
         nodeId: study.getUuid(),
         skipNode: null,
         position: null
@@ -188,33 +168,54 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       });
     },
 
-    __initData: function() {
-      if (!this.__slideShow.isEmpty()) {
-        const initData = this.__slideShow.getData();
-        const children = this.__tree.getModel().getChildren().toArray();
-        children.forEach(child => {
-          const nodeId = child.getNodeId();
-          if (nodeId in initData) {
-            child.setPosition(initData[nodeId].position);
-            child.setSkipNode(false);
-          } else {
-            child.setPosition(-1);
-            child.setSkipNode(true);
-          }
-        });
-        children.sort((a, b) => {
-          const aPos = a.getPosition();
-          const bPos = b.getPosition();
-          if (aPos === -1) {
-            return 1;
-          }
-          if (bPos === -1) {
-            return -1;
-          }
-          return aPos - bPos;
-        });
-        this.__tree.refresh();
+    __convertToModel: function(nodes) {
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const slideshow = study.getUi().getSlideshow();
+
+      let children = [];
+      for (let nodeId in nodes) {
+        const node = nodes[nodeId];
+        const nodeInTree = {
+          label: node.getLabel(),
+          nodeId: node.getNodeId()
+        };
+        const pos = slideshow.getPosition(nodeId);
+        if (pos === -1) {
+          nodeInTree.position = -1;
+          nodeInTree.skipNode = true;
+        } else {
+          nodeInTree.position = pos;
+          nodeInTree.skipNode = false;
+        }
+        if (node.isContainer()) {
+          nodeInTree.children = this.__convertToModel(node.getInnerNodes());
+        }
+        children.push(nodeInTree);
       }
+      return children;
+    },
+
+    __initData: function() {
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const topLevelNodes = study.getWorkbench().getNodes();
+
+      this.__tree.getModel().getChildren().removeAll();
+      const allChildren = this.__convertToModel(topLevelNodes);
+      this.__tree.getModel().setChildren(qx.data.marshal.Json.createModel(allChildren));
+
+      const children = this.__tree.getModel().getChildren().toArray();
+      children.sort((a, b) => {
+        const aPos = a.getPosition();
+        const bPos = b.getPosition();
+        if (aPos === -1) {
+          return 1;
+        }
+        if (bPos === -1) {
+          return -1;
+        }
+        return aPos - bPos;
+      });
+      this.__tree.refresh();
     },
 
     __itemActioned: function(item, action) {

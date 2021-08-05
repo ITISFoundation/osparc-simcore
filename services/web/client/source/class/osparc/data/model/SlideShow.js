@@ -69,6 +69,14 @@ qx.Class.define("osparc.data.model.SlideShow", {
       }
     },
 
+    getPosition: function(nodeId) {
+      const slideShow = this.getData();
+      if (nodeId in slideShow) {
+        return slideShow[nodeId].position;
+      }
+      return -1;
+    },
+
     serialize: function() {
       return this.getData();
     }
