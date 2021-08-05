@@ -161,18 +161,6 @@ def minimal_configuration(
 
 
 @pytest.fixture
-def fake_workbench_without_outputs(
-    fake_workbench_as_dict: Dict[str, Any]
-) -> Dict[str, Any]:
-    workbench = deepcopy(fake_workbench_as_dict)
-    # remove all the outputs from the workbench
-    for _, data in workbench.items():
-        data["outputs"] = {}
-
-    return workbench
-
-
-@pytest.fixture
 def update_project_workbench_with_comp_tasks(postgres_db: sa.engine.Engine) -> Callable:
     def updator(project_uuid: str):
         with postgres_db.connect() as con:

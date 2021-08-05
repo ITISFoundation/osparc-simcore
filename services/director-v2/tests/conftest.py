@@ -11,7 +11,7 @@ from copy import deepcopy
 from pathlib import Path
 from pprint import pformat
 from random import randint
-from typing import Any, Callable, Dict, Iterator
+from typing import Any, Callable, Dict, Iterator, List
 from uuid import uuid4
 
 import dotenv
@@ -26,11 +26,14 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.projects import Node, ProjectAtDB, Workbench
 from pydantic.types import PositiveInt
+from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
+from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from sqlalchemy import literal_column
+from sqlalchemy.sql.expression import over
 from starlette.testclient import TestClient
 
 nest_asyncio.apply()
@@ -201,6 +204,18 @@ def fake_workbench_as_dict(fake_workbench_file: Path) -> Dict[str, Any]:
     return workbench_dict
 
 
+@pytest.fixture
+def fake_workbench_without_outputs(
+    fake_workbench_as_dict: Dict[str, Any]
+) -> Dict[str, Any]:
+    workbench = deepcopy(fake_workbench_as_dict)
+    # remove all the outputs from the workbench
+    for _, data in workbench.items():
+        data["outputs"] = {}
+
+    return workbench
+
+
 @pytest.fixture(scope="session")
 def fake_workbench_computational_adjacency_file(mocks_dir: Path) -> Path:
     file_path = mocks_dir / "fake_workbench_computational_adjacency_list.json"
@@ -259,11 +274,11 @@ def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Dict:
 
 @pytest.fixture
 def project(postgres_db: sa.engine.Engine, user_db: Dict) -> Callable[..., ProjectAtDB]:
-    created_project_ids = []
+    created_project_ids: List[str] = []
 
     def creator(**overrides) -> ProjectAtDB:
         project_config = {
-            "uuid": uuid4(),
+            "uuid": f"{uuid4()}",
             "name": "my test project",
             "type": ProjectType.STANDARD.name,
             "description": "my test description",
@@ -281,12 +296,43 @@ def project(postgres_db: sa.engine.Engine, user_db: Dict) -> Callable[..., Proje
             )
 
             project = ProjectAtDB.parse_obj(result.first())
-            created_project_ids.append(project.uuid)
+            created_project_ids.append(f"{project.uuid}")
             return project
 
     yield creator
 
     # cleanup
     with postgres_db.connect() as con:
-        for pid in created_project_ids:
-            con.execute(projects.delete().where(projects.c.uuid == str(pid)))
+        con.execute(projects.delete().where(projects.c.uuid.in_(created_project_ids)))
+
+
+@pytest.fixture
+def pipeline(postgres_db: sa.engine.Engine) -> Callable[..., CompPipelineAtDB]:
+    created_pipeline_ids: List[str] = []
+
+    def creator(**overrides) -> CompPipelineAtDB:
+        pipeline_config = {
+            "project_id": f"{uuid4()}",
+            "dag_adjacency_list": {},
+            "state": StateType.NOT_STARTED,
+        }
+        pipeline_config.update(**overrides)
+        with postgres_db.connect() as conn:
+            result = conn.execute(
+                comp_pipeline.insert()
+                .values(**pipeline_config)
+                .returning(literal_column("*"))
+            )
+            new_pipeline = CompPipelineAtDB.parse_obj(result.first())
+            created_pipeline_ids.append(f"{new_pipeline.project_id}")
+            return new_pipeline
+
+    yield creator
+
+    # cleanup
+    with postgres_db.connect() as conn:
+        conn.execute(
+            comp_pipeline.delete().where(
+                comp_pipeline.c.project_id.in_(created_pipeline_ids)
+            )
+        )
