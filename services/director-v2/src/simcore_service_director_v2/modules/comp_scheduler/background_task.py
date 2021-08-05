@@ -14,8 +14,9 @@ logger = logging.getLogger(__name__)
 _DEFAULT_TIMEOUT_S: int = 5
 
 
-async def scheduler_task(scheduler: BaseCompScheduler, run_scheduler: bool) -> None:
-    while run_scheduler:
+async def scheduler_task(app: FastAPI) -> None:
+    scheduler = app.state.scheduler
+    while app.state.comp_scheduler_running:
         try:
             logger.debug("scheduler task running...")
             await scheduler.schedule_all_pipelines()
@@ -27,7 +28,8 @@ async def scheduler_task(scheduler: BaseCompScheduler, run_scheduler: bool) -> N
             logger.info("scheduler task cancelled")
             raise
         except Exception:  # pylint: disable=broad-except
-            if not run_scheduler:
+            if not app.state.comp_scheduler_running:
+                logger.warning("Forced to stop computational scheduler")
                 break
             logger.exception(
                 "Unexpected error in scheduler task, restarting scheduler now..."
@@ -38,10 +40,14 @@ async def scheduler_task(scheduler: BaseCompScheduler, run_scheduler: bool) -> N
 
 def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
     async def start_scheduler() -> None:
-        app.state.comp_scheduler_running = run_scheduler = True
-        app.state.scheduler = scheduler = await factory.create_from_db(app)
+        # FIXME: added this variable to overcome the state in which the
+        # task cancelation is ignored and the exceptions enter in a loop
+        # that never stops the background task. This flag is an additional
+        # mechanism to enforce stopping the background task
+        app.state.comp_scheduler_running = True
+        app.state.scheduler = await factory.create_from_db(app)
         app.state.scheduler_task = asyncio.create_task(
-            scheduler_task(scheduler, run_scheduler), name="comp. services scheduler"
+            scheduler_task(app), name="comp. services scheduler"
         )
         logger.info("Computational services Scheduler started")
 
@@ -50,12 +56,12 @@ def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
 
 def on_app_shutdown(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
     async def stop_scheduler() -> None:
-        app.state.comp_scheduler_running = False
         task = app.state.scheduler_task
-        app.state.scheduler = None
         with suppress(CancelledError):
             task.cancel()
+            app.state.comp_scheduler_running = False
             await task
+        app.state.scheduler = None
         app.state.scheduler_task = None
         logger.info("Computational services Scheduler stopped")
 
