@@ -440,30 +440,12 @@ qx.Class.define("osparc.data.model.Workbench", {
       return false;
     },
 
-    removeEdge: function(edgeId, currentNodeId) {
+    removeEdge: function(edgeId) {
       if (!osparc.data.Permissions.getInstance().canDo("study.edge.delete", true)) {
         return false;
       }
 
       const edge = this.getEdge(edgeId);
-      if (currentNodeId !== undefined) {
-        const currentNode = this.getNode(currentNodeId);
-        if (currentNode && currentNode.isContainer() && edge.getOutputNodeId() === currentNode.getNodeId()) {
-          const inputNode = this.getNode(edge.getInputNodeId());
-          currentNode.removeOutputNode(inputNode.getNodeId());
-
-          // Remove also dependencies from outter nodes
-          const cNodeId = inputNode.getNodeId();
-          const allNodes = this.getNodes(true);
-          for (const nodeId in allNodes) {
-            const node = allNodes[nodeId];
-            if (node.isInputNode(cNodeId) && !currentNode.isInnerNode(node.getNodeId())) {
-              this.removeEdge(edgeId);
-            }
-          }
-        }
-      }
-
       if (edge) {
         const inputNodeId = edge.getInputNodeId();
         const outputNodeId = edge.getOutputNodeId();
