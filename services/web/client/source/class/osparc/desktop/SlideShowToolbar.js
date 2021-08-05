@@ -36,13 +36,13 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
           });
           editBtn.addListener("execute", () => {
-            this.getChildControl("breadcrumb-navigation").exclude();
-            this.getChildControl("breadcrumb-navigation-edit").show();
+            this.getChildControl("breadcrumbs-scroll").exclude();
+            this.getChildControl("breadcrumbs-edit-scroll").show();
             control.setSelection([saveBtn]);
           }, this);
           saveBtn.addListener("execute", () => {
-            this.getChildControl("breadcrumb-navigation").show();
-            this.getChildControl("breadcrumb-navigation-edit").exclude();
+            this.getChildControl("breadcrumbs-scroll").show();
+            this.getChildControl("breadcrumbs-edit-scroll").exclude();
             control.setSelection([editBtn]);
           }, this);
           control.add(editBtn);
@@ -66,6 +66,12 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           scroll.add(control);
           break;
         }
+        case "breadcrumbs-edit-scroll":
+          control = new qx.ui.container.Scroll();
+          this._add(control, {
+            flex: 1
+          });
+          break;
         case "breadcrumb-navigation-edit": {
           control = new osparc.navigation.BreadcrumbsSlideShowEdit();
           control.addListener("addServiceBetween", e => {
@@ -74,7 +80,7 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           control.addListener("removeServiceBetween", e => {
             this.fireDataEvent("removeServiceBetween", e.getData());
           }, this);
-          const scroll = this.getChildControl("breadcrumbs-scroll");
+          const scroll = this.getChildControl("breadcrumbs-edit-scroll");
           scroll.add(control);
           break;
         }
@@ -94,6 +100,7 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
     _buildLayout: function() {
       this.getChildControl("edit-slideshow-buttons");
       this.getChildControl("breadcrumb-navigation");
+      this.getChildControl("breadcrumb-navigation-edit");
       this.getChildControl("prev-next-btns");
 
       this._add(new qx.ui.core.Spacer(20));
@@ -125,8 +132,9 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
 
         this.getChildControl("breadcrumb-navigation").populateButtons(nodeIds);
         this.getChildControl("breadcrumb-navigation-edit").populateButtons(nodeIds);
-        this.getChildControl("breadcrumb-navigation-edit").exclude();
         this.getChildControl("prev-next-btns").populateButtons(nodeIds);
+
+        this.getChildControl("breadcrumbs-edit-scroll").exclude();
       }
     }
   }
