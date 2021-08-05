@@ -38,7 +38,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     const model = this.__initRoot();
     this.__tree.setModel(model);
 
-    this.__populateTree();
+    this.__initTree();
     this.__recalculatePositions();
 
     this.__initData();
@@ -149,7 +149,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       return qx.data.marshal.Json.createModel(rootData, true);
     },
 
-    __populateTree: function() {
+    __initTree: function() {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
 
       this.__tree.setDelegate({
@@ -218,24 +218,24 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     },
 
     __itemActioned: function(item, action) {
-      let fntc;
+      let fnct;
       switch (action) {
         case "show":
-          fntc = this.__show;
+          fnct = this.__show;
           break;
         case "hide":
-          fntc = this.__hide;
+          fnct = this.__hide;
           break;
         case "moveUp":
-          fntc = this.__moveUp;
+          fnct = this.__moveUp;
           break;
         case "moveDown":
-          fntc = this.__moveDown;
+          fnct = this.__moveDown;
           break;
       }
-      if (fntc) {
+      if (fnct) {
         this.__tree.setSelection(new qx.data.Array([item.getModel()]));
-        fntc.call(this, item.getModel());
+        fnct.call(this, item.getModel());
         this.__recalculatePositions();
       }
     },
