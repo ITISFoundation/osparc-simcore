@@ -309,8 +309,6 @@ push-latest: tag-latest
 	@export DOCKER_IMAGE_TAG=latest; \
 	$(MAKE) push-version
 
-# NOTE: docker-compose only pushes images with a 'build' section.
-# TODO: change to docker-compose push when make config-version available
 push-version: tag-version
 	# pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
 	$(foreach service, $(SERVICES_LIST)\
