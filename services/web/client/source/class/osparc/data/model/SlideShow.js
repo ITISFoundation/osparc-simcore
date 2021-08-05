@@ -63,6 +63,18 @@ qx.Class.define("osparc.data.model.SlideShow", {
       return this.self().getSortedNodes(this.getData());
     },
 
+    insertNode: function(nodeId, pos) {
+      const slideShow = this.getData();
+      for (let nodeId2 in slideShow) {
+        if (slideShow[nodeId2].position >= pos) {
+          slideShow[nodeId2].position++;
+        }
+      }
+      slideShow[nodeId] = {
+        position: pos
+      };
+    },
+
     removeNode: function(nodeId) {
       if (nodeId in this.getData()) {
         delete this.getData()[nodeId];
@@ -75,6 +87,13 @@ qx.Class.define("osparc.data.model.SlideShow", {
         return slideShow[nodeId].position;
       }
       return -1;
+    },
+
+    __moveNode: function(nodes, from, to) {
+      let numberOfDeletedElm = 1;
+      const elm = nodes.splice(from, numberOfDeletedElm)[0];
+      numberOfDeletedElm = 0;
+      nodes.splice(to, numberOfDeletedElm, elm);
     },
 
     serialize: function() {

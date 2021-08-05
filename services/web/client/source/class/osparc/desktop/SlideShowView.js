@@ -209,6 +209,18 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       }
 
       // add to the slideshow
+      const slideshow = this.getStudy().getUi().getSlideshow();
+      const nodeId = node.getNodeId();
+      if (leftNodeId) {
+        let leftPos = slideshow.getPosition(leftNodeId);
+        slideshow.insertNode(nodeId, leftPos+1);
+      } else if (rightNodeId) {
+        const rightPos = slideshow.getPosition(rightNodeId);
+        slideshow.insertNode(nodeId, rightPos);
+      } else {
+        slideshow.insertNode(nodeId, 0);
+      }
+      this.__slideShowToolbar.populateButtons();
     },
 
     __removeService: function(nodeId) {
