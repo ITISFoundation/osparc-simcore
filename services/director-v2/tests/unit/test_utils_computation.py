@@ -3,8 +3,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
-
-from datetime import datetime
 from pathlib import Path
 from typing import List
 
@@ -33,120 +31,113 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
     return CompTaskAtDB.parse_file(fake_task_file)
 
 
-CELERY_PUBLICATION_TIMEOUT = 120
-
-
-def _lazy_evaluate_time(time_fct: str) -> datetime:
-    # pylint: disable=eval-used
-    # pylint: disable=unused-import
-    from datetime import timedelta
-
-    return eval(time_fct)
-
-
 @pytest.mark.parametrize(
     "task_states, exp_pipeline_state",
     [
-        (
-            # pipeline is published if all the nodes are published AND time is within publication timeout
+        pytest.param(
             [
                 (RunningState.PUBLISHED),
                 (RunningState.PENDING),
                 (RunningState.PUBLISHED),
             ],
             RunningState.PENDING,
+            id="unconnected published/pending tasks = pending",
         ),
-        (
-            # pipeline is published if all the nodes are published AND time is within publication timeout
+        pytest.param(
             [
                 (RunningState.PUBLISHED),
                 (RunningState.PUBLISHED),
                 (RunningState.PUBLISHED),
             ],
             RunningState.PUBLISHED,
+            id="unconnected published tasks = published",
         ),
-        (
-            # not started pipeline (all nodes are in non started mode)
+        pytest.param(
             [
                 (RunningState.NOT_STARTED),
                 (RunningState.NOT_STARTED),
             ],
             RunningState.NOT_STARTED,
+            id="unconnected not_started tasks = not_started",
         ),
-        (
-            # successful pipeline if ALL of the node are successful
+        pytest.param(
             [
                 (RunningState.SUCCESS),
                 (RunningState.SUCCESS),
             ],
             RunningState.SUCCESS,
+            id="unconnected successfull tasks = success",
         ),
-        (
-            # pending pipeline if ALL of the node are pending
+        pytest.param(
             [
                 (RunningState.PENDING),
                 (RunningState.PENDING),
             ],
             RunningState.PENDING,
+            id="unconnected pending tasks = pending",
         ),
-        (
-            # if one failed out of the other successfull ones then fails
+        pytest.param(
             [
                 (RunningState.SUCCESS),
                 (RunningState.SUCCESS),
                 (RunningState.FAILED),
             ],
             RunningState.FAILED,
+            id="any number of success and 1 failed = failed",
         ),
-        (
-            # started pipeline even if one node failed
+        pytest.param(
             [
+                (RunningState.SUCCESS),
                 (RunningState.SUCCESS),
                 (RunningState.PENDING),
                 (RunningState.FAILED),
+                (RunningState.FAILED),
                 (RunningState.PENDING),
+                (RunningState.PUBLISHED),
+                (RunningState.ABORTED),
             ],
             RunningState.STARTED,
+            id="any number of unconnected success and failed failed with pending/published = started",
         ),
-        (
-            # started pipeline if any of the node is started
+        pytest.param(
             [
                 (RunningState.STARTED),
                 (RunningState.FAILED),
             ],
             RunningState.STARTED,
+            id="any number of unconnected success and failed failed with pending/published = started",
         ),
-        (
-            # started pipeline if any of the node is started
+        pytest.param(
             [
                 (RunningState.SUCCESS),
                 (RunningState.PENDING),
                 (RunningState.PENDING),
             ],
             RunningState.STARTED,
+            id="any number of unconnected success and failed failed with pending/published = started",
         ),
-        (
-            # started pipeline if any of the node is started
+        pytest.param(
             [
                 (RunningState.SUCCESS),
                 (RunningState.PENDING),
                 (RunningState.PUBLISHED),
             ],
             RunningState.STARTED,
+            id="any number of unconnected success and failed failed with pending/published = started",
         ),
-        (
-            # ABORTED pipeline if any of the node is aborted
+        pytest.param(
             [
                 (RunningState.SUCCESS),
                 (RunningState.ABORTED),
                 (RunningState.PENDING),
             ],
-            RunningState.ABORTED,
+            RunningState.STARTED,
+            id="any number of unconnected success and failed failed with pending/published = started",
         ),
-        (
-            # empty tasks (could be an empty project or filled with dynamic services)
+        pytest.param(
             [],
             RunningState.NOT_STARTED,
+            id="empty tasks (empty project or full of dynamic services) = not_started",
         ),
     ],
 )
