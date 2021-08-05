@@ -95,8 +95,15 @@ async def test_pipeline_runs(
 ):
     empty_project = project()
 
-    # an empty pipeline should be removed from the scheduled pipelines
+    # check the pipeline is correctly added to the scheduled pipelines
     await scheduler.run_new_pipeline(user_id=user_id, project_id=empty_project.uuid)
-    assert (user_id, empty_project.uuid, 1) in scheduler.scheduled_pipelines
+    assert len(scheduler.scheduled_pipelines) == 1
+    for (u_id, p_id, it), params in scheduler.scheduled_pipelines.items():
+        assert u_id == user_id
+        assert p_id == empty_project.uuid
+        assert it > 0
+        assert params.mark_for_cancellation == False
+    # let the scheduler kick in
     await asyncio.sleep(1)
+    # an empty pipeline does not need scheduling, so it should be removed
     assert scheduler.scheduled_pipelines == {}
