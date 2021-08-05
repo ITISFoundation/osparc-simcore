@@ -193,11 +193,11 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       });
 
       // break previous connection
-      if (rightNodeId) {
-        const connectedEdges = workbench.getConnectedEdges(rightNodeId);
-        connectedEdges.forEach(connectedEdgeId => {
-          workbench.removeEdge(connectedEdgeId);
-        });
+      if (leftNodeId && rightNodeId) {
+        const edge = workbench.getEdge(null, leftNodeId, rightNodeId);
+        if (edge) {
+          workbench.removeEdge(edge.getEdgeId());
+        }
       }
 
       // create connections

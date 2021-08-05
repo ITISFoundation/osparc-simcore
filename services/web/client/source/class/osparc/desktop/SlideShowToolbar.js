@@ -32,17 +32,19 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           const editBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/14").set({
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
           });
+          editBtn.editing = false;
           const saveBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/check/14").set({
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
           });
+          saveBtn.editing = true;
           editBtn.addListener("execute", () => {
             this.getChildControl("breadcrumbs-scroll").exclude();
-            this.getChildControl("breadcrumbs-edit-scroll").show();
+            this.getChildControl("breadcrumbs-scroll-edit").show();
             control.setSelection([saveBtn]);
           }, this);
           saveBtn.addListener("execute", () => {
             this.getChildControl("breadcrumbs-scroll").show();
-            this.getChildControl("breadcrumbs-edit-scroll").exclude();
+            this.getChildControl("breadcrumbs-scroll-edit").exclude();
             control.setSelection([editBtn]);
           }, this);
           control.add(editBtn);
@@ -66,7 +68,7 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           scroll.add(control);
           break;
         }
-        case "breadcrumbs-edit-scroll":
+        case "breadcrumbs-scroll-edit":
           control = new qx.ui.container.Scroll();
           this._add(control, {
             flex: 1
@@ -80,7 +82,7 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           control.addListener("removeService", e => {
             this.fireDataEvent("removeService", e.getData());
           }, this);
-          const scroll = this.getChildControl("breadcrumbs-edit-scroll");
+          const scroll = this.getChildControl("breadcrumbs-scroll-edit");
           scroll.add(control);
           break;
         }
@@ -129,7 +131,14 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
         this.getChildControl("breadcrumb-navigation-edit").populateButtons(nodeIds);
         this.getChildControl("prev-next-btns").populateButtons(nodeIds);
 
-        this.getChildControl("breadcrumbs-edit-scroll").exclude();
+        const currectModeBtn = editSlideshowButtons.getSelection()[0];
+        if ("editing" in currectModeBtn && currectModeBtn["editing"]) {
+          this.getChildControl("breadcrumbs-scroll").exclude();
+          this.getChildControl("breadcrumbs-scroll-edit").show();
+        } else {
+          this.getChildControl("breadcrumbs-scroll").show();
+          this.getChildControl("breadcrumbs-scroll-edit").exclude();
+        }
       }
     }
   }
