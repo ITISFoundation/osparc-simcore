@@ -87,9 +87,5 @@ class RunningServicesDetailsArrayEnveloped(BaseModel):
     data: RunningServicesDetailsArray
 
 
-class RunningServiceDetailsEnveloped(BaseModel):
-    data: RunningServiceDetails
-
-
 class ServicesArrayEnveloped(BaseModel):
     data: List[ServiceDockerData]

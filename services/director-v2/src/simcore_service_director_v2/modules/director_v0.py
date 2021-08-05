@@ -21,10 +21,7 @@ from starlette.datastructures import URL
 
 from ..core.settings import DirectorV0Settings
 from ..models.schemas.constants import UserID
-from ..models.schemas.dynamic_services import (
-    RunningDynamicServiceDetails,
-    ServiceBootType,
-)
+from ..models.schemas.dynamic_services import RunningDynamicServiceDetails
 from ..models.schemas.services import ServiceExtras
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
@@ -160,7 +157,7 @@ class DirectorV0Client:
 
         if resp.status_code == status.HTTP_200_OK:
             return [
-                RunningDynamicServiceDetails(**x, boot_type=ServiceBootType.V0)
+                RunningDynamicServiceDetails(**x)
                 for x in unenvelope_or_raise_error(resp)
             ]
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
