@@ -45,7 +45,7 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
 
   statics: {
     ITEM_WIDTH: 180,
-    ITEM_HEIGHT: 150,
+    ITEM_HEIGHT: 140,
     SERVICE_ICON: "@FontAwesome5Solid/paw/50"
   },
 
