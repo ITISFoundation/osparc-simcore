@@ -17,6 +17,7 @@ from copy import deepcopy
 from importlib import reload
 from pathlib import Path
 from typing import Callable, Dict, Iterator, List
+from unittest.mock import patch
 from uuid import uuid4
 
 import aioredis
@@ -33,9 +34,10 @@ from pydantic import BaseSettings
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiopg_utils import DSN
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
+from simcore_service_webserver import rest
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_config import app_schema as app_schema
-from simcore_service_webserver.constants import APP_DB_ENGINE_KEY, INDEX_RESOURCE_NAME
+from simcore_service_webserver.constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
     create_user_group,
@@ -49,6 +51,17 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 
 # DEPLOYED SERVICES FOR TESTSUITE SESSION -----------------------------------
+
+
+@pytest.fixture(autouse=True)
+def disable_swagger_doc_genertion() -> None:
+    """
+    by not enabling the swagger documentation, 1.8s per test is gained
+    """
+    with patch.dict(
+        rest.setup.__wrapped__.__kwdefaults__, {"swagger_doc_enabled": False}
+    ):
+        yield
 
 
 @pytest.fixture(scope="session")
