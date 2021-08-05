@@ -21,7 +21,7 @@ services:
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
-  dask-scheduler: # uses same iamge as dask-sidecar, keeping here for consistency
+  dask-scheduler:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
   datcore-adapter:

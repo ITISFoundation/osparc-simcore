@@ -212,7 +212,7 @@ def test_not_implemented_comparison() -> None:
 
 
 def test_regression_legacy_service_compatibility() -> None:
-    api_repone = {
+    api_response = {
         "published_port": None,
         "entry_point": "",
         "service_uuid": "e5aa2f7a-eac4-4522-bd4f-270b5d8d9fff",
@@ -226,7 +226,7 @@ def test_regression_legacy_service_compatibility() -> None:
         "user_id": "1",
         "project_id": "b1ec5c8e-f5bb-11eb-b1d5-02420a000006",
     }
-    service_details = RunningDynamicServiceDetails.parse_obj(api_repone)
+    service_details = RunningDynamicServiceDetails.parse_obj(api_response)
 
     assert service_details
 
