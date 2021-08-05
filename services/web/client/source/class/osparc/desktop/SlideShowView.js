@@ -35,9 +35,9 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       } = e.getData();
       this.__requestServiceBetween(leftNodeId, rightNodeId);
     }, this);
-    slideShowToolbar.addListener("removeService", e => {
+    slideShowToolbar.addListener("removeNode", e => {
       const nodeId = e.getData();
-      this.__removeService(nodeId);
+      this.__removeNode(nodeId);
     }, this);
     this._add(slideShowToolbar);
   },
@@ -223,7 +223,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       this.__slideShowToolbar.populateButtons();
     },
 
-    __removeService: function(nodeId) {
+    __removeNode: function(nodeId) {
       const workbench = this.getStudy().getWorkbench();
 
       const node = workbench.getNode(nodeId);
@@ -236,22 +236,24 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       let rightNodeId = null;
       const nodes = this.getStudy().getUi().getSlideshow()
         .getSortedNodes();
-      const idx = nodes.findIndex(nodeId);
+      const idx = nodes.findIndex(node2 => node2.nodeId === nodeId);
       if (idx < 0) {
         return;
       }
       if (idx !== 0) {
         // not first
-        leftNodeId = nodes[idx-1];
+        leftNodeId = nodes[idx-1].nodeId;
       }
       if (idx < nodes.length) {
         // not last
-        rightNodeId = nodes[idx+1];
+        rightNodeId = nodes[idx+1].nodeId;
       }
       workbench.createEdge(null, leftNodeId, rightNodeId);
 
       // remove node
       workbench.removeNode(nodeId);
+
+      this.__slideShowToolbar.populateButtons();
     }
   }
 });

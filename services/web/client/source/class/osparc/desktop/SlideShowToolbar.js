@@ -20,7 +20,7 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
 
   events: {
     "addServiceBetween": "qx.event.type.Data",
-    "removeService": "qx.event.type.Data"
+    "removeNode": "qx.event.type.Data"
   },
 
   members: {
@@ -79,8 +79,8 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           control.addListener("addServiceBetween", e => {
             this.fireDataEvent("addServiceBetween", e.getData());
           }, this);
-          control.addListener("removeService", e => {
-            this.fireDataEvent("removeService", e.getData());
+          control.addListener("removeNode", e => {
+            this.fireDataEvent("removeNode", e.getData());
           }, this);
           const scroll = this.getChildControl("breadcrumbs-scroll-edit");
           scroll.add(control);

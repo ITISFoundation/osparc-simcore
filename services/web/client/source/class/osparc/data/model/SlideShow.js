@@ -76,8 +76,16 @@ qx.Class.define("osparc.data.model.SlideShow", {
     },
 
     removeNode: function(nodeId) {
-      if (nodeId in this.getData()) {
-        delete this.getData()[nodeId];
+      const slideShow = this.getData();
+      if (nodeId in slideShow) {
+        const pos = slideShow[nodeId];
+        for (let nodeId2 in slideShow) {
+          if (slideShow[nodeId2].position >= pos) {
+            slideShow[nodeId2].position--;
+          }
+        }
+
+        delete slideShow[nodeId];
       }
     },
 

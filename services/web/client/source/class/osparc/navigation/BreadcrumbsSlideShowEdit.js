@@ -24,7 +24,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
 
   events: {
     "addServiceBetween": "qx.event.type.Data",
-    "removeService": "qx.event.type.Data"
+    "removeNode": "qx.event.type.Data"
   },
 
   members: {
@@ -91,7 +91,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
 
       const deleteButton = new qx.ui.menu.Button("Delete");
       deleteButton.addListener("execute", () => {
-        this.fireDataEvent("removeService", nodeId);
+        this.fireDataEvent("removeNode", nodeId);
       });
       menu.add(deleteButton);
 
