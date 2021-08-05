@@ -20,6 +20,8 @@ translate into something like
 """
 from typing import Optional
 
+from models_library.projects import ProjectID
+
 
 class DirectorException(Exception):
     """Basic exception"""
@@ -69,6 +71,20 @@ class ServiceStartTimeoutError(DirectorException):
         super().__init__(f"Service {service_name}:{service_uuid} failed to start ")
         self.service_name = service_name
         self.service_uuid = service_uuid
+
+
+class ProjectNotFoundError(DirectorException):
+    """Project not found error"""
+
+    def __init__(self, project_id: ProjectID):
+        super().__init__(f"project {project_id} not found")
+
+
+class PipelineNotFoundError(DirectorException):
+    """Pipeline not found error"""
+
+    def __init__(self, pipeline_id: str):
+        super().__init__(f"pipeline {pipeline_id} not found")
 
 
 class SchedulerError(DirectorException):

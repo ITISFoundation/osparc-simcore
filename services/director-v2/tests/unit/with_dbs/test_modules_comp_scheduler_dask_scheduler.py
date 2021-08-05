@@ -15,8 +15,12 @@ from fastapi.applications import FastAPI
 from models_library.projects import ProjectAtDB
 from pydantic import PositiveInt
 from simcore_service_director_v2.core.application import init_app
-from simcore_service_director_v2.core.errors import ConfigurationError
+from simcore_service_director_v2.core.errors import (
+    ConfigurationError,
+    PipelineNotFoundError,
+)
 from simcore_service_director_v2.core.settings import AppSettings
+from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
     BaseCompScheduler,
 )

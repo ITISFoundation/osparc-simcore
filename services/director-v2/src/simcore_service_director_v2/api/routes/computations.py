@@ -17,7 +17,7 @@ from tenacity import (
     wait_random,
 )
 
-from ...core.errors import SchedulerError
+from ...core.errors import PipelineNotFoundError, ProjectNotFoundError, SchedulerError
 from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_tasks import CompTaskAtDB
 from ...models.schemas.comp_tasks import (
@@ -46,7 +46,6 @@ from ...utils.dags import (
     create_minimal_computational_graph_based_on_selection,
     find_computational_node_cycles,
 )
-from ...utils.exceptions import PipelineNotFoundError, ProjectNotFoundError
 from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
 from ..dependencies.scheduler import get_scheduler

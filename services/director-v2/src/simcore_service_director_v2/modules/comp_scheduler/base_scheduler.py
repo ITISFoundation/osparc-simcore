@@ -15,7 +15,7 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, cast
 
 import networkx as nx
 from aiopg.sa.engine import Engine
@@ -25,13 +25,12 @@ from models_library.projects_state import RunningState
 from pydantic import PositiveInt
 from simcore_service_director_v2.models.schemas.comp_scheduler import TaskIn
 
-from ...core.errors import SchedulerError
+from ...core.errors import PipelineNotFoundError, SchedulerError
 from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_runs import CompRunsAtDB
 from ...models.domains.comp_tasks import CompTaskAtDB
 from ...models.schemas.constants import UserID
 from ...utils.computations import get_pipeline_state_from_task_states
-from ...utils.exceptions import PipelineNotFoundError
 from ...utils.scheduler import COMPLETED_STATES, Iteration, get_repository
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
@@ -54,6 +53,14 @@ class BaseCompScheduler(ABC):
     wake_up_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
 
     async def run_new_pipeline(self, user_id: UserID, project_id: ProjectID) -> None:
+        # ensure the pipeline exists and is populated with something
+        dag = await self._get_pipeline_dag(project_id)
+        if not dag:
+            logger.warning(
+                "project %s has no computational dag defined. not scheduled for a run."
+            )
+            return
+
         runs_repo: CompRunsRepository = get_repository(
             self.db_engine, CompRunsRepository
         )  # type: ignore
