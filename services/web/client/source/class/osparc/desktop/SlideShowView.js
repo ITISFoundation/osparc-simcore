@@ -194,9 +194,9 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
       // break previous connection
       if (rightNodeId) {
-        const connectedEdges = this.getConnectedEdges(rightNodeId);
+        const connectedEdges = workbench.getConnectedEdges(rightNodeId);
         connectedEdges.forEach(connectedEdgeId => {
-          this.removeEdge(connectedEdgeId);
+          workbench.removeEdge(connectedEdgeId);
         });
       }
 
@@ -212,7 +212,34 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     },
 
     __removeService: function(nodeId) {
+      const workbench = this.getStudy().getWorkbench();
 
+      const node = workbench.getNode(nodeId);
+      if (!node) {
+        return;
+      }
+
+      // connect next node to previous node
+      let leftNodeId = null;
+      let rightNodeId = null;
+      const nodes = this.getStudy().getUi().getSlideshow()
+        .getSortedNodes();
+      const idx = nodes.findIndex(nodeId);
+      if (idx < 0) {
+        return;
+      }
+      if (idx !== 0) {
+        // not first
+        leftNodeId = nodes[idx-1];
+      }
+      if (idx < nodes.length) {
+        // not last
+        rightNodeId = nodes[idx+1];
+      }
+      workbench.createEdge(null, leftNodeId, rightNodeId);
+
+      // remove node
+      workbench.removeNode(nodeId);
     }
   }
 });
