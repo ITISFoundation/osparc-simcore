@@ -143,7 +143,7 @@ class BaseCompScheduler(ABC):
             )
         return pipeline_comp_tasks
 
-    async def _update_run_result(
+    async def _update_run_result_from_tasks(
         self,
         user_id: UserID,
         project_id: ProjectID,
@@ -151,10 +151,21 @@ class BaseCompScheduler(ABC):
         pipeline_tasks: Dict[str, CompTaskAtDB],
     ) -> RunningState:
 
-        pipeline_state_from_tasks = get_pipeline_state_from_task_states(
+        pipeline_state_from_tasks: RunningState = get_pipeline_state_from_task_states(
             list(pipeline_tasks.values()),
         )
+        await self._set_run_result(
+            user_id, project_id, iteration, pipeline_state_from_tasks
+        )
+        return pipeline_state_from_tasks
 
+    async def _set_run_result(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        iteration: PositiveInt,
+        run_result: RunningState,
+    ) -> None:
         comp_runs_repo: CompRunsRepository = get_repository(
             self.db_engine, CompRunsRepository
         )  # type: ignore
@@ -162,10 +173,9 @@ class BaseCompScheduler(ABC):
             user_id=user_id,
             project_id=project_id,
             iteration=iteration,
-            result_state=pipeline_state_from_tasks,
-            final_state=(pipeline_state_from_tasks in COMPLETED_STATES),
+            result_state=run_result,
+            final_state=(run_result in COMPLETED_STATES),
         )
-        return pipeline_state_from_tasks
 
     @abstractmethod
     async def _start_tasks(
@@ -212,21 +222,26 @@ class BaseCompScheduler(ABC):
                     if t.state in COMPLETED_STATES
                 }
             )
+            # update the current status of the run
+            pipeline_result = await self._update_run_result_from_tasks(
+                user_id, project_id, iteration, pipeline_tasks
+            )
         except PipelineNotFoundError:
             logger.warning(
                 "pipeline %s does not exist in comp_pipeline table, it will be removed from scheduler",
                 project_id,
             )
+            pipeline_result = RunningState.ABORTED
+            await self._set_run_result(user_id, project_id, iteration, pipeline_result)
         except InvalidPipelineError as exc:
             logger.warning(
                 "pipeline %s appears to be misconfigured, it will be removed from scheduler. Please check pipeline:\n%s",
                 project_id,
                 exc,
             )
-        # update the current status of the run
-        pipeline_result = await self._update_run_result(
-            user_id, project_id, iteration, pipeline_tasks
-        )
+            pipeline_dag = nx.DiGraph()
+            pipeline_result = RunningState.ABORTED
+            await self._set_run_result(user_id, project_id, iteration, pipeline_result)
 
         if not pipeline_dag.nodes():
             # there is nothing left, the run is completed, we're done here
