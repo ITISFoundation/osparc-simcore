@@ -5,7 +5,7 @@
 
 
 import asyncio
-from typing import Callable, Dict, Iterator
+from typing import Any, Callable, Dict, Iterator
 
 import aiopg
 import pytest
@@ -92,12 +92,26 @@ def scheduler(
     return minimal_app.state.scheduler
 
 
-async def test_pipeline_runs(
+async def test_empty_pipeline_is_not_scheduled(
     scheduler: BaseCompScheduler,
     user_id: PositiveInt,
     project: Callable[..., ProjectAtDB],
+    pipeline: Callable[..., CompPipelineAtDB],
 ):
     empty_project = project()
+
+    # the project is not in the comp_pipeline, therefore scheduling it should fail
+    with pytest.raises(PipelineNotFoundError):
+        await scheduler.run_new_pipeline(user_id=user_id, project_id=empty_project.uuid)
+    # create the empty pipeline now
+    _empty_pipeline = pipeline(project_id=f"{empty_project.uuid}")
+
+    # creating a run with an empty pipeline is useless, check the scheduler is not kicking in
+    await scheduler.run_new_pipeline(user_id=user_id, project_id=empty_project.uuid)
+    assert len(scheduler.scheduled_pipelines) == 0
+    assert (
+        scheduler.wake_up_event.is_set() == False
+    ), "the scheduler was woken up on an empty pipeline!"
 
     # check the pipeline is correctly added to the scheduled pipelines
     await scheduler.run_new_pipeline(user_id=user_id, project_id=empty_project.uuid)
