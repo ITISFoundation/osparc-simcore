@@ -90,8 +90,15 @@ class PipelineNotFoundError(DirectorException):
 class SchedulerError(DirectorException):
     """An error in the scheduler"""
 
-    def __init__(self, msg: Optional[str]):
+    def __init__(self, msg: Optional[str] = None):
         super().__init__(msg or "Unexpected error in the scheduler")
+
+
+class InvalidPipelineError(SchedulerError):
+    """A pipeline is misconfigured"""
+
+    def __init__(self, pipeline_id: str, msg: Optional[str] = None):
+        super().__init__(msg or f"Invalid configuration of pipeline {pipeline_id}")
 
 
 class ConfigurationError(DirectorException):

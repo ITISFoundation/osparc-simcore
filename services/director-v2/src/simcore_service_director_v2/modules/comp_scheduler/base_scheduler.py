@@ -15,7 +15,7 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional, Tuple, cast
+from typing import Callable, Dict, List, Optional, Tuple
 
 import networkx as nx
 from aiopg.sa.engine import Engine
@@ -25,7 +25,7 @@ from models_library.projects_state import RunningState
 from pydantic import PositiveInt
 from simcore_service_director_v2.models.schemas.comp_scheduler import TaskIn
 
-from ...core.errors import PipelineNotFoundError, SchedulerError
+from ...core.errors import InvalidPipelineError, PipelineNotFoundError, SchedulerError
 from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_runs import CompRunsAtDB
 from ...models.domains.comp_tasks import CompTaskAtDB
@@ -137,7 +137,8 @@ class BaseCompScheduler(ABC):
             if (str(t.node_id) in list(pipeline_dag.nodes()))
         }
         if len(pipeline_comp_tasks) != len(pipeline_dag.nodes()):
-            raise SchedulerError(
+            raise InvalidPipelineError(
+                f"{project_id}"
                 f"The tasks defined for {project_id} do not contain all the tasks defined in the pipeline [{list(pipeline_dag.nodes)}]! Please check."
             )
         return pipeline_comp_tasks
@@ -211,16 +212,21 @@ class BaseCompScheduler(ABC):
                     if t.state in COMPLETED_STATES
                 }
             )
-
-            # update the current status of the run
-            pipeline_result = await self._update_run_result(
-                user_id, project_id, iteration, pipeline_tasks
-            )
         except PipelineNotFoundError:
             logger.warning(
                 "pipeline %s does not exist in comp_pipeline table, it will be removed from scheduler",
                 project_id,
             )
+        except InvalidPipelineError as exc:
+            logger.warning(
+                "pipeline %s appears to be misconfigured, it will be removed from scheduler. Please check pipeline:\n%s",
+                project_id,
+                exc,
+            )
+        # update the current status of the run
+        pipeline_result = await self._update_run_result(
+            user_id, project_id, iteration, pipeline_tasks
+        )
 
         if not pipeline_dag.nodes():
             # there is nothing left, the run is completed, we're done here
