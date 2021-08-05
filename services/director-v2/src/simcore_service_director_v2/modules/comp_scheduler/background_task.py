@@ -7,7 +7,6 @@ from typing import Any, Callable, Coroutine
 from fastapi import FastAPI
 
 from . import factory
-from .base_scheduler import BaseCompScheduler
 
 logger = logging.getLogger(__name__)
 
