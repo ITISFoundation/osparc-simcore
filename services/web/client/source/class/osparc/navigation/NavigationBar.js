@@ -493,8 +493,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         study.bind("readOnly", this.getChildControl("read-only-icon"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
-        study.getUi().addListener("changeSlideshow", () => {
-          // this.__resetSlidesBtnsVis();
+        study.getUi().getSlideshow().addListener("changeSlideshow", () => {
+          this.__resetSlidesBtnsVis();
         });
       }
     }

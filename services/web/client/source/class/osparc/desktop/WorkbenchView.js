@@ -173,14 +173,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __editSlides: function() {
-      const uiData = this.getStudy().getUi();
-      const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(uiData.getSlideshow());
+      const slideshow = this.getStudy().getUi().getSlideshow();
+      const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(slideshow);
       const title = this.tr("Edit Slides");
       const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 600, 500).set({
         modal: false,
         clickAwayClose: false
       });
       nodesSlidesTree.addListener("finished", () => {
+        slideshow.fireEvent("changeSlideshow");
         win.close();
       });
     },

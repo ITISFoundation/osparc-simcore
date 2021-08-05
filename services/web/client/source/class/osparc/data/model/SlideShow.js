@@ -39,6 +39,10 @@ qx.Class.define("osparc.data.model.SlideShow", {
     }
   },
 
+  events: {
+    "changeSlideshow": "qx.event.type.Event"
+  },
+
   statics: {
     getSortedNodes: function(slideShow) {
       const nodes = [];
