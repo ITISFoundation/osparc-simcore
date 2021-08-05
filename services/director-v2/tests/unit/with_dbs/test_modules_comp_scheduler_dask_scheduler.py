@@ -373,7 +373,3 @@ async def test_proper_pipeline_is_scheduled(
     mocked_dask_client.assert_not_called()
     # the scheduled pipeline shall be removed
     assert scheduler.scheduled_pipelines == {}
-
-    import pdb
-
-    pdb.set_trace()
