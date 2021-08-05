@@ -15,7 +15,7 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Set, Tuple, cast
 
 import networkx as nx
 from aiopg.sa.engine import Engine
@@ -214,15 +214,42 @@ class BaseCompScheduler(ABC):
                 project_id, pipeline_dag
             )
 
-            # filter out the tasks with what were already completed
+            # filter out the tasks that were already successfully completed
             pipeline_dag.remove_nodes_from(
                 {
                     node_id
                     for node_id, t in pipeline_tasks.items()
-                    if t.state in COMPLETED_STATES
+                    if t.state == RunningState.SUCCESS
                 }
             )
-            # update the current status of the run
+
+            # find the tasks that need scheduling
+            tasks_to_schedule = [node_id for node_id, degree in pipeline_dag.in_degree() if degree == 0]  # type: ignore
+
+            tasks_to_mark_as_aborted: Set[NodeID] = set()
+            tasks_to_start: Set[NodeID] = set()
+            for node_id in tasks_to_schedule:
+                if pipeline_tasks[str(node_id)].state == RunningState.FAILED:
+                    tasks_to_mark_as_aborted.update(nx.bfs_tree(pipeline_dag, node_id))
+                    tasks_to_mark_as_aborted.remove(
+                        node_id
+                    )  # do not mark the failed one as aborted
+
+                if pipeline_tasks[str(node_id)].state == RunningState.PUBLISHED:
+                    tasks_to_start.add(node_id)
+
+            comp_tasks_repo: CompTasksRepository = cast(
+                CompTasksRepository, get_repository(self.db_engine, CompTasksRepository)
+            )
+
+            await comp_tasks_repo.set_project_tasks_state(
+                project_id, list(tasks_to_mark_as_aborted), RunningState.ABORTED
+            )
+            # update the current states
+            for node_id in tasks_to_mark_as_aborted:
+                pipeline_tasks[str(node_id)].state = RunningState.ABORTED
+
+            # compute and update the current status of the run
             pipeline_result = await self._update_run_result_from_tasks(
                 user_id, project_id, iteration, pipeline_tasks
             )
@@ -239,11 +266,10 @@ class BaseCompScheduler(ABC):
                 project_id,
                 exc,
             )
-            pipeline_dag = nx.DiGraph()
             pipeline_result = RunningState.ABORTED
             await self._set_run_result(user_id, project_id, iteration, pipeline_result)
 
-        if not pipeline_dag.nodes():
+        if not pipeline_dag.nodes() or pipeline_result in COMPLETED_STATES:
             # there is nothing left, the run is completed, we're done here
             self.scheduled_pipelines.pop((user_id, project_id, iteration))
             logger.info(
@@ -300,7 +326,9 @@ class BaseCompScheduler(ABC):
         comp_tasks_repo: CompTasksRepository = get_repository(
             self.db_engine, CompTasksRepository
         )  # type: ignore
-        await comp_tasks_repo.mark_project_tasks_as_pending(project_id, tasks)
+        await comp_tasks_repo.set_project_tasks_state(
+            project_id, tasks, RunningState.PENDING
+        )
 
         # now start the tasks
         await self._start_tasks(
