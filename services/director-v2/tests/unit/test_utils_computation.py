@@ -127,6 +127,15 @@ def configure_celery_timeout(monkeypatch):
             RunningState.STARTED,
         ),
         (
+            # started pipeline if any of the node is started
+            [
+                (RunningState.SUCCESS, "fake.date_time()"),
+                (RunningState.PENDING, "fake.date_time()"),
+                (RunningState.PUBLISHED, "fake.date_time()"),
+            ],
+            RunningState.STARTED,
+        ),
+        (
             # ABORTED pipeline if any of the node is aborted
             [
                 (RunningState.SUCCESS, "fake.date_time()"),
