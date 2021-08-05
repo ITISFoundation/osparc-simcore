@@ -300,7 +300,7 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 
 pull-version: .env ## pulls images from DOCKER_REGISTRY tagged as DOCKER_IMAGE_TAG
 	# Pulling images '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	@docker-compose --file services/docker-compose.yml pull
+	@docker-compose --file services/docker-compose-deploy.yml pull
 
 
 .PHONY: push-version push-latest
@@ -311,9 +311,7 @@ push-latest: tag-latest
 
 push-version: tag-version
 	# pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	$(foreach service, $(SERVICES_LIST)\
-		,docker push ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG}; \
-	)
+	@docker-compose --file services/docker-compose-build.yml --file services/docker-compose-deploy.yml push
 
 
 ## ENVIRONMENT -------------------------------

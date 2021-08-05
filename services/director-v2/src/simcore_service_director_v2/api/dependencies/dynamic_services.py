@@ -5,7 +5,7 @@ from models_library.projects_nodes import NodeID
 from starlette.datastructures import URL
 
 from ...core.settings import DynamicServicesSettings
-from ...models.schemas.services import RunningServiceDetails
+from ...models.schemas.dynamic_services import RunningDynamicServiceDetails
 from ...modules.dynamic_services import ServicesClient
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 from ...utils.logging_utils import log_decorator
@@ -21,14 +21,10 @@ async def get_service_base_url(
 ) -> URL:
 
     # get the service details
-    service_details: RunningServiceDetails = (
+    service_details: RunningDynamicServiceDetails = (
         await director_v0_client.get_running_service_details(node_uuid)
     )
-    # compute service url
-    service_url = URL(
-        f"http://{service_details.service_host}:{service_details.service_port}{service_details.service_basepath}"
-    )
-    return service_url
+    return URL(service_details.legacy_service_url)
 
 
 @log_decorator(logger=logger)
