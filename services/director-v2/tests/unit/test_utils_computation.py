@@ -44,103 +44,102 @@ def _lazy_evaluate_time(time_fct: str) -> datetime:
     return eval(time_fct)
 
 
-@pytest.fixture
-def configure_celery_timeout(monkeypatch):
-    monkeypatch.setenv("CELERY_PUBLICATION_TIMEOUT", str(CELERY_PUBLICATION_TIMEOUT))
-
-
 @pytest.mark.parametrize(
     "task_states, exp_pipeline_state",
     [
         (
             # pipeline is published if all the nodes are published AND time is within publication timeout
             [
-                (RunningState.PUBLISHED, "datetime.utcnow()"),
-                (RunningState.PENDING, "datetime.utcnow()-timedelta(seconds=75)"),
-                (RunningState.PUBLISHED, "datetime.utcnow()-timedelta(seconds=155)"),
+                (RunningState.PUBLISHED),
+                (RunningState.PENDING),
+                (RunningState.PUBLISHED),
             ],
             RunningState.PENDING,
         ),
         (
             # pipeline is published if all the nodes are published AND time is within publication timeout
             [
-                (RunningState.PUBLISHED, "datetime.utcnow()"),
-                (RunningState.PUBLISHED, "datetime.utcnow()-timedelta(seconds=75)"),
-                (RunningState.PUBLISHED, "datetime.utcnow()-timedelta(seconds=155)"),
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
             ],
             RunningState.PUBLISHED,
         ),
         (
             # not started pipeline (all nodes are in non started mode)
             [
-                (
-                    RunningState.NOT_STARTED,
-                    "fake.date_time()",
-                ),
-                (
-                    RunningState.NOT_STARTED,
-                    "fake.date_time()",
-                ),
+                (RunningState.NOT_STARTED),
+                (RunningState.NOT_STARTED),
             ],
             RunningState.NOT_STARTED,
         ),
         (
             # successful pipeline if ALL of the node are successful
             [
-                (RunningState.SUCCESS, "fake.date_time()"),
-                (RunningState.SUCCESS, "fake.date_time()"),
+                (RunningState.SUCCESS),
+                (RunningState.SUCCESS),
             ],
             RunningState.SUCCESS,
         ),
         (
             # pending pipeline if ALL of the node are pending
             [
-                (RunningState.PENDING, "fake.date_time()"),
-                (RunningState.PENDING, "fake.date_time()"),
+                (RunningState.PENDING),
+                (RunningState.PENDING),
             ],
             RunningState.PENDING,
         ),
         (
-            # failed pipeline if any of the node is failed
+            # if one failed out of the other successfull ones then fails
             [
-                (RunningState.PENDING, "fake.date_time()"),
-                (RunningState.FAILED, "fake.date_time()"),
-                (RunningState.PENDING, "fake.date_time()"),
+                (RunningState.SUCCESS),
+                (RunningState.SUCCESS),
+                (RunningState.FAILED),
             ],
             RunningState.FAILED,
         ),
         (
-            # started pipeline if any of the node is started
+            # started pipeline even if one node failed
             [
-                (RunningState.STARTED, "fake.date_time()"),
-                (RunningState.FAILED, "fake.date_time()"),
-            ],
-            RunningState.FAILED,
-        ),
-        (
-            # started pipeline if any of the node is started
-            [
-                (RunningState.SUCCESS, "fake.date_time()"),
-                (RunningState.PENDING, "fake.date_time()"),
-                (RunningState.PENDING, "fake.date_time()"),
+                (RunningState.SUCCESS),
+                (RunningState.PENDING),
+                (RunningState.FAILED),
+                (RunningState.PENDING),
             ],
             RunningState.STARTED,
         ),
         (
             # started pipeline if any of the node is started
             [
-                (RunningState.SUCCESS, "fake.date_time()"),
-                (RunningState.PENDING, "fake.date_time()"),
-                (RunningState.PUBLISHED, "fake.date_time()"),
+                (RunningState.STARTED),
+                (RunningState.FAILED),
+            ],
+            RunningState.STARTED,
+        ),
+        (
+            # started pipeline if any of the node is started
+            [
+                (RunningState.SUCCESS),
+                (RunningState.PENDING),
+                (RunningState.PENDING),
+            ],
+            RunningState.STARTED,
+        ),
+        (
+            # started pipeline if any of the node is started
+            [
+                (RunningState.SUCCESS),
+                (RunningState.PENDING),
+                (RunningState.PUBLISHED),
             ],
             RunningState.STARTED,
         ),
         (
             # ABORTED pipeline if any of the node is aborted
             [
-                (RunningState.SUCCESS, "fake.date_time()"),
-                (RunningState.ABORTED, "fake.date_time()"),
-                (RunningState.PENDING, "fake.date_time()"),
+                (RunningState.SUCCESS),
+                (RunningState.ABORTED),
+                (RunningState.PENDING),
             ],
             RunningState.ABORTED,
         ),
@@ -152,14 +151,12 @@ def configure_celery_timeout(monkeypatch):
     ],
 )
 def test_get_pipeline_state_from_task_states(
-    configure_celery_timeout,
     task_states: List[RunningState],
     exp_pipeline_state: RunningState,
     fake_task: CompTaskAtDB,
 ):
     tasks: List[CompTaskAtDB] = [
-        fake_task.copy(deep=True, update={"state": s, "submit": _lazy_evaluate_time(t)})
-        for s, t in task_states
+        fake_task.copy(deep=True, update={"state": s}) for s in task_states
     ]
 
     pipeline_state: RunningState = get_pipeline_state_from_task_states(tasks)

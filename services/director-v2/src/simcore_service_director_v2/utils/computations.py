@@ -23,17 +23,16 @@ def get_pipeline_state_from_task_states(tasks: List[CompTaskAtDB]) -> RunningSta
             return the_state
 
         # we have more than one state, let's check by order of priority
-        # if any FAILED/ABORTED then the pipeline is in the same state
-        for state in [
-            RunningState.FAILED,  # task is failed -> pipeline as well
-            RunningState.ABORTED,  # task aborted
-        ]:
-            if state in set_states:
-                return state
+        # if any ABORTED then the pipeline is in the same state
+        if RunningState.ABORTED in set_states:
+            return RunningState.ABORTED
 
         if set_states.issubset({RunningState.PENDING, RunningState.PUBLISHED}):
             # a pending pipeline has nodes either in PENDING or PUBLISHED state
             return RunningState.PENDING
+
+        if set_states.issubset({RunningState.SUCCESS, RunningState.FAILED}):
+            return RunningState.FAILED
 
         if set_states.issubset(
             {
@@ -42,6 +41,7 @@ def get_pipeline_state_from_task_states(tasks: List[CompTaskAtDB]) -> RunningSta
                 RunningState.STARTED,
                 RunningState.SUCCESS,
                 RunningState.RETRY,
+                RunningState.FAILED,
             }
         ):
             # a running pipeline has typically any number of nodes
