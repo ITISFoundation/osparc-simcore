@@ -29,9 +29,7 @@ make info-images
 
 # re-tag build
 DOCKER_IMAGE_TAG="$TAG_PREFIX-latest"
-BUILD_TARGET="undefined" # this gets overwritten but is required when merging yaml files
 export DOCKER_IMAGE_TAG
-export BUILD_TARGET
 log_info "pushing images ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY}"
 make push-version
 
