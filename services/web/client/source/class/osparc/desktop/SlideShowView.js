@@ -244,7 +244,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
         // not first
         leftNodeId = nodes[idx-1].nodeId;
       }
-      if (idx < nodes.length) {
+      if (idx < nodes.length-1) {
         // not last
         rightNodeId = nodes[idx+1].nodeId;
       }
