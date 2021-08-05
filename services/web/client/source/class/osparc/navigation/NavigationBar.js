@@ -261,7 +261,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       const context = ["workbench", "slideshow", "fullSlideshow"].includes(this.getPageContext());
       if (areSlidesEnabled && context) {
         const study = this.getStudy();
-        if (study && Object.keys(study.getUi().getSlideshow()).length) {
+        if (study && !study.getUi().getSlideshow().isEmpty()) {
           if (["slideshow", "fullSlideshow"].includes(this.getPageContext())) {
             this.getChildControl("slideshow-start").exclude();
             this.getChildControl("slideshow-stop").show();
@@ -494,7 +494,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           converter: value => value ? "visible" : "excluded"
         });
         study.getUi().addListener("changeSlideshow", () => {
-          this.__resetSlidesBtnsVis();
+          // this.__resetSlidesBtnsVis();
         });
       }
     }

@@ -22,8 +22,10 @@
 qx.Class.define("osparc.component.widget.NodesSlidesTree", {
   extend: qx.ui.core.Widget,
 
-  construct: function(initData = {}) {
+  construct: function(slideShow) {
     this.base(arguments);
+
+    this.__slideShow = slideShow;
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
@@ -39,7 +41,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     this.__populateTree();
     this.__recalculatePositions();
 
-    this.__initData(initData);
+    this.__initData();
   },
 
   events: {
@@ -83,6 +85,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
 
   members: {
     __tree: null,
+    __slideShow: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -185,8 +188,9 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       });
     },
 
-    __initData: function(initData) {
-      if (Object.keys(initData).length) {
+    __initData: function() {
+      if (!this.__slideShow.isEmpty()) {
+        const initData = this.__slideShow.getData();
         const children = this.__tree.getModel().getChildren().toArray();
         children.forEach(child => {
           const nodeId = child.getNodeId();
@@ -305,13 +309,13 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     __enableSlides: function() {
       const slideshow = this.__serialize();
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      study.getUi().setSlideshow(slideshow);
+      study.getUi().getSlideshow().setData(slideshow);
       this.fireEvent("finished");
     },
 
     __disableSlides: function() {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      study.getUi().setSlideshow({});
+      study.getUi().getSlideshow().setData({});
       this.fireEvent("finished");
     }
   }

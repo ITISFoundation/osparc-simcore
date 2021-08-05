@@ -29,10 +29,15 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       this.nodeSelected(nodeId);
     }, this);
     slideShowToolbar.addListener("addServiceBetween", e => {
-      console.log(e.getData());
+      const {
+        leftNodeId,
+        rightNodeId
+      } = e.getData();
+      this.__requestServiceBetween(leftNodeId, rightNodeId);
     }, this);
-    slideShowToolbar.addListener("removeServiceBetween", e => {
-      console.log(e.getData());
+    slideShowToolbar.addListener("removeService", e => {
+      const nodeId = e.getData();
+      this.__removeService(nodeId);
     }, this);
     this._add(slideShowToolbar);
   },
@@ -135,9 +140,10 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
     startSlides: function(context = "slideshow") {
       this.setPageContext(context);
+      this.__slideShowToolbar.populateButtons();
       const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
       const study = this.getStudy();
-      const slideShow = study.getUi().getSlideshow();
+      const slideShow = study.getUi().getSlideshow().getData();
       const isValid = Object.keys(slideShow).indexOf(currentNodeId) !== -1;
       if (isValid && currentNodeId) {
         this.nodeSelected(currentNodeId);
@@ -155,11 +161,58 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     __openFirstNode: function() {
       const study = this.getStudy();
       if (study) {
-        const nodes = osparc.data.model.StudyUI.getSortedNodes(study);
+        const nodes = study.getUi().getSlideshow().getSortedNodes();
         if (nodes.length) {
           this.nodeSelected(nodes[0].nodeId);
         }
       }
+    },
+
+    __requestServiceBetween: function(leftNodeId, rightNodeId) {
+      const srvCat = new osparc.component.workbench.ServiceCatalog();
+      srvCat.addListener("addService", e => {
+        const data = e.getData();
+        const service = data.service;
+        this.__addServiceBetween(service, leftNodeId, rightNodeId);
+      }, this);
+      srvCat.center();
+      srvCat.open();
+    },
+
+    __addServiceBetween: function(service, leftNodeId, rightNodeId) {
+      const workbench = this.getStudy().getWorkbench();
+
+      // create node
+      const node = workbench.createNode(service.getKey(), service.getVersion());
+      if (!node) {
+        return;
+      }
+      node.setPosition({
+        x: 0,
+        y: 0
+      });
+
+      // break previous connection
+      if (rightNodeId) {
+        const connectedEdges = this.getConnectedEdges(rightNodeId);
+        connectedEdges.forEach(connectedEdgeId => {
+          this.removeEdge(connectedEdgeId);
+        });
+      }
+
+      // create connections
+      if (leftNodeId) {
+        workbench.createEdge(null, leftNodeId, node.getNodeId());
+      }
+      if (rightNodeId) {
+        workbench.createEdge(null, node.getNodeId(), rightNodeId);
+      }
+
+      // add to the slideshow
+    },
+
+    __removeService: function(nodeId) {
+
     }
   }
 });

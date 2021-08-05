@@ -40,7 +40,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
     __createBtn: function(nodeId) {
       const btn = this._createNodeBtn(nodeId);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const slideShow = study.getUi().getSlideshow();
+      const slideShow = study.getUi().getSlideshow().getData();
       const node = study.getWorkbench().getNode(nodeId);
       if (node && nodeId in slideShow) {
         const pos = slideShow[nodeId].position;

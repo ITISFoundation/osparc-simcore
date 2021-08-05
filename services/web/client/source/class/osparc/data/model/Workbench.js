@@ -170,6 +170,8 @@ qx.Class.define("osparc.data.model.Workbench", {
         // post edge creation
         this.getNode(nodeRightId).edgeAdded(edge);
 
+        nodeRight.addInputNode(nodeLeftId);
+
         return edge;
       }
       return null;
@@ -415,10 +417,9 @@ qx.Class.define("osparc.data.model.Workbench", {
 
       // remove first the connected edges
       const connectedEdges = this.getConnectedEdges(nodeId);
-      for (let i=0; i<connectedEdges.length; i++) {
-        const edgeId = connectedEdges[i];
-        this.removeEdge(edgeId);
-      }
+      connectedEdges.forEach(connectedEdgeId => {
+        this.removeEdge(connectedEdgeId);
+      });
 
       let node = this.getNode(nodeId);
       if (node) {
@@ -431,9 +432,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
         // remove it from slideshow
         const study = osparc.store.Store.getInstance().getCurrentStudy();
-        if (nodeId in study.getUi().getSlideshow()) {
-          delete study.getUi().getSlideshow()[nodeId];
-        }
+        study.getUi().getSlideshow().removeNode(nodeId);
 
         this.fireEvent("nNodesChanged");
         return true;

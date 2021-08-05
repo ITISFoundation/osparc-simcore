@@ -20,7 +20,7 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
 
   events: {
     "addServiceBetween": "qx.event.type.Data",
-    "removeServiceBetween": "qx.event.type.Data"
+    "removeService": "qx.event.type.Data"
   },
 
   members: {
@@ -77,8 +77,8 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           control.addListener("addServiceBetween", e => {
             this.fireDataEvent("addServiceBetween", e.getData());
           }, this);
-          control.addListener("removeServiceBetween", e => {
-            this.fireDataEvent("removeServiceBetween", e.getData());
+          control.addListener("removeService", e => {
+            this.fireDataEvent("removeService", e.getData());
           }, this);
           const scroll = this.getChildControl("breadcrumbs-edit-scroll");
           scroll.add(control);
@@ -108,6 +108,10 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
       this._startStopBtns = this.getChildControl("start-stop-btns");
     },
 
+    populateButtons: function() {
+      this._populateNodesNavigationLayout();
+    },
+
     // overriden
     _populateNodesNavigationLayout: function() {
       const study = this.getStudy();
@@ -115,16 +119,7 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
         const editSlideshowButtons = this.getChildControl("edit-slideshow-buttons");
         osparc.data.model.Study.isOwner(study) ? editSlideshowButtons.show() : editSlideshowButtons.exclude();
 
-        const slideShow = study.getUi().getSlideshow();
-        const nodes = [];
-        for (let nodeId in slideShow) {
-          const node = slideShow[nodeId];
-          nodes.push({
-            ...node,
-            nodeId
-          });
-        }
-        nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
+        const nodes = study.getUi().getSlideshow().getSortedNodes();
         const nodeIds = [];
         nodes.forEach(node => {
           nodeIds.push(node.nodeId);
