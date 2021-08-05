@@ -106,6 +106,7 @@ class DaskClient:
                 f"{task.node_id}",
                 key=job_id,
                 resources=_from_task_in_to_dask_resource(task),
+                retries=2,
             )
             task_future.add_done_callback(_done_dask_callback)
             self._taskid_to_future_map[job_id] = task_future
