@@ -8,6 +8,7 @@ import json
 import logging
 import os
 from copy import deepcopy
+from datetime import datetime
 from pathlib import Path
 from pprint import pformat
 from random import randint
@@ -25,15 +26,18 @@ from aiohttp.test_utils import loop_context
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.projects import Node, ProjectAtDB, Workbench
+from pydantic.main import BaseModel
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
+from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
+from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB, Image
+from simcore_service_director_v2.utils.computations import to_node_class
 from sqlalchemy import literal_column
-from sqlalchemy.sql.expression import over
 from starlette.testclient import TestClient
 
 nest_asyncio.apply()
@@ -335,4 +339,62 @@ def pipeline(postgres_db: sa.engine.Engine) -> Callable[..., CompPipelineAtDB]:
             comp_pipeline.delete().where(
                 comp_pipeline.c.project_id.in_(created_pipeline_ids)
             )
+        )
+
+
+@pytest.fixture
+def tasks(postgres_db: sa.engine.Engine) -> Callable[..., List[CompTaskAtDB]]:
+    created_task_ids: List[int] = []
+
+    def creator(project: ProjectAtDB, **overrides) -> List[CompTaskAtDB]:
+        created_tasks: List[CompTaskAtDB] = []
+        for internal_id, (node_id, node_data) in enumerate(project.workbench.items()):
+            task_config = {
+                "project_id": f"{project.uuid}",
+                "node_id": f"{node_id}",
+                "schema": {"inputs": {}, "outputs": {}},
+                "inputs": {
+                    key: json.loads(value.json(by_alias=True, exclude_unset=True))
+                    if isinstance(value, BaseModel)
+                    else value
+                    for key, value in node_data.inputs.items()
+                }
+                if node_data.inputs
+                else {},
+                "outputs": {
+                    key: json.loads(value.json(by_alias=True, exclude_unset=True))
+                    if isinstance(value, BaseModel)
+                    else value
+                    for key, value in node_data.outputs.items()
+                }
+                if node_data.outputs
+                else {},
+                "image": Image(
+                    name=node_data.key,
+                    tag=node_data.version,
+                    requires_gpu=False,
+                    requires_mpi=False,
+                ).dict(),
+                "node_class": to_node_class(node_data.key),
+                "internal_id": internal_id + 1,
+                "submit": datetime.utcnow(),
+            }
+            task_config.update(**overrides)
+            with postgres_db.connect() as conn:
+                result = conn.execute(
+                    comp_tasks.insert()
+                    .values(**task_config)
+                    .returning(literal_column("*"))
+                )
+                new_task = CompTaskAtDB.parse_obj(result.first())
+                created_tasks.append(new_task)
+            created_task_ids.extend([t.task_id for t in created_tasks if t.task_id])
+        return created_tasks
+
+    yield creator
+
+    # cleanup
+    with postgres_db.connect() as conn:
+        conn.execute(
+            comp_tasks.delete().where(comp_tasks.c.task_id.in_(created_task_ids))
         )
