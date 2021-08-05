@@ -13,7 +13,9 @@ from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import LocalCluster
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectAtDB
+from models_library.projects_state import RunningState
 from pydantic import PositiveInt
+from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
     ConfigurationError,
@@ -21,6 +23,7 @@ from simcore_service_director_v2.core.errors import (
 )
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
+from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
     BaseCompScheduler,
 )
@@ -113,15 +116,56 @@ async def test_empty_pipeline_is_not_scheduled(
         scheduler.wake_up_event.is_set() == False
     ), "the scheduler was woken up on an empty pipeline!"
 
+
+async def test_misconfigured_pipeline_is_not_scheduled(
+    scheduler: BaseCompScheduler,
+    user_id: PositiveInt,
+    project: Callable[..., ProjectAtDB],
+    pipeline: Callable[..., CompPipelineAtDB],
+    fake_workbench_without_outputs: Dict[str, Any],
+    fake_workbench_adjacency: Dict[str, Any],
+    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+):
+    """A pipeline which comp_tasks are missing should not be scheduled.
+    It shall be aborted and shown as such in the comp_runs db"""
+    sleepers_project = project(workbench=fake_workbench_without_outputs)
+    sleepers_pipeline = pipeline(
+        project_id=f"{sleepers_project.uuid}",
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
     # check the pipeline is correctly added to the scheduled pipelines
-    await scheduler.run_new_pipeline(user_id=user_id, project_id=empty_project.uuid)
+    await scheduler.run_new_pipeline(user_id=user_id, project_id=sleepers_project.uuid)
     assert len(scheduler.scheduled_pipelines) == 1
+    assert (
+        scheduler.wake_up_event.is_set() == True
+    ), "the scheduler was NOT woken up on the scheduled pipeline!"
     for (u_id, p_id, it), params in scheduler.scheduled_pipelines.items():
         assert u_id == user_id
-        assert p_id == empty_project.uuid
+        assert p_id == sleepers_project.uuid
         assert it > 0
         assert params.mark_for_cancellation == False
+    # check the database was properly updated
+    async with aiopg_engine.acquire() as conn:  # type: ignore
+        result = await conn.execute(
+            comp_runs.select().where(
+                comp_runs.c.user_id == user_id
+            )  # there is only one entry
+        )
+        run_entry = CompRunsAtDB.parse_obj(await result.first())
+    assert run_entry.result == RunningState.PUBLISHED
     # let the scheduler kick in
     await asyncio.sleep(1)
+    # check the scheduled pipelines is again empty since it's misconfigured
+    assert len(scheduler.scheduled_pipelines) == 0
+    # check the database entry is correctly updated
+    async with aiopg_engine.acquire() as conn:  # type: ignore
+        result = await conn.execute(
+            comp_runs.select().where(
+                comp_runs.c.user_id == user_id
+            )  # there is only one entry
+        )
+        run_entry = CompRunsAtDB.parse_obj(await result.first())
+    assert run_entry.result == RunningState.ABORTED
+
     # an empty pipeline does not need scheduling, so it should be removed
     assert scheduler.scheduled_pipelines == {}
