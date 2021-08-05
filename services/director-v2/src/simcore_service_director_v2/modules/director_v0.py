@@ -21,10 +21,7 @@ from starlette.datastructures import URL
 
 from ..core.settings import DirectorV0Settings
 from ..models.schemas.constants import UserID
-from ..models.schemas.dynamic_services import (
-    RunningDynamicServiceDetails,
-    ServiceBootType,
-)
+from ..models.schemas.dynamic_services import RunningDynamicServiceDetails
 from ..models.schemas.services import ServiceExtras
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
