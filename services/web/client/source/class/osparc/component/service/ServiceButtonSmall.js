@@ -68,8 +68,13 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
           hint.exclude();
         };
         this.addListener("mouseover", showHint);
-        this.addListener("mouseout", hideHint);
-        this.addListener("dbltap", hideHint);
+        [
+          "mouseout",
+          "dbltap",
+          "keypress"
+        ].forEach(e => {
+          this.addListener(e, hideHint);
+        });
       } else {
         serviceModel.bind("description", this.getChildControl("subtitle-text"), "value");
         this.getChildControl("subtitle-text").set({
