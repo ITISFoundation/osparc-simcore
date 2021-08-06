@@ -2,7 +2,7 @@ import asyncio
 import logging
 import zipfile
 from pathlib import Path
-from typing import Iterator, List, Set
+from typing import Iterator, List, Set, Union
 
 from servicelib.pools import non_blocking_process_pool_executor
 
@@ -118,32 +118,37 @@ async def unarchive_dir(
 
 def _serial_add_to_archive(
     dir_to_compress: Path, destination: Path, compress: bool, store_relative_path: bool
-) -> bool:
-    compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
-    with zipfile.ZipFile(destination, "w", compression=compression) as zip_file_handler:
-        files_to_compress_generator = _full_file_path_from_dir_and_subdirs(
-            dir_to_compress
-        )
-        for file_to_add in files_to_compress_generator:
-            try:
-                file_name_in_archive = (
-                    _strip_directory_from_path(file_to_add, dir_to_compress)
-                    if store_relative_path
-                    else file_to_add
-                )
-                zip_file_handler.write(file_to_add, file_name_in_archive)
-            except ValueError:
-                log.exception("Could write files to archive, please check logs")
-                return False
-    return True
+) -> Union[None, Exception]:
+    try:
+        compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
+        with zipfile.ZipFile(
+            destination, "w", compression=compression
+        ) as zip_file_handler:
+            files_to_compress_generator = _full_file_path_from_dir_and_subdirs(
+                dir_to_compress
+            )
+            for file_to_add in files_to_compress_generator:
+                try:
+                    file_name_in_archive = (
+                        _strip_directory_from_path(file_to_add, dir_to_compress)
+                        if store_relative_path
+                        else file_to_add
+                    )
+                    zip_file_handler.write(file_to_add, file_name_in_archive)
+                except ValueError as value_error:
+                    log.exception("Could write files to archive, please check logs")
+                    raise value_error
+    except Exception as e:  # pylint: disable=broad-except
+        return e
 
 
 async def archive_dir(
     dir_to_compress: Path, destination: Path, compress: bool, store_relative_path: bool
-) -> bool:
-    """Returns True if successuly archived"""
+) -> None:
     with non_blocking_process_pool_executor(max_workers=1) as pool:
-        return await asyncio.get_event_loop().run_in_executor(
+        add_to_archive_error: Union[
+            None, Exception
+        ] = await asyncio.get_event_loop().run_in_executor(
             pool,
             _serial_add_to_archive,
             dir_to_compress,
@@ -151,6 +156,9 @@ async def archive_dir(
             compress,
             store_relative_path,
         )
+
+        if isinstance(add_to_archive_error, Exception):
+            raise add_to_archive_error
 
 
 def is_leaf_path(p: Path) -> bool:
