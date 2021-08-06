@@ -123,6 +123,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           this.__showDashboard();
           this.__dashboard.getStudyBrowser().invalidateStudies();
           this.__dashboard.getStudyBrowser().reloadStudies();
+          this.__dashboard.getStudyBrowser().resetSelection();
           this.__dashboard.getStudyBrowser().reloadStudy(studyId)
             .then(() => {
               this.__closeStudy(studyId);
