@@ -140,6 +140,7 @@ def _serial_add_to_archive(
                     raise value_error
     except Exception as e:  # pylint: disable=broad-except
         return e
+    return None
 
 
 async def archive_dir(
