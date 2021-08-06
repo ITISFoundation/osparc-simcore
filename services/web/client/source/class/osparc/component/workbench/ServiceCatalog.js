@@ -196,13 +196,9 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       let store = osparc.store.Store.getInstance();
       store.getServicesDAGs(reload)
         .then(services => {
-          this.__addNewData(services);
+          this.__allServicesList = osparc.utils.Services.convertObjectToArray(services);
+          this.__updateList();
         });
-    },
-
-    __addNewData: function(newData) {
-      this.__allServicesList = osparc.utils.Services.convertObjectToArray(newData);
-      this.__updateList();
     },
 
     __updateList: function() {
