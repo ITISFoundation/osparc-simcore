@@ -81,6 +81,11 @@ qx.Class.define("osparc.data.model.Workbench", {
       return false;
     },
 
+    isPipelineLinear: function() {
+      let isLinear = true;
+      return isLinear;
+    },
+
     getNode: function(nodeId) {
       const allNodes = this.getNodes(true);
       const exists = Object.prototype.hasOwnProperty.call(allNodes, nodeId);

@@ -110,8 +110,15 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
       this._startStopBtns = this.getChildControl("start-stop-btns");
     },
 
-    populateButtons: function() {
+    populateButtons: function(start = false) {
       this._populateNodesNavigationLayout();
+      if (start) {
+        const editSlideshowButtons = this.getChildControl("edit-slideshow-buttons");
+        const currentModeBtn = editSlideshowButtons.getSelection()[0];
+        if ("editing" in currentModeBtn && currentModeBtn["editing"]) {
+          currentModeBtn.execute();
+        }
+      }
     },
 
     // overriden
@@ -120,6 +127,9 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
       if (study) {
         const editSlideshowButtons = this.getChildControl("edit-slideshow-buttons");
         osparc.data.model.Study.isOwner(study) ? editSlideshowButtons.show() : editSlideshowButtons.exclude();
+        if (!study.getWorkbench().isPipelineLinear()) {
+          editSlideshowButtons.exclude();
+        }
 
         const nodes = study.getUi().getSlideshow().getSortedNodes();
         const nodeIds = [];
@@ -131,8 +141,8 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
         this.getChildControl("breadcrumb-navigation-edit").populateButtons(nodeIds);
         this.getChildControl("prev-next-btns").populateButtons(nodeIds);
 
-        const currectModeBtn = editSlideshowButtons.getSelection()[0];
-        if ("editing" in currectModeBtn && currectModeBtn["editing"]) {
+        const currentModeBtn = editSlideshowButtons.getSelection()[0];
+        if ("editing" in currentModeBtn && currentModeBtn["editing"]) {
           this.getChildControl("breadcrumbs-scroll").exclude();
           this.getChildControl("breadcrumbs-scroll-edit").show();
         } else {
