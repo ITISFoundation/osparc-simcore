@@ -144,7 +144,8 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @validator("container_http_entry", always=True)
     @classmethod
-    def compose_spec_requires_container_http_entry(cls, v, values):
+    def compose_spec_requires_container_http_entry(cls, v, values) -> Optional[str]:
+        v = None if v == "" else v
         if v is None and values.get("compose_spec") is not None:
             raise ValueError(
                 "Field `container_http_entry` must be defined but is missing"
@@ -186,6 +187,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
     )
 
     class Config(_BaseConfig):
+        extra = Extra.allow
         schema_extra = {
             "examples": [
                 # legacy service

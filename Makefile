@@ -195,17 +195,19 @@ define _show_endpoints
 set -o allexport; \
 source $(CURDIR)/.env; \
 set +o allexport; \
-separator=------------------------------------------;\
+separator=------------------------------------------------------------------------------------;\
 separator=$${separator}$${separator}$${separator};\
-rows="%-22s | %80s | %12s | %12s\n";\
+rows="%-22s | %90s | %12s | %12s\n";\
 TableWidth=140;\
-printf "%22s | %80s | %12s | %12s\n" Name Endpoint User Password;\
+printf "%22s | %90s | %12s | %12s\n" Name Endpoint User Password;\
 printf "%.$${TableWidth}s\n" "$$separator";\
-printf "$$rows" 'oSparc platform' "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9081";\
-printf "$$rows" 'Postgres DB' "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18080/?pgsql=postgres&username=$${POSTGRES_USER}&db=$${POSTGRES_DB}&ns=public" $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
-printf "$$rows" Portainer "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9000" admin adminadmin;\
-printf "$$rows" Redis-commander "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18081";\
-printf "$$rows" "Docker Registry" "$${REGISTRY_URL}" $${REGISTRY_USER} $${REGISTRY_PW}
+printf "$$rows" 'oSparc platform' 'http://$(get_my_ip).nip.io:9081';\
+printf "$$rows" 'Postgres DB' 'http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username='$${POSTGRES_USER}'&db='$${POSTGRES_DB}'&ns=public' $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
+printf "$$rows" Portainer 'http://$(get_my_ip).nip.io:9000' admin adminadmin;\
+printf "$$rows" Redis 'http://$(get_my_ip).nip.io:18081';\
+printf "$$rows" 'Docker Registry' $${REGISTRY_URL} $${REGISTRY_USER} $${REGISTRY_PW};\
+echo "⚠️ if a DNS is not used (as displayed above), the interactive services started via dynamic-sidecar"
+echo "⚠️ will not be shown. The frontend accesses them via the uuid.services.YOUR_IP.nip.io:9081"
 endef
 
 show-endpoints:
@@ -298,7 +300,7 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 
 pull-version: .env ## pulls images from DOCKER_REGISTRY tagged as DOCKER_IMAGE_TAG
 	# Pulling images '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	@docker-compose --file services/docker-compose.yml pull
+	@docker-compose --file services/docker-compose-deploy.yml pull
 
 
 .PHONY: push-version push-latest
@@ -307,13 +309,11 @@ push-latest: tag-latest
 	@export DOCKER_IMAGE_TAG=latest; \
 	$(MAKE) push-version
 
-# NOTE: docker-compose only pushes images with a 'build' section.
-# TODO: change to docker-compose push when make config-version available
+# below BUILD_TARGET gets overwritten but is required when merging yaml files
 push-version: tag-version
 	# pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	$(foreach service, $(SERVICES_LIST)\
-		,docker push ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG}; \
-	)
+	@export BUILD_TARGET=undefined; \
+	docker-compose --file services/docker-compose-build.yml --file services/docker-compose-deploy.yml push
 
 
 ## ENVIRONMENT -------------------------------
