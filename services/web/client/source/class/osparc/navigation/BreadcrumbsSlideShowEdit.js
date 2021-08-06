@@ -40,6 +40,9 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
 
       nodesIds.forEach(nodeId => {
         newServiceBtn.rightNodeId = nodeId;
+        if (!study.getWorkbench().getNode(nodeId).hasInputs()) {
+          newServiceBtn.exclude();
+        }
 
         const node = study.getWorkbench().getNode(nodeId);
         if (node && nodeId in slideShow) {
@@ -63,6 +66,9 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
           newServiceBtn.leftNodeId = nodeId;
           newServiceBtn.rightNodeId = null;
           this._add(newServiceBtn);
+          if (!study.getWorkbench().getNode(nodeId).hasOutputs()) {
+            newServiceBtn.exclude();
+          }
         }
       });
     },
