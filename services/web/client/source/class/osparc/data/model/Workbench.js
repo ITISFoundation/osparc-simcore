@@ -258,19 +258,19 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    __getFreeSpotPostition: function(node0) {
-      // do not overlap the new node with other nodes
-      const pos = node0.getPosition();
+    getFreePosition: function(node, toTheLeft = true) {
+      // do not overlap the new node2 with other nodes
+      const pos = node.getPosition();
       const nodeWidth = osparc.component.workbench.NodeUI.NODE_WIDTH;
       const nodeHeight = osparc.component.workbench.NodeUI.NODE_HEIGHT;
-      const xPos = Math.max(0, pos.x-nodeWidth-30);
+      const xPos = toTheLeft ? Math.max(0, pos.x-nodeWidth-30) : pos.x+nodeWidth+30;
       let yPos = pos.y;
       const allNodes = this.getNodes();
       const avoidY = [];
       for (const nId in allNodes) {
-        const node = allNodes[nId];
-        if (node.getPosition().x >= xPos-nodeWidth && node.getPosition().x <= (xPos+nodeWidth)) {
-          avoidY.push(node.getPosition().y);
+        const node2 = allNodes[nId];
+        if (node2.getPosition().x >= xPos-nodeWidth && node2.getPosition().x <= (xPos+nodeWidth)) {
+          avoidY.push(node2.getPosition().y);
         }
       }
       avoidY.sort((a, b) => a - b); // For ascending sort
@@ -314,7 +314,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
 
       if (link === null || isUsed) {
-        const freePos = this.__getFreeSpotPostition(requesterNode);
+        const freePos = this.getFreePosition(requesterNode);
 
         // create a new FP
         const fpMD = osparc.utils.Services.getFilePicker();
@@ -359,7 +359,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         const pm = this.createNode(pmMD["key"], pmMD["version"], null, parent);
 
         // do not overlap the new Parameter Node with other nodes
-        const freePos = this.__getFreeSpotPostition(requesterNode);
+        const freePos = this.getFreePosition(requesterNode);
         pm.setPosition(freePos);
 
         // create connection

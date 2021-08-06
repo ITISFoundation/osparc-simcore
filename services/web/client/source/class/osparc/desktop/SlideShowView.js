@@ -188,10 +188,18 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       if (!node) {
         return;
       }
-      node.setPosition({
-        x: 0,
-        y: 0
-      });
+      if (leftNodeId) {
+        const leftNode = workbench.getNode(leftNodeId);
+        node.setPosition(workbench.getFreePosition(leftNode, false));
+      } else if (rightNodeId) {
+        const rightNode = workbench.getNode(rightNodeId);
+        node.setPosition(workbench.getFreePosition(rightNode, true));
+      } else {
+        node.setPosition({
+          x: 20,
+          y: 20
+        });
+      }
 
       // break previous connection
       if (leftNodeId && rightNodeId) {
