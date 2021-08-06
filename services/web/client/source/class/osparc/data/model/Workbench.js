@@ -49,7 +49,7 @@ qx.Class.define("osparc.data.model.Workbench", {
   },
 
   events: {
-    "nNodesChanged": "qx.event.type.Event",
+    "pipelineChanged": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
     "openNode": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data"
@@ -386,7 +386,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         this.__rootNodes[nodeId] = node;
       }
       node.setParentNodeId(parentNode ? parentNode.getNodeId() : null);
-      this.fireEvent("nNodesChanged");
+      this.fireEvent("pipelineChanged");
       if (node.isParameter()) {
         const study = osparc.store.Store.getInstance().getCurrentStudy();
         if (study) {
@@ -434,7 +434,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         const study = osparc.store.Store.getInstance().getCurrentStudy();
         study.getUi().getSlideshow().removeNode(nodeId);
 
-        this.fireEvent("nNodesChanged");
+        this.fireEvent("pipelineChanged");
         return true;
       }
       return false;
