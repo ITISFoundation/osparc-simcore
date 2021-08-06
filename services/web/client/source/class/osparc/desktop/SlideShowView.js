@@ -170,6 +170,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
     __requestServiceBetween: function(leftNodeId, rightNodeId) {
       const srvCat = new osparc.component.workbench.ServiceCatalog();
+      srvCat.setContext(leftNodeId, rightNodeId);
       srvCat.addListener("addService", e => {
         const data = e.getData();
         const service = data.service;

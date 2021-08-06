@@ -87,8 +87,8 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     __allServicesList: null,
     __filteredServicesObj: null,
     __textfield: null,
-    __contextNodeId: null,
-    __contextPort: null,
+    __contextLeftNodeId: null,
+    __contextRightNodeId: null,
     __versionsBox: null,
     __infoBtn: null,
     __serviceBrowser: null,
@@ -185,9 +185,9 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       }, this);
     },
 
-    setContext: function(nodeId, port) {
-      this.__contextNodeId = nodeId;
-      this.__contextPort = port;
+    setContext: function(leftNodeId = null, rightNodeId = null) {
+      this.__contextLeftNodeId = leftNodeId;
+      this.__contextRightNodeId = rightNodeId;
       this.__updateList();
     },
 
@@ -208,12 +208,14 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     __updateList: function() {
       const filteredServices = [];
       this.__allServicesList.forEach(service => {
-        if (this.__contextPort === null) {
+        if (this.__contextLeftNodeId === null && this.__contextRightNodeId === null) {
           filteredServices.push(service);
         } else {
           // filter out services that can't be connected
-          const isInput = this.__contextPort.isInput;
-          const connectable = Object.keys(isInput ? service.outputs : service.inputs).length;
+          const needsInputs = this.__contextLeftNodeId !== null;
+          const needsOutputs = this.__contextRightNodeId !== null;
+          let connectable = needsInputs ? Boolean(Object.keys(service.inputs).length) : true;
+          connectable = connectable && (needsOutputs ? Boolean(Object.keys(service.outputs).length) : true);
           if (connectable) {
             filteredServices.push(service);
           }
@@ -273,8 +275,8 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       if (serviceModel) {
         const eData = {
           service: serviceModel,
-          contextNodeId: this.__contextNodeId,
-          contextPort: this.__contextPort
+          nodeLeftId: this.__contextLeftNodeId,
+          nodeRightId: this.__contextRightNodeId
         };
         this.fireDataEvent("addService", eData);
       }
