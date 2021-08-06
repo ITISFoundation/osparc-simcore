@@ -203,13 +203,12 @@ async def test_archive_unarchive_same_structure_dir(
 
     archive_file = temp_dir_one / "archive.zip"
 
-    archive_result = await archive_dir(
+    await archive_dir(
         dir_to_compress=dir_with_random_content,
         destination=archive_file,
         store_relative_path=store_relative_path,
         compress=compress,
     )
-    assert archive_result is True
 
     unarchived_paths: Set[Path] = await unarchive_dir(
         archive_to_extract=archive_file, destination_folder=temp_dir_two
@@ -241,13 +240,12 @@ async def test_unarchive_in_same_dir_as_archive(
 ):
     archive_file = tmp_path / "archive.zip"
 
-    archive_result = await archive_dir(
+    await archive_dir(
         dir_to_compress=dir_with_random_content,
         destination=archive_file,
         store_relative_path=store_relative_path,
         compress=compress,
     )
-    assert archive_result is True
 
     unarchived_paths = await unarchive_dir(
         archive_to_extract=archive_file, destination_folder=tmp_path
@@ -267,3 +265,32 @@ async def test_unarchive_in_same_dir_as_archive(
         tmp_path,
         None if store_relative_path else dir_with_random_content,
     )
+
+
+async def test_regression_unsupported_characters() -> None:
+    with tempfile.TemporaryDirectory() as source_dir, tempfile.TemporaryDirectory() as destination_dir:
+        dir_to_archive = Path(source_dir)
+        content = "payload"
+        unsupported_file_name = "something\udce6likethis.zip"
+
+        # assert can write data to file
+        file_path = dir_to_archive / unsupported_file_name
+        file_path.write_text(content)
+        assert file_path.read_text() == content
+
+        # assert error with handling filename as string
+        with pytest.raises(UnicodeEncodeError) as exc_info:
+            print(file_path)
+        assert exc_info.value.args[4] == "surrogates not allowed"
+
+        destinaion_path = Path(destination_dir) / "archive.z"
+
+        # when fixed this will no longer raise an error
+        with pytest.raises(UnicodeEncodeError) as exc_info:
+            await archive_dir(
+                dir_to_compress=dir_to_archive,
+                destination=destinaion_path,
+                store_relative_path=False,
+                compress=False,
+            )
+        assert exc_info.value.args[4] == "surrogates not allowed"
