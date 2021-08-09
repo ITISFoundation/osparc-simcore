@@ -147,7 +147,7 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def minimal_configuration(
     sleeper_service: Dict[str, str],
     jupyter_service: Dict[str, str],
@@ -156,7 +156,7 @@ def minimal_configuration(
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitConfig,
     simcore_services: Dict[str, URL],
-):
+) -> None:
     pass
 
 
@@ -250,7 +250,9 @@ def fake_workbench_computational_pipeline_details_not_started(
         ),
     ],
 )
-def test_invalid_computation(client: TestClient, body: Dict, exp_response: int):
+def test_invalid_computation(
+    minimal_configuration: None, client: TestClient, body: Dict, exp_response: int
+):
     # create a bunch of invalid stuff
     response = client.post(
         COMPUTATION_URL,
@@ -262,6 +264,7 @@ def test_invalid_computation(client: TestClient, body: Dict, exp_response: int):
 
 
 def test_start_empty_computation(
+    minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -385,6 +388,7 @@ PartialComputationParams = namedtuple(
     ],
 )
 def test_run_partial_computation(
+    minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -519,6 +523,7 @@ def test_run_partial_computation(
 
 
 def test_run_computation(
+    minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -623,6 +628,7 @@ def test_run_computation(
 
 
 def test_abort_computation(
+    minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -690,6 +696,7 @@ def test_abort_computation(
 
 
 def test_update_and_delete_computation(
+    minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -808,6 +815,7 @@ def test_update_and_delete_computation(
 
 
 def test_pipeline_with_no_comp_services_still_create_correct_comp_tasks(
+    minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -847,6 +855,7 @@ def test_pipeline_with_no_comp_services_still_create_correct_comp_tasks(
 
 
 def test_pipeline_with_control_pipeline_made_of_dynamic_services_are_allowed(
+    minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -910,6 +919,7 @@ def test_pipeline_with_control_pipeline_made_of_dynamic_services_are_allowed(
 
 
 def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
+    minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -986,6 +996,7 @@ def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
 
 
 async def test_burst_create_computations(
+    minimal_configuration: None,
     async_client: AsyncClient,
     user_id: PositiveInt,
     project: Callable,
