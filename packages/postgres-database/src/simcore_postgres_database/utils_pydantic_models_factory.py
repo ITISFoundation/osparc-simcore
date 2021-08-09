@@ -1,4 +1,5 @@
 from typing import Container, Optional, Type
+from uuid import UUID
 
 import sqlalchemy as sa
 from pydantic import BaseConfig, BaseModel, Field, create_model
@@ -6,6 +7,12 @@ from pydantic import BaseConfig, BaseModel, Field, create_model
 
 class OrmConfig(BaseConfig):
     orm_mode = True
+
+
+RESERVED = {
+    "schema",
+}
+# e.g. Field name "schema" shadows a BaseModel attribute; use a different field name with "alias='schema'".
 
 
 def sa_table_to_pydantic_model(
@@ -21,6 +28,10 @@ def sa_table_to_pydantic_model(
 
     for column in table.columns:
         name = str(column.name)
+
+        if name in RESERVED:
+            name = f"{table.name.lower()}_{name}"
+
         if name in exclude:
             continue
 
@@ -30,10 +41,18 @@ def sa_table_to_pydantic_model(
                 python_type = column.type.impl.python_type
         elif hasattr(column.type, "python_type"):
             python_type = column.type.python_type
+
         assert python_type, f"Could not infer python_type for {column}"  # nosec
+
         default = None
         if column.default is None and not column.nullable:
             default = ...
+
+        # Policies based on naming conventions
+        if "uuid" in name.split("_") and python_type == str:
+            python_type = UUID
+            if isinstance(default, str):
+                default = UUID(default)
 
         if hasattr(column, "doc") and column.doc:
             default = Field(default, description=column.doc)
