@@ -92,7 +92,7 @@ def dask_local_cluster(monkeypatch: MonkeyPatch) -> LocalCluster:
 
 
 @pytest.fixture
-def dask_spec_cluster(monkeypatch: MonkeyPatch) -> SpecCluster:
+def dask_spec_local_cluster(monkeypatch: MonkeyPatch) -> SpecCluster:
     # in this mode we can precisely create a specific cluster
     workers = {
         "cpu-worker": {

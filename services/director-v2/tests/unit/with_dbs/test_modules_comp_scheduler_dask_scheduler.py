@@ -94,7 +94,7 @@ def test_scheduler_raises_exception_for_missing_dependencies(
 def scheduler(
     minimal_dask_scheduler_config: None,
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    dask_spec_cluster: SpecCluster,
+    dask_spec_local_cluster: SpecCluster,
     minimal_app: FastAPI,
 ) -> BaseCompScheduler:
     assert minimal_app.state.scheduler is not None

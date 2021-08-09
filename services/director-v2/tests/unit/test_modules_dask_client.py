@@ -52,7 +52,9 @@ def test_dask_client_missing_raises_configuration_error(
 
 @pytest.fixture
 def dask_client(
-    minimal_dask_config: None, dask_spec_cluster: SpecCluster, minimal_app: FastAPI
+    minimal_dask_config: None,
+    dask_spec_local_cluster: SpecCluster,
+    minimal_app: FastAPI,
 ) -> DaskClient:
     client = DaskClient.instance(minimal_app)
     assert client
