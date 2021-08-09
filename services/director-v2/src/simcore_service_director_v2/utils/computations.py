@@ -26,9 +26,14 @@ def get_pipeline_state_from_task_states(tasks: List[CompTaskAtDB]) -> RunningSta
             # a pending pipeline has nodes either in PENDING or PUBLISHED state
             return RunningState.PENDING
 
+        if set_states.issubset({RunningState.SUCCESS, RunningState.ABORTED}):
+            # if only ABORTED and SUCCESS --> then it is aborted
+            return RunningState.ABORTED
+
         if set_states.issubset(
             {RunningState.SUCCESS, RunningState.FAILED, RunningState.ABORTED}
         ):
+            # if there are also failed state in there --> failed
             return RunningState.FAILED
 
         if set_states.issubset(

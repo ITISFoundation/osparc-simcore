@@ -81,6 +81,7 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
                 (RunningState.SUCCESS),
                 (RunningState.SUCCESS),
                 (RunningState.FAILED),
+                (RunningState.ABORTED),
             ],
             RunningState.FAILED,
             id="any number of success and 1 failed = failed",
@@ -129,10 +130,20 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
             [
                 (RunningState.SUCCESS),
                 (RunningState.ABORTED),
+                (RunningState.FAILED),
                 (RunningState.PENDING),
             ],
             RunningState.STARTED,
             id="any number of unconnected success and failed failed with pending/published = started",
+        ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.ABORTED),
+                (RunningState.ABORTED),
+            ],
+            RunningState.ABORTED,
+            id="any number of unconnected success and aborted without pending/published = aborted",
         ),
         pytest.param(
             [],
