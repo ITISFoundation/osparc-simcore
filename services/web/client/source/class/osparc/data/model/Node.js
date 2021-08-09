@@ -214,6 +214,10 @@ qx.Class.define("osparc.data.model.Node", {
       return (metaData && metaData.key && metaData.key.includes("nodes-group"));
     },
 
+    isIterator: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("data-iterator"));
+    },
+
     isDynamic: function(metaData) {
       return (metaData && metaData.type && metaData.type === "dynamic");
     },
@@ -261,6 +265,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     isContainer: function() {
       return osparc.data.model.Node.isContainer(this.getMetaData());
+    },
+
+    isIterator: function() {
+      return osparc.data.model.Node.isIterator(this.getMetaData());
     },
 
     isDynamic: function() {
