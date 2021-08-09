@@ -6,6 +6,7 @@
 
 """
 import logging
+from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
@@ -14,7 +15,6 @@ import yaml
 from aiohttp import web
 from aiohttp_swagger import setup_swagger
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
-
 from servicelib import openapi
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_middlewares import (
@@ -25,8 +25,8 @@ from simcore_service_webserver.resources import resources
 
 from . import rest_routes
 from ._meta import api_version_prefix
-from .rest_config import APP_OPENAPI_SPECS_KEY, assert_valid_config
 from .diagnostics_config import get_diagnostics_config
+from .rest_config import APP_OPENAPI_SPECS_KEY, assert_valid_config
 
 log = logging.getLogger(__name__)
 
@@ -38,6 +38,7 @@ def get_openapi_specs_path(api_version_dir: Optional[str] = None) -> Path:
     return resources.get_path(f"api/{api_version_dir}/openapi.yaml")
 
 
+@lru_cache  # required to boost tests speed, gains 3.5s per test
 def load_openapi_specs(spec_path: Optional[Path] = None) -> OpenApiSpecs:
     if spec_path is None:
         spec_path = get_openapi_specs_path()
@@ -116,4 +117,4 @@ def setup(app: web.Application, *, swagger_doc_enabled: bool = True):
 # alias
 setup_rest = setup
 
-__all__ = "setup_rest"
+__all__ = ["setup_rest"]

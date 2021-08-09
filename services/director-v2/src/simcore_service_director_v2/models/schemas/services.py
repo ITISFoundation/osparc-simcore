@@ -6,6 +6,8 @@ from models_library.projects_nodes_io import UUID_REGEX
 from models_library.services import KEY_RE, VERSION_RE, ServiceDockerData
 from pydantic import BaseModel, Field, constr
 
+from .dynamic_services import ServiceState
+
 
 class NodeRequirement(str, Enum):
     CPU = "CPU"
@@ -28,18 +30,9 @@ class ServiceExtrasEnveloped(BaseModel):
     data: ServiceExtras
 
 
-class ServiceState(str, Enum):
-    PENDING = "pending"
-    PULLING = "pulling"
-    STARTING = "starting"
-    RUNNING = "running"
-    COMPLETE = "complete"
-    FAILED = "failed"
-
-
 class RunningServiceDetails(BaseModel):
     published_port: Optional[PortInt] = Field(
-        ...,
+        None,
         description="The ports where the service provides its interface on the docker swarm",
         deprecated=True,
     )
@@ -92,10 +85,6 @@ class RunningServicesDetailsArray(BaseModel):
 
 class RunningServicesDetailsArrayEnveloped(BaseModel):
     data: RunningServicesDetailsArray
-
-
-class RunningServiceDetailsEnveloped(BaseModel):
-    data: RunningServiceDetails
 
 
 class ServicesArrayEnveloped(BaseModel):

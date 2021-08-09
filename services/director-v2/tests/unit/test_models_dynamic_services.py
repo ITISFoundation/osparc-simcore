@@ -209,3 +209,26 @@ def test_extract_containers_minimim_statuses(
 def test_not_implemented_comparison() -> None:
     with pytest.raises(TypeError):
         ServiceState.FAILED > {}  # pylint: disable=pointless-statement
+
+
+def test_regression_legacy_service_compatibility() -> None:
+    api_response = {
+        "published_port": None,
+        "entry_point": "",
+        "service_uuid": "e5aa2f7a-eac4-4522-bd4f-270b5d8d9fff",
+        "service_key": "simcore/services/dynamic/mocked",
+        "service_version": "1.6.10",
+        "service_host": "mocked_e5aa2f7a-eac4-4522-bd4f-270b5d8d9fff",
+        "service_port": 8888,
+        "service_basepath": "/x/e5aa2f7a-eac4-4522-bd4f-270b5d8d9fff",
+        "service_state": "running",
+        "service_message": "",
+        "user_id": "1",
+        "project_id": "b1ec5c8e-f5bb-11eb-b1d5-02420a000006",
+    }
+    service_details = RunningDynamicServiceDetails.parse_obj(api_response)
+
+    assert service_details
+
+    service_url = f"http://{service_details.host}:{service_details.internal_port}{service_details.basepath}"
+    assert service_url == service_details.legacy_service_url

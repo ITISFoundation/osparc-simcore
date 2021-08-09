@@ -562,7 +562,7 @@ jobs:
           driver: docker
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v2.3.1
         with:
           node-version: ${{ matrix.node }}
       - name: show system version
@@ -1824,9 +1824,9 @@ jobs:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
-  integration-test-director-v2:
+  integration-test-director-v2-01:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[int] director-v2"
+    name: "[int] director-v2 01"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1873,7 +1873,81 @@ jobs:
       - name: install
         run: ./ci/github/integration-testing/director-v2.bash install
       - name: test
-        run: ./ci/github/integration-testing/director-v2.bash test
+        run: ./ci/github/integration-testing/director-v2.bash test 01
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/director-v2/test_failures
+      - name: cleanup
+        if: always()
+        run: ./ci/github/integration-testing/director-v2.bash clean_up
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: integrationtests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  integration-test-director-v2-02:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    name: "[int] director-v2 02"
+    needs: [build-test-images]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - name: set PR default variables
+        # only pushes have access to the docker credentials, use a default
+        if: github.event_name == 'pull_request'
+        run: |
+          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
+          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
+      - uses: actions/checkout@v2
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-director-v2-${{ hashFiles('services/director-v2/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-director-v2-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install
+        run: ./ci/github/integration-testing/director-v2.bash install
+      - name: test
+        run: ./ci/github/integration-testing/director-v2.bash test 02
       - name: upload failed tests logs
         if: failure()
         uses: actions/upload-artifact@v2
@@ -2044,7 +2118,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   system-test-public-api:
-    timeout-minutes: 25 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] public api"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -2187,7 +2261,7 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v2.3.1
         with:
           node-version: ${{ matrix.node }}
       - name: show system version
@@ -2320,7 +2394,8 @@ jobs:
         unit-test-webserver-10,
         integration-test-webserver-01,
         integration-test-webserver-02,
-        integration-test-director-v2,
+        integration-test-director-v2-01,
+        integration-test-director-v2-02,
         integration-test-sidecar,
         integration-test-simcore-sdk,
       ]
@@ -2380,7 +2455,8 @@ jobs:
         unit-test-webserver-10,
         integration-test-webserver-01,
         integration-test-webserver-02,
-        integration-test-director-v2,
+        integration-test-director-v2-01,
+        integration-test-director-v2-02,
         integration-test-sidecar,
         integration-test-simcore-sdk,
         system-test-public-api,

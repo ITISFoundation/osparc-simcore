@@ -225,3 +225,54 @@ def jupyter_service(docker_registry: str, node_meta_schema: Dict) -> Dict[str, s
         docker_registry,
         node_meta_schema,
     )
+
+
+DY_STATIC_FILE_SERVER_VERSION = "1.0.5"
+
+
+@pytest.fixture(scope="session")
+def dy_static_file_server_service(
+    docker_registry: str, node_meta_schema: Dict
+) -> Dict[str, str]:
+    """
+    Adds the below service in docker registry
+    itisfoundation/dy-static-file-server
+    """
+    return _pull_push_service(
+        "itisfoundation/dy-static-file-server",
+        DY_STATIC_FILE_SERVER_VERSION,
+        docker_registry,
+        node_meta_schema,
+    )
+
+
+@pytest.fixture(scope="session")
+def dy_static_file_server_dynamic_sidecar_service(
+    docker_registry: str, node_meta_schema: Dict
+) -> Dict[str, str]:
+    """
+    Adds the below service in docker registry
+    itisfoundation/dy-static-file-server-dynamic-sidecar
+    """
+    return _pull_push_service(
+        "itisfoundation/dy-static-file-server-dynamic-sidecar",
+        DY_STATIC_FILE_SERVER_VERSION,
+        docker_registry,
+        node_meta_schema,
+    )
+
+
+@pytest.fixture(scope="session")
+def dy_static_file_server_dynamic_sidecar_compose_spec_service(
+    docker_registry: str, node_meta_schema: Dict
+) -> Dict[str, str]:
+    """
+    Adds the below service in docker registry
+    itisfoundation/dy-static-file-server-dynamic-sidecar-compose-spec
+    """
+    return _pull_push_service(
+        "itisfoundation/dy-static-file-server-dynamic-sidecar-compose-spec",
+        DY_STATIC_FILE_SERVER_VERSION,
+        docker_registry,
+        node_meta_schema,
+    )

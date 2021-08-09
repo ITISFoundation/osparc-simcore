@@ -5,6 +5,7 @@
 
 import logging
 import urllib.parse
+import warnings
 from typing import Any, Dict, List, Optional, Tuple
 
 from aiohttp import ClientSession, web
@@ -17,6 +18,8 @@ from . import director_exceptions
 from .config import get_config
 
 log = logging.getLogger(__name__)
+
+warnings.warn("Director-v0 is deprecated, please use Director-v2", DeprecationWarning)
 
 
 def _get_director_client(app: web.Application) -> Tuple[ClientSession, URL]:
@@ -52,12 +55,15 @@ async def get_running_interactive_services(
 
 
 async def start_service(
+    # pylint: disable=too-many-arguments
     app: web.Application,
     user_id: str,
     project_id: str,
     service_key: str,
     service_version: str,
     service_uuid: str,
+    request_dns: str,
+    request_scheme: str,
 ) -> Optional[Dict]:
     session, api_endpoint = _get_director_client(app)
 
@@ -70,8 +76,13 @@ async def start_service(
         "service_basepath": f"/x/{service_uuid}",
     }
 
+    headers = {
+        "X-Dynamic-Sidecar-Request-DNS": request_dns,
+        "X-Dynamic-Sidecar-Request-Scheme": request_scheme,
+    }
+
     url = (api_endpoint / "running_interactive_services").with_query(params)
-    async with session.post(url, ssl=False) as resp:
+    async with session.post(url, ssl=False, headers=headers) as resp:
         payload = await resp.json()
         return payload["data"]
 

@@ -5,6 +5,7 @@ from typing import Any, AnyStr, Dict, List, Match, Optional, Set, Tuple
 from uuid import UUID, uuid1, uuid5
 
 from servicelib.decorators import safe_return
+from yarl import URL
 
 log = logging.getLogger(__name__)
 variable_pattern = re.compile(r"^{{\W*(\w+)\W*}}$")
@@ -204,3 +205,8 @@ async def project_get_depending_nodes(
                 depending_node_uuids.add(dep_node_uuid)
 
     return depending_node_uuids
+
+
+def extract_dns_without_default_port(url: URL) -> str:
+    port = "" if url.port == 80 else f":{url.port}"
+    return f"{url.host}{port}"
