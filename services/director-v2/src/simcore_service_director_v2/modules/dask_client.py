@@ -7,6 +7,7 @@ from dask.distributed import Client, Future, fire_and_forget
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from simcore_service_director_v2.models.schemas.comp_scheduler import TaskIn
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_random
 
 from ..core.errors import ConfigurationError
 from ..core.settings import DaskSchedulerSettings
@@ -15,7 +16,16 @@ from ..models.schemas.constants import UserID
 logger = logging.getLogger(__name__)
 
 
+dask_retry_policy = dict(
+    wait=wait_random(5, 8),
+    stop=stop_after_attempt(20),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True,
+)
+
+
 def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
+    @retry(**dask_retry_policy)
     def on_startup() -> None:
         DaskClient.create(
             app,
