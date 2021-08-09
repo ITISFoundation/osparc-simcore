@@ -37,6 +37,8 @@ from yarl import URL
 
 pytest_simcore_core_services_selection = [
     "director",
+    "dask-scheduler",
+    "dask-sidecar",
     "redis",
     "rabbit",
     "sidecar",
@@ -136,12 +138,19 @@ def _assert_computation_task_out_obj(
 # FIXTURES ---------------------------------------
 
 
-@pytest.fixture(scope="function")
-def mock_env(monkeypatch: MonkeyPatch) -> None:
+@pytest.fixture(scope="function", params=["dask", "celery"])
+def mock_env(monkeypatch: MonkeyPatch, request) -> None:
     # used by the client fixture
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "itisfoundation/dynamic-sidecar:MOCKED")
 
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv(
+        "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED",
+        "true" if request.param == "dask" else "false",
+    )
+    monkeypatch.setenv(
+        "DIRECTOR_V2_CELERY_SCHEDULER_ENABLED",
+        "true" if request.param == "celery" else "false",
+    )
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
@@ -151,6 +160,7 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
 def minimal_configuration(
     sleeper_service: Dict[str, str],
     jupyter_service: Dict[str, str],
+    dask_scheduler_service: None,
     redis_service: RedisConfig,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
