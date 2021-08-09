@@ -234,12 +234,31 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
     __removeNode: function(nodeId) {
       const workbench = this.getStudy().getWorkbench();
-
       const node = workbench.getNode(nodeId);
       if (!node) {
         return;
       }
+      if (nodeId === this.__currentNodeId) {
+        return;
+      }
 
+      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      if (preferencesSettings.getConfirmDeleteNode()) {
+        const msg = this.tr("Are you sure you want to delete node?");
+        const win = new osparc.ui.window.Confirmation(msg);
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            this.__doRemoveNode(nodeId);
+          }
+        }, this);
+      } else {
+        this.__doRemoveNode(nodeId);
+      }
+    },
+
+    __doRemoveNode: function(nodeId) {
       // connect next node to previous node
       let leftNodeId = null;
       let rightNodeId = null;
@@ -257,6 +276,9 @@ qx.Class.define("osparc.desktop.SlideShowView", {
         // not last
         rightNodeId = nodes[idx+1].nodeId;
       }
+
+      // bypass connection
+      const workbench = this.getStudy().getWorkbench();
       workbench.createEdge(null, leftNodeId, rightNodeId);
 
       // remove node
