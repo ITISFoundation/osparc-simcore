@@ -1,5 +1,7 @@
 """ parametrization app module setup
 
+    Extend project's business logic by adding two new concepts, namely snapshots and parametrizations
+
     - Project parametrization
     - Project snapshots
 
