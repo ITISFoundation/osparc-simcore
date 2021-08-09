@@ -235,17 +235,21 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __requestStartPipeline: function(studyId, partialPipeline = [], forceRestart = false) {
-      const startPipelineView = new osparc.desktop.StartPipelineView(partialPipeline, forceRestart);
-      const win = osparc.ui.window.Window.popUpInWindow(startPipelineView, "Start Pipeline", 250, 290);
-      startPipelineView.addListener("startPipeline", e => {
-        const data = e.getData();
-        const useCache = data["useCache"];
-        this.__reallyRequestStartPipeline(studyId, partialPipeline, forceRestart, useCache);
-        win.close();
-      }, this);
-      startPipelineView.addListener("cancel", () => {
-        win.close();
-      }, this);
+      if (this.getStudy().isSnapshot()) {
+        const startPipelineView = new osparc.desktop.StartPipelineView(partialPipeline, forceRestart);
+        const win = osparc.ui.window.Window.popUpInWindow(startPipelineView, "Start Pipeline", 250, 290);
+        startPipelineView.addListener("startPipeline", e => {
+          const data = e.getData();
+          const useCache = data["useCache"];
+          this.__reallyRequestStartPipeline(studyId, partialPipeline, forceRestart, useCache);
+          win.close();
+        }, this);
+        startPipelineView.addListener("cancel", () => {
+          win.close();
+        }, this);
+      } else {
+        this.__reallyRequestStartPipeline(studyId, partialPipeline, forceRestart);
+      }
     },
 
     __reallyRequestStartPipeline: function(studyId, partialPipeline = [], forceRestart = false, useCache = false) {
