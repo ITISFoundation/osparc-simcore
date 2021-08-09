@@ -9,10 +9,15 @@ class OrmConfig(BaseConfig):
 
 
 def sa_table_to_pydantic_model(
-    table: sa.Table, *, config: Type = OrmConfig, exclude: Container[str] = []
+    table: sa.Table,
+    *,
+    config: Type = OrmConfig,
+    exclude: Optional[Container[str]] = None,
 ) -> Type[BaseModel]:
+
     # NOTE: basically copied from https://github.com/tiangolo/pydantic-sqlalchemy/blob/master/pydantic_sqlalchemy/main.py
     fields = {}
+    exclude = exclude or []
 
     for column in table.columns:
         name = str(column.name)
