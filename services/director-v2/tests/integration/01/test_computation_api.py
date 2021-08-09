@@ -144,12 +144,16 @@ def mock_env(monkeypatch: MonkeyPatch, request) -> None:
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "itisfoundation/dynamic-sidecar:MOCKED")
 
     monkeypatch.setenv(
-        "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED",
-        "true" if request.param == "dask" else "false",
+        "DIRECTOR_V2_DASK_CLIENT_ENABLED",
+        "1" if request.param == "dask" else "0",
+    )
+    monkeypatch.setenv(
+        "DIRECTOR_V2_DASK_SCHEDULER_ENABLED",
+        "1" if request.param == "dask" else "0",
     )
     monkeypatch.setenv(
         "DIRECTOR_V2_CELERY_SCHEDULER_ENABLED",
-        "true" if request.param == "celery" else "false",
+        "1" if request.param == "celery" else "0",
     )
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
@@ -161,6 +165,7 @@ def minimal_configuration(
     sleeper_service: Dict[str, str],
     jupyter_service: Dict[str, str],
     dask_scheduler_service: None,
+    dask_sidecar_service: None,
     redis_service: RedisConfig,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
@@ -261,7 +266,10 @@ def fake_workbench_computational_pipeline_details_not_started(
     ],
 )
 def test_invalid_computation(
-    minimal_configuration: None, client: TestClient, body: Dict, exp_response: int
+    minimal_configuration: None,
+    client: TestClient,
+    body: Dict,
+    exp_response: int,
 ):
     # create a bunch of invalid stuff
     response = client.post(
