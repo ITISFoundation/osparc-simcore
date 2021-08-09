@@ -4,23 +4,23 @@
 
 import asyncio
 import logging
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import aiohttp
 import pytest
 import tenacity
+from distributed import Client
 from yarl import URL
 
 from .helpers.utils_docker import get_service_published_port
 
 log = logging.getLogger(__name__)
 
-SERVICES_TO_SKIP = ["sidecar", "postgres", "redis", "rabbit"]
+SERVICES_TO_SKIP = ["dask-sidecar", "sidecar", "postgres", "redis", "rabbit"]
 SERVICE_PUBLISHED_PORT = {}
 SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "director-v2": "/",
     "dask-scheduler": "/health",
-    "dask-sidecar": "/health",
 }
 
 
@@ -61,7 +61,7 @@ async def simcore_services(services_endpoint: Dict[str, URL], monkeypatch) -> No
 
 
 @pytest.fixture(scope="function")
-async def dask_scheduler_service(simcore_services, monkeypatch) -> None:
+async def dask_scheduler_service(simcore_services, monkeypatch) -> Dict[str, Any]:
     # the dask scheduler has a UI for the dashboard and a secondary port for the API
     # simcore_services fixture already ensure the dask-scheduler is up and running
     dask_scheduler_api_port = get_service_published_port(
@@ -69,6 +69,22 @@ async def dask_scheduler_service(simcore_services, monkeypatch) -> None:
     )
     # override the port
     monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{dask_scheduler_api_port}")
+    return {"host": "127.0.0.1", "port": dask_scheduler_api_port}
+
+
+@pytest.fixture(scope="function")
+def dask_client(dask_scheduler_service: Dict[str, Any]) -> Client:
+
+    client = Client(
+        f"{dask_scheduler_service['host']}:{dask_scheduler_service['port']}"
+    )
+    yield client
+    client.close()
+
+
+@pytest.fixture(scope="function")
+def dask_sidecar_service(dask_client: Client) -> None:
+    dask_client.wait_for_workers(1, 30)
 
 
 # HELPERS --
