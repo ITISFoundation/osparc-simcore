@@ -3,7 +3,13 @@ from uuid import uuid4
 
 import pytest
 from pydantic import BaseModel
+
+# pylint: disable=wildcard-import
+# pylint: disable=unused-wildcard-import
 from simcore_postgres_database.models import *
+
+# pylint: enable=wildcard-import
+# pylint: enable=unused-wildcard-import
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.models.snapshots import snapshots
 from simcore_postgres_database.utils_pydantic_models_factory import (
@@ -11,7 +17,7 @@ from simcore_postgres_database.utils_pydantic_models_factory import (
 )
 
 
-@pytest.mark.parametrized("table_cls", metadata.tables)
+@pytest.mark.parametrize("table_cls", metadata.tables.values(), ids=lambda t: t.name)
 def test_table_to_pydantic_models(table_cls):
 
     PydanticModelAtDB = sa_table_to_pydantic_model(table=table_cls)
@@ -26,6 +32,7 @@ def test_snapshot_pydantic_model():
 
     snapshot = Snapshot(
         id=0,
+        name="foo",
         created_at=datetime.now(),
         parent_uuid=uuid4(),
         child_index=2,
