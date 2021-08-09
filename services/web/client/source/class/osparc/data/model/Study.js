@@ -244,12 +244,34 @@ qx.Class.define("osparc.data.model.Study", {
       this.getWorkbench().initWorkbench();
     },
 
+    isSnapshot: function() {
+      if (this.getSweeper()) {
+        const primaryStudyId = this.getSweeper().getPrimaryStudyId();
+        return primaryStudyId !== null;
+      }
+      return false;
+    },
+
+    hasSnapshots: function() {
+      return new Promise((resolve, reject) => {
+        const params = {
+          url: {
+            "studyId": this.getUuid()
+          }
+        };
+        osparc.data.Resources.get("snapshots", params)
+          .then(snapshots => {
+            resolve(snapshots.length);
+          });
+      });
+    },
+
     __applyAccessRights: function(value) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(myGid);
 
-      if (myGid) {
+      if (myGid && !this.isSnapshot()) {
         const canIWrite = osparc.component.permissions.Study.canGroupsWrite(value, orgIDs);
         this.setReadOnly(!canIWrite);
       } else {
