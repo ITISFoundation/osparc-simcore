@@ -15,13 +15,14 @@ from pydantic import (
 
 BuiltinTypes = Union[StrictBool, StrictInt, StrictFloat, str]
 
-
+## Domain models --------
 class Parameter(BaseModel):
     name: str
     value: BuiltinTypes
 
-    node_id: UUID
-    output_id: OutputID
+    # TODO: same parameter in different nodes?
+    node_id: UUID = Field(..., description="Id of parametrized node")
+    output_id: OutputID = Field(..., description="Output where parameter is exposed")
 
 
 class Snapshot(BaseModel):
@@ -34,6 +35,9 @@ class Snapshot(BaseModel):
 
     parent_id: UUID = Field(..., description="Parent's project uuid")
     project_id: UUID = Field(..., description="Current project's uuid")
+
+
+## API models ----------
 
 
 class ParameterApiModel(Parameter):
