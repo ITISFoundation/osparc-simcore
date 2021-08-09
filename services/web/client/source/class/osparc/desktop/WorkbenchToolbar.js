@@ -50,7 +50,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
         }
         case "take-snapshot-btn": {
           control = new osparc.ui.form.FetchButton(this.tr("Take Snapshot")).set({
-            icon: "@FontAwesome5Solid/camera/14",
+            icon: "@FontAwesome5Solid/code-branch/14",
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
             allowGrowX: false
           });

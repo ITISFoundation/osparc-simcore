@@ -201,7 +201,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const study = this.getStudy();
       const takeSnapshotView = new osparc.component.snapshots.TakeSnapshotView(study);
       const title = this.tr("Take Snapshot");
-      const win = osparc.ui.window.Window.popUpInWindow(takeSnapshotView, title, 400, 120);
+      const win = osparc.ui.window.Window.popUpInWindow(takeSnapshotView, title, 400, 140);
       takeSnapshotView.addListener("takeSnapshot", () => {
         const label = takeSnapshotView.getLabel();
         const saveData = takeSnapshotView.getSaveData();
