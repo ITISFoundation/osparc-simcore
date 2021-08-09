@@ -56,6 +56,7 @@ pytest_plugins = [
     "pytest_simcore.schemas",
     "pytest_simcore.simcore_services",
     "pytest_simcore.tmp_path_extra",
+    "pytest_simcore.simcore_dask_service",
 ]
 
 logger = logging.getLogger(__name__)
