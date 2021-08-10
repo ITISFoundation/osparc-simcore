@@ -21,6 +21,9 @@ SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "director-v2": "/",
     "dask-scheduler": "/health",
 }
+AIOHTTP_BASED_SERVICE_PORT: int = 8080
+FASTAPI_BASED_SERVICE_PORT: int = 8000
+DASK_SCHEDULER_SERVICE_PORT: int = 8787
 
 
 @pytest.fixture(scope="module")
@@ -34,7 +37,7 @@ def services_endpoint(
         assert f"{stack_name}_{service}" in docker_stack["services"]
         if not service in SERVICES_TO_SKIP:
             endpoint = URL(
-                f"http://127.0.0.1:{get_service_published_port(service, [8080, 8000, 8787])}"
+                f"http://127.0.0.1:{get_service_published_port(service, [AIOHTTP_BASED_SERVICE_PORT, FASTAPI_BASED_SERVICE_PORT, DASK_SCHEDULER_SERVICE_PORT])}"
             )
             services_endpoint[service] = endpoint
     return services_endpoint
