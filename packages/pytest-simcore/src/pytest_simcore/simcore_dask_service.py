@@ -34,4 +34,4 @@ def dask_client(dask_scheduler_service: Dict[str, Any]) -> Client:
 
 @pytest.fixture(scope="function")
 def dask_sidecar_service(dask_client: Client) -> None:
-    dask_client.wait_for_workers(1, 30)
+    dask_client.wait_for_workers(n_workers=1, timeout=30)
