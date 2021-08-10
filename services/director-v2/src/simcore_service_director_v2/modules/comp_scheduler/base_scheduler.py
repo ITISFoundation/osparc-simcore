@@ -185,11 +185,11 @@ class BaseCompScheduler(ABC):
         scheduled_tasks: List[TaskIn],
         callback: Callable[[], None],
     ) -> None:
-        pass
+        ...
 
     @abstractmethod
     async def _stop_tasks(self, tasks: List[CompTaskAtDB]) -> None:
-        pass
+        ...
 
     async def _schedule_pipeline(
         self,
