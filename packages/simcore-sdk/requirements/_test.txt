@@ -82,7 +82,7 @@ markupsafe==2.0.1
     #   mako
 mccabe==0.6.1
     # via pylint
-minio==7.1.0
+minio==7.0.4
     # via -r requirements/_test.in
 multidict==5.1.0
     # via
