@@ -168,11 +168,17 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       });
     },
 
+    /**
+     * Converts an object of nodes into an array of children to be consumed by the tree model.
+     * The tree is expecting to bind the children into NodeSlideTreeItem with nodeId, position and skipNode as props.
+     * @param {Object.<Nodes>} nodes Object with nodes <nodeId: node>
+     * @returns {Array} Array of objects with label, nodeId, position and skipNode fields.
+     */
     __convertToModel: function(nodes) {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const slideshow = study.getUi().getSlideshow();
 
-      let children = [];
+      const children = [];
       for (let nodeId in nodes) {
         const node = nodes[nodeId];
         const nodeInTree = {
