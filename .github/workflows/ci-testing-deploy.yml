@@ -2557,8 +2557,6 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-      - name: setup
-        run: ./ci/github/system-testing/e2e.bash install
       # if the build happens on a push event it may help to pull first the last version
       - name: build stack
         if: github.event_name == 'push'
@@ -2566,6 +2564,8 @@ jobs:
       - name: build stack
         if: github.event_name == 'pull_request'
         run: ./ci/github/system-testing/e2e.bash build
+      - name: setup
+        run: ./ci/github/system-testing/e2e.bash install
       - name: test
         run: ./ci/github/system-testing/e2e.bash test
       - name: recover docker logs
