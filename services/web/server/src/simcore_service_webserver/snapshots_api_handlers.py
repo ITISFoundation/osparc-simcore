@@ -7,11 +7,11 @@ from aiohttp import web
 from models_library.projects import Project
 from pydantic.decorator import validate_arguments
 from pydantic.error_wrappers import ValidationError
-from simcore_service_webserver.parametrization_models import Snapshot
+from simcore_service_webserver.snapshots_models import Snapshot
 
 from ._meta import api_version_prefix as vtag
 from .constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
-from .parametrization_models import Snapshot, SnapshotApiModel
+from .snapshots_models import Snapshot, SnapshotApiModel
 
 json_dumps = json.dumps
 

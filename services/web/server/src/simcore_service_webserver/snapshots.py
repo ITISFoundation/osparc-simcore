@@ -1,9 +1,8 @@
-""" parametrization app module setup
+""" snapshots (and parametrization) app module setup
 
-    Extend project's business logic by adding two new concepts, namely snapshots and parametrizations
-
-    - Project parametrization
-    - Project snapshots
+    Extend project's business logic by adding two new concepts, namely
+        - project snapshots and
+        - parametrizations
 
 """
 import logging
@@ -15,7 +14,7 @@ from servicelib.application_setup import (
     app_module_setup,
 )
 
-from . import parametrization_api_handlers
+from . import snapshots_api_handlers
 from .constants import APP_SETTINGS_KEY
 from .settings import ApplicationSettings
 
@@ -34,4 +33,4 @@ def setup(app: web.Application):
     if not settings.WEBSERVER_DEV_FEATURES_ENABLED:
         raise SkipModuleSetup(reason="Development feature")
 
-    app.add_routes(parametrization_api_handlers.routes)
+    app.add_routes(snapshots_api_handlers.routes)
