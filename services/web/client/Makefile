@@ -59,6 +59,8 @@ compile: ## qx compiles host' 'source' -> image's 'build-output'
 		--build-arg VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT} \
 		--build-arg VCS_URL=${VCS_URL} \
 		--output type=registry \
+		--cache-from type=local,src=$(DOCKER_BUILDX_CACHE_FROM)/qooxdoo-kit \
+		--cache-to type=local,mode=max,src=$(DOCKER_BUILDX_CACHE_TO)/qooxdoo-kit \
 		--target=build-client .
 
 

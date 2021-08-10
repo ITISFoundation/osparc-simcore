@@ -148,6 +148,8 @@ build build-nc: .docker-buildx-builder .docker-build-registry .env ## Builds pro
 ifeq ($(target),)
 	# Compiling front-end
 	export DOCKER_BUILD_REGISTRY_PORT=$(DOCKER_BUILD_REGISTRY_PORT);\
+	export DOCKER_BUILDX_CACHE_FROM=$(DOCKER_BUILDX_CACHE_FROM);\
+	export DOCKER_BUILDX_CACHE_TO=$(DOCKER_BUILDX_CACHE_TO);\
 		$(MAKE_C) services/web/client compile
 	# Building services
 	$(_docker_compose_build)
@@ -155,6 +157,8 @@ else
 ifeq ($(findstring static-webserver,$(target)),static-webserver)
 	# Compiling front-end
 	export DOCKER_BUILD_REGISTRY_PORT=$(DOCKER_BUILD_REGISTRY_PORT);\
+	export DOCKER_BUILDX_CACHE_FROM=$(DOCKER_BUILDX_CACHE_FROM);\
+	export DOCKER_BUILDX_CACHE_TO=$(DOCKER_BUILDX_CACHE_TO);\
 		$(MAKE_C) services/web/client clean compile
 endif
 	# Building service $(target)
@@ -170,6 +174,8 @@ else
 ifeq ($(findstring static-webserver,$(target)),static-webserver)
 	# Compiling front-end
 	export DOCKER_BUILD_REGISTRY_PORT=$(DOCKER_BUILD_REGISTRY_PORT);\
+	export DOCKER_BUILDX_CACHE_FROM=$(DOCKER_BUILDX_CACHE_FROM);\
+	export DOCKER_BUILDX_CACHE_TO=$(DOCKER_BUILDX_CACHE_TO);\
 		$(MAKE_C) services/web/client touch compile-dev
 endif
 	# Building service $(target)
