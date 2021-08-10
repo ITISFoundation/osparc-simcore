@@ -6,8 +6,12 @@ from fastapi import FastAPI
 from ...core.errors import ConfigurationError
 from ...models.domains.comp_runs import CompRunsAtDB
 from ...utils.scheduler import SCHEDULED_STATES, get_repository
+from ..celery import CeleryClient
+from ..dask_client import DaskClient
 from ..db.repositories.comp_runs import CompRunsRepository
 from .base_scheduler import BaseCompScheduler, ScheduledPipelineParams
+from .celery_scheduler import CeleryScheduler
+from .dask_scheduler import DaskScheduler
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +44,6 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
         and not app.state.settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
     ):
         logger.info("Creating Celery-based scheduler...")
-        from ..celery import CeleryClient
-        from .celery_scheduler import CeleryScheduler
 
         return CeleryScheduler(
             settings=app.state.settings.CELERY_SCHEDULER,
@@ -54,8 +56,6 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
                 for r in runs
             },
         )
-    from ..dask_client import DaskClient
-    from .dask_scheduler import DaskScheduler
 
     logger.info("Creating Dask-based scheduler...")
     return DaskScheduler(
