@@ -16,6 +16,7 @@ from sqlalchemy.dialects.postgresql import insert
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from ....models.schemas.services import NodeRequirement, ServiceExtras
 from ....utils.computations import to_node_class
+from ....utils.db import RUNNING_STATE_TO_DB
 from ....utils.logging_utils import log_decorator
 from ...director_v0 import DirectorV0Client
 from ..tables import NodeClass, StateType, comp_tasks
@@ -204,13 +205,13 @@ class CompTasksRepository(BaseRepository):
             return inserted_comp_tasks_db
 
     @log_decorator(logger=logger)
-    async def mark_project_tasks_as_aborted(self, project: ProjectAtDB) -> None:
+    async def mark_project_tasks_as_aborted(self, project_id: ProjectID) -> None:
         # block all pending tasks, so the sidecars stop taking them
         async with self.db_engine.acquire() as conn:
             await conn.execute(
                 sa.update(comp_tasks)
                 .where(
-                    (comp_tasks.c.project_id == str(project.uuid))
+                    (comp_tasks.c.project_id == str(project_id))
                     & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                     & (
                         (comp_tasks.c.state == StateType.PUBLISHED)
@@ -221,8 +222,8 @@ class CompTasksRepository(BaseRepository):
             )
 
     @log_decorator(logger=logger)
-    async def mark_project_tasks_as_pending(
-        self, project_id: ProjectID, tasks: List[NodeID]
+    async def set_project_tasks_state(
+        self, project_id: ProjectID, tasks: List[NodeID], state: RunningState
     ) -> None:
         # block all pending tasks, so the sidecars stop taking them
         async with self.db_engine.acquire() as conn:
@@ -232,7 +233,7 @@ class CompTasksRepository(BaseRepository):
                     (comp_tasks.c.project_id == str(project_id))
                     & (comp_tasks.c.node_id.in_([str(t) for t in tasks]))
                 )
-                .values(state=StateType.PENDING)
+                .values(state=RUNNING_STATE_TO_DB[state])
             )
 
     @log_decorator(logger=logger)

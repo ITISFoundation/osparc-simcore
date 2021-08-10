@@ -1,6 +1,7 @@
 from aiodocker.exceptions import DockerError
 from models_library.projects_nodes import NodeID
-from simcore_service_director_v2.utils.exceptions import DirectorException
+
+from ...core.errors import DirectorException
 
 
 class DynamicSidecarError(DirectorException):

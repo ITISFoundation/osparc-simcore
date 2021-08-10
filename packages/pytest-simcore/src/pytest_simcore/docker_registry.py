@@ -39,6 +39,9 @@ def docker_registry(keep_docker_up: bool) -> str:
             name="pytest_registry",
             environment=["REGISTRY_STORAGE_DELETE_ENABLED=true"],
             restart_policy={"Name": "always"},
+            volumes={
+                "pytest_registry_data": {"bind": "/var/lib/registry", "mode": "rw"}
+            },
             detach=True,
         )
 

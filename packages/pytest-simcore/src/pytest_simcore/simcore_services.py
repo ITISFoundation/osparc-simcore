@@ -15,8 +15,15 @@ from .helpers.utils_docker import get_service_published_port
 
 log = logging.getLogger(__name__)
 
-SERVICES_TO_SKIP = ["sidecar", "postgres", "redis", "rabbit"]
-SERVICE_HEALTHCHECK_ENTRYPOINT = {"director-v2": "/"}
+SERVICES_TO_SKIP = ["dask-sidecar", "sidecar", "postgres", "redis", "rabbit"]
+SERVICE_PUBLISHED_PORT = {}
+SERVICE_HEALTHCHECK_ENTRYPOINT = {
+    "director-v2": "/",
+    "dask-scheduler": "/health",
+}
+AIOHTTP_BASED_SERVICE_PORT: int = 8080
+FASTAPI_BASED_SERVICE_PORT: int = 8000
+DASK_SCHEDULER_SERVICE_PORT: int = 8787
 
 
 @pytest.fixture(scope="module")
@@ -28,9 +35,9 @@ def services_endpoint(
     stack_name = testing_environ_vars["SWARM_STACK_NAME"]
     for service in core_services_selection:
         assert f"{stack_name}_{service}" in docker_stack["services"]
-        if not service in SERVICES_TO_SKIP:
+        if service not in SERVICES_TO_SKIP:
             endpoint = URL(
-                f"http://127.0.0.1:{get_service_published_port(service, [8080, 8000])}"
+                f"http://127.0.0.1:{get_service_published_port(service, [AIOHTTP_BASED_SERVICE_PORT, FASTAPI_BASED_SERVICE_PORT, DASK_SCHEDULER_SERVICE_PORT])}"
             )
             services_endpoint[service] = endpoint
     return services_endpoint
@@ -42,7 +49,7 @@ async def simcore_services(services_endpoint: Dict[str, URL], monkeypatch) -> No
     # waits for all services to be responsive
     wait_tasks = [
         wait_till_service_responsive(
-            f"{endpoint}{SERVICE_HEALTHCHECK_ENTRYPOINT.get(service, '/v0/')}"
+            URL(f"{endpoint}{SERVICE_HEALTHCHECK_ENTRYPOINT.get(service, '/v0/')}")
         )
         for service, endpoint in services_endpoint.items()
     ]
