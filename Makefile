@@ -583,6 +583,7 @@ endif
 _git_clean_args := -dxf -e .vscode -e TODO.md -e .venv -e .python-version
 _running_containers = $(shell docker ps -aq)
 
+
 .check-clean:
 	@git clean -n $(_git_clean_args)
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
@@ -602,9 +603,12 @@ clean: .check-clean ## cleans all unversioned files in project and temp files cr
 	# Cleaning web/client
 	@$(MAKE_C) services/web/client clean-files
 	# Remove build registry
-	@docker rm --force $(DOCKER_BUILD_REGISTRY_NAME)
+	@docker rm --force $(DOCKER_BUILD_REGISTRY_NAME) 2>/dev/null
 	# Remove docker buildx builder instance
-	@docker builx rm osparc-builder
+	@$(if $(findstring osparc-builder,$(shell docker buildx ls | grep osparc-builder)),\
+		docker buildx rm osparc-builder,\
+	)
+
 
 clean-more: ## cleans containers and unused volumes
 	# stops and deletes running containers
