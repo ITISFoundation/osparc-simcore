@@ -27,7 +27,6 @@ from ...models.schemas.comp_tasks import (
     ComputationTaskStop,
 )
 from ...models.schemas.constants import UserID
-from ...modules.celery import CeleryClient
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
@@ -54,20 +53,6 @@ router = APIRouter()
 log = logging.getLogger(__file__)
 
 PIPELINE_ABORT_TIMEOUT_S = 10
-
-
-async def _abort_pipeline_tasks(
-    project: ProjectAtDB,
-    tasks: List[CompTaskAtDB],
-    computation_tasks: CompTasksRepository,
-    celery_client: CeleryClient,
-) -> None:
-    await computation_tasks.mark_project_tasks_as_aborted(project.uuid)
-    celery_client.abort_computation_tasks([str(t.job_id) for t in tasks])
-    log.debug(
-        "Computational task stopped for project %s",
-        project.uuid,
-    )
 
 
 @router.post(
@@ -145,7 +130,7 @@ async def create_computation(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"Project {job.project_id} has no computational services, or contains cycles",
                 )
-            # await celery_scheduler.run_new_pipeline(job.user_id, job.project_id)
+
             await scheduler.run_new_pipeline(job.user_id, job.project_id)
 
         return ComputationTaskOut(
