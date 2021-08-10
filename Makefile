@@ -508,9 +508,10 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 	@echo REGISTRY_URL=$(get_my_ip):5000 >> .env
 	@echo DIRECTOR_REGISTRY_CACHING=False >> .env
 	@echo CATALOG_BACKGROUND_TASK_REST_TIME=1 >> .env
+	@scripts/docker/wait-for-it.bash --host=$(get_my_ip) --port=5000 --timeout=10
 	# local registry set in $(local_registry):5000
 	# images currently in registry:
-	curl --silent $(local_registry):5000/v2/_catalog | jq
+	@curl --silent $(local_registry):5000/v2/_catalog | jq
 
 
 ## INFO -------------------------------
