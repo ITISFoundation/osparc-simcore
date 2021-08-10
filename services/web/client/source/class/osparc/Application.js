@@ -262,7 +262,7 @@ qx.Class.define("osparc.Application", {
         link.rel = "icon";
         document.getElementsByTagName("head")[0].appendChild(link);
       }
-      link.href = "resource/osparc/favicon-"+qx.core.Environment.get("product.name")+".png";
+      link.href = "/resource/osparc/favicon-"+qx.core.Environment.get("product.name")+".png";
     },
 
     __checkCookiesAccepted: function() {
