@@ -18,7 +18,7 @@ from simcore_postgres_database.models.users import users
 
 @pytest.fixture
 async def engine(pg_engine: Engine):
-    # injects
+    # injects ...
     async with pg_engine.acquire() as conn:
         # a 'me' user
         user_id = await conn.scalar(

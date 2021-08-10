@@ -30,6 +30,7 @@ snapshots = sa.Table(
             ondelete="CASCADE",
         ),
         nullable=False,
+        unique=False,
         doc="UUID of the parent project",
     ),
     sa.Column(
@@ -37,7 +38,7 @@ snapshots = sa.Table(
         sa.Integer,
         nullable=False,
         unique=True,
-        doc="Number of child (as 0-based index: 0 being the oldest, 1, ...)"
+        doc="0-based index in order of creation (i.e. 0 being the oldest and N-1 the latest)"
         "from the same parent_id",
     ),
     sa.Column(
