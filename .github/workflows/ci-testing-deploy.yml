@@ -1889,6 +1889,13 @@ jobs:
             ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
+      # if the build happens on a push event it may help to pull first the last version
+      - name: build stack
+        if: github.event_name == 'push'
+        run: ./ci/github/integration-testing/webserver.bash build pull
+      - name: build stack
+        if: github.event_name == 'pull_request'
+        run: ./ci/github/integration-testing/webserver.bash build
       - name: test
         run: ./ci/github/integration-testing/webserver.bash test 01
       - name: upload failed tests logs
