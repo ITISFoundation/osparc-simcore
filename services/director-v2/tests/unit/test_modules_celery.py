@@ -13,8 +13,8 @@ from celery.contrib.testing.worker import TestWorkController
 from fastapi import FastAPI
 from models_library.settings.celery import CeleryConfig
 from pydantic.types import PositiveInt
-from simcore_service_director_v2.models.domains.comp_tasks import Image
-from simcore_service_director_v2.modules.celery import CeleryClient, CeleryTaskIn
+from simcore_service_director_v2.models.schemas.comp_scheduler import TaskIn
+from simcore_service_director_v2.modules.celery import CeleryClient
 
 
 # Fixtures -----------------------------------------------------------------
@@ -117,8 +117,8 @@ def test_send_computation_tasks(
     )
     celery_worker.reload()
 
-    list_of_tasks: List[CeleryTaskIn] = [
-        CeleryTaskIn(node_id=f"task_{i}", runtime_requirements=runtime_requirements)
+    list_of_tasks: List[TaskIn] = [
+        TaskIn(node_id=f"{uuid4()}", runtime_requirements=runtime_requirements)
         for i in range(3)
     ]
     celery_client: CeleryClient = minimal_app.state.celery_client
@@ -137,53 +137,3 @@ def test_send_computation_tasks(
         )
 
     callback_fct.assert_called()
-
-
-@pytest.mark.parametrize(
-    "image, exp_requirement",
-    [
-        (
-            Image(
-                name="simcore/services/dynamic/fake",
-                tag="1.2.3",
-                requires_gpu=False,
-                requires_mpi=False,
-            ),
-            "cpu",
-        ),
-        (
-            Image(
-                name="simcore/services/dynamic/fake",
-                tag="1.2.3",
-                requires_gpu=True,
-                requires_mpi=False,
-            ),
-            "gpu",
-        ),
-        (
-            Image(
-                name="simcore/services/dynamic/fake",
-                tag="1.2.3",
-                requires_gpu=False,
-                requires_mpi=True,
-            ),
-            "mpi",
-        ),
-        (
-            Image(
-                name="simcore/services/dynamic/fake",
-                tag="1.2.3",
-                requires_gpu=True,
-                requires_mpi=True,
-            ),
-            "gpu:mpi",
-        ),
-    ],
-)
-def test_celery_in_constructor(
-    minimal_celery_config: None, image: Image, exp_requirement: str
-):
-    fake_node_id = uuid4()
-    assert CeleryTaskIn.from_node_image(fake_node_id, image) == CeleryTaskIn(
-        fake_node_id, exp_requirement
-    )

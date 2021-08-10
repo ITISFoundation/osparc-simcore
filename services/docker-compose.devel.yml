@@ -97,7 +97,8 @@ services:
       <<: *dev-sidecar-environment
     ports:
       - "3000"
-    deploy: *dev-sidecar-deploy
+    deploy:
+      endpoint_mode: vip
 
   dask-scheduler:
     volumes: *dev-dask-sidecar-volumes

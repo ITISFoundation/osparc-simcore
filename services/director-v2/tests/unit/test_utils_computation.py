@@ -3,8 +3,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
-
-from datetime import datetime
 from pathlib import Path
 from typing import List
 
@@ -33,147 +31,137 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
     return CompTaskAtDB.parse_file(fake_task_file)
 
 
-@pytest.fixture(scope="session")
-def publication_timeout() -> int:
-    return 60
-
-
-CELERY_PUBLICATION_TIMEOUT = 120
-
-
-def _lazy_evaluate_time(time_fct: str) -> datetime:
-    # pylint: disable=eval-used
-    # pylint: disable=unused-import
-    from datetime import timedelta
-
-    return eval(time_fct)
-
-
-@pytest.fixture
-def configure_celery_timeout(monkeypatch):
-    monkeypatch.setenv("CELERY_PUBLICATION_TIMEOUT", str(CELERY_PUBLICATION_TIMEOUT))
-
-
 @pytest.mark.parametrize(
     "task_states, exp_pipeline_state",
     [
-        (
-            # pipeline is published if all the nodes are published AND time is within publication timeout
+        pytest.param(
             [
-                (RunningState.PUBLISHED, "datetime.utcnow()"),
-                (RunningState.PENDING, "datetime.utcnow()-timedelta(seconds=75)"),
-                (RunningState.PUBLISHED, "datetime.utcnow()-timedelta(seconds=155)"),
+                (RunningState.PUBLISHED),
+                (RunningState.PENDING),
+                (RunningState.PUBLISHED),
             ],
             RunningState.PENDING,
+            id="unconnected published/pending tasks = pending",
         ),
-        (
-            # pipeline is published if all the nodes are published AND time is within publication timeout
+        pytest.param(
             [
-                (RunningState.PUBLISHED, "datetime.utcnow()"),
-                (RunningState.PUBLISHED, "datetime.utcnow()-timedelta(seconds=75)"),
-                (RunningState.PUBLISHED, "datetime.utcnow()-timedelta(seconds=155)"),
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
             ],
             RunningState.PUBLISHED,
+            id="unconnected published tasks = published",
         ),
-        (
-            # pipeline is published if any of the node is published AND time is within publication timeout
+        pytest.param(
             [
-                (
-                    RunningState.PUBLISHED,
-                    "datetime.utcnow()-timedelta(seconds=CELERY_PUBLICATION_TIMEOUT + 75)",
-                ),
-                (RunningState.PUBLISHED, "datetime.utcnow()-timedelta(seconds=145)"),
-                (RunningState.PUBLISHED, "datetime.utcnow()-timedelta(seconds=1555)"),
+                (RunningState.NOT_STARTED),
+                (RunningState.NOT_STARTED),
             ],
             RunningState.NOT_STARTED,
+            id="unconnected not_started tasks = not_started",
         ),
-        (
-            # not started pipeline (all nodes are in non started mode)
+        pytest.param(
             [
-                (
-                    RunningState.NOT_STARTED,
-                    "fake.date_time()",
-                ),
-                (
-                    RunningState.NOT_STARTED,
-                    "fake.date_time()",
-                ),
-            ],
-            RunningState.NOT_STARTED,
-        ),
-        (
-            # successful pipeline if ALL of the node are successful
-            [
-                (RunningState.SUCCESS, "fake.date_time()"),
-                (RunningState.SUCCESS, "fake.date_time()"),
+                (RunningState.SUCCESS),
+                (RunningState.SUCCESS),
             ],
             RunningState.SUCCESS,
+            id="unconnected successfull tasks = success",
         ),
-        (
-            # pending pipeline if ALL of the node are pending
+        pytest.param(
             [
-                (RunningState.PENDING, "fake.date_time()"),
-                (RunningState.PENDING, "fake.date_time()"),
+                (RunningState.PENDING),
+                (RunningState.PENDING),
             ],
             RunningState.PENDING,
+            id="unconnected pending tasks = pending",
         ),
-        (
-            # failed pipeline if any of the node is failed
+        pytest.param(
             [
-                (RunningState.PENDING, "fake.date_time()"),
-                (RunningState.FAILED, "fake.date_time()"),
-                (RunningState.PENDING, "fake.date_time()"),
+                (RunningState.SUCCESS),
+                (RunningState.SUCCESS),
+                (RunningState.FAILED),
+                (RunningState.ABORTED),
             ],
             RunningState.FAILED,
+            id="any number of success and 1 failed = failed",
         ),
-        (
-            # started pipeline if any of the node is started
+        pytest.param(
             [
-                (RunningState.STARTED, "fake.date_time()"),
-                (RunningState.FAILED, "fake.date_time()"),
-            ],
-            RunningState.FAILED,
-        ),
-        (
-            # started pipeline if any of the node is started
-            [
-                (RunningState.SUCCESS, "fake.date_time()"),
-                (RunningState.PENDING, "fake.date_time()"),
-                (RunningState.PENDING, "fake.date_time()"),
+                (RunningState.SUCCESS),
+                (RunningState.SUCCESS),
+                (RunningState.PENDING),
+                (RunningState.FAILED),
+                (RunningState.FAILED),
+                (RunningState.PENDING),
+                (RunningState.PUBLISHED),
+                (RunningState.ABORTED),
             ],
             RunningState.STARTED,
+            id="any number of unconnected success and failed failed with pending/published = started",
         ),
-        (
-            # ABORTED pipeline if any of the node is aborted
+        pytest.param(
             [
-                (RunningState.SUCCESS, "fake.date_time()"),
-                (RunningState.ABORTED, "fake.date_time()"),
-                (RunningState.PENDING, "fake.date_time()"),
+                (RunningState.STARTED),
+                (RunningState.FAILED),
+            ],
+            RunningState.STARTED,
+            id="any number of unconnected success and failed failed with pending/published = started",
+        ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.PENDING),
+                (RunningState.PENDING),
+            ],
+            RunningState.STARTED,
+            id="any number of unconnected success and failed failed with pending/published = started",
+        ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.PENDING),
+                (RunningState.PUBLISHED),
+            ],
+            RunningState.STARTED,
+            id="any number of unconnected success and failed failed with pending/published = started",
+        ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.ABORTED),
+                (RunningState.FAILED),
+                (RunningState.PENDING),
+            ],
+            RunningState.STARTED,
+            id="any number of unconnected success and failed failed with pending/published = started",
+        ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.ABORTED),
+                (RunningState.ABORTED),
             ],
             RunningState.ABORTED,
+            id="any number of unconnected success and aborted without pending/published = aborted",
         ),
-        (
-            # empty tasks (could be an empty project or filled with dynamic services)
+        pytest.param(
             [],
             RunningState.NOT_STARTED,
+            id="empty tasks (empty project or full of dynamic services) = not_started",
         ),
     ],
 )
 def test_get_pipeline_state_from_task_states(
-    configure_celery_timeout,
     task_states: List[RunningState],
     exp_pipeline_state: RunningState,
     fake_task: CompTaskAtDB,
-    publication_timeout: int,
 ):
     tasks: List[CompTaskAtDB] = [
-        fake_task.copy(deep=True, update={"state": s, "submit": _lazy_evaluate_time(t)})
-        for s, t in task_states
+        fake_task.copy(deep=True, update={"state": s}) for s in task_states
     ]
 
-    pipeline_state: RunningState = get_pipeline_state_from_task_states(
-        tasks, publication_timeout
-    )
+    pipeline_state: RunningState = get_pipeline_state_from_task_states(tasks)
     assert (
         pipeline_state == exp_pipeline_state
     ), f"task states are: {task_states}, got {pipeline_state} instead of {exp_pipeline_state}"
