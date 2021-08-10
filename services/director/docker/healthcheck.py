@@ -18,8 +18,6 @@ Q&A:
 
 import os
 import sys
-
-
 from urllib.request import urlopen
 
 SUCCESS, UNHEALTHY = 0, 1
@@ -28,6 +26,7 @@ SUCCESS, UNHEALTHY = 0, 1
 ok = os.environ.get("SC_BOOT_MODE") == "debug"
 
 # Queries host
+# pylint: disable=consider-using-with
 ok = (
     ok
     or urlopen(
