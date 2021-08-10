@@ -95,7 +95,7 @@ class CelerySettings(BaseCelerySettings):
 
 class DynamicSidecarTraefikSettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_TRAEFIK_VERSION: str = Field(
-        "v2.2.1",
+        "v2.4.13",
         description="current version of the Traefik image to be pulled and used from dockerhub",
     )
     DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL: str = Field(

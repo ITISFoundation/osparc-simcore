@@ -394,7 +394,7 @@ services:
       retries: 50
 
   traefik:
-    image: traefik:v2.2.1
+    image: traefik:v2.4.13
     init: true
     command:
       - "--api=true"
