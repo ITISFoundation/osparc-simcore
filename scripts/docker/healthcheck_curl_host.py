@@ -29,7 +29,7 @@ ok = os.environ.get("SC_BOOT_MODE", "").lower() == "debug"
 # pylint: disable=consider-using-with
 ok = (
     ok
-    or urlopen(
+    or urlopen(  # nosec
         "{host}{baseurl}".format(
             host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
         )  # adds a base-path if defined in environ
