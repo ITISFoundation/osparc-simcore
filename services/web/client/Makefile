@@ -49,8 +49,17 @@ follow-dev-logs: ## follow the logs of the qx compiler
 	@docker logs --follow $(container_name)
 
 
+.docker-build-registry:
+	# create registry for temporary builds
+	@$(if $(shell docker ps --format="{{.Names}}" | grep $(DOCKER_BUILD_REGISTRY_NAME)),,\
+		docker run --detach \
+				--publish $(DOCKER_BUILD_REGISTRY_PORT):5000 \
+				--name $(DOCKER_BUILD_REGISTRY_NAME) \
+				registry:2 \
+		|| true)
+
 .PHONY: compile touch upgrade
-compile: ## qx compiles host' 'source' -> image's 'build-output'
+compile: .docker-build-registry ## qx compiles host' 'source' -> image's 'build-output'
 	# qx compile 'source' within $(docker_image) image  [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
 	@docker buildx build --file $(docker_file) --tag localhost:$(DOCKER_BUILD_REGISTRY_PORT)/$(docker_image) \
 		--build-arg tag=${QOOXDOO_KIT_TAG} \
@@ -137,5 +146,7 @@ clean-images:
 	@${docker_compose} down
 	# remove build
 	@docker image rm -f $(docker_image)
+	# Remove build registry
+	@docker rm --force $(DOCKER_BUILD_REGISTRY_NAME) 2>/dev/null
 
 clean: clean-images clean-files ## Forces clean of all outputs (files and images)
