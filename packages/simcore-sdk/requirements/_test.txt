@@ -83,7 +83,9 @@ markupsafe==2.0.1
 mccabe==0.6.1
     # via pylint
 minio==7.0.4
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 multidict==5.1.0
     # via
     #   -c requirements/_base.txt

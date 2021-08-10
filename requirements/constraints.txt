@@ -32,6 +32,14 @@ sqlalchemy<2.0
 
 
 #
+# Bugs
+#
+
+# FIXME: minio 7.1.0 does not delete objects. SEE
+minio==7.0.4
+
+
+#
 # Compatibility/coordination
 #
 
