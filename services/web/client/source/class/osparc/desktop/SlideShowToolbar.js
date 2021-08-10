@@ -137,18 +137,18 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           nodeIds.push(node.nodeId);
         });
 
-        this.getChildControl("breadcrumb-navigation").populateButtons(nodeIds);
-        this.getChildControl("breadcrumb-navigation-edit").populateButtons(nodeIds);
-        this.getChildControl("prev-next-btns").populateButtons(nodeIds);
-
         const currentModeBtn = editSlideshowButtons.getSelection()[0];
         if ("editing" in currentModeBtn && currentModeBtn["editing"]) {
           this.getChildControl("breadcrumbs-scroll").exclude();
+          this.getChildControl("breadcrumb-navigation-edit").populateButtons(study);
           this.getChildControl("breadcrumbs-scroll-edit").show();
         } else {
+          this.getChildControl("breadcrumb-navigation").populateButtons(nodeIds);
           this.getChildControl("breadcrumbs-scroll").show();
           this.getChildControl("breadcrumbs-scroll-edit").exclude();
         }
+
+        this.getChildControl("prev-next-btns").populateButtons(nodeIds);
       }
     }
   }

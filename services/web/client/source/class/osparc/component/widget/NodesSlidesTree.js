@@ -180,7 +180,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           label: node.getLabel(),
           nodeId: node.getNodeId()
         };
-        const pos = this.__study.getUi().getSlideShow().getPosition(nodeId);
+        const pos = this.__study.getUi().getSlideshow().getPosition(nodeId);
         if (pos === -1) {
           nodeInTree.position = -1;
           nodeInTree.skipNode = true;
