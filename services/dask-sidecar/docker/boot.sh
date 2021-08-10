@@ -60,13 +60,14 @@ else
   # 'daemonic processes are not allowed to have children' arises when running the sidecar.cli
   # because multi-processing library is used by the sidecar and the nanny does not like it
   # setting --no-nanny fixes this: see https://github.com/dask/distributed/issues/2142
+  num_cpus=$(($(nproc) - ${DASK_SIDECAR_NUM_NON_USABLE_CPUS:-2}))
   num_gpus=$(python -c "from simcore_service_sidecar.utils import num_available_gpus; print(num_available_gpus());")
-  resources="CPU=1"
+  resources="CPU=$num_cpus"
   if [ "$num_gpus" -gt 0 ]; then
     resources="$resources,GPU=$num_gpus"
   fi
   if [ ${TARGET_MPI_NODE_CPU_COUNT+x} ]; then
-    if [ $(nproc) -eq ${TARGET_MPI_NODE_CPU_COUNT} ]; then
+    if [ "$(nproc)" -eq "${TARGET_MPI_NODE_CPU_COUNT}" ]; then
       resources="$resources,MPI=1"
     fi
   fi
@@ -80,7 +81,7 @@ else
       --preload simcore_service_dask_sidecar.tasks \
       --reconnect \
       --no-nanny \
-      --nthreads 1 \
+      --nthreads "$num_cpus" \
       --dashboard-address 8787 \
       --resources "$resources"
 
@@ -91,7 +92,7 @@ else
       --preload simcore_service_dask_sidecar.tasks \
       --reconnect \
       --no-nanny \
-      --nthreads 1 \
+      --nthreads "$num_cpus" \
       --dashboard-address 8787 \
       --resources "$resources"
 
