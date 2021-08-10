@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Any, Dict
+from typing import Any, Dict, Iterator
 
 import pytest
 from distributed import Client
@@ -23,7 +23,7 @@ async def dask_scheduler_service(simcore_services, monkeypatch) -> Dict[str, Any
 
 
 @pytest.fixture(scope="function")
-def dask_client(dask_scheduler_service: Dict[str, Any]) -> Client:
+def dask_client(dask_scheduler_service: Dict[str, Any]) -> Iterator[Client]:
 
     client = Client(
         f"{dask_scheduler_service['host']}:{dask_scheduler_service['port']}"
