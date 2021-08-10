@@ -24,51 +24,69 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
 
   events: {
     "addServiceBetween": "qx.event.type.Data",
-    "removeNode": "qx.event.type.Data"
+    "removeNode": "qx.event.type.Data",
+    "showNode": "qx.event.type.Data",
+    "hideNode": "qx.event.type.Data"
   },
 
   members: {
-    populateButtons: function(nodesIds = []) {
+    populateButtons: function(study) {
       this._removeAll();
+
+      if (!study.getWorkbench().isPipelineLinear()) {
+        return;
+      }
+      const nodeIds = study.getWorkbench().getPipelineLinearSorted();
+      if (nodeIds === null) {
+        return;
+      }
 
       let newServiceBtn = this.__createNewServiceBtn();
       newServiceBtn.leftNodeId = null;
       this._add(newServiceBtn);
 
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const slideShow = study.getUi().getSlideshow().getData();
-
-      nodesIds.forEach(nodeId => {
+      const slideShow = study.getUi().getSlideshow();
+      let currentPos = 0;
+      nodeIds.forEach(nodeId => {
         newServiceBtn.rightNodeId = nodeId;
         if (!study.getWorkbench().getNode(nodeId).hasInputs()) {
           newServiceBtn.exclude();
         }
 
+        const btn = new qx.ui.toolbar.MenuButton().set({
+          paddingLeft: 5,
+          paddingRight: 5,
+          marginLeft: 1,
+          marginRight: 1
+        });
+        this._add(btn);
+
         const node = study.getWorkbench().getNode(nodeId);
-        if (node && nodeId in slideShow) {
-          const btn = new qx.ui.toolbar.MenuButton().set({
-            paddingLeft: 5,
-            paddingRight: 5,
-            marginLeft: 1,
-            marginRight: 1
+        const nodeLabel = node.getLabel();
+        const skipNode = slideShow.getPosition(nodeId) === -1;
+        if (skipNode) {
+          btn.set({
+            label: nodeLabel,
+            icon: "@FontAwesome5Solid/eye-slash/14"
           });
-          this._add(btn);
-
-          const pos = slideShow[nodeId].position;
-          node.bind("label", btn, "label", {
-            converter: val => `${pos+1}- ${val}`
+        } else {
+          btn.set({
+            label: currentPos+1 + " - " + nodeLabel
           });
+          currentPos++;
+        }
+        btn.nodeId = nodeId;
+        btn.skipNode = skipNode;
 
-          const menu = this.__createEditNodeMenu(nodeId);
-          btn.setMenu(menu);
+        this.__addEditNodeMenu(btn);
 
-          newServiceBtn = this.__createNewServiceBtn();
-          newServiceBtn.leftNodeId = nodeId;
-          newServiceBtn.rightNodeId = null;
-          this._add(newServiceBtn);
-          if (!study.getWorkbench().getNode(nodeId).hasOutputs()) {
-            newServiceBtn.exclude();
-          }
+        newServiceBtn = this.__createNewServiceBtn();
+        newServiceBtn.leftNodeId = nodeId;
+        newServiceBtn.rightNodeId = null;
+        this._add(newServiceBtn);
+
+        if (!study.getWorkbench().getNode(nodeId).hasOutputs()) {
+          newServiceBtn.exclude();
         }
       });
     },
@@ -92,16 +110,30 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
       return newServiceBtn;
     },
 
-    __createEditNodeMenu: function(nodeId) {
+    __addEditNodeMenu: function(btn) {
       const menu = new qx.ui.menu.Menu();
 
-      const deleteButton = new qx.ui.menu.Button("Delete");
+      if (btn.skipNode) {
+        const showButton = new qx.ui.menu.Button("Show", "@FontAwesome5Solid/eye/14");
+        showButton.addListener("execute", () => {
+          this.fireDataEvent("showNode", btn.nodeId);
+        });
+        menu.add(showButton);
+      } else {
+        const hideButton = new qx.ui.menu.Button("Hide", "@FontAwesome5Solid/eye-slash/14");
+        hideButton.addListener("execute", () => {
+          this.fireDataEvent("hideNode", btn.nodeId);
+        });
+        menu.add(hideButton);
+      }
+
+      const deleteButton = new qx.ui.menu.Button("Delete", "@FontAwesome5Solid/trash/14");
       deleteButton.addListener("execute", () => {
-        this.fireDataEvent("removeNode", nodeId);
+        this.fireDataEvent("removeNode", btn.nodeId);
       });
       menu.add(deleteButton);
 
-      return menu;
+      btn.setMenu(menu);
     }
   }
 });
