@@ -90,13 +90,19 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director-v2:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
+      - DASK_SCHEDULER_HOST=${DASK_SCHEDULER_HOST:-dask-scheduler}
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
       - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
+      - DIRECTOR_SELF_SIGNED_SSL_FILENAME=${DIRECTOR_SELF_SIGNED_SSL_FILENAME}
+      - DIRECTOR_SELF_SIGNED_SSL_SECRET_ID=${DIRECTOR_SELF_SIGNED_SSL_SECRET_ID}
+      - DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME=${DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME}
+      - DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS=${DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS}
+      - DIRECTOR_V2_DEV_FEATURES_ENABLED=${DIRECTOR_V2_DEV_FEATURES_ENABLED}
       - DYNAMIC_SIDECAR_IMAGE=${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
       - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX:-undefined}
-      - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
-      - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+      - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
+      - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
     env_file:
       - ../.env
     volumes:
@@ -232,9 +238,8 @@ services:
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    deploy:
-      mode: replicated
-      replicas: 2
+    deploy: &dask-sidecar-deploy
+      mode: global
       endpoint_mode: dnsrr
       resources:
         reservations:

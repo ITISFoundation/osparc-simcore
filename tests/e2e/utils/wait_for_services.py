@@ -149,7 +149,11 @@ def wait_for_services() -> int:
 
     for service in started_services:
 
-        expected_replicas = service.attrs["Spec"]["Mode"]["Replicated"]["Replicas"]
+        expected_replicas = (
+            service.attrs["Spec"]["Mode"]["Replicated"]["Replicas"]
+            if "Replicated" in service.attrs["Spec"]["Mode"]
+            else len(client.nodes.list())  # we are in global mode
+        )
         print(f"Service: {service.name} expects {expected_replicas} replicas", "-" * 10)
 
         try:
