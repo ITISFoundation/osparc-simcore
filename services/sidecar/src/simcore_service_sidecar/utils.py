@@ -1,6 +1,6 @@
 import asyncio
 import logging
-import subprocess
+import subprocess  # nosec
 import tempfile
 import uuid
 from pathlib import Path
@@ -134,10 +134,13 @@ def start_as_mpi_node() -> bool:
     If it can it will try to grab a Redlock, ensure it is the only service who can be
     started as MPI.
     """
-    with subprocess.Popen(
-        "cat /proc/cpuinfo | grep processor | wc -l", shell=True, stdout=subprocess.PIPE
+
+    with subprocess.Popen(  # nosec
+        "cat /proc/cpuinfo | grep processor | wc -l",
+        shell=True,
+        stdout=subprocess.PIPE,
     ) as proc:
-        assert proc.stdout  #  nosec
+        assert proc.stdout  # nosec
         command_output = proc.stdout.read()
 
     current_cpu_count: int = int(command_output)
