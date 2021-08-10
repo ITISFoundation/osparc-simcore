@@ -13,9 +13,9 @@ from uuid import UUID, uuid3
 
 from models_library.projects_nodes import Node
 
-from .parametrization_models import Snapshot
 from .projects.projects_db import ProjectAtDB
 from .projects.projects_utils import clone_project_document
+from .snapshots_models import Snapshot
 
 
 def is_parametrized(node: Node) -> bool:
