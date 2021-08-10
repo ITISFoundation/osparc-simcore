@@ -35,7 +35,7 @@ def services_endpoint(
     stack_name = testing_environ_vars["SWARM_STACK_NAME"]
     for service in core_services_selection:
         assert f"{stack_name}_{service}" in docker_stack["services"]
-        if not service in SERVICES_TO_SKIP:
+        if service not in SERVICES_TO_SKIP:
             endpoint = URL(
                 f"http://127.0.0.1:{get_service_published_port(service, [AIOHTTP_BASED_SERVICE_PORT, FASTAPI_BASED_SERVICE_PORT, DASK_SCHEDULER_SERVICE_PORT])}"
             )
