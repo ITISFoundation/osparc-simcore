@@ -78,7 +78,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
         btn.nodeId = nodeId;
         btn.skipNode = skipNode;
 
-        this.__addEditNodeMenu(btn);
+        this.__addEditNodeMenu(btn, currentPos);
 
         newServiceBtn = this.__createNewServiceBtn();
         newServiceBtn.leftNodeId = nodeId;
@@ -110,13 +110,16 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
       return newServiceBtn;
     },
 
-    __addEditNodeMenu: function(btn) {
+    __addEditNodeMenu: function(btn, currentPos) {
       const menu = new qx.ui.menu.Menu();
 
       if (btn.skipNode) {
         const showButton = new qx.ui.menu.Button("Show", "@FontAwesome5Solid/eye/14");
         showButton.addListener("execute", () => {
-          this.fireDataEvent("showNode", btn.nodeId);
+          this.fireDataEvent("showNode", {
+            nodeId: btn.nodeId,
+            desiredPos: currentPos
+          });
         });
         menu.add(showButton);
       } else {

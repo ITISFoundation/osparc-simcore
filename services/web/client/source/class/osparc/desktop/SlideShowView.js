@@ -39,6 +39,17 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       const nodeId = e.getData();
       this.__removeNode(nodeId);
     }, this);
+    slideShowToolbar.addListener("showNode", e => {
+      const {
+        nodeId,
+        desiredPos
+      } = e.getData();
+      this.__showNode(nodeId, desiredPos);
+    }, this);
+    slideShowToolbar.addListener("hideNode", e => {
+      const nodeId = e.getData();
+      this.__hideNode(nodeId);
+    }, this);
     this._add(slideShowToolbar);
   },
 
@@ -283,6 +294,20 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
       // remove node
       workbench.removeNode(nodeId);
+
+      this.__slideShowToolbar.populateButtons();
+    },
+
+    __showNode: function(nodeId) {
+      this.getStudy().getUi().getSlideshow()
+        .insertNode(nodeId, 1);
+
+      this.__slideShowToolbar.populateButtons();
+    },
+
+    __hideNode: function(nodeId) {
+      this.getStudy().getUi().getSlideshow()
+        .removeNode(nodeId);
 
       this.__slideShowToolbar.populateButtons();
     }
