@@ -1,4 +1,5 @@
 import tempfile
+import threading
 from pathlib import Path
 from typing import Dict, Tuple, Union
 
@@ -49,8 +50,8 @@ _INTERNAL_DIR = Path(tempfile.gettempdir(), "simcorefiles")
 
 
 def create_folder_path(key: str) -> Path:
-    return Path(_INTERNAL_DIR, key)
+    return Path(_INTERNAL_DIR, f"{threading.get_ident()}", key)
 
 
 def create_file_path(key: str, name: str) -> Path:
-    return Path(_INTERNAL_DIR, key, name)
+    return Path(_INTERNAL_DIR, f"{threading.get_ident()}", key, name)
