@@ -57,6 +57,8 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
       box.add(confirm);
 
       const manager = new qx.ui.form.validation.Manager();
+      manager.add(newPassword, osparc.auth.core.Utils.passwordLengthValidator);
+      manager.add(confirm, osparc.auth.core.Utils.passwordLengthValidator);
       manager.setValidator(function(_itemForms) {
         return osparc.auth.core.Utils.checkSamePasswords(newPassword, confirm);
       });
