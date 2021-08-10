@@ -1286,6 +1286,13 @@ jobs:
             ${{ runner.os }}-
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
+      # if the build happens on a push event it may help to pull first the last version
+      - name: build stack
+        if: github.event_name == 'push'
+        run: ./ci/github/integration-testing/webserver.bash build pull
+      - name: build stack
+        if: github.event_name == 'pull_request'
+        run: ./ci/github/integration-testing/webserver.bash build
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 02
       - uses: codecov/codecov-action@v2.0.3
