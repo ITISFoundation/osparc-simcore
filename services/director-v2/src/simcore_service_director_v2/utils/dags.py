@@ -72,7 +72,8 @@ async def compute_node_modified_state(
 ) -> bool:
     node = nodes_data_view[str(node_id)]
     # if the node state is in the modified state already
-    if node["state"] in [None,
+    if node["state"] in [
+        None,
         RunningState.ABORTED,
         RunningState.FAILED,
     ]:
