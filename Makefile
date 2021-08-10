@@ -131,17 +131,18 @@ endef
 	# create docker buildkit builder
 	@docker buildx create --name osparc-builder \
 			--driver-opt network=host \
-			--node \
+			--node osparc \
 			--use \
 			|| true
 
 .docker-build-registry:
 	# create registry for temporary builds
-	@docker run --detach \
-			--publish $(DOCKER_BUILD_REGISTRY_PORT):5000 \
-			--name $(DOCKER_BUILD_REGISTRY_NAME) \
-			registry:2 \
-			|| true
+	@$(if $(shell docker ps --format="{{.Names}}" | grep $(DOCKER_BUILD_REGISTRY_NAME)),,\
+		docker run --detach \
+				--publish $(DOCKER_BUILD_REGISTRY_PORT):5000 \
+				--name $(DOCKER_BUILD_REGISTRY_NAME) \
+				registry:2 \
+		|| true)
 
 rebuild: build-nc # alias
 build build-nc: .docker-buildx-builder .docker-build-registry .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
@@ -491,7 +492,7 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 					echo restarting engine...; \
 					sudo service docker restart;\
 					echo done)
-	@$(if $(shell docker ps --format="{{.Names}}" | grep registry),,\
+	@$(if $(shell docker ps --format="{{.Names}}" | grep $(local_registry)),,\
 					echo starting registry on $(local_registry):5000...; \
 					docker run --detach \
 							--init \
@@ -602,6 +603,8 @@ clean: .check-clean ## cleans all unversioned files in project and temp files cr
 	@$(MAKE_C) services/web/client clean-files
 	# Remove build registry
 	@docker rm --force $(DOCKER_BUILD_REGISTRY_NAME)
+	# Remove docker buildx builder instance
+	@docker builx rm osparc-builder
 
 clean-more: ## cleans containers and unused volumes
 	# stops and deletes running containers
