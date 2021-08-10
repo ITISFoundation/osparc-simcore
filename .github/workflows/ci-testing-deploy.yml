@@ -2134,6 +2134,13 @@ jobs:
             ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/director-v2.bash install
+      # if the build happens on a push event it may help to pull first the last version
+      - name: build stack
+        if: github.event_name == 'push'
+        run: ./ci/github/integration-testing/director-v2.bash build pull
+      - name: build stack
+        if: github.event_name == 'pull_request'
+        run: ./ci/github/integration-testing/director-v2.bash build
       - name: test
         run: ./ci/github/integration-testing/director-v2.bash test 02
       - name: upload failed tests logs
