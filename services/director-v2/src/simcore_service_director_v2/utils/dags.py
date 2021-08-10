@@ -37,6 +37,7 @@ def create_complete_dag(workbench: Workbench) -> nx.DiGraph:
             inputs=node.inputs,
             run_hash=node.run_hash,
             outputs=node.outputs,
+            state=node.state.current_status,
         )
         for input_node_id in node.input_nodes:
             predecessor_node = workbench.get(str(input_node_id))
@@ -58,6 +59,7 @@ def create_complete_dag_from_tasks(tasks: List[CompTaskAtDB]) -> nx.DiGraph:
             inputs=task.inputs,
             run_hash=task.run_hash,
             outputs=task.outputs,
+            state=task.state,
         )
         for input_data in task.inputs.values():
             if isinstance(input_data, PortLink):
@@ -69,12 +71,19 @@ async def compute_node_modified_state(
     nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
 ) -> bool:
     node = nodes_data_view[str(node_id)]
+    # if the node state is in the modified state already
+    if not node["state"] or node["state"] in [
+        RunningState.ABORTED,
+        RunningState.FAILED,
+    ]:
+        return True
     # if the node has no output it is outdated for sure
     if not node["outputs"]:
         return True
     for output_port in node["outputs"]:
         if output_port is None:
             return True
+
     # maybe our inputs changed? let's compute the node hash and compare with the saved one
     async def get_node_io_payload_cb(node_id: NodeID) -> Dict[str, Any]:
         return nodes_data_view[str(node_id)]
