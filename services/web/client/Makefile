@@ -10,6 +10,14 @@ export VCS_REF:=$(shell git rev-parse --short HEAD)
 export VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 .)
 export VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
 
+# docker buildx cache location
+DOCKER_BUILDX_CACHE_FROM ?= /tmp/.buildx-cache
+DOCKER_BUILDX_CACHE_TO ?= /tmp/.buildx-cache
+# docker build temporary registry
+DOCKER_BUILD_REGISTRY_PORT ?= 5000
+DOCKER_BUILD_REGISTRY_NAME ?= build_registry
+
+
 docker_compose := docker-compose -f tools/docker-compose.yml
 docker_file    := tools/qooxdoo-kit/builder/Dockerfile
 docker_image   := client/$(subst /Dockerfile,,$(docker_file)):latest
@@ -44,12 +52,13 @@ follow-dev-logs: ## follow the logs of the qx compiler
 .PHONY: compile touch upgrade
 compile: ## qx compiles host' 'source' -> image's 'build-output'
 	# qx compile 'source' within $(docker_image) image  [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
-	@docker buildx build --file $(docker_file) --tag $(docker_image) \
+	@docker buildx build --file $(docker_file) --tag localhost:$(DOCKER_BUILD_REGISTRY_PORT)/$(docker_image) \
 		--build-arg tag=${QOOXDOO_KIT_TAG} \
 		--build-arg VCS_REF=${VCS_REF} \
 		--build-arg VCS_REF_CLIENT=${VCS_REF_CLIENT} \
 		--build-arg VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT} \
 		--build-arg VCS_URL=${VCS_URL} \
+		--output type=registry \
 		--target=build-client .
 
 
