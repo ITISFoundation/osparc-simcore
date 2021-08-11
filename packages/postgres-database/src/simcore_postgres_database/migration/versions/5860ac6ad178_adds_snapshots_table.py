@@ -23,7 +23,6 @@ def upgrade():
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("parent_uuid", sa.String(), nullable=False),
-        sa.Column("child_index", sa.Integer(), nullable=False),
         sa.Column("project_uuid", sa.String(), nullable=False),
         sa.ForeignKeyConstraint(
             ["parent_uuid"],
@@ -38,8 +37,10 @@ def upgrade():
             ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("child_index"),
         sa.UniqueConstraint("project_uuid"),
+        sa.UniqueConstraint(
+            "parent_uuid", "created_at", name="snapshot_from_project_uniqueness"
+        ),
     )
     # ### end Alembic commands ###
 
