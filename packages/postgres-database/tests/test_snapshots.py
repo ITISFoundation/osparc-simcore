@@ -4,13 +4,14 @@
 # pylint: disable=unused-variable
 
 from copy import deepcopy
-from typing import Optional
+from typing import Callable, Optional, Set
 from uuid import UUID, uuid3
 
 import pytest
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
+from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.snapshots import snapshots
 from simcore_postgres_database.models.users import users
@@ -36,8 +37,9 @@ async def engine(pg_engine: Engine):
     yield pg_engine
 
 
-async def test_creating_snapshots(engine: Engine):
-    exclude = {
+@pytest.fixture
+def exclude():
+    return {
         "id",
         "uuid",
         "creation_date",
@@ -46,8 +48,11 @@ async def test_creating_snapshots(engine: Engine):
         "published",
     }
 
+
+@pytest.fixture
+def create_snapshot(exclude) -> Callable:
     async def _create_snapshot(child_index: int, parent_prj, conn) -> int:
-        # NOTE: used as prototype
+        # NOTE: used as FAKE prototype
 
         # create project-snapshot
         prj_dict = {c: deepcopy(parent_prj[c]) for c in parent_prj if c not in exclude}
@@ -80,12 +85,18 @@ async def test_creating_snapshots(engine: Engine):
                 name=f"Snapshot {child_index} [{parent_prj.name}]",
                 created_at=parent_prj.last_change_date,
                 parent_uuid=parent_prj.uuid,
-                child_index=child_index,
                 project_uuid=project_uuid,
             )
             .returning(snapshots.c.id)
         )
         return snapshot_id
+
+    return _create_snapshot
+
+
+async def test_creating_snapshots(
+    engine: Engine, create_snapshot: Callable, exclude: Set
+):
 
     async with engine.acquire() as conn:
         # get parent
@@ -97,7 +108,7 @@ async def test_creating_snapshots(engine: Engine):
         assert parent_prj
 
         # take one snapshot
-        first_snapshot_id = await _create_snapshot(0, parent_prj, conn)
+        first_snapshot_id = await create_snapshot(0, parent_prj, conn)
 
         # modify parent
         updated_parent_prj = await (
@@ -115,7 +126,7 @@ async def test_creating_snapshots(engine: Engine):
         assert updated_parent_prj.creation_date < updated_parent_prj.last_change_date
 
         # take another snapshot
-        second_snapshot_id = await _create_snapshot(1, updated_parent_prj, conn)
+        second_snapshot_id = await create_snapshot(1, updated_parent_prj, conn)
 
         second_snapshot = await (
             await conn.execute(
@@ -148,6 +159,25 @@ async def test_creating_snapshots(engine: Engine):
 
         # TODO: if we call to take consecutive snapshots ... of the same thing, it should
         # return existing
+
+
+async def test_multiple_snapshots_of_same_project(
+    engine: Engine, create_snapshot: Callable
+):
+    async with engine.acquire() as conn:
+        # get parent
+        res: ResultProxy = await conn.execute(
+            projects.select().where(projects.c.name == PARENT_PROJECT_NAME)
+        )
+        parent_prj: Optional[RowProxy] = await res.first()
+        assert parent_prj
+
+        # take first snapshot
+        await create_snapshot(0, parent_prj, conn)
+
+        # no changes in the parent!
+        with pytest.raises(UniqueViolation):
+            await create_snapshot(1, parent_prj, conn)
 
 
 def test_deleting_snapshots():

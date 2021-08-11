@@ -34,14 +34,6 @@ snapshots = sa.Table(
         doc="UUID of the parent project",
     ),
     sa.Column(
-        "child_index",
-        sa.Integer,
-        nullable=False,
-        unique=True,
-        doc="0-based index in order of creation (i.e. 0 being the oldest and N-1 the latest)"
-        "from the same parent_id",
-    ),
-    sa.Column(
         "project_uuid",
         sa.String,
         sa.ForeignKey(
@@ -52,6 +44,9 @@ snapshots = sa.Table(
         nullable=False,
         unique=True,
         doc="UUID of the project associated to this snapshot",
+    ),
+    sa.UniqueConstraint(
+        "parent_uuid", "created_at", name="snapshot_from_project_uniqueness"
     ),
 )
 
