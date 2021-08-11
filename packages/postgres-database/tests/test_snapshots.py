@@ -19,14 +19,6 @@ USERNAME = "me"
 PARENT_PROJECT_NAME = "parent"
 
 
-def test_it():
-    import os
-
-    cwd = os.getcwd()
-
-    assert True
-
-
 @pytest.fixture
 async def engine(pg_engine: Engine):
     # injects ...
@@ -55,6 +47,8 @@ async def test_creating_snapshots(engine: Engine):
     }
 
     async def _create_snapshot(child_index: int, parent_prj, conn) -> int:
+        # NOTE: used as prototype
+
         # create project-snapshot
         prj_dict = {c: deepcopy(parent_prj[c]) for c in parent_prj if c not in exclude}
 
@@ -83,7 +77,8 @@ async def test_creating_snapshots(engine: Engine):
         snapshot_id = await conn.scalar(
             snapshots.insert()
             .values(
-                name=f"Snapshot {child_index}",
+                name=f"Snapshot {child_index} [{parent_prj.name}]",
+                created_at=parent_prj.last_change_date,
                 parent_uuid=parent_prj.uuid,
                 child_index=child_index,
                 project_uuid=project_uuid,
@@ -93,7 +88,6 @@ async def test_creating_snapshots(engine: Engine):
         return snapshot_id
 
     async with engine.acquire() as conn:
-
         # get parent
         res: ResultProxy = await conn.execute(
             projects.select().where(projects.c.name == PARENT_PROJECT_NAME)
@@ -103,7 +97,7 @@ async def test_creating_snapshots(engine: Engine):
         assert parent_prj
 
         # take one snapshot
-        snapshot_one_id = await _create_snapshot(0, parent_prj, conn)
+        first_snapshot_id = await _create_snapshot(0, parent_prj, conn)
 
         # modify parent
         updated_parent_prj = await (
@@ -121,30 +115,31 @@ async def test_creating_snapshots(engine: Engine):
         assert updated_parent_prj.creation_date < updated_parent_prj.last_change_date
 
         # take another snapshot
-        snapshot_two_id = await _create_snapshot(1, updated_parent_prj, conn)
+        second_snapshot_id = await _create_snapshot(1, updated_parent_prj, conn)
 
-        snapshot_two = await (
+        second_snapshot = await (
             await conn.execute(
-                snapshots.select().where(snapshots.c.id == snapshot_two_id)
+                snapshots.select().where(snapshots.c.id == second_snapshot_id)
             )
         ).first()
 
-        assert snapshot_two.id != snapshot_one_id
-        assert snapshot_two.created_at == updated_parent_prj.last_change_date
+        assert second_snapshot
+        assert second_snapshot.id != first_snapshot_id
+        assert second_snapshot.created_at == updated_parent_prj.last_change_date
 
-        # get project corresponding to snapshot 1
+        # get project corresponding to first snapshot
         j = projects.join(snapshots, projects.c.uuid == snapshots.c.project_uuid)
         selected_snapshot_project = await (
             await conn.execute(
                 projects.select()
                 .select_from(j)
-                .where(snapshots.c.id == snapshot_two_id)
+                .where(snapshots.c.id == second_snapshot_id)
             )
         ).first()
 
         assert selected_snapshot_project
-        assert selected_snapshot_project.uuid == snapshot_two.projects_uuid
-        assert parent_prj.uuid == snapshot_two.parent_uuid
+        assert selected_snapshot_project.uuid == second_snapshot.project_uuid
+        assert parent_prj.uuid == second_snapshot.parent_uuid
 
         def extract(t):
             return {k: t[k] for k in t if k not in exclude.union({"name"})}
@@ -161,10 +156,4 @@ def test_deleting_snapshots():
 
     # test delete parent project -> deletes snapshots
     # test delete snapshot does NOT delete parent
-    pass
-
-
-def test_create_pydantic_models_from_sqlalchemy_tables():
-    # SEE https://docs.sqlalchemy.org/en/14/core/metadata.html
-    # SEE https://github.com/tiangolo/pydantic-sqlalchemy/blob/master/pydantic_sqlalchemy/main.py
     pass
