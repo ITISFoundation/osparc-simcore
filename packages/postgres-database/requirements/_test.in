@@ -8,7 +8,6 @@
 #
 --constraint _base.txt
 --constraint _migration.txt
---constraint _pydantic.txt
 
 # fixtures
 pyyaml
