@@ -10,6 +10,8 @@ from pydantic.main import BaseModel
 
 from ._meta import api_version_prefix as vtag
 from .constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
+from .login.decorators import login_required
+from .security_decorators import permission_required
 from .snapshots_db import SnapshotsRepository
 from .snapshots_models import Snapshot, SnapshotItem
 
@@ -25,8 +27,8 @@ def json_dumps(v) -> str:
     return orjson.dumps(v, default=_default).decode()
 
 
-def enveloped_response(data: Any) -> web.Response:
-    enveloped: str = json_dumps({"data": data})
+def enveloped_response(data: Any, **extra) -> web.Response:
+    enveloped: str = json_dumps({"data": data, **extra})
     return web.Response(text=enveloped, content_type="application/json")
 
 
@@ -43,7 +45,7 @@ def handle_request_errors(handler: Callable):
 
         except KeyError as err:
             # NOTE: handles required request.match_info[*] or request.query[*]
-            raise web.HTTPBadRequest(reason="Expected parameter {err}") from err
+            raise web.HTTPBadRequest(reason=f"Expected parameter {err}") from err
 
         except ValidationError as err:
             #  NOTE: pydantic.validate_arguments parses and validates -> ValidationError
@@ -63,6 +65,8 @@ routes = web.RouteTableDef()
     f"/{vtag}/projects/{{project_id}}/snapshots",
     name="list_project_snapshots_handler",
 )
+@login_required
+@permission_required("project.read")
 @handle_request_errors
 async def list_project_snapshots_handler(request: web.Request):
     """
@@ -103,6 +107,8 @@ async def list_project_snapshots_handler(request: web.Request):
     f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}",
     name="get_project_snapshot_handler",
 )
+@login_required
+@permission_required("project.read")
 @handle_request_errors
 async def get_project_snapshot_handler(request: web.Request):
     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
@@ -133,32 +139,36 @@ async def get_project_snapshot_handler(request: web.Request):
 
 
 @routes.post(
-    f"/{vtag}/projects/{{project_id}}/snapshots",
+    f"/{vtag}/projects/{{project_id}}/snapshots", name="create_project_snapshot_handler"
 )
+@login_required
+@permission_required("project.create")
 @handle_request_errors
 async def create_project_snapshot_handler(request: web.Request):
     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
     snapshots_repo = (SnapshotsRepository(request.app),)
 
     @validate_arguments
-    async def create_snapshot(
+    async def _create_snapshot(
         project_id: UUID,
         snapshot_label: Optional[str] = None,
     ) -> Snapshot:
         raise NotImplementedError
 
-    snapshot = await create_snapshot(
+    snapshot = await _create_snapshot(
         project_id=request.match_info["project_id"],  # type: ignore
         snapshot_label=request.query.get("snapshot_label"),
     )
 
-    return enveloped_response(snapshots)
+    return enveloped_response(snapshot)
 
 
 @routes.get(
     f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}/parameters",
     name="get_snapshot_parameters_handler",
 )
+@login_required
+@permission_required("project.read")
 @handle_request_errors
 async def get_project_snapshot_parameters_handler(
     request: web.Request,
