@@ -13244,6 +13244,269 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
+  '/projects/{project_id}/snapshots':
+    get:
+      summary: List Snapshots
+      operationId: list_snapshots_projects__project_id__snapshots_get
+      tags:
+        - project
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+        - description: index to the first item to return (pagination)
+          required: false
+          schema:
+            title: Offset
+            type: integer
+            description: index to the first item to return (pagination)
+            default: 0
+          name: offset
+          in: query
+        - description: maximum number of items to return (pagination)
+          required: false
+          schema:
+            title: Limit
+            maximum: 50
+            minimum: 1
+            type: integer
+            description: maximum number of items to return (pagination)
+            default: 20
+          name: limit
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: Response List Snapshots Projects  Project Id  Snapshots Get
+                type: array
+                items:
+                  title: Snapshot
+                  required:
+                    - id
+                    - parent_id
+                    - project_id
+                    - url
+                    - url_parent
+                    - url_project
+                  type: object
+                  properties:
+                    id:
+                      title: Id
+                      type: integer
+                      description: Unique snapshot identifier
+                    label:
+                      title: Label
+                      type: string
+                      description: Unique human readable display name
+                    created_at:
+                      title: Created At
+                      type: string
+                      description: Timestamp of the time snapshot was taken from parent. Notice that parent might change with time
+                      format: date-time
+                    parent_id:
+                      title: Parent Id
+                      type: string
+                      description: Parent's project uuid
+                      format: uuid
+                    project_id:
+                      title: Project Id
+                      type: string
+                      description: Current project's uuid
+                      format: uuid
+                    url:
+                      title: Url
+                      maxLength: 65536
+                      minLength: 1
+                      type: string
+                      format: uri
+                    url_parent:
+                      title: Url Parent
+                      maxLength: 65536
+                      minLength: 1
+                      type: string
+                      format: uri
+                    url_project:
+                      title: Url Project
+                      maxLength: 65536
+                      minLength: 1
+                      type: string
+                      format: uri
+                    url_parameters:
+                      title: Url Parameters
+                      maxLength: 65536
+                      minLength: 1
+                      type: string
+                      format: uri
+  '/projects/{project_id}/snapshots/{snapshot_id}':
+    get:
+      summary: Get Snapshot
+      operationId: get_snapshot_projects__project_id__snapshots__snapshot_id__get
+      tags:
+        - project
+      parameters:
+        - required: true
+          schema:
+            title: Snapshot Id
+            type: integer
+          name: snapshot_id
+          in: path
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: Snapshot
+                required:
+                  - id
+                  - parent_id
+                  - project_id
+                  - url
+                  - url_parent
+                  - url_project
+                type: object
+                properties:
+                  id:
+                    title: Id
+                    type: integer
+                    description: Unique snapshot identifier
+                  label:
+                    title: Label
+                    type: string
+                    description: Unique human readable display name
+                  created_at:
+                    title: Created At
+                    type: string
+                    description: Timestamp of the time snapshot was taken from parent. Notice that parent might change with time
+                    format: date-time
+                  parent_id:
+                    title: Parent Id
+                    type: string
+                    description: Parent's project uuid
+                    format: uuid
+                  project_id:
+                    title: Project Id
+                    type: string
+                    description: Current project's uuid
+                    format: uuid
+                  url:
+                    title: Url
+                    maxLength: 65536
+                    minLength: 1
+                    type: string
+                    format: uri
+                  url_parent:
+                    title: Url Parent
+                    maxLength: 65536
+                    minLength: 1
+                    type: string
+                    format: uri
+                  url_project:
+                    title: Url Project
+                    maxLength: 65536
+                    minLength: 1
+                    type: string
+                    format: uri
+                  url_parameters:
+                    title: Url Parameters
+                    maxLength: 65536
+                    minLength: 1
+                    type: string
+                    format: uri
+    post:
+      summary: Create Snapshot
+      operationId: create_snapshot_projects__project_id__snapshots_post
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+        - required: false
+          schema:
+            title: Snapshot Label
+            type: string
+          name: snapshot_label
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: Snapshot
+                required:
+                  - id
+                  - parent_id
+                  - project_id
+                  - url
+                  - url_parent
+                  - url_project
+                type: object
+                properties:
+                  id:
+                    title: Id
+                    type: integer
+                    description: Unique snapshot identifier
+                  label:
+                    title: Label
+                    type: string
+                    description: Unique human readable display name
+                  created_at:
+                    title: Created At
+                    type: string
+                    description: Timestamp of the time snapshot was taken from parent. Notice that parent might change with time
+                    format: date-time
+                  parent_id:
+                    title: Parent Id
+                    type: string
+                    description: Parent's project uuid
+                    format: uuid
+                  project_id:
+                    title: Project Id
+                    type: string
+                    description: Current project's uuid
+                    format: uuid
+                  url:
+                    title: Url
+                    maxLength: 65536
+                    minLength: 1
+                    type: string
+                    format: uri
+                  url_parent:
+                    title: Url Parent
+                    maxLength: 65536
+                    minLength: 1
+                    type: string
+                    format: uri
+                  url_project:
+                    title: Url Project
+                    maxLength: 65536
+                    minLength: 1
+                    type: string
+                    format: uri
+                  url_parameters:
+                    title: Url Parameters
+                    maxLength: 65536
+                    minLength: 1
+                    type: string
+                    format: uri
   /activity/status:
     get:
       operationId: get_status
