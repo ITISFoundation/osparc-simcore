@@ -21,7 +21,7 @@ install_requirements = read_reqs(current_dir / "requirements" / "_base.in")
 # Strong dependencies
 migration_requirements = read_reqs(current_dir / "requirements" / "_migration.in")
 test_requirements = read_reqs(current_dir / "requirements" / "_test.txt")
-pydantic_requirements = read_reqs(current_dir / "requirements" / "_pydantic.in")
+
 
 setup(
     name="simcore-postgres-database",
@@ -43,11 +43,7 @@ setup(
     test_suite="tests",
     install_requires=install_requirements,
     tests_require=test_requirements,
-    extras_require={
-        "migration": migration_requirements,
-        "test": test_requirements,
-        "pydantic": pydantic_requirements,
-    },
+    extras_require={"migration": migration_requirements, "test": test_requirements},
     include_package_data=True,
     package_data={
         "": [
