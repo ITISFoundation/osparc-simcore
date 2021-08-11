@@ -24,7 +24,7 @@ class SnapshotsRepository(BaseRepository):
         async with self.engine.acquire() as conn:
             stmt = (
                 snapshots.select()
-                .where(snapshots.c.parent_uuid == projec_uuid)
+                .where(snapshots.c.parent_uuid == str(projec_uuid))
                 .order_by(snapshots.c.child_index)
             )
             async for row in conn.execute(stmt):
@@ -39,7 +39,7 @@ class SnapshotsRepository(BaseRepository):
         self, project_uuid: UUID, snapshot_index: PositiveInt
     ) -> Optional[SnapshotOrm]:
         stmt = snapshots.select().where(
-            (snapshots.c.parent_uuid == project_uuid)
+            (snapshots.c.parent_uuid == str(project_uuid))
             & (snapshots.c.child_index == snapshot_index)
         )
         return await self._get(stmt)
@@ -48,7 +48,7 @@ class SnapshotsRepository(BaseRepository):
         self, project_uuid: UUID, snapshot_name: str
     ) -> Optional[SnapshotOrm]:
         stmt = snapshots.select().where(
-            (snapshots.c.parent_uuid == project_uuid)
+            (snapshots.c.parent_uuid == str(project_uuid))
             & (snapshots.c.name == snapshot_name)
         )
         return await self._get(stmt)
