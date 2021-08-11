@@ -1,5 +1,4 @@
 import sqlalchemy as sa
-from sqlalchemy.sql import func
 
 from .base import metadata
 
@@ -18,8 +17,7 @@ snapshots = sa.Table(
         "created_at",
         sa.DateTime(),
         nullable=False,
-        server_default=func.now(),
-        doc="Timestamp on creation. "
+        doc="Timestamp for this snapshot."
         "It corresponds to the last_change_date of the parent project "
         "at the time the snapshot was taken.",
     ),
