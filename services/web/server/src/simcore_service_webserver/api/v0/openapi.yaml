@@ -13435,16 +13435,16 @@ paths:
       parameters:
         - required: true
           schema:
-            title: Snapshot Id
-            type: integer
-          name: snapshot_id
-          in: path
-        - required: true
-          schema:
             title: Project Id
             type: string
             format: uuid
           name: project_id
+          in: path
+        - required: true
+          schema:
+            title: Snapshot Id
+            type: integer
+          name: snapshot_id
           in: path
       responses:
         '200':
