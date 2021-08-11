@@ -23,9 +23,10 @@ from urllib.request import urlopen
 SUCCESS, UNHEALTHY = 0, 1
 
 # Disabled if boots with debugger
-ok = os.environ.get("SC_BOOT_MODE").lower() == "debug"
+ok = os.environ.get("SC_BOOT_MODE", "").lower() == "debug"
 
 # Queries host
+# pylint: disable=consider-using-with
 ok = (
     ok
     or urlopen(
