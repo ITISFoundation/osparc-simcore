@@ -1,19 +1,33 @@
-import json
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, List, Optional
 from uuid import UUID
 
+import orjson
 from aiohttp import web
-from models_library.projects import Project
 from pydantic.decorator import validate_arguments
 from pydantic.error_wrappers import ValidationError
-from simcore_service_webserver.snapshots_models import Snapshot
+from pydantic.main import BaseModel
 
 from ._meta import api_version_prefix as vtag
 from .constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
-from .snapshots_models import Snapshot, SnapshotApiModel
+from .snapshots_db import SnapshotsRepository
+from .snapshots_models import Snapshot, SnapshotItem
 
-json_dumps = json.dumps
+
+def _default(obj):
+    if isinstance(obj, BaseModel):
+        return obj.dict()
+    raise TypeError
+
+
+def json_dumps(v) -> str:
+    # orjson.dumps returns bytes, to match standard json.dumps we need to decode
+    return orjson.dumps(v, default=_default).decode()
+
+
+def enveloped_response(data: Any) -> web.Response:
+    enveloped: str = json_dumps({"data": data})
+    return web.Response(text=enveloped, content_type="application/json")
 
 
 def handle_request_errors(handler: Callable):
@@ -47,75 +61,117 @@ routes = web.RouteTableDef()
 
 @routes.get(
     f"/{vtag}/projects/{{project_id}}/snapshots",
-    name="_list_snapshots_handler",
+    name="list_project_snapshots_handler",
 )
 @handle_request_errors
-async def _list_snapshots_handler(request: web.Request):
+async def list_project_snapshots_handler(request: web.Request):
     """
     Lists references on project snapshots
     """
     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
 
-    snapshots = await list_snapshots(
+    snapshots_repo = SnapshotsRepository(request.app)
+
+    @validate_arguments
+    async def list_snapshots(project_id: UUID) -> List[Snapshot]:
+        # project_id is param-project?
+        # TODO: add pagination
+        # TODO: optimizaiton will grow snapshots of a project with time!
+        #
+        snapshots_orm = await snapshots_repo.list(project_id)
+        # snapshots:
+        #   - ordered (iterations!)
+        #   - have a parent project with all the parametrization
+
+        return [Snapshot.from_orm(obj) for obj in snapshots_orm]
+
+    snapshots: List[Snapshot] = await list_snapshots(
         project_id=request.match_info["project_id"],  # type: ignore
     )
 
-    # Append url links
-    url_for_snapshot = request.app.router["_get_snapshot_handler"].url_for
-    url_for_parameters = request.app.router["_get_snapshot_parameters_handler"].url_for
+    # TODO: async for snapshot in await list_snapshot is the same?
 
-    for snp in snapshots:
-        snp["url"] = url_for_snapshot(
-            project_id=snp["parent_id"], snapshot_id=snp["id"]
-        )
-        snp["url_parameters"] = url_for_parameters(
-            project_id=snp["parent_id"], snapshot_id=snp["id"]
-        )
-        # snp['url_project'] =
+    data = []
+    for snapshot in snapshots:
+        # FIXME: raw dict
+        data.append(SnapshotItem.from_snapshot(snapshot, request.app).dict())
 
-    return snapshots
+    return enveloped_response(data)
 
 
 @routes.get(
     f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}",
-    name="_get_snapshot_handler",
+    name="get_project_snapshot_handler",
 )
 @handle_request_errors
-async def _get_snapshot_handler(request: web.Request):
+async def get_project_snapshot_handler(request: web.Request):
     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
+
+    # FIXME: access rights ??
+
+    snapshots_repo = SnapshotsRepository(request.app)
+
+    @validate_arguments
+    async def get_snapshot(project_id: UUID, snapshot_id: str) -> Snapshot:
+        try:
+            snapshot_orm = await snapshots_repo.get_by_index(
+                project_id, int(snapshot_id)
+            )
+        except ValueError:
+            snapshot_orm = await snapshots_repo.get_by_name(project_id, snapshot_id)
+
+        if not snapshot_orm:
+            raise web.HTTPNotFound(reason=f"snapshot {snapshot_id} not found")
+
+        return Snapshot.from_orm(snapshot_orm)
 
     snapshot = await get_snapshot(
         project_id=request.match_info["project_id"],  # type: ignore
         snapshot_id=request.match_info["snapshot_id"],
     )
-    return snapshot.json()
+    return enveloped_response(snapshot)
 
 
 @routes.post(
     f"/{vtag}/projects/{{project_id}}/snapshots",
-    name="_create_snapshot_handler",
 )
 @handle_request_errors
-async def _create_snapshot_handler(request: web.Request):
+async def create_project_snapshot_handler(request: web.Request):
     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
+    snapshots_repo = (SnapshotsRepository(request.app),)
+
+    @validate_arguments
+    async def create_snapshot(
+        project_id: UUID,
+        snapshot_label: Optional[str] = None,
+    ) -> Snapshot:
+        raise NotImplementedError
 
     snapshot = await create_snapshot(
         project_id=request.match_info["project_id"],  # type: ignore
         snapshot_label=request.query.get("snapshot_label"),
     )
 
-    return snapshot.json()
+    return enveloped_response(snapshots)
 
 
 @routes.get(
     f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}/parameters",
-    name="_get_snapshot_parameters_handler",
+    name="get_snapshot_parameters_handler",
 )
 @handle_request_errors
-async def _get_snapshot_parameters_handler(
+async def get_project_snapshot_parameters_handler(
     request: web.Request,
 ):
     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
+
+    @validate_arguments
+    async def get_snapshot_parameters(
+        project_id: UUID,
+        snapshot_id: str,
+    ):
+        #
+        return {"x": 4, "y": "yes"}
 
     params = await get_snapshot_parameters(
         project_id=request.match_info["project_id"],  # type: ignore
@@ -123,51 +179,3 @@ async def _get_snapshot_parameters_handler(
     )
 
     return params
-
-
-# API ROUTES HANDLERS ---------------------------------------------------------
-
-
-@validate_arguments
-async def list_snapshots(project_id: UUID) -> List[Dict[str, Any]]:
-    # project_id is param-project?
-    # TODO: add pagination
-    # TODO: optimizaiton will grow snapshots of a project with time!
-    #
-
-    # snapshots:
-    #   - ordered (iterations!)
-    #   - have a parent project with all the parametrization
-    #
-    snapshot_info_0 = {
-        "id": 0,
-        "display_name": "snapshot 0",
-        "parent_id": project_id,
-        "parameters": get_snapshot_parameters(project_id, snapshot_id=str(id)),
-    }
-
-    return [
-        snapshot_info_0,
-    ]
-
-
-@validate_arguments
-async def get_snapshot(project_id: UUID, snapshot_id: str) -> Snapshot:
-    # TODO: create a fake project
-    # - generate project_id
-    # - define what changes etc...
-    pass
-
-
-@validate_arguments
-async def create_snapshot(
-    project_id: UUID,
-    snapshot_label: Optional[str] = None,
-) -> Snapshot:
-    pass
-
-
-@validate_arguments
-async def get_snapshot_parameters(project_id: UUID, snapshot_id: str):
-    #
-    return {"x": 4, "y": "yes"}

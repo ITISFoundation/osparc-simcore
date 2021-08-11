@@ -3,5 +3,5 @@ from simcore_service_webserver.snapshots_models import (
     Parameter,
     ParameterApiModel,
     Snapshot,
-    SnapshotApiModel,
+    SnapshotItem,
 )

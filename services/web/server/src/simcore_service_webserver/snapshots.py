@@ -27,10 +27,11 @@ log = logging.getLogger(__name__)
     depends=["simcore_service_webserver.projects"],
     logger=log,
 )
-def setup(app: web.Application):
+def setup_snapshots(app: web.Application):
 
     settings: ApplicationSettings = app[APP_SETTINGS_KEY]
     if not settings.WEBSERVER_DEV_FEATURES_ENABLED:
         raise SkipModuleSetup(reason="Development feature")
 
+    # TODO: validate routes against OAS
     app.add_routes(snapshots_api_handlers.routes)
