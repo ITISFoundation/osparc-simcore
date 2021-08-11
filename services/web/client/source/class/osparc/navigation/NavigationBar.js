@@ -103,6 +103,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
   members: {
     __serverStatics: null,
+    __startSlidesButton: null,
+    __startSlidesFullButton: null,
+    __EditSlidesButton: null,
 
     buildLayout: function() {
       this.getChildControl("logo");
@@ -258,22 +261,24 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __resetSlidesBtnsVis: function() {
-      const slidesBtnsVisible = ["workbench", "slideshow", "fullSlideshow"].includes(this.getPageContext());
       const slideshowMenuBtn = this.getChildControl("slideshow-menu-button");
       const slideshowStopBtn = this.getChildControl("slideshow-stop");
+      const slidesBtnsVisible = ["workbench", "slideshow", "fullSlideshow"].includes(this.getPageContext());
       if (slidesBtnsVisible) {
+        const study = this.getStudy();
         const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
         if (areSlidesEnabled) {
-          const study = this.getStudy();
-          if (study && !study.getUi().getSlideshow().isEmpty()) {
-            if (["slideshow", "fullSlideshow"].includes(this.getPageContext())) {
-              slideshowMenuBtn.exclude();
-              slideshowStopBtn.show();
-            } else if (this.getPageContext() === "workbench") {
-              slideshowMenuBtn.show();
-              slideshowStopBtn.exclude();
-            }
-            return;
+          this.__startSlidesButton.setEnabled(study.hasSlideshow());
+          this.__startSlidesFullButton.setEnabled(study.getWorkbench().isPipelineLinear());
+          const isOwner = osparc.data.model.Study.isOwner(study);
+          this.__editSlidesButton.setEnabled(areSlidesEnabled && isOwner);
+
+          if (["slideshow", "fullSlideshow"].includes(this.getPageContext())) {
+            slideshowMenuBtn.exclude();
+            slideshowStopBtn.show();
+          } else if (this.getPageContext() === "workbench") {
+            slideshowMenuBtn.show();
+            slideshowStopBtn.exclude();
           }
         }
       } else {
@@ -284,31 +289,31 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
     __createSlideMenuBtn: function() {
       const slidesMenuBtn = new qx.ui.form.MenuButton(this.tr("Guided Mode"), "@FontAwesome5Solid/caret-square-right/16").set({
-        // iconPosition: "left"
-        ...this.self().BUTTON_OPTIONS
+        ...this.self().BUTTON_OPTIONS,
+        iconPosition: "left"
       });
       const splitButtonMenu = new qx.ui.menu.Menu();
       slidesMenuBtn.setMenu(splitButtonMenu);
 
-      const startButton = new qx.ui.menu.Button(this.tr("Start Guided Mode"));
-      startButton.addListener("execute", () => {
+      const startSlidesBtn = this.__startSlidesButton = new qx.ui.menu.Button(this.tr("Start Guided Mode"));
+      startSlidesBtn.addListener("execute", () => {
         this.fireEvent("slidesStart");
       }, this);
-      splitButtonMenu.add(startButton);
+      splitButtonMenu.add(startSlidesBtn);
 
-      const startFullButton = new qx.ui.menu.Button(this.tr("Start Full Guided Mode"));
-      startFullButton.addListener("execute", () => {
+      const startSlidesFullBtn = this.__startSlidesFullButton = new qx.ui.menu.Button(this.tr("Start Full Guided Mode"));
+      startSlidesFullBtn.addListener("execute", () => {
         this.fireEvent("slidesFullStart");
       });
-      splitButtonMenu.add(startFullButton);
+      splitButtonMenu.add(startSlidesFullBtn);
 
       splitButtonMenu.addSeparator();
 
-      const editBtn = new qx.ui.menu.Button(this.tr("Edit Guided Mode"));
-      editBtn.addListener("execute", () => {
+      const editSlidesBtn = this.__editSlidesButton = new qx.ui.menu.Button(this.tr("Edit Guided Mode"));
+      editSlidesBtn.addListener("execute", () => {
         this.fireEvent("slidesEdit");
       }, this);
-      splitButtonMenu.add(editBtn);
+      splitButtonMenu.add(editSlidesBtn);
 
       return slidesMenuBtn;
     },
