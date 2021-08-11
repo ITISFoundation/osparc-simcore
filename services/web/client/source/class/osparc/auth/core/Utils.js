@@ -20,6 +20,14 @@ qx.Class.define("osparc.auth.core.Utils", {
 
   statics:
   {
+    passwordLengthValidator: function(value, item) {
+      const valid = value != null && value.length > 3;
+      if (!valid) {
+        item.setInvalidMessage("Please enter a password at with least 4 characters.");
+      }
+      return valid;
+    },
+
     checkSamePasswords: function(passwordField1, passwordField2) {
       const isValid = passwordField1.getValue() == passwordField2.getValue();
       if (!isValid) {
