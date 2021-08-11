@@ -15,6 +15,17 @@ from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.snapshots import snapshots
 from simcore_postgres_database.models.users import users
 
+USERNAME = "me"
+PARENT_PROJECT_NAME = "parent"
+
+
+def test_it():
+    import os
+
+    cwd = os.getcwd()
+
+    assert True
+
 
 @pytest.fixture
 async def engine(pg_engine: Engine):
@@ -22,11 +33,13 @@ async def engine(pg_engine: Engine):
     async with pg_engine.acquire() as conn:
         # a 'me' user
         user_id = await conn.scalar(
-            users.insert().values(**random_user(name="me")).returning(users.c.id)
+            users.insert().values(**random_user(name=USERNAME)).returning(users.c.id)
         )
         # has a project 'parent'
         await conn.execute(
-            projects.insert().values(**random_project(prj_owner=user_id, name="parent"))
+            projects.insert().values(
+                **random_project(prj_owner=user_id, name=PARENT_PROJECT_NAME)
+            )
         )
     yield pg_engine
 
@@ -42,15 +55,13 @@ async def test_creating_snapshots(engine: Engine):
     }
 
     async def _create_snapshot(child_index: int, parent_prj, conn) -> int:
-        # copy
-        # change uuid, and set to invisible
+        # create project-snapshot
         prj_dict = {c: deepcopy(parent_prj[c]) for c in parent_prj if c not in exclude}
 
         prj_dict["name"] += f" [snapshot {child_index}]"
         prj_dict["uuid"] = uuid3(UUID(parent_prj.uuid), f"snapshot.{child_index}")
-        prj_dict[
-            "creation_date"
-        ] = parent_prj.last_change_date  # state of parent upon copy!
+        # creation_data = state of parent upon copy! WARNING: changes can be state changes and not project definition?
+        prj_dict["creation_date"] = parent_prj.last_change_date
         prj_dict["hidden"] = True
         prj_dict["published"] = False
 
@@ -85,7 +96,7 @@ async def test_creating_snapshots(engine: Engine):
 
         # get parent
         res: ResultProxy = await conn.execute(
-            projects.select().where(projects.c.name == "parent")
+            projects.select().where(projects.c.name == PARENT_PROJECT_NAME)
         )
         parent_prj: Optional[RowProxy] = await res.first()
 
@@ -105,14 +116,21 @@ async def test_creating_snapshots(engine: Engine):
         ).first()
 
         assert updated_parent_prj
-
         assert updated_parent_prj.id == parent_prj.id
         assert updated_parent_prj.description != parent_prj.description
+        assert updated_parent_prj.creation_date < updated_parent_prj.last_change_date
 
         # take another snapshot
         snapshot_two_id = await _create_snapshot(1, updated_parent_prj, conn)
 
-        assert snapshot_one_id != snapshot_two_id
+        snapshot_two = await (
+            await conn.execute(
+                snapshots.select().where(snapshots.c.id == snapshot_two_id)
+            )
+        ).first()
+
+        assert snapshot_two.id != snapshot_one_id
+        assert snapshot_two.created_at == updated_parent_prj.last_change_date
 
         # get project corresponding to snapshot 1
         j = projects.join(snapshots, projects.c.uuid == snapshots.c.project_uuid)
@@ -125,11 +143,16 @@ async def test_creating_snapshots(engine: Engine):
         ).first()
 
         assert selected_snapshot_project
+        assert selected_snapshot_project.uuid == snapshot_two.projects_uuid
+        assert parent_prj.uuid == snapshot_two.parent_uuid
 
         def extract(t):
             return {k: t[k] for k in t if k not in exclude.union({"name"})}
 
         assert extract(selected_snapshot_project) == extract(updated_parent_prj)
+
+        # TODO: if we call to take consecutive snapshots ... of the same thing, it should
+        # return existing
 
 
 def test_deleting_snapshots():
