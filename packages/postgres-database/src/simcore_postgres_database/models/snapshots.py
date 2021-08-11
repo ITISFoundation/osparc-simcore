@@ -19,7 +19,9 @@ snapshots = sa.Table(
         sa.DateTime(),
         nullable=False,
         server_default=func.now(),
-        doc="Timestamp on creation",
+        doc="Timestamp on creation. "
+        "It corresponds to the last_change_date of the parent project "
+        "at the time the snapshot was taken.",
     ),
     sa.Column(
         "parent_uuid",
