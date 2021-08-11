@@ -11,8 +11,11 @@ from pydantic.main import BaseModel
 from ._meta import api_version_prefix as vtag
 from .constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from .login.decorators import login_required
+from .projects import projects_api
+from .projects.projects_exceptions import ProjectNotFoundError
 from .security_decorators import permission_required
-from .snapshots_db import SnapshotsRepository
+from .snapshots_core import ProjectDict, take_snapshot
+from .snapshots_db import ProjectsRepository, SnapshotsRepository
 from .snapshots_models import Snapshot, SnapshotItem
 
 
@@ -52,6 +55,11 @@ def handle_request_errors(handler: Callable):
             raise web.HTTPUnprocessableEntity(
                 text=json_dumps({"error": err.errors()}),
                 content_type="application/json",
+            ) from err
+
+        except ProjectNotFoundError as err:
+            raise web.HTTPNotFound(
+                reason=f"Project not found {err.project_uuid} or not accessible. Skipping snapshot"
             ) from err
 
     return wrapped
@@ -94,13 +102,9 @@ async def list_project_snapshots_handler(request: web.Request):
     snapshots: List[Snapshot] = await _list_snapshots(
         project_id=request.match_info["project_id"],  # type: ignore
     )
-
     # TODO: async for snapshot in await list_snapshot is the same?
 
-    data = []
-    for snapshot in snapshots:
-        data.append(SnapshotItem.from_snapshot(snapshot, request.app))
-
+    data = [SnapshotItem.from_snapshot(snp, request.app) for snp in snapshots]
     return enveloped_response(data)
 
 
@@ -143,13 +147,41 @@ async def get_project_snapshot_handler(request: web.Request):
 @handle_request_errors
 async def create_project_snapshot_handler(request: web.Request):
     snapshots_repo = SnapshotsRepository(request)
+    projects_repo = ProjectsRepository(request)
+    user_id = request[RQT_USERID_KEY]
 
     @validate_arguments
     async def _create_snapshot(
         project_id: UUID,
         snapshot_label: Optional[str] = None,
     ) -> Snapshot:
-        raise NotImplementedError
+
+        snapshot_orm = None
+        if snapshot_label:
+            snapshot_orm = snapshots_repo.get_by_name(project_id, snapshot_label)
+
+        if not snapshot_orm:
+            parent: ProjectDict = await projects_api.get_project_for_user(
+                request.app,
+                str(project_id),
+                user_id,
+                include_templates=False,
+                include_state=False,
+            )
+
+            # pylint: disable=unused-variable
+            project: ProjectDict
+            snapshot: Snapshot
+            project, snapshot = await take_snapshot(
+                parent,
+                snapshot_label=snapshot_label,
+            )
+
+            # FIXME: Atomic?? project and snapshot shall be created in the same transaction!!
+            await projects_repo.create(project)
+            snapshot_orm = await snapshots_repo.create(snapshot.dict())
+
+        return Snapshot.from_orm(snapshot_orm)
 
     snapshot = await _create_snapshot(
         project_id=request.match_info["project_id"],  # type: ignore
