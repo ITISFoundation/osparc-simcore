@@ -42,7 +42,10 @@ def _create_routes(tag, specs, *handlers_module, disable_login: bool = False):
 
     routes = map_handlers_with_operations(
         handlers,
-        filter(lambda o: tag in o[3], iter_path_operations(specs)),
+        filter(
+            lambda o: tag in o[3] and "snapshot" not in o[2],
+            iter_path_operations(specs),
+        ),
         strict=True,
     )
 
