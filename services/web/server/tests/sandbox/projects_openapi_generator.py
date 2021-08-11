@@ -10,7 +10,7 @@ from uuid import UUID, uuid3, uuid4
 
 from fastapi import Depends, FastAPI
 from fastapi import Path as PathParam
-from fastapi import Request, status
+from fastapi import Query, Request, status
 from fastapi.exceptions import HTTPException
 from models_library.services import PROPERTY_KEY_RE
 from pydantic import (
@@ -145,56 +145,66 @@ def get_valid_id(project_id: UUID = PathParam(...)) -> UUID:
 ####################################################################
 
 
-@app.get("/projects/{project_id}", response_model=Project)
+@app.get("/projects/{project_id}", response_model=Project, tags=["project"])
 def get_project(pid: UUID = Depends(get_valid_id)):
     return _PROJECTS[pid]
 
 
-@app.post("/projects/{project_id}")
+@app.post("/projects/{project_id}", tags=["project"])
 def create_project(project: Project):
     if project.id not in _PROJECTS:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Invalid id")
     _PROJECTS[project.id] = project
 
 
-@app.put("/projects/{project_id}")
+@app.put("/projects/{project_id}", tags=["project"])
 def replace_project(project: Project, pid: UUID = Depends(get_valid_id)):
     _PROJECTS[pid] = project
 
 
-@app.patch("/projects/{project_id}")
+@app.patch("/projects/{project_id}", tags=["project"])
 def update_project(project: Project, pid: UUID = Depends(get_valid_id)):
     raise NotImplementedError()
 
 
-@app.delete("/projects/{project_id}")
+@app.delete("/projects/{project_id}", tags=["project"])
 def delete_project(pid: UUID = Depends(get_valid_id)):
     del _PROJECTS[pid]
 
 
-@app.post("/projects/{project_id}:open")
+@app.post("/projects/{project_id}:open", tags=["project"])
 def open_project(pid: UUID = Depends(get_valid_id)):
     pass
 
 
-@app.post("/projects/{project_id}:start")
+@app.post("/projects/{project_id}:start", tags=["project"])
 def start_project(use_cache: bool = True, pid: UUID = Depends(get_valid_id)):
     pass
 
 
-@app.post("/projects/{project_id}:stop")
+@app.post("/projects/{project_id}:stop", tags=["project"])
 def stop_project(pid: UUID = Depends(get_valid_id)):
     pass
 
 
-@app.post("/projects/{project_id}:close")
+@app.post("/projects/{project_id}:close", tags=["project"])
 def close_project(pid: UUID = Depends(get_valid_id)):
     pass
 
 
-@app.get("/projects/{project_id}/snapshots", response_model=List[SnapshotApiModel])
+@app.get(
+    "/projects/{project_id}/snapshots",
+    response_model=List[SnapshotApiModel],
+    tags=["project"],
+)
 async def list_snapshots(
     pid: UUID = Depends(get_valid_id),
+    offset: PositiveInt = Query(
+        0, description="index to the first item to return (pagination)"
+    ),
+    limit: int = Query(
+        20, description="maximum number of items to return (pagination)", ge=1, le=50
+    ),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     psid = _PROJECT2SNAPSHOT.get(pid)
@@ -209,7 +219,11 @@ async def list_snapshots(
     ]
 
 
-@app.post("/projects/{project_id}/snapshots", response_model=SnapshotApiModel)
+@app.post(
+    "/projects/{project_id}/snapshots",
+    response_model=SnapshotApiModel,
+    tags=["project"],
+)
 async def create_snapshot(
     pid: UUID = Depends(get_valid_id),
     snapshot_label: Optional[str] = None,
@@ -265,6 +279,7 @@ async def create_snapshot(
 @app.get(
     "/projects/{project_id}/snapshots/{snapshot_id}",
     response_model=SnapshotApiModel,
+    tags=["project"],
 )
 async def get_snapshot(
     snapshot_id: PositiveInt,
@@ -286,6 +301,7 @@ async def get_snapshot(
 @app.get(
     "/projects/{project_id}/snapshots/{snapshot_id}/parameters",
     response_model=List[ParameterApiModel],
+    tags=["project"],
 )
 async def list_snapshot_parameters(
     snapshot_id: str,
@@ -331,6 +347,7 @@ def create_snapshots(project_id: UUID):
 # print("-"*100)
 
 
-print(json.dumps(app.openapi(), indent=2))
+with open("openapi-ignore.json", "wt") as f:
+    json.dump(app.openapi(), f, indent=2)
 
 # uvicorn --reload projects_openapi_generator:app
