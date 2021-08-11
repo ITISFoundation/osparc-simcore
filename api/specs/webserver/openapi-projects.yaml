@@ -439,7 +439,7 @@ paths:
   projects_snapshots:
     get:
       summary: List Snapshots
-      operationId: list_snapshots
+      operationId: list_project_snapshots_handler
       tags:
         - project
       parameters:
@@ -480,11 +480,37 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Snapshot"
+    post:
+      summary: Create Snapshot
+      operationId: create_project_snapshot_handler
+      tags:
+        - project
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+        - required: false
+          schema:
+            title: Snapshot Label
+            type: string
+          name: snapshot_label
+          in: query
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snapshot"
 
   projects_id_snapshots_id:
     get:
       summary: Get Snapshot
-      operationId: get_snapshot
+      operationId: get_project_snapshot_handler
       tags:
         - project
       parameters:
@@ -508,32 +534,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Snapshot"
-
-    post:
-      summary: Create Snapshot
-      operationId: create_snapshot
-      parameters:
-        - required: true
-          schema:
-            title: Project Id
-            type: string
-            format: uuid
-          name: project_id
-          in: path
-        - required: false
-          schema:
-            title: Snapshot Label
-            type: string
-          name: snapshot_label
-          in: query
-      responses:
-        "200":
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Snapshot"
-
 
 components:
   schemas:
@@ -599,7 +599,8 @@ components:
         created_at:
           title: Created At
           type: string
-          description: Timestamp of the time snapshot was taken from parent. Notice that
+          description:
+            Timestamp of the time snapshot was taken from parent. Notice that
             parent might change with time
           format: date-time
         parent_id:

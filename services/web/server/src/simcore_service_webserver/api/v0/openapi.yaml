@@ -13247,7 +13247,7 @@ paths:
   '/projects/{project_id}/snapshots':
     get:
       summary: List Snapshots
-      operationId: list_snapshots_projects__project_id__snapshots_get
+      operationId: list_project_snapshots_handler
       tags:
         - project
       parameters:
@@ -13344,19 +13344,12 @@ paths:
                       minLength: 1
                       type: string
                       format: uri
-  '/projects/{project_id}/snapshots/{snapshot_id}':
-    get:
-      summary: Get Snapshot
-      operationId: get_snapshot_projects__project_id__snapshots__snapshot_id__get
+    post:
+      summary: Create Snapshot
+      operationId: create_project_snapshot_handler
       tags:
         - project
       parameters:
-        - required: true
-          schema:
-            title: Snapshot Id
-            type: integer
-          name: snapshot_id
-          in: path
         - required: true
           schema:
             title: Project Id
@@ -13364,6 +13357,12 @@ paths:
             format: uuid
           name: project_id
           in: path
+        - required: false
+          schema:
+            title: Snapshot Label
+            type: string
+          name: snapshot_label
+          in: query
       responses:
         '200':
           description: Successful Response
@@ -13427,10 +13426,19 @@ paths:
                     minLength: 1
                     type: string
                     format: uri
-    post:
-      summary: Create Snapshot
-      operationId: create_snapshot_projects__project_id__snapshots_post
+  '/projects/{project_id}/snapshots/{snapshot_id}':
+    get:
+      summary: Get Snapshot
+      operationId: get_project_snapshot_handler
+      tags:
+        - project
       parameters:
+        - required: true
+          schema:
+            title: Snapshot Id
+            type: integer
+          name: snapshot_id
+          in: path
         - required: true
           schema:
             title: Project Id
@@ -13438,12 +13446,6 @@ paths:
             format: uuid
           name: project_id
           in: path
-        - required: false
-          schema:
-            title: Snapshot Label
-            type: string
-          name: snapshot_label
-          in: query
       responses:
         '200':
           description: Successful Response
