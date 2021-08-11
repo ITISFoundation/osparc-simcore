@@ -22,6 +22,7 @@ pytest-sugar
 # tools
 pylint  # NOTE: The version in pylint at _text.txt is used as a reference for ci/helpers/install_pylint.bash
 coveralls
+--requirement ../../../packages/postgres-database/requirements/_base.in
 
 
 # to test units tools
