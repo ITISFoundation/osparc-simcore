@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Callable, Optional, Union
+from typing import Optional, Union
 from uuid import UUID
 
 from aiohttp import web
