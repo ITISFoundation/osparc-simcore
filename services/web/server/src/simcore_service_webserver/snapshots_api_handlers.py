@@ -57,6 +57,10 @@ def handle_request_errors(handler: Callable):
     return wrapped
 
 
+# FIXME: access rights using same approach as in access_layer.py in storage.
+# A user can only check snapshots (subresource) of its project (parent resource)
+
+
 # API ROUTES HANDLERS ---------------------------------------------------------
 routes = web.RouteTableDef()
 
@@ -72,12 +76,10 @@ async def list_project_snapshots_handler(request: web.Request):
     """
     Lists references on project snapshots
     """
-    user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
-
-    snapshots_repo = SnapshotsRepository(request.app)
+    snapshots_repo = SnapshotsRepository(request)
 
     @validate_arguments
-    async def list_snapshots(project_id: UUID) -> List[Snapshot]:
+    async def _list_snapshots(project_id: UUID) -> List[Snapshot]:
         # project_id is param-project?
         # TODO: add pagination
         # TODO: optimizaiton will grow snapshots of a project with time!
@@ -89,7 +91,7 @@ async def list_project_snapshots_handler(request: web.Request):
 
         return [Snapshot.from_orm(obj) for obj in snapshots_orm]
 
-    snapshots: List[Snapshot] = await list_snapshots(
+    snapshots: List[Snapshot] = await _list_snapshots(
         project_id=request.match_info["project_id"],  # type: ignore
     )
 
@@ -97,8 +99,7 @@ async def list_project_snapshots_handler(request: web.Request):
 
     data = []
     for snapshot in snapshots:
-        # FIXME: raw dict
-        data.append(SnapshotItem.from_snapshot(snapshot, request.app).dict())
+        data.append(SnapshotItem.from_snapshot(snapshot, request.app))
 
     return enveloped_response(data)
 
@@ -111,14 +112,10 @@ async def list_project_snapshots_handler(request: web.Request):
 @permission_required("project.read")
 @handle_request_errors
 async def get_project_snapshot_handler(request: web.Request):
-    user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
-
-    # FIXME: access rights ??
-
-    snapshots_repo = SnapshotsRepository(request.app)
+    snapshots_repo = SnapshotsRepository(request)
 
     @validate_arguments
-    async def get_snapshot(project_id: UUID, snapshot_id: str) -> Snapshot:
+    async def _get_snapshot(project_id: UUID, snapshot_id: str) -> Snapshot:
         try:
             snapshot_orm = await snapshots_repo.get_by_index(
                 project_id, int(snapshot_id)
@@ -131,7 +128,7 @@ async def get_project_snapshot_handler(request: web.Request):
 
         return Snapshot.from_orm(snapshot_orm)
 
-    snapshot = await get_snapshot(
+    snapshot = await _get_snapshot(
         project_id=request.match_info["project_id"],  # type: ignore
         snapshot_id=request.match_info["snapshot_id"],
     )
@@ -145,8 +142,7 @@ async def get_project_snapshot_handler(request: web.Request):
 @permission_required("project.create")
 @handle_request_errors
 async def create_project_snapshot_handler(request: web.Request):
-    user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
-    snapshots_repo = (SnapshotsRepository(request.app),)
+    snapshots_repo = SnapshotsRepository(request)
 
     @validate_arguments
     async def _create_snapshot(
