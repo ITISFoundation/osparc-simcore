@@ -172,21 +172,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return null;
     },
 
-    __editSlides: function() {
-      const study = this.getStudy();
-      const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(study);
-      const title = this.tr("Edit Slides");
-      const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 600, 500).set({
-        modal: false,
-        clickAwayClose: false
-      });
-      nodesSlidesTree.addListener("finished", () => {
-        const slideshow = study.getUi().getSlideshow();
-        slideshow.fireEvent("changeSlideshow");
-        win.close();
-      });
-    },
-
     __showSweeper: function() {
       const study = this.getStudy();
       const sweeper = new osparc.component.sweeper.Sweeper(study);
@@ -334,9 +319,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree();
       nodesTree.setStudy(study);
-      nodesTree.addListener("slidesEdit", () => {
-        this.__editSlides();
-      }, this);
       nodesTree.addListener("removeNode", e => {
         if (this.getStudy().isReadOnly()) {
           return;

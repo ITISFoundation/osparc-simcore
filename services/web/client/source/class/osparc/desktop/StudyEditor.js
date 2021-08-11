@@ -203,6 +203,25 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.fireEvent("forceBackToDashboard");
     },
 
+    editSlides: function() {
+      if (this.getPageContext() !== "workbench") {
+        return;
+      }
+
+      const study = this.getStudy();
+      const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(study);
+      const title = this.tr("Edit Slides");
+      const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 600, 500).set({
+        modal: false,
+        clickAwayClose: false
+      });
+      nodesSlidesTree.addListener("finished", () => {
+        const slideshow = study.getUi().getSlideshow();
+        slideshow.fireEvent("changeSlideshow");
+        win.close();
+      });
+    },
+
 
     // ------------------ START/STOP PIPELINE ------------------
     __startPipeline: function(partialPipeline = []) {

@@ -110,6 +110,12 @@ qx.Class.define("osparc.desktop.MainPage", {
         }
       }, this);
 
+      navBar.addListener("slidesEdit", () => {
+        if (this.__studyEditor) {
+          this.__studyEditor.editSlides();
+        }
+      }, this);
+
       return navBar;
     },
 

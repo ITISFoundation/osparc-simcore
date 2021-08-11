@@ -65,7 +65,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     "dashboardPressed": "qx.event.type.Event",
     "slidesStart": "qx.event.type.Event",
     "slidesFullStart": "qx.event.type.Event",
-    "slidesStop": "qx.event.type.Event"
+    "slidesStop": "qx.event.type.Event",
+    "slidesEdit": "qx.event.type.Event"
   },
 
   properties: {
@@ -113,7 +114,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
       this._add(new qx.ui.core.Spacer(20));
 
-      this.getChildControl("slideshow-start").set({
+      this.getChildControl("slideshow-menu-button").set({
         visibility: "excluded"
       });
       this.getChildControl("slideshow-stop").set({
@@ -189,8 +190,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           this._add(control);
           break;
-        case "slideshow-start":
-          control = this.__createSlideStartBtn();
+        case "slideshow-menu-button":
+          control = this.__createSlideMenuBtn();
           this._add(control);
           break;
         case "slideshow-stop":
@@ -242,7 +243,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("dashboard-label").show();
           this.getChildControl("dashboard-button").exclude();
           this.getChildControl("read-only-icon").exclude();
-          this.__resetSlidesBtnsVis(false);
+          this.__resetSlidesBtnsVis();
           this.getChildControl("study-title").exclude();
           break;
         case "workbench":
@@ -250,47 +251,66 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "fullSlideshow":
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
-          this.__resetSlidesBtnsVis(true);
+          this.__resetSlidesBtnsVis();
           this.getChildControl("study-title").show();
           break;
       }
     },
 
     __resetSlidesBtnsVis: function() {
-      const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
-      const context = ["workbench", "slideshow", "fullSlideshow"].includes(this.getPageContext());
-      if (areSlidesEnabled && context) {
-        const study = this.getStudy();
-        if (study && !study.getUi().getSlideshow().isEmpty()) {
-          if (["slideshow", "fullSlideshow"].includes(this.getPageContext())) {
-            this.getChildControl("slideshow-start").exclude();
-            this.getChildControl("slideshow-stop").show();
-          } else if (this.getPageContext() === "workbench") {
-            this.getChildControl("slideshow-start").show();
-            this.getChildControl("slideshow-stop").exclude();
+      const slidesBtnsVisible = ["workbench", "slideshow", "fullSlideshow"].includes(this.getPageContext());
+      const slideshowMenuBtn = this.getChildControl("slideshow-menu-button");
+      const slideshowStopBtn = this.getChildControl("slideshow-stop");
+      if (slidesBtnsVisible) {
+        const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
+        if (areSlidesEnabled) {
+          const study = this.getStudy();
+          if (study && !study.getUi().getSlideshow().isEmpty()) {
+            if (["slideshow", "fullSlideshow"].includes(this.getPageContext())) {
+              slideshowMenuBtn.exclude();
+              slideshowStopBtn.show();
+            } else if (this.getPageContext() === "workbench") {
+              slideshowMenuBtn.show();
+              slideshowStopBtn.exclude();
+            }
+            return;
           }
-          return;
         }
+      } else {
+        slideshowMenuBtn.exclude();
+        slideshowStopBtn.exclude();
       }
-      this.getChildControl("slideshow-start").exclude();
-      this.getChildControl("slideshow-stop").exclude();
     },
 
-    __createSlideStartBtn: function() {
-      const startBtn = new qx.ui.form.SplitButton(this.tr("Guided Mode"), "@FontAwesome5Solid/caret-square-right/16").set({
+    __createSlideMenuBtn: function() {
+      const slidesMenuBtn = new qx.ui.form.MenuButton(this.tr("Guided Mode"), "@FontAwesome5Solid/caret-square-right/16").set({
+        // iconPosition: "left"
         ...this.self().BUTTON_OPTIONS
       });
-      startBtn.addListener("execute", () => {
+      const splitButtonMenu = new qx.ui.menu.Menu();
+      slidesMenuBtn.setMenu(splitButtonMenu);
+
+      const startButton = new qx.ui.menu.Button(this.tr("Start Guided Mode"));
+      startButton.addListener("execute", () => {
         this.fireEvent("slidesStart");
       }, this);
-      const splitButtonMenu = new qx.ui.menu.Menu();
-      const startFullButton = new qx.ui.menu.Button(this.tr("Full Guided Mode"));
+      splitButtonMenu.add(startButton);
+
+      const startFullButton = new qx.ui.menu.Button(this.tr("Start Full Guided Mode"));
       startFullButton.addListener("execute", () => {
         this.fireEvent("slidesFullStart");
       });
       splitButtonMenu.add(startFullButton);
-      startBtn.setMenu(splitButtonMenu);
-      return startBtn;
+
+      splitButtonMenu.addSeparator();
+
+      const editBtn = new qx.ui.menu.Button(this.tr("Edit Guided Mode"));
+      editBtn.addListener("execute", () => {
+        this.fireEvent("slidesEdit");
+      }, this);
+      splitButtonMenu.add(editBtn);
+
+      return slidesMenuBtn;
     },
 
     __createSlideStopBtn: function() {
@@ -496,6 +516,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         study.getUi().getSlideshow().addListener("changeSlideshow", () => {
           this.__resetSlidesBtnsVis();
         });
+        this.__resetSlidesBtnsVis();
       }
     }
   }
