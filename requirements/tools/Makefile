@@ -69,6 +69,10 @@ reqs: ## updates requirements of all package libraries
 	# Upgrading $(upgrade) requirements
 	@$(foreach p,${_target-inputs},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
 
+reqs-all: ## upgrades all
+	# Upgrading $(upgrade) requirements
+	@$(foreach p,${_inputs-all},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
+
 
 IMAGE_NAME:=local/python-devkit:${PYTHON_VERSION}
 

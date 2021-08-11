@@ -38,7 +38,7 @@ ecdsa==0.14.1
     # via python-jose
 email-validator==1.1.3
     # via pydantic
-fastapi==0.65.2
+fastapi==0.68.0
     # via
     #   -r requirements/_base.in
     #   fastapi-pagination

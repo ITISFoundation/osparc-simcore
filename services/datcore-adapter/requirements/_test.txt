@@ -80,7 +80,7 @@ execnet==1.9.0
     # via pytest-xdist
 faker==8.11.0
     # via -r requirements/_test.in
-fastapi==0.65.2
+fastapi==0.68.0
     # via
     #   -r requirements/_base.txt
     #   fastapi-pagination
