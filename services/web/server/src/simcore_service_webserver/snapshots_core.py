@@ -8,14 +8,16 @@
 #
 
 
-from typing import Iterator, Tuple
+from typing import Any, Dict, Iterator, Optional, Tuple
 from uuid import UUID, uuid3
 
 from models_library.projects_nodes import Node
 
+from .projects import projects_utils
 from .projects.projects_db import ProjectAtDB
-from .projects.projects_utils import clone_project_document
 from .snapshots_models import Snapshot
+
+ProjectDict = Dict[str, Any]
 
 
 def is_parametrized(node: Node) -> bool:
@@ -35,20 +37,45 @@ def is_parametrized_project(project: ProjectAtDB) -> bool:
     return any(is_parametrized(node) for node in project.workbench.values())
 
 
-def snapshot_project(parent: ProjectAtDB, snapshot_label: str):
+async def take_snapshot(
+    parent: ProjectDict,
+    snapshot_label: Optional[str] = None,
+) -> Tuple[ProjectDict, Snapshot]:
 
-    if is_parametrized_project(parent):
-        raise NotImplementedError(
-            "Only non-parametrized projects can be snapshot right now"
-        )
+    assert ProjectAtDB.parse_obj(parent)  # nosec
 
-    project, nodes_map = clone_project_document(
-        parent.dict(),
-        forced_copy_project_id=str(uuid3(namespace=parent.uuid, name=snapshot_label)),
+    # FIXME:
+    # if is_parametrized_project(parent):
+    #     raise NotImplementedError(
+    #         "Only non-parametrized projects can be snapshot right now"
+    #     )
+
+    # Clones parent's project document
+    snapshot_timestamp = parent["last_change_date"]
+
+    child: ProjectDict
+    child, nodes_map = projects_utils.clone_project_document(
+        project=parent,
+        forced_copy_project_id=uuid3(
+            UUID(parent["uuid"]), f"snapshot.{snapshot_timestamp}"
+        ),
     )
 
+    assert child  # nosec
     assert nodes_map  # nosec
+    assert ProjectAtDB.parse_obj(child)  # nosec
+
+    child["name"] += snapshot_label or f" [snapshot {snapshot_timestamp}]"
+    # creation_data = state of parent upon copy! WARNING: changes can be state changes and not project definition?
+    child["creation_date"] = parent["last_change_date"]
+    child["hidden"] = True
+    child["published"] = False
 
     snapshot = Snapshot(
-        id, label=snapshot_label, parent_id=parent.id, project_id=project.id
+        name=f"Snapshot {snapshot_timestamp} [{parent['name']}]",
+        created_at=snapshot_timestamp,
+        parent_uuid=parent["uuid"],
+        project_uuid=child["uuid"],
     )
+
+    return (child, snapshot)
