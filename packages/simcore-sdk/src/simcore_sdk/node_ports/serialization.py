@@ -58,14 +58,19 @@ async def create_from_json(
     return nodeports_obj
 
 
-async def create_nodeports_from_uuid(db_mgr: DBManager, node_uuid: str):
+async def create_nodeports_from_uuid(
+    db_mgr: DBManager, user_id: int, project_id: str, node_uuid: str
+):
     log.debug("Creating Nodeports object from node uuid: %s", node_uuid)
     if not db_mgr:
         raise exceptions.NodeportsException(
             "Invalid call to create nodeports from uuid"
         )
     nodeports_dict = json.loads(
-        await db_mgr.get_ports_configuration_from_node_uuid(node_uuid)
+        await db_mgr.get_ports_configuration_from_node_uuid(project_id, node_uuid)
+    )
+    nodeports_dict.update(
+        {"user_id": user_id, "project_id": project_id, "node_uuid": node_uuid}
     )
     nodeports_obj = __decodeNodePorts(nodeports_dict)
     log.debug("Created Nodeports object")
@@ -89,7 +94,7 @@ async def save_to_json(nodeports_obj) -> None:
 
     if nodeports_obj.autowrite:
         await nodeports_obj.db_mgr.write_ports_configuration(
-            nodeports_json, nodeports_obj.node_uuid
+            nodeports_json, nodeports_obj.project_id, nodeports_obj.node_uuid
         )
     log.debug("Saved Nodeports object to json: %s", nodeports_json)
 

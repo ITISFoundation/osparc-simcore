@@ -181,7 +181,9 @@ class Nodeports:
     async def _get_node_from_node_uuid(self, node_uuid: str):
         if not self.db_mgr:
             raise exceptions.NodeportsException("db manager is not initialised")
-        return await serialization.create_nodeports_from_uuid(self.db_mgr, node_uuid)
+        return await serialization.create_nodeports_from_uuid(
+            self.db_mgr, self.user_id, self.project_id, node_uuid
+        )
 
 
 async def ports(

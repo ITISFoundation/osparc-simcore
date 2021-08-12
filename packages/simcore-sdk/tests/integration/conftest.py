@@ -103,16 +103,14 @@ def default_configuration(
     pipeline: Callable[[str], str],
     task: Callable[..., str],
     default_configuration_file: Path,
-    project_id,
-    node_uuid,
+    project_id: str,
+    node_uuid: str,
 ) -> Dict[str, Any]:
     # prepare database with default configuration
     json_configuration = default_configuration_file.read_text()
     pipeline(project_id)
     config_dict = _set_configuration(task, project_id, node_uuid, json_configuration)
-    node_config.NODE_UUID = str(node_uuid)
-    node_config.PROJECT_ID = str(project_id)
-    yield config_dict
+    return config_dict
 
 
 @pytest.fixture()
@@ -180,14 +178,12 @@ def special_configuration(
         node_id: str = node_uuid,
     ) -> Tuple[Dict, str, str]:
         config_dict = json.loads(empty_configuration_file.read_text())
-        _assign_config(config_dict, "inputs", inputs)
-        _assign_config(config_dict, "outputs", outputs)
+        _assign_config(config_dict, "inputs", inputs if inputs else [])
+        _assign_config(config_dict, "outputs", outputs if outputs else [])
         project_id = pipeline(project_id)
         config_dict = _set_configuration(
             task, project_id, node_id, json.dumps(config_dict)
         )
-        node_config.NODE_UUID = str(node_uuid)
-        node_config.PROJECT_ID = str(project_id)
         return config_dict, project_id, node_uuid
 
     yield create_config
@@ -200,24 +196,28 @@ def special_2nodes_configuration(
     pipeline: Callable[[str], str],
     task: Callable[..., str],
     empty_configuration_file: Path,
-    project_id: str,
-    node_uuid: str,
 ) -> Callable:
     def create_config(
-        prev_node_inputs: List[Tuple[str, str, Any]] = None,
-        prev_node_outputs: List[Tuple[str, str, Any]] = None,
-        inputs: List[Tuple[str, str, Any]] = None,
-        outputs: List[Tuple[str, str, Any]] = None,
-        project_id: str = project_id,
-        previous_node_id: str = node_uuid,
-        node_id: str = "asdasdadsa",
+        prev_node_inputs: List[Tuple[str, str, Any]],
+        prev_node_outputs: List[Tuple[str, str, Any]],
+        inputs: List[Tuple[str, str, Any]],
+        outputs: List[Tuple[str, str, Any]],
+        project_id: str,
+        previous_node_id: str,
+        node_id: str,
     ) -> Tuple[Dict, str, str]:
         pipeline(project_id)
 
         # create previous node
         previous_config_dict = json.loads(empty_configuration_file.read_text())
-        _assign_config(previous_config_dict, "inputs", prev_node_inputs)
-        _assign_config(previous_config_dict, "outputs", prev_node_outputs)
+        _assign_config(
+            previous_config_dict, "inputs", prev_node_inputs if prev_node_inputs else []
+        )
+        _assign_config(
+            previous_config_dict,
+            "outputs",
+            prev_node_outputs if prev_node_outputs else [],
+        )
         previous_config_dict = _set_configuration(
             task,
             project_id,
@@ -227,15 +227,13 @@ def special_2nodes_configuration(
 
         # create current node
         config_dict = json.loads(empty_configuration_file.read_text())
-        _assign_config(config_dict, "inputs", inputs)
-        _assign_config(config_dict, "outputs", outputs)
+        _assign_config(config_dict, "inputs", inputs if inputs else [])
+        _assign_config(config_dict, "outputs", outputs if outputs else [])
         # configure links if necessary
         str_config = json.dumps(config_dict)
-        str_config = str_config.replace("TEST_NODE_UUID", str(previous_node_uuid))
+        str_config = str_config.replace("TEST_NODE_UUID", previous_node_id)
         config_dict = _set_configuration(task, project_id, node_id, str_config)
-        node_config.NODE_UUID = str(node_uuid)
-        node_config.PROJECT_ID = str(project_id)
-        return config_dict, project_id, node_uuid
+        return config_dict, project_id, node_id
 
     yield create_config
 
