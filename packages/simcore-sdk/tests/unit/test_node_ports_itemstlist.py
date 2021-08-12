@@ -108,8 +108,12 @@ async def test_modifying_items_triggers_cb(
         [("1", "integer", 333), ("2", "integer", 333), ("3", "integer", 333)],
     )
     itemslist.change_notifier = mock_method
-    await itemslist[0].set(-123)
+    await itemslist[0].set(
+        user_id=-1, project_id="fake project", node_uuid="fake node", value=-123
+    )
     mock_method.assert_called_once()
     mock_method.reset_mock()
-    await itemslist[0].set(234)
+    await itemslist[0].set(
+        user_id=-1, project_id="fake project", node_uuid="fake node", value=234
+    )
     mock_method.assert_called_once()
