@@ -13290,8 +13290,8 @@ paths:
                   title: Snapshot
                   required:
                     - id
-                    - parent_id
-                    - project_id
+                    - parent_uuid
+                    - project_uuid
                     - url
                     - url_parent
                     - url_project
@@ -13310,12 +13310,12 @@ paths:
                       type: string
                       description: Timestamp of the time snapshot was taken from parent. Notice that parent might change with time
                       format: date-time
-                    parent_id:
+                    parent_uuid:
                       title: Parent Id
                       type: string
                       description: Parent's project uuid
                       format: uuid
-                    project_id:
+                    project_uuid:
                       title: Project Id
                       type: string
                       description: Current project's uuid
@@ -13372,8 +13372,8 @@ paths:
                 title: Snapshot
                 required:
                   - id
-                  - parent_id
-                  - project_id
+                  - parent_uuid
+                  - project_uuid
                   - url
                   - url_parent
                   - url_project
@@ -13392,12 +13392,12 @@ paths:
                     type: string
                     description: Timestamp of the time snapshot was taken from parent. Notice that parent might change with time
                     format: date-time
-                  parent_id:
+                  parent_uuid:
                     title: Parent Id
                     type: string
                     description: Parent's project uuid
                     format: uuid
-                  project_id:
+                  project_uuid:
                     title: Project Id
                     type: string
                     description: Current project's uuid
@@ -13455,8 +13455,8 @@ paths:
                 title: Snapshot
                 required:
                   - id
-                  - parent_id
-                  - project_id
+                  - parent_uuid
+                  - project_uuid
                   - url
                   - url_parent
                   - url_project
@@ -13475,12 +13475,12 @@ paths:
                     type: string
                     description: Timestamp of the time snapshot was taken from parent. Notice that parent might change with time
                     format: date-time
-                  parent_id:
+                  parent_uuid:
                     title: Parent Id
                     type: string
                     description: Parent's project uuid
                     format: uuid
-                  project_id:
+                  project_uuid:
                     title: Project Id
                     type: string
                     description: Current project's uuid

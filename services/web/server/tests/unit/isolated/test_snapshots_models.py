@@ -1,7 +1,29 @@
+from uuid import uuid4
+
+from faker import Faker
+from models_library.utils.database_models_factory import sa_table_to_pydantic_model
 from simcore_postgres_database.models.snapshots import snapshots
+from simcore_service_webserver.snapshots_db import snapshots
 from simcore_service_webserver.snapshots_models import (
     Parameter,
     ParameterApiModel,
     Snapshot,
     SnapshotItem,
 )
+
+SnapshotORM = sa_table_to_pydantic_model(snapshots)
+
+
+def test_snapshot_orm_to_domain_model(faker: Faker):
+
+    snapshot_orm = SnapshotORM(
+        id=faker.random_int(min=0),
+        name=faker.name(),
+        created_at=faker.date_time(),
+        parent_uuid=faker.uuid4(),
+        project_uuid=faker.uuid4(),
+    )
+
+    snapshot = Snapshot.from_orm(snapshot_orm)
+
+    assert snapshot.dict(by_alias=True) == snapshot_orm.dict()
