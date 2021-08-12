@@ -78,7 +78,11 @@ class Nodeports(BaseModel):
         for output in (await self.outputs).values():
             if is_file_type(output.property_type) and output.file_to_key_map:
                 if item_value.name in output.file_to_key_map:
-                    await output.set(item_value)
+                    await output.set(
+                        project_id=self.project_id,
+                        node_id=self.node_uuid,
+                        new_value=item_value,
+                    )
                     return
         raise PortNotFound(msg=f"output port for item {item_value} not found")
 

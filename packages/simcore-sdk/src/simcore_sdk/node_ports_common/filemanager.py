@@ -16,7 +16,7 @@ from tqdm import tqdm
 from yarl import URL
 
 from ..config.http_clients import client_request_settings
-from . import config, exceptions
+from . import exceptions
 
 log = logging.getLogger(__name__)
 
