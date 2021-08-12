@@ -1,10 +1,9 @@
 # DEPRECATED: Use instead postgres-database
 import networkx as nx
+from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from sqlalchemy.orm import mapper
-
-from .base import metadata
 
 
 # NOTE: All this file ises classical mapping to keep LEGACY
