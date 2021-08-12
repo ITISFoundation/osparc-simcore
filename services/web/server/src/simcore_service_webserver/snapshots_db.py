@@ -11,10 +11,10 @@ from .projects.projects_db import APP_PROJECT_DBAPI
 
 # alias for readability
 # SEE https://pydantic-docs.helpmanual.io/usage/models/#orm-mode-aka-arbitrary-class-instances
-SnapshotOrm = RowProxy
+SnapshotRow = RowProxy
 SnapshotDict = Dict
 
-ProjectOrm = RowProxy
+ProjectRow = RowProxy
 ProjectDict = Dict
 
 
@@ -27,7 +27,7 @@ class SnapshotsRepository(BaseRepository):
 
     async def list(
         self, project_uuid: UUID, limit: Optional[int] = None
-    ) -> List[SnapshotOrm]:
+    ) -> List[SnapshotRow]:
         """ Returns sorted list of snapshots in project"""
         # TODO: add pagination
 
@@ -42,13 +42,13 @@ class SnapshotsRepository(BaseRepository):
 
             return await (await conn.execute(query)).fetchall()
 
-    async def _first(self, query) -> Optional[SnapshotOrm]:
+    async def _first(self, query) -> Optional[SnapshotRow]:
         async with self.engine.acquire() as conn:
             return await (await conn.execute(query)).first()
 
     async def get_by_index(
         self, project_uuid: UUID, snapshot_index: PositiveInt
-    ) -> Optional[SnapshotOrm]:
+    ) -> Optional[SnapshotRow]:
         query = snapshots.select().where(
             (snapshots.c.parent_uuid == str(project_uuid))
             & (snapshots.c.child_index == snapshot_index)
@@ -57,14 +57,14 @@ class SnapshotsRepository(BaseRepository):
 
     async def get_by_name(
         self, project_uuid: UUID, snapshot_name: str
-    ) -> Optional[SnapshotOrm]:
+    ) -> Optional[SnapshotRow]:
         query = snapshots.select().where(
             (snapshots.c.parent_uuid == str(project_uuid))
             & (snapshots.c.name == snapshot_name)
         )
         return await self._first(query)
 
-    async def create(self, snapshot: SnapshotDict) -> SnapshotOrm:
+    async def create(self, snapshot: SnapshotDict) -> SnapshotRow:
         # pylint: disable=no-value-for-parameter
         query = snapshots.insert().values(**snapshot).returning(snapshots)
         row = await self._first(query)
