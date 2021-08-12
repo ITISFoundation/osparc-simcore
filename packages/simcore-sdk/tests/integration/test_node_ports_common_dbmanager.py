@@ -10,8 +10,6 @@ from simcore_sdk.node_ports_common.dbmanager import DBManager
 
 pytest_simcore_core_services_selection = ["postgres"]
 
-pytest_simcore_ops_services_selection = ["minio"]
-
 
 async def test_db_manager_read_config(
     project_id: str,
