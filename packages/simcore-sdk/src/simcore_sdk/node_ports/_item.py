@@ -143,9 +143,7 @@ class Item:
             config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["converter"](self.value)
         )
 
-    async def set(
-        self, user_id: int, project_id: str, node_uuid: str, value: ItemConcreteValue
-    ):
+    async def set(self, value: ItemConcreteValue):
         """sets the data to the underlying port
 
         :param value: must be convertible to a string, or an exception will be thrown.

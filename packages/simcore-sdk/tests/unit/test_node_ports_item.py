@@ -76,7 +76,7 @@ async def test_item(user_id: int, project_id: str, node_uuid: str):
 
     assert item.new_data_cb is None
 
-    assert await item.get(user_id=-1) == item_value
+    assert await item.get() == item_value
 
 
 @pytest.mark.parametrize(
@@ -151,10 +151,10 @@ async def test_valid_type(
     if not data_items_utils.is_value_link(item_value):
         if item_value and data_items_utils.is_file_type(item_type):
             if data_items_utils.is_value_on_store(item_value):
-                assert await item.get(user_id=-1) == item_value["path"]
+                assert await item.get() == item_value["path"]
             elif data_items_utils.is_value_a_download_link(item_value):
                 # this really downloads...
-                file = await item.get(user_id=-1)
+                file = await item.get()
                 assert file.exists(), f"{file} is not downloaded"
                 assert file.name in item_value["downloadLink"]
 
@@ -162,7 +162,7 @@ async def test_valid_type(
                 assert False, f"invalid type/value combination {item_type}/{item_value}"
         else:
             # I don't know how to monkeypatch that one
-            assert await item.get(user_id=-1) == item_value
+            assert await item.get() == item_value
 
 
 @pytest.mark.parametrize(
