@@ -58,11 +58,21 @@ class Item:
     :raises exceptions.NodeportsException: [description]
     """
 
-    def __init__(self, schema: SchemaItem, data: DataItem):
+    def __init__(
+        self,
+        user_id: int,
+        project_id: str,
+        node_uuid: str,
+        schema: SchemaItem,
+        data: DataItem,
+    ):
         if not schema:
             raise exceptions.InvalidProtocolError(None, msg="empty schema or payload")
         self._schema = schema
         self._data = data
+        self._user_id = user_id
+        self._project_id = project_id
+        self._node_uuid = node_uuid
         self.new_data_cb: Optional[Callable] = None
         self.get_node_from_uuid_cb: Optional[Callable] = None
 
@@ -83,7 +93,7 @@ class Item:
 
         raise AttributeError
 
-    async def get(self, user_id: int) -> Optional[ItemConcreteValue]:
+    async def get(self) -> Optional[ItemConcreteValue]:
         """gets data converted to the underlying type
 
         :raises exceptions.InvalidProtocolError: if the underlying type is unknown
@@ -124,7 +134,7 @@ class Item:
             return value
 
         if data_items_utils.is_value_on_store(self.value):
-            return await self.__get_value_from_store(user_id, self.value)
+            return await self.__get_value_from_store(self._user_id, self.value)
 
         if data_items_utils.is_value_a_download_link(self.value):
             return await self._get_value_from_download_link(self.value)
@@ -133,9 +143,7 @@ class Item:
             config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["converter"](self.value)
         )
 
-    async def set(
-        self, user_id: int, project_id: str, node_uuid: str, value: ItemConcreteValue
-    ):
+    async def set(self, value: ItemConcreteValue):
         """sets the data to the underlying port
 
         :param value: must be convertible to a string, or an exception will be thrown.
@@ -165,10 +173,10 @@ class Item:
                 raise exceptions.InvalidItemTypeError(self.type, f"{value}")
             log.debug("file path %s will be uploaded to s3", value)
             s3_object = data_items_utils.encode_file_id(
-                file_path, project_id=project_id, node_id=node_uuid
+                file_path, project_id=self._project_id, node_id=self._node_uuid
             )
             store_id, _ = await filemanager.upload_file(
-                user_id=user_id,
+                user_id=self._user_id,
                 store_name=config.STORE,
                 s3_object=s3_object,
                 local_file_path=file_path,

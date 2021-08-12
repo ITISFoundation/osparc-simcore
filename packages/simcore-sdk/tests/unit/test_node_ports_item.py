@@ -18,9 +18,18 @@ from simcore_sdk.node_ports_common import (
 )
 
 
-def create_item(item_type: str, item_value: DataItemValue) -> Item:
+def create_item(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    item_type: str,
+    item_value: DataItemValue,
+) -> Item:
     key = "some key"
     return Item(
+        user_id,
+        project_id,
+        node_uuid,
         SchemaItem(
             key=key,
             label="a label",
@@ -32,12 +41,12 @@ def create_item(item_type: str, item_value: DataItemValue) -> Item:
     )
 
 
-def test_default_item():
+def test_default_item(user_id: int, project_id: str, node_uuid: str):
     with pytest.raises(exceptions.InvalidProtocolError):
-        Item(None, None)
+        Item(user_id, project_id, node_uuid, None, None)
 
 
-async def test_item():
+async def test_item(user_id: int, project_id: str, node_uuid: str):
     key = "my key"
     label = "my label"
     description = "my description"
@@ -46,6 +55,9 @@ async def test_item():
     display_order = 2
 
     item = Item(
+        user_id,
+        project_id,
+        node_uuid,
         SchemaItem(
             key=key,
             label=label,
@@ -64,15 +76,17 @@ async def test_item():
 
     assert item.new_data_cb is None
 
-    assert await item.get(user_id=-1) == item_value
+    assert await item.get() == item_value
 
 
 @pytest.mark.parametrize(
     "item_type", list(config.TYPE_TO_PYTHON_TYPE_MAP.keys()) + [config.FILE_TYPE_PREFIX]
 )
-async def test_valid_type_empty_value(item_type: str):
-    item = create_item(item_type, None)
-    assert await item.get(user_id=-1) is None
+async def test_valid_type_empty_value(
+    user_id: int, project_id: str, node_uuid: str, item_type: str
+):
+    item = create_item(user_id, project_id, node_uuid, item_type, None)
+    assert await item.get() is None
 
 
 @pytest.fixture
@@ -126,18 +140,21 @@ async def file_link_mock(
 )
 async def test_valid_type(
     loop,
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
     file_link_mock: Callable,
     item_type: str,
     item_value: DataItemValue,
 ):
-    item = create_item(item_type, item_value)
+    item = create_item(user_id, project_id, node_uuid, item_type, item_value)
     if not data_items_utils.is_value_link(item_value):
         if item_value and data_items_utils.is_file_type(item_type):
             if data_items_utils.is_value_on_store(item_value):
-                assert await item.get(user_id=-1) == item_value["path"]
+                assert await item.get() == item_value["path"]
             elif data_items_utils.is_value_a_download_link(item_value):
                 # this really downloads...
-                file = await item.get(user_id=-1)
+                file = await item.get()
                 assert file.exists(), f"{file} is not downloaded"
                 assert file.name in item_value["downloadLink"]
 
@@ -145,7 +162,7 @@ async def test_valid_type(
                 assert False, f"invalid type/value combination {item_type}/{item_value}"
         else:
             # I don't know how to monkeypatch that one
-            assert await item.get(user_id=-1) == item_value
+            assert await item.get() == item_value
 
 
 @pytest.mark.parametrize(
@@ -203,12 +220,18 @@ async def test_valid_type(
         ),
     ],
 )
-async def test_invalid_type(item_type: str, item_value: DataItemValue):
+async def test_invalid_type(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    item_type: str,
+    item_value: DataItemValue,
+):
     # pylint: disable=W0612
     with pytest.raises(
         exceptions.InvalidItemTypeError, match=rf"Invalid item type, .*[{item_type}]"
     ):
-        create_item(item_type, item_value)
+        create_item(user_id, project_id, node_uuid, item_type, item_value)
 
 
 @pytest.mark.parametrize(
@@ -221,19 +244,19 @@ async def test_invalid_type(item_type: str, item_value: DataItemValue):
     ],
 )
 async def test_set_new_value(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
     item_type: str,
     item_value_to_set: ItemConcreteValue,
     expected_value: ItemConcreteValue,
     mocker,
 ):
     mock_method = mocker.AsyncMock(return_value="")
-    item = create_item(item_type, None)
+    item = create_item(user_id, project_id, node_uuid, item_type, None)
     item.new_data_cb = mock_method
-    assert await item.get(user_id=-1) is None
+    assert await item.get() is None
     await item.set(
-        user_id=-1,
-        project_id="fake project",
-        node_uuid="fake_node",
         value=item_value_to_set,
     )
     mock_method.assert_called_with(DataItem(key=item.key, value=expected_value))
@@ -251,15 +274,16 @@ async def test_set_new_value(
     ],
 )
 async def test_set_new_invalid_value(
-    item_type: str, item_value_to_set: ItemConcreteValue
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    item_type: str,
+    item_value_to_set: ItemConcreteValue,
 ):  # pylint: disable=W0613
-    item = create_item(item_type, None)
-    assert await item.get(user_id=-1) is None
+    item = create_item(user_id, project_id, node_uuid, item_type, None)
+    assert await item.get() is None
     with pytest.raises(exceptions.InvalidItemTypeError) as excinfo:
         await item.set(
-            user_id=-1,
-            project_id="fake project",
-            node_uuid="fake_node",
             value=item_value_to_set,
         )
     assert "Invalid item type" in str(excinfo.value)

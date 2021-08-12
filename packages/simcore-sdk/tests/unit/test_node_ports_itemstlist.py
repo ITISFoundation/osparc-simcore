@@ -29,7 +29,9 @@ def create_item(
     )
 
 
-def create_items_list(key_item_value_tuples):
+def create_items_list(
+    user_id: int, project_id: str, node_uuid: str, key_item_value_tuples
+):
     schemas = SchemaItemsList(
         {
             key: SchemaItem(
@@ -48,27 +50,43 @@ def create_items_list(key_item_value_tuples):
             for key, _, item_value in key_item_value_tuples
         }
     )
-    return ItemsList(schemas, payloads)
+    return ItemsList(user_id, project_id, node_uuid, schemas, payloads)
 
 
-def test_default_list():
-    itemslist = ItemsList(SchemaItemsList(), DataItemsList())
+def test_default_list(user_id: int, project_id: str, node_uuid: str):
+    itemslist = ItemsList(
+        user_id, project_id, node_uuid, SchemaItemsList(), DataItemsList()
+    )
 
     assert not itemslist
     assert not itemslist.change_notifier
     assert not itemslist.get_node_from_node_uuid_cb
 
 
-def test_creating_list():
+def test_creating_list(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+):
     itemslist = create_items_list(
-        [("1", "integer", 333), ("2", "integer", 333), ("3", "integer", 333)]
+        user_id,
+        project_id,
+        node_uuid,
+        [("1", "integer", 333), ("2", "integer", 333), ("3", "integer", 333)],
     )
     assert len(itemslist) == 3
 
 
-def test_accessing_by_key():
+def test_accessing_by_key(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+):
     itemslist = create_items_list(
-        [("1", "integer", 333), ("2", "integer", 333), ("3", "integer", 333)]
+        user_id,
+        project_id,
+        node_uuid,
+        [("1", "integer", 333), ("2", "integer", 333), ("3", "integer", 333)],
     )
     assert itemslist[0].key == "1"
     assert itemslist["1"].key == "1"
@@ -78,29 +96,37 @@ def test_accessing_by_key():
     assert itemslist["3"].key == "3"
 
 
-def test_access_by_wrong_key():
+def test_access_by_wrong_key(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+):
     from simcore_sdk.node_ports import exceptions
 
     itemslist = create_items_list(
-        [("1", "integer", 333), ("2", "integer", 333), ("3", "integer", 333)]
+        user_id,
+        project_id,
+        node_uuid,
+        [("1", "integer", 333), ("2", "integer", 333), ("3", "integer", 333)],
     )
     with pytest.raises(exceptions.UnboundPortError):
         print(itemslist["fdoiht"])
 
 
-async def test_modifying_items_triggers_cb(mocker):  # pylint: disable=C0103
+async def test_modifying_items_triggers_cb(
+    user_id: int, project_id: str, node_uuid: str, mocker
+):  # pylint: disable=C0103
     mock_method = mocker.AsyncMock(return_value="")
 
     itemslist = create_items_list(
-        [("1", "integer", 333), ("2", "integer", 333), ("3", "integer", 333)]
+        user_id,
+        project_id,
+        node_uuid,
+        [("1", "integer", 333), ("2", "integer", 333), ("3", "integer", 333)],
     )
     itemslist.change_notifier = mock_method
-    await itemslist[0].set(
-        user_id=-1, project_id="fake project", node_uuid="fake node", value=-123
-    )
+    await itemslist[0].set(-123)
     mock_method.assert_called_once()
     mock_method.reset_mock()
-    await itemslist[0].set(
-        user_id=-1, project_id="fake project", node_uuid="fake node", value=234
-    )
+    await itemslist[0].set(234)
     mock_method.assert_called_once()

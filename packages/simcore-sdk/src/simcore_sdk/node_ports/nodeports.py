@@ -81,12 +81,18 @@ class Nodeports:
         self._outputs_payloads = outputs_payloads
 
         self._inputs = ItemsList(
+            self.user_id,
+            self.project_id,
+            self.node_uuid,
             self._input_schemas,
             self._inputs_payloads,
             change_cb=self._save_to_json,
             get_node_from_node_uuid_cb=self._get_node_from_node_uuid,
         )
         self._outputs = ItemsList(
+            self.user_id,
+            self.project_id,
+            self.node_uuid,
             self._output_schemas,
             self._outputs_payloads,
             change_cb=self._save_to_json,
