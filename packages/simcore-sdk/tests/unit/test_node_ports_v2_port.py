@@ -592,7 +592,7 @@ async def test_valid_port(
         assert await port.get() == exp_get_value
 
     # set a new value
-    await port.set(new_value)
+    await port.set(project_id="fake project", node_id="fake node", new_value=new_value)
     assert port.value == exp_new_value
 
     if isinstance(exp_new_get_value, Path):
