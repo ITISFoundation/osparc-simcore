@@ -106,9 +106,7 @@ class Port(ServiceProperty):
 
         return self._py_value_converter(value)
 
-    async def set(
-        self, project_id: str, node_id: str, new_value: ItemConcreteValue
-    ) -> None:
+    async def set(self, new_value: ItemConcreteValue) -> None:
         log.debug(
             "setting %s[%s] with value %s", self.key, self.property_type, new_value
         )
