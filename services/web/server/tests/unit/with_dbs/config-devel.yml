@@ -36,6 +36,8 @@ main:
   testing: true
 projects:
   enabled: false
+snapshots:
+  enabled: false
 resource_manager:
   enabled: false
   garbage_collection_interval_seconds: 30
