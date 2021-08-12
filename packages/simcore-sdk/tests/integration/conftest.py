@@ -23,7 +23,7 @@ from yarl import URL
 
 
 @pytest.fixture
-def user_id(postgres_engine: sa.engine.Engine) -> Iterable[int]:
+def user_id(postgres_db: sa.engine.Engine) -> Iterable[int]:
     # inject user in db
 
     # NOTE: Ideally this (and next fixture) should be done via webserver API but at this point
@@ -33,18 +33,18 @@ def user_id(postgres_engine: sa.engine.Engine) -> Iterable[int]:
     # pylint: disable=no-value-for-parameter
     stmt = users.insert().values(**random_user(name="test")).returning(users.c.id)
     print(str(stmt))
-    with postgres_engine.connect() as conn:
+    with postgres_db.connect() as conn:
         result = conn.execute(stmt)
         [usr_id] = result.fetchone()
 
     yield usr_id
 
-    with postgres_engine.connect() as conn:
+    with postgres_db.connect() as conn:
         conn.execute(users.delete().where(users.c.id == usr_id))
 
 
 @pytest.fixture
-def project_id(user_id: int, postgres_engine: sa.engine.Engine) -> Iterable[str]:
+def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[str]:
     # inject project for user in db. This will give user_id, the full project's ownership
 
     # pylint: disable=no-value-for-parameter
@@ -54,13 +54,13 @@ def project_id(user_id: int, postgres_engine: sa.engine.Engine) -> Iterable[str]
         .returning(projects.c.uuid)
     )
     print(str(stmt))
-    with postgres_engine.connect() as conn:
+    with postgres_db.connect() as conn:
         result = conn.execute(stmt)
         [prj_uuid] = result.fetchone()
 
     yield prj_uuid
 
-    with postgres_engine.connect() as conn:
+    with postgres_db.connect() as conn:
         conn.execute(projects.delete().where(projects.c.uuid == prj_uuid))
 
 
@@ -196,7 +196,6 @@ def special_2nodes_configuration(
     bucket: str,
     pipeline: Callable[[str], str],
     task: Callable[..., str],
-    postgres_session: sa.orm.session.Session,
     empty_configuration_file: Path,
     project_id: str,
     node_uuid: str,
