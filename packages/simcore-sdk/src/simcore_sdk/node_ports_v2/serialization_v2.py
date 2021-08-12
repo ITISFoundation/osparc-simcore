@@ -7,7 +7,6 @@ import pydantic
 from models_library.projects_nodes import NodeID
 from models_library.utils.nodes import compute_node_hash
 from packaging import version
-from sqlalchemy.sql.functions import user
 
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.exceptions import InvalidProtocolError
@@ -159,5 +158,7 @@ async def dump(nodeports: Nodeports) -> None:
                 port_cfg[port_type][port_key] = port_values["value"]
 
     await nodeports.db_manager.write_ports_configuration(
-        json.dumps(port_cfg), nodeports.project_id, nodeports.node_uuid
+        json.dumps(port_cfg),
+        nodeports.project_id,
+        nodeports.node_uuid,
     )

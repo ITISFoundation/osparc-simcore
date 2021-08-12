@@ -29,8 +29,9 @@ def node_uuid() -> str:
 
 @pytest.fixture(scope="function")
 async def mock_db_manager(
-    loop: asyncio.AbstractEventLoop,
+    loop,
     monkeypatch,
+    project_id: str,
     node_uuid: str,
 ) -> Callable:
     def _mock_db_manager(port_cfg: Dict[str, Any]) -> DBManager:
@@ -38,10 +39,11 @@ async def mock_db_manager(
             return json.dumps(port_cfg)
 
         async def mock_write_ports_configuration(
-            self, json_configuration: str, uuid: str
+            self, json_configuration: str, p_id: str, n_id: str
         ):
             assert json.loads(json_configuration) == port_cfg
-            assert uuid == node_uuid
+            assert p_id == project_id
+            assert n_id == node_uuid
 
         monkeypatch.setattr(
             DBManager,

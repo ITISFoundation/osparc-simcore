@@ -154,7 +154,10 @@ class Nodeports:
         if not self.db_mgr:
             raise exceptions.NodeportsException("db manager is not initialised")
         upd_node = await serialization.create_from_json(
-            self.db_mgr, project_id=self.project_id, node_uuid=self.node_uuid
+            self.db_mgr,
+            user_id=self.user_id,
+            project_id=self.project_id,
+            node_uuid=self.node_uuid,
         )
         # copy from updated nodeports
         self._copy_schemas_payloads(
