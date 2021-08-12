@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 from typing import Any, Callable, Coroutine, Dict, Optional
 
-from ..node_ports import config, data_items_utils, filemanager
+from ..node_ports_common import config, data_items_utils, filemanager
 from .links import DownloadLink, FileLink, ItemConcreteValue, PortLink
 
 log = logging.getLogger(__name__)
@@ -57,17 +57,15 @@ async def pull_file_from_store(
         if downloaded_file != renamed_file:
             if renamed_file.exists():
                 renamed_file.unlink()
-            shutil.move(downloaded_file, renamed_file)
+            shutil.move(f"{downloaded_file}", renamed_file)
             downloaded_file = renamed_file
 
     return downloaded_file
 
 
-async def push_file_to_store(file: Path) -> FileLink:
+async def push_file_to_store(file: Path, project_id: str, node_id: str) -> FileLink:
     log.debug("file path %s will be uploaded to s3", file)
-    s3_object = data_items_utils.encode_file_id(
-        file, project_id=config.PROJECT_ID, node_id=config.NODE_UUID
-    )
+    s3_object = data_items_utils.encode_file_id(file, project_id, node_id)
     store_id, e_tag = await filemanager.upload_file(
         store_name=config.STORE, s3_object=s3_object, local_file_path=file
     )
@@ -96,7 +94,7 @@ async def pull_file_from_download_link(
         if downloaded_file != renamed_file:
             if renamed_file.exists():
                 renamed_file.unlink()
-            shutil.move(downloaded_file, renamed_file)
+            shutil.move(f"{downloaded_file}", renamed_file)
             downloaded_file = renamed_file
 
     return downloaded_file

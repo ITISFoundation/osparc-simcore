@@ -5,8 +5,8 @@
 from copy import deepcopy
 
 import pytest
-from simcore_sdk.node_ports import config, exceptions
 from simcore_sdk.node_ports._schema_item import SchemaItem
+from simcore_sdk.node_ports_common import config, exceptions
 
 
 def test_default_item():

@@ -8,7 +8,12 @@ from typing import Any, Callable, Dict
 from uuid import uuid4
 
 import pytest
-from simcore_sdk.node_ports.dbmanager import DBManager
+from simcore_sdk.node_ports_common.dbmanager import DBManager
+
+
+@pytest.fixture(scope="module")
+def project_id() -> str:
+    return f"{uuid4()}"
 
 
 @pytest.fixture(scope="module")

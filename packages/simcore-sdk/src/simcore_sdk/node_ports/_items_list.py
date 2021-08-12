@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Sequence
 
-from . import exceptions
+from ..node_ports_common import exceptions
 from ._data_items_list import DataItemsList
 from ._item import Item
 from ._schema_items_list import SchemaItemsList

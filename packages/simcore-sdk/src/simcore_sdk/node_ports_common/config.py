@@ -4,9 +4,6 @@ import os
 from typing import Dict, Type
 
 # required configurations
-PROJECT_ID: str = os.environ.get("SIMCORE_PROJECT_ID", default="undefined")
-NODE_UUID: str = os.environ.get("SIMCORE_NODE_UUID", default="undefined")
-USER_ID: str = os.environ.get("SIMCORE_USER_ID", default="undefined")
 STORAGE_ENDPOINT: str = os.environ.get("STORAGE_ENDPOINT", default="undefined")
 STORAGE_VERSION: str = "v0"
 

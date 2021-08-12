@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional, Tuple, Type
 from models_library.services import PROPERTY_KEY_RE, ServiceProperty
 from pydantic import Field, PrivateAttr, validator
 
-from ..node_ports.exceptions import InvalidItemTypeError
+from ..node_ports_common.exceptions import InvalidItemTypeError
 from . import port_utils
 from .links import DataItemValue, DownloadLink, FileLink, ItemConcreteValue, PortLink
 
@@ -66,7 +66,7 @@ class Port(ServiceProperty):
             self.value = self.default_value
             self._used_default_value = True
 
-    async def get(self) -> ItemConcreteValue:
+    async def get(self) -> Optional[ItemConcreteValue]:
         log.debug(
             "getting %s[%s] with value %s",
             self.key,
@@ -106,7 +106,9 @@ class Port(ServiceProperty):
 
         return self._py_value_converter(value)
 
-    async def set(self, new_value: ItemConcreteValue) -> None:
+    async def set(
+        self, project_id: str, node_id: str, new_value: ItemConcreteValue
+    ) -> None:
         log.debug(
             "setting %s[%s] with value %s", self.key, self.property_type, new_value
         )
@@ -118,7 +120,9 @@ class Port(ServiceProperty):
             if isinstance(converted_value, Path):
                 if not converted_value.exists() or not converted_value.is_file():
                     raise InvalidItemTypeError(self.property_type, str(new_value))
-                final_value = await port_utils.push_file_to_store(converted_value)
+                final_value = await port_utils.push_file_to_store(
+                    converted_value, project_id, node_id
+                )
             else:
                 final_value = converted_value
 

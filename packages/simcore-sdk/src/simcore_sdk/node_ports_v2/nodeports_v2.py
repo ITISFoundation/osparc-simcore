@@ -4,8 +4,8 @@ from typing import Any, Callable, Coroutine, Type
 
 from pydantic import BaseModel, Field
 
-from ..node_ports.dbmanager import DBManager
-from ..node_ports.exceptions import PortNotFound, UnboundPortError
+from ..node_ports_common.dbmanager import DBManager
+from ..node_ports_common.exceptions import PortNotFound, UnboundPortError
 from .links import ItemConcreteValue
 from .port_utils import is_file_type
 from .ports_mapping import InputsList, OutputsList
@@ -17,6 +17,7 @@ class Nodeports(BaseModel):
     internal_inputs: InputsList = Field(..., alias="inputs")
     internal_outputs: OutputsList = Field(..., alias="outputs")
     db_manager: DBManager
+    project_id: str
     node_uuid: str
     save_to_db_cb: Callable[["Nodeports"], Coroutine[Any, Any, None]]
     node_port_creator_cb: Callable[[DBManager, str], Coroutine[Any, Any, "Nodeports"]]
@@ -59,20 +60,30 @@ class Nodeports(BaseModel):
         return await (await self.outputs)[item_key].get()
 
     async def set(self, item_key: str, item_value: ItemConcreteValue) -> None:
+        # first try to set the inputs.
         try:
-            await (await self.inputs)[item_key].set(item_value)
+            the_updated_inputs = await self.inputs
+            await the_updated_inputs[item_key].set(
+                project_id=self.project_id, node_id=self.node_uuid, new_value=item_value
+            )
             return
         except UnboundPortError:
             # not available try outputs
-            pass
-        # if this fails it will raise an exception
-        await (await self.outputs)[item_key].set(item_value)
+            # if this fails it will raise another exception
+            the_updated_outputs = await self.outputs
+            await the_updated_outputs[item_key].set(
+                project_id=self.project_id, node_id=self.node_uuid, new_value=item_value
+            )
 
     async def set_file_by_keymap(self, item_value: Path) -> None:
         for output in (await self.outputs).values():
             if is_file_type(output.property_type) and output.file_to_key_map:
                 if item_value.name in output.file_to_key_map:
-                    await output.set(item_value)
+                    await output.set(
+                        project_id=self.project_id,
+                        node_id=self.node_uuid,
+                        new_value=item_value,
+                    )
                     return
         raise PortNotFound(msg=f"output port for item {item_value} not found")
 

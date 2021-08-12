@@ -6,12 +6,13 @@ import logging
 from typing import Dict
 
 # FIXME: : nodeports.Nodeports produces recursive import
-from . import config, exceptions, nodeports
+from ..node_ports_common import config, exceptions
+from ..node_ports_common.dbmanager import DBManager
+from . import nodeports
 from ._data_item import DataItem
 from ._data_items_list import DataItemsList
 from ._schema_item import SchemaItem
 from ._schema_items_list import SchemaItemsList
-from .dbmanager import DBManager
 
 log = logging.getLogger(__name__)
 

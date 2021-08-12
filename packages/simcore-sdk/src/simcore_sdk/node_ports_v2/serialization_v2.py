@@ -4,13 +4,12 @@ from pprint import pformat
 from typing import Any, Dict, Set
 
 import pydantic
-from aiopg.sa.result import RowProxy
 from models_library.projects_nodes import NodeID
 from models_library.utils.nodes import compute_node_hash
 from packaging import version
 
-from ..node_ports.dbmanager import DBManager
-from ..node_ports.exceptions import InvalidProtocolError
+from ..node_ports_common.dbmanager import DBManager
+from ..node_ports_common.exceptions import InvalidProtocolError
 from .nodeports_v2 import Nodeports
 
 # NOTE: Keeps backwards compatibility with pydantic
@@ -28,7 +27,7 @@ NODE_REQUIRED_KEYS: Set[str] = {
 
 
 async def load(
-    db_manager: DBManager, node_uuid: str, auto_update: bool = False
+    db_manager: DBManager, project_id: str, node_uuid: str, auto_update: bool = False
 ) -> Nodeports:
     """creates a nodeport object from a row from comp_tasks"""
     log.debug(
@@ -36,8 +35,10 @@ async def load(
         node_uuid,
         auto_update,
     )
-    row: RowProxy = await db_manager.get_ports_configuration_from_node_uuid(node_uuid)
-    port_cfg = json.loads(row)
+    port_config_str: str = await db_manager.get_ports_configuration_from_node_uuid(
+        node_uuid
+    )
+    port_cfg = json.loads(port_config_str)
     if any(k not in port_cfg for k in NODE_REQUIRED_KEYS):
         raise InvalidProtocolError(
             port_cfg, "nodeport in comp_task does not follow protocol"
@@ -75,6 +76,7 @@ async def load(
     ports = Nodeports(
         **node_ports_cfg,
         db_manager=db_manager,
+        project_id=project_id,
         node_uuid=node_uuid,
         save_to_db_cb=dump,
         node_port_creator_cb=load,
@@ -102,7 +104,11 @@ async def dump(nodeports: Nodeports) -> None:
         ports = (
             nodeports
             if str(node_id) == nodeports.node_uuid
-            else await load(nodeports.db_manager, str(node_id))
+            else await load(
+                db_manager=nodeports.db_manager,
+                project_id=nodeports.project_id,
+                node_uuid=str(node_id),
+            )
         )
 
         return {
@@ -115,7 +121,9 @@ async def dump(nodeports: Nodeports) -> None:
             },
         }
 
-    run_hash = await compute_node_hash(nodeports.node_uuid, get_node_io_payload_cb)
+    run_hash = await compute_node_hash(
+        NodeID(nodeports.node_uuid), get_node_io_payload_cb
+    )
 
     # convert to DB
     port_cfg = {

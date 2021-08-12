@@ -11,7 +11,8 @@ import warnings
 from pathlib import Path
 from typing import Optional
 
-from . import data_items_utils, dbmanager, exceptions, serialization
+from ..node_ports_common import data_items_utils, dbmanager, exceptions
+from . import serialization
 from ._data_items_list import DataItemsList
 from ._items_list import ItemsList
 from ._schema_items_list import SchemaItemsList

@@ -21,6 +21,7 @@ from utils_port_v2 import create_valid_port_mapping
 async def test_nodeports_auto_updates(
     mock_db_manager: Callable,
     default_configuration: Dict[str, Any],
+    project_id: str,
     node_uuid: str,
     auto_update: bool,
 ):
@@ -40,6 +41,7 @@ async def test_nodeports_auto_updates(
             inputs=updated_inputs,
             outputs=updated_outputs,
             db_manager=db_manager,
+            project_id=project_id,
             node_uuid=node_uuid,
             save_to_db_cb=mock_save_db_cb,
             node_port_creator_cb=mock_node_port_creator_cb,
@@ -51,6 +53,7 @@ async def test_nodeports_auto_updates(
         inputs=original_inputs,
         outputs=original_outputs,
         db_manager=db_manager,
+        project_id=project_id,
         node_uuid=node_uuid,
         save_to_db_cb=mock_save_db_cb,
         node_port_creator_cb=mock_node_port_creator_cb,
@@ -70,6 +73,7 @@ async def test_nodeports_auto_updates(
 async def test_node_ports_accessors(
     mock_db_manager: Callable,
     default_configuration: Dict[str, Any],
+    project_id: str,
     node_uuid: str,
 ):
     db_manager = mock_db_manager(default_configuration)
@@ -96,6 +100,7 @@ async def test_node_ports_accessors(
         inputs=original_inputs,
         outputs=original_outputs,
         db_manager=db_manager,
+        project_id=project_id,
         node_uuid=node_uuid,
         save_to_db_cb=mock_save_db_cb,
         node_port_creator_cb=mock_node_port_creator_cb,
@@ -131,6 +136,7 @@ async def mock_upload_file(mocker, e_tag):
 async def test_node_ports_set_file_by_keymap(
     mock_db_manager: Callable,
     default_configuration: Dict[str, Any],
+    project_id: str,
     node_uuid: str,
     mock_upload_file,
 ):
@@ -149,6 +155,7 @@ async def test_node_ports_set_file_by_keymap(
             inputs=original_inputs,
             outputs=original_outputs,
             db_manager=db_manager,
+            project_id=project_id,
             node_uuid=node_uuid,
             save_to_db_cb=mock_save_db_cb,
             node_port_creator_cb=mock_node_port_creator_cb,
@@ -160,6 +167,7 @@ async def test_node_ports_set_file_by_keymap(
         inputs=original_inputs,
         outputs=original_outputs,
         db_manager=db_manager,
+        project_id=project_id,
         node_uuid=node_uuid,
         save_to_db_cb=mock_save_db_cb,
         node_port_creator_cb=mock_node_port_creator_cb,
@@ -173,8 +181,11 @@ async def test_node_ports_set_file_by_keymap(
 
 
 async def test_node_ports_v2_packages(
-    mock_db_manager: Callable, default_configuration: Dict[str, Any]
+    mock_db_manager: Callable,
+    default_configuration: Dict[str, Any],
+    project_id: str,
+    node_uuid: str,
 ):
     db_manager = mock_db_manager(default_configuration)
-    node_ports = await ports()
-    node_ports = await ports(db_manager)
+    node_ports = await ports(project_id, node_uuid)
+    node_ports = await ports(project_id, node_uuid, db_manager=db_manager)

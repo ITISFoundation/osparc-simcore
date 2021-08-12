@@ -5,7 +5,7 @@ from typing import Dict, Union
 
 from yarl import URL
 
-from . import config, data_items_utils, exceptions, filemanager
+from ..node_ports_common import config, data_items_utils, exceptions, filemanager
 from ._data_item import DataItem, DataItemValue
 from ._schema_item import SchemaItem
 
@@ -13,12 +13,16 @@ log = logging.getLogger(__name__)
 
 
 ItemConcreteValue = Union[int, float, bool, str, Path]
-NodeLink = Dict[str,str]
-StoreLink = Dict[str,str]
-DownloadLink = Dict[str,str]
+NodeLink = Dict[str, str]
+StoreLink = Dict[str, str]
+DownloadLink = Dict[str, str]
+
 
 def _check_type(item_type: str, value: DataItemValue):
-    if item_type not in config.TYPE_TO_PYTHON_TYPE_MAP and not data_items_utils.is_file_type(item_type):
+    if (
+        item_type not in config.TYPE_TO_PYTHON_TYPE_MAP
+        and not data_items_utils.is_file_type(item_type)
+    ):
         raise exceptions.InvalidItemTypeError(item_type, value)
 
     if not value:
@@ -36,10 +40,10 @@ def _check_type(item_type: str, value: DataItemValue):
     ]
     if item_type in possible_types:
         return
-    if data_items_utils.is_file_type(
-        item_type
-    ):
-        if data_items_utils.is_value_on_store(value) or data_items_utils.is_value_a_download_link(value):
+    if data_items_utils.is_file_type(item_type):
+        if data_items_utils.is_value_on_store(
+            value
+        ) or data_items_utils.is_value_a_download_link(value):
             return
     raise exceptions.InvalidItemTypeError(item_type, value)
 
@@ -80,7 +84,7 @@ class Item:
         raise AttributeError
 
     async def get(self) -> ItemConcreteValue:
-        """ gets data converted to the underlying type
+        """gets data converted to the underlying type
 
         :raises exceptions.InvalidProtocolError: if the underlying type is unknown
         :return: the converted value or None if no value is defined
@@ -130,7 +134,7 @@ class Item:
         )
 
     async def set(self, value: ItemConcreteValue):
-        """ sets the data to the underlying port
+        """sets the data to the underlying port
 
         :param value: must be convertible to a string, or an exception will be thrown.
         :type value: [type]
@@ -185,9 +189,9 @@ class Item:
                 "callback to get other node information is not set"
             )
         # create a node ports for the other node
-        other_nodeports = await self.get_node_from_uuid_cb(  # pylint: disable=not-callable
+        other_nodeports = await self.get_node_from_uuid_cb(
             node_uuid
-        )
+        )  # pylint: disable=not-callable
         # get the port value through that guy
         log.debug("Received node from DB %s, now returning value", other_nodeports)
         return await other_nodeports.get(port_key)
@@ -212,10 +216,20 @@ class Item:
         return downloaded_file
 
     async def _get_value_from_download_link(self, value: DownloadLink) -> Path:
-        log.debug("Getting value from download link [%s] with label %s", value["downloadLink"], value.get("label", "undef"))
+        log.debug(
+            "Getting value from download link [%s] with label %s",
+            value["downloadLink"],
+            value.get("label", "undef"),
+        )
 
         download_link = URL(value["downloadLink"])
         local_path = data_items_utils.create_folder_path(self.key)
-        downloaded_file = await filemanager.download_file_from_link(download_link, local_path, file_name=next(iter(self._schema.fileToKeyMap)) if self._schema.fileToKeyMap else None)
+        downloaded_file = await filemanager.download_file_from_link(
+            download_link,
+            local_path,
+            file_name=next(iter(self._schema.fileToKeyMap))
+            if self._schema.fileToKeyMap
+            else None,
+        )
 
         return downloaded_file

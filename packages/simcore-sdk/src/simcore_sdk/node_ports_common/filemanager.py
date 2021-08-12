@@ -16,7 +16,7 @@ from tqdm import tqdm
 from yarl import URL
 
 from ..config.http_clients import client_request_settings
-from . import config, exceptions
+from . import exceptions
 
 log = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ def api_client():
 
 
 def _handle_api_exception(store_id: Union[int, str], err: ApiException):
-    """ Maps client's ApiException -> NodeportsException """
+    """Maps client's ApiException -> NodeportsException"""
 
     #  NOTE: ApiException produces a long __str__ with multiple lines which is not
     #  allowed when composing header

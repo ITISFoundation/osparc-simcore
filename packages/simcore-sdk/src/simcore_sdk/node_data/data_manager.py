@@ -5,7 +5,8 @@ from tempfile import TemporaryDirectory
 from typing import Optional, Union
 
 from servicelib.archiving_utils import archive_dir, unarchive_dir
-from simcore_sdk.node_ports import config, filemanager
+
+from ..node_ports_common import config, filemanager
 
 log = logging.getLogger(__name__)
 
