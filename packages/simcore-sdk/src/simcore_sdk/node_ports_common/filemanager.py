@@ -16,7 +16,7 @@ from tqdm import tqdm
 from yarl import URL
 
 from ..config.http_clients import client_request_settings
-from . import exceptions
+from . import config, exceptions
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class ClientSessionContextManager:
                 total=None,
                 connect=client_request_settings.aiohttp_connect_timeout,
                 sock_connect=client_request_settings.aiohttp_sock_connect_timeout,
-            )
+            )  # type: ignore
         )
         self.is_owned = self.active_session is not session
 
@@ -86,9 +86,11 @@ def _handle_api_exception(store_id: Union[int, str], err: ApiException):
     raise exceptions.StorageConnectionError(store_id, error_reason)
 
 
-async def _get_location_id_from_location_name(store: str, api: UsersApi):
+async def _get_location_id_from_location_name(
+    user_id: int, store: str, api: UsersApi
+) -> str:
     try:
-        resp = await api.get_storage_locations(user_id=config.USER_ID)
+        resp = await api.get_storage_locations(user_id=user_id)
         for location in resp.data:
             if location["name"] == store:
                 return location["id"]
@@ -98,14 +100,14 @@ async def _get_location_id_from_location_name(store: str, api: UsersApi):
         _handle_api_exception(store, err)
 
 
-async def _get_link(store_id: int, file_id: str, apifct) -> URL:
+async def _get_link(user_id: int, store_id: str, file_id: str, apifct) -> URL:
     log.debug("Getting link from store id %s for %s", store_id, file_id)
     # When uploading and downloading files from the storage service
     # it is important to use a longer timeout, previously was 5 minutes
     # changing to 1 hour. this will allow for larger payloads to be stored/download
     resp = await apifct(
         location_id=store_id,
-        user_id=config.USER_ID,
+        user_id=user_id,
         file_id=file_id,
         _request_timeout=ServicesCommonSettings().storage_service_upload_download_timeout,
     )
@@ -120,18 +122,22 @@ async def _get_link(store_id: int, file_id: str, apifct) -> URL:
     return URL(resp.data.link)
 
 
-async def _get_download_link(store_id: int, file_id: str, api: UsersApi) -> URL:
+async def _get_download_link(
+    user_id: int, store_id: str, file_id: str, api: UsersApi
+) -> URL:
     try:
-        return await _get_link(store_id, file_id, api.download_file)
+        return await _get_link(user_id, store_id, file_id, api.download_file)
     except ApiException as err:
         if err.status == 404:
             raise exceptions.InvalidDownloadLinkError(None) from err
         _handle_api_exception(store_id, err)
 
 
-async def _get_upload_link(store_id: int, file_id: str, api: UsersApi) -> URL:
+async def _get_upload_link(
+    user_id: int, store_id: str, file_id: str, api: UsersApi
+) -> URL:
     try:
-        return await _get_link(store_id, file_id, api.upload_file)
+        return await _get_link(user_id, store_id, file_id, api.upload_file)
     except ApiException as err:
         _handle_api_exception(store_id, err)
 
@@ -203,13 +209,14 @@ async def _upload_file_to_link(
             )
 
         # get the S3 etag from the headers
-        e_tag = json.loads(resp.headers.get("Etag", None))
+        e_tag = json.loads(resp.headers.get("Etag", ""))
         log.debug("Uploaded %s to %s, received Etag %s", file_path, url, e_tag)
         return e_tag
 
 
 async def download_file_from_s3(
     *,
+    user_id: int,
     store_name: str = None,
     store_id: str = None,
     s3_object: str,
@@ -240,8 +247,10 @@ async def download_file_from_s3(
         api = UsersApi(client)
 
         if store_name is not None:
-            store_id = await _get_location_id_from_location_name(store_name, api)
-        download_link = await _get_download_link(store_id, s3_object, api)
+            store_id = await _get_location_id_from_location_name(
+                user_id, store_name, api
+            )
+        download_link = await _get_download_link(user_id, store_id, s3_object, api)
     # the link contains the file name
     if not download_link:
         raise exceptions.S3InvalidPathError(s3_object)
@@ -271,6 +280,7 @@ async def download_file_from_link(
 
 async def upload_file(
     *,
+    user_id: int,
     store_id: Optional[str] = None,
     store_name: Optional[str] = None,
     s3_object: str,
@@ -298,8 +308,10 @@ async def upload_file(
         api = UsersApi(client)
 
         if store_name is not None:
-            store_id = await _get_location_id_from_location_name(store_name, api)
-        upload_link: URL = await _get_upload_link(store_id, s3_object, api)
+            store_id = await _get_location_id_from_location_name(
+                user_id, store_name, api
+            )
+        upload_link: URL = await _get_upload_link(user_id, store_id, s3_object, api)
 
         if upload_link:
             # FIXME: This client should be kept with the nodeports instead of creating one each time
@@ -312,9 +324,8 @@ async def upload_file(
     raise exceptions.S3InvalidPathError(s3_object)
 
 
-async def entry_exists(store_id: str, s3_object: str) -> bool:
+async def entry_exists(user_id: int, store_id: str, s3_object: str) -> bool:
     """Returns True if metadata for s3_object is present"""
-    user_id = config.USER_ID
     with api_client() as client:
         api = UsersApi(client)
         try:
