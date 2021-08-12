@@ -37,6 +37,7 @@ qx.Class.define("osparc.Application", {
 
   members: {
     __current: null,
+    __themeSwitcher: null,
     __mainPage: null,
 
     /**
@@ -354,12 +355,25 @@ qx.Class.define("osparc.Application", {
       this.assert(view!==null);
       // Update root document and currentness
       let doc = this.getRoot();
-      if (doc.hasChildren() && this.__current) {
-        doc.remove(this.__current);
-        // this.__current.destroy();
+      if (doc.hasChildren()) {
+        if (this.__current) {
+          doc.remove(this.__current);
+        }
+        if (this.__themeSwitcher) {
+          doc.remove(this.__themeSwitcher);
+          this.__themeSwitcher = null;
+        }
       }
       doc.add(view, options);
       this.__current = view;
+      if (!(view instanceof osparc.desktop.MainPage)) {
+        this.__themeSwitcher = new osparc.ui.switch.ThemeSwitcher();
+        doc.add(this.__themeSwitcher, {
+          top: 10,
+          right: 15
+        });
+      }
+
       // Clear URL
       window.history.replaceState(null, "", "/");
     },

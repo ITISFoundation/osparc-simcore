@@ -21,7 +21,10 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
       return;
     }
 
-    this.setToolTipText(this.tr("Switch theme"));
+    this.set({
+      checked: qx.theme.manager.Meta.getInstance().getTheme().name === validThemes[1].name,
+      toolTipText: this.tr("Switch theme")
+    });
 
     this.addListener("changeChecked", () => {
       this.__switchTheme();
