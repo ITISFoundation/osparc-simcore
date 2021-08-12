@@ -9,7 +9,7 @@ from pydantic.error_wrappers import ValidationError
 from pydantic.main import BaseModel
 
 from ._meta import api_version_prefix as vtag
-from .constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
+from .constants import RQT_USERID_KEY
 from .login.decorators import login_required
 from .projects import projects_api
 from .projects.projects_exceptions import ProjectNotFoundError
@@ -191,29 +191,30 @@ async def create_project_snapshot_handler(request: web.Request):
     return enveloped_response(snapshot)
 
 
-@routes.get(
-    f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}/parameters",
-    name="get_snapshot_parameters_handler",
-)
-@login_required
-@permission_required("project.read")
-@handle_request_errors
-async def get_project_snapshot_parameters_handler(
-    request: web.Request,
-):
-    user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
+# @routes.get(
+#     f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}/parameters",
+#     name="get_snapshot_parameters_handler",
+# )
+# @login_required
+# @permission_required("project.read")
+# @handle_request_errors
+# async def get_project_snapshot_parameters_handler(
+#     request: web.Request,
+# ):
+#     import .constants import RQ_PRODUCT_KEY
+#     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
 
-    @validate_arguments
-    async def get_snapshot_parameters(
-        project_id: UUID,
-        snapshot_id: str,
-    ):
-        #
-        return {"x": 4, "y": "yes"}
+#     @validate_arguments
+#     async def get_snapshot_parameters(
+#         project_id: UUID,
+#         snapshot_id: str,
+#     ):
+#         #
+#         return {"x": 4, "y": "yes"}
 
-    params = await get_snapshot_parameters(
-        project_id=request.match_info["project_id"],  # type: ignore
-        snapshot_id=request.match_info["snapshot_id"],
-    )
+#     params = await get_snapshot_parameters(
+#         project_id=request.match_info["project_id"],  # type: ignore
+#         snapshot_id=request.match_info["snapshot_id"],
+#     )
 
-    return params
+#     return params
