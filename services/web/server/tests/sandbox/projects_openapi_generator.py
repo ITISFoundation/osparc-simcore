@@ -83,8 +83,8 @@ class Snapshot(BaseModel):
         description="Timestamp of the time snapshot was taken from parent. Notice that parent might change with time",
     )
 
-    parent_id: UUID = Field(..., description="Parent's project uuid")
-    project_id: UUID = Field(..., description="Current project's uuid")
+    parent_uuid: UUID = Field(..., description="Parent's project uuid")
+    project_uuid: UUID = Field(..., description="Current project's uuid")
 
 
 class ParameterApiModel(Parameter):
@@ -106,11 +106,11 @@ class SnapshotApiModel(Snapshot):
                 project_id=snapshot.project_id,
                 snapshot_id=snapshot.id,
             ),
-            url_parent=url_for("get_project", project_id=snapshot.parent_id),
+            url_parent=url_for("get_project", project_id=snapshot.parent_uuid),
             url_project=url_for("get_project", project_id=snapshot.project_id),
             url_parameters=url_for(
                 "get_snapshot_parameters",
-                project_id=snapshot.parent_id,
+                project_id=snapshot.parent_uuid,
                 snapshot_id=snapshot.id,
             ),
             **snapshot.dict(),
@@ -258,7 +258,7 @@ async def create_snapshot(
     project_id = uuid3(namespace=parent_project.id, name=snapshot_label)
     project = parent_project.copy(update={"id": project_id})  # THIS IS WRONG
 
-    snapshot = Snapshot(id=index, parent_id=pid, project_id=project_id)
+    snapshot = Snapshot(id=index, parent_uuid=pid, project_id=project_id)
 
     _PROJECTS[project_id] = project
 
@@ -270,7 +270,7 @@ async def create_snapshot(
 
     return SnapshotApiModel(
         url=url_for(
-            "get_snapshot", project_id=snapshot.parent_id, snapshot_id=snapshot.id
+            "get_snapshot", project_id=snapshot.parent_uuid, snapshot_id=snapshot.id
         ),
         **snapshot.dict(),
     )
@@ -292,7 +292,7 @@ async def get_snapshot(
 
     return SnapshotApiModel(
         url=url_for(
-            "get_snapshot", project_id=snapshot.parent_id, snapshot_id=snapshot.id
+            "get_snapshot", project_id=snapshot.parent_uuid, snapshot_id=snapshot.id
         ),
         **snapshot.dict(),
     )
