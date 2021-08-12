@@ -7,7 +7,6 @@ import pydantic
 from models_library.projects_nodes import NodeID
 from models_library.utils.nodes import compute_node_hash
 from packaging import version
-from sqlalchemy.sql.functions import user
 
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.exceptions import InvalidProtocolError
