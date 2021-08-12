@@ -151,14 +151,15 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       }
     },
 
-    evalSnapshotsBtn: function() {
+    evalSnapshotsBtn: async function() {
       const study = this.getStudy();
       if (study) {
         const allNodes = study.getWorkbench().getNodes(true);
         const hasIterators = Object.values(allNodes).some(node => node.isIterator());
         const isSnapshot = study.isSnapshot();
+        const hasSnapshots = await study.hasSnapshots();
         const snapshotsBtn = this.getChildControl("snapshots-btn");
-        (hasIterators && !isSnapshot) ? snapshotsBtn.show() : snapshotsBtn.exclude();
+        (hasSnapshots || (hasIterators && !isSnapshot)) ? snapshotsBtn.show() : snapshotsBtn.exclude();
       }
     },
 
