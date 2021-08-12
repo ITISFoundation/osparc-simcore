@@ -538,7 +538,11 @@ class Executor:
         )
         if self.shared_folders.log_folder and self.shared_folders.log_folder.exists():
             await node_data.data_manager.push(
-                self.shared_folders.log_folder, rename_to="logs"
+                int(self.user_id),
+                self.task.project_id,
+                self.task.node_id,
+                self.shared_folders.log_folder,
+                rename_to="logs",
             )
 
     async def _post_messages(self, log_type: LogType, message: str):
