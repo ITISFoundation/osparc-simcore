@@ -4,4 +4,4 @@ from .base import metadata
 # Add here new models
 
 
-__all__ = "metadata"
+__all__ = ("metadata",)

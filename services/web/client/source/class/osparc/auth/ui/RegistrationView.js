@@ -31,7 +31,6 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
   */
 
   members: {
-    __email: null,
     __submitBtn: null,
     __cancelBtn: null,
 
@@ -48,7 +47,6 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       });
       this.add(email);
       osparc.utils.Utils.setIdToWidget(email, "registrationEmailFld");
-      this.__email = email;
       this.addListener("appear", () => {
         email.focus();
         email.activate();
@@ -78,9 +76,9 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
 
       // validation
       validator.add(email, qx.util.Validate.email());
-      validator.setValidator(function(_itemForms) {
-        return osparc.auth.core.Utils.checkSamePasswords(pass1, pass2);
-      });
+      validator.add(pass1, osparc.auth.core.Utils.passwordLengthValidator);
+      validator.add(pass2, osparc.auth.core.Utils.passwordLengthValidator);
+      validator.setValidator(() => osparc.auth.core.Utils.checkSamePasswords(pass1, pass2));
 
       // submit & cancel buttons
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));

@@ -11,9 +11,9 @@ from simcore_service_director_v2.utils.db import RUNNING_STATE_TO_DB
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql import or_
 
+from ....core.errors import PipelineNotFoundError
 from ....models.domains.comp_pipelines import CompPipelineAtDB
 from ....models.schemas.constants import UserID
-from ....utils.exceptions import PipelineNotFoundError
 from ....utils.logging_utils import log_decorator
 from ..tables import comp_pipeline
 from ._base import BaseRepository

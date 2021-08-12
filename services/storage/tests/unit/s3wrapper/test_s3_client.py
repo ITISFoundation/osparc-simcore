@@ -197,6 +197,7 @@ def test_presigned_put_expired(s3_client, bucket, text_files_factory):
         d = fp.read()
         req = urllib.request.Request(url, data=d, method="PUT")
         try:
+            # pylint: disable=consider-using-with
             urllib.request.urlopen(req)
         except urllib.error.HTTPError as _ex:
             failed = True

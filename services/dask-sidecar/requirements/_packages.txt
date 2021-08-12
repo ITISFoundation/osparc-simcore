@@ -229,7 +229,7 @@ pamqp==2.3.0
     # via
     #   -r requirements/../../../services/sidecar/requirements/_base.txt
     #   aiormq
-prometheus_client==0.11.0
+prometheus-client==0.11.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in

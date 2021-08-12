@@ -11,7 +11,7 @@ from models_library.projects_nodes_io import NodeID
 from settings_library.celery import CelerySettings
 
 from ..core.errors import ConfigurationError
-from ..models.domains.comp_tasks import Image
+from ..models.schemas.comp_scheduler import TaskIn
 from ..models.schemas.constants import UserID
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ def setup(app: FastAPI, settings: CelerySettings) -> None:
         )
 
     async def on_shutdown() -> None:
-        del app.state.celery_client
+        del app.state.celery_client  # type: ignore
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
@@ -54,24 +54,6 @@ def _computation_task_signature(
         },
     )
     return task_signature
-
-
-@dataclass
-class CeleryTaskIn:
-    node_id: NodeID
-    runtime_requirements: str
-
-    @classmethod
-    def from_node_image(cls, node_id: NodeID, node_image: Image) -> "CeleryTaskIn":
-        # NOTE: to keep compatibility the queues are currently defined as .cpu, .gpu, .mpi.
-        reqs = []
-        if node_image.requires_gpu:
-            reqs.append("gpu")
-        if node_image.requires_mpi:
-            reqs.append("mpi")
-        req = ":".join(reqs)
-
-        return cls(node_id=node_id, runtime_requirements=req or "cpu")
 
 
 CeleryTaskOut = Task
@@ -100,7 +82,7 @@ class CeleryClient:
         self,
         user_id: UserID,
         project_id: ProjectID,
-        single_tasks: List[CeleryTaskIn],
+        single_tasks: List[TaskIn],
         callback: Callable,
     ) -> Dict[NodeID, CeleryTaskOut]:
         async_tasks = {}
@@ -125,3 +107,8 @@ class CeleryClient:
             task_result = AbortableAsyncResult(task_id)
             if task_result:
                 task_result.abort()
+                logger.info(
+                    "Aborted celery task %s, status: %s",
+                    task_id,
+                    task_result.is_aborted(),
+                )

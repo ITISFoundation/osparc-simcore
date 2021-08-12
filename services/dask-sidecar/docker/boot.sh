@@ -25,7 +25,6 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   pip list | sed 's/^/    /'
 fi
 
-
 # RUNNING application ----------------------------------------
 #
 # - If DASK_START_AS_SCHEDULER is set, then it boots as scheduler otherwise as worker
@@ -52,24 +51,49 @@ else
   DASK_WORKER_VERSION=$(dask-worker --version)
   DASK_SCHEDULER_ADDRESS="tcp://${DASK_SCHEDULER_HOST}:8786"
 
+  #
+  # by default a dask worker will use as many threads as there are CPUs on the machine regardless of what limit the
+  # the docker container has set (e.g. if the docker container is limited to 4 CPUs out of 10, dask will still use 10 threads by default)
+  # so for now we lock the number of threads to 1, so that only 1 job is done by 1 sidecar, thus --nthreads 1.
 
+  #
+  # 'daemonic processes are not allowed to have children' arises when running the sidecar.cli
+  # because multi-processing library is used by the sidecar and the nanny does not like it
+  # setting --no-nanny fixes this: see https://github.com/dask/distributed/issues/2142
+  num_gpus=$(python -c "from simcore_service_sidecar.utils import num_available_gpus; print(num_available_gpus());")
+  resources="CPU=1"
+  if [ "$num_gpus" -gt 0 ]; then
+    resources="$resources,GPU=$num_gpus"
+  fi
+  if [ ${TARGET_MPI_NODE_CPU_COUNT+x} ]; then
+    if [ $(nproc) -eq ${TARGET_MPI_NODE_CPU_COUNT} ]; then
+      resources="$resources,MPI=1"
+    fi
+  fi
   echo "$INFO" "Starting as a ${DASK_WORKER_VERSION} -> ${DASK_SCHEDULER_ADDRESS} ..."
+  echo "$INFO" "Worker resources set as: $resources"
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
 
     exec watchmedo auto-restart --recursive --pattern="*.py" -- \
       dask-worker "${DASK_SCHEDULER_ADDRESS}" \
-        --local-directory /tmp/dask-sidecar \
-        --preload simcore_service_dask_sidecar.tasks \
-        --reconnect \
-        --dashboard-address 8787
+      --local-directory /tmp/dask-sidecar \
+      --preload simcore_service_dask_sidecar.tasks \
+      --reconnect \
+      --no-nanny \
+      --nthreads 1 \
+      --dashboard-address 8787 \
+      --resources "$resources"
 
   else
 
     exec dask-worker "${DASK_SCHEDULER_ADDRESS}" \
-        --local-directory /tmp/dask-sidecar \
-        --preload simcore_service_dask_sidecar.tasks \
-        --reconnect \
-        --dashboard-address 8787
+      --local-directory /tmp/dask-sidecar \
+      --preload simcore_service_dask_sidecar.tasks \
+      --reconnect \
+      --no-nanny \
+      --nthreads 1 \
+      --dashboard-address 8787 \
+      --resources "$resources"
 
   fi
 fi
