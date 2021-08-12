@@ -142,7 +142,7 @@ async def mock_download_file(
         shutil.copy(this_node_file, destination_path)
         return destination_path
 
-    from simcore_sdk.node_ports import filemanager
+    from simcore_sdk.node_ports_common import filemanager
 
     monkeypatch.setattr(
         filemanager, "download_file_from_link", mock_download_file_from_link
@@ -157,13 +157,12 @@ def e_tag_fixture() -> str:
 @pytest.fixture
 async def mock_upload_file(mocker, e_tag):
     mock = mocker.patch(
-        "simcore_sdk.node_ports.filemanager.upload_file",
+        "simcore_sdk.node_ports_common.filemanager.upload_file",
         return_value=(simcore_store_id(), e_tag),
     )
     yield mock
 
 
-@pytest.fixture(autouse=True)
 def common_fixtures(
     loop,
     storage_v0_service_mock,
@@ -178,9 +177,6 @@ def common_fixtures(
 ):
     """this module main fixture"""
 
-    node_config.USER_ID = user_id
-    node_config.PROJECT_ID = project_id
-    node_config.NODE_UUID = node_uuid
     node_config.STORAGE_ENDPOINT = "storage:8080"
 
 
@@ -524,6 +520,7 @@ def common_fixtures(
     ],
 )
 async def test_valid_port(
+    common_fixtures: None,
     port_cfg: Dict[str, Any],
     exp_value_type: Type[Union[int, float, bool, str, Path]],
     exp_value_converter: Type[Union[int, float, bool, str, Path]],
@@ -583,7 +580,7 @@ async def test_valid_port(
         assert await port.get() == exp_get_value
 
     # set a new value
-    await port.set(new_value)
+    await port.set(project_id="fake project", node_id="fake node", new_value=new_value)
     assert port.value == exp_new_value
 
     if isinstance(exp_new_get_value, Path):
@@ -631,7 +628,7 @@ async def test_valid_port(
         },
     ],
 )
-def test_invalid_port(port_cfg: Dict[str, Any]):
+def test_invalid_port(common_fixtures: None, port_cfg: Dict[str, Any]):
     with pytest.raises(ValidationError):
         Port(**port_cfg)
 
@@ -639,7 +636,9 @@ def test_invalid_port(port_cfg: Dict[str, Any]):
 @pytest.mark.parametrize(
     "port_cfg", [(create_valid_port_config("data:*/*", key="set_some_inexisting_file"))]
 )
-async def test_invalid_file_type_setter(port_cfg: Dict[str, Any]):
+async def test_invalid_file_type_setter(
+    common_fixtures: None, port_cfg: Dict[str, Any]
+):
     port = Port(**port_cfg)
     # set a file that does not exist
     with pytest.raises(exceptions.InvalidItemTypeError):
