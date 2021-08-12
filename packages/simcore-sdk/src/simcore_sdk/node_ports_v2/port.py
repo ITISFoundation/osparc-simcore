@@ -90,7 +90,7 @@ class Port(ServiceProperty):
         elif isinstance(self.value, FileLink):
             # this is a link from storage
             value = await port_utils.pull_file_from_store(
-                self.key, self.file_to_key_map, self.value
+                self._node_ports.user_id, self.key, self.file_to_key_map, self.value
             )
         elif isinstance(self.value, DownloadLink):
             # this is a downloadable link
@@ -121,7 +121,7 @@ class Port(ServiceProperty):
                 if not converted_value.exists() or not converted_value.is_file():
                     raise InvalidItemTypeError(self.property_type, str(new_value))
                 final_value = await port_utils.push_file_to_store(
-                    converted_value, project_id, node_id
+                    converted_value, self._node_ports.user_id, project_id, node_id
                 )
             else:
                 final_value = converted_value

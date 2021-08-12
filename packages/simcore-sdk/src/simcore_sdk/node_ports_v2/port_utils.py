@@ -3,6 +3,8 @@ import shutil
 from pathlib import Path
 from typing import Any, Callable, Coroutine, Dict, Optional
 
+from yarl import URL
+
 from ..node_ports_common import config, data_items_utils, filemanager
 from .links import DownloadLink, FileLink, ItemConcreteValue, PortLink
 
@@ -43,13 +45,16 @@ async def get_value_from_link(
 
 
 async def pull_file_from_store(
-    key: str, fileToKeyMap: Optional[Dict[str, str]], value: FileLink
+    user_id: int, key: str, fileToKeyMap: Optional[Dict[str, str]], value: FileLink
 ) -> Path:
     log.debug("Getting value from storage %s", value)
     # do not make any assumption about s3_path, it is a str containing stuff that can be anything depending on the store
     local_path = data_items_utils.create_folder_path(key)
     downloaded_file = await filemanager.download_file_from_s3(
-        store_id=value.store, s3_object=value.path, local_folder=local_path
+        user_id=user_id,
+        store_id=f"{value.store}",
+        s3_object=value.path,
+        local_folder=local_path,
     )
     # if a file alias is present use it to rename the file accordingly
     if fileToKeyMap:
@@ -63,11 +68,16 @@ async def pull_file_from_store(
     return downloaded_file
 
 
-async def push_file_to_store(file: Path, project_id: str, node_id: str) -> FileLink:
+async def push_file_to_store(
+    file: Path, user_id: int, project_id: str, node_id: str
+) -> FileLink:
     log.debug("file path %s will be uploaded to s3", file)
     s3_object = data_items_utils.encode_file_id(file, project_id, node_id)
     store_id, e_tag = await filemanager.upload_file(
-        store_name=config.STORE, s3_object=s3_object, local_file_path=file
+        user_id=user_id,
+        store_name=config.STORE,
+        s3_object=s3_object,
+        local_file_path=file,
     )
     log.debug("file path %s uploaded, received ETag %s", file, e_tag)
     return FileLink(store=store_id, path=s3_object, e_tag=e_tag)
@@ -84,7 +94,7 @@ async def pull_file_from_download_link(
 
     local_path = data_items_utils.create_folder_path(key)
     downloaded_file = await filemanager.download_file_from_link(
-        value.download_link,
+        URL(f"{value.download_link}"),
         local_path,
     )
 

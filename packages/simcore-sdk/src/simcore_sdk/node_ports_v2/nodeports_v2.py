@@ -17,6 +17,7 @@ class Nodeports(BaseModel):
     internal_inputs: InputsList = Field(..., alias="inputs")
     internal_outputs: OutputsList = Field(..., alias="outputs")
     db_manager: DBManager
+    user_id: int
     project_id: str
     node_uuid: str
     save_to_db_cb: Callable[["Nodeports"], Coroutine[Any, Any, None]]
