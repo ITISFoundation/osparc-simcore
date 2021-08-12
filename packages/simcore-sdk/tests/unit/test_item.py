@@ -42,7 +42,7 @@ def test_default_item():
         Item(None, None)
 
 
-async def test_item(loop):
+async def test_item():
     key = "my key"
     label = "my label"
     description = "my description"
@@ -69,7 +69,7 @@ async def test_item(loop):
 
     assert item.new_data_cb is None
 
-    assert await item.get() == item_value
+    assert await item.get(user_id=-1) == item_value
 
 
 @pytest.mark.parametrize(
@@ -77,7 +77,7 @@ async def test_item(loop):
 )
 async def test_valid_type_empty_value(item_type: str):
     item = create_item(item_type, None)
-    assert await item.get() is None
+    assert await item.get(user_id=-1) is None
 
 
 @pytest.fixture
@@ -91,6 +91,7 @@ async def file_link_mock(
         return return_value
 
     monkeypatch.setattr(filemanager, "download_file_from_s3", fake_download_file)
+    return fake_download_file
 
 
 @pytest.mark.parametrize(
@@ -138,10 +139,10 @@ async def test_valid_type(
     if not data_items_utils.is_value_link(item_value):
         if item_value and data_items_utils.is_file_type(item_type):
             if data_items_utils.is_value_on_store(item_value):
-                assert await item.get() == item_value["path"]
+                assert await item.get(user_id=-1) == item_value["path"]
             elif data_items_utils.is_value_a_download_link(item_value):
                 # this really downloads...
-                file = await item.get()
+                file = await item.get(user_id=-1)
                 assert file.exists(), f"{file} is not downloaded"
                 assert file.name in item_value["downloadLink"]
 
@@ -149,7 +150,7 @@ async def test_valid_type(
                 assert False, f"invalid type/value combination {item_type}/{item_value}"
         else:
             # I don't know how to monkeypatch that one
-            assert await item.get() == item_value
+            assert await item.get(user_id=-1) == item_value
 
 
 @pytest.mark.parametrize(
@@ -233,8 +234,13 @@ async def test_set_new_value(
     mock_method = mocker.AsyncMock(return_value="")
     item = create_item(item_type, None)
     item.new_data_cb = mock_method
-    assert await item.get() is None
-    await item.set(item_value_to_set)
+    assert await item.get(user_id=-1) is None
+    await item.set(
+        user_id=-1,
+        project_id="fake project",
+        node_uuid="fake_node",
+        value=item_value_to_set,
+    )
     mock_method.assert_called_with(DataItem(key=item.key, value=expected_value))
 
 
@@ -253,7 +259,12 @@ async def test_set_new_invalid_value(
     item_type: str, item_value_to_set: ItemConcreteValue
 ):  # pylint: disable=W0613
     item = create_item(item_type, None)
-    assert await item.get() is None
+    assert await item.get(user_id=-1) is None
     with pytest.raises(exceptions.InvalidItemTypeError) as excinfo:
-        await item.set(item_value_to_set)
+        await item.set(
+            user_id=-1,
+            project_id="fake project",
+            node_uuid="fake_node",
+            value=item_value_to_set,
+        )
     assert "Invalid item type" in str(excinfo.value)

@@ -25,6 +25,9 @@ class Nodeports:
 
     def __init__(
         self,
+        user_id: int,
+        project_id: str,
+        node_uuid: str,
         input_schemas: SchemaItemsList = None,
         output_schemas: SchemaItemsList = None,
         input_payloads: DataItemsList = None,
@@ -39,6 +42,9 @@ class Nodeports:
             input_payloads,
             outputs_payloads,
         )
+        self.user_id = user_id
+        self.project_id = project_id
+        self.node_uuid = node_uuid
         if not input_schemas:
             input_schemas = SchemaItemsList()
         if not output_schemas:
@@ -147,7 +153,9 @@ class Nodeports:
         log.debug("Updating json configuration")
         if not self.db_mgr:
             raise exceptions.NodeportsException("db manager is not initialised")
-        upd_node = await serialization.create_from_json(self.db_mgr)
+        upd_node = await serialization.create_from_json(
+            self.db_mgr, project_id=self.project_id, node_uuid=self.node_uuid
+        )
         # copy from updated nodeports
         self._copy_schemas_payloads(
             upd_node._input_schemas,
@@ -167,7 +175,13 @@ class Nodeports:
         return await serialization.create_nodeports_from_uuid(self.db_mgr, node_uuid)
 
 
-async def ports(db_manager: Optional[dbmanager.DBManager] = None) -> Nodeports:
+async def ports(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    *,
+    db_manager: Optional[dbmanager.DBManager] = None
+) -> Nodeports:
     warnings.warn(
         "node_ports is deprecated, use node_ports_v2 instead",
         category=DeprecationWarning,
@@ -178,5 +192,10 @@ async def ports(db_manager: Optional[dbmanager.DBManager] = None) -> Nodeports:
 
     # create initial Simcore object
     return await serialization.create_from_json(
-        db_manager, auto_read=True, auto_write=True
+        db_manager,
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
+        auto_read=True,
+        auto_write=True,
     )

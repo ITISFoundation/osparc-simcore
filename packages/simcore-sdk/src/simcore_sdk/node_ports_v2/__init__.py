@@ -12,7 +12,11 @@ log = logging.getLogger(__name__)
 
 
 async def ports(
-    project_id: str, node_uuid: str, *, db_manager: Optional[DBManager] = None
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    *,
+    db_manager: Optional[DBManager] = None
 ) -> Nodeports:
     log.debug("creating node_ports_v2 object using provided dbmanager: %s", db_manager)
     # FIXME: warning every dbmanager create a new db engine!
@@ -22,6 +26,7 @@ async def ports(
 
     return await load(
         db_manager=db_manager,
+        user_id=user_id,
         project_id=project_id,
         node_uuid=node_uuid,
         auto_update=True,

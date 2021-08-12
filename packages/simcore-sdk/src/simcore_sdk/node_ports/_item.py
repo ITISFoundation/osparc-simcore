@@ -1,7 +1,7 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import Dict, Union
+from typing import Callable, Dict, Optional, Union
 
 from yarl import URL
 
@@ -12,7 +12,7 @@ from ._schema_item import SchemaItem
 log = logging.getLogger(__name__)
 
 
-ItemConcreteValue = Union[int, float, bool, str, Path]
+ItemConcreteValue = Union[int, float, bool, str, Path, Dict[str, str]]
 NodeLink = Dict[str, str]
 StoreLink = Dict[str, str]
 DownloadLink = Dict[str, str]
@@ -23,7 +23,7 @@ def _check_type(item_type: str, value: DataItemValue):
         item_type not in config.TYPE_TO_PYTHON_TYPE_MAP
         and not data_items_utils.is_file_type(item_type)
     ):
-        raise exceptions.InvalidItemTypeError(item_type, value)
+        raise exceptions.InvalidItemTypeError(item_type, f"{value}")
 
     if not value:
         return
@@ -45,7 +45,7 @@ def _check_type(item_type: str, value: DataItemValue):
             value
         ) or data_items_utils.is_value_a_download_link(value):
             return
-    raise exceptions.InvalidItemTypeError(item_type, value)
+    raise exceptions.InvalidItemTypeError(item_type, f"{value}")
 
 
 class Item:
@@ -63,8 +63,8 @@ class Item:
             raise exceptions.InvalidProtocolError(None, msg="empty schema or payload")
         self._schema = schema
         self._data = data
-        self.new_data_cb = None
-        self.get_node_from_uuid_cb = None
+        self.new_data_cb: Optional[Callable] = None
+        self.get_node_from_uuid_cb: Optional[Callable] = None
 
         _check_type(self.type, self.value)
 
@@ -83,7 +83,7 @@ class Item:
 
         raise AttributeError
 
-    async def get(self) -> ItemConcreteValue:
+    async def get(self, user_id: int) -> Optional[ItemConcreteValue]:
         """gets data converted to the underlying type
 
         :raises exceptions.InvalidProtocolError: if the underlying type is unknown
@@ -106,7 +106,7 @@ class Item:
 
             if value and data_items_utils.is_file_type(self.type):
                 # move the file to the right location
-                file_name = Path(value).name
+                file_name = Path(value).name  # type: ignore
 
                 # if a file alias is present use it
                 if self._schema.fileToKeyMap:
@@ -124,7 +124,7 @@ class Item:
             return value
 
         if data_items_utils.is_value_on_store(self.value):
-            return await self.__get_value_from_store(self.value)
+            return await self.__get_value_from_store(user_id, self.value)
 
         if data_items_utils.is_value_a_download_link(self.value):
             return await self._get_value_from_download_link(self.value)
@@ -133,7 +133,9 @@ class Item:
             config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["converter"](self.value)
         )
 
-    async def set(self, value: ItemConcreteValue):
+    async def set(
+        self, user_id: int, project_id: str, node_uuid: str, value: ItemConcreteValue
+    ):
         """sets the data to the underlying port
 
         :param value: must be convertible to a string, or an exception will be thrown.
@@ -154,19 +156,22 @@ class Item:
             if not data_items_utils.is_file_type(self.type) or not isinstance(
                 value, (Path, str)
             ):
-                raise exceptions.InvalidItemTypeError(self.type, value)
+                raise exceptions.InvalidItemTypeError(self.type, f"{value}")
 
         # upload to S3 if file
         if data_items_utils.is_file_type(self.type):
-            file_path = Path(value)
+            file_path = Path(value)  # type: ignore
             if not file_path.exists() or not file_path.is_file():
-                raise exceptions.InvalidItemTypeError(self.type, value)
+                raise exceptions.InvalidItemTypeError(self.type, f"{value}")
             log.debug("file path %s will be uploaded to s3", value)
             s3_object = data_items_utils.encode_file_id(
-                file_path, project_id=config.PROJECT_ID, node_id=config.NODE_UUID
+                file_path, project_id=project_id, node_id=node_uuid
             )
             store_id, _ = await filemanager.upload_file(
-                store_name=config.STORE, s3_object=s3_object, local_file_path=file_path
+                user_id=user_id,
+                store_name=config.STORE,
+                s3_object=s3_object,
+                local_file_path=file_path,
             )
             log.debug("file path %s uploaded", value)
             value = data_items_utils.encode_store(store_id, s3_object)
@@ -189,20 +194,22 @@ class Item:
                 "callback to get other node information is not set"
             )
         # create a node ports for the other node
-        other_nodeports = await self.get_node_from_uuid_cb(
-            node_uuid
-        )  # pylint: disable=not-callable
+        # pylint: disable=not-callable
+        other_nodeports = await self.get_node_from_uuid_cb(node_uuid)
         # get the port value through that guy
         log.debug("Received node from DB %s, now returning value", other_nodeports)
         return await other_nodeports.get(port_key)
 
-    async def __get_value_from_store(self, value: StoreLink) -> Path:
+    async def __get_value_from_store(self, user_id: int, value: StoreLink) -> Path:
         log.debug("Getting value from storage %s", value)
         store_id, s3_path = data_items_utils.decode_store(value)
         # do not make any assumption about s3_path, it is a str containing stuff that can be anything depending on the store
         local_path = data_items_utils.create_folder_path(self.key)
         downloaded_file = await filemanager.download_file_from_s3(
-            store_id=store_id, s3_object=s3_path, local_folder=local_path
+            user_id=user_id,
+            store_id=store_id,
+            s3_object=s3_path,
+            local_folder=local_path,
         )
         # if a file alias is present use it to rename the file accordingly
         if self._schema.fileToKeyMap:
@@ -210,7 +217,7 @@ class Item:
             if downloaded_file != renamed_file:
                 if renamed_file.exists():
                     renamed_file.unlink()
-                shutil.move(downloaded_file, renamed_file)
+                shutil.move(f"{downloaded_file}", renamed_file)
                 downloaded_file = renamed_file
 
         return downloaded_file

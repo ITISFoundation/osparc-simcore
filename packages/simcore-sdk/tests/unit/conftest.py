@@ -4,11 +4,17 @@
 
 import asyncio
 import json
+from random import randint
 from typing import Any, Callable, Dict
 from uuid import uuid4
 
 import pytest
 from simcore_sdk.node_ports_common.dbmanager import DBManager
+
+
+@pytest.fixture(scope="module")
+def user_id() -> int:
+    return randint(1, 10000)
 
 
 @pytest.fixture(scope="module")
