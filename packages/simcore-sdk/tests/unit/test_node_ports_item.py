@@ -18,11 +18,6 @@ from simcore_sdk.node_ports_common import (
 )
 
 
-@pytest.fixture
-def node_ports_config():
-    config.STORAGE_ENDPOINT = "storage:8080"
-
-
 def create_item(item_type: str, item_value: DataItemValue) -> Item:
     key = "some key"
     return Item(
