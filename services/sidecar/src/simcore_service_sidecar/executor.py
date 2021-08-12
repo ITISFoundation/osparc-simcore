@@ -148,7 +148,12 @@ class Executor:
         if self.db_manager is None:
             # Keeps single db engine: simcore_sdk.node_ports.dbmanager_{id}
             self.db_manager = DBManager(self.db_engine)
-        return await node_ports_v2.ports(self.db_manager)
+        return await node_ports_v2.ports(
+            user_id=int(self.user_id),
+            project_id=self.task.project_id,
+            node_uuid=self.task.node_id,
+            db_manager=self.db_manager,
+        )
 
     @log_decorator(logger=log)
     async def _process_task_input(self, port: node_ports_v2.Port, input_ports: Dict):

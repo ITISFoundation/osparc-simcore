@@ -26,15 +26,16 @@ async def get_solver_output_results(
     Wraps calls via node_ports to retrieve project's output
     """
 
-    node_ports_v2.node_config.USER_ID = str(user_id)
-    node_ports_v2.node_config.PROJECT_ID = str(project_uuid)
-    node_ports_v2.node_config.NODE_UUID = str(node_uuid)
-
     # get the DB engine
     db_manager = DBManager(db_engine=db_engine)
 
     try:
-        solver: Nodeports = await node_ports_v2.ports(db_manager)
+        solver: Nodeports = await node_ports_v2.ports(
+            user_id=user_id,
+            project_id=str(project_uuid),
+            node_uuid=str(node_uuid),
+            db_manager=db_manager,
+        )
         solver_output_results = {}
         for port in (await solver.outputs).values():
             log.debug("Getting %s [%s]: %s", port.key, port.property_type, port.value)
