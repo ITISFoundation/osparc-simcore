@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import asyncio
 from filecmp import cmpfiles
 from pathlib import Path
 from shutil import copy, make_archive, unpack_archive
