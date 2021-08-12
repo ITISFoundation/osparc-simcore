@@ -81,6 +81,7 @@ paths:
                 $ref: "#/components/schemas/ProjectEnveloped"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
+
   /projects/active:
     get:
       tags:
@@ -435,6 +436,105 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
+  projects_snapshots:
+    get:
+      summary: List Snapshots
+      operationId: list_project_snapshots_handler
+      tags:
+        - project
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+        - description: index to the first item to return (pagination)
+          required: false
+          schema:
+            title: Offset
+            type: integer
+            description: index to the first item to return (pagination)
+            default: 0
+          name: offset
+          in: query
+        - description: maximum number of items to return (pagination)
+          required: false
+          schema:
+            title: Limit
+            maximum: 50
+            minimum: 1
+            type: integer
+            description: maximum number of items to return (pagination)
+            default: 20
+          name: limit
+          in: query
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: Response List Snapshots Projects  Project Id  Snapshots Get
+                type: array
+                items:
+                  $ref: "#/components/schemas/Snapshot"
+    post:
+      summary: Create Snapshot
+      operationId: create_project_snapshot_handler
+      tags:
+        - project
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+        - required: false
+          schema:
+            title: Snapshot Label
+            type: string
+          name: snapshot_label
+          in: query
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snapshot"
+
+  projects_id_snapshots_id:
+    get:
+      summary: Get Snapshot
+      operationId: get_project_snapshot_handler
+      tags:
+        - project
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+        - required: true
+          schema:
+            title: Snapshot Id
+            type: integer
+          name: snapshot_id
+          in: path
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snapshot"
+
 components:
   schemas:
     ClientSessionId:
@@ -476,6 +576,67 @@ components:
 
     RunningServiceEnveloped:
       $ref: "../common/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped"
+
+    Snapshot:
+      title: Snapshot
+      required:
+        - id
+        - parent_id
+        - project_id
+        - url
+        - url_parent
+        - url_project
+      type: object
+      properties:
+        id:
+          title: Id
+          type: integer
+          description: Unique snapshot identifier
+        label:
+          title: Label
+          type: string
+          description: Unique human readable display name
+        created_at:
+          title: Created At
+          type: string
+          description:
+            Timestamp of the time snapshot was taken from parent. Notice that
+            parent might change with time
+          format: date-time
+        parent_id:
+          title: Parent Id
+          type: string
+          description: Parent's project uuid
+          format: uuid
+        project_id:
+          title: Project Id
+          type: string
+          description: Current project's uuid
+          format: uuid
+        url:
+          title: Url
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
+        url_parent:
+          title: Url Parent
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
+        url_project:
+          title: Url Project
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
+        url_parameters:
+          title: Url Parameters
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
 
   responses:
     DefaultErrorResponse:
