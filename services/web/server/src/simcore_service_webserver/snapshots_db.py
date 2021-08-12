@@ -5,11 +5,6 @@ from aiohttp import web
 from aiopg.sa.result import RowProxy
 from pydantic import PositiveInt
 from simcore_postgres_database.models.snapshots import snapshots
-from simcore_service_catalog.services.access_rights import OLD_SERVICES_DATE
-from simcore_service_director_v2.modules.dynamic_sidecar.docker_compose_specs import (
-    BASE_SERVICE_SPEC,
-)
-from simcore_service_webserver.snapshots_models import Snapshot
 
 from .db_base_repository import BaseRepository
 from .projects.projects_db import APP_PROJECT_DBAPI
