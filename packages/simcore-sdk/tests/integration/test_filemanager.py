@@ -10,7 +10,7 @@ from uuid import uuid4
 
 import np_helpers
 import pytest
-from simcore_sdk.node_ports import exceptions, filemanager
+from simcore_sdk.node_ports_common import exceptions, filemanager
 
 pytest_simcore_core_services_selection = ["postgres", "storage"]
 

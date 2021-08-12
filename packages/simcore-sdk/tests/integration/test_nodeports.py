@@ -13,9 +13,9 @@ import np_helpers  # pylint: disable=no-name-in-module
 import pytest
 import sqlalchemy as sa
 from simcore_sdk import node_ports
-from simcore_sdk.node_ports import exceptions
 from simcore_sdk.node_ports._item import ItemConcreteValue
 from simcore_sdk.node_ports.nodeports import Nodeports
+from simcore_sdk.node_ports_common import exceptions
 
 pytest_simcore_core_services_selection = ["postgres", "storage"]
 
