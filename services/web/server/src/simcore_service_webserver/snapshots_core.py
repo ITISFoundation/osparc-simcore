@@ -11,10 +11,10 @@
 from typing import Any, Dict, Iterator, Optional, Tuple
 from uuid import UUID, uuid3
 
+from models_library.projects import Project
 from models_library.projects_nodes import Node
 
 from .projects import projects_utils
-from .projects.projects_db import ProjectAtDB
 from .snapshots_models import Snapshot
 
 ProjectDict = Dict[str, Any]
@@ -27,13 +27,13 @@ def is_parametrized(node: Node) -> bool:
         return False
 
 
-def iter_param_nodes(project: ProjectAtDB) -> Iterator[Tuple[UUID, Node]]:
+def iter_param_nodes(project: Project) -> Iterator[Tuple[UUID, Node]]:
     for node_id, node in project.workbench.items():
         if is_parametrized(node):
             yield UUID(node_id), node
 
 
-def is_parametrized_project(project: ProjectAtDB) -> bool:
+def is_parametrized_project(project: Project) -> bool:
     return any(is_parametrized(node) for node in project.workbench.values())
 
 
@@ -42,7 +42,7 @@ async def take_snapshot(
     snapshot_label: Optional[str] = None,
 ) -> Tuple[ProjectDict, Snapshot]:
 
-    assert ProjectAtDB.parse_obj(parent)  # nosec
+    assert Project.parse_obj(parent)  # nosec
 
     # FIXME:
     # if is_parametrized_project(parent):
@@ -51,10 +51,10 @@ async def take_snapshot(
     #     )
 
     # Clones parent's project document
-    snapshot_timestamp = parent["last_change_date"]
+    snapshot_timestamp = parent["lastChangeDate"]
 
     child: ProjectDict
-    child, nodes_map = projects_utils.clone_project_document(
+    child, _ = projects_utils.clone_project_document(
         project=parent,
         forced_copy_project_id=uuid3(
             UUID(parent["uuid"]), f"snapshot.{snapshot_timestamp}"
@@ -62,12 +62,11 @@ async def take_snapshot(
     )
 
     assert child  # nosec
-    assert nodes_map  # nosec
-    assert ProjectAtDB.parse_obj(child)  # nosec
+    assert Project.parse_obj(child)  # nosec
 
     child["name"] += snapshot_label or f" [snapshot {snapshot_timestamp}]"
-    # creation_data = state of parent upon copy! WARNING: changes can be state changes and not project definition?
-    child["creation_date"] = parent["last_change_date"]
+    # creation_date = state of parent upon copy! WARNING: changes can be state changes and not project definition?
+    child["creationDate"] = parent["lastChangeDate"]
     child["hidden"] = True
     child["published"] = False
 
