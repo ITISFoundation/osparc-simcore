@@ -37,7 +37,7 @@ def decode_store(value: Dict) -> Tuple[str, str]:
     return value["store"], value["path"]
 
 
-def encode_store(store: str, s3_object: str) -> Dict:
+def encode_store(store: str, s3_object: str) -> Dict[str, str]:
     return {"store": str(store), "path": s3_object}
 
 
