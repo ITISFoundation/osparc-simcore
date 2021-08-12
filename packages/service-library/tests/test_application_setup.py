@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import logging
 from typing import Dict
 from unittest.mock import Mock
 

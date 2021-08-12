@@ -32,6 +32,18 @@ class DependencyError(ApplicationSetupError):
     pass
 
 
+def _is_app_module_enabled(cfg: Dict, parts: List[str], section) -> bool:
+    # navigates app_config (cfg) searching for section
+    for part in parts:
+        if section and part == "enabled":
+            # if section exists, no need to explicitly enable it
+            cfg = cfg.get(part, True)
+        else:
+            cfg = cfg[part]
+    assert isinstance(cfg, bool)  # nosec
+    return cfg
+
+
 def app_module_setup(
     module_name: str,
     category: ModuleCategory,
@@ -57,7 +69,7 @@ def app_module_setup(
     :param config_enabled: option in config to enable, defaults to None which is '$(module-section).enabled' (config_section and config_enabled are mutually exclusive)
     :raises DependencyError
     :raises ApplicationSetupError
-    :return: False if setup was skipped
+    :return: True if setup was completed or False if setup was skipped
     :rtype: bool
 
     :Example:
@@ -112,18 +124,10 @@ def app_module_setup(
                 # TODO: sometimes section is optional, check in config schema
                 cfg = app[APP_CONFIG_KEY]
 
-                def _get(cfg_, parts):
-                    for part in parts:
-                        if (
-                            section and part == "enabled"
-                        ):  # if section exists, no need to explicitly enable it
-                            cfg_ = cfg_.get(part, True)
-                        else:
-                            cfg_ = cfg_[part]
-                    return cfg_
-
                 try:
-                    is_enabled = _get(cfg, config_enabled.split("."))
+                    is_enabled = _is_app_module_enabled(
+                        cfg, config_enabled.split("."), section
+                    )
                 except KeyError as ee:
                     raise ApplicationSetupError(
                         f"Cannot find required option '{config_enabled}' in app config's section '{ee}'"
