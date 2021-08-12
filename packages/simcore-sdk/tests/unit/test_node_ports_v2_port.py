@@ -592,7 +592,7 @@ async def test_valid_port(
         assert await port.get() == exp_get_value
 
     # set a new value
-    await port.set(project_id=project_id, node_id=node_uuid, new_value=new_value)
+    await port.set(new_value)
     assert port.value == exp_new_value
 
     if isinstance(exp_new_get_value, Path):
@@ -654,12 +654,8 @@ async def test_invalid_file_type_setter(
     port = Port(**port_cfg)
     # set a file that does not exist
     with pytest.raises(exceptions.InvalidItemTypeError):
-        await port.set(
-            project_id=project_id, node_id=node_uuid, new_value="some/dummy/file/name"
-        )
+        await port.set("some/dummy/file/name")
 
     # set a folder fails too
     with pytest.raises(exceptions.InvalidItemTypeError):
-        await port.set(
-            project_id=project_id, node_id=node_uuid, new_value=Path(__file__).parent
-        )
+        await port.set(Path(__file__).parent)

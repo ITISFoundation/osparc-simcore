@@ -21,7 +21,9 @@ class Nodeports(BaseModel):
     project_id: str
     node_uuid: str
     save_to_db_cb: Callable[["Nodeports"], Coroutine[Any, Any, None]]
-    node_port_creator_cb: Callable[[DBManager, str], Coroutine[Any, Any, "Nodeports"]]
+    node_port_creator_cb: Callable[
+        [DBManager, int, str, str], Coroutine[Any, Any, Type["Nodeports"]]
+    ]
     auto_update: bool = False
 
     class Config:
@@ -64,32 +66,26 @@ class Nodeports(BaseModel):
         # first try to set the inputs.
         try:
             the_updated_inputs = await self.inputs
-            await the_updated_inputs[item_key].set(
-                project_id=self.project_id, node_id=self.node_uuid, new_value=item_value
-            )
+            await the_updated_inputs[item_key].set(item_value)
             return
         except UnboundPortError:
             # not available try outputs
             # if this fails it will raise another exception
             the_updated_outputs = await self.outputs
-            await the_updated_outputs[item_key].set(
-                project_id=self.project_id, node_id=self.node_uuid, new_value=item_value
-            )
+            await the_updated_outputs[item_key].set(item_value)
 
     async def set_file_by_keymap(self, item_value: Path) -> None:
         for output in (await self.outputs).values():
             if is_file_type(output.property_type) and output.file_to_key_map:
                 if item_value.name in output.file_to_key_map:
-                    await output.set(
-                        project_id=self.project_id,
-                        node_id=self.node_uuid,
-                        new_value=item_value,
-                    )
+                    await output.set(item_value)
                     return
         raise PortNotFound(msg=f"output port for item {item_value} not found")
 
     async def _node_ports_creator_cb(self, node_uuid: str) -> Type["Nodeports"]:
-        return await self.node_port_creator_cb(self.db_manager, node_uuid)
+        return await self.node_port_creator_cb(
+            self.db_manager, self.user_id, self.project_id, node_uuid
+        )
 
     async def _auto_update_from_db(self) -> None:
         # get the newest from the DB

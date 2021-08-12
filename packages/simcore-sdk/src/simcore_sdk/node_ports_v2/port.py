@@ -106,9 +106,7 @@ class Port(ServiceProperty):
 
         return self._py_value_converter(value)
 
-    async def set(
-        self, project_id: str, node_id: str, new_value: ItemConcreteValue
-    ) -> None:
+    async def set(self, new_value: ItemConcreteValue) -> None:
         log.debug(
             "setting %s[%s] with value %s", self.key, self.property_type, new_value
         )
@@ -121,7 +119,10 @@ class Port(ServiceProperty):
                 if not converted_value.exists() or not converted_value.is_file():
                     raise InvalidItemTypeError(self.property_type, str(new_value))
                 final_value = await port_utils.push_file_to_store(
-                    converted_value, self._node_ports.user_id, project_id, node_id
+                    converted_value,
+                    self._node_ports.user_id,
+                    self._node_ports.project_id,
+                    self._node_ports.node_uuid,
                 )
             else:
                 final_value = converted_value
