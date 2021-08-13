@@ -1,7 +1,8 @@
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from uuid import UUID
 
+import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
 from pydantic import PositiveInt
@@ -48,21 +49,21 @@ class SnapshotsRepository(BaseRepository):
         async with self.engine.acquire() as conn:
             return await (await conn.execute(query)).first()
 
-    async def get_by_index(
-        self, project_uuid: UUID, snapshot_index: PositiveInt
-    ) -> Optional[SnapshotRow]:
-        query = snapshots.select().where(
-            (snapshots.c.parent_uuid == str(project_uuid))
-            & (snapshots.c.child_index == snapshot_index)
-        )
-        return await self._first(query)
-
     async def get_by_name(
         self, project_uuid: UUID, snapshot_name: str
     ) -> Optional[SnapshotRow]:
         query = snapshots.select().where(
             (snapshots.c.parent_uuid == str(project_uuid))
             & (snapshots.c.name == snapshot_name)
+        )
+        return await self._first(query)
+
+    async def get_by_id(
+        self, parent_uuid: UUID, snapshot_id: int
+    ) -> Optional[SnapshotRow]:
+        query = snapshots.select().where(
+            (snapshots.c.parent_uuid == str(parent_uuid))
+            & (snapshots.c.id == snapshot_id)
         )
         return await self._first(query)
 
@@ -77,6 +78,15 @@ class SnapshotsRepository(BaseRepository):
             & (snapshots.c.project_uuid == snapshot_project_uuid)
         )
         return await self._first(query)
+
+    async def list_snapshot_names(self, parent_uuid: UUID) -> List[Tuple[str, int]]:
+        query = (
+            sa.select([snapshots.c.name, snapshots.c.id])
+            .where(snapshots.c.parent_uuid == str(parent_uuid))
+            .order_by(snapshots.c.id)
+        )
+        async with self.engine.acquire() as conn:
+            return await (await conn.execute(query)).fetchall()
 
     async def create(self, snapshot: Snapshot) -> SnapshotRow:
         # pylint: disable=no-value-for-parameter
