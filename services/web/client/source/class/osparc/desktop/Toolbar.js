@@ -51,7 +51,6 @@ qx.Class.define("osparc.desktop.Toolbar", {
   },
 
   members: {
-    _navNodes: null,
     _startStopBtns: null,
 
     getStartStopButtons: function() {

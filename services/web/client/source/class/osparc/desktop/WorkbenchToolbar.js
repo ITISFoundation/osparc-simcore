@@ -33,11 +33,13 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
   },
 
   members: {
+    __navNodes: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "breadcrumb-navigation": {
-          const breadcrumbNavigation = this._navNodes = new osparc.navigation.BreadcrumbsWorkbench();
+          const breadcrumbNavigation = this.__navNodes = new osparc.navigation.BreadcrumbsWorkbench();
           breadcrumbNavigation.addListener("nodeSelected", e => {
             this.fireDataEvent("nodeSelected", e.getData());
           }, this);
@@ -129,7 +131,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       const study = this.getStudy();
       if (study) {
         const nodeIds = study.getWorkbench().getPathIds(study.getUi().getCurrentNodeId());
-        this._navNodes.populateButtons(nodeIds, "slash");
+        this.__navNodes.populateButtons(nodeIds);
 
         const takeSnapshotBtn = this.getChildControl("take-snapshot-btn");
         const convertToStudyBtn = this.getChildControl("convert-to-study-btn");
@@ -166,7 +168,11 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
     __attachEventHandlers: function() {
       qx.event.message.Bus.subscribe("changeWorkbenchSelection", e => {
         const selectedNodes = e.getData();
-        this.getStartStopButtons().nodeSelectionChanged(selectedNodes);
+        const selectedNodeIds = [];
+        selectedNodes.forEach(selectedNode => {
+          selectedNodeIds.push(selectedNode.getNodeId());
+        });
+        this.getStartStopButtons().nodeSelectionChanged(selectedNodeIds);
       }, this);
     }
   }

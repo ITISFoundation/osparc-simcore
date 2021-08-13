@@ -270,24 +270,17 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return inputOutputNodesLayout;
     },
 
-    __createServiceCatalog: function(winPos, srvPos) {
+    __createServiceCatalog: function(winPos) {
       const srvCat = new osparc.component.workbench.ServiceCatalog();
       const maxLeft = this.getBounds().width - osparc.component.workbench.ServiceCatalog.Width;
       const maxHeight = this.getBounds().height - osparc.component.workbench.ServiceCatalog.Height;
       const posX = Math.min(winPos.x, maxLeft);
       const posY = Math.min(winPos.y, maxHeight);
       srvCat.moveTo(posX + this.__getSidePanelWidth(), posY + this.self().TOP_OFFSET);
-      srvCat.addListener("addService", e => {
-        this.__addService(e.getData(), srvPos);
-      }, this);
       return srvCat;
     },
 
-    __addService: function(data, pos) {
-      const service = data.service;
-      let nodeAId = "contextNodeId" in data ? data.contextNodeId : null;
-      let portA = "contextPort" in data ? data.contextPort : null;
-
+    __addService: function(service, pos) {
       let parent = null;
       if (this.__currentModel.isContainer()) {
         parent = this.__currentModel;
@@ -297,24 +290,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         return null;
       }
 
-      const nodeUI = this.__createNodeUI(node.getNodeId());
-      this.__addNodeUIToWorkbench(nodeUI, pos);
-
-      if (nodeAId !== null && portA !== null) {
-        let nodeBId = nodeUI.getNodeId();
-        let portB = this.__findCompatiblePort(nodeUI, portA);
-        // swap node-ports to have node1 as input and node2 as output
-        if (portA.isInput) {
-          [nodeAId, portA, nodeBId, portB] = [nodeBId, portB, nodeAId, portA];
-        }
-        this.__createEdgeBetweenNodes({
-          nodeId: nodeAId
-        }, {
-          nodeId: nodeBId
-        });
-      }
-
-      return nodeUI;
+      const newNodeUI = this.__createNodeUI(node.getNodeId());
+      this.__addNodeUIToWorkbench(newNodeUI, pos);
+      return newNodeUI;
     },
 
     __getNodesBounds: function() {
@@ -610,12 +588,28 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
         if (this.__tempEdgeNodeId === dragNodeId) {
           const winPos = this.__unscaleCoordinates(this.__pointerPos.x, this.__pointerPos.y);
-          const srvCat = this.__createServiceCatalog(winPos, this.__pointerPos);
+          const srvCat = this.__createServiceCatalog(winPos);
           if (this.__tempEdgeIsInput === true) {
-            srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getInputPort());
+            srvCat.setContext(null, dragNodeId);
           } else {
-            srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getOutputPort());
+            srvCat.setContext(dragNodeId, null);
           }
+          srvCat.addListener("addService", ev => {
+            const {
+              service,
+              nodeLeftId,
+              nodeRightId
+            } = ev.getData();
+            const newNodeUI = this.__addService(service, this.__pointerPos);
+            if (nodeLeftId !== null || nodeRightId !== null) {
+              const newNodeId = newNodeUI.getNodeId();
+              this.__createEdgeBetweenNodes({
+                nodeId: nodeLeftId ? nodeLeftId : newNodeId
+              }, {
+                nodeId: nodeRightId ? nodeRightId : newNodeId
+              });
+            }
+          }, this);
           srvCat.addListener("close", () => {
             this.__removeTempEdge();
           }, this);
@@ -678,15 +672,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       while (this.__outputNodesLayout.getChildren().length > 1) {
         this.__outputNodesLayout.removeAt(this.__outputNodesLayout.getChildren().length - 1);
       }
-    },
-
-    __findCompatiblePort: function(nodeB, portA) {
-      if (portA.isInput && nodeB.getOutputPort()) {
-        return nodeB.getOutputPort();
-      } else if (nodeB.getInputPort()) {
-        return nodeB.getInputPort();
-      }
-      return null;
     },
 
     __createEdgeBetweenNodes: function(from, to, edgeId) {
@@ -1188,7 +1173,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         }
         const winPos = this.__pointerEventToWorkbenchPos(pointerEvent, false);
         const scaledPos = this.__pointerEventToWorkbenchPos(pointerEvent, true);
-        const srvCat = this.__createServiceCatalog(winPos, scaledPos);
+        const srvCat = this.__createServiceCatalog(winPos);
+        srvCat.addListener("addService", e => {
+          const {
+            service
+          } = e.getData();
+          this.__addService(service, scaledPos);
+        }, this);
         srvCat.open();
       }, this);
 
@@ -1226,10 +1217,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         };
         const fileList = pointerEvent.dataTransfer.files;
         if (fileList.length) {
-          const data = {
-            service: qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker())
-          };
-          const nodeUI = this.__addService(data, pos);
+          const service = qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker());
+          const nodeUI = this.__addService(service, pos);
           const filePicker = new osparc.file.FilePicker(nodeUI.getNode());
           filePicker.buildLayout();
           filePicker.uploadPendingFiles(fileList);

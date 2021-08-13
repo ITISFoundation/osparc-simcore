@@ -331,6 +331,10 @@ qx.Class.define("osparc.data.model.Study", {
       return parameters;
     },
 
+    hasSlideshow: function() {
+      return !this.getUi().getSlideshow().isEmpty();
+    },
+
     serialize: function() {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();

@@ -204,11 +204,11 @@ class TutorialBase {
   }
 
   async openService(waitFor = 1000) {
-    await this.takeScreenshot("dashboardOpenFirstService_before");
+    await this.takeScreenshot("dashboardOpenService_before");
     this.__responsesQueue.addResponseListener("open");
     let resp = null;
     try {
-      const serviceFound = await auto.dashboardOpenFirstService(this.__page, this.__templateName);
+      const serviceFound = await auto.dashboardOpenService(this.__page, this.__templateName);
       assert(serviceFound, "Expected service, got nothing. TIP: is it available??");
       resp = await this.__responsesQueue.waitUntilResponse("open");
     }
@@ -217,7 +217,7 @@ class TutorialBase {
       throw (err);
     }
     await this.waitFor(waitFor);
-    await this.takeScreenshot("dashboardOpenFirstService_after");
+    await this.takeScreenshot("dashboardOpenService_after");
     return resp;
   }
 
