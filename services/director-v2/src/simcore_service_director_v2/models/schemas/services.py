@@ -4,7 +4,7 @@ from models_library.basic_types import PortInt
 from models_library.projects_nodes_io import UUID_REGEX
 from models_library.services import KEY_RE, VERSION_RE, ServiceDockerData
 from pydantic import BaseModel, Field
-from pydantic.types import ByteSize, NonNegativeInt, PositiveInt
+from pydantic.types import ByteSize, NonNegativeInt
 
 from .dynamic_services import ServiceState
 
@@ -45,6 +45,30 @@ class NodeRequirements(BaseModel):
 class ServiceExtras(BaseModel):
     node_requirements: NodeRequirements
     service_build_details: Optional[ServiceBuildDetails]
+
+    class Config:
+        schema_extra = {
+            "examples": [
+                {
+                    "node_requirements": {"CPU": 1.0, "RAM": 1048576},
+                },
+                {
+                    "node_requirements": {"CPU": 1.0, "GPU": 1, "RAM": 4194304},
+                    "service_build_details": {
+                        "build_date": "2021-08-13T12:56:28Z",
+                        "vcs_ref": "8251ade",
+                        "vcs_url": "git@github.com:ITISFoundation/osparc-simcore.git",
+                    },
+                },
+                {
+                    "node_requirements": {
+                        "CPU": 1.0,
+                        "RAM": 4194304,
+                        "MPI": 1,
+                    },
+                },
+            ]
+        }
 
 
 class ServiceExtrasEnveloped(BaseModel):
