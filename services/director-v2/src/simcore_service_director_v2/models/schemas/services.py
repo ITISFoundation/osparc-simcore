@@ -41,6 +41,19 @@ class NodeRequirements(BaseModel):
         gt=0,
     )
 
+    class Config:
+        schema_extra = {
+            "examples": [
+                {"CPU": 1.0, "RAM": 4194304},
+                {"CPU": 1.0, "GPU": 1, "RAM": 4194304},
+                {
+                    "CPU": 1.0,
+                    "RAM": 4194304,
+                    "MPI": 1,
+                },
+            ]
+        }
+
 
 class ServiceExtras(BaseModel):
     node_requirements: NodeRequirements
@@ -49,24 +62,19 @@ class ServiceExtras(BaseModel):
     class Config:
         schema_extra = {
             "examples": [
+                {"node_requirements": node_example}
+                for node_example in NodeRequirements.Config.schema_extra["examples"]
+            ]
+            + [
                 {
-                    "node_requirements": {"CPU": 1.0, "RAM": 1048576},
-                },
-                {
-                    "node_requirements": {"CPU": 1.0, "GPU": 1, "RAM": 4194304},
+                    "node_requirements": node_example,
                     "service_build_details": {
                         "build_date": "2021-08-13T12:56:28Z",
                         "vcs_ref": "8251ade",
                         "vcs_url": "git@github.com:ITISFoundation/osparc-simcore.git",
                     },
-                },
-                {
-                    "node_requirements": {
-                        "CPU": 1.0,
-                        "RAM": 4194304,
-                        "MPI": 1,
-                    },
-                },
+                }
+                for node_example in NodeRequirements.Config.schema_extra["examples"]
             ]
         }
 
