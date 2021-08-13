@@ -152,6 +152,23 @@ async function getVisibleChildrenIDs(page, parentSelector) {
   return childrenIDs;
 }
 
+async function getDashboardCardLabel(page, selector) {
+  const cardLabel = await page.evaluate((selector) => {
+    let label = null;
+    const card = document.querySelector(selector);
+    if (card.children.length) {
+      // first child is the card layout
+      const cardLayout = card.children[0];
+      if (cardLayout.children.length) {
+        // first child is the label
+        label = cardLayout.children[0].innerText;
+      }
+    }
+    return label;
+  }, selector);
+  return cardLabel;
+}
+
 async function getStyle(page, selector) {
   const style = await page.evaluate((selector) => {
     const node = document.querySelector(selector);
@@ -453,6 +470,7 @@ module.exports = {
   getNodeTreeItemIDs,
   getFileTreeItemIDs,
   getVisibleChildrenIDs,
+  getDashboardCardLabel,
   getStyle,
   fetchReq,
   makeRequest,

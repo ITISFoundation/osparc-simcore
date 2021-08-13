@@ -19,7 +19,6 @@ cfgv==3.3.0
 click==7.1.2
     # via
     #   -c requirements/_base.txt
-    #   -c requirements/_test.txt
     #   black
     #   pip-tools
 distlib==0.3.2
@@ -50,7 +49,6 @@ pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
 regex==2021.8.3

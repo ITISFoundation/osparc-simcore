@@ -2,10 +2,7 @@
 # Specifies dependencies required to run 'services/datcore-adapter/test' both for unit and integration tests!!
 #
 --constraint ../../../requirements/constraints.txt
-
-# frozen specs
---requirement _base.txt
-
+--constraint _base.txt
 
 # testing
 asgi_lifespan
