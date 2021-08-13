@@ -95,9 +95,6 @@ qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
       form.add(label, "Label", null, "label");
       label.setValue(study.getName());
 
-      const saveWData = this.getChildControl("save-data");
-      form.add(saveWData, "Save with Data", null, "save-data");
-
       // buttons
       const cancelButton = this.getChildControl("cancel-button");
       form.addButton(cancelButton);
