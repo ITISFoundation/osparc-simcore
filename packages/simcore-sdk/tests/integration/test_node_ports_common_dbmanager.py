@@ -2,12 +2,10 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import asyncio
 import json
 from pathlib import Path
 from typing import Callable, Dict
 
-from simcore_sdk.node_ports_common import config
 from simcore_sdk.node_ports_common.dbmanager import DBManager
 
 pytest_simcore_core_services_selection = ["postgres"]
