@@ -10,7 +10,7 @@
 
 from datetime import datetime
 from typing import Any, Dict, Iterator, Optional, Tuple
-from uuid import UUID, uuid3
+from uuid import UUID
 
 from models_library.projects import Project
 from models_library.projects_nodes import Node
