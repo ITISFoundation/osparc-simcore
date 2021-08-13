@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Dict, List, Optional
 from uuid import UUID
 
@@ -5,6 +6,7 @@ from aiohttp import web
 from aiopg.sa.result import RowProxy
 from pydantic import PositiveInt
 from simcore_postgres_database.models.snapshots import snapshots
+from simcore_service_webserver.snapshots_models import Snapshot
 
 from .db_base_repository import BaseRepository
 from .projects.projects_db import APP_PROJECT_DBAPI
@@ -28,7 +30,7 @@ class SnapshotsRepository(BaseRepository):
     async def list(
         self, project_uuid: UUID, limit: Optional[int] = None
     ) -> List[SnapshotRow]:
-        """ Returns sorted list of snapshots in project"""
+        """Returns sorted list of snapshots in project"""
         # TODO: add pagination
 
         async with self.engine.acquire() as conn:
@@ -64,9 +66,25 @@ class SnapshotsRepository(BaseRepository):
         )
         return await self._first(query)
 
-    async def create(self, snapshot: SnapshotDict) -> SnapshotRow:
+    async def get(
+        self, parent_uuid: UUID, created_at: datetime
+    ) -> Optional[SnapshotRow]:
+        snapshot_project_uuid: UUID = Snapshot.compose_project_uuid(
+            parent_uuid, created_at
+        )
+        query = snapshots.select().where(
+            (snapshots.c.parent_uuid == str(parent_uuid))
+            & (snapshots.c.project_uuid == snapshot_project_uuid)
+        )
+        return await self._first(query)
+
+    async def create(self, snapshot: Snapshot) -> SnapshotRow:
         # pylint: disable=no-value-for-parameter
-        query = snapshots.insert().values(**snapshot).returning(snapshots)
+        query = (
+            snapshots.insert()
+            .values(**snapshot.dict(by_alias=True, exclude={"id"}))
+            .returning(snapshots)
+        )
         row = await self._first(query)
         assert row  # nosec
         return row

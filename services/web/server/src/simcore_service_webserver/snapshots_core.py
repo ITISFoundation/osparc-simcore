@@ -8,6 +8,7 @@
 #
 
 
+from datetime import datetime
 from typing import Any, Dict, Iterator, Optional, Tuple
 from uuid import UUID, uuid3
 
@@ -51,14 +52,15 @@ async def take_snapshot(
     #     )
 
     # Clones parent's project document
-    snapshot_timestamp = parent["lastChangeDate"]
+    snapshot_timestamp: datetime = parent["lastChangeDate"]
+    snapshot_project_uuid: UUID = Snapshot.compose_project_uuid(
+        parent["uuid"], snapshot_timestamp
+    )
 
     child: ProjectDict
     child, _ = projects_utils.clone_project_document(
         project=parent,
-        forced_copy_project_id=uuid3(
-            UUID(parent["uuid"]), f"snapshot.{snapshot_timestamp}"
-        ),
+        forced_copy_project_id=snapshot_project_uuid,
     )
 
     assert child  # nosec
@@ -66,7 +68,7 @@ async def take_snapshot(
 
     child["name"] += snapshot_label or f" [snapshot {snapshot_timestamp}]"
     # creation_date = state of parent upon copy! WARNING: changes can be state changes and not project definition?
-    child["creationDate"] = parent["lastChangeDate"]
+    child["creationDate"] = snapshot_timestamp
     child["hidden"] = True
     child["published"] = False
 

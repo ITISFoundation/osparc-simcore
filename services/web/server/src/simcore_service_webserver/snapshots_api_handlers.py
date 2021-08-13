@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from functools import wraps
 from typing import Any, Callable, List, Optional
 from uuid import UUID
@@ -51,19 +52,19 @@ def handle_request_errors(handler: Callable):
 
         except KeyError as err:
             # NOTE: handles required request.match_info[*] or request.query[*]
-            logger.debug(err, stack_info=True)
+            logger.debug(err, exc_info=True)
             raise web.HTTPBadRequest(reason=f"Expected parameter {err}") from err
 
         except ValidationError as err:
             #  NOTE: pydantic.validate_arguments parses and validates -> ValidationError
-            logger.debug(err, stack_info=True)
+            logger.debug(err, exc_info=True)
             raise web.HTTPUnprocessableEntity(
                 text=json_dumps({"error": err.errors()}),
                 content_type="application/json",
             ) from err
 
         except ProjectNotFoundError as err:
-            logger.debug(err, stack_info=True)
+            logger.debug(err, exc_info=True)
             raise web.HTTPNotFound(
                 reason=f"Project not found {err.project_uuid} or not accessible. Skipping snapshot"
             ) from err
@@ -164,29 +165,27 @@ async def create_project_snapshot_handler(request: web.Request):
         snapshot_label: Optional[str] = None,
     ) -> Snapshot:
 
-        # validate parents!
+        # fetch parent's project
+        parent: ProjectDict = await projects_api.get_project_for_user(
+            request.app,
+            str(project_id),
+            user_id,
+            include_templates=False,
+            include_state=False,
+        )
 
-        # already exists!
-        # - check parent_uuid
-        # - check
+        # fetch snapshot if any
+        parent_uuid: UUID = parent["uuid"]
+        snapshot_timestamp: datetime = parent["lastChangeDate"]
 
-        # yes: get and return
-        # no: create and return
+        snapshot_orm = await snapshots_repo.get(
+            parent_uuid=parent_uuid, created_at=snapshot_timestamp
+        )
 
-        snapshot_orm = None
-        if snapshot_label:
-            snapshot_orm = await snapshots_repo.get_by_name(project_id, snapshot_label)
+        # FIXME: if exists but different name?
 
         if not snapshot_orm:
-            parent: ProjectDict = await projects_api.get_project_for_user(
-                request.app,
-                str(project_id),
-                user_id,
-                include_templates=False,
-                include_state=False,
-            )
-
-            # pylint: disable=unused-variable
+            # take a snapshot of the parent project and commit to db
             project: ProjectDict
             snapshot: Snapshot
             project, snapshot = await take_snapshot(
@@ -194,16 +193,10 @@ async def create_project_snapshot_handler(request: web.Request):
                 snapshot_label=snapshot_label,
             )
 
-            snapshot_orm = await snapshots_repo.search(
-                **snapshot.dict(include={"created_at", "parent_uuid", "project_uuid"})
-            )
-            if not snapshot_orm:
-                # FIXME: Atomic?? project and snapshot shall be created in the same transaction!!
-                # FIXME: project returned might already exist, then return same snaphot
-                await projects_repo.create(project)
-                snapshot_orm = await snapshots_repo.create(
-                    snapshot.dict(by_alias=True, exclude_none=True)
-                )
+            # FIXME: Atomic?? project and snapshot shall be created in the same transaction!!
+            # FIXME: project returned might already exist, then return same snaphot
+            await projects_repo.create(project)
+            snapshot_orm = await snapshots_repo.create(snapshot)
 
         return Snapshot.from_orm(snapshot_orm)
 
