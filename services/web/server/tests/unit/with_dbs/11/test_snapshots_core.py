@@ -10,11 +10,9 @@ from aiohttp import web
 from models_library.projects import Project  # , ProjectAtDB
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
-from simcore_service_webserver.constants import APP_PROJECT_DBAPI
 from simcore_service_webserver.projects.projects_api import get_project_for_user
 from simcore_service_webserver.projects.projects_db import APP_PROJECT_DBAPI
 from simcore_service_webserver.projects.projects_utils import clone_project_document
-from simcore_service_webserver.snapshots_core import snapshot_project
 
 
 # is parametrized project?
