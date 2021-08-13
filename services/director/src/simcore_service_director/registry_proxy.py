@@ -365,7 +365,8 @@ async def get_service_extras(
             if entry.get("name", "").lower() != "resources":
                 continue
 
-            if resource_value := entry.get("value"):
+            resource_value = entry.get("value")
+            if resource_value:
                 if not isinstance(resource_value, dict):
                     logger.warning(
                         "invalid type for resource %s in service settings in %s:%s",
