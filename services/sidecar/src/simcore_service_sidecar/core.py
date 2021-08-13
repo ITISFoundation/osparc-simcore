@@ -11,7 +11,6 @@ from simcore_postgres_database.sidecar_models import (
     comp_pipeline,
     comp_tasks,
 )
-from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import log as node_port_v2_log
 from sqlalchemy import and_, literal_column
 

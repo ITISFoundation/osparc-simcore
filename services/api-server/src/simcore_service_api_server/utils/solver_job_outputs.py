@@ -8,8 +8,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import BaseFileLink
 from simcore_sdk import node_ports_v2
-from simcore_sdk.node_ports.dbmanager import DBManager
-from simcore_sdk.node_ports_v2 import Nodeports
+from simcore_sdk.node_ports_v2 import DBManager, Nodeports
 
 from .typing_extra import get_types
 
