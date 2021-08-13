@@ -264,9 +264,9 @@ qx.Class.define("osparc.data.model.Study", {
             console.log(snapshots);
             resolve(snapshots);
           })
-          .catch(() => {
-            // FIXME
-            resolve([]);
+          .catch(err => {
+            console.error(err);
+            reject(err);
           });
       });
     },
@@ -275,13 +275,11 @@ qx.Class.define("osparc.data.model.Study", {
       return new Promise((resolve, reject) => {
         this.getSnapshots()
           .then(snapshots => {
-            // FIXME
-            // resolve(Boolean(snapshots.length));
-            resolve(true);
+            resolve(Boolean(snapshots.length));
           })
           .catch(err => {
             console.error(err);
-            reject();
+            reject(err);
           });
       });
     },
