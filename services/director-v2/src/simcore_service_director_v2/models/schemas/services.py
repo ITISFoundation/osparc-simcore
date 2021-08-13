@@ -1,17 +1,18 @@
 from enum import Enum
-from typing import List, Optional
+from typing import Dict, List, Optional, Union
 
 from models_library.basic_types import PortInt
 from models_library.projects_nodes_io import UUID_REGEX
 from models_library.services import KEY_RE, VERSION_RE, ServiceDockerData
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
 
 from .dynamic_services import ServiceState
 
 
-class NodeRequirement(str, Enum):
+class NodeRequirementType(str, Enum):
     CPU = "CPU"
     GPU = "GPU"
+    RAM = "RAM"
     MPI = "MPI"
 
 
@@ -22,7 +23,7 @@ class ServiceBuildDetails(BaseModel):
 
 
 class ServiceExtras(BaseModel):
-    node_requirements: List[NodeRequirement]
+    node_requirements: Dict[NodeRequirementType, Union[PositiveFloat, PositiveInt]]
     service_build_details: Optional[ServiceBuildDetails]
 
 
@@ -43,16 +44,18 @@ class RunningServiceDetails(BaseModel):
     service_uuid: str = Field(
         ..., regex=UUID_REGEX, description="The node UUID attached to the service"
     )
-    service_key: constr(regex=KEY_RE) = Field(
+    service_key: str = Field(
         ...,
+        regex=KEY_RE,
         description="distinctive name for the node based on the docker registry path",
         example=[
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
         ],
     )
-    service_version: constr(regex=VERSION_RE) = Field(
+    service_version: str = Field(
         ...,
+        regex=VERSION_RE,
         description="service version number",
         example=["1.0.0", "0.0.1"],
     )
