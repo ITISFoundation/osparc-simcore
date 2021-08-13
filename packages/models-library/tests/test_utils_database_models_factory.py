@@ -33,7 +33,6 @@ def test_snapshot_pydantic_model():
         name="foo",
         created_at=datetime.now(),
         parent_uuid=uuid4(),
-        child_index=2,
         project_uuid=uuid4(),
     )
     assert snapshot.id == 0
