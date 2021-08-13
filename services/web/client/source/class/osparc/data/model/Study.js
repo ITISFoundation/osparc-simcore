@@ -275,11 +275,13 @@ qx.Class.define("osparc.data.model.Study", {
       return new Promise((resolve, reject) => {
         this.getSnapshots()
           .then(snapshots => {
-            resolve(Boolean(snapshots.length));
-          })
-          .catch(() => {
             // FIXME
+            // resolve(Boolean(snapshots.length));
             resolve(true);
+          })
+          .catch(err => {
+            console.error(err);
+            reject();
           });
       });
     },
