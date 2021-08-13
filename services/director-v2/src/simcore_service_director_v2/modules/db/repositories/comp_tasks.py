@@ -69,20 +69,13 @@ async def _generate_tasks_list_from_project(
                 director_client.get_service_extras(service_key_version),
             )
 
-        if not node_details:
+        if not node_details or not node_extras:
             continue
-
-        requires_mpi = False
-        requires_gpu = False
-        if node_extras:
-            requires_gpu = node_extras.node_requirements.gpu is not None
-            requires_mpi = node_extras.node_requirements.mpi is not None
 
         image = Image(
             name=service_key_version.key,
             tag=service_key_version.version,
-            requires_gpu=requires_gpu,
-            requires_mpi=requires_mpi,
+            node_requirements=node_extras.node_requirements,
         )
 
         assert node.state is not None  # nosec

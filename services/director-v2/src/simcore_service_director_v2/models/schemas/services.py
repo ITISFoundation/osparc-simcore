@@ -20,6 +20,7 @@ class NodeRequirements(BaseModel):
         ...,
         description="defines the required (maximum) CPU shares for running the services",
         alias="CPU",
+        gt=0.0,
     )
     gpu: Optional[NonNegativeInt] = Field(
         None,
@@ -30,7 +31,6 @@ class NodeRequirements(BaseModel):
         ...,
         description="defines the required (maximum) amount of RAM for running the services in bytes",
         alias="RAM",
-        ge=1024,
     )
     mpi: Optional[int] = Field(
         None,
@@ -38,7 +38,7 @@ class NodeRequirements(BaseModel):
         description="defines whether a MPI node is required for running the services",
         alias="MPI",
         le=1,
-        gt=0,
+        ge=0,
     )
 
     class Config:

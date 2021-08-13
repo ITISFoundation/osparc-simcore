@@ -373,9 +373,7 @@ def tasks(postgres_db: sa.engine.Engine) -> Callable[..., List[CompTaskAtDB]]:
                 "image": Image(
                     name=node_data.key,
                     tag=node_data.version,
-                    requires_gpu=False,
-                    requires_mpi=False,
-                ).dict(),
+                ).dict(by_alias=True, exclude_unset=True),
                 "node_class": to_node_class(node_data.key),
                 "internal_id": internal_id + 1,
                 "submit": datetime.utcnow(),
