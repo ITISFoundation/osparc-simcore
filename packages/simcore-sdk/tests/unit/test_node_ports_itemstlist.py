@@ -3,30 +3,14 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-member
 
-from typing import Dict, Union
 
 import pytest
 from simcore_sdk.node_ports._data_item import DataItem
 from simcore_sdk.node_ports._data_items_list import DataItemsList
-from simcore_sdk.node_ports._item import Item
 from simcore_sdk.node_ports._items_list import ItemsList
 from simcore_sdk.node_ports._schema_item import SchemaItem
 from simcore_sdk.node_ports._schema_items_list import SchemaItemsList
-
-
-def create_item(
-    key: str, item_type: str, item_value: Union[int, float, bool, str, Dict]
-):
-    return Item(
-        SchemaItem(
-            key=key,
-            label="a label",
-            description="a description",
-            type=item_type,
-            displayOrder=2,
-        ),
-        DataItem(key=key, value=item_value),
-    )
+from simcore_sdk.node_ports_common import exceptions
 
 
 def create_items_list(
@@ -101,7 +85,6 @@ def test_access_by_wrong_key(
     project_id: str,
     node_uuid: str,
 ):
-    from simcore_sdk.node_ports import exceptions
 
     itemslist = create_items_list(
         user_id,
