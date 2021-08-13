@@ -6,12 +6,14 @@ from uuid import uuid4
 from dask.distributed import Client, Future, fire_and_forget
 from fastapi import FastAPI
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from simcore_service_director_v2.models.schemas.comp_scheduler import TaskIn
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_random
 
 from ..core.errors import ConfigurationError
 from ..core.settings import DaskSchedulerSettings
 from ..models.schemas.constants import UserID
+from ..models.schemas.services import NodeRequirements
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +69,7 @@ class DaskClient:
         self,
         user_id: UserID,
         project_id: ProjectID,
-        single_tasks: List[TaskIn],
+        single_tasks: Dict[NodeID, NodeRequirements],
         callback: Callable[[], None],
         remote_fct: Callable = None,
     ):
@@ -100,22 +102,21 @@ class DaskClient:
         if remote_fct is None:
             remote_fct = comp_sidecar_fct
 
-        def _from_task_in_to_dask_resource(
-            task: TaskIn,
+        def _from_node_reqs_to_dask_resources(
+            node_reqs: NodeRequirements,
         ) -> Dict[str, Union[int, float]]:
-            reqs = task.runtime_requirements.upper().split(":")
-            return {r: 1 for r in reqs}
+            return node_reqs.dict(exclude_unset=True, by_alias=True)
 
-        for task in single_tasks:
+        for node_id, node_reqs in single_tasks.items():
             job_id = f"dask_{uuid4()}"
             task_future = self.client.submit(
                 remote_fct,
                 job_id,
                 f"{user_id}",
                 f"{project_id}",
-                f"{task.node_id}",
+                f"{node_id}",
                 key=job_id,
-                resources=_from_task_in_to_dask_resource(task),
+                resources=_from_node_reqs_to_dask_resources(node_reqs),
                 retries=2,
             )
             task_future.add_done_callback(_done_dask_callback)

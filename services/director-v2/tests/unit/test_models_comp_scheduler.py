@@ -46,7 +46,7 @@ from simcore_service_director_v2.models.schemas.comp_scheduler import Image, Tas
 #         ),
 #     ],
 # )
-def test_dask_task_in_model(image: Image, exp_requirements_str: str):
+def test_task_in_model(image: Image, exp_requirements_str: str):
     node_id = uuid4()
     dask_task = TaskIn.from_node_image(node_id, image)
     assert dask_task
