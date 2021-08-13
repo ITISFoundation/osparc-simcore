@@ -232,6 +232,37 @@ qx.Class.define("osparc.data.model.Study", {
         return true;
       }
       return false;
+    },
+
+    getSnapshots: function(studyId) {
+      return new Promise((resolve, reject) => {
+        const params = {
+          url: {
+            "studyId": studyId
+          }
+        };
+        osparc.data.Resources.get("snapshots", params)
+          .then(snapshots => {
+            resolve(snapshots);
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
+    },
+
+    hasSnapshots: function(studyId) {
+      return new Promise((resolve, reject) => {
+        this.self().getSnapshots(studyId)
+          .then(snapshots => {
+            resolve(Boolean(snapshots.length));
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
     }
   },
 
@@ -253,35 +284,11 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     getSnapshots: function() {
-      return new Promise((resolve, reject) => {
-        const params = {
-          url: {
-            "studyId": this.getUuid()
-          }
-        };
-        osparc.data.Resources.get("snapshots", params)
-          .then(snapshots => {
-            console.log(snapshots);
-            resolve(snapshots);
-          })
-          .catch(err => {
-            console.error(err);
-            reject(err);
-          });
-      });
+      return this.self().getSnapshots(this.getUuid());
     },
 
     hasSnapshots: function() {
-      return new Promise((resolve, reject) => {
-        this.getSnapshots()
-          .then(snapshots => {
-            resolve(Boolean(snapshots.length));
-          })
-          .catch(err => {
-            console.error(err);
-            reject(err);
-          });
-      });
+      return this.self().hasSnapshots(this.getUuid());
     },
 
     __applyAccessRights: function(value) {
