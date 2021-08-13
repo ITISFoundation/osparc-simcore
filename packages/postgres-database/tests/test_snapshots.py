@@ -38,7 +38,7 @@ async def engine(pg_engine: Engine):
 
 
 @pytest.fixture
-def exclude():
+def exclude() -> Set:
     return {
         "id",
         "uuid",
@@ -50,7 +50,7 @@ def exclude():
 
 
 @pytest.fixture
-def create_snapshot(exclude) -> Callable:
+def create_snapshot(exclude: Set) -> Callable:
     async def _create_snapshot(child_index: int, parent_prj, conn) -> int:
         # NOTE: used as FAKE prototype
 

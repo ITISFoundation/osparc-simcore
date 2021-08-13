@@ -1,8 +1,7 @@
 from datetime import datetime
-from typing import Optional, Union
-from uuid import UUID
+from typing import Callable, Optional, Union
+from uuid import UUID, uuid3
 
-from aiohttp import web
 from models_library.projects_nodes import OutputID
 from pydantic import (
     AnyUrl,
@@ -13,6 +12,7 @@ from pydantic import (
     StrictFloat,
     StrictInt,
 )
+from yarl import URL
 
 BuiltinTypes = Union[StrictBool, StrictInt, StrictFloat, str]
 
@@ -43,6 +43,16 @@ class Snapshot(BaseModel):
     class Config:
         orm_mode = True
 
+    # TODO: can project_uuid be frozen property??
+
+    @staticmethod
+    def compose_project_uuid(
+        parent_uuid: Union[UUID, str], snapshot_timestamp: datetime
+    ) -> UUID:
+        if isinstance(parent_uuid, str):
+            parent_uuid = UUID(parent_uuid)
+        return uuid3(parent_uuid, f"snapshot.{snapshot_timestamp}")
+
 
 ## API models ----------
 
@@ -61,12 +71,11 @@ class SnapshotItem(Snapshot):
     url_parameters: Optional[AnyUrl] = None
 
     @classmethod
-    def from_snapshot(cls, snapshot: Snapshot, app: web.Application) -> "SnapshotItem":
-        def url_for(router_name: str, **params):
-            return app.router[router_name].url_for(
-                **{k: str(v) for k, v in params.items()}
-            )
-
+    def from_snapshot(
+        cls, snapshot: Snapshot, url_for: Callable[..., URL]
+    ) -> "SnapshotItem":
+        # TODO: is this the right place?  requires pre-defined routes
+        # how to guarantee routes names
         return cls(
             url=url_for(
                 "get_project_snapshot_handler",
@@ -76,9 +85,9 @@ class SnapshotItem(Snapshot):
             url_parent=url_for("get_project", project_id=snapshot.parent_uuid),
             url_project=url_for("get_project", project_id=snapshot.project_uuid),
             url_parameters=url_for(
-                "get_project_snapshot_parameters_handler",
+                "get_snapshot_parameters_handler",
                 project_id=snapshot.parent_uuid,
                 snapshot_id=snapshot.id,
             ),
-            **snapshot.dict(),
+            **snapshot.dict(by_alias=True),
         )
