@@ -28,15 +28,17 @@ class Parameter(BaseModel):
 
 
 class Snapshot(BaseModel):
-    id: PositiveInt = Field(..., description="Unique snapshot identifier")
-    label: Optional[str] = Field(None, description="Unique human readable display name")
+    id: PositiveInt = Field(None, description="Unique snapshot identifier")
+    label: Optional[str] = Field(
+        None, description="Unique human readable display name", alias="name"
+    )
     created_at: datetime = Field(
         default_factory=datetime.utcnow,
         description="Timestamp of the time snapshot was taken from parent. Notice that parent might change with time",
     )
 
-    parent_id: UUID = Field(..., description="Parent's project uuid")
-    project_id: UUID = Field(..., description="Current project's uuid")
+    parent_uuid: UUID = Field(..., description="Parent's project uuid")
+    project_uuid: UUID = Field(..., description="Current project's uuid")
 
     class Config:
         orm_mode = True
@@ -51,7 +53,7 @@ class ParameterApiModel(Parameter):
 
 
 class SnapshotItem(Snapshot):
-    """ API model for an array item of snapshots """
+    """API model for an array item of snapshots"""
 
     url: AnyUrl
     url_parent: AnyUrl
@@ -61,19 +63,21 @@ class SnapshotItem(Snapshot):
     @classmethod
     def from_snapshot(cls, snapshot: Snapshot, app: web.Application) -> "SnapshotItem":
         def url_for(router_name: str, **params):
-            return app.router[router_name].url_for(**params)
+            return app.router[router_name].url_for(
+                **{k: str(v) for k, v in params.items()}
+            )
 
         return cls(
             url=url_for(
                 "get_project_snapshot_handler",
-                project_id=snapshot.project_id,
+                project_id=snapshot.project_uuid,
                 snapshot_id=snapshot.id,
             ),
-            url_parent=url_for("get_project", project_id=snapshot.parent_id),
-            url_project=url_for("get_project", project_id=snapshot.project_id),
+            url_parent=url_for("get_project", project_id=snapshot.parent_uuid),
+            url_project=url_for("get_project", project_id=snapshot.project_uuid),
             url_parameters=url_for(
                 "get_project_snapshot_parameters_handler",
-                project_id=snapshot.parent_id,
+                project_id=snapshot.parent_uuid,
                 snapshot_id=snapshot.id,
             ),
             **snapshot.dict(),

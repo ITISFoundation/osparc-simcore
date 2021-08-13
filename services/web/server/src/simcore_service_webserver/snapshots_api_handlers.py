@@ -1,3 +1,4 @@
+import logging
 from functools import wraps
 from typing import Any, Callable, List, Optional
 from uuid import UUID
@@ -9,7 +10,7 @@ from pydantic.error_wrappers import ValidationError
 from pydantic.main import BaseModel
 
 from ._meta import api_version_prefix as vtag
-from .constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
+from .constants import RQT_USERID_KEY
 from .login.decorators import login_required
 from .projects import projects_api
 from .projects.projects_exceptions import ProjectNotFoundError
@@ -17,6 +18,8 @@ from .security_decorators import permission_required
 from .snapshots_core import ProjectDict, take_snapshot
 from .snapshots_db import ProjectsRepository, SnapshotsRepository
 from .snapshots_models import Snapshot, SnapshotItem
+
+logger = logging.getLogger(__name__)
 
 
 def _default(obj):
@@ -48,16 +51,19 @@ def handle_request_errors(handler: Callable):
 
         except KeyError as err:
             # NOTE: handles required request.match_info[*] or request.query[*]
+            logger.debug(err, stack_info=True)
             raise web.HTTPBadRequest(reason=f"Expected parameter {err}") from err
 
         except ValidationError as err:
             #  NOTE: pydantic.validate_arguments parses and validates -> ValidationError
+            logger.debug(err, stack_info=True)
             raise web.HTTPUnprocessableEntity(
                 text=json_dumps({"error": err.errors()}),
                 content_type="application/json",
             ) from err
 
         except ProjectNotFoundError as err:
+            logger.debug(err, stack_info=True)
             raise web.HTTPNotFound(
                 reason=f"Project not found {err.project_uuid} or not accessible. Skipping snapshot"
             ) from err
@@ -136,7 +142,9 @@ async def get_project_snapshot_handler(request: web.Request):
         project_id=request.match_info["project_id"],  # type: ignore
         snapshot_id=request.match_info["snapshot_id"],
     )
-    return enveloped_response(snapshot)
+
+    data = SnapshotItem.from_snapshot(snapshot, request.app)
+    return enveloped_response(data)
 
 
 @routes.post(
@@ -156,9 +164,18 @@ async def create_project_snapshot_handler(request: web.Request):
         snapshot_label: Optional[str] = None,
     ) -> Snapshot:
 
+        # validate parents!
+
+        # already exists!
+        # - check parent_uuid
+        # - check
+
+        # yes: get and return
+        # no: create and return
+
         snapshot_orm = None
         if snapshot_label:
-            snapshot_orm = snapshots_repo.get_by_name(project_id, snapshot_label)
+            snapshot_orm = await snapshots_repo.get_by_name(project_id, snapshot_label)
 
         if not snapshot_orm:
             parent: ProjectDict = await projects_api.get_project_for_user(
@@ -177,9 +194,16 @@ async def create_project_snapshot_handler(request: web.Request):
                 snapshot_label=snapshot_label,
             )
 
-            # FIXME: Atomic?? project and snapshot shall be created in the same transaction!!
-            await projects_repo.create(project)
-            snapshot_orm = await snapshots_repo.create(snapshot.dict())
+            snapshot_orm = await snapshots_repo.search(
+                **snapshot.dict(include={"created_at", "parent_uuid", "project_uuid"})
+            )
+            if not snapshot_orm:
+                # FIXME: Atomic?? project and snapshot shall be created in the same transaction!!
+                # FIXME: project returned might already exist, then return same snaphot
+                await projects_repo.create(project)
+                snapshot_orm = await snapshots_repo.create(
+                    snapshot.dict(by_alias=True, exclude_none=True)
+                )
 
         return Snapshot.from_orm(snapshot_orm)
 
@@ -188,32 +212,34 @@ async def create_project_snapshot_handler(request: web.Request):
         snapshot_label=request.query.get("snapshot_label"),
     )
 
-    return enveloped_response(snapshot)
+    data = SnapshotItem.from_snapshot(snapshot, request.app)
+    return enveloped_response(data)
 
 
-@routes.get(
-    f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}/parameters",
-    name="get_snapshot_parameters_handler",
-)
-@login_required
-@permission_required("project.read")
-@handle_request_errors
-async def get_project_snapshot_parameters_handler(
-    request: web.Request,
-):
-    user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
+# @routes.get(
+#     f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}/parameters",
+#     name="get_snapshot_parameters_handler",
+# )
+# @login_required
+# @permission_required("project.read")
+# @handle_request_errors
+# async def get_project_snapshot_parameters_handler(
+#     request: web.Request,
+# ):
+#     import .constants import RQ_PRODUCT_KEY
+#     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
 
-    @validate_arguments
-    async def get_snapshot_parameters(
-        project_id: UUID,
-        snapshot_id: str,
-    ):
-        #
-        return {"x": 4, "y": "yes"}
+#     @validate_arguments
+#     async def get_snapshot_parameters(
+#         project_id: UUID,
+#         snapshot_id: str,
+#     ):
+#         #
+#         return {"x": 4, "y": "yes"}
 
-    params = await get_snapshot_parameters(
-        project_id=request.match_info["project_id"],  # type: ignore
-        snapshot_id=request.match_info["snapshot_id"],
-    )
+#     params = await get_snapshot_parameters(
+#         project_id=request.match_info["project_id"],  # type: ignore
+#         snapshot_id=request.match_info["snapshot_id"],
+#     )
 
-    return params
+#     return params

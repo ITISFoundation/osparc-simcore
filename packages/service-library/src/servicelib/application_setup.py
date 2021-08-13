@@ -145,7 +145,7 @@ def app_module_setup(
                     dep for dep in depends if dep not in app[APP_SETUP_KEY]
                 ]
                 if uninitialized:
-                    msg = f"The following '{module_name}'' dependencies are still uninitialized: {uninitialized}"
+                    msg = f"Cannot setup app module '{module_name}' because the following dependencies are still uninitialized: {uninitialized}"
                     log.error(msg)
                     raise DependencyError(msg)
 
