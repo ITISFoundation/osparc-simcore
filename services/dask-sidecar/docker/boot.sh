@@ -61,6 +61,10 @@ else
   # because multi-processing library is used by the sidecar and the nanny does not like it
   # setting --no-nanny fixes this: see https://github.com/dask/distributed/issues/2142
   num_cpus=$(($(nproc) - ${DASK_SIDECAR_NUM_NON_USABLE_CPUS:-2}))
+  if [ "$num_cpus" -le 0 ]; then
+    # ensure the minimal amount of cpus is 1 in case the system is a dual-core or less (CI case for instance)
+    num_cpus=1
+  fi
   num_gpus=$(python -c "from simcore_service_sidecar.utils import num_available_gpus; print(num_available_gpus());")
   resources="CPU=$num_cpus"
   if [ "$num_gpus" -gt 0 ]; then
