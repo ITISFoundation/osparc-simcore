@@ -9,9 +9,10 @@ from aiohttp import web
 from pydantic.decorator import validate_arguments
 from pydantic.error_wrappers import ValidationError
 from pydantic.main import BaseModel
+from yarl import URL
 
 from ._meta import api_version_prefix as vtag
-from .constants import RQT_USERID_KEY
+from .constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from .login.decorators import login_required
 from .projects import projects_api
 from .projects.projects_exceptions import ProjectNotFoundError
@@ -72,6 +73,22 @@ def handle_request_errors(handler: Callable):
     return wrapped
 
 
+def create_url_for(request: web.Request):
+    app = request.app
+
+    def url_for(router_name: str, **params) -> Optional[str]:
+        try:
+            rel_url: URL = app.router[router_name].url_for(
+                **{k: str(v) for k, v in params.items()}
+            )
+            url = request.url.origin().with_path(str(rel_url))
+            return str(url)
+        except KeyError:
+            return None
+
+    return url_for
+
+
 # FIXME: access rights using same approach as in access_layer.py in storage.
 # A user can only check snapshots (subresource) of its project (parent resource)
 
@@ -92,6 +109,7 @@ async def list_project_snapshots_handler(request: web.Request):
     Lists references on project snapshots
     """
     snapshots_repo = SnapshotsRepository(request)
+    url_for = create_url_for(request)
 
     @validate_arguments
     async def _list_snapshots(project_id: UUID) -> List[Snapshot]:
@@ -111,7 +129,7 @@ async def list_project_snapshots_handler(request: web.Request):
     )
     # TODO: async for snapshot in await list_snapshot is the same?
 
-    data = [SnapshotItem.from_snapshot(snp, request.app) for snp in snapshots]
+    data = [SnapshotItem.from_snapshot(snp, url_for) for snp in snapshots]
     return enveloped_response(data)
 
 
@@ -124,18 +142,16 @@ async def list_project_snapshots_handler(request: web.Request):
 @handle_request_errors
 async def get_project_snapshot_handler(request: web.Request):
     snapshots_repo = SnapshotsRepository(request)
+    url_for = create_url_for(request)
 
     @validate_arguments
     async def _get_snapshot(project_id: UUID, snapshot_id: str) -> Snapshot:
-        try:
-            snapshot_orm = await snapshots_repo.get_by_index(
-                project_id, int(snapshot_id)
-            )
-        except ValueError:
-            snapshot_orm = await snapshots_repo.get_by_name(project_id, snapshot_id)
+        snapshot_orm = await snapshots_repo.get_by_id(project_id, int(snapshot_id))
 
         if not snapshot_orm:
-            raise web.HTTPNotFound(reason=f"snapshot {snapshot_id} not found")
+            raise web.HTTPNotFound(
+                reason=f"snapshot {snapshot_id} for project {project_id} not found"
+            )
 
         return Snapshot.from_orm(snapshot_orm)
 
@@ -144,7 +160,7 @@ async def get_project_snapshot_handler(request: web.Request):
         snapshot_id=request.match_info["snapshot_id"],
     )
 
-    data = SnapshotItem.from_snapshot(snapshot, request.app)
+    data = SnapshotItem.from_snapshot(snapshot, url_for)
     return enveloped_response(data)
 
 
@@ -158,6 +174,7 @@ async def create_project_snapshot_handler(request: web.Request):
     snapshots_repo = SnapshotsRepository(request)
     projects_repo = ProjectsRepository(request)
     user_id = request[RQT_USERID_KEY]
+    url_for = create_url_for(request)
 
     @validate_arguments
     async def _create_snapshot(
@@ -205,34 +222,34 @@ async def create_project_snapshot_handler(request: web.Request):
         snapshot_label=request.query.get("snapshot_label"),
     )
 
-    data = SnapshotItem.from_snapshot(snapshot, request.app)
+    data = SnapshotItem.from_snapshot(snapshot, url_for)
     return enveloped_response(data)
 
 
-# @routes.get(
-#     f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}/parameters",
-#     name="get_snapshot_parameters_handler",
-# )
-# @login_required
-# @permission_required("project.read")
-# @handle_request_errors
-# async def get_project_snapshot_parameters_handler(
-#     request: web.Request,
-# ):
-#     import .constants import RQ_PRODUCT_KEY
-#     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
+@routes.get(
+    f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}/parameters",
+    name="get_snapshot_parameters_handler",
+)
+@login_required
+@permission_required("project.read")
+@handle_request_errors
+async def get_project_snapshot_parameters_handler(
+    request: web.Request,
+):
+    # pylint: disable=unused-variable
+    # pylint: disable=unused-argument
+    user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
 
-#     @validate_arguments
-#     async def get_snapshot_parameters(
-#         project_id: UUID,
-#         snapshot_id: str,
-#     ):
-#         #
-#         return {"x": 4, "y": "yes"}
+    @validate_arguments
+    async def get_snapshot_parameters(
+        project_id: UUID,
+        snapshot_id: str,
+    ):
+        return {"x": 4, "y": "yes"}
 
-#     params = await get_snapshot_parameters(
-#         project_id=request.match_info["project_id"],  # type: ignore
-#         snapshot_id=request.match_info["snapshot_id"],
-#     )
+    params = await get_snapshot_parameters(
+        project_id=request.match_info["project_id"],  # type: ignore
+        snapshot_id=request.match_info["snapshot_id"],
+    )
 
-#     return params
+    return params
