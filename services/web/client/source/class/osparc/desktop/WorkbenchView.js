@@ -172,19 +172,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return null;
     },
 
-    __editSlides: function() {
-      const uiData = this.getStudy().getUi();
-      const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(uiData.getSlideshow());
-      const title = this.tr("Edit Slides");
-      const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 600, 500).set({
-        modal: false,
-        clickAwayClose: false
-      });
-      nodesSlidesTree.addListener("finished", () => {
-        win.close();
-      });
-    },
-
     __showSweeper: function() {
       const study = this.getStudy();
       const sweeper = new osparc.component.sweeper.Sweeper(study);
@@ -332,9 +319,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree();
       nodesTree.setStudy(study);
-      nodesTree.addListener("slidesEdit", () => {
-        this.__editSlides();
-      }, this);
       nodesTree.addListener("removeNode", e => {
         if (this.getStudy().isReadOnly()) {
           return;
@@ -472,7 +456,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __connectEvents: function() {
       const workbench = this.getStudy().getWorkbench();
-      workbench.addListener("nNodesChanged", this.__workbenchChanged, this);
+      workbench.addListener("pipelineChanged", this.__workbenchChanged, this);
 
       workbench.addListener("showInLogger", ev => {
         const data = ev.getData();

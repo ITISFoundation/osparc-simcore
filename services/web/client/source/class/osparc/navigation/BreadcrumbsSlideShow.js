@@ -27,21 +27,20 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
       const btns = [];
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const currentNodeId = study.getUi().getCurrentNodeId();
-      for (let i=0; i<nodesIds.length; i++) {
-        const nodeId = nodesIds[i];
-        const btn = this.__createBtns(nodeId);
+      nodesIds.forEach(nodeId => {
+        const btn = this.__createBtn(nodeId);
         if (nodeId === currentNodeId) {
           btn.setValue(true);
         }
         btns.push(btn);
-      }
+      });
       this._buttonsToBreadcrumb(btns, "arrow");
     },
 
-    __createBtns: function(nodeId) {
+    __createBtn: function(nodeId) {
       const btn = this._createNodeBtn(nodeId);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const slideShow = study.getUi().getSlideshow();
+      const slideShow = study.getUi().getSlideshow().getData();
       const node = study.getWorkbench().getNode(nodeId);
       if (node && nodeId in slideShow) {
         const pos = slideShow[nodeId].position;
@@ -56,35 +55,21 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
         });
 
         const statusIcon = new qx.ui.basic.Image();
-        node.getStatus().bind("output", statusIcon, "source", {
-          converter: output => {
-            switch (output) {
-              case "up-to-date":
-                return osparc.utils.StatusUI.getIconSource("up-to-date");
-              case "out-of-date":
-                return osparc.utils.StatusUI.getIconSource("modified");
-              case "busy":
-                return osparc.utils.StatusUI.getIconSource("running");
-              case "not-available":
-              default:
-                return osparc.utils.StatusUI.getIconSource();
-            }
-          },
-          onUpdate: (source, target) => (source.getOutput() === "busy") ? target.getContentElement().addClass("rotate") : target.getContentElement().removeClass("rotate")
-        });
-        node.getStatus().bind("output", statusIcon, "textColor", {
-          converter: output => {
-            switch (output) {
-              case "up-to-date":
-                return osparc.utils.StatusUI.getColor("ready");
-              case "out-of-date":
-              case "busy":
-                return osparc.utils.StatusUI.getColor("modified");
-              case "not-available":
-              default:
-                return osparc.utils.StatusUI.getColor();
+        const check = node.isDynamic() ? "interactive" : "output";
+        node.getStatus().bind(check, statusIcon, "source", {
+          converter: output => osparc.utils.StatusUI.getIconSource(output),
+          onUpdate: (source, target) => {
+            const elem = target.getContentElement();
+            const state = source.get(check);
+            if (["busy", "starting", "pulling", "pending", "connecting"].includes(state)) {
+              elem.addClass("rotate");
+            } else {
+              elem.removeClass("rotate");
             }
           }
+        });
+        node.getStatus().bind(check, statusIcon, "textColor", {
+          converter: output => osparc.utils.StatusUI.getColor(output)
         }, this);
         // eslint-disable-next-line no-underscore-dangle
         btn._add(statusIcon);

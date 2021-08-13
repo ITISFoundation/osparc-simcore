@@ -71,7 +71,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     pageContext: {
-      check: ["workbench", "slideshow"],
+      check: ["workbench", "slideshow", "fullSlideshow"],
       nullable: false,
       apply: "_applyPageContext"
     }
@@ -142,9 +142,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               }
             });
 
-          switch (this.getPageContext()) {
+          const pageContext = this.getPageContext();
+          switch (pageContext) {
             case "slideshow":
-              this.__slideshowView.startSlides();
+            case "fullSlideshow":
+              this.__slideshowView.startSlides(pageContext);
               break;
             default:
               this.__workbenchView.openFirstNode();
@@ -199,6 +201,25 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const msg = this.tr("Study was closed while you were offline");
       osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
       this.fireEvent("forceBackToDashboard");
+    },
+
+    editSlides: function() {
+      if (this.getPageContext() !== "workbench") {
+        return;
+      }
+
+      const study = this.getStudy();
+      const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(study);
+      const title = this.tr("Edit Slides");
+      const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 600, 500).set({
+        modal: false,
+        clickAwayClose: false
+      });
+      nodesSlidesTree.addListener("finished", () => {
+        const slideshow = study.getUi().getSlideshow();
+        slideshow.fireEvent("changeSlideshow");
+        win.close();
+      });
     },
 
 
@@ -382,8 +403,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__workbenchView.nodeSelected(this.getStudy().getUi().getCurrentNodeId());
           break;
         case "slideshow":
+        case "fullSlideshow":
           this.__viewsStack.setSelection([this.__slideshowView]);
-          this.__slideshowView.startSlides();
+          this.__slideshowView.startSlides(newCtxt);
           break;
       }
     },
