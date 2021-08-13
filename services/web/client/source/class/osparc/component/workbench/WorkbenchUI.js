@@ -34,7 +34,6 @@
  */
 
 const BUTTON_SIZE = 38;
-const BUTTON_SPACING = 10;
 const ZOOM_BUTTON_SIZE = 24;
 const NODE_INPUTS_WIDTH = 210;
 
@@ -51,66 +50,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     const hBox = new qx.ui.layout.HBox();
     this._setLayout(hBox);
 
-    const inputNodesLayout = this.__inputNodesLayout = this.__createInputOutputNodesLayout(true);
-    this._add(inputNodesLayout);
-
-    const workbenchLayer = this.__workbenchLayer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-    this._add(workbenchLayer, {
-      flex: 1
-    });
-
-    const workbenchLayoutScroll = this.__workbenchLayoutScroll = new qx.ui.container.Scroll();
-    const workbenchLayout = this.__workbenchLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-    workbenchLayoutScroll.add(workbenchLayout);
-    workbenchLayer.add(workbenchLayoutScroll, {
-      left: 0,
-      top: 0,
-      right: 0,
-      bottom: 0
-    });
-
-
-    const nodesExposedLayout = this.__outputNodesLayout = this.__createInputOutputNodesLayout(false);
-    this._add(nodesExposedLayout);
-
-    const desktop = this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
-    workbenchLayout.add(desktop, {
-      left: 0,
-      top: 0,
-      right: 0,
-      bottom: 0
-    });
-
-    this.__startHint = new qx.ui.basic.Label(this.tr("Double click to start adding a node")).set({
-      font: "workbench-start-hint",
-      textColor: "workbench-start-hint",
-      visibility: "excluded"
-    });
-    workbenchLayout.add(this.__startHint);
-
-    const svgWidgetWorkbench = this.__svgWidgetWorkbench = new osparc.component.workbench.SvgWidget("SvgWidget_Workbench");
-    desktop.add(svgWidgetWorkbench, {
-      left: 0,
-      top: 0,
-      right: 0,
-      bottom: 0
-    });
-
-    const zoomToolbar = this.__getZoomToolbar();
-    this._add(zoomToolbar);
-    this.__workbenchLayer.add(zoomToolbar, {
-      left: 10,
-      bottom: 10
-    });
-
-    const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
-    this.__workbenchLayer.add(buttonContainer, {
-      bottom: 10,
-      right: 10
-    });
-    let unlinkButton = this.__unlinkButton = this.__getUnlinkButton();
-    unlinkButton.setVisibility("excluded");
-    buttonContainer.add(unlinkButton);
+    this._addItemsToLayout();
 
     this.__addEventListeners();
   },
@@ -173,11 +113,73 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __startHint: null,
     __dropHint: null,
 
-    __getWorkbench: function() {
-      return this.getStudy().getWorkbench();
+    _addItemsToLayout: function() {
+      this.__addInputNodesLayout();
+      this._addWorkbenchLayer();
+      this.__addOutputNodesLayout();
     },
 
-    __getZoomToolbar: function() {
+    __addInputNodesLayout: function() {
+      const inputNodesLayout = this.__inputNodesLayout = this.__createInputOutputNodesLayout(true);
+      this._add(inputNodesLayout);
+    },
+
+    _addWorkbenchLayer: function() {
+      const workbenchLayer = this.__workbenchLayer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      this._add(workbenchLayer, {
+        flex: 1
+      });
+
+      const workbenchLayoutScroll = this.__workbenchLayoutScroll = new qx.ui.container.Scroll();
+      const workbenchLayout = this.__workbenchLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      workbenchLayoutScroll.add(workbenchLayout);
+      workbenchLayer.add(workbenchLayoutScroll, {
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0
+      });
+
+      this.__addStartHint(workbenchLayout);
+
+      const desktop = this._addDesktop(workbenchLayout);
+      this._addSVGLayer(desktop);
+
+      this.__addZoomToolbar(workbenchLayer);
+      this.__addUnlinkButton(workbenchLayer);
+    },
+
+    _addDesktop: function(workbenchLayout) {
+      const desktop = this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
+      workbenchLayout.add(desktop, {
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0
+      });
+      return desktop;
+    },
+
+    __addStartHint: function(workbenchLayout) {
+      this.__startHint = new qx.ui.basic.Label(this.tr("Double click to start adding a node")).set({
+        font: "workbench-start-hint",
+        textColor: "workbench-start-hint",
+        visibility: "excluded"
+      });
+      workbenchLayout.add(this.__startHint);
+    },
+
+    _addSVGLayer: function(desktop) {
+      this.__svgWidgetWorkbench = new osparc.component.workbench.SvgWidget("SvgWidget_Workbench");
+      desktop.add(this.__svgWidgetWorkbench, {
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0
+      });
+    },
+
+    __addZoomToolbar: function(workbenchLayer) {
       const zoomToolbar = new qx.ui.toolbar.ToolBar().set({
         spacing: 0,
         opacity: 0.8
@@ -186,7 +188,40 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       zoomToolbar.add(this.__getZoomResetButton());
       zoomToolbar.add(this.__getZoomAllButton());
       zoomToolbar.add(this.__getZoomInButton());
-      return zoomToolbar;
+
+      workbenchLayer.add(zoomToolbar, {
+        left: 10,
+        bottom: 10
+      });
+    },
+
+    __addUnlinkButton: function(workbenchLayer) {
+      const unlinkButton = this.__unlinkButton = new qx.ui.form.Button().set({
+        icon: "@FontAwesome5Solid/unlink/18",
+        width: BUTTON_SIZE,
+        height: BUTTON_SIZE,
+        visibility: "excluded"
+      });
+      unlinkButton.addListener("execute", () => {
+        if (this.__selectedItemId && this.__isSelectedItemAnEdge()) {
+          this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
+          this.__selectedItemChanged(null);
+        }
+      }, this);
+
+      workbenchLayer.add(unlinkButton, {
+        bottom: 10,
+        right: 10
+      });
+    },
+
+    __addOutputNodesLayout: function() {
+      const nodesExposedLayout = this.__outputNodesLayout = this.__createInputOutputNodesLayout(false);
+      this._add(nodesExposedLayout);
+    },
+
+    __getWorkbench: function() {
+      return this.getStudy().getWorkbench();
     },
 
     __getZoomBtn: function(icon, tooltip) {
@@ -231,22 +266,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__zoomAll();
       }, this);
       return btn;
-    },
-
-    __getUnlinkButton: function() {
-      const icon = "@FontAwesome5Solid/unlink/18";
-      let unlinkBtn = new qx.ui.form.Button(null, icon);
-      unlinkBtn.set({
-        width: BUTTON_SIZE,
-        height: BUTTON_SIZE
-      });
-      unlinkBtn.addListener("execute", () => {
-        if (this.__selectedItemId && this.__isSelectedItemAnEdge()) {
-          this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
-          this.__selectedItemChanged(null);
-        }
-      }, this);
-      return unlinkBtn;
     },
 
     __createInputOutputNodesLayout: function(isInput) {
