@@ -12,6 +12,7 @@ from typing import Any, Dict, Iterable, List, Tuple
 import aio_pika
 import pytest
 import sqlalchemy as sa
+from aiopg.sa.result import RowProxy
 from models_library.settings.celery import CeleryConfig
 from models_library.settings.rabbit import RabbitConfig
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
