@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -50,7 +51,6 @@ async def _generate_tasks_list_from_project(
 ) -> List[CompTaskAtDB]:
 
     list_comp_tasks = []
-
     for internal_id, node_id in enumerate(project.workbench, 1):
         node: Node = project.workbench[node_id]
 
@@ -64,10 +64,11 @@ async def _generate_tasks_list_from_project(
         if node_class == NodeClass.FRONTEND:
             node_details = _FRONTEND_SERVICES_CATALOG.get(service_key_version.key, None)
         else:
-            node_details = await director_client.get_service_details(
-                service_key_version
+            node_details, node_extras = await asyncio.gather(
+                director_client.get_service_details(service_key_version),
+                director_client.get_service_extras(service_key_version),
             )
-            node_extras = await director_client.get_service_extras(service_key_version)
+
         if not node_details:
             continue
 
