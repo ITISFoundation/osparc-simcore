@@ -73,7 +73,7 @@ async def take_snapshot(
     child["published"] = False
 
     snapshot = Snapshot(
-        name=f"Snapshot {snapshot_timestamp} [{parent['name']}]",
+        name=snapshot_label or f"Snapshot {snapshot_timestamp} [{parent['name']}]",
         created_at=snapshot_timestamp,
         parent_uuid=parent["uuid"],
         project_uuid=child["uuid"],

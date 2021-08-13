@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Callable, Optional, Union
 from uuid import UUID, uuid3
 
-from aiohttp import web
 from models_library.projects_nodes import OutputID
 from pydantic import (
     AnyUrl,
@@ -47,7 +46,11 @@ class Snapshot(BaseModel):
     # TODO: can project_uuid be frozen property??
 
     @staticmethod
-    def compose_project_uuid(parent_uuid: UUID, snapshot_timestamp: datetime):
+    def compose_project_uuid(
+        parent_uuid: Union[UUID, str], snapshot_timestamp: datetime
+    ) -> UUID:
+        if isinstance(parent_uuid, str):
+            parent_uuid = UUID(parent_uuid)
         return uuid3(parent_uuid, f"snapshot.{snapshot_timestamp}")
 
 
@@ -68,7 +71,9 @@ class SnapshotItem(Snapshot):
     url_parameters: Optional[AnyUrl] = None
 
     @classmethod
-    def from_snapshot(cls, snapshot: Snapshot, url_for: Callable) -> "SnapshotItem":
+    def from_snapshot(
+        cls, snapshot: Snapshot, url_for: Callable[..., URL]
+    ) -> "SnapshotItem":
         # TODO: is this the right place?  requires pre-defined routes
         # how to guarantee routes names
         return cls(

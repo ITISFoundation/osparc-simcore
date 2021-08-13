@@ -192,7 +192,7 @@ async def create_project_snapshot_handler(request: web.Request):
         )
 
         # fetch snapshot if any
-        parent_uuid: UUID = parent["uuid"]
+        parent_uuid: UUID = UUID(parent["uuid"])
         snapshot_timestamp: datetime = parent["lastChangeDate"]
 
         snapshot_orm = await snapshots_repo.get(

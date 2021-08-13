@@ -5,7 +5,6 @@ from uuid import UUID
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
-from pydantic import PositiveInt
 from simcore_postgres_database.models.snapshots import snapshots
 from simcore_service_webserver.snapshots_models import Snapshot
 
@@ -75,7 +74,7 @@ class SnapshotsRepository(BaseRepository):
         )
         query = snapshots.select().where(
             (snapshots.c.parent_uuid == str(parent_uuid))
-            & (snapshots.c.project_uuid == snapshot_project_uuid)
+            & (snapshots.c.project_uuid == str(snapshot_project_uuid))
         )
         return await self._first(query)
 
