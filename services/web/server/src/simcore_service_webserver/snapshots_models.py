@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, Union
-from uuid import UUID
+from uuid import UUID, uuid3
 
 from aiohttp import web
 from models_library.projects_nodes import OutputID
@@ -42,6 +42,12 @@ class Snapshot(BaseModel):
 
     class Config:
         orm_mode = True
+
+    # TODO: can project_uuid be frozen property??
+
+    @staticmethod
+    def compose_project_uuid(parent_uuid: UUID, snapshot_timestamp: datetime):
+        return uuid3(parent_uuid, f"snapshot.{snapshot_timestamp}")
 
 
 ## API models ----------
