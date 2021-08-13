@@ -14,7 +14,7 @@ from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
-from ....models.schemas.services import NodeRequirementType, ServiceExtras
+from ....models.schemas.services import ServiceExtras
 from ....utils.computations import to_node_class
 from ....utils.db import RUNNING_STATE_TO_DB
 from ....utils.logging_utils import log_decorator
@@ -74,8 +74,8 @@ async def _generate_tasks_list_from_project(
         requires_mpi = False
         requires_gpu = False
         if node_extras:
-            requires_gpu = NodeRequirementType.GPU in node_extras.node_requirements
-            requires_mpi = NodeRequirementType.MPI in node_extras.node_requirements
+            requires_gpu = node_extras.node_requirements.gpu is not None
+            requires_mpi = node_extras.node_requirements.mpi is not None
 
         image = Image(
             name=service_key_version.key,

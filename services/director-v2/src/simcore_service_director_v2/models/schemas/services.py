@@ -1,19 +1,12 @@
-from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import List, Optional
 
 from models_library.basic_types import PortInt
 from models_library.projects_nodes_io import UUID_REGEX
 from models_library.services import KEY_RE, VERSION_RE, ServiceDockerData
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
+from pydantic import BaseModel, Field
+from pydantic.types import ByteSize, NonNegativeInt, PositiveInt
 
 from .dynamic_services import ServiceState
-
-
-class NodeRequirementType(str, Enum):
-    CPU = "CPU"
-    GPU = "GPU"
-    RAM = "RAM"
-    MPI = "MPI"
 
 
 class ServiceBuildDetails(BaseModel):
@@ -22,8 +15,35 @@ class ServiceBuildDetails(BaseModel):
     vcs_url: str
 
 
+class NodeRequirements(BaseModel):
+    cpu: float = Field(
+        ...,
+        description="defines the required (maximum) CPU shares for running the services",
+        alias="CPU",
+    )
+    gpu: Optional[NonNegativeInt] = Field(
+        None,
+        description="defines the required (maximum) GPU for running the services",
+        alias="GPU",
+    )
+    ram: ByteSize = Field(
+        ...,
+        description="defines the required (maximum) amount of RAM for running the services in bytes",
+        alias="RAM",
+        ge=1024,
+    )
+    mpi: Optional[int] = Field(
+        None,
+        deprecated=True,
+        description="defines whether a MPI node is required for running the services",
+        alias="MPI",
+        le=1,
+        gt=0,
+    )
+
+
 class ServiceExtras(BaseModel):
-    node_requirements: Dict[NodeRequirementType, Union[PositiveFloat, PositiveInt]]
+    node_requirements: NodeRequirements
     service_build_details: Optional[ServiceBuildDetails]
 
 

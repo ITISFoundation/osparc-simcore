@@ -13,20 +13,24 @@ class InlineResponse2002DataNodeRequirements(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, cpu: float = 1, gpu: int = None, ram: int = None):
+    def __init__(
+        self, cpu: float = 1, gpu: int = None, ram: int = None, mpi: int = None
+    ):
         """InlineResponse2002DataNodeRequirements - a model defined in OpenAPI
 
         :param cpu: The cpu of this InlineResponse2002DataNodeRequirements.
         :param gpu: The gpu of this InlineResponse2002DataNodeRequirements.
         :param ram: The ram of this InlineResponse2002DataNodeRequirements.
+        :param mpi: The mpi of this InlineResponse2002DataNodeRequirements.
         """
-        self.openapi_types = {"cpu": float, "gpu": int, "ram": int}
+        self.openapi_types = {"cpu": float, "gpu": int, "ram": int, "mpi": int}
 
-        self.attribute_map = {"cpu": "CPU", "gpu": "GPU", "ram": "RAM"}
+        self.attribute_map = {"cpu": "CPU", "gpu": "GPU", "ram": "RAM", "mpi": "MPI"}
 
         self._cpu = cpu
         self._gpu = gpu
         self._ram = ram
+        self._mpi = mpi
 
     @classmethod
     def from_dict(cls, dikt: dict) -> "InlineResponse2002DataNodeRequirements":
@@ -57,6 +61,10 @@ class InlineResponse2002DataNodeRequirements(Model):
         """
         if cpu is None:
             raise ValueError("Invalid value for `cpu`, must not be `None`")
+        if cpu is not None and cpu < 1:
+            raise ValueError(
+                "Invalid value for `cpu`, must be a value greater than or equal to `1`"
+            )
 
         self._cpu = cpu
 
@@ -78,6 +86,10 @@ class InlineResponse2002DataNodeRequirements(Model):
         :param gpu: The gpu of this InlineResponse2002DataNodeRequirements.
         :type gpu: int
         """
+        if gpu is not None and gpu < 0:
+            raise ValueError(
+                "Invalid value for `gpu`, must be a value greater than or equal to `0`"
+            )
 
         self._gpu = gpu
 
@@ -99,5 +111,36 @@ class InlineResponse2002DataNodeRequirements(Model):
         :param ram: The ram of this InlineResponse2002DataNodeRequirements.
         :type ram: int
         """
+        if ram is None:
+            raise ValueError("Invalid value for `ram`, must not be `None`")
+        if ram is not None and ram < 1024:
+            raise ValueError(
+                "Invalid value for `ram`, must be a value greater than or equal to `1024`"
+            )
 
         self._ram = ram
+
+    @property
+    def mpi(self):
+        """Gets the mpi of this InlineResponse2002DataNodeRequirements.
+
+
+        :return: The mpi of this InlineResponse2002DataNodeRequirements.
+        :rtype: int
+        """
+        return self._mpi
+
+    @mpi.setter
+    def mpi(self, mpi):
+        """Sets the mpi of this InlineResponse2002DataNodeRequirements.
+
+
+        :param mpi: The mpi of this InlineResponse2002DataNodeRequirements.
+        :type mpi: int
+        """
+        if mpi is not None and mpi > 1:
+            raise ValueError(
+                "Invalid value for `mpi`, must be a value less than or equal to `1`"
+            )
+
+        self._mpi = mpi
