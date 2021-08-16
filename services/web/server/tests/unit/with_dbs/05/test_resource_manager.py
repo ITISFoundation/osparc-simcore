@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 
 API_VERSION = "v0"
 GARBAGE_COLLECTOR_INTERVAL = 1
-SERVICE_DELETION_DELAY = 1
+SERVICE_DELETION_DELAY = 2
 CHECK_BACKGROUND_RETRY_POLICY = dict(
     stop=stop_after_attempt(2),
     wait=wait_fixed(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL),
@@ -465,7 +465,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     # We have no mock-up for the heatbeat...
     await sio.disconnect()
     assert not sio.sid
-    await asyncio.sleep(0.5)  # let the thread call the method
+    await asyncio.sleep(1)  # let the thread call the method
     socket_project_state_update_mock_callable.assert_called_with(
         json.dumps(
             {
