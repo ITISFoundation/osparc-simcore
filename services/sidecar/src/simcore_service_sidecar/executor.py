@@ -16,7 +16,6 @@ from aiodocker.containers import DockerContainer
 from aiodocker.exceptions import DockerContainerError, DockerError
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from packaging import version
-from pydantic import BaseModel
 from servicelib.logging_utils import log_decorator
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from servicelib.utils import fire_and_forget_task, logged_gather
@@ -72,13 +71,6 @@ class TaskSharedVolumes:
                     )
 
                 shutil.rmtree(str(folder), onerror=log_error)
-
-
-class ServiceResources(BaseModel):
-    memory_reservation: int = 0
-    memory_limit: int = config.CompServices.DEFAULT_MAX_MEMORY
-    nano_cpus_reservation: int = 0
-    nano_cpus_limit: int = config.CompServices.DEFAULT_MAX_NANO_CPUS
 
 
 @attr.s(auto_attribs=True)
