@@ -19,9 +19,13 @@ def test_snapshot_orm_to_domain_model(faker: Faker):
         project_uuid=faker.uuid4(),
     )
 
+    # snapshot_orm is dot-attr accessed so
     snapshot = Snapshot.from_orm(snapshot_orm)
 
     assert snapshot.dict(by_alias=True) == snapshot_orm.dict()
+
+    # snapshot_orm here is dict-like so ...
+    assert Snapshot.parse_obj(snapshot_orm) == snapshot
 
 
 def test_compose_project_uuid():

@@ -34,7 +34,8 @@ class Snapshot(BaseModel):
     )
     created_at: datetime = Field(
         default_factory=datetime.utcnow,
-        description="Timestamp of the time snapshot was taken from parent. Notice that parent might change with time",
+        description="Timestamp of the time snapshot was taken from parent."
+        "Notice that parent might change with time",
     )
 
     parent_uuid: UUID = Field(..., description="Parent's project uuid")

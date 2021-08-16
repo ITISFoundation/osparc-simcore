@@ -73,7 +73,7 @@ def handle_request_errors(handler: Callable):
     return wrapped
 
 
-def create_url_for(request: web.Request):
+def create_url_for_function(request: web.Request) -> Callable:
     app = request.app
 
     def url_for(router_name: str, **params) -> Optional[str]:
@@ -109,7 +109,7 @@ async def list_project_snapshots_handler(request: web.Request):
     Lists references on project snapshots
     """
     snapshots_repo = SnapshotsRepository(request)
-    url_for = create_url_for(request)
+    url_for = create_url_for_function(request)
 
     @validate_arguments
     async def _list_snapshots(project_id: UUID) -> List[Snapshot]:
@@ -142,7 +142,7 @@ async def list_project_snapshots_handler(request: web.Request):
 @handle_request_errors
 async def get_project_snapshot_handler(request: web.Request):
     snapshots_repo = SnapshotsRepository(request)
-    url_for = create_url_for(request)
+    url_for = create_url_for_function(request)
 
     @validate_arguments
     async def _get_snapshot(project_id: UUID, snapshot_id: str) -> Snapshot:
@@ -174,7 +174,7 @@ async def create_project_snapshot_handler(request: web.Request):
     snapshots_repo = SnapshotsRepository(request)
     projects_repo = ProjectsRepository(request)
     user_id = request[RQT_USERID_KEY]
-    url_for = create_url_for(request)
+    url_for = create_url_for_function(request)
 
     @validate_arguments
     async def _create_snapshot(
