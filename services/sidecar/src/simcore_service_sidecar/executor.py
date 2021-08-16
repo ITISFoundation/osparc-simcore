@@ -277,8 +277,8 @@ class Executor:
         # get user-defined IT limitations
         async def _get_resource_limitations() -> Dict[str, int]:
             resource_limitations = {
-                "Memory": config.CompServices.DEFAULT_MAX_MEMORY,
-                "NanoCPUs": config.CompServices.DEFAULT_MAX_NANO_CPUS,
+                "Memory": config.COMP_SERVICES.DEFAULT_MAX_MEMORY,
+                "NanoCPUs": config.COMP_SERVICES.DEFAULT_MAX_NANO_CPUS,
             }
             for setting in self.service_settings_labels:
                 if not setting.name == "Resources":
@@ -288,10 +288,10 @@ class Executor:
 
                 limits = setting.value.get("Limits", {})
                 resource_limitations["Memory"] = limits.get(
-                    "MemoryBytes", config.CompServices.DEFAULT_MAX_MEMORY
+                    "MemoryBytes", config.COMP_SERVICES.DEFAULT_MAX_MEMORY
                 )
                 resource_limitations["NanoCPUs"] = limits.get(
-                    "NanoCPUs", config.CompServices.DEFAULT_MAX_NANO_CPUS
+                    "NanoCPUs", config.COMP_SERVICES.DEFAULT_MAX_NANO_CPUS
                 )
             log.debug(
                 "Current resource limitations are %s", pformat(resource_limitations)
@@ -401,12 +401,12 @@ class Executor:
                     container_data = await container.show()
                     if (
                         (time.perf_counter() - start_time)
-                        > config.CompServices.DEFAULT_RUNTIME_TIMEOUT
-                        and config.CompServices.DEFAULT_RUNTIME_TIMEOUT > 0
+                        > config.COMP_SERVICES.DEFAULT_RUNTIME_TIMEOUT
+                        and config.COMP_SERVICES.DEFAULT_RUNTIME_TIMEOUT > 0
                     ):
                         log.error(
                             "Running container timed-out after %ss and will be stopped now\nlogs: %s",
-                            config.CompServices.DEFAULT_RUNTIME_TIMEOUT,
+                            config.COMP_SERVICES.DEFAULT_RUNTIME_TIMEOUT,
                             container.log(stdout=True, stderr=True),
                         )
                         await container.stop()

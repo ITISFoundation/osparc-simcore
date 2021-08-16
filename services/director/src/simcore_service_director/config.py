@@ -22,6 +22,14 @@ DEBUG_MODE = log_level == logging.DEBUG
 API_VERSION: str = "v0"
 API_ROOT: str = "api"
 
+# NOTE: these settings must be in sync with settings-library: comp_services.py (since the director is frozen)
+DEFAULT_MAX_NANO_CPUS: int = int(
+    os.environ.get("DEFAULT_MAX_NANO_CPUS", 4 * pow(10, 9))
+)
+DEFAULT_MAX_MEMORY: int = int(
+    os.environ.get("DEFAULT_MAX_MEMORY", 2 * pow(1024, 3))
+)  # 2 GiB
+
 SERVICE_RUNTIME_SETTINGS: str = "simcore.service.settings"
 SERVICE_REVERSE_PROXY_SETTINGS: str = "simcore.service.reverse-proxy-settings"
 SERVICE_RUNTIME_BOOTSETTINGS: str = "simcore.service.bootsettings"

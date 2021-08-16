@@ -341,11 +341,9 @@ async def get_service_extras(
 
     # check physical node requirements
     # all nodes require "CPU"
-    DEFAULT_REQUIRED_NANO_CPUS: float = 0.5 * 1.0e09
-    DEFAULT_REQUIRED_RAM_BYTES = 128 * 1024 * 1024
     result["node_requirements"] = {
-        "CPU": DEFAULT_REQUIRED_NANO_CPUS / 1.0e09,
-        "RAM": DEFAULT_REQUIRED_RAM_BYTES,
+        "CPU": config.DEFAULT_MAX_NANO_CPUS / 1.0e09,
+        "RAM": config.DEFAULT_MAX_MEMORY,
     }
     # check if the service requires GPU support
 
@@ -381,13 +379,13 @@ async def get_service_extras(
                 result["node_requirements"]["CPU"] = (
                     float(res_limit.get("NanoCPUs", 0))
                     or float(res_reservation.get("NanoCPUs", 0))
-                    or DEFAULT_REQUIRED_NANO_CPUS
+                    or config.DEFAULT_MAX_NANO_CPUS
                 ) / 1.0e09
                 # RAM
                 result["node_requirements"]["RAM"] = (
                     res_limit.get("MemoryBytes", 0)
                     or res_reservation.get("MemoryBytes", 0)
-                    or DEFAULT_REQUIRED_RAM_BYTES
+                    or config.DEFAULT_MAX_MEMORY
                 )
 
             # discrete resources (custom made ones)
