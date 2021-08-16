@@ -13263,7 +13263,6 @@ paths:
           schema:
             title: Offset
             type: integer
-            description: index to the first item to return (pagination)
             default: 0
           name: offset
           in: query
@@ -13274,7 +13273,6 @@ paths:
             maximum: 50
             minimum: 1
             type: integer
-            description: maximum number of items to return (pagination)
             default: 20
           name: limit
           in: query
