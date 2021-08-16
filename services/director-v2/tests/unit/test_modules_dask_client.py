@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
-import asyncio
 from typing import Any, Dict
 from uuid import uuid4
 
@@ -18,6 +17,7 @@ from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.schemas.comp_scheduler import TaskIn
 from simcore_service_director_v2.modules.dask_client import DaskClient
 from starlette.testclient import TestClient
+from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
 
 
 @pytest.fixture
@@ -81,6 +81,15 @@ async def test_send_computation_task(
     runtime_requirements: str,
     mocker: MockerFixture,
 ):
+    @retry(
+        stop=stop_after_delay(10),
+        wait=wait_random(0, 1),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    )
+    async def wait_for_call(mocked_fct):
+        mocked_fct.assert_called_once()
+
     user_id = 12
     project_id = uuid4()
     node_id = uuid4()
@@ -111,7 +120,7 @@ async def test_send_computation_task(
     # we shall have the results defined above
     assert task_result == 123
     assert future.key == job_id
-    mocked_done_callback_fct.assert_called_once()
+    await wait_for_call(mocked_done_callback_fct)
     mocked_done_callback_fct.reset_mock()
 
     # start another computation that will be aborted
@@ -130,5 +139,4 @@ async def test_send_computation_task(
     assert future.key == job_id
     dask_client.abort_computation_tasks([job_id])
     assert future.cancelled() == True
-    await asyncio.sleep(2)
-    mocked_done_callback_fct.assert_called_once()
+    await wait_for_call(mocked_done_callback_fct)

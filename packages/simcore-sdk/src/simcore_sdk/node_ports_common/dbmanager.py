@@ -22,18 +22,18 @@ log = logging.getLogger(__name__)
 
 
 async def _get_node_from_db(
-    node_uuid: str, connection: aiopg.sa.SAConnection
+    project_id: str, node_uuid: str, connection: aiopg.sa.SAConnection
 ) -> RowProxy:
     log.debug(
         "Reading from comp_tasks table for node uuid %s, project %s",
         node_uuid,
-        config.PROJECT_ID,
+        project_id,
     )
     result = await connection.execute(
         comp_tasks.select(
             and_(
                 comp_tasks.c.node_id == node_uuid,
-                comp_tasks.c.project_id == config.PROJECT_ID,
+                comp_tasks.c.project_id == project_id,
             )
         )
     )
@@ -54,7 +54,7 @@ async def wait_till_postgres_responsive(dsn: DataSourceName) -> None:
 
 class DBContextManager:
     def __init__(self, db_engine: Optional[aiopg.sa.Engine] = None):
-        self._db_engine: aiopg.sa.Engine = db_engine
+        self._db_engine: Optional[aiopg.sa.Engine] = db_engine
         self._db_engine_created: bool = False
 
     async def _create_db_engine(self) -> aiopg.sa.Engine:
@@ -77,7 +77,7 @@ class DBContextManager:
         return self._db_engine
 
     async def __aexit__(self, exc_type, exc, tb):
-        if self._db_engine_created:
+        if self._db_engine and self._db_engine_created:
             self._db_engine.close()
             await self._db_engine.wait_closed()
             log.debug(
@@ -92,7 +92,9 @@ class DBManager:
     def __init__(self, db_engine: Optional[aiopg.sa.Engine] = None):
         self._db_engine = db_engine
 
-    async def write_ports_configuration(self, json_configuration: str, node_uuid: str):
+    async def write_ports_configuration(
+        self, json_configuration: str, project_id: str, node_uuid: str
+    ):
         log.debug("Writing ports configuration to database")
 
         node_configuration = json.loads(json_configuration)
@@ -106,7 +108,7 @@ class DBManager:
                     .where(
                         and_(
                             comp_tasks.c.node_id == node_uuid,
-                            comp_tasks.c.project_id == config.PROJECT_ID,
+                            comp_tasks.c.project_id == project_id,
                         )
                     )
                     .values(
@@ -117,13 +119,17 @@ class DBManager:
                     )
                 )
 
-    async def get_ports_configuration_from_node_uuid(self, node_uuid: str) -> str:
+    async def get_ports_configuration_from_node_uuid(
+        self, project_id: str, node_uuid: str
+    ) -> str:
         log.debug(
             "Getting ports configuration of node %s from comp_tasks table", node_uuid
         )
         async with DBContextManager(self._db_engine) as engine:
             async with engine.acquire() as connection:
-                node: RowProxy = await _get_node_from_db(node_uuid, connection)
+                node: RowProxy = await _get_node_from_db(
+                    project_id, node_uuid, connection
+                )
                 node_json_config = json.dumps(
                     {
                         "schema": node.schema,

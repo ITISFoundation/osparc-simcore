@@ -3,8 +3,8 @@
 # pylint:disable=redefined-outer-name
 
 import pytest
-from simcore_sdk.node_ports import exceptions
 from simcore_sdk.node_ports._data_item import DataItem, DataItemValue
+from simcore_sdk.node_ports_common import exceptions
 
 
 @pytest.mark.parametrize(

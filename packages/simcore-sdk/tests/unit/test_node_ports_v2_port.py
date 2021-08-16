@@ -7,12 +7,14 @@
 import re
 import shutil
 import tempfile
+import threading
 from collections import namedtuple
 from pathlib import Path
 from typing import Any, Dict, Optional, Type, Union
 
 import pytest
 from aiohttp.client import ClientSession
+from attr import dataclass
 from pydantic.error_wrappers import ValidationError
 from simcore_sdk.node_ports_v2 import exceptions, node_config
 from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink, PortLink
@@ -42,7 +44,7 @@ def another_node_file_name() -> Path:
 
 
 def download_file_folder_name() -> Path:
-    return Path(tempfile.gettempdir(), "simcorefiles")
+    return Path(tempfile.gettempdir(), "simcorefiles", f"{threading.get_ident()}")
 
 
 def project_id() -> str:
@@ -53,8 +55,8 @@ def node_uuid() -> str:
     return "609b7af4-6861-4aa7-a16e-730ea8125190"
 
 
-def user_id() -> str:
-    return "666"
+def user_id() -> int:
+    return 666
 
 
 def simcore_store_id() -> str:
@@ -116,7 +118,7 @@ def node_uuid_fixture() -> str:
 
 
 @pytest.fixture(scope="module", name="user_id")
-def user_id_fixture() -> str:
+def user_id_fixture() -> int:
     """NOTE: since pytest does not allow to use fixtures inside parametrizations,
     this trick allows to re-use the same function in a fixture with a same "fixture" name"""
     return user_id()
@@ -142,7 +144,7 @@ async def mock_download_file(
         shutil.copy(this_node_file, destination_path)
         return destination_path
 
-    from simcore_sdk.node_ports import filemanager
+    from simcore_sdk.node_ports_common import filemanager
 
     monkeypatch.setattr(
         filemanager, "download_file_from_link", mock_download_file_from_link
@@ -157,30 +159,24 @@ def e_tag_fixture() -> str:
 @pytest.fixture
 async def mock_upload_file(mocker, e_tag):
     mock = mocker.patch(
-        "simcore_sdk.node_ports.filemanager.upload_file",
+        "simcore_sdk.node_ports_common.filemanager.upload_file",
         return_value=(simcore_store_id(), e_tag),
     )
     yield mock
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def common_fixtures(
     loop,
     storage_v0_service_mock,
     mock_download_file,
     mock_upload_file,
-    project_id: str,
-    user_id: str,
-    node_uuid: str,
     this_node_file: Path,
     another_node_file: Path,
     download_file_folder: Path,
 ):
     """this module main fixture"""
 
-    node_config.USER_ID = user_id
-    node_config.PROJECT_ID = project_id
-    node_config.NODE_UUID = node_uuid
     node_config.STORAGE_ENDPOINT = "storage:8080"
 
 
@@ -524,6 +520,10 @@ def common_fixtures(
     ],
 )
 async def test_valid_port(
+    common_fixtures: None,
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
     port_cfg: Dict[str, Any],
     exp_value_type: Type[Union[int, float, bool, str, Path]],
     exp_value_converter: Type[Union[int, float, bool, str, Path]],
@@ -534,7 +534,12 @@ async def test_valid_port(
     exp_new_get_value: Union[int, float, bool, str, Path],
     another_node_file: Path,
 ):
+    @dataclass
     class FakeNodePorts:
+        user_id: int
+        project_id: str
+        node_uuid: str
+
         async def get(self, key):
             # this gets called when a node links to another node we return the get value but for files it needs to be a real one
             return (
@@ -544,12 +549,16 @@ async def test_valid_port(
             )
 
         async def _node_ports_creator_cb(self, node_uuid: str):
-            return FakeNodePorts()
+            return FakeNodePorts(
+                user_id=user_id, project_id=project_id, node_uuid=node_uuid
+            )
 
         async def save_to_db_cb(self, node_ports):
             return
 
-    fake_node_ports = FakeNodePorts()
+    fake_node_ports = FakeNodePorts(
+        user_id=user_id, project_id=project_id, node_uuid=node_uuid
+    )
     port = Port(**port_cfg)
     port._node_ports = fake_node_ports
 
@@ -631,7 +640,7 @@ async def test_valid_port(
         },
     ],
 )
-def test_invalid_port(port_cfg: Dict[str, Any]):
+def test_invalid_port(common_fixtures: None, port_cfg: Dict[str, Any]):
     with pytest.raises(ValidationError):
         Port(**port_cfg)
 
@@ -639,7 +648,9 @@ def test_invalid_port(port_cfg: Dict[str, Any]):
 @pytest.mark.parametrize(
     "port_cfg", [(create_valid_port_config("data:*/*", key="set_some_inexisting_file"))]
 )
-async def test_invalid_file_type_setter(port_cfg: Dict[str, Any]):
+async def test_invalid_file_type_setter(
+    common_fixtures: None, project_id: str, node_uuid: str, port_cfg: Dict[str, Any]
+):
     port = Port(**port_cfg)
     # set a file that does not exist
     with pytest.raises(exceptions.InvalidItemTypeError):

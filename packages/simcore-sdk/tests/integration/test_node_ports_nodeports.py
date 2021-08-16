@@ -6,29 +6,32 @@
 
 import filecmp
 import tempfile
+import threading
 from pathlib import Path
-from typing import Callable, Dict, Type
+from typing import Any, Callable, Dict, Type, Union
 
 import np_helpers  # pylint: disable=no-name-in-module
 import pytest
 import sqlalchemy as sa
 from simcore_sdk import node_ports
-from simcore_sdk.node_ports import exceptions
 from simcore_sdk.node_ports._item import ItemConcreteValue
 from simcore_sdk.node_ports.nodeports import Nodeports
+from simcore_sdk.node_ports_common import exceptions
 
 pytest_simcore_core_services_selection = ["postgres", "storage"]
 
 pytest_simcore_ops_services_selection = [
     "minio",
-    # NOTE: keep for debugging
-    "portainer",
     "adminer",
 ]
 
 
 async def _check_port_valid(
-    ports: Nodeports, config_dict: Dict, port_type: str, key_name: str, key: str
+    ports: Nodeports,
+    config_dict: Dict,
+    port_type: str,
+    key_name: str,
+    key: Union[str, int],
 ):
     assert (await getattr(ports, port_type))[key].key == key_name
     # check required values
@@ -91,15 +94,27 @@ async def check_config_valid(ports: Nodeports, config_dict: Dict):
 
 
 async def test_default_configuration(
-    default_configuration: Dict,
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    default_configuration: Dict[str, Any],
 ):
     config_dict = default_configuration
-    await check_config_valid(await node_ports.ports(), config_dict)
+    await check_config_valid(
+        await node_ports.ports(
+            user_id=user_id, project_id=project_id, node_uuid=node_uuid
+        ),
+        config_dict,
+    )
 
 
-async def test_invalid_ports(special_configuration: Callable):
+async def test_invalid_ports(
+    user_id: int, project_id: str, node_uuid: str, special_configuration: Callable
+):
     config_dict, _, _ = special_configuration()
-    PORTS = await node_ports.ports()
+    PORTS = await node_ports.ports(
+        user_id=user_id, project_id=project_id, node_uuid=node_uuid
+    )
     await check_config_valid(PORTS, config_dict)
 
     assert not (await PORTS.inputs)
@@ -128,6 +143,9 @@ async def test_invalid_ports(special_configuration: Callable):
     ],
 )
 async def test_port_value_accessors(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
     special_configuration: Callable,
     item_type: str,
     item_value: ItemConcreteValue,
@@ -138,7 +156,9 @@ async def test_port_value_accessors(
         inputs=[(item_key, item_type, item_value)],
         outputs=[(item_key, item_type, None)],
     )
-    PORTS = await node_ports.ports()
+    PORTS = await node_ports.ports(
+        user_id=user_id, project_id=project_id, node_uuid=node_uuid
+    )
     await check_config_valid(PORTS, config_dict)
 
     assert isinstance(await (await PORTS.inputs)[item_key].get(), item_pytype)
@@ -163,6 +183,9 @@ async def test_port_value_accessors(
     ],
 )
 async def test_port_file_accessors(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
     special_configuration: Callable,
     filemanager_cfg: None,
     s3_simcore_location: str,
@@ -176,7 +199,9 @@ async def test_port_file_accessors(
         inputs=[("in_1", item_type, config_value)],
         outputs=[("out_34", item_type, None)],
     )
-    PORTS = await node_ports.ports()
+    PORTS = await node_ports.ports(
+        user_id=user_id, project_id=project_id, node_uuid=node_uuid
+    )
     await check_config_valid(PORTS, config_dict)
     assert await (await PORTS.outputs)["out_34"].get() is None  # check emptyness
     # with pytest.raises(exceptions.S3InvalidPathError):
@@ -193,18 +218,28 @@ async def test_port_file_accessors(
     assert isinstance(await (await PORTS.outputs)["out_34"].get(), item_pytype)
     assert (await (await PORTS.outputs)["out_34"].get()).exists()
     assert str(await (await PORTS.outputs)["out_34"].get()).startswith(
-        str(Path(tempfile.gettempdir(), "simcorefiles", "out_34"))
+        str(
+            Path(
+                tempfile.gettempdir(),
+                "simcorefiles",
+                f"{threading.get_ident()}",
+                "out_34",
+            )
+        )
     )
     filecmp.clear_cache()
     assert filecmp.cmp(item_value, await (await PORTS.outputs)["out_34"].get())
 
 
 async def test_adding_new_ports(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
     special_configuration: Callable,
-    postgres_session: sa.orm.session.Session,
+    postgres_db: sa.engine.Engine,
 ):
     config_dict, project_id, node_uuid = special_configuration()
-    PORTS = await node_ports.ports()
+    PORTS = await node_ports.ports(user_id, project_id, node_uuid)
     await check_config_valid(PORTS, config_dict)
     # check empty configuration
     assert not (await PORTS.inputs)
@@ -223,7 +258,7 @@ async def test_adding_new_ports(
     )
     config_dict["inputs"].update({"in_15": 15})
     np_helpers.update_configuration(
-        postgres_session, project_id, node_uuid, config_dict
+        postgres_db, project_id, node_uuid, config_dict
     )  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
 
@@ -239,33 +274,38 @@ async def test_adding_new_ports(
         }
     )
     np_helpers.update_configuration(
-        postgres_session, project_id, node_uuid, config_dict
+        postgres_db, project_id, node_uuid, config_dict
     )  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
 
 
 async def test_removing_ports(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
     special_configuration: Callable,
-    postgres_session: sa.orm.session.Session,
+    postgres_db: sa.engine.Engine,
 ):
     config_dict, project_id, node_uuid = special_configuration(
         inputs=[("in_14", "integer", 15), ("in_17", "boolean", False)],
         outputs=[("out_123", "string", "blahblah"), ("out_2", "number", -12.3)],
     )  # pylint: disable=W0612
-    PORTS = await node_ports.ports()
+    PORTS = await node_ports.ports(
+        user_id=user_id, project_id=project_id, node_uuid=node_uuid
+    )
     await check_config_valid(PORTS, config_dict)
     # let's remove the first input
     del config_dict["schema"]["inputs"]["in_14"]
     del config_dict["inputs"]["in_14"]
     np_helpers.update_configuration(
-        postgres_session, project_id, node_uuid, config_dict
+        postgres_db, project_id, node_uuid, config_dict
     )  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
     # let's do the same for the second output
     del config_dict["schema"]["outputs"]["out_2"]
     del config_dict["outputs"]["out_2"]
     np_helpers.update_configuration(
-        postgres_session, project_id, node_uuid, config_dict
+        postgres_db, project_id, node_uuid, config_dict
     )  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
 
@@ -286,6 +326,9 @@ async def test_removing_ports(
     ],
 )
 async def test_get_value_from_previous_node(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
     special_2nodes_configuration: Callable,
     node_link: Callable,
     item_type: str,
@@ -293,10 +336,17 @@ async def test_get_value_from_previous_node(
     item_pytype: Type,
 ):
     config_dict, _, _ = special_2nodes_configuration(
+        prev_node_inputs=None,
         prev_node_outputs=[("output_int", item_type, item_value)],
         inputs=[("in_15", item_type, node_link("output_int"))],
+        outputs=None,
+        project_id=project_id,
+        previous_node_id="myfakepreviousnodeid",
+        node_id=node_uuid,
     )
-    PORTS = await node_ports.ports()
+    PORTS = await node_ports.ports(
+        user_id=user_id, project_id=project_id, node_uuid=node_uuid
+    )
 
     await check_config_valid(PORTS, config_dict)
     input_value = await (await PORTS.inputs)["in_15"].get()
@@ -314,6 +364,7 @@ async def test_get_value_from_previous_node(
 )
 async def test_get_file_from_previous_node(
     special_2nodes_configuration: Callable,
+    user_id: int,
     project_id: str,
     node_uuid: str,
     filemanager_cfg: None,
@@ -324,17 +375,26 @@ async def test_get_file_from_previous_node(
     item_pytype: Type,
 ):
     config_dict, _, _ = special_2nodes_configuration(
+        prev_node_inputs=None,
         prev_node_outputs=[("output_int", item_type, await store_link(item_value))],
         inputs=[("in_15", item_type, node_link("output_int"))],
+        outputs=None,
         project_id=project_id,
-        previous_node_id=node_uuid,
+        previous_node_id="my_fake_node_id",
+        node_id=node_uuid,
     )
-    PORTS = await node_ports.ports()
+    PORTS = await node_ports.ports(
+        user_id=user_id, project_id=project_id, node_uuid=node_uuid
+    )
     await check_config_valid(PORTS, config_dict)
     file_path = await (await PORTS.inputs)["in_15"].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(
-        tempfile.gettempdir(), "simcorefiles", "in_15", Path(item_value).name
+        tempfile.gettempdir(),
+        "simcorefiles",
+        f"{threading.get_ident()}",
+        "in_15",
+        Path(item_value).name,
     )
     assert file_path.exists()
     filecmp.clear_cache()
@@ -352,34 +412,46 @@ async def test_get_file_from_previous_node(
 )
 async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     special_2nodes_configuration: Callable,
+    user_id: int,
     project_id: str,
     node_uuid: str,
     filemanager_cfg: None,
     node_link: Callable,
     store_link: Callable,
-    postgres_session: sa.orm.session.Session,
+    postgres_db: sa.engine.Engine,
     item_type: str,
     item_value: str,
     item_alias: str,
     item_pytype: Type,
 ):
     config_dict, _, this_node_uuid = special_2nodes_configuration(
+        prev_node_inputs=None,
         prev_node_outputs=[("in_15", item_type, await store_link(item_value))],
         inputs=[("in_15", item_type, node_link("in_15"))],
+        outputs=None,
         project_id=project_id,
-        previous_node_id=node_uuid,
+        previous_node_id="my_fake_previous_node_id",
+        node_id=node_uuid,
     )
-    PORTS = await node_ports.ports()
+    PORTS = await node_ports.ports(
+        user_id=user_id, project_id=project_id, node_uuid=node_uuid
+    )
     await check_config_valid(PORTS, config_dict)
     # add a filetokeymap
     config_dict["schema"]["inputs"]["in_15"]["fileToKeyMap"] = {item_alias: "in_15"}
     np_helpers.update_configuration(
-        postgres_session, project_id, this_node_uuid, config_dict
+        postgres_db, project_id, this_node_uuid, config_dict
     )  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
     file_path = await (await PORTS.inputs)["in_15"].get()
     assert isinstance(file_path, item_pytype)
-    assert file_path == Path(tempfile.gettempdir(), "simcorefiles", "in_15", item_alias)
+    assert file_path == Path(
+        tempfile.gettempdir(),
+        "simcorefiles",
+        f"{threading.get_ident()}",
+        "in_15",
+        item_alias,
+    )
     assert file_path.exists()
     filecmp.clear_cache()
     assert filecmp.cmp(file_path, item_value)
@@ -396,13 +468,14 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
 )
 async def test_file_mapping(
     special_configuration: Callable,
+    user_id: int,
     project_id: str,
     node_uuid: str,
     filemanager_cfg: None,
     s3_simcore_location: str,
     bucket: str,
     store_link: Callable,
-    postgres_session: sa.orm.session.Session,
+    postgres_db: sa.engine.Engine,
     item_type: str,
     item_value: str,
     item_alias: str,
@@ -414,23 +487,37 @@ async def test_file_mapping(
         project_id=project_id,
         node_id=node_uuid,
     )
-    PORTS = await node_ports.ports()
+    PORTS = await node_ports.ports(
+        user_id=user_id, project_id=project_id, node_uuid=node_uuid
+    )
     await check_config_valid(PORTS, config_dict)
     # add a filetokeymap
     config_dict["schema"]["inputs"]["in_1"]["fileToKeyMap"] = {item_alias: "in_1"}
     config_dict["schema"]["outputs"]["out_1"]["fileToKeyMap"] = {item_alias: "out_1"}
     np_helpers.update_configuration(
-        postgres_session, project_id, node_uuid, config_dict
+        postgres_db, project_id, node_uuid, config_dict
     )  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
     file_path = await (await PORTS.inputs)["in_1"].get()
     assert isinstance(file_path, item_pytype)
-    assert file_path == Path(tempfile.gettempdir(), "simcorefiles", "in_1", item_alias)
+    assert file_path == Path(
+        tempfile.gettempdir(),
+        "simcorefiles",
+        f"{threading.get_ident()}",
+        "in_1",
+        item_alias,
+    )
 
     # let's get it a second time to see if replacing works
     file_path = await (await PORTS.inputs)["in_1"].get()
     assert isinstance(file_path, item_pytype)
-    assert file_path == Path(tempfile.gettempdir(), "simcorefiles", "in_1", item_alias)
+    assert file_path == Path(
+        tempfile.gettempdir(),
+        "simcorefiles",
+        f"{threading.get_ident()}",
+        "in_1",
+        item_alias,
+    )
 
     # now set
     invalid_alias = Path("invalid_alias.fjfj")
