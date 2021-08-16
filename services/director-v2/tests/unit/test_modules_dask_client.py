@@ -14,7 +14,7 @@ from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import ConfigurationError
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.models.schemas.comp_scheduler import TaskIn
+from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.modules.dask_client import DaskClient
 from starlette.testclient import TestClient
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
@@ -75,10 +75,17 @@ def test_local_dask_cluster_through_client(dask_client: DaskClient):
     assert result == 7
 
 
-@pytest.mark.parametrize("runtime_requirements", ["cpu", "gpu", "mpi", "gpu:mpi"])
+@pytest.mark.parametrize(
+    "node_requirements",
+    [
+        NodeRequirements(CPU=1, RAM="128 MiB"),
+        NodeRequirements(CPU=1, GPU=1, RAM="256 MiB"),
+        NodeRequirements(CPU=2, RAM="128 MiB", MPI=1),
+    ],
+)
 async def test_send_computation_task(
     dask_client: DaskClient,
-    runtime_requirements: str,
+    node_requirements: NodeRequirements,
     mocker: MockerFixture,
 ):
     @retry(
@@ -93,7 +100,7 @@ async def test_send_computation_task(
     user_id = 12
     project_id = uuid4()
     node_id = uuid4()
-    fake_task = TaskIn(node_id=node_id, runtime_requirements=runtime_requirements)
+    fake_task = {node_id: node_requirements}
     mocked_done_callback_fct = mocker.Mock()
 
     def fake_sidecar_fct(job_id: str, u_id: str, prj_id: str, n_id: str) -> int:
@@ -106,7 +113,7 @@ async def test_send_computation_task(
     dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
-        single_tasks=[fake_task],
+        tasks=fake_task,
         callback=mocked_done_callback_fct,
         remote_fct=fake_sidecar_fct,
     )
@@ -127,7 +134,7 @@ async def test_send_computation_task(
     dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
-        single_tasks=[fake_task],
+        tasks=fake_task,
         callback=mocked_done_callback_fct,
         remote_fct=fake_sidecar_fct,
     )

@@ -7,7 +7,6 @@ from dask.distributed import Client, Future, fire_and_forget
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from simcore_service_director_v2.models.schemas.comp_scheduler import TaskIn
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_random
 
 from ..core.errors import ConfigurationError
@@ -69,7 +68,7 @@ class DaskClient:
         self,
         user_id: UserID,
         project_id: ProjectID,
-        single_tasks: Dict[NodeID, NodeRequirements],
+        tasks: Dict[NodeID, NodeRequirements],
         callback: Callable[[], None],
         remote_fct: Callable = None,
     ):
@@ -105,9 +104,10 @@ class DaskClient:
         def _from_node_reqs_to_dask_resources(
             node_reqs: NodeRequirements,
         ) -> Dict[str, Union[int, float]]:
+            """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
             return node_reqs.dict(exclude_unset=True, by_alias=True)
 
-        for node_id, node_reqs in single_tasks.items():
+        for node_id, node_reqs in tasks.items():
             job_id = f"dask_{uuid4()}"
             task_future = self.client.submit(
                 remote_fct,
