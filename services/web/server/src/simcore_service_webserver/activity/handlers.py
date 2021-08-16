@@ -2,13 +2,14 @@ import asyncio
 from collections import defaultdict
 
 import aiohttp
+import aiohttp.web
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.client_session import get_client_session
 from servicelib.request_keys import RQT_USERID_KEY
 from yarl import URL
 
-from ..computation_api import get_celery
 from ..login.decorators import login_required
+from .celery_client import get_celery_client
 from .config import CONFIG_SECTION_NAME
 
 
@@ -19,7 +20,7 @@ async def query_prometheus(session, url, query):
 
 
 def celery_reserved(app):
-    return get_celery(app).control.inspect().reserved()
+    return get_celery_client(app).control.inspect().reserved()
 
 
 async def get_cpu_usage(session, url, user_id):
@@ -33,7 +34,8 @@ async def get_memory_usage(session, url, user_id):
 
 
 async def get_celery_reserved(app):
-    return celery_reserved(app)
+    # this can take a bit of time, blocks for a second. so it runs in an executor
+    return await asyncio.get_event_loop().run_in_executor(None, celery_reserved, app)
 
 
 async def get_container_metric_for_labels(session, url, user_id):

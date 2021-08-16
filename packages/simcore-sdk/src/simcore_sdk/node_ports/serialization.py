@@ -6,18 +6,24 @@ import logging
 from typing import Dict
 
 # FIXME: : nodeports.Nodeports produces recursive import
-from . import config, exceptions, nodeports
+from ..node_ports_common import config, exceptions
+from ..node_ports_common.dbmanager import DBManager
+from . import nodeports
 from ._data_item import DataItem
 from ._data_items_list import DataItemsList
 from ._schema_item import SchemaItem
 from ._schema_items_list import SchemaItemsList
-from .dbmanager import DBManager
 
 log = logging.getLogger(__name__)
 
 
 async def create_from_json(
-    db_mgr: DBManager, auto_read: bool = False, auto_write: bool = False
+    db_mgr: DBManager,
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    auto_read: bool = False,
+    auto_write: bool = False,
 ):
     """creates a Nodeports object provided a json configuration in form of a callback function
 
@@ -39,7 +45,10 @@ async def create_from_json(
     if not db_mgr:
         raise exceptions.NodeportsException("io object empty, this is not allowed")
     nodeports_dict = json.loads(
-        await db_mgr.get_ports_configuration_from_node_uuid(config.NODE_UUID)
+        await db_mgr.get_ports_configuration_from_node_uuid(project_id, node_uuid)
+    )
+    nodeports_dict.update(
+        {"user_id": user_id, "project_id": project_id, "node_uuid": node_uuid}
     )
     nodeports_obj = __decodeNodePorts(nodeports_dict)
     nodeports_obj.db_mgr = db_mgr
@@ -49,14 +58,19 @@ async def create_from_json(
     return nodeports_obj
 
 
-async def create_nodeports_from_uuid(db_mgr: DBManager, node_uuid: str):
+async def create_nodeports_from_uuid(
+    db_mgr: DBManager, user_id: int, project_id: str, node_uuid: str
+):
     log.debug("Creating Nodeports object from node uuid: %s", node_uuid)
     if not db_mgr:
         raise exceptions.NodeportsException(
             "Invalid call to create nodeports from uuid"
         )
     nodeports_dict = json.loads(
-        await db_mgr.get_ports_configuration_from_node_uuid(node_uuid)
+        await db_mgr.get_ports_configuration_from_node_uuid(project_id, node_uuid)
+    )
+    nodeports_dict.update(
+        {"user_id": user_id, "project_id": project_id, "node_uuid": node_uuid}
     )
     nodeports_obj = __decodeNodePorts(nodeports_dict)
     log.debug("Created Nodeports object")
@@ -80,7 +94,7 @@ async def save_to_json(nodeports_obj) -> None:
 
     if nodeports_obj.autowrite:
         await nodeports_obj.db_mgr.write_ports_configuration(
-            nodeports_json, config.NODE_UUID
+            nodeports_json, nodeports_obj.project_id, nodeports_obj.node_uuid
         )
     log.debug("Saved Nodeports object to json: %s", nodeports_json)
 
@@ -141,8 +155,11 @@ def __decodeNodePorts(dct: Dict):
     )
 
     return nodeports.Nodeports(
-        SchemaItemsList(decoded_input_schema),
-        SchemaItemsList(decoded_output_schema),
-        DataItemsList(decoded_input_payload),
-        DataItemsList(decoded_output_payload),
+        user_id=dct["user_id"],
+        project_id=dct["project_id"],
+        node_uuid=dct["node_uuid"],
+        input_schemas=SchemaItemsList(decoded_input_schema),
+        output_schemas=SchemaItemsList(decoded_output_schema),
+        input_payloads=DataItemsList(decoded_input_payload),
+        outputs_payloads=DataItemsList(decoded_output_payload),
     )

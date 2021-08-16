@@ -6,9 +6,9 @@ from setuptools import find_packages, setup
 
 here = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-if sys.version_info < (3, 6):
+if not (sys.version_info.major == 3 and sys.version_info.minor == 6):
     raise RuntimeError(
-        "Requires >=3.6, got %s. Did you forget to activate virtualenv?"
+        "Requires <=3.6, got %s. Did you forget to activate virtualenv?"
         % sys.version_info
     )
 
@@ -35,7 +35,7 @@ _CONFIG = dict(
     version="0.1.0",
     description="oSparc Director webserver service",
     author="Sylvain Anderegg (sanderegg)",
-    python_requires=">=3.6",
+    python_requires="~=3.6",
     packages=find_packages(where="src"),
     package_dir={
         "": "src",

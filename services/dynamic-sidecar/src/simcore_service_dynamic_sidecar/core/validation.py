@@ -39,7 +39,7 @@ def _assemble_container_name(
 
 
 def _get_forwarded_env_vars(container_key: str) -> List[str]:
-    """retruns env vars targeted to each container in the compose spec"""
+    """returns env vars targeted to each container in the compose spec"""
     results = [
         # some services expect it, using it as empty
         "SIMCORE_NODE_BASEPATH=",

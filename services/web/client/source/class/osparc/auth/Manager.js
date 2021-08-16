@@ -148,6 +148,11 @@ qx.Class.define("osparc.auth.Manager", {
       osparc.auth.Data.getInstance().setToken(profile.login);
       osparc.auth.Data.getInstance().setUserId(profile.id);
       osparc.auth.Data.getInstance().setGroupId(profile["groups"]["me"]["gid"]);
+      if ("organizations" in profile["groups"]) {
+        const orgIds = [];
+        profile["groups"]["organizations"].forEach(org => orgIds.push(org["gid"]));
+        osparc.auth.Data.getInstance().setOrgIds(orgIds);
+      }
       osparc.data.Permissions.getInstance().setRole(profile.role);
     },
 

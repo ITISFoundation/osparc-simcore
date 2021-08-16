@@ -66,9 +66,14 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       this.__stopButton.setEnabled(running);
     },
 
-    nodeSelectionChanged: function(selectedNodes) {
+    nodeSelectionChanged: function(selectedNodeIds) {
       if (!this.__startButton.isFetching()) {
-        if (selectedNodes.length) {
+        const runnableNodes = [];
+        selectedNodeIds.forEach(selectedNodeId => {
+          runnableNodes.push(this.getStudy().getWorkbench().getNode(selectedNodeId));
+        });
+        const isSelectionRunnable = runnableNodes.some(node => node.isComputational());
+        if (isSelectionRunnable) {
           this.__startButton.exclude();
           this.__startSelectionButton.show();
         } else {
@@ -110,7 +115,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __createStartSplitButton: function() {
-      const startSelectionButton = this.__startSelectionButton = new osparc.ui.toolbar.FetchSplitButton(this.tr("Run Node"), "@FontAwesome5Solid/play/14");
+      const startSelectionButton = this.__startSelectionButton = new osparc.ui.toolbar.FetchSplitButton(this.tr("Run Selection"), "@FontAwesome5Solid/play/14");
       startSelectionButton.addListener("execute", () => {
         this.fireEvent("startPartialPipeline");
       }, this);
@@ -141,7 +146,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __applyStudy: function(study) {
-      study.getWorkbench().addListener("nNodesChanged", this.__checkButtonsVisible, this);
+      study.getWorkbench().addListener("pipelineChanged", this.__checkButtonsVisible, this);
       study.addListener("changeState", this.__updateRunButtonsStatus, this);
       this.__checkButtonsVisible();
     },

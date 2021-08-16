@@ -95,6 +95,37 @@ paths:
                 $ref: '#/components/schemas/FileLocationArrayEnveloped'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+  '/locations/{location_id}:sync':
+    post:
+      summary: Manually triggers the synchronisation of the file meta data table in the database
+      operationId: synchronise_meta_data_table
+      parameters:
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: dry_run
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+        - name: fire_and_forget
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: 'An object containing added, changed and removed paths'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TableSynchronisationEnveloped'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
   '/locations/{location_id}/datasets':
     get:
       summary: Lists all dataset's metadata
@@ -597,6 +628,30 @@ components:
         body_value:
           key1: value1
           key2: value2
+    TableSynchronisationEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: '#/components/schemas/TableSynchronisation'
+        error:
+          nullable: true
+          default: null
+    TableSynchronisation:
+      type: object
+      required:
+        - removed
+      properties:
+        dry_run:
+          type: boolean
+        fire_and_forget:
+          type: boolean
+        removed:
+          type: array
+          items:
+            type: string
     FileLocationArrayEnveloped:
       type: object
       required:
@@ -1157,11 +1212,11 @@ components:
                       properties:
                         value:
                           title: Value
-                          description: True if the project is locked by another user
+                          description: True if the project is locked
                           type: boolean
                         owner:
                           title: Owner
-                          description: The user that owns the lock
+                          description: 'If locked, the user that owns the lock'
                           allOf:
                             - title: Owner
                               type: object
@@ -1189,8 +1244,20 @@ components:
                                 - user_id
                                 - first_name
                                 - last_name
+                        status:
+                          title: Status
+                          description: The status of the project
+                          enum:
+                            - CLOSED
+                            - CLOSING
+                            - CLONING
+                            - OPENING
+                            - EXPORTING
+                            - OPENED
+                          type: string
                       required:
                         - value
+                        - status
                 state:
                   title: State
                   description: The project running state

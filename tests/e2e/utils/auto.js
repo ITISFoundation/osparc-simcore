@@ -153,7 +153,7 @@ async function dashboardOpenFirstTemplate(page, templateName) {
   return false;
 }
 
-async function dashboardOpenFirstService(page, serviceName) {
+async function dashboardOpenService(page, serviceName) {
   // Returns true if template is found
   console.log("Creating New Study from template");
 
@@ -165,9 +165,17 @@ async function dashboardOpenFirstService(page, serviceName) {
 
   await page.waitForSelector('[osparc-test-id="servicesList"]')
   const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="servicesList"]');
-
   if (children.length) {
-    const firstChildId = '[osparc-test-id="' + children[0] + '"]';
+    let idx = 0;
+    for (let i=0; i<children.length; i++) {
+      const childId = '[osparc-test-id="' + children[i] + '"]';
+      const cardLabel = await utils.getDashboardCardLabel(page, childId);
+      if (cardLabel === serviceName) {
+        idx = i;
+        break;
+      }
+    }
+    const firstChildId = '[osparc-test-id="' + children[idx] + '"]';
     await utils.waitAndClick(page, firstChildId);
     return true;
   }
@@ -329,7 +337,7 @@ async function openNodeFiles(page) {
   await utils.waitAndClick(page, '[osparc-test-id="nodeViewFilesBtn"]')
 }
 
-async function checkDataProducedByNode(page, nFiles = 1) {
+async function checkDataProducedByNode(page, nFiles = 1, itemSuffix = 'NodeFiles') {
   console.log("checking Data produced by Node. Expecting", nFiles, "file(s)");
   const iconsContent = await page.waitForSelector('[osparc-test-id="FolderViewerIconsContent"]', {
     timeout: 5000
@@ -380,7 +388,7 @@ module.exports = {
   dashboardNewStudy,
   waitForAllTemplates,
   dashboardOpenFirstTemplate,
-  dashboardOpenFirstService,
+  dashboardOpenService,
   showLogger,
   findLogMessage,
   runStudy,

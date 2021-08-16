@@ -17,7 +17,7 @@ from simcore_service_api_server.utils.solver_job_models_converters import (
     create_jobstatus_from_task,
     create_new_project_for_job,
     create_node_inputs_from_job_inputs,
-    get_args,
+    get_types,
 )
 
 
@@ -78,7 +78,7 @@ def test_job_to_node_inputs_conversion():
         }
     )
     for name, value in job_inputs.values.items():
-        assert isinstance(value, get_args(ArgumentType)), f"Invalid type in {name}"
+        assert isinstance(value, get_types(ArgumentType)), f"Invalid type in {name}"
 
     node_inputs: Inputs = {
         "x": 4.33,
@@ -95,7 +95,7 @@ def test_job_to_node_inputs_conversion():
 
     for name, value in node_inputs.items():
         # TODO: py3.8 use typings.get_args
-        assert isinstance(value, get_args(InputTypes)), f"Invalid type in {name}"
+        assert isinstance(value, get_types(InputTypes)), f"Invalid type in {name}"
 
     # test transformations in both directions
     got_node_inputs = create_node_inputs_from_job_inputs(inputs=job_inputs)
@@ -173,7 +173,13 @@ def test_create_job_from_project():
             },
             "quality": {},
             "tags": [],
-            "state": {"locked": {"value": False}, "state": {"value": "SUCCESS"}},
+            "state": {
+                "locked": {
+                    "value": False,
+                    "status": "CLOSED",
+                },
+                "state": {"value": "SUCCESS"},
+            },
         },
     )
 

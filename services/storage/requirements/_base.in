@@ -1,29 +1,27 @@
-# WARNING: manually disabled urllib3 contraint to upgrade minio
--c ../../../requirements/constraints.txt
+#
+# Specifies dependencies required by 'storage' service
+#
 
--r ../../../packages/postgres-database/requirements/_base.in
--r ../../../packages/service-library/requirements/_base.in
--r ../../../packages/models-library/requirements/_base.in
+--constraint ../../../requirements/constraints.txt
 
--c ./constraints.txt
+--requirement ../../../packages/models-library/requirements/_base.in
+--requirement ../../../packages/postgres-database/requirements/_base.in
+--requirement ../../../packages/service-library/requirements/_base.in
+--requirement ../../../packages/settings-library/requirements/_base.in
 
-# These packages introduce incompatible dependencies:
-blackfynn==4.0.0
-aiobotocore==1.0.7
-
-
+# server
 aiohttp
 aiohttp-swagger[performance]
 
+# s3 storage
+aiobotocore
+minio
+
+# i/o + db
 aiofiles
 aiopg[sa]
 
-tenacity
+# misc
 semantic_version
-click
-minio
-urllib3
-
-#
-# FIXME: pip copiling these requirements wil fail due to incompatible contraints on urllib3 (ongoing in weekely mainteinance)
-#
+tenacity
+typer

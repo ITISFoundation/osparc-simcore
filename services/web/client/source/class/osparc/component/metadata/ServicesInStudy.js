@@ -75,7 +75,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
 
       const params = {
         url: {
-          "projectId": this.__studyData["uuid"]
+          "studyId": this.__studyData["uuid"]
         },
         data: this.__studyData
       };
@@ -193,7 +193,11 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           column: this.self().gridPos.latestVersion
         });
 
-        if (osparc.data.Permissions.getInstance().canDo("study.service.update") && osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
+        const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+        const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+        orgIDs.push(myGroupId);
+        const canIWrite = osparc.component.permissions.Study.canGroupsWrite(this.__studyData["accessRights"], orgIDs);
+        if (osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWrite) {
           const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
           updateButton.set({
             label: node["version"] === latestCompatibleMetadata["version"] ? this.tr("Up-to-date") : this.tr("Update"),

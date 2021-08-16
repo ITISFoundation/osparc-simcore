@@ -1,11 +1,9 @@
 #
-# Specifies dependencies required to run 'storage'
+# Specifies dependencies required to TEST 'storage'
 #
--c ../../../requirements/constraints.txt
-# Adds base AS CONSTRAINT specs, not requirement.
-#  - Resulting _text.txt is a frozen list of EXTRA packages for testing, besides _base.txt
-#
--c _base.txt
+
+--constraint ../../../requirements/constraints.txt
+--constraint _base.txt
 
 # testing
 pytest
@@ -16,16 +14,17 @@ pytest-instafail
 pytest-mock
 pytest-runner
 pytest-sugar
-pylint
 
 # test coverage
 coverage
 coveralls
 codecov
+
+# fixtures
 faker
-
-# remote debugging
-ptvsd
-
-# utils
 pandas
+pylint
+python-dotenv
+
+# remote debugger
+ptvsd

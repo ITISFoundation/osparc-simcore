@@ -9,12 +9,9 @@ from copy import deepcopy
 import pytest
 from models_library.projects import Project
 from pytest_simcore.helpers.utils_login import NewUser
-from pytest_simcore.helpers.utils_mock import future_with_result
 from pytest_simcore.helpers.utils_projects import delete_all_projects
 from pytest_simcore.helpers.utils_services import list_fake_file_consumers
 from simcore_service_webserver.groups_api import auto_add_user_to_groups
-
-# from simcore_postgres_database.models.projects import projects as projects_table
 from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.projects_api import get_project_for_user
 from simcore_service_webserver.studies_dispatcher._projects import (
@@ -95,7 +92,7 @@ async def test_add_new_project_from_model_instance(
 
     mock_func = mocker.patch(
         "simcore_service_webserver.director_v2.create_or_update_pipeline",
-        return_value=future_with_result(result=None),
+        return_value=None,
     )
 
     async with NewUser() as user_db:

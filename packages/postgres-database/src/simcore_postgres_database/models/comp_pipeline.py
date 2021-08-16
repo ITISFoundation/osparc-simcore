@@ -10,6 +10,13 @@ from .base import metadata
 
 
 class StateType(enum.Enum):
+    """Discrete states in a task lifecycle
+
+    NOTE: these states are the exact same ones as the models-library (RunningState for a project's execution state)
+    """
+
+    # TODO: how they map to celery.states?
+    # https://docs.celeryproject.org/en/stable/reference/celery.states.html
     NOT_STARTED = "NOT_STARTED"
     PUBLISHED = "PUBLISHED"
     PENDING = "PENDING"
@@ -26,12 +33,21 @@ def _new_uuid():
 comp_pipeline = sa.Table(
     "comp_pipeline",
     metadata,
-    sa.Column("project_id", sa.String, primary_key=True, default=_new_uuid),
-    sa.Column("dag_adjacency_list", sa.JSON),
+    sa.Column(
+        "project_id",
+        sa.String,
+        primary_key=True,
+        default=_new_uuid,
+        doc="Project ID including this pipeline",
+    ),
+    sa.Column(
+        "dag_adjacency_list", sa.JSON, doc="Adjancey list for the pipeline's graph"
+    ),
     sa.Column(
         "state",
         sa.Enum(StateType),
         nullable=False,
         server_default=StateType.NOT_STARTED.value,
+        doc="Current state of this pipeline",
     ),
 )

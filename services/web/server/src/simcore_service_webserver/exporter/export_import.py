@@ -29,6 +29,7 @@ async def study_export(
 
     returns: directory if archive is True else a compressed archive is returned
     """
+
     # storage area for the project data
     base_temp_dir = Path(tmp_dir)
     destination = base_temp_dir / project_id
@@ -45,7 +46,6 @@ async def study_export(
         return destination
 
     # an archive is always produced when compression is active
-
     archive_path = await zip_folder(
         folder_to_zip=base_temp_dir, destination_folder=base_temp_dir
     )

@@ -6,7 +6,6 @@ from typing import Optional
 import pkg_resources
 import yaml
 from aiohttp import web, web_exceptions
-
 from simcore_service_director import exceptions, producer, registry_proxy, resources
 
 log = logging.getLogger(__name__)
@@ -77,6 +76,28 @@ async def services_by_key_version_get(
             )
         ]
         return web.json_response(data=dict(data=services))
+    except exceptions.ServiceNotAvailableError as err:
+        raise web_exceptions.HTTPNotFound(reason=str(err))
+    except exceptions.RegistryConnectionError as err:
+        raise web_exceptions.HTTPUnauthorized(reason=str(err))
+    except Exception as err:
+        raise web_exceptions.HTTPInternalServerError(reason=str(err))
+
+
+async def get_service_labels(
+    request: web.Request, service_key: str, service_version: str
+) -> web.Response:
+    log.debug(
+        "Retrieving service labels %s with service_key %s, service_version %s",
+        request,
+        service_key,
+        service_version,
+    )
+    try:
+        service_labels = await registry_proxy.get_image_labels(
+            request.app, service_key, service_version
+        )
+        return web.json_response(data=dict(data=service_labels))
     except exceptions.ServiceNotAvailableError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
     except exceptions.RegistryConnectionError as err:

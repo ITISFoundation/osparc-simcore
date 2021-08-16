@@ -3,26 +3,60 @@
 #   - vulnerabilities
 #   - breaking changes
 #   - known bugs/malfunction
+#   - coordination (e.g. enforce same library in the entire repository)
 
+#
 # Vulnerabilities
+#
+aiohttp>=3.7.4                                # https://github.com/advisories/GHSA-v6wp-4m6f-gcjg
+cryptography>=3.3.2                           # https://github.com/advisories/GHSA-rhm9-p9w5-fwm7  Feb.2021
 jinja2>=2.11.3                                # https://github.com/advisories/GHSA-g3rq-g295-4j3m
 pydantic>=1.8.2                               # https://github.com/advisories/GHSA-5jqp-qgf6-3pvh
 pyyaml>=5.4                                   # https://github.com/advisories/GHSA-8q59-q68h-6hv4
 sqlalchemy[postgresql_psycopg2binary]>=1.3.3  # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
 sqlalchemy>=1.3.3                             # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
-urllib3>=1.26.4                               # https://github.com/advisories/GHSA-5phf-pp7p-vc2r
+urllib3>=1.26.5                               # https://github.com/advisories/GHSA-q2q7-5pp4-w6pg
 
+
+#
 # Breaking changes
+#
+
+# TODO: https://aioredis.readthedocs.io/en/latest/migration/)
+aioredis<2.0.0
 # with new released version 1.0.0 (https://github.com/aio-libs/aiozipkin/releases).
 # TODO: Check again when moving to py3.8-3.9! SEE https://github.com/ITISFoundation/osparc-simcore/pull/2025
 aiozipkin==0.7.1
+# TODO: includes async features https://docs.sqlalchemy.org/en/14/changelog/migration_20.html
+sqlalchemy<2.0
+
+
+#
+# Bugs
+#
+
+# FIXME: minio 7.1.0 does not delete objects. SEE
+minio==7.0.4
+
+
+#
+# Compatibility/coordination
+#
 
 # Keeps all docker compose to the same version. TODO: remove when all synced
 docker-compose==1.29.1
 
-# vulnerability https://github.com/advisories/GHSA-rhm9-p9w5-fwm7  Feb.2021
-cryptography>=3.3.2
-
-
 # constraint since https://github.com/MagicStack/uvloop/releases/tag/v0.15.0: drops support for 3.5/3.6  Feb.2021
 uvloop<0.15.0 ; python_version < '3.7'
+
+# All backports libraries add environ markers
+# NOTE: If >second dependency, this will annotate a marker in the compiled requirements file
+#
+async-exit-stack ; python_version < '3.7'
+async-generator ; python_version < '3.7'
+contextvars ; python_version < '3.7'
+dataclasses ; python_version < '3.7'
+importlib-metadata ; python_version < '3.8'
+importlib-resources ; python_version < '3.9'
+typing-extensions ; python_version < '3.7'
+zipp ; python_version < '3.7'

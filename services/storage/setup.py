@@ -6,9 +6,9 @@ from setuptools import find_packages, setup
 
 here = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-if sys.version_info < (3, 6):
+if not (sys.version_info.major == 3 and sys.version_info.minor == 8):
     raise RuntimeError(
-        "Requires 3.6, got %s. Did you forget to activate virtualenv?"
+        "Requires ~=3.8, got %s. Did you forget to activate virtualenv?"
         % sys.version_info
     )
 
@@ -20,9 +20,10 @@ def read_reqs(reqs_path: Path):
 
 
 install_requirements = read_reqs(here / "requirements" / "_base.txt") + [
+    "simcore-models-library",
     "simcore-postgres-database",
     "simcore-service-library",
-    "simcore-models-library",
+    "simcore-settings-library",
 ]
 
 test_requirements = read_reqs(here / "requirements" / "_test.txt")
@@ -33,7 +34,7 @@ setup_config = dict(
     version="0.2.1",
     description="Service to manage data storage in simcore",
     author="Manuel Guidon (mguidon)",
-    python_requires=">3.6, <3.7",
+    python_requires="~=3.8",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     include_package_data=True,
@@ -43,9 +44,6 @@ setup_config = dict(
         "": [
             "api/v0/openapi.yaml",
             "api/v0/schemas/*.json",
-            "data/*.json",
-            "data/*.yml",
-            "data/*.yaml",
         ],
     },
     entry_points={

@@ -36,6 +36,7 @@ services:
       - POSTGRES_PORT=${POSTGRES_PORT}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
       - BACKGROUND_TASK_REST_TIME=${CATALOG_BACKGROUND_TASK_REST_TIME:-60}
+      - CATALOG_DEV_FEATURES_ENABLED=${CATALOG_DEV_FEATURES_ENABLED}
     networks:
       - default
 
@@ -89,16 +90,19 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director-v2:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
+      - DASK_SCHEDULER_HOST=${DASK_SCHEDULER_HOST:-dask-scheduler}
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
       - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
-      - DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS=${DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS}
+      - DIRECTOR_SELF_SIGNED_SSL_FILENAME=${DIRECTOR_SELF_SIGNED_SSL_FILENAME}
       - DIRECTOR_SELF_SIGNED_SSL_SECRET_ID=${DIRECTOR_SELF_SIGNED_SSL_SECRET_ID}
       - DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME=${DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME}
-      - DIRECTOR_SELF_SIGNED_SSL_FILENAME=${DIRECTOR_SELF_SIGNED_SSL_FILENAME}
+      - DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS=${DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS}
+      - DIRECTOR_V2_DEV_FEATURES_ENABLED=${DIRECTOR_V2_DEV_FEATURES_ENABLED}
+      - DYNAMIC_SIDECAR_IMAGE=${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
       - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX:-undefined}
-      - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
-      - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+      - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
+      - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
     env_file:
       - ../.env
     volumes:
@@ -194,47 +198,83 @@ services:
         reservations:
           cpus: "0.10"
           memory: "100M"
-    volumes:
+    volumes: &sidecar-volumes
       - input:/home/scu/input
       - output:/home/scu/output
       - log:/home/scu/log
       - /var/run/docker.sock:/var/run/docker.sock
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
-    environment:
-      - RABBIT_HOST=${RABBIT_HOST}
-      - RABBIT_PORT=${RABBIT_PORT}
-      - RABBIT_USER=${RABBIT_USER}
-      - RABBIT_PASSWORD=${RABBIT_PASSWORD}
-      - RABBIT_CHANNELS=${RABBIT_CHANNELS}
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
-      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - S3_ENDPOINT=${S3_ENDPOINT}
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-      - S3_SECRET_KEY=${S3_SECRET_KEY}
-      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
-      - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
-      - REGISTRY_URL=${REGISTRY_URL}
-      - REGISTRY_PATH=${REGISTRY_PATH}
-      - REGISTRY_USER=${REGISTRY_USER}
-      - REGISTRY_PW=${REGISTRY_PW}
-      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
-      - SIDECAR_LOGLEVEL=${LOG_LEVEL:-WARNING}
-      - SIDECAR_HOST_HOSTNAME_PATH=${SIDECAR_HOST_HOSTNAME_PATH:-/home/scu/hostname}
-      - START_AS_MODE_CPU=${SIDECAR_FORCE_CPU_NODE:-0}
+    environment: &sidecar-environment
+      RABBIT_HOST: ${RABBIT_HOST}
+      RABBIT_PORT: ${RABBIT_PORT}
+      RABBIT_USER: ${RABBIT_USER}
+      RABBIT_PASSWORD: ${RABBIT_PASSWORD}
+      RABBIT_CHANNELS: ${RABBIT_CHANNELS}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      REGISTRY_URL: ${REGISTRY_URL}
+      REGISTRY_PATH: ${REGISTRY_PATH}
+      REGISTRY_USER: ${REGISTRY_USER}
+      REGISTRY_PW: ${REGISTRY_PW}
+      SWARM_STACK_NAME: ${SWARM_STACK_NAME:-simcore}
+      SIDECAR_LOGLEVEL: ${LOG_LEVEL:-WARNING}
+      SIDECAR_HOST_HOSTNAME_PATH: ${SIDECAR_HOST_HOSTNAME_PATH:-/home/scu/hostname}
+      START_AS_MODE_CPU: ${SIDECAR_FORCE_CPU_NODE:-0}
 
     networks:
       - computational_services_subnet
+
+  dask-sidecar:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    deploy: &dask-sidecar-deploy
+      mode: global
+      endpoint_mode: dnsrr
+      resources:
+        reservations:
+          cpus: "0.10"
+          memory: "100M"
+    volumes: *sidecar-volumes
+    environment:
+      <<: *sidecar-environment
+      DASK_SCHEDULER_HOST: ${DASK_SCHEDULER_HOST:-dask-scheduler}
+    networks:
+      - computational_services_subnet
+
+  dask-scheduler:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: dask-scheduler
+    environment:
+      <<: *sidecar-environment
+      DASK_START_AS_SCHEDULER: 1
+
+    networks:
+      - interactive_services_subnet
+      - computational_services_subnet
+
+  datcore-adapter:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    networks:
+      - storage_subnet
 
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
+      - DATCORE_ADAPTER_HOST=${DATCORE_ADAPTER_HOST:-datcore-adapter}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -260,6 +300,7 @@ services:
       - default
       - interactive_services_subnet
       - computational_services_subnet
+      - storage_subnet
 
   rabbit:
     image: itisfoundation/rabbitmq:3.8.0-management
@@ -342,7 +383,7 @@ services:
         "-c",
         "max_connections=413",
         "-c",
-        "shared_buffers=256MB"
+        "shared_buffers=256MB",
       ]
 
   redis:
@@ -358,7 +399,7 @@ services:
       retries: 50
 
   traefik:
-    image: traefik:v2.2.1
+    image: traefik:v2.4.13
     init: true
     command:
       - "--api=true"
@@ -424,6 +465,8 @@ volumes:
 
 networks:
   default:
+    attachable: true
+  storage_subnet:
     attachable: true
   interactive_services_subnet:
     driver: overlay

@@ -71,7 +71,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     pageContext: {
-      check: ["workbench", "slideshow"],
+      check: ["workbench", "slideshow", "fullSlideshow"],
       nullable: false,
       apply: "_applyPageContext"
     }
@@ -99,7 +99,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         // Before starting a study, make sure the latest version is fetched
         const params = {
           url: {
-            "projectId": studyData.uuid
+            "studyId": studyData.uuid
           }
         };
         const promises = [
@@ -126,16 +126,27 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       study.openStudy()
         .then(() => {
           study.initStudy();
-          const myGrpId = osparc.auth.Data.getInstance().getGroupId();
-          if (osparc.component.permissions.Study.canGroupWrite(study.getAccessRights(), myGrpId)) {
-            this.__startAutoSaveTimer();
-          } else {
-            const msg = this.tr("You do not have writing permissions.<br>Changes will not be saved");
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
-          }
-          switch (this.getPageContext()) {
+
+          osparc.data.Resources.get("organizations")
+            .then(resp => {
+              const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+              const orgs = resp["organizations"];
+              const orgIDs = [myGroupId];
+              orgs.forEach(org => orgIDs.push(org["gid"]));
+
+              if (osparc.component.permissions.Study.canGroupsWrite(study.getAccessRights(), orgIDs)) {
+                this.__startAutoSaveTimer();
+              } else {
+                const msg = this.tr("You do not have writing permissions.<br>Changes will not be saved");
+                osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+              }
+            });
+
+          const pageContext = this.getPageContext();
+          switch (pageContext) {
             case "slideshow":
-              this.__slideshowView.startSlides();
+            case "fullSlideshow":
+              this.__slideshowView.startSlides(pageContext);
               break;
             default:
               this.__workbenchView.openFirstNode();
@@ -148,6 +159,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             const node = data["node"];
             const portKey = data["portKey"];
             this.__updatePipelineAndRetrieve(node, portKey);
+          }, this);
+
+          workbench.addListener("openNode", e => {
+            const nodeId = e.getData();
+            this.nodeSelected(nodeId);
           }, this);
 
           const socket = osparc.wrapper.WebSocket.getInstance();
@@ -185,6 +201,25 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const msg = this.tr("Study was closed while you were offline");
       osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
       this.fireEvent("forceBackToDashboard");
+    },
+
+    editSlides: function() {
+      if (this.getPageContext() !== "workbench") {
+        return;
+      }
+
+      const study = this.getStudy();
+      const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(study);
+      const title = this.tr("Edit Slides");
+      const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 600, 500).set({
+        modal: false,
+        clickAwayClose: false
+      });
+      nodesSlidesTree.addListener("finished", () => {
+        const slideshow = study.getUi().getSlideshow();
+        slideshow.fireEvent("changeSlideshow");
+        win.close();
+      });
     },
 
 
@@ -368,8 +403,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__workbenchView.nodeSelected(this.getStudy().getUi().getCurrentNodeId());
           break;
         case "slideshow":
+        case "fullSlideshow":
           this.__viewsStack.setSelection([this.__slideshowView]);
-          this.__slideshowView.startSlides();
+          this.__slideshowView.startSlides(newCtxt);
           break;
       }
     },
@@ -414,7 +450,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     updateStudyDocument: function(run = false) {
       const myGrpId = osparc.auth.Data.getInstance().getGroupId();
-      if (!osparc.component.permissions.Study.canGroupWrite(this.getStudy().getAccessRights(), myGrpId)) {
+      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      orgIDs.push(myGrpId);
+      if (!osparc.component.permissions.Study.canGroupsWrite(this.getStudy().getAccessRights(), orgIDs)) {
         return new Promise(resolve => {
           resolve();
         });

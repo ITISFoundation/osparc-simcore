@@ -96,10 +96,23 @@ qx.Class.define("osparc.desktop.MainPage", {
         }
       }, this);
 
+      navBar.addListener("slidesFullStart", () => {
+        if (this.__studyEditor) {
+          navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[3]);
+          this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[3]);
+        }
+      }, this);
+
       navBar.addListener("slidesStop", () => {
         if (this.__studyEditor) {
           navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
           this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
+        }
+      }, this);
+
+      navBar.addListener("slidesEdit", () => {
+        if (this.__studyEditor) {
+          this.__studyEditor.editSlides();
         }
       }, this);
 
@@ -116,6 +129,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           this.__showDashboard();
           this.__dashboard.getStudyBrowser().invalidateStudies();
           this.__dashboard.getStudyBrowser().reloadStudies();
+          this.__dashboard.getStudyBrowser().resetSelection();
           this.__dashboard.getStudyBrowser().reloadStudy(studyId)
             .then(() => {
               this.__closeStudy(studyId);
@@ -224,7 +238,7 @@ qx.Class.define("osparc.desktop.MainPage", {
 
       const params = {
         url: {
-          "projectId": studyId
+          "studyId": studyId
         }
       };
       osparc.data.Resources.getOne("studies", params)
@@ -274,24 +288,19 @@ qx.Class.define("osparc.desktop.MainPage", {
     __closeStudy: function(studyId) {
       const params = {
         url: {
-          projectId: studyId
+          "studyId": studyId
         },
         data: osparc.utils.Utils.getClientSessionID()
       };
       osparc.data.Resources.fetch("studies", "close", params);
     },
 
-    __syncStudyEditor: function(pageContext) {
+    __syncStudyEditor: function(pageContext = "workbench") {
       const studyEditor = this.__studyEditor;
       const study = studyEditor.getStudy();
       this.__navBar.setStudy(study);
-      if (pageContext === "slideshow") {
-        this.__navBar.setPageContext("slideshow");
-        studyEditor.setPageContext("slideshow");
-      } else {
-        this.__navBar.setPageContext("workbench");
-        studyEditor.setPageContext("workbench");
-      }
+      this.__navBar.setPageContext(pageContext);
+      studyEditor.setPageContext(pageContext);
 
       this.__studyEditor.addListener("forceBackToDashboard", () => {
         this.__showDashboard();

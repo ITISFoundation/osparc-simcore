@@ -2,7 +2,6 @@ import asyncio
 import logging
 from pathlib import Path
 from typing import Optional
-from concurrent.futures import ProcessPoolExecutor
 from collections import deque
 
 from aiohttp import web
@@ -10,6 +9,7 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from aiopg.sa.engine import SAConnection
 
 from simcore_postgres_database.models.scicrunch_resources import scicrunch_resources
+from servicelib.pools import non_blocking_process_pool_executor
 
 from ..exceptions import ExporterException
 from .formatter_v1 import FormatterV1
@@ -168,7 +168,7 @@ async def _write_sds_content(
     )
 
     # writing SDS structure with process pool to avoid blocking
-    with ProcessPoolExecutor(max_workers=1) as pool:
+    with non_blocking_process_pool_executor(max_workers=1) as pool:
         return await asyncio.get_event_loop().run_in_executor(
             pool,
             write_sds_directory_content,

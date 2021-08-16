@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import json
 import logging
 import subprocess
 import time
@@ -77,9 +78,13 @@ def _wait_for_services(docker_client: docker.client.DockerClient) -> None:
         if service.tasks():
             sorted_tasks = sorted(service.tasks(), key=by_task_update)
             task = sorted_tasks[-1]
-            if task["Status"]["State"].upper() not in pre_states:
-                if not task["Status"]["State"].upper() == "RUNNING":
-                    raise Exception(f"service {service.name} not running")
+            task_state = task["Status"]["State"].upper()
+            if task_state not in pre_states:
+                if not task_state == "RUNNING":
+                    raise ValueError(
+                        f"service {service.name} not running [task_state={task_state} instead]. "
+                        f"Details: \n{json.dumps(task, indent=2)}"
+                    )
 
 
 def _print_services(docker_client: docker.client.DockerClient, msg: str) -> None:
@@ -160,9 +165,23 @@ def docker_stack(
     # make down
     # NOTE: remove them in reverse order since stacks share common networks
     WAIT_BEFORE_RETRY_SECS = 1
+
+    HEADER = "{:-^20}"
     stacks.reverse()
     for _, stack, _ in stacks:
-        subprocess.run(f"docker stack remove {stack}", shell=True, check=True)
+
+        try:
+            subprocess.run(f"docker stack remove {stack}", shell=True, check=True)
+        except subprocess.CalledProcessError as err:
+            log.warning(
+                "Ignoring failure while executing '%s' (returned code %d):\n%s\n%s\n%s\n%s\n",
+                err.cmd,
+                err.returncode,
+                HEADER.format("stdout"),
+                err.stdout,
+                HEADER.format("stderr"),
+                err.stderr,
+            )
 
         while docker_client.services.list(
             filters={"label": f"com.docker.stack.namespace={stack}"}

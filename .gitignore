@@ -110,11 +110,12 @@ ENV/
 # Dependency directories
 node_modules/
 
-# IDEs config
-.vscode/launch.json
-.vscode/settings.json
+# IDEs config (except templates)
+.vscode/*
+!.vscode/*.template.json
 
-# Manual overrides
+
+# manual overrides
 services/docker-compose.override.yml
 
 # swarm files
@@ -162,3 +163,6 @@ services/**/.codeclimate.yml
 
 # pytest-fixture-tools output
 artifacts
+
+# dask artifacts in devel mode
+dask*-space/

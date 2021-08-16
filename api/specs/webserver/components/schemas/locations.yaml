@@ -4,7 +4,7 @@ FileLocationEnveloped:
     - data
   properties:
     data:
-      $ref: '#/FileLocation'
+      $ref: "#/FileLocation"
     error:
       nullable: true
       default: null
@@ -17,10 +17,36 @@ FileLocation:
     id:
       type: number
   example:
-    filename: 'simcore.s3'
+    filename: "simcore.s3"
     id: 0
 
 FileLocationArray:
   type: array
   items:
-    $ref: '#/FileLocation'
+    $ref: "#/FileLocation"
+
+TableSynchronisationEnveloped:
+  type: object
+  required:
+    - data
+    - error
+  properties:
+    data:
+      $ref: "#/TableSynchronisation"
+    error:
+      nullable: true
+      default: null
+
+TableSynchronisation:
+  type: object
+  required:
+    - removed
+  properties:
+    dry_run:
+      type: boolean
+    fire_and_forget:
+      type: boolean
+    removed:
+      type: array
+      items:
+        type: string

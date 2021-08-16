@@ -11,7 +11,6 @@ from simcore_postgres_database.sidecar_models import (
     comp_pipeline,
     comp_tasks,
 )
-from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import log as node_port_v2_log
 from sqlalchemy import and_, literal_column
 
@@ -171,11 +170,6 @@ async def run_computational_task(
                 node_id,
                 "[sidecar]Task found: starting...",
             )
-
-            # config nodeports
-            node_ports_v2.node_config.USER_ID = user_id
-            node_ports_v2.node_config.NODE_UUID = task.node_id
-            node_ports_v2.node_config.PROJECT_ID = task.project_id
 
             # now proceed actually running the task (we do that after the db session has been closed)
             # try to run the task, return empyt list of next nodes if anything goes wrong

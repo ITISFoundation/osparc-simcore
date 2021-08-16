@@ -13,7 +13,7 @@ openapi-specs: ## updates and validates openapi specifications
 .PHONY: tests
 tests: ## runs unit tests
 	# running unit tests
-	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests
+	@pytest -vv --failed-first --durations=10 --pdb $(CURDIR)/tests
 
 
 # DEVELOPMENT ########

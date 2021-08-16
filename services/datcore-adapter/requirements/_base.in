@@ -1,0 +1,19 @@
+#
+# Specifies third-party dependencies for 'services/datcore-adapter/src'
+#
+# NOTE: ALL version constraints MUST be commented
+--constraint ../../../requirements/constraints.txt
+
+--requirement ../../../packages/models-library/requirements/_base.in
+--requirement ../../../packages/settings-library/requirements/_base.in
+
+
+aiofiles
+fastapi
+fastapi-pagination
+httpx[http2]
+uvicorn[standard]
+
+pennsieve
+pydantic[email]
+python-multipart # for fastapi multipart uploads

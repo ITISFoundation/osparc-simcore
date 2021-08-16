@@ -30,14 +30,16 @@ $(if $(IS_WIN),$(error Windows is not supported in all recipes. Use WSL instead.
 SERVICES_LIST := \
 	api-server \
 	catalog \
+	dask-sidecar \
+	datcore-adapter \
 	director \
 	director-v2 \
 	dynamic-sidecar \
 	migration \
 	sidecar \
+	static-webserver \
 	storage \
-	webserver \
-	static-webserver
+	webserver
 
 CLIENT_WEB_OUTPUT       := $(CURDIR)/services/web/client/source-output
 
@@ -54,6 +56,7 @@ export CATALOG_API_VERSION    := $(shell cat $(CURDIR)/services/catalog/VERSION)
 export DIRECTOR_API_VERSION   := $(shell cat $(CURDIR)/services/director/VERSION)
 export DIRECTOR_V2_API_VERSION:= $(shell cat $(CURDIR)/services/director-v2/VERSION)
 export STORAGE_API_VERSION    := $(shell cat $(CURDIR)/services/storage/VERSION)
+export DATCORE_ADAPTER_API_VERSION    := $(shell cat $(CURDIR)/services/datcore-adapter/VERSION)
 export WEBSERVER_API_VERSION  := $(shell cat $(CURDIR)/services/web/server/VERSION)
 
 
@@ -102,7 +105,7 @@ SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),N
 
 define _docker_compose_build
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,production);\
-pushd services; docker buildx bake --file docker-compose-build.yml $(if $(target),$(target),); popd;
+pushd services && docker buildx bake --file docker-compose-build.yml $(if $(target),$(target),) && popd;
 endef
 
 rebuild: build-nc # alias
@@ -189,10 +192,27 @@ endif
 
 define _show_endpoints
 # The following endpoints are available
-echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9081                                                                 - oSparc platform"
-echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18080/?pgsql=postgres&username=scu&db=simcoredb&ns=public  - Postgres DB"
-echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9000                                                                 - Portainer"
+set -o allexport; \
+source $(CURDIR)/.env; \
+set +o allexport; \
+separator=------------------------------------------------------------------------------------;\
+separator=$${separator}$${separator}$${separator};\
+rows="%-22s | %90s | %12s | %12s\n";\
+TableWidth=140;\
+printf "%22s | %90s | %12s | %12s\n" Name Endpoint User Password;\
+printf "%.$${TableWidth}s\n" "$$separator";\
+printf "$$rows" 'oSparc platform' 'http://$(get_my_ip).nip.io:9081';\
+printf "$$rows" 'Postgres DB' 'http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username='$${POSTGRES_USER}'&db='$${POSTGRES_DB}'&ns=public' $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
+printf "$$rows" Portainer 'http://$(get_my_ip).nip.io:9000' admin adminadmin;\
+printf "$$rows" Redis 'http://$(get_my_ip).nip.io:18081';\
+printf "$$rows" 'Docker Registry' $${REGISTRY_URL} $${REGISTRY_USER} $${REGISTRY_PW};\
+printf "$$rows" "Dask Dashboard" "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1).nip.io:8787";
+printf "\n%s\n" "⚠️ if a DNS is not used (as displayed above), the interactive services started via dynamic-sidecar";\
+echo "⚠️ will not be shown. The frontend accesses them via the uuid.services.YOUR_IP.nip.io:9081";
 endef
+
+show-endpoints:
+	@$(_show_endpoints)
 
 up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Start compile+watch front-end container [front-end]
@@ -281,7 +301,7 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 
 pull-version: .env ## pulls images from DOCKER_REGISTRY tagged as DOCKER_IMAGE_TAG
 	# Pulling images '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	@docker-compose --file services/docker-compose.yml pull
+	@docker-compose --file services/docker-compose-deploy.yml pull
 
 
 .PHONY: push-version push-latest
@@ -290,13 +310,11 @@ push-latest: tag-latest
 	@export DOCKER_IMAGE_TAG=latest; \
 	$(MAKE) push-version
 
-# NOTE: docker-compose only pushes images with a 'build' section.
-# TODO: change to docker-compose push when make config-version available
+# below BUILD_TARGET gets overwritten but is required when merging yaml files
 push-version: tag-version
 	# pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	$(foreach service, $(SERVICES_LIST)\
-		,docker push ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG}; \
-	)
+	@export BUILD_TARGET=undefined; \
+	docker-compose --file services/docker-compose-build.yml --file services/docker-compose-deploy.yml push
 
 
 ## ENVIRONMENT -------------------------------
@@ -467,6 +485,7 @@ info: ## displays setup information
 	@echo '  - (STATUS)REF_CLIENT : (${VCS_STATUS_CLIENT}) ${VCS_REF_CLIENT}'
 	@echo ' DIRECTOR_API_VERSION  : ${DIRECTOR_API_VERSION}'
 	@echo ' STORAGE_API_VERSION   : ${STORAGE_API_VERSION}'
+	@echo ' DATCORE_ADAPTER_API_VERSION   : ${DATCORE_ADAPTER_API_VERSION}'
 	@echo ' WEBSERVER_API_VERSION : ${WEBSERVER_API_VERSION}'
 	# dev tools version
 	@echo ' make          : $(shell make --version 2>&1 | head -n 1)'

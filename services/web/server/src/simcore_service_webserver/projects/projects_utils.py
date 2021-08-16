@@ -1,32 +1,36 @@
 import logging
 import re
-import uuid as uuidlib
 from copy import deepcopy
 from typing import Any, AnyStr, Dict, List, Match, Optional, Set, Tuple
+from uuid import UUID, uuid1, uuid5
 
 from servicelib.decorators import safe_return
+from yarl import URL
 
 log = logging.getLogger(__name__)
 variable_pattern = re.compile(r"^{{\W*(\w+)\W*}}$")
 
 
 def clone_project_document(
-    project: Dict, forced_copy_project_id: str = ""
+    project: Dict, *, forced_copy_project_id: Optional[UUID] = None
 ) -> Tuple[Dict, Dict]:
     project_copy = deepcopy(project)
 
     # Update project id
     # NOTE: this can be re-assigned by dbapi if not unique
     if forced_copy_project_id:
-        project_copy_uuid = uuidlib.UUID(forced_copy_project_id)
+        assert isinstance(forced_copy_project_id, UUID)  # nosec
+        project_copy_uuid = forced_copy_project_id
     else:
-        project_copy_uuid = uuidlib.uuid1()  # random project id
+        project_copy_uuid = uuid1()  # random project id
+
+    assert project_copy_uuid  # nosec
 
     project_copy["uuid"] = str(project_copy_uuid)
 
     # Workbench nodes shall be unique within the project context
     def _create_new_node_uuid(old_uuid):
-        return str(uuidlib.uuid5(project_copy_uuid, str(old_uuid)))
+        return str(uuid5(project_copy_uuid, str(old_uuid)))
 
     nodes_map = {}
     for node_uuid in project.get("workbench", {}).keys():
@@ -172,20 +176,20 @@ async def project_uses_available_services(
     return needed_services.issubset(available_services)
 
 
-def get_project_unavilable_services(
+def get_project_unavailable_services(
     project: Dict[str, Any], available_services: List[Dict[str, Any]]
 ) -> Set[Tuple[str, str]]:
     # get project services
-    needed_services: Set[Tuple[str, str]] = {
+    required: Set[Tuple[str, str]] = {
         (s["key"], s["version"]) for _, s in project["workbench"].items()
     }
 
     # get available services
-    available_services: Set[Tuple[str, str]] = {
+    available: Set[Tuple[str, str]] = {
         (s["key"], s["version"]) for s in available_services
     }
 
-    return needed_services - available_services
+    return required - available
 
 
 async def project_get_depending_nodes(
@@ -201,3 +205,8 @@ async def project_get_depending_nodes(
                 depending_node_uuids.add(dep_node_uuid)
 
     return depending_node_uuids
+
+
+def extract_dns_without_default_port(url: URL) -> str:
+    port = "" if url.port == 80 else f":{url.port}"
+    return f"{url.host}{port}"

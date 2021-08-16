@@ -24,7 +24,7 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
 
   properties: {
     collabType: {
-      check: [0, 1, 2],
+      check: [0, 1, 2], // 0:all, 1:org, 2:user
       event: "changeCollabType",
       nullable: true
     },
@@ -152,30 +152,36 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
         });
       });
 
-      const removeButton = new qx.ui.menu.Button(this.tr("Remove Collaborator"));
-      removeButton.addListener("execute", () => {
+      const removeCollabButton = new qx.ui.menu.Button(this.tr("Remove Collaborator"));
+      removeCollabButton.addListener("execute", () => {
         this.fireDataEvent("removeCollaborator", {
           gid: this.getKey(),
           name: this.getTitle()
         });
       });
 
+      /*
+       * Owners can make this collaborator:
+       * - makeOwnerButton
+       * - makeCollabButton or makeViewerButton
+       * - removeCollabButton
+      */
       if (!osparc.component.permissions.Permissions.canDelete(accessRights)) {
         if (osparc.component.permissions.Permissions.canWrite(accessRights)) {
           // collaborator
-          if (this.getCollabType() === 2) {
+          if (this.getCollabType() === 2) { // single user
             menu.add(makeOwnerButton);
           }
           menu.add(makeViewerButton);
         } else {
           // viewer
-          if (this.getCollabType() === 2) {
+          if (this.getCollabType() === 2) { // single user
             menu.add(makeOwnerButton);
           }
           menu.add(makeCollabButton);
         }
 
-        menu.add(removeButton);
+        menu.add(removeCollabButton);
       }
 
       return menu;

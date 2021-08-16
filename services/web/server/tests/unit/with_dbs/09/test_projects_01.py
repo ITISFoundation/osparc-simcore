@@ -1,18 +1,17 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=too-many-arguments
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import asyncio
-import unittest.mock as mock
 import uuid as uuidlib
 from copy import deepcopy
 from math import ceil
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 from unittest.mock import call
 
 import aiohttp
 import pytest
-import socketio
 from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -22,10 +21,10 @@ from models_library.projects_state import (
     ProjectLocked,
     ProjectRunningState,
     ProjectState,
+    ProjectStatus,
     RunningState,
 )
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_mock import future_with_result
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib import async_utils
 from servicelib.application import create_safe_application
@@ -65,8 +64,9 @@ def client(
     aiohttp_client,
     app_cfg,
     postgres_db,
-    mocked_director_subsystem,
+    mocked_director_v2_api,
     mock_orphaned_services,
+    redis_client,
 ):
 
     # config app
@@ -110,7 +110,7 @@ def ensure_run_in_sequence_context_is_empty():
 
 
 @pytest.fixture
-def mocks_on_projects_api(mocker, logged_user) -> Dict:
+def mocks_on_projects_api(mocker, logged_user) -> None:
     """
     All projects in this module are UNLOCKED
 
@@ -126,12 +126,13 @@ def mocks_on_projects_api(mocker, logged_user) -> Dict:
                 first_name=nameparts[0],
                 last_name=nameparts[1],
             ),
+            status=ProjectStatus.CLOSED,
         ),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     )
     mocker.patch(
         "simcore_service_webserver.projects.projects_api._get_project_lock_state",
-        return_value=future_with_result(state),
+        return_value=state,
     )
 
 
@@ -250,7 +251,7 @@ def assert_replaced(current_project, update_data):
 
 async def _list_projects(
     client,
-    expected: web.Response,
+    expected: Type[web.HTTPException],
     query_parameters: Optional[Dict] = None,
     expected_error_msg: Optional[str] = None,
     expected_error_code: Optional[str] = None,
@@ -321,7 +322,9 @@ async def _list_projects(
 
 
 async def _assert_get_same_project(
-    client, project: Dict, expected: web.Response
+    client,
+    project: Dict,
+    expected: Type[web.HTTPException],
 ) -> Dict:
     # GET /v0/projects/{project_id}
 
@@ -340,7 +343,7 @@ async def _assert_get_same_project(
 
 async def _new_project(
     client,
-    expected_response: web.Response,
+    expected_response: Type[web.HTTPException],
     logged_user: Dict[str, str],
     primary_group: Dict[str, str],
     *,
@@ -434,7 +437,7 @@ async def _new_project(
 
 
 async def _replace_project(
-    client, project_update: Dict, expected: web.Response
+    client, project_update: Dict, expected: Type[web.HTTPException]
 ) -> Dict:
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(
@@ -448,7 +451,9 @@ async def _replace_project(
     return data
 
 
-async def _delete_project(client, project: Dict, expected: web.Response) -> None:
+async def _delete_project(
+    client, project: Dict, expected: Type[web.HTTPException]
+) -> None:
     url = client.app.router["delete_project"].url_for(project_id=project["uuid"])
     assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
     resp = await client.delete(url)
@@ -466,11 +471,11 @@ async def _delete_project(client, project: Dict, expected: web.Response) -> None
     ],
 )
 async def test_list_projects(
-    client: aiohttp.test_utils.TestClient,
+    client: TestClient,
     logged_user: Dict[str, Any],
     user_project: Dict[str, Any],
     template_project: Dict[str, Any],
-    expected: aiohttp.web.HTTPException,
+    expected: Type[web.HTTPException],
     catalog_subsystem_mock: Callable[[Optional[Union[List[Dict], Dict]]], None],
     director_v2_service_mock: aioresponses,
 ):
@@ -850,28 +855,32 @@ async def test_delete_project(
     user_project,
     expected,
     storage_subsystem_mock,
-    mocked_director_subsystem,
+    mocked_director_v2_api,
     catalog_subsystem_mock,
     fake_services,
 ):
     # DELETE /v0/projects/{project_id}
 
     fakes = fake_services(5)
-    mocked_director_subsystem[
-        "get_running_interactive_services"
-    ].return_value = future_with_result(fakes)
+    mocked_director_v2_api["director_v2.get_services"].return_value = fakes
 
     await _delete_project(client, user_project, expected)
     await asyncio.sleep(2)  # let some time fly for the background tasks to run
 
     if expected == web.HTTPNoContent:
-        mocked_director_subsystem[
-            "get_running_interactive_services"
-        ].assert_called_once()
-        calls = [
-            call(client.server.app, service["service_uuid"], True) for service in fakes
+        mocked_director_v2_api["director_v2.get_services"].assert_called_once()
+
+        expected_calls = [
+            call(
+                app=client.server.app,
+                service_uuid=service["service_uuid"],
+                save_state=True,
+            )
+            for service in fakes
         ]
-        mocked_director_subsystem["stop_service"].has_calls(calls)
+        mocked_director_v2_api["director_v2.stop_service"].assert_has_calls(
+            expected_calls
+        )
 
         # wait for the fire&forget to run
         await asyncio.sleep(2)
@@ -891,14 +900,13 @@ async def test_delete_multiple_opened_project_forbidden(
     client,
     logged_user,
     user_project,
-    mocked_director_api,
+    mocked_director_v2_api,
     mocked_dynamic_service,
     socketio_client_factory: Callable,
     client_session_id_factory: Callable,
     user_role,
     expected_ok,
     expected_forbidden,
-    mocked_director_subsystem,
 ):
     # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
     service = await mocked_dynamic_service(logged_user["id"], user_project["uuid"])

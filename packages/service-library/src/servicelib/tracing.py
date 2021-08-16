@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 
 def setup_tracing(
-    app: web.Application, app_name: str, host: str, port: str, config: Dict
+    app: web.Application, app_name: str, host: str, port: int, config: Dict
 ) -> bool:
     zipkin_address = f"{config['zipkin_endpoint']}/api/v2/spans"
     endpoint = az.create_endpoint(app_name, ipv4=host, port=port)

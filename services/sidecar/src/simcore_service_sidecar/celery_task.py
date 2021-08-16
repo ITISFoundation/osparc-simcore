@@ -1,8 +1,8 @@
+import asyncio
 import logging
 from asyncio import CancelledError
 
 from .cli import run_sidecar
-from .utils import wrap_async_call
 
 log = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ def _shared_task_dispatch(
         celery_request.max_retries,
     )
     try:
-        wrap_async_call(
+        asyncio.run(
             run_sidecar(
                 celery_request.request.id,
                 user_id,

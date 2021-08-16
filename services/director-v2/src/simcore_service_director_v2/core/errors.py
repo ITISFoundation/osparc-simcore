@@ -20,6 +20,8 @@ translate into something like
 """
 from typing import Optional
 
+from models_library.projects import ProjectID
+
 
 class DirectorException(Exception):
     """Basic exception"""
@@ -32,7 +34,7 @@ class GenericDockerError(DirectorException):
     """Generic docker library error"""
 
     def __init__(self, msg: str, original_exception: Exception):
-        super().__init__(msg + ": {original_exception}")
+        super().__init__(msg + f": {original_exception.message}")
         self.original_exception = original_exception
 
 
@@ -62,13 +64,6 @@ class ServiceUUIDInUseError(DirectorException):
         self.service_uuid = service_uuid
 
 
-class RegistryConnectionError(DirectorException):
-    """Error while connecting to the docker regitry"""
-
-    def __init__(self, msg: str):
-        super().__init__(msg or "Unexpected connection error while accessing registry")
-
-
 class ServiceStartTimeoutError(DirectorException):
     """The service was created but never run (time-out)"""
 
@@ -78,11 +73,32 @@ class ServiceStartTimeoutError(DirectorException):
         self.service_uuid = service_uuid
 
 
-class CelerySchedulerError(DirectorException):
+class ProjectNotFoundError(DirectorException):
+    """Project not found error"""
+
+    def __init__(self, project_id: ProjectID):
+        super().__init__(f"project {project_id} not found")
+
+
+class PipelineNotFoundError(DirectorException):
+    """Pipeline not found error"""
+
+    def __init__(self, pipeline_id: str):
+        super().__init__(f"pipeline {pipeline_id} not found")
+
+
+class SchedulerError(DirectorException):
     """An error in the scheduler"""
 
-    def __init__(self, msg: Optional[str]):
+    def __init__(self, msg: Optional[str] = None):
         super().__init__(msg or "Unexpected error in the scheduler")
+
+
+class InvalidPipelineError(SchedulerError):
+    """A pipeline is misconfigured"""
+
+    def __init__(self, pipeline_id: str, msg: Optional[str] = None):
+        super().__init__(msg or f"Invalid configuration of pipeline {pipeline_id}")
 
 
 class ConfigurationError(DirectorException):

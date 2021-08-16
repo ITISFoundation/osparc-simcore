@@ -1,5 +1,4 @@
 # pylint: disable=unused-argument,redefined-outer-name,no-member
-import asyncio
 from pathlib import Path
 
 import aiodocker
@@ -12,15 +11,13 @@ from simcore_service_sidecar.utils import is_gpu_node
 
 
 def _toggle_gpu_mock(mocker, has_gpu: bool) -> None:
-    containers_get = mocker.patch(
-        "aiodocker.containers.DockerContainers.run", return_value=asyncio.Future()
-    )
-
     class FakeContainer:
         async def wait(self, **kwargs):
             return {"StatusCode": 0 if has_gpu else 127}
 
-    containers_get.return_value.set_result(FakeContainer())
+    containers_get = mocker.patch(
+        "aiodocker.containers.DockerContainers.run", return_value=FakeContainer()
+    )
 
     if not has_gpu:
         containers_get.side_effect = aiodocker.exceptions.DockerError(
@@ -95,7 +92,7 @@ def test_force_start_gpu_mode(mocker, force_gpu_mode, gpu_support) -> None:
     mocked_configure_gpu_mode.assert_called_with(BootMode.GPU)
 
 
-def test_auto_detects_gpu(mocker, mock_node_with_gpu) -> None:
+def test_auto_detects_gpu(mocker, mock_node_with_gpu, loop) -> None:
     mocked_configure_gpu_mode = mocker.patch(
         "simcore_service_sidecar.celery_configurator.configure_node"
     )

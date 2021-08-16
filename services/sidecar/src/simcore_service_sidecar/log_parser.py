@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import re
-import sys
 from enum import Enum
 from pathlib import Path
 from typing import Awaitable, Callable, Optional, Tuple, Union
@@ -105,9 +104,7 @@ async def _monitor_docker_container(
 
     finally:
         if not out_log_file and log_file:
-            # TODO: Update missing_ok=True in py3.8
-            assert sys.version_info < (3, 8)  # nosec
-            log_file.unlink()
+            log_file.unlink(missing_ok=True)
 
 
 @log_decorator(logger=log)
@@ -124,5 +121,4 @@ async def _monitor_log_file(
                 await asyncio.sleep(1)
                 continue
             log_type, parsed_line = await parse_line(line)
-
             await log_cb(log_type, parsed_line)

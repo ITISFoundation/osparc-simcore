@@ -37,6 +37,7 @@ qx.Class.define("osparc.Application", {
 
   members: {
     __current: null,
+    __themeSwitcher: null,
     __mainPage: null,
 
     /**
@@ -93,6 +94,7 @@ qx.Class.define("osparc.Application", {
       this.__loadCommonCss();
 
       this.__updateTabName();
+      this.__updateFavicon();
       this.__checkCookiesAccepted();
 
       // onload, load, DOMContentLoaded, appear... didn't work
@@ -254,6 +256,16 @@ qx.Class.define("osparc.Application", {
         });
     },
 
+    __updateFavicon: function() {
+      let link = document.querySelector("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.getElementsByTagName("head")[0].appendChild(link);
+      }
+      link.href = "/resource/osparc/favicon-"+qx.core.Environment.get("product.name")+".png";
+    },
+
     __checkCookiesAccepted: function() {
       osparc.utils.LibVersions.getPlatformName()
         .then(platformName => {
@@ -277,14 +289,6 @@ qx.Class.define("osparc.Application", {
             }
           }
         });
-    },
-
-    __updateFavicon: function() {
-      const link = document.querySelector("link[rel*='icon']") || document.createElement("link");
-      link.type = "image/x-icon";
-      link.rel = "shortcut icon";
-      link.href = "resource/osparc/favicon-osparc.png";
-      document.getElementsByTagName("head")[0].appendChild(link);
     },
 
     __restart: function() {
@@ -313,11 +317,20 @@ qx.Class.define("osparc.Application", {
 
     __loadLoginPage: function() {
       this.__disconnectWebSocket();
-      const view = new osparc.auth.LoginPage();
+      let view = null;
+      switch (qx.core.Environment.get("product.name")) {
+        case "s4l":
+          view = new osparc.auth.LoginPageS4L();
+          this.__loadView(view);
+          break;
+        default:
+          view = new osparc.auth.LoginPage();
+          this.__loadView(view, {
+            top: "10%"
+          });
+          break;
+      }
       view.addListener("done", () => this.__restart(), this);
-      this.__loadView(view, {
-        top: "10%"
-      });
     },
 
     __loadMainPage: function() {
@@ -342,12 +355,25 @@ qx.Class.define("osparc.Application", {
       this.assert(view!==null);
       // Update root document and currentness
       let doc = this.getRoot();
-      if (doc.hasChildren() && this.__current) {
-        doc.remove(this.__current);
-        // this.__current.destroy();
+      if (doc.hasChildren()) {
+        if (this.__current) {
+          doc.remove(this.__current);
+        }
+        if (this.__themeSwitcher) {
+          doc.remove(this.__themeSwitcher);
+          this.__themeSwitcher = null;
+        }
       }
       doc.add(view, options);
       this.__current = view;
+      if (!(view instanceof osparc.desktop.MainPage)) {
+        this.__themeSwitcher = new osparc.ui.switch.ThemeSwitcher();
+        doc.add(this.__themeSwitcher, {
+          top: 10,
+          right: 15
+        });
+      }
+
       // Clear URL
       window.history.replaceState(null, "", "/");
     },

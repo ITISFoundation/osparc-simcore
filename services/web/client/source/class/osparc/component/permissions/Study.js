@@ -41,23 +41,26 @@ qx.Class.define("osparc.component.permissions.Study", {
   },
 
   statics: {
-    canGroupRead: function(accessRights, GID) {
-      if (GID in accessRights) {
-        return accessRights[GID]["read"];
-      }
-      return false;
-    },
-    canGroupWrite: function(accessRights, GID) {
+    __canGroupWrite: function(accessRights, GID) {
       if (GID in accessRights) {
         return accessRights[GID]["write"];
       }
       return false;
     },
-    canGroupExecute: function(accessRights, GID) {
+    canGroupDelete: function(accessRights, GID) {
       if (GID in accessRights) {
         return accessRights[GID]["delete"];
       }
       return false;
+    },
+
+    canGroupsWrite: function(accessRights, GIDs) {
+      let canWrite = false;
+      for (let i=0; i<GIDs.length && !canWrite; i++) {
+        // eslint-disable-next-line no-underscore-dangle
+        canWrite = this.self().__canGroupWrite(accessRights, GIDs[i]);
+      }
+      return canWrite;
     },
 
     getViewerAccessRight: function() {
@@ -107,7 +110,7 @@ qx.Class.define("osparc.component.permissions.Study", {
       });
       const params = {
         url: {
-          "projectId": this.__studyData["uuid"]
+          "studyId": this.__studyData["uuid"]
         },
         data: this.__studyData
       };
@@ -132,7 +135,7 @@ qx.Class.define("osparc.component.permissions.Study", {
 
       const params = {
         url: {
-          "projectId": this.__studyData["uuid"]
+          "studyId": this.__studyData["uuid"]
         },
         data: this.__studyData
       };
@@ -153,7 +156,7 @@ qx.Class.define("osparc.component.permissions.Study", {
       this.__studyData["accessRights"][collboratorGId] = newAccessRights;
       const params = {
         url: {
-          "projectId": this.__studyData["uuid"]
+          "studyId": this.__studyData["uuid"]
         },
         data: this.__studyData
       };

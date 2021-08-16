@@ -23,7 +23,7 @@ def print_tree(path: Path, level=0):
 
 @pytest.fixture
 def state_dir(tmp_path) -> Path:
-    """ Folder with some data, representing a given state"""
+    """Folder with some data, representing a given state"""
     base_dir = tmp_path / "original"
     base_dir.mkdir()
     (base_dir / "empty").mkdir()
@@ -55,7 +55,7 @@ def state_dir(tmp_path) -> Path:
 
 @pytest.fixture
 def new_state_dir(tmp_path) -> Path:
-    """ Folder AFTER updated with new data """
+    """Folder AFTER updated with new data"""
     base_dir = tmp_path / "updated"
     base_dir.mkdir()
     (base_dir / "d1").mkdir()

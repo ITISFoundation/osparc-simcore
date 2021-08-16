@@ -22,9 +22,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     this.base(arguments, form, node);
 
     this.__ctrlLinkMap = {};
-    this.__addLinkCtrls();
-
     this.__ctrlParamMap = {};
+
+    this.__addLinkCtrls();
     this.__addParamCtrls();
 
     this.setDroppable(true);
@@ -33,6 +33,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
   events: {
     "linkFieldModified": "qx.event.type.Data",
+    "filePickerRequested": "qx.event.type.Data",
+    "parameterNodeRequested": "qx.event.type.Data",
     "changeChildVisibility": "qx.event.type.Event"
   },
 
@@ -54,6 +56,15 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     gridPos: {
       ...osparc.component.form.renderer.PropFormBase.gridPos,
       retrieveStatus: Object.keys(osparc.component.form.renderer.PropFormBase.gridPos).length
+    },
+
+    isFieldParametrizable: function(field) {
+      const supportedTypes = [];
+      const paramsMD = osparc.utils.Services.getParametersMetadata();
+      paramsMD.forEach(paramMD => {
+        supportedTypes.push(osparc.component.node.ParameterEditor.getParameterOutputTypeFromMD(paramMD));
+      });
+      return supportedTypes.includes(field.type);
     }
   },
 
@@ -67,12 +78,103 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __ctrlLinkMap: null,
+    __ctrlParamMap: null,
+
+    __createFieldOpts: function(field) {
+      if (["FileButton"].includes(field.widgetType)) {
+        return this.__getSelectFileButton(field.key);
+      }
+      if (this.self().isFieldParametrizable(field)) {
+        const paramsMenuBtn = this.__getParamsMenuButton(field.key).set({
+          visibility: "excluded"
+        });
+        osparc.data.model.Sweeper.isSweeperEnabled()
+          .then(isSweeperEnabled => {
+            field.bind("visibility", paramsMenuBtn, "visibility", {
+              converter: visibility => (visibility === "visible" && isSweeperEnabled) ? "visible" : "excluded"
+            });
+          });
+        return paramsMenuBtn;
+      }
+      return null;
+    },
+
+    __getSelectFileButton: function(portId) {
+      const selectFileButton = new qx.ui.form.Button((this.tr("Select File")));
+      selectFileButton.addListener("execute", () => {
+        this.fireDataEvent("filePickerRequested", portId);
+      }, this);
+      return selectFileButton;
+    },
+
+    __getParamsMenuButton: function(portId) {
+      const paramsMenu = new qx.ui.menu.Menu().set({
+        position: "bottom-right"
+      });
+
+      const newParamBtn = new qx.ui.menu.Button(this.tr("Set new parameter"));
+      newParamBtn.addListener("execute", () => {
+        this.fireDataEvent("parameterNodeRequested", portId);
+      }, this);
+      paramsMenu.add(newParamBtn);
+
+      const existingParamMenu = new qx.ui.menu.Menu();
+      this.__populateExistingParamsMenu(portId, existingParamMenu);
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      study.addListener("changeParameters", () => {
+        this.__populateExistingParamsMenu(portId, existingParamMenu);
+      }, this);
+
+      const existingParamBtn = new qx.ui.menu.Button(this.tr("Set existing parameter"), null, null, existingParamMenu);
+      paramsMenu.add(existingParamBtn);
+
+      const menuBtn = new qx.ui.form.MenuButton().set({
+        menu: paramsMenu,
+        icon: "@FontAwesome5Solid/ellipsis-v/14",
+        focusable: false,
+        allowGrowX: false,
+        alignX: "center"
+      });
+      return menuBtn;
+    },
+
+    __populateExistingParamsMenu: function(fieldKey, existingParamMenu) {
+      existingParamMenu.removeAll();
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      study.getParameters().forEach(paramNode => {
+        osparc.utils.Ports.arePortsCompatible(paramNode, "out_1", this.getNode(), fieldKey)
+          .then(compatible => {
+            if (compatible) {
+              const paramButton = new qx.ui.menu.Button();
+              paramNode.bind("label", paramButton, "label");
+              paramButton.addListener("execute", () => {
+                this.getNode().addInputNode(paramNode.getNodeId());
+                this.getNode().addPortLink(fieldKey, paramNode.getNodeId(), "out_1");
+              }, this);
+              existingParamMenu.add(paramButton);
+            }
+          });
+      });
+    },
 
     // overridden
     addItems: function(items, names, title, itemOptions, headerOptions) {
       this.base(arguments, items, names, title, itemOptions, headerOptions);
 
-      items.forEach(item => {
+      // header
+      let row = title === null ? 0 : 1;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+
+        const fieldOpts = this.__createFieldOpts(item);
+        if (fieldOpts) {
+          this._add(fieldOpts, {
+            row,
+            column: this.self().gridPos.fieldOptions
+          });
+        }
+
         this.__createDropMechanism(item, item.key);
 
         // Notify focus and focus out
@@ -88,7 +190,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             qx.event.message.Bus.getInstance().dispatchByName("inputFocusout", msgDataFn);
           }
         }, this);
-      });
+
+        row++;
+      }
     },
 
     // overridden
@@ -200,6 +304,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __arePortsCompatible: function(node1Id, port1Id, node2Id, port2Id) {
       return new Promise((resolve, reject) => {
+        if (node1Id === node2Id) {
+          resolve(false);
+          return;
+        }
         const study = osparc.store.Store.getInstance().getCurrentStudy();
         const workbench = study.getWorkbench();
         const node1 = workbench.getNode(node1Id);
@@ -392,15 +500,15 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
         const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
-        const unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
-        unlinkBtn.addListener("execute", function() {
-          this.removeLink(portId);
-        }, this);
-        hBox.add(unlinkBtn);
-
         hBox.add(this.getControlLink(portId), {
           flex: 1
         });
+
+        const unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
+        unlinkBtn.addListener("execute", function() {
+          this.removePortLink(portId);
+        }, this);
+        hBox.add(unlinkBtn);
 
         hBox.key = portId;
 
@@ -408,12 +516,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           row: layoutProps.row,
           column: this.self().gridPos.ctrlField
         });
-
-        // disable menu button
-        const menu = this._getCtrlMenuChild(portId);
-        if (menu) {
-          menu.child.setEnabled(false);
-        }
 
         const linkFieldModified = {
           portId,
@@ -425,12 +527,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
     },
 
-    __linkRemoved: function(portId) {
+    __portLinkRemoved: function(portId) {
       if (this.__resetCtrlField(portId)) {
-        // enable menu button
-        const menu = this._getCtrlMenuChild(portId);
-        if (menu) {
-          menu.child.setEnabled(true);
+        // enable fieldOpts button
+        const fieldOpts = this._getFieldOptsChild(portId);
+        if (fieldOpts) {
+          fieldOpts.child.setEnabled(true);
         }
 
         const linkFieldModified = {
@@ -441,17 +543,25 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
     },
 
+    getLink: function(portId) {
+      if ("link" in this._form.getControl(portId)) {
+        return this._form.getControl(portId)["link"];
+      }
+      return null;
+    },
+
     getLinks: function() {
       const links = [];
-      Object.keys(this.__ctrlLinkMap).forEach(portKey => {
-        if ("link" in this._form.getControl(portKey)) {
-          links.push(this._form.getControl(portKey)["link"]);
+      Object.keys(this.__ctrlLinkMap).forEach(portId => {
+        const link = this.getLink(portId);
+        if (link) {
+          links.push(link);
         }
       });
       return links;
     },
 
-    addLink: function(toPortId, fromNodeId, fromPortId) {
+    addPortLink: function(toPortId, fromNodeId, fromPortId) {
       if (!this.__isPortAvailable(toPortId)) {
         return false;
       }
@@ -475,21 +585,21 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return true;
     },
 
-    addLinks: function(data) {
+    addPortLinks: function(data) {
       for (let key in data) {
         if (osparc.utils.Ports.isDataALink(data[key])) {
-          this.addLink(key, data[key].nodeUuid, data[key].output);
+          this.addPortLink(key, data[key].nodeUuid, data[key].output);
         }
       }
     },
 
-    removeLink: function(toPortId) {
+    removePortLink: function(toPortId) {
       this.getControlLink(toPortId).setEnabled(false);
       if ("link" in this._form.getControl(toPortId)) {
         delete this._form.getControl(toPortId)["link"];
       }
 
-      this.__linkRemoved(toPortId);
+      this.__portLinkRemoved(toPortId);
     },
     /* /LINKS */
 
@@ -539,36 +649,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __parameterRemoved: function(portId) {
       this.__resetCtrlField(portId);
-    },
-
-    // overridden
-    addParameter: function(portId, parameter) {
-      if (!this.__isPortAvailable(portId)) {
-        return false;
-      }
-      if (!parameter) {
-        return false;
-      }
-
-      this.getControlParam(portId).setEnabled(false);
-      this._form.getControl(portId).parameter = parameter;
-      // ToDo: Binding missing
-      this.getControlParam(portId).setValue(this.tr("Parameter: ") + parameter.label);
-      this.__parameterAdded(portId);
-      return true;
-    },
-
-    addParameters: function(data) {
-      for (let key in data) {
-        if (osparc.utils.Ports.isDataAParameter(data[key])) {
-          const parameterId = data[key].replace("{{", "").replace("}}", "");
-          const study = osparc.store.Store.getInstance().getCurrentStudy();
-          const parameter = study.getSweeper().getParameter(parameterId);
-          if (parameter) {
-            this.addParameter(key, parameter);
-          }
-        }
-      }
     },
 
     removeParameter: function(portId) {

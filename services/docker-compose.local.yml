@@ -41,6 +41,13 @@ services:
       - "8000"
       - "3009:3000"
 
+  datcore-adapter:
+    environment:
+      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+    ports:
+      - "8000"
+      - "3010:3000"
+
   storage:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
@@ -54,6 +61,20 @@ services:
     ports:
       - "8080"
       - "3001:3000"
+
+  dask-sidecar:
+    environment:
+      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+
+
+  dask-scheduler:
+    environment:
+      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+    ports:
+      # dashboard UI
+      - "8787:8787"
+      # scheduler API
+      - "8786:8786"
 
   postgres:
     ports:

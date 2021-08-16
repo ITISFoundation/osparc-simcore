@@ -96,6 +96,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__loggerView.setCurrentNodeId("");
         return;
       }
+
+      const study = this.getStudy();
+      const workbench = study.getWorkbench();
+      const node = workbench.getNode(nodeId);
+      if (node && node.isParameter()) {
+        this.__popUpParameterEditor(node);
+        return;
+      }
+
       if (this.__nodesTree) {
         this.__nodesTree.setCurrentNodeId(nodeId);
       }
@@ -105,12 +114,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (this.__groupNodeView) {
         this.__groupNodeView.restoreIFrame();
       }
+      const prevNodeId = this.__currentNodeId;
       this.__currentNodeId = nodeId;
-      this.getStudy().getUi().setCurrentNodeId(nodeId);
+      study.getUi().setCurrentNodeId(nodeId);
 
-      const study = this.getStudy();
-      const workbench = study.getWorkbench();
-      const node = workbench.getNode(nodeId);
       if (node === null || nodeId === study.getUuid()) {
         this.__showInMainView(this.__workbenchUI, study.getUuid());
         this.__workbenchUI.loadModel(workbench);
@@ -124,11 +131,31 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         nodeView.setNode(node);
         this.__showInMainView(nodeView, nodeId);
         nodeView.populateLayout();
+        nodeView.addListener("itemSelected", () => {
+          this.nodeSelected(prevNodeId);
+        }, this);
       } else {
         this.__nodeView.setNode(node);
         this.__showInMainView(this.__nodeView, nodeId);
         this.__nodeView.populateLayout();
       }
+    },
+
+    __popUpParameterEditor: function(node) {
+      const parameterEditor = new osparc.component.node.ParameterEditor(node);
+      const win = osparc.ui.window.Window.popUpInWindow(parameterEditor, "Edit Parameter", 250, 175);
+      parameterEditor.addListener("editParameter", () => {
+        const label = parameterEditor.getLabel();
+        node.setLabel(label);
+
+        const val = parameterEditor.getValue();
+        osparc.component.node.ParameterEditor.setParameterOutputValue(node, val);
+
+        win.close();
+      }, this);
+      parameterEditor.addListener("cancel", () => {
+        win.close();
+      }, this);
     },
 
     getLogger: function() {
@@ -145,19 +172,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return null;
     },
 
-    __editSlides: function() {
-      const uiData = this.getStudy().getUi();
-      const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(uiData.getSlideshow());
-      const title = this.tr("Edit Slides");
-      const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 600, 500).set({
-        modal: false,
-        clickAwayClose: false
-      });
-      nodesSlidesTree.addListener("finished", () => {
-        win.close();
-      });
-    },
-
     __showSweeper: function() {
       const study = this.getStudy();
       const sweeper = new osparc.component.sweeper.Sweeper(study);
@@ -168,7 +182,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const iterationStudyId = e.getData();
         const params = {
           url: {
-            "projectId": iterationStudyId
+            "studyId": iterationStudyId
           }
         };
         osparc.data.Resources.getOne("studies", params)
@@ -305,9 +319,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree();
       nodesTree.setStudy(study);
-      nodesTree.addListener("slidesEdit", () => {
-        this.__editSlides();
-      }, this);
       nodesTree.addListener("removeNode", e => {
         if (this.getStudy().isReadOnly()) {
           return;
@@ -445,7 +456,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __connectEvents: function() {
       const workbench = this.getStudy().getWorkbench();
-      workbench.addListener("nNodesChanged", this.__workbenchChanged, this);
+      workbench.addListener("pipelineChanged", this.__workbenchChanged, this);
 
       workbench.addListener("showInLogger", ev => {
         const data = ev.getData();

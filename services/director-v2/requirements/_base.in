@@ -2,11 +2,13 @@
 # Specifies third-party dependencies for 'services/director-v2/src'
 #
 # NOTE: ALL version constraints MUST be commented
--c ../../../requirements/constraints.txt
+--constraint ../../../requirements/constraints.txt
+# we need EXACTLY the same dask libraries in the client/scheduler/workers
+--requirement ../../../services/dask-sidecar/requirements/_dask-distributed.txt
 
-async-exit-stack; python_version < '3.7'
-async-generator ; python_version < '3.7'
-dataclasses ; python_version < '3.7'
+--requirement ../../../packages/models-library/requirements/_base.in
+--requirement ../../../packages/settings-library/requirements/_base.in
+--requirement ../../../packages/postgres-database/requirements/_base.in
 
 # fastapi and extensions
 fastapi[all]

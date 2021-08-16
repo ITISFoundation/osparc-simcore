@@ -48,7 +48,7 @@ async def get_app_diagnostics(request: web.Request):
         /v0/status/diagnostics?top_tracemalloc=10 with display top 10 files allocating the most memory
     """
     # tasks in loop
-    data = {"loop_tasks": [get_task_info(task) for task in asyncio.Task.all_tasks()]}
+    data = {"loop_tasks": [get_task_info(task) for task in asyncio.all_tasks()]}
 
     # allocated memory
     if request.query.get("top_tracemalloc", False):

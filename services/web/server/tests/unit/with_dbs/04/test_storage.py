@@ -2,17 +2,12 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import logging
-from copy import deepcopy
 from urllib.parse import quote
 
 import pytest
 from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser
 from servicelib.application import create_safe_application
-from servicelib.rest_responses import unwrap_envelope
-from servicelib.rest_utils import extract_and_validate
 from simcore_service_webserver.security_roles import UserRole
 
 API_VERSION = "v0"
@@ -37,6 +32,20 @@ def storage_server(loop, aiohttp_server, app_cfg):
                 "data": [
                     {"user_id": int(query["user_id"])},
                 ]
+            }
+        )
+
+    async def _post_sync_meta_data(request: web.Request):
+        assert not request.has_body
+
+        query = request.query
+        assert query
+        assert "dry_run" in query
+
+        assert query["dry_run"] == "true"
+        return web.json_response(
+            {
+                "data": {"removed": []},
             }
         )
 
@@ -114,6 +123,9 @@ def storage_server(loop, aiohttp_server, app_cfg):
     ), "backend service w/ different version as webserver entrypoint"
 
     app.router.add_get(f"/{storage_api_version}/locations", _get_locs)
+    app.router.add_post(
+        f"/{storage_api_version}/locations/0:sync", _post_sync_meta_data
+    )
     app.router.add_get(
         f"/{storage_api_version}/locations/0/files/{{file_id}}/metadata", _get_filemeta
     )
@@ -155,6 +167,29 @@ async def test_get_storage_locations(client, storage_server, logged_user, expect
     if not error:
         assert len(data) == 1
         assert data[0]["user_id"] == logged_user["id"]
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPForbidden),
+        (UserRole.TESTER, web.HTTPForbidden),
+        (UserRole.ADMIN, web.HTTPOk),
+    ],
+)
+async def test_sync_file_meta_table(client, storage_server, logged_user, expected):
+    url = "/v0/storage/locations/0:sync"
+    assert url.startswith(PREFIX)
+
+    resp = await client.post(url, params={"dry_run": "true"})
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        # the test of the functionality is already done in storage
+        assert "removed" in data
+        assert not data["removed"]
 
 
 @pytest.mark.parametrize(

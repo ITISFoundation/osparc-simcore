@@ -29,25 +29,32 @@ env:
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
   DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   CC_TEST_REPORTER_ID: 21a72eb30476c870140b1576258873a41be6692f71bd9aebe812174b7d8f4b4e
-  #enable buildkit
-  DOCKER_BUILDKIT: 1
-  COMPOSE_DOCKER_CLI_BUILD: 1
 
 jobs:
   unit-test-api:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] api"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -69,19 +76,29 @@ jobs:
         run: ./ci/github/unit-testing/api.bash test
 
   unit-test-api-server:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] api-server"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -101,7 +118,7 @@ jobs:
         run: ./ci/github/unit-testing/api-server.bash install
       - name: test
         run: ./ci/github/unit-testing/api-server.bash test
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -116,19 +133,29 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-catalog:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] catalog"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -154,7 +181,68 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  unit-test-datcore-adapter:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    name: "[unit] datcore-adapter"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v1
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: install
+        run: ./ci/github/unit-testing/datcore-adapter.bash install
+      - name: test
+        run: ./ci/github/unit-testing/datcore-adapter.bash test
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/datcore-adapter/test_failures
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -169,19 +257,30 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-director:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] director"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        # KEEP 3.6 Development of this service is frozen
         python: [3.6]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -201,7 +300,7 @@ jobs:
         run: ./ci/github/unit-testing/director.bash install
       - name: test
         run: ./ci/github/unit-testing/director.bash test
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -216,19 +315,29 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-director-v2:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] director-v2"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -252,7 +361,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -267,19 +376,29 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-sidecar:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] sidecar"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -299,7 +418,64 @@ jobs:
         run: ./ci/github/unit-testing/sidecar.bash install
       - name: test
         run: ./ci/github/unit-testing/sidecar.bash test
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  unit-test-dask-sidecar:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    name: "[unit] dask-sidecar"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-dask-sidecar-${{ hashFiles('services/dask-sidecar/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-dask-sidecar-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install
+        run: ./ci/github/unit-testing/dask-sidecar.bash install
+      - name: test
+        run: ./ci/github/unit-testing/dask-sidecar.bash test
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -314,19 +490,29 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-dynamic-sidecar:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] dynamic-sidecar"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -348,7 +534,7 @@ jobs:
         run: ./ci/github/unit-testing/dynamic-sidecar.bash codestyle
       - name: test
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -363,20 +549,30 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-frontend:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] frontend"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         node: [14]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
-      - uses: actions/setup-node@v1
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - uses: actions/setup-node@v2.3.1
         with:
           node-version: ${{ matrix.node }}
       - name: show system version
@@ -386,24 +582,34 @@ jobs:
       - name: test
         run: ./ci/github/unit-testing/frontend.bash test
     # no coverage here??
-    # - uses: codecov/codecov-action@v1
+    # - uses: codecov/codecov-action@v2.0.2
     #   with:
     #     flags: unittests #optional
 
   unit-test-python-linting:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] python-linting"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8, 3.9]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -425,19 +631,29 @@ jobs:
         run: ./ci/github/unit-testing/python-linting.bash test
 
   unit-test-postgres-database:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] postgres-database"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -457,7 +673,7 @@ jobs:
         run: ./ci/github/unit-testing/postgres-database.bash install
       - name: test
         run: ./ci/github/unit-testing/postgres-database.bash test
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -473,19 +689,29 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-service-integration:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] service-integration"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -505,7 +731,7 @@ jobs:
         run: ./ci/github/unit-testing/service-integration.bash install
       - name: test
         run: ./ci/github/unit-testing/service-integration.bash test
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -520,19 +746,29 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-service-library:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] service-library"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -552,7 +788,64 @@ jobs:
         run: ./ci/github/unit-testing/service-library.bash install
       - name: test
         run: ./ci/github/unit-testing/service-library.bash test
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  unit-test-settings-library:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    name: "[unit] settings-library"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-settings-library-${{ hashFiles('packages/settings-library/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-settings-library-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install
+        run: ./ci/github/unit-testing/settings-library.bash install
+      - name: test
+        run: ./ci/github/unit-testing/settings-library.bash test
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -567,19 +860,29 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-models-library:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] models-library"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -599,7 +902,7 @@ jobs:
         run: ./ci/github/unit-testing/models-library.bash install
       - name: test
         run: ./ci/github/unit-testing/models-library.bash test
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -614,19 +917,29 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-simcore-sdk:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] simcore-sdk"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -646,7 +959,7 @@ jobs:
         run: ./ci/github/unit-testing/simcore-sdk.bash install
       - name: test
         run: ./ci/github/unit-testing/simcore-sdk.bash test
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -661,19 +974,29 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-storage:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] storage"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -693,7 +1016,7 @@ jobs:
         run: ./ci/github/unit-testing/storage.bash install
       - name: test
         run: ./ci/github/unit-testing/storage.bash test
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -708,19 +1031,29 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-isolated:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] webserver isolated"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -740,7 +1073,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_isolated
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -760,15 +1093,24 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -788,7 +1130,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -808,15 +1150,24 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -836,7 +1187,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 02
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -856,15 +1207,24 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -884,7 +1244,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 03
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -904,15 +1264,24 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -932,7 +1301,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 04
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -947,20 +1316,29 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-05:
-    timeout-minutes: 15 # if this timeout gets too small, then split the tests
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 05"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -980,7 +1358,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 05
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -1000,15 +1378,24 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1028,7 +1415,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 06
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -1048,15 +1435,24 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1076,7 +1472,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 07
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -1096,15 +1492,24 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1124,7 +1529,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 08
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -1144,15 +1549,24 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1172,7 +1586,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 09
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -1192,15 +1606,24 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1220,7 +1643,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 10
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -1236,21 +1659,33 @@ jobs:
 
   build-test-images:
     # make PR faster by executing this one straight as PR cannot push to the registry anyway
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
     name: "[build] docker images"
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
+      - name: setup docker buildx
         if: github.event_name == 'push'
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        if: github.event_name == 'push'
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: show system environs
         if: github.event_name == 'push'
         run: ./ci/helpers/show_system_versions.bash
-      - name: pull images
-        if: github.event_name == 'push'
-        run: ./ci/build/test-images.bash pull_images
       - name: build images
         if: github.event_name == 'push'
         run: ./ci/build/test-images.bash build_images
@@ -1263,14 +1698,19 @@ jobs:
         run: ./ci/deploy/dockerhub-test-images.bash
 
   integration-test-webserver-01:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 01"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -1280,10 +1720,14 @@ jobs:
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1312,7 +1756,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: integrationtests #optional
       - name: prepare codeclimate coverage file
@@ -1327,14 +1771,19 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-webserver-02:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 02"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -1344,10 +1793,14 @@ jobs:
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1376,7 +1829,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: integrationtests #optional
       - name: prepare codeclimate coverage file
@@ -1390,15 +1843,20 @@ jobs:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
-  integration-test-director-v2:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
-    name: "[int] director-v2"
+  integration-test-director-v2-01:
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
+    name: "[int] director-v2 01"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -1408,10 +1866,14 @@ jobs:
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1430,7 +1892,7 @@ jobs:
       - name: install
         run: ./ci/github/integration-testing/director-v2.bash install
       - name: test
-        run: ./ci/github/integration-testing/director-v2.bash test
+        run: ./ci/github/integration-testing/director-v2.bash test 01
       - name: upload failed tests logs
         if: failure()
         uses: actions/upload-artifact@v2
@@ -1454,15 +1916,20 @@ jobs:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
-  integration-test-sidecar:
+  integration-test-director-v2-02:
     timeout-minutes: 20 # if this timeout gets too small, then split the tests
-    name: "[int] sidecar"
+    name: "[int] director-v2 02"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -1472,10 +1939,88 @@ jobs:
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
-      - name: setup docker
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-director-v2-${{ hashFiles('services/director-v2/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-director-v2-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install
+        run: ./ci/github/integration-testing/director-v2.bash install
+      - name: test
+        run: ./ci/github/integration-testing/director-v2.bash test 02
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/director-v2/test_failures
+      - name: cleanup
+        if: always()
+        run: ./ci/github/integration-testing/director-v2.bash clean_up
+      - uses: codecov/codecov-action@v2.0.2
+        with:
+          flags: integrationtests #optional
+      - name: prepare codeclimate coverage file
         run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  integration-test-sidecar:
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
+    name: "[int] sidecar"
+    needs: [build-test-images]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - name: set PR default variables
+        # only pushes have access to the docker credentials, use a default
+        if: github.event_name == 'pull_request'
+        run: |
+          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
+          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
+      - uses: actions/checkout@v2
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1504,7 +2049,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/sidecar.bash clean_up
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: integrationtests #optional
       - name: prepare codeclimate coverage file
@@ -1519,14 +2064,19 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-simcore-sdk:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] simcore-sdk"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -1536,10 +2086,14 @@ jobs:
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1568,7 +2122,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/simcore-sdk.bash clean_up
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           flags: integrationtests
       - name: prepare codeclimate coverage file
@@ -1583,14 +2137,19 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   system-test-public-api:
-    timeout-minutes: 25 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] public api"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -1600,10 +2159,14 @@ jobs:
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1628,14 +2191,19 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash clean_up
 
   system-test-swarm-deploy:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] deploy simcore"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -1645,10 +2213,14 @@ jobs:
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1673,15 +2245,20 @@ jobs:
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
 
   system-test-e2e:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] e2e"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         node: [14]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -1691,15 +2268,19 @@ jobs:
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v2.3.1
         with:
           node-version: ${{ matrix.node }}
       - name: show system version
@@ -1751,13 +2332,18 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash clean_up
 
   system-test-environment-setup:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] environment setup"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -1767,10 +2353,14 @@ jobs:
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1798,12 +2388,15 @@ jobs:
     needs:
       [
         unit-test-catalog,
+        unit-test-datcore-adapter,
         unit-test-director,
         unit-test-director-v2,
         unit-test-sidecar,
         unit-test-dynamic-sidecar,
+        unit-test-dask-sidecar,
         unit-test-service-integration,
         unit-test-service-library,
+        unit-test-settings-library,
         unit-test-models-library,
         unit-test-simcore-sdk,
         unit-test-storage,
@@ -1820,7 +2413,8 @@ jobs:
         unit-test-webserver-10,
         integration-test-webserver-01,
         integration-test-webserver-02,
-        integration-test-director-v2,
+        integration-test-director-v2-01,
+        integration-test-director-v2-02,
         integration-test-sidecar,
         integration-test-simcore-sdk,
       ]
@@ -1853,14 +2447,17 @@ jobs:
       [
         unit-test-api,
         unit-test-catalog,
+        unit-test-datcore-adapter,
         unit-test-director,
         unit-test-director-v2,
         unit-test-sidecar,
         unit-test-dynamic-sidecar,
+        unit-test-dask-sidecar,
         unit-test-frontend,
         unit-test-python-linting,
         unit-test-service-integration,
         unit-test-service-library,
+        unit-test-settings-library,
         unit-test-models-library,
         unit-test-simcore-sdk,
         unit-test-storage,
@@ -1877,19 +2474,34 @@ jobs:
         unit-test-webserver-10,
         integration-test-webserver-01,
         integration-test-webserver-02,
-        integration-test-director-v2,
+        integration-test-director-v2-01,
+        integration-test-director-v2-02,
         integration-test-sidecar,
         integration-test-simcore-sdk,
         system-test-public-api,
         system-test-swarm-deploy,
       ]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - name: deploy master

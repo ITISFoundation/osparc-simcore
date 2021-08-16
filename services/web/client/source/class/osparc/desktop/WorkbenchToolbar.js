@@ -29,11 +29,13 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
   },
 
   members: {
+    __navNodes: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "breadcrumb-navigation": {
-          const breadcrumbNavigation = this._navNodes = new osparc.navigation.BreadcrumbsWorkbench();
+          const breadcrumbNavigation = this.__navNodes = new osparc.navigation.BreadcrumbsWorkbench();
           breadcrumbNavigation.addListener("nodeSelected", e => {
             this.fireDataEvent("nodeSelected", e.getData());
           }, this);
@@ -84,17 +86,19 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       const study = this.getStudy();
       if (study) {
         const nodeIds = study.getWorkbench().getPathIds(study.getUi().getCurrentNodeId());
-        this._navNodes.populateButtons(nodeIds, "slash");
+        this.__navNodes.populateButtons(nodeIds);
       }
     },
 
-    __workbenchSelectionChanged: function(msg) {
-      const selectedNodes = msg.getData();
-      this.getStartStopButtons().nodeSelectionChanged(selectedNodes);
-    },
-
     __attachEventHandlers: function() {
-      qx.event.message.Bus.subscribe("changeWorkbenchSelection", this.__workbenchSelectionChanged, this);
+      qx.event.message.Bus.subscribe("changeWorkbenchSelection", e => {
+        const selectedNodes = e.getData();
+        const selectedNodeIds = [];
+        selectedNodes.forEach(selectedNode => {
+          selectedNodeIds.push(selectedNode.getNodeId());
+        });
+        this.getStartStopButtons().nodeSelectionChanged(selectedNodeIds);
+      }, this);
     }
   }
 });

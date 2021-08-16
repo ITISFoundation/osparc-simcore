@@ -11,10 +11,9 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from aiohttp import web
-from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
-
-from servicelib.observer import observe
+from servicelib.observer import observe, emit
 from servicelib.utils import fire_and_forget_task, logged_gather
+from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
 
 from ..groups_api import list_user_groups
 from ..login.decorators import RQT_USERID_KEY, login_required
@@ -68,8 +67,7 @@ async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
 async def authenticate_user(
     sid: str, app: web.Application, request: web.Request
 ) -> None:
-    """throws web.HTTPUnauthorized when the user is not recognized. Keeps the original request.
-    """
+    """throws web.HTTPUnauthorized when the user is not recognized. Keeps the original request."""
     user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     log.debug("client %s authenticated", user_id)
     client_session_id = request.query.get("client_session_id", None)
@@ -116,7 +114,7 @@ async def disconnect_other_sockets(sio, sockets: List[str]) -> None:
 
 
 @observe(event="SIGNAL_USER_LOGOUT")
-async def user_logged_out(
+async def on_user_logout(
     user_id: str, client_session_id: Optional[str], app: web.Application
 ) -> None:
     log.debug("user %s must be disconnected", user_id)
@@ -125,8 +123,7 @@ async def user_logged_out(
     with managed_resource(user_id, client_session_id, app) as rt:
         # start by disconnecting this client if possible
         if client_session_id:
-            socket_id = await rt.get_socket_id()
-            if socket_id:
+            if socket_id := await rt.get_socket_id():
                 await sio.disconnect(sid=socket_id)
             # trigger faster gc on disconnect
             await rt.user_pressed_disconnect()
@@ -155,6 +152,9 @@ async def disconnect(sid: str, app: web.Application) -> None:
             with managed_resource(user_id, client_session_id, app) as rt:
                 log.debug("client %s disconnected from room %s", user_id, sid)
                 await rt.remove_socket_id()
+            # signal same user other clients if available
+            await emit("SIGNAL_USER_DISCONNECTED", user_id, client_session_id, app)
+
         else:
             # this should not happen!!
             log.error(

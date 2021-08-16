@@ -19,8 +19,10 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       this.__setupFilepicker();
     } else if (node.isComputational()) {
       this.__setupComputational();
-    } else {
+    } else if (node.isDynamic()) {
       this.__setupInteractive();
+    } else {
+      this.__setupBlank();
     }
   },
 
@@ -161,15 +163,19 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       this.__node.bind("outputs", this.__label, "value", {
         converter: outputs => {
           if (osparc.file.FilePicker.getOutput(outputs)) {
-            const outputLabel = osparc.file.FilePicker.getOutputLabel(outputs);
+            let outputLabel = osparc.file.FilePicker.getOutputLabel(outputs);
             if (outputLabel === "" && osparc.file.FilePicker.isOutputDownloadLink(outputs)) {
-              return osparc.file.FilePicker.extractLabelFromLink(outputs);
+              outputLabel = osparc.file.FilePicker.extractLabelFromLink(outputs);
             }
             return outputLabel;
           }
           return this.tr("Select a file");
         }
       });
+    },
+
+    __setupBlank: function() {
+      this.exclude();
     }
   }
 });

@@ -130,6 +130,21 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
+    getOwnedServices: function(services, key) {
+      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      orgIDs.push(osparc.auth.Data.getInstance().getGroupId());
+      const ownedVersions = [];
+      if (key in services) {
+        this.getVersions(services, key).forEach(version => {
+          if (osparc.component.permissions.Service.canAnyGroupWrite(services[key][version]["access_rights"], orgIDs)) {
+            ownedVersions.push(version);
+          }
+        });
+        ownedVersions.sort(osparc.utils.Utils.compareVersionNumbers);
+      }
+      return ownedVersions;
+    },
+
     /**
      * Compatibility check:
      * - compIOFields of src inputs need to be in dest inputs
@@ -218,6 +233,23 @@ qx.Class.define("osparc.utils.Services", {
       return this.self().getLatest(this.servicesCached, "simcore/services/frontend/file-picker");
     },
 
+    getParametersMetadata: function() {
+      const parametersMetadata = [];
+      for (const key in this.servicesCached) {
+        if (key.includes("simcore/services/frontend/parameter/")) {
+          const latest = this.self().getLatest(this.servicesCached, key);
+          if (latest) {
+            parametersMetadata.push(latest);
+          }
+        }
+      }
+      return parametersMetadata;
+    },
+
+    getParameterMetadata: function(type) {
+      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/parameter/"+type);
+    },
+
     getNodesGroup: function() {
       return this.self().getLatest(this.servicesCached, "simcore/services/frontend/nodes-group");
     },
@@ -229,6 +261,21 @@ qx.Class.define("osparc.utils.Services", {
             osparc.component.metadata.Quality.attachQualityToObject(service);
           }
         });
+      });
+    },
+
+    removeFileToKeyMap: function(service) {
+      [
+        "inputs",
+        "outputs"
+      ].forEach(inOut => {
+        if (inOut in service) {
+          for (const key in service[inOut]) {
+            if ("fileToKeyMap" in service[inOut][key]) {
+              delete service[inOut][key]["fileToKeyMap"];
+            }
+          }
+        }
       });
     },
 

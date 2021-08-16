@@ -65,7 +65,7 @@ describe('tags testing', () => {
     await page.evaluate(async function(studyId, tagId) {
       await osparc.data.Resources.fetch('studies', 'delete', {
         url: {
-          projectId: studyId
+          "studyId": studyId
         }
       }, studyId);
       await osparc.data.Resources.fetch('tags', 'delete', {
@@ -106,7 +106,7 @@ describe('tags testing', () => {
 
   test('assign tag and reflect changes', async () => {
     await page.waitForSelector(
-      '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] > [qxclass="osparc.component.widget.Thumbnail"]',
+      '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] > [qxclass="osparc.ui.basic.Thumbnail"]',
       {
         hidden: true
       }

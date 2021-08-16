@@ -4,10 +4,11 @@
 
 import re
 from pprint import pformat
-from typing import Any, Dict
+from typing import Any, Callable, Dict, List
 
 import pytest
 import yaml
+from models_library.basic_regex import VERSION_RE
 from models_library.services import (
     SERVICE_KEY_RE,
     ServiceAccessRightsAtDB,
@@ -103,7 +104,6 @@ def test_service_models_examples(model_cls, model_cls_examples):
         assert model_instance, f"Failed with {name}"
 
 
-@pytest.mark.skip(reason="dev")
 @pytest.mark.parametrize(
     "service_key",
     [
@@ -159,7 +159,7 @@ def test_service_models_examples(model_cls, model_cls_examples):
     [SERVICE_KEY_RE, r"^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$"],
     ids=["pattern_with_w", "pattern_with_s"],
 )
-def test_service_key_regex_patterns(service_key, regex_pattern):
+def test_service_key_regex_patterns(service_key: str, regex_pattern: str):
     match = re.match(regex_pattern, service_key)
     assert match
 
@@ -178,3 +178,36 @@ def test_services_model_examples(model_cls, model_cls_examples):
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)
         assert model_instance, f"Failed with {name}"
+
+
+@pytest.mark.parametrize(
+    "python_regex_pattern, json_schema_file_name, json_schema_entry_paths",
+    [
+        (SERVICE_KEY_RE, "project-v0.0.1.json", ["key"]),
+        (VERSION_RE, "project-v0.0.1.json", ["version"]),
+        (VERSION_RE, "node-meta-v0.0.1.json", ["version"]),
+        (SERVICE_KEY_RE, "node-meta-v0.0.1.json", ["key"]),
+    ],
+)
+def test_same_regex_patterns_in_jsonschema_and_python(
+    python_regex_pattern: str,
+    json_schema_file_name: str,
+    json_schema_entry_paths: List[str],
+    json_schema_dict: Callable,
+):
+    # read file in
+    json_schema_config = json_schema_dict(json_schema_file_name)
+    # go to keys
+    def _find_pattern_entry(obj: Dict[str, Any], key: str) -> Any:
+        if key in obj:
+            return obj[key]["pattern"]
+        for v in obj.values():
+            if isinstance(v, dict):
+                item = _find_pattern_entry(v, key)
+                if item is not None:
+                    return item
+        return None
+
+    for x_path in json_schema_entry_paths:
+        json_pattern = _find_pattern_entry(json_schema_config, x_path)
+        assert json_pattern == python_regex_pattern

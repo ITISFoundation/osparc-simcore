@@ -18,7 +18,6 @@ async function runTutorial () {
   const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, enableDemoMode);
 
   try {
-    tutorial.startScreenshooter();
     const page = await tutorial.beforeScript();
     const studyData = await tutorial.openStudyLink();
     const studyId = studyData["data"]["uuid"];
@@ -27,8 +26,7 @@ async function runTutorial () {
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][0]]);
 
-    // Some time for starting the service
-    await tutorial.waitFor(60000);
+    await tutorial.waitFor(60000, 'Some time for starting the service');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
     // This study opens in fullscreen mode
@@ -38,7 +36,8 @@ async function runTutorial () {
       "output.csv",
       "traces.pkl"
     ];
-    await tutorial.checkNodeResults(0, outFiles);
+    await tutorial.openNodeFiles(0)
+    await tutorial.checkResults2(outFiles);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
@@ -46,7 +45,6 @@ async function runTutorial () {
   }
   finally {
     await tutorial.logOut();
-    tutorial.stopScreenshooter();
     await tutorial.close();
   }
 

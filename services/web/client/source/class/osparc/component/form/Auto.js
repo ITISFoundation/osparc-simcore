@@ -20,15 +20,13 @@
  *       type: "string",
  *       widget: {
  *         type: "SelectBox",
- *         details: {
- *           structure: [{
- *             key: "dog",
- *             label: "A Dog"
- *           }, {
- *             key: "cat",
- *             label: "A Cat"
- *           }]
- *         }
+ *         structure: [{
+ *           key: "dog",
+ *           label: "A Dog"
+ *         }, {
+ *           key: "cat",
+ *           label: "A Cat"
+ *         }]
  *       }
  *     },
  *   }
@@ -351,7 +349,7 @@ qx.Class.define("osparc.component.form.Auto", {
         }
       });
       const cfg = s.widget;
-      let structure = cfg.details.structure;
+      let structure = cfg.structure;
       if (structure) {
         structure.forEach(item => {
           item.label = item.label || "";
@@ -513,6 +511,7 @@ qx.Class.define("osparc.component.form.Auto", {
       }
       control.key = key;
       control.description = s.description;
+      control.type = s.type;
       control.widgetType = s.widget.type;
       control.unitShort = s.unitShort;
       control.unitLong = s.unitLong;

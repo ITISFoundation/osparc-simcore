@@ -173,6 +173,10 @@ qx.Class.define("osparc.data.model.Study", {
     }
   },
 
+  events: {
+    "changeParameters": "qx.event.type.Event"
+  },
+
   statics: {
     createMyNewStudyObject: function() {
       let myNewStudyObject = {};
@@ -220,15 +224,7 @@ qx.Class.define("osparc.data.model.Study", {
       }
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const aceessRights = studyData["accessRights"];
-      return osparc.component.permissions.Study.canGroupExecute(aceessRights, myGid);
-    },
-
-    canIWrite: function(accessRights) {
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      if (myGid) {
-        return osparc.component.permissions.Study.canGroupWrite(accessRights, myGid);
-      }
-      return false;
+      return osparc.component.permissions.Study.canGroupDelete(aceessRights, myGid);
     },
 
     hasSlideshow: function(studyData) {
@@ -240,18 +236,21 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
-    initStudy: function() {
-      this.getWorkbench().initWorkbench();
-    },
-
     buildWorkbench: function() {
       this.getWorkbench().buildWorkbench();
     },
 
+    initStudy: function() {
+      this.getWorkbench().initWorkbench();
+    },
+
     __applyAccessRights: function(value) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
+      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      orgIDs.push(myGid);
+
       if (myGid) {
-        const canIWrite = osparc.component.permissions.Study.canGroupWrite(value, myGid);
+        const canIWrite = osparc.component.permissions.Study.canGroupsWrite(value, orgIDs);
         this.setReadOnly(!canIWrite);
       } else {
         this.setReadOnly(true);
@@ -261,7 +260,7 @@ qx.Class.define("osparc.data.model.Study", {
     openStudy: function() {
       const params = {
         url: {
-          projectId: this.getUuid()
+          "studyId": this.getUuid()
         },
         data: osparc.utils.Utils.getClientSessionID()
       };
@@ -277,6 +276,21 @@ qx.Class.define("osparc.data.model.Study", {
       for (const node of Object.values(nodes)) {
         node.removeIFrame();
       }
+    },
+
+    getParameters: function() {
+      const parameters = [];
+      const nodes = this.getWorkbench().getNodes(true);
+      Object.values(nodes).forEach(node => {
+        if (node.isParameter()) {
+          parameters.push(node);
+        }
+      });
+      return parameters;
+    },
+
+    hasSlideshow: function() {
+      return !this.getUi().getSlideshow().isEmpty();
     },
 
     serialize: function() {
@@ -312,7 +326,7 @@ qx.Class.define("osparc.data.model.Study", {
       return new Promise(resolve => {
         osparc.data.Resources.fetch("studies", "put", {
           url: {
-            projectId: this.getUuid(),
+            "studyId": this.getUuid(),
             run
           },
           data: {

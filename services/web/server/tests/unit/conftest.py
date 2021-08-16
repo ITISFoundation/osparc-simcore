@@ -11,7 +11,6 @@
 import json
 import logging
 import sys
-from asyncio import Future
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable
 
@@ -27,6 +26,7 @@ log = logging.getLogger(__name__)
 
 pytest_plugins = [
     "pytest_simcore.environment_configs",
+    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
@@ -80,9 +80,8 @@ def test_tags_data(fake_data_dir: Path) -> Iterable[Dict[str, Any]]:
 def mock_orphaned_services(mocker):
     remove_orphaned_services = mocker.patch(
         "simcore_service_webserver.resource_manager.garbage_collector.remove_orphaned_services",
-        return_value=Future(),
+        return_value="",
     )
-    remove_orphaned_services.return_value.set_result("")
     return remove_orphaned_services
 
 
@@ -91,5 +90,5 @@ def disable_gc_manual_guest_users(mocker):
     """Disable to avoid an almost instant cleanup of GUEST users with their projects"""
     mocker.patch(
         "simcore_service_webserver.resource_manager.garbage_collector.remove_users_manually_marked_as_guests",
-        return_value=Future(),
+        return_value=None,
     )

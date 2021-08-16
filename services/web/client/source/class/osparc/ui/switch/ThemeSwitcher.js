@@ -15,19 +15,37 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
   construct: function() {
     this.base(arguments);
 
-    const validThemes = Object.values(qx.Theme.getAll()).filter(theme => theme.type === "meta");
+    const validThemes = this.__validThemes = Object.values(qx.Theme.getAll()).filter(theme => theme.type === "meta");
     if (validThemes.length !== 2) {
       this.setVisibility("excluded");
       return;
     }
 
-    this.addListener("changeChecked", e => {
-      let themeName = "osparc.theme.ThemeDark";
-      if (e.getData()) {
-        themeName = "osparc.theme.ThemeLight";
-      }
-      qx.theme.manager.Meta.getInstance().setTheme(qx.Theme.getByName(themeName));
-      window.localStorage.setItem("themeName", themeName);
+    this.set({
+      checked: qx.theme.manager.Meta.getInstance().getTheme().name === validThemes[1].name,
+      toolTipText: this.tr("Switch theme")
     });
+
+    this.addListener("changeChecked", () => {
+      this.__switchTheme();
+    });
+  },
+
+  members: {
+    __validThemes: null,
+
+    __switchTheme: function() {
+      if (this.__validThemes.length !== 2) {
+        return;
+      }
+
+      const currentTheme = qx.theme.manager.Meta.getInstance().getTheme();
+      const idx = this.__validThemes.findIndex(validTheme => validTheme.name === currentTheme.name);
+      if (idx !== -1) {
+        const theme = this.__validThemes[1-idx];
+        qx.theme.manager.Meta.getInstance().setTheme(theme);
+        window.localStorage.setItem("themeName", theme.name);
+      }
+    }
   }
 });

@@ -12,8 +12,8 @@ from servicelib.openapi import get_base_path
 from servicelib.rest_middlewares import append_rest_middlewares
 
 from . import app_handlers, handlers
+from .constants import APP_OPENAPI_SPECS_KEY
 from .resources import resources
-from .settings import APP_OPENAPI_SPECS_KEY
 
 log = logging.getLogger(__name__)
 

@@ -7,6 +7,7 @@ from servicelib.application_keys import (
     APP_DB_ENGINE_KEY,
     APP_JSONSCHEMA_SPECS_KEY,
 )
+from servicelib.request_keys import RQT_USERID_KEY
 
 # Application storage keys
 APP_SETTINGS_KEY = f"{__name__ }.app_settings"

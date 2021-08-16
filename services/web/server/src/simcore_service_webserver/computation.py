@@ -22,7 +22,8 @@ def setup_computation(app: web.Application):
     # create settings and injects in app
     create_computation_settings(app)
 
-    # subscribe to rabbit upon startup
+    # subscribe to rabbit upon startup for logs, progress and other
+    # metrics on the execution reported by sidecars
     app.on_startup.append(subscribe)
 
     # setup comp_task listener

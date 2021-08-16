@@ -17,7 +17,11 @@ from servicelib.async_utils import run_sequentially_in_context
 from servicelib.monitor_services import service_started, service_stopped
 
 from . import config, docker_utils, exceptions, registry_proxy
-from .config import APP_CLIENT_SESSION_KEY
+from .config import (
+    APP_CLIENT_SESSION_KEY,
+    CPU_RESOURCE_LIMIT_KEY,
+    MEM_RESOURCE_LIMIT_KEY,
+)
 from .services_common import ServicesCommonSettings
 from .system_utils import get_system_extra_hosts_raw
 
@@ -318,12 +322,21 @@ async def _create_docker_service_params(
         log.exception("Could not find swarm network")
 
     # set labels for CPU and Memory limits
-    container_spec["Labels"]["nano_cpus_limit"] = str(
+    nano_cpus_limit = str(
         docker_params["task_template"]["Resources"]["Limits"]["NanoCPUs"]
     )
-    container_spec["Labels"]["mem_limit"] = str(
+    mem_limit = str(
         docker_params["task_template"]["Resources"]["Limits"]["MemoryBytes"]
     )
+    container_spec["Labels"]["nano_cpus_limit"] = nano_cpus_limit
+    container_spec["Labels"]["mem_limit"] = mem_limit
+
+    # and make the container aware of them via env variables
+    resource_limits = {
+        CPU_RESOURCE_LIMIT_KEY: nano_cpus_limit,
+        MEM_RESOURCE_LIMIT_KEY: mem_limit,
+    }
+    docker_params["task_template"]["ContainerSpec"]["Env"].update(resource_limits)
 
     log.debug(
         "Converted labels to docker runtime parameters: %s", pformat(docker_params)
@@ -729,6 +742,7 @@ async def _start_docker_service(
             "service_state": service_state.value,
             "service_message": service_msg,
             "user_id": user_id,
+            "project_id": project_id,
         }
         return container_meta_data
 
@@ -889,6 +903,7 @@ async def _get_node_details(
     service_name = service["Spec"]["Name"]
     service_uuid = service["Spec"]["Labels"]["uuid"]
     user_id = service["Spec"]["Labels"]["user_id"]
+    project_id = service["Spec"]["Labels"]["study_id"]
 
     # get the published port
     published_port, target_port = await _get_docker_image_port_mapping(service)
@@ -904,6 +919,7 @@ async def _get_node_details(
         "service_state": service_state.value,
         "service_message": service_msg,
         "user_id": user_id,
+        "project_id": project_id,
     }
     return node_details
 
@@ -921,6 +937,7 @@ async def get_services_details(
             list_running_services = await client.services.list(
                 filters={"label": filters}
             )
+
             services_details = [
                 await _get_node_details(app, client, service)
                 for service in list_running_services

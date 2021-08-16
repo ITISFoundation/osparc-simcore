@@ -28,7 +28,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
   members: {
     __servicesContainer: null,
     __templates: null,
-    __services: null,
+    __servicesAll: null,
+    __servicesLatestList: null,
 
     /**
      * Function that resets the selected item
@@ -45,7 +46,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     _reloadTemplate: function(templateId) {
       const params = {
         url: {
-          "projectId": templateId
+          "studyId": templateId
         }
       };
       osparc.data.Resources.getOne("studies", params)
@@ -94,6 +95,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const store = osparc.store.Store.getInstance();
       store.getServicesDAGs()
         .then(services => {
+          this.__servicesAll = services;
           const servicesList = [];
           for (const key in services) {
             const latestService = osparc.utils.Services.getLatest(services, key);
@@ -111,7 +113,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this._showLoadingPage(this.tr("Starting..."));
 
       this.__templates = [];
-      this.__services = [];
+      this.__servicesAll = {};
+      this.__servicesLatestList = [];
       const resourcePromises = [];
       const store = osparc.store.Store.getInstance();
       resourcePromises.push(store.getServicesDAGs(true));
@@ -223,8 +226,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
             }
             minStudyData["ui"]["workbench"][newUuid] = {
               "position": {
-                "x": 50,
-                "y": 50
+                "x": 250,
+                "y": 100
               }
             };
             store.getInaccessibleServices(minStudyData)
@@ -357,18 +360,16 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     _resetServiceItem: function(serviceData) {
-      const servicesList = this.__services;
-      const index = servicesList.findIndex(service => service["key"] === serviceData["key"]);
-      if (index === -1) {
-        servicesList.push(serviceData);
-      } else {
+      const servicesList = this.__servicesLatestList;
+      const index = servicesList.findIndex(service => service["key"] === serviceData["key"] && service["version"] === serviceData["version"]);
+      if (index !== -1) {
         servicesList[index] = serviceData;
+        this.__resetServicesList(servicesList);
       }
-      this.__resetServicesList(servicesList);
     },
 
     __resetServicesList: function(servicesList) {
-      this.__services = servicesList;
+      this.__servicesLatestList = servicesList;
       this.__servicesContainer.removeAll();
       servicesList.forEach(service => {
         service["resourceType"] = "service";
@@ -463,16 +464,20 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __getPermissionsMenuButton: function(studyData) {
-      const isCurrentUserOwner = this.__isUserOwner(studyData);
-      if (!isCurrentUserOwner) {
-        return null;
-      }
-
       const permissionsButton = new qx.ui.menu.Button(this.tr("Sharing"));
       permissionsButton.addListener("execute", () => {
         this.__openPermissions(studyData);
       }, this);
-      return permissionsButton;
+
+      if (osparc.utils.Resources.isTemplate(studyData) && this.__isUserTemplateOwner(studyData)) {
+        return permissionsButton;
+      }
+
+      if (osparc.utils.Resources.isService(studyData) && this.__isUserAnyServiceVersionOwner(studyData)) {
+        return permissionsButton;
+      }
+
+      return null;
     },
 
     __getClassifiersMenuButton: function(studyData) {
@@ -511,7 +516,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __getDeleteTemplateMenuButton: function(studyData) {
-      const isCurrentUserOwner = this.__isUserOwner(studyData);
+      const isCurrentUserOwner = this.__isUserTemplateOwner(studyData);
       if (!isCurrentUserOwner) {
         return null;
       }
@@ -667,7 +672,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
       const params = {
         url: {
-          projectId: studyData.uuid
+          "studyId": studyData.uuid
         }
       };
       let operationPromise = null;
@@ -693,12 +698,20 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       return new osparc.ui.window.Confirmation(msg);
     },
 
-    __isUserOwner: function(studyData) {
+    __isUserTemplateOwner: function(studyData) {
       if (osparc.utils.Resources.isTemplate(studyData)) {
         return osparc.data.model.Study.isOwner(studyData);
-      } else if (osparc.utils.Resources.isService(studyData)) {
-        const myEmail = osparc.auth.Data.getInstance().getEmail();
-        return studyData.owner === myEmail;
+      }
+      return false;
+    },
+
+    __isUserAnyServiceVersionOwner: function(studyData) {
+      if (osparc.utils.Resources.isService(studyData)) {
+        const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+        orgIDs.push(osparc.auth.Data.getInstance().getGroupId());
+
+        const ownedServices = osparc.utils.Services.getOwnedServices(this.__servicesAll, studyData["key"]);
+        return ownedServices.length;
       }
       return false;
     },

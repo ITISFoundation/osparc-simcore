@@ -90,8 +90,8 @@ def test_project_against_schema(data_path, project_schema, this_repo_root_dir):
         }
         data = prj
 
-    assert any(isinstance(data, _type) for _type in [List, Dict])
-    if isinstance(data, Dict):
+    assert any(isinstance(data, _type) for _type in [list, dict])
+    if isinstance(data, dict):
         data = [
             data,
         ]

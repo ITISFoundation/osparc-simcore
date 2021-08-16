@@ -1,115 +1,62 @@
-""" Configuration of simcore_service_storage
+from typing import List, Optional
 
-The application can consume settings revealed at different
-stages of the development workflow. This submodule gives access
-to all of them.
+from pydantic import AnyHttpUrl, Field, PositiveInt, validator
+from settings_library.base import BaseCustomSettings
+from settings_library.basic_types import LogLevel, PortInt
+from settings_library.logging_utils import MixinLoggingSettings
+from settings_library.postgres import PostgresSettings
+from settings_library.s3 import S3Settings
 
-
-Naming convention:
-
-APP_*_KEY: is a key in app-storage
-RQT_*_KEY: is a key in request-storage
-RSP_*_KEY: is a key in response-storage
-
-See https://docs.aiohttp.org/en/stable/web_advanced.html#data-sharing-aka-no-singletons-please
-"""
-
-import logging
-from typing import Any, Dict, List, Optional
-
-from models_library.basic_types import LogLevel
-from models_library.settings.application_bases import BaseAiohttpAppSettings
-from models_library.settings.postgres import PostgresSettings
-from models_library.settings.s3 import S3Config
-from pydantic import BaseSettings, Field, SecretStr
-from servicelib import application_keys
-from servicelib.tracing import TracingSettings
-
-from .meta import version
-
-log = logging.getLogger(__name__)
+from .datcore_adapter.datcore_adapter_settings import DatcoreAdapterSettings
 
 
-## CONSTANTS--------------------
-RETRY_WAIT_SECS = 2
-RETRY_COUNT = 20
-CONNECT_TIMEOUT_SECS = 30
-
-## VERSION-----------------------------
-service_version = version
-
-## CONFIGURATION FILES------------------
-DEFAULT_CONFIG = "docker-prod-config.yaml"
+class TracingSettings(BaseCustomSettings):
+    # FIXME: upgrade to new setup
+    enabled: Optional[bool] = True
+    zipkin_endpoint: AnyHttpUrl = "http://jaeger:9411"
 
 
-APP_CONFIG_KEY = application_keys.APP_CONFIG_KEY  # app-storage-key for config object
-RSC_CONFIG_DIR_KEY = "data"  # resource folder
+class Settings(BaseCustomSettings, MixinLoggingSettings):
 
-# DSM specific constants
-SIMCORE_S3_ID = 0
-SIMCORE_S3_STR = "simcore.s3"
+    STORAGE_HOST: str = "0.0.0.0"  # nosec
+    STORAGE_PORT: PortInt = 8080
 
-DATCORE_ID = 1
-DATCORE_STR = "datcore"
-
-
-# RSC=resource
-RSC_CONFIG_DIR_KEY = "data"
-RSC_CONFIG_SCHEMA_KEY = RSC_CONFIG_DIR_KEY + "/config-schema-v1.json"
-
-
-# REST API ----------------------------
-API_MAJOR_VERSION = service_version.major  # NOTE: syncs with service key
-API_VERSION_TAG = "v{:.0f}".format(API_MAJOR_VERSION)
-
-APP_OPENAPI_SPECS_KEY = (
-    application_keys.APP_OPENAPI_SPECS_KEY
-)  # app-storage-key for openapi specs object
-
-
-# DATABASE ----------------------------
-APP_DB_ENGINE_KEY = __name__ + ".db_engine"
-
-
-# DATA STORAGE MANAGER ----------------------------------
-APP_DSM_THREADPOOL = __name__ + ".dsm_threadpool"
-APP_DSM_KEY = __name__ + ".DSM"
-APP_S3_KEY = __name__ + ".S3_CLIENT"
-
-
-class BfApiToken(BaseSettings):
-    token_key: str = Field(..., env="BF_API_KEY")
-    token_secret: str = Field(..., env="BF_API_SECRET")
-
-
-class ApplicationSettings(BaseAiohttpAppSettings):
-    loglevel: LogLevel = Field(
+    LOG_LEVEL: LogLevel = Field(
         "INFO", env=["STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
 
-    testing: bool = False
+    STORAGE_MAX_WORKERS: PositiveInt = Field(
+        8,
+        description="Number of workers for the thead executor pool used in DatcoreWrapper",
+    )
 
-    max_workers: int = 8
+    STORAGE_MONITORING_ENABLED: bool = False
 
-    monitoring_enabled: bool = False
+    STORAGE_DISABLE_SERVICES: List[str] = []
 
-    test_datcore: Optional[BfApiToken] = None
+    STORAGE_TESTING: bool = Field(
+        False, description="Flag to enable some fakes for testing purposes"
+    )
+    BF_API_KEY: Optional[str] = Field(
+        None, description="Pennsieve API key ONLY for testing purposes"
+    )
+    BF_API_SECRET: Optional[str] = Field(
+        None, description="Pennsieve API secret ONLY for testing purposes"
+    )
 
-    disable_services: List[str] = []
+    STORAGE_POSTGRES: PostgresSettings
 
-    # settings for sub-modules
-    postgres: PostgresSettings
-    s3: S3Config
-    rest: Dict[str, Any] = {"enabled": True}
-    tracing: TracingSettings
+    STORAGE_S3: S3Settings
 
-    class Config:
-        case_sensitive = False
-        env_prefix = "STORAGE_"
-        json_encoders = {SecretStr: lambda v: v.get_secret_value()}
+    STORAGE_TRACING: TracingSettings
 
+    DATCORE_ADAPTER: DatcoreAdapterSettings
+
+    STORAGE_SYNC_METADATA_TIMEOUT: PositiveInt = Field(
+        180, description="Timeout (seconds) for metadata sync task"
+    )
+
+    @validator("LOG_LEVEL")
     @classmethod
-    def create_from_environ(cls):
-        return cls(
-            postgres=PostgresSettings(), s3=S3Config(), tracing=TracingSettings()
-        )
+    def _validate_loglevel(cls, value) -> str:
+        return cls.validate_log_level(value)

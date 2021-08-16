@@ -1,5 +1,5 @@
--c ../../../requirements/constraints.txt
--c _base.txt
+--constraint ../../../requirements/constraints.txt
+--constraint _base.txt
 
 pytest
 pytest-cov
@@ -7,3 +7,8 @@ pytest-asyncio
 pytest-mock
 async-asgi-testclient
 faker
+
+# missing mypy stubs
+types-pkg_resources
+types-aiofiles
+types-PyYAML

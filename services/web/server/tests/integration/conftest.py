@@ -14,7 +14,6 @@
 
 import logging
 import sys
-from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
@@ -171,9 +170,8 @@ def app_config(_webserver_dev_config: Dict, aiohttp_unused_port) -> Dict:
 def mock_orphaned_services(mocker):
     remove_orphaned_services = mocker.patch(
         "simcore_service_webserver.resource_manager.garbage_collector.remove_orphaned_services",
-        return_value=Future(),
+        return_value="",
     )
-    remove_orphaned_services.return_value.set_result("")
     return remove_orphaned_services
 
 

@@ -666,7 +666,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
           const isTemplate = osparc.utils.Resources.isTemplate(this.__copyResourceData);
           const params = {
             url: {
-              projectId: this.__copyResourceData["uuid"]
+              "studyId": this.__copyResourceData["uuid"]
             },
             data: this.__copyResourceData
           };
@@ -689,10 +689,12 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     __isUserOwner: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       if (myGid) {
+        const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+        orgIDs.push(myGid);
         if (osparc.utils.Resources.isService(this.__resourceData)) {
-          return osparc.component.permissions.Service.canGroupWrite(this.__resourceData["access_rights"], myGid);
+          return osparc.component.permissions.Service.canAnyGroupWrite(this.__resourceData["access_rights"], orgIDs);
         }
-        return osparc.component.permissions.Study.canGroupWrite(this.__resourceData["accessRights"], myGid);
+        return osparc.component.permissions.Study.canGroupsWrite(this.__resourceData["accessRights"], orgIDs);
       }
       return false;
     }

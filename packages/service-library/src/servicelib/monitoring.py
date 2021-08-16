@@ -9,14 +9,36 @@
     - TODO: see https://github.com/claws/aioprometheus
 """
 
+import asyncio
 import logging
 import time
 
 import prometheus_client
 from aiohttp import web
-from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram
+from prometheus_client import CONTENT_TYPE_LATEST, Counter
 
 log = logging.getLogger(__name__)
+
+
+#
+# CAUTION CAUTION CAUTION NOTE:
+# Be very careful with metrics. pay attention to metrics cardinatity.
+# Each time series takes about 3kb of overhead in Prometheus
+#
+# CAUTION: every unique combination of key-value label pairs represents a new time series
+#
+# If a metrics is not needed, don't add it!! It will collapse the application AND prometheus
+#
+# references:
+# https://prometheus.io/docs/practices/naming/
+# https://www.robustperception.io/cardinality-is-key
+# https://www.robustperception.io/why-does-prometheus-use-so-much-ram
+# https://promcon.io/2019-munich/slides/containing-your-cardinality.pdf
+# https://grafana.com/docs/grafana-cloud/how-do-i/control-prometheus-metrics-usage/usage-analysis-explore/
+#
+
+
+# TODO: the endpoint label on the http_requests_total Counter is a candidate to be removed. as endpoints also contain all kind of UUIDs
 
 
 async def metrics_handler(_request: web.Request):
@@ -31,11 +53,9 @@ def middleware_factory(app_name):
     @web.middleware
     async def middleware_handler(request: web.Request, handler):
         # See https://prometheus.io/docs/concepts/metric_types
+        resp = None
         try:
             request["start_time"] = time.time()
-            request.app["REQUEST_IN_PROGRESS"].labels(
-                app_name, request.path, request.method
-            ).inc()
 
             resp = await handler(request)
 
@@ -43,10 +63,12 @@ def middleware_factory(app_name):
             # Captures raised reponses (success/failures accounted with resp.status)
             resp = exc
             raise
-        except Exception as exc:  # pylint: disable=broad-except
+        except asyncio.CancelledError as exc:
+            # python 3.8 cancellederror is a subclass of BaseException and NOT Exception
+            resp = web.HTTPRequestTimeout(reason=str(exc))
+        except BaseException as exc:  # pylint: disable=broad-except
             # Prevents issue #1025.
             resp = web.HTTPInternalServerError(reason=str(exc))
-            resp_time = time.time() - request["start_time"]
 
             # NOTE: all access to API (i.e. and not other paths as /socket, /x, etc) shall return web.HTTPErrors since processed by error_middleware_factory
             log.exception(
@@ -55,23 +77,16 @@ def middleware_factory(app_name):
                 request.remote,
                 request.method,
                 request.path,
-                resp_time,
+                time.time() - request["start_time"],
                 resp.status,
             )
+
         finally:
             # metrics on the same request
-            resp_time = time.time() - request["start_time"]
-            request.app["REQUEST_LATENCY"].labels(app_name, request.path).observe(
-                resp_time
-            )
-
-            request.app["REQUEST_IN_PROGRESS"].labels(
-                app_name, request.path, request.method
-            ).dec()
-
-            request.app["REQUEST_COUNT"].labels(
-                app_name, request.method, request.path, resp.status
-            ).inc()
+            if resp:
+                request.app["REQUEST_COUNT"].labels(
+                    app_name, request.method, request.path, resp.status
+                ).inc()
 
         return resp
 
@@ -113,18 +128,6 @@ def setup_monitoring(app: web.Application, app_name: str):
         "http_requests_total",
         "Total Request Count",
         ["app_name", "method", "endpoint", "http_status"],
-    )
-
-    # Latency of a request in seconds
-    app["REQUEST_LATENCY"] = Histogram(
-        "http_request_latency_seconds", "Request latency", ["app_name", "endpoint"]
-    )
-
-    # Number of requests in progress
-    app["REQUEST_IN_PROGRESS"] = Gauge(
-        "http_requests_in_progress_total",
-        "Requests in progress",
-        ["app_name", "endpoint", "method"],
     )
 
     # ensures is first layer but cannot guarantee the order setup is applied

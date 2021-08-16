@@ -1,16 +1,35 @@
 import logging
+from typing import Any, Callable, Coroutine
 
 from fastapi import FastAPI
 
-from .._meta import api_vtag
+from .._meta import __version__, api_vtag
 from ..api import main_router
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
 from .remote_debug import setup as remote_debug_setup
 from .settings import DynamicSidecarSettings
 from .shared_handlers import on_shutdown_handler
+from .utils import login_registry
 
 logger = logging.getLogger(__name__)
+
+#
+# https://patorjk.com/software/taag/#p=display&f=AMC%20Tubes&t=DYSIDECAR
+#
+
+WELCOME_MSG = r"""
+d ss    Ss   sS   sss. d d ss    d sss     sSSs. d s.   d ss.
+S   ~o    S S   d      S S   ~o  S        S      S  ~O  S    b
+S     b    S    Y      S S     b S       S       S   `b S    P
+S     S    S      ss.  S S     S S sSSs  S       S sSSO S sS'
+S     P    S         b S S     P S       S       S    O S   S
+S    S     S         P S S    S  S        S      S    O S    S
+P ss"      P    ` ss'  P P ss"   P sSSss   "sss' P    P P    P   {0}
+
+""".format(
+    f"v{__version__}"
+)
 
 
 def assemble_application() -> FastAPI:
@@ -46,11 +65,21 @@ def assemble_application() -> FastAPI:
     # add routing paths
     application.include_router(main_router)
 
+    def create_start_app_handler(
+        app: FastAPI,
+    ) -> Callable[[], Coroutine[Any, Any, None]]:
+        async def on_startup() -> None:
+            await login_registry(app.state.settings.registry)
+            print(WELCOME_MSG, flush=True)
+
+        return on_startup
+
     # setting up handler for lifecycle
     async def on_shutdown() -> None:
         await on_shutdown_handler(application)
         logger.info("shutdown cleanup completed")
 
+    application.add_event_handler("startup", create_start_app_handler(application))
     application.add_event_handler("shutdown", on_shutdown)
 
     return application

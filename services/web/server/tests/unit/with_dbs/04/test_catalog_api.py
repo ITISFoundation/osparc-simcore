@@ -2,13 +2,12 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from asyncio import Future
+import re
 from copy import deepcopy
 
 import pytest
 from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser
 from simcore_service_webserver.application import (
     create_safe_application,
     setup_catalog,
@@ -19,6 +18,7 @@ from simcore_service_webserver.application import (
     setup_security,
     setup_session,
 )
+from simcore_service_webserver.catalog_client import KCATALOG_ORIGIN
 from simcore_service_webserver.db_models import UserRole
 
 
@@ -50,40 +50,18 @@ def client(loop, app_cfg, aiohttp_client, postgres_db):
 
 
 @pytest.fixture
-def mock_api_client_session(client, mocker):
-    get_client_session = mocker.patch(
-        "simcore_service_webserver.catalog_client.get_client_session"
-    )
+def mock_catalog_service_api_responses(client, aioresponses_mocker):
+    origin = client.app[KCATALOG_ORIGIN]
 
-    class MockClientSession(mocker.MagicMock):
-        async def __aenter__(self):
-            # Mocks aiohttp.ClientResponse
-            # https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse
-            resp = mocker.Mock()
+    url_pattern = re.compile(f"^{origin}+/.*$")
 
-            f = Future()
-            f.set_result({})
-            resp.json.return_value = f
-
-            resp.status = 200
-            return resp
-
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
-            pass
-
-    client_session = mocker.Mock()
-
-    context_mock = mocker.Mock(return_value=MockClientSession())
-    client_session.get = context_mock
-    client_session.post = context_mock
-    client_session.request = context_mock
-
-    get_client_session.return_value = client_session
-
-    yield context_mock
+    aioresponses_mocker.get(url_pattern, payload={"data": {}})
+    aioresponses_mocker.post(url_pattern, payload={"data": {}})
+    aioresponses_mocker.put(url_pattern, payload={"data": {}})
+    aioresponses_mocker.patch(url_pattern, payload={"data": {}})
+    aioresponses_mocker.delete(url_pattern)
 
 
-# TODO: with different user roles, i.e. access rights
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -94,7 +72,11 @@ def mock_api_client_session(client, mocker):
     ],
 )
 async def test_dag_entrypoints(
-    client, logged_user, api_version_prefix, mock_api_client_session, expected
+    client,
+    logged_user,
+    api_version_prefix,
+    mock_catalog_service_api_responses,
+    expected,
 ):
     vx = api_version_prefix
 

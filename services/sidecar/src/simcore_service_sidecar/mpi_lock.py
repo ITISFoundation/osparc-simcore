@@ -63,7 +63,7 @@ async def _acquire_and_extend_lock_forever(
         {
             "host": config.CELERY_CONFIG.redis.host,
             "port": config.CELERY_CONFIG.redis.port,
-            "db": int(config.CELERY_CONFIG.redis.db),
+            "db": 1,
         }
     ]
 

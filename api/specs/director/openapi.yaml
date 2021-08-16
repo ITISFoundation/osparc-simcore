@@ -128,6 +128,43 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnveloped"
 
+  /services/{service_key}/{service_version}/labels:
+    get:
+      tags:
+        - users
+      summary: Returns the list of tags attached to a service
+      operationId: get_service_labels
+      parameters:
+        - $ref: "#/components/parameters/ServiceKeyPath"
+        - $ref: "#/components/parameters/ServiceVersionPath"
+      responses:
+        "200":
+          description: Success, returns the details of the service
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+        "401":
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnveloped"
+        "404":
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnveloped"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnveloped"
+
   /service_extras/{service_key}/{service_version}:
     get:
       tags:

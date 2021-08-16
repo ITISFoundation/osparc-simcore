@@ -30,7 +30,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
 
     this.set({
       workbench: studyDataUI && studyDataUI.workbench ? studyDataUI.workbench : this.getWorkbench(),
-      slideshow: studyDataUI && studyDataUI.slideshow ? studyDataUI.slideshow : this.getSlideshow(),
+      slideshow: new osparc.data.model.SlideShow(studyDataUI && studyDataUI.slideshow ? studyDataUI.slideshow : {}),
       currentNodeId: studyDataUI && studyDataUI.currentNodeId ? studyDataUI.currentNodeId : this.getCurrentNodeId()
     });
   },
@@ -43,10 +43,8 @@ qx.Class.define("osparc.data.model.StudyUI", {
     },
 
     slideshow: {
-      check: "Object",
-      init: {},
-      nullable: true,
-      event: "changeSlideshow"
+      check: "osparc.data.model.SlideShow",
+      nullable: true
     },
 
     currentNodeId: {
@@ -57,28 +55,12 @@ qx.Class.define("osparc.data.model.StudyUI", {
     }
   },
 
-  statics: {
-    getSortedNodes: function(study) {
-      const slideShow = study.getUi().getSlideshow();
-      const nodes = [];
-      for (let nodeId in slideShow) {
-        const node = slideShow[nodeId];
-        nodes.push({
-          ...node,
-          nodeId
-        });
-      }
-      nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
-      return nodes;
-    }
-  },
-
   members: {
     serialize: function() {
       const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
       let jsonObject = {};
       jsonObject["workbench"] = currentStudy ? currentStudy.getWorkbench().serializeUI() : this.getWorkbench();
-      jsonObject["slideshow"] = this.getSlideshow();
+      jsonObject["slideshow"] = this.getSlideshow().serialize();
       jsonObject["currentNodeId"] = this.getCurrentNodeId();
       return jsonObject;
     }

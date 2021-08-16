@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 import pytest
-
 from servicelib import openapi
 from servicelib.rest_routing import (
     create_routes_from_namespace,

@@ -181,7 +181,7 @@ qx.Class.define("osparc.studycard.Utils", {
       * @param maxHeight {Number} thumbnail's maxHeight
       */
     createThumbnail: function(study, maxWidth, maxHeight = 160) {
-      const image = new osparc.component.widget.Thumbnail(null, maxWidth, maxHeight);
+      const image = new osparc.ui.basic.Thumbnail(null, maxWidth, maxHeight);
       const img = image.getChildControl("image");
       if (study instanceof osparc.data.model.Study) {
         study.bind("thumbnail", img, "source", {

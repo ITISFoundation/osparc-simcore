@@ -18,7 +18,6 @@ async function runTutorial () {
   const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, enableDemoMode);
 
   try {
-    tutorial.startScreenshooter();
     const page = await tutorial.beforeScript();
     const studyData = await tutorial.openStudyLink();
     const studyId = studyData["data"]["uuid"];
@@ -27,14 +26,14 @@ async function runTutorial () {
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][1]]);
 
-    // Some time for starting the service
-    await tutorial.waitFor(10000);
+    await tutorial.waitFor(10000, 'Some time for starting the service');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
     const outFiles = [
       "data.zip"
     ];
-    await tutorial.checkNodeResults(1, outFiles);
+    await tutorial.openNodeFiles(1)
+    await tutorial.checkResults2(outFiles);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
@@ -42,7 +41,6 @@ async function runTutorial () {
   }
   finally {
     await tutorial.logOut();
-    tutorial.stopScreenshooter();
     await tutorial.close();
   }
 

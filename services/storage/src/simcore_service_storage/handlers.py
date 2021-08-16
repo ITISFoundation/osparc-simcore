@@ -1,18 +1,21 @@
+import asyncio
 import json
 import logging
 from contextlib import contextmanager
-from typing import Dict
+from typing import Any, Dict
 
 import attr
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_utils import extract_and_validate
 
 from .access_layer import InvalidFileIdentifier
+from .constants import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 from .db_tokens import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
 from .meta import __version__, api_vtag
-from .settings import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
+from .settings import Settings
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +32,6 @@ async def _prepare_storage_manager(
 
     INIT_STR = "init"
     dsm: DataStorageManager = request.app[APP_DSM_KEY]
-
     user_id = query.get("user_id")
     location_id = params.get("location_id")
     location = (
@@ -41,7 +43,7 @@ async def _prepare_storage_manager(
         # re-query when needed.
 
         # updates from db
-        token_info = await get_api_token_and_secret(request.app, user_id)
+        token_info = await get_api_token_and_secret(request.app, int(user_id))
         if all(token_info):
             dsm.datcore_tokens[user_id] = DatCoreApiToken(*token_info)
         else:
@@ -220,6 +222,49 @@ async def get_file_metadata(request: web.Request):
         }
 
 
+@routes.post(f"/{api_vtag}/locations/{{location_id}}:sync")  # type: ignore
+async def synchronise_meta_data_table(request: web.Request):
+    params, query, *_ = await extract_and_validate(request)
+    assert query["dry_run"] is not None  # nosec
+    assert params["location_id"]  # nosec
+
+    with handle_storage_errors():
+        location_id: str = params["location_id"]
+        fire_and_forget: bool = query["fire_and_forget"]
+        dry_run: bool = query["dry_run"]
+
+        dsm = await _prepare_storage_manager(params, query, request)
+        location = dsm.location_from_id(location_id)
+
+        sync_results: Dict[str, Any] = {
+            "removed": [],
+        }
+        sync_coro = dsm.synchronise_meta_data_table(location, dry_run)
+
+        if fire_and_forget:
+            settings: Settings = request.app[APP_CONFIG_KEY]
+
+            async def _go():
+                timeout = settings.STORAGE_SYNC_METADATA_TIMEOUT
+                try:
+                    result = await asyncio.wait_for(sync_coro, timeout=timeout)
+                    log.info(
+                        "Sync metadata table completed: %d entries removed",
+                        len(result.get("removed", [])),
+                    )
+                except asyncio.TimeoutError:
+                    log.error("Sync metadata table timed out (%s seconds)", timeout)
+
+            asyncio.create_task(_go(), name="f&f sync_task")
+        else:
+            sync_results = await sync_coro
+
+        sync_results["fire_and_forget"] = fire_and_forget
+        sync_results["dry_run"] = dry_run
+
+        return {"error": None, "data": sync_results}
+
+
 # DISABLED: @routes.patch(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}/metadata") # type: ignore
 async def update_file_meta_data(request: web.Request):
     params, query, body = await extract_and_validate(request)
@@ -263,7 +308,7 @@ async def download_file(request: web.Request):
         if location == SIMCORE_S3_STR:
             link = await dsm.download_link_s3(file_uuid, user_id)
         else:
-            link, _filename = await dsm.download_link_datcore(user_id, file_uuid)
+            link = await dsm.download_link_datcore(user_id, file_uuid)
 
         return {"error": None, "data": {"link": link}}
 

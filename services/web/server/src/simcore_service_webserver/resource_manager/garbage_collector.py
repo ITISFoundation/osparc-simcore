@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from contextlib import suppress
 from itertools import chain
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -9,65 +8,78 @@ import psycopg2
 from aiohttp import web
 from aiopg.sa.result import RowProxy
 from aioredlock import Aioredlock
-from servicelib.observer import emit
 from servicelib.utils import logged_gather
-from simcore_service_webserver import users_exceptions
-from simcore_service_webserver.db_models import GroupType
-from simcore_service_webserver.director.director_api import (
-    get_running_interactive_services,
-    stop_service,
-)
-from simcore_service_webserver.director.director_exceptions import (
-    DirectorException,
-    ServiceNotFoundError,
-)
-from simcore_service_webserver.groups_api import get_group_from_gid
-from simcore_service_webserver.projects.projects_api import (
+
+from .. import director_v2, users_exceptions
+from ..db_models import GroupType
+from ..director.director_exceptions import DirectorException, ServiceNotFoundError
+from ..groups_api import get_group_from_gid
+from ..projects.projects_api import (
     delete_project_from_db,
     get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
     is_node_id_present_in_any_project_workbench,
+    remove_project_interactive_services,
 )
-from simcore_service_webserver.projects.projects_db import (
-    APP_PROJECT_DBAPI,
-    ProjectAccessRights,
-)
-from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
-from simcore_service_webserver.users_api import (
+from ..projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
+from ..projects.projects_exceptions import ProjectNotFoundError
+from ..resource_manager.redis import get_redis_lock_manager
+from ..users_api import (
     delete_user,
     get_guest_user_ids_and_names,
     get_user,
     get_user_id_from_gid,
     is_user_guest,
 )
-from simcore_service_webserver.users_to_groups_api import get_users_for_gid
-
-from .config import (
-    APP_CLIENT_REDIS_LOCK_KEY,
-    GUEST_USER_RC_LOCK_FORMAT,
-    get_garbage_collector_interval,
-)
+from ..users_to_groups_api import get_users_for_gid
+from .config import GUEST_USER_RC_LOCK_FORMAT, get_garbage_collector_interval
 from .registry import RedisResourceRegistry, get_registry
 
 logger = logging.getLogger(__name__)
 database_errors = (psycopg2.DatabaseError, asyncpg.exceptions.PostgresError)
 
+TASK_NAME = f"{__name__}.collect_garbage_periodically"
+TASK_CONFIG = f"{TASK_NAME}.config"
+
 
 def setup_garbage_collector(app: web.Application):
     async def _setup_background_task(app: web.Application):
-        # on_startup
+        # SETUP ------
         # create a background task to collect garbage periodically
-        loop = asyncio.get_event_loop()
-        cgp_task = loop.create_task(collect_garbage_periodically(app))
+        assert not any(  # nosec
+            t.get_name() == TASK_NAME for t in asyncio.all_tasks()
+        ), "Garbage collector task already running. ONLY ONE expected"  # nosec
+
+        gc_bg_task = asyncio.create_task(
+            collect_garbage_periodically(app), name=TASK_NAME
+        )
+
+        # FIXME: added this config to overcome the state in which the
+        # task cancelation is ignored and the exceptions enter in a loop
+        # that never stops the background task. This flag is an additional
+        # mechanism to enforce stopping the background task
+        #
+        # Implemented with a mutable dict to avoid
+        #   DeprecationWarning: Changing state of started or joined application is deprecated
+        #
+        app[TASK_CONFIG] = {"force_stop": False, "name": TASK_NAME}
 
         yield
 
-        # on_cleanup
-        # controlled cancelation of the gc tas
-        with suppress(asyncio.CancelledError):
+        # TEAR-DOWN -----
+        # controlled cancelation of the gc task
+        try:
             logger.info("Stopping garbage collector...")
-            cgp_task.cancel()
-            await cgp_task
+
+            ack = gc_bg_task.cancel()
+            assert ack  # nosec
+
+            app[TASK_CONFIG]["force_stop"] = True
+
+            await gc_bg_task
+
+        except asyncio.CancelledError:
+            assert gc_bg_task.cancelled()  # nosec
 
     app.cleanup_ctx.append(_setup_background_task)
 
@@ -80,6 +92,10 @@ async def collect_garbage_periodically(app: web.Application):
             interval = get_garbage_collector_interval(app)
             while True:
                 await collect_garbage(app)
+
+                if app[TASK_CONFIG].get("force_stop", False):
+                    raise Exception("Forced to stop garbage collection")
+
                 await asyncio.sleep(interval)
 
         except asyncio.CancelledError:
@@ -92,6 +108,11 @@ async def collect_garbage_periodically(app: web.Application):
                 "There was an error during garbage collection, restarting...",
                 exc_info=True,
             )
+
+            if app[TASK_CONFIG].get("force_stop", False):
+                logger.warning("Forced to stop garbage collection")
+                break
+
             # will wait 5 seconds to recover before restarting to avoid restart loops
             # - it might be that db/redis is down, etc
             #
@@ -147,7 +168,7 @@ async def collect_garbage(app: web.Application):
 async def remove_disconnected_user_resources(
     registry: RedisResourceRegistry, app: web.Application
 ) -> None:
-    lock_manager: Aioredlock = app[APP_CLIENT_REDIS_LOCK_KEY]
+    lock_manager: Aioredlock = get_redis_lock_manager(app)
 
     #
     # In redis jargon, every entry is denoted as "key"
@@ -242,11 +263,7 @@ async def remove_disconnected_user_resources(
                 if resource_name == "project_id":
                     # inform that the project can be closed on the backend side
                     #
-                    # FIXME: slot functions are "whatever" and can e.g. raise any exception or
-                    # delay or block execution here in many different ways
-                    #
-                    await emit(
-                        event="SIGNAL_PROJECT_CLOSE",
+                    await remove_project_interactive_services(
                         user_id=int(dead_key["user_id"]),
                         project_uuid=resource_value,
                         app=app,
@@ -283,7 +300,7 @@ async def remove_users_manually_marked_as_guests(
     Removes all the projects associated with GUEST users in the system.
     If the user defined a TEMPLATE, this one also gets removed.
     """
-    lock_manager: Aioredlock = app[APP_CLIENT_REDIS_LOCK_KEY]
+    lock_manager: Aioredlock = get_redis_lock_manager(app)
 
     # collects all users with registed sessions
     alive_keys, dead_keys = await registry.get_all_resource_keys()
@@ -326,6 +343,67 @@ async def remove_users_manually_marked_as_guests(
         )
 
 
+async def _remove_single_orphaned_service(
+    app: web.Application,
+    interactive_service: Dict[str, Any],
+    currently_opened_projects_node_ids: Set[str],
+) -> None:
+    service_host = interactive_service["service_host"]
+    # if not present in DB or not part of currently opened projects, can be removed
+    service_uuid = interactive_service["service_uuid"]
+    # if the node does not exist in any project in the db
+    # they can be safely remove it without saving any state
+    if not await is_node_id_present_in_any_project_workbench(app, service_uuid):
+        message = (
+            "Will remove orphaned service without saving state since "
+            f"this service is not part of any project {service_host}"
+        )
+        logger.info(message)
+        try:
+            await director_v2.stop_service(app, service_uuid, save_state=False)
+        except (ServiceNotFoundError, DirectorException) as err:
+            logger.warning("Error while stopping service: %s", err)
+        return
+
+    # if the node is not present in any of the currently opened project it shall be closed
+    if service_uuid not in currently_opened_projects_node_ids:
+        if interactive_service.get("service_state") in [
+            "pulling",
+            "starting",
+        ]:
+            # Services returned in running_interactive_services
+            # might be still pulling its image and when stop_service is
+            # called, will cancel the pull operation as well.
+            # This enforces next run to start again by pulling the image
+            # which is costly and sometimes the cause of timeout and
+            # service malfunction.
+            # For that reason, we prefer here to allow the image to
+            # be completely pulled and stop it instead at the next gc round
+            #
+            # This should eventually be responsibility of the director, but
+            # the functionality is in the old service which is frozen.
+            #
+            # a service state might be one of [pending, pulling, starting, running, complete, failed]
+            logger.warning(
+                "Skipping %s since image is in %s",
+                service_host,
+                interactive_service.get("service_state", "unknown"),
+            )
+            return
+
+        logger.info("Will remove service %s", service_host)
+        try:
+            # let's be conservative here.
+            # 1. opened project disappeared from redis?
+            # 2. something bad happened when closing a project?
+            user_id = int(interactive_service.get("user_id", 0))
+
+            save_state = not await is_user_guest(app, user_id) if user_id else True
+            await director_v2.stop_service(app, service_uuid, save_state)
+        except (ServiceNotFoundError, DirectorException) as err:
+            logger.warning("Error while stopping service: %s", err)
+
+
 async def remove_orphaned_services(
     registry: RedisResourceRegistry, app: web.Application
 ) -> None:
@@ -338,9 +416,9 @@ async def remove_orphaned_services(
 
     If the service is a dynamic service
     """
-    logger.info("Starting orphaned services removal...")
+    logger.debug("Starting orphaned services removal...")
 
-    currently_opened_projects_node_ids = set()
+    currently_opened_projects_node_ids: Set[str] = set()
     alive_keys, _ = await registry.get_all_resource_keys()
     for alive_key in alive_keys:
         resources = await registry.get_resources(alive_key)
@@ -351,73 +429,34 @@ async def remove_orphaned_services(
         node_ids = await get_workbench_node_ids_from_project_uuid(app, project_uuid)
         currently_opened_projects_node_ids.update(node_ids)
 
-    running_interactive_services: List[
-        Dict[str, Any]
-    ] = await get_running_interactive_services(app)
+    running_interactive_services: List[Dict[str, Any]] = []
+    try:
+        running_interactive_services = await director_v2.get_services(app)
+    except director_v2.DirectorServiceError:
+        logger.debug(("Could not fetch running_interactive_services"))
+
     logger.info(
         "Will collect the following: %s",
-        [x["service_host"] for x in running_interactive_services],
+        [
+            (x.get("service_uuid", ""), x.get("service_host", ""))
+            for x in running_interactive_services
+        ],
     )
-    for interactive_service in running_interactive_services:
-        # if not present in DB or not part of currently opened projects, can be removed
-        node_id = interactive_service["service_uuid"]
-        # if the node does not exist in any project in the db, we can safely remove it without saving any state
-        if not await is_node_id_present_in_any_project_workbench(app, node_id):
-            logger.info(
-                "Will remove orphaned service without saving state since this service should is not part of any project %s",
-                service_host,
-            )
-            try:
-                await stop_service(app, node_id, save_state=False)
-            except (ServiceNotFoundError, DirectorException) as err:
-                logger.warning("Error while stopping service: %s", err)
-            continue
 
-        # if the node is not present in any of the currently opened project it shall be closed
-        if node_id not in currently_opened_projects_node_ids:
-            service_host = interactive_service["service_host"]
-            if interactive_service.get("service_state") in [
-                "pulling",
-                "starting",
-            ]:
-                # Services returned in running_interactive_services
-                # might be still pulling its image and when stop_service is
-                # called, will cancel the pull operation as well.
-                # This enforces next run to start again by pulling the image
-                # which is costly and sometimes the cause of timeout and
-                # service malfunction.
-                # For that reason, we prefer here to allow the image to
-                # be completely pulled and stop it instead at the next gc round
-                #
-                # This should eventually be responsibility of the director, but
-                # the functionality is in the old service which is frozen.
-                #
-                # a service state might be one of [pending, pulling, starting, running, complete, failed]
-                logger.warning(
-                    "Skipping %s since image is in %s",
-                    service_host,
-                    interactive_service.get("service_state", "unknown"),
-                )
-                continue
+    # if there are multiple dynamic services to stop,
+    # this ensures they are being stopped in parallel
+    # when the user is timed out and the GC needs to close
+    # a big study with logs of heavy projects, this will
+    # ensure it gets done in parallel
+    tasks = [
+        _remove_single_orphaned_service(
+            app, interactive_service, currently_opened_projects_node_ids
+        )
+        for interactive_service in running_interactive_services
+    ]
+    await logged_gather(*tasks, reraise=False)
 
-            logger.info("Will remove service %s", service_host)
-            try:
-                # let's be conservative here.
-                # 1. opened project disappeared from redis?
-                # 2. something bad happened when closing a project?
-                user_id = int(interactive_service.get("user_id", 0))
-
-                await stop_service(
-                    app,
-                    node_id,
-                    save_state=not await is_user_guest(app, user_id)
-                    if user_id
-                    else True,
-                )
-            except (ServiceNotFoundError, DirectorException) as err:
-                logger.warning("Error while stopping service: %s", err)
-
-    logger.info("Finished orphaned services removal")
+    logger.debug("Finished orphaned services removal")
 
 
 async def remove_guest_user_with_all_its_resources(
@@ -464,7 +503,6 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
             user_id,
         )
         return
-
     user_primary_gid = int(project_owner["primary_gid"])
 
     # fetch all projects for the user

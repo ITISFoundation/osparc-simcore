@@ -39,6 +39,7 @@ REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 SCRIPTS_DIR := $(abspath $(REPO_BASE_DIR)/scripts)
 
 # virtual env
+EXPECTED_PYTHON_VERSION := $(shell cat $(REPO_BASE_DIR)/requirements/PYTHON_VERSION)
 VENV_DIR      := $(abspath $(REPO_BASE_DIR)/.venv)
 
 #
@@ -158,15 +159,15 @@ version-major: ## commits version with backwards-INcompatible addition or change
 
 _check_python_version:
 	# Checking that runs with correct python version
-	@python3 -c "import sys; assert sys.version_info[:2]==(3,6), f'Expected python 3.6, got {sys.version_info}'"
+	@python3 -c "import sys; current_version=[int(d) for d in '$(EXPECTED_PYTHON_VERSION)'.split('.')]; assert sys.version_info[:2]==tuple(current_version[:2]), f'Expected python $(EXPECTED_PYTHON_VERSION), got {sys.version_info}'"
 
 
 _check_venv_active: _check_python_version
-	# checking whether virtual environment was activated
+	# Checking whether virtual environment was activated
 	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
 
 
 define _bumpversion
-	# upgrades as $(subst version-,,$@) version, commits and tags
+	# Upgrades as $(subst version-,,$@) version, commits and tags
 	@bump2version --verbose --list $(subst version-,,$@)
 endef

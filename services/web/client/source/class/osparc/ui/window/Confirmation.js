@@ -21,12 +21,9 @@ qx.Class.define("osparc.ui.window.Confirmation", {
 
     this.addCancelButton();
 
-    const confirmButton = this.__confirmButton = this.getChildControl("confirm-button").set({
+    this.getChildControl("confirm-button").set({
       label: confirmBtnText
     });
-
-    const command = new qx.ui.command.Command("Enter");
-    confirmButton.setCommand(command);
   },
 
   properties: {
@@ -46,6 +43,8 @@ qx.Class.define("osparc.ui.window.Confirmation", {
             this.setConfirmed(true);
             this.close(1);
           }, this);
+          const command = new qx.ui.command.Command("Enter");
+          control.setCommand(command);
           this.addButton(control);
           break;
         }
@@ -54,7 +53,7 @@ qx.Class.define("osparc.ui.window.Confirmation", {
     },
 
     getConfirmButton: function() {
-      return this.__confirmButton;
+      return this.getChildControl("confirm-button");
     }
   }
 });

@@ -147,7 +147,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "menu-button":
+        case "menu-button": {
+          this.getChildControl("title").set({
+            maxWidth: osparc.dashboard.StudyBrowserButtonBase.ITEM_WIDTH - 2*osparc.dashboard.StudyBrowserButtonBase.PADDING - this.self().MENU_BTN_WIDTH
+          });
           control = new qx.ui.form.MenuButton().set({
             width: this.self().MENU_BTN_WIDTH,
             height: this.self().MENU_BTN_WIDTH,
@@ -160,6 +163,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             right: -2
           });
           break;
+        }
         case "tick-unselected":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16");
           this._add(control, {
@@ -174,8 +178,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             right: 4
           });
           break;
-        case "lock":
-          control = new osparc.component.widget.Thumbnail("@FontAwesome5Solid/lock/70");
+        case "lock-status":
+          control = new osparc.ui.basic.Thumbnail();
           this._add(control, {
             top: 0,
             right: 0,
@@ -188,8 +192,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             alignX: "center",
             alignY: "middle"
           }));
-          // const icon = new osparc.component.widget.Thumbnail("@FontAwesome5Solid/file-export/60");
-          const icon = new osparc.component.widget.Thumbnail("@FontAwesome5Solid/cloud-download-alt/60");
+          // const icon = new osparc.ui.basic.Thumbnail("@FontAwesome5Solid/file-export/60");
+          const icon = new osparc.ui.basic.Thumbnail("@FontAwesome5Solid/cloud-download-alt/60");
           control.add(icon, {
             flex: 1
           });
@@ -454,8 +458,11 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     __setStudyPermissions: function(accessRights) {
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      orgIDs.push(myGroupId);
+
       const image = this.getChildControl("permission-icon");
-      if (osparc.component.permissions.Study.canGroupWrite(accessRights, myGroupId)) {
+      if (osparc.component.permissions.Study.canGroupsWrite(accessRights, orgIDs)) {
         image.exclude();
       } else {
         image.setSource(this.self().PERM_READ);
@@ -467,13 +474,56 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyState: function(state) {
       const locked = ("locked" in state) ? state["locked"]["value"] : false;
+      this.setLocked(locked);
       if (locked) {
-        this.setLocked(state["locked"]["value"]);
-        const owner = state["locked"]["owner"];
-        this.__setLockedBy(osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]));
-      } else {
-        this.setLocked(false);
+        this.__setLockedStatus(state["locked"]);
       }
+    },
+
+    __setLockedStatus: function(lockedStatus) {
+      const status = lockedStatus["status"];
+      const owner = lockedStatus["owner"];
+      const lock = this.getChildControl("lock-status");
+      const lockImage = this.getChildControl("lock-status").getChildControl("image");
+      let toolTipText = osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]);
+      let source = null;
+      switch (status) {
+        case "CLOSING":
+          source = "@FontAwesome5Solid/key/70";
+          toolTipText += this.tr(" is closing it...");
+          break;
+        case "CLONING":
+          source = "@FontAwesome5Solid/clone/70";
+          toolTipText += this.tr(" is cloning it...");
+          break;
+        case "EXPORTING":
+          source = osparc.component.task.Export.EXPORT_ICON+"/70";
+          toolTipText += this.tr(" is exporting it...");
+          break;
+        case "OPENING":
+          source = "@FontAwesome5Solid/key/70";
+          toolTipText += this.tr(" is opening it...");
+          break;
+        case "OPENED":
+          source = "@FontAwesome5Solid/lock/70";
+          toolTipText += this.tr(" is using it.");
+          break;
+        default:
+          source = "@FontAwesome5Solid/lock/70";
+          break;
+      }
+      lock.set({
+        toolTipText: toolTipText
+      });
+      lockImage.setSource(source);
+    },
+
+    _applyLocked: function(locked) {
+      this.__enableCard(!locked);
+      this.getChildControl("lock-status").set({
+        opacity: 1.0,
+        visibility: locked ? "visible" : "excluded"
+      });
     },
 
     __enableCard: function(enabled) {
@@ -494,23 +544,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         child.set({
           enabled
         });
-      });
-    },
-
-    _applyLocked: function(locked) {
-      this.__enableCard(!locked);
-
-      const lock = this.getChildControl("lock");
-      lock.set({
-        opacity: 1.0,
-        visibility: locked ? "visible" : "excluded"
-      });
-    },
-
-    __setLockedBy: function(lockedBy) {
-      const lock = this.getChildControl("lock");
-      lock.set({
-        toolTipText: lockedBy ? (lockedBy + this.tr(" is using it")) : null
       });
     },
 

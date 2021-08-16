@@ -45,7 +45,7 @@ setup(
             "simcore-service-webserver=simcore_service_webserver.__main__:main",
         ]
     },
-    python_requires=">=3.6",
+    python_requires="~=3.8",
     install_requires=install_requirements,
     tests_require=test_requirements,
     setup_requires=["pytest-runner"],

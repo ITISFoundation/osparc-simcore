@@ -31,6 +31,13 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     routes.append(web.get(BASEPATH + path, handler, name=operation_id))
 
     path, handler = (
+        "/storage/locations/{location_id}:sync",
+        storage_handlers.synchronise_meta_data_table,
+    )
+    operation_id = specs.paths[path].operations["post"].operation_id
+    routes.append(web.post(BASEPATH + path, handler, name=operation_id))
+
+    path, handler = (
         "/storage/locations/{location_id}/datasets",
         storage_handlers.get_datasets_metadata,
     )

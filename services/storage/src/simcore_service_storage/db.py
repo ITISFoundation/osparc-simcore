@@ -14,24 +14,25 @@ from servicelib.aiopg_utils import (
 )
 from tenacity import AsyncRetrying
 
+from .constants import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from .models import metadata
-from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
+from .settings import PostgresSettings
 
 log = logging.getLogger(__name__)
 
-THIS_SERVICE_NAME = "postgres"
-
 
 async def pg_engine(app: web.Application):
-    pg_cfg = app[APP_CONFIG_KEY][THIS_SERVICE_NAME]
+    engine = None
+
+    pg_cfg: PostgresSettings = app[APP_CONFIG_KEY].STORAGE_POSTGRES
     dsn = DataSourceName(
         application_name=f"{__name__}_{id(app)}",
-        database=pg_cfg["db"],
-        user=pg_cfg["user"],
-        password=pg_cfg["password"],
-        host=pg_cfg["host"],
-        port=pg_cfg["port"],
-    )
+        database=pg_cfg.POSTGRES_DB,
+        user=pg_cfg.POSTGRES_USER,
+        password=pg_cfg.POSTGRES_PASSWORD.get_secret_value(),
+        host=pg_cfg.POSTGRES_HOST,
+        port=pg_cfg.POSTGRES_PORT,
+    )  # type: ignore
 
     log.info("Creating pg engine for %s", dsn)
     async for attempt in AsyncRetrying(
@@ -39,11 +40,11 @@ async def pg_engine(app: web.Application):
     ):
         with attempt:
             engine = await create_pg_engine(
-                dsn, minsize=pg_cfg["minsize"], maxsize=pg_cfg["maxsize"]
+                dsn, minsize=pg_cfg.POSTGRES_MINSIZE, maxsize=pg_cfg.POSTGRES_MAXSIZE
             )
             await raise_if_not_responsive(engine)
 
-    if app[APP_CONFIG_KEY]["testing"]:
+    if app[APP_CONFIG_KEY].STORAGE_TESTING:
         log.info("Initializing tables for %s", dsn)
         init_pg_tables(dsn, schema=metadata)
 
@@ -80,17 +81,15 @@ def get_engine_state(app: web.Application) -> Dict[str, Any]:
 
 
 def setup_db(app: web.Application):
-    disable_services = app[APP_CONFIG_KEY].get("main", {}).get("disable_services", [])
-
-    if THIS_SERVICE_NAME in disable_services:
+    if "postgres" in app[APP_CONFIG_KEY].STORAGE_DISABLE_SERVICES:
         app[APP_DB_ENGINE_KEY] = None
-        log.warning("Service '%s' explicitly disabled in config", THIS_SERVICE_NAME)
+        log.warning("Service '%s' explicitly disabled in config", "postgres")
         return
 
     app[APP_DB_ENGINE_KEY] = None
 
     # app is created at this point but not yet started
-    log.debug("Setting up %s [service: %s] ...", __name__, THIS_SERVICE_NAME)
+    log.debug("Setting up %s [service: %s] ...", __name__, "postgres")
 
     # async connection to db
     app.cleanup_ctx.append(pg_engine)

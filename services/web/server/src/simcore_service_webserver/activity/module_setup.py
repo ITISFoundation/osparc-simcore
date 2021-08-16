@@ -5,7 +5,7 @@ from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
 
 from ..rest_config import APP_OPENAPI_SPECS_KEY
-from . import handlers
+from . import celery_client, handlers
 from .config import assert_valid_config
 
 logger = logging.getLogger(__name__)
@@ -19,11 +19,11 @@ logger = logging.getLogger(__name__)
 )
 def setup_activity(app: web.Application):
 
-    #----------------------------------------------
+    # ----------------------------------------------
     # TODO: temporary, just to check compatibility between
     # trafaret and pydantic schemas
     assert_valid_config(app)
-    #---------------------------------------------
+    # ---------------------------------------------
 
     # setup routes ------------
     specs = app[APP_OPENAPI_SPECS_KEY]
@@ -38,3 +38,5 @@ def setup_activity(app: web.Application):
         handlers_dict, filter(include_path, iter_path_operations(specs)), strict=True
     )
     app.router.add_routes(routes)
+
+    celery_client.setup(app)

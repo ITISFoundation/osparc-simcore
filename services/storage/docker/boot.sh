@@ -24,23 +24,20 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   echo "$INFO" "PIP :"
   pip list | sed 's/^/    /'
 
-  APP_CONFIG=docker-dev-config.yaml
   echo "$INFO" "Setting entrypoint to use watchmedo autorestart..."
   entrypoint='watchmedo auto-restart --recursive --pattern="*.py" --'
 
 elif [ "${SC_BUILD_TARGET}" = "production" ]; then
-  APP_CONFIG=docker-prod-config.yaml
   entrypoint=""
 fi
 
 # RUNNING application ----------------------------------------
-echo "$INFO" "Selected config $APP_CONFIG"
-
+echo "$INFO" "Selected config ${SC_BUILD_TARGET}"
 if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
   # NOTE: needs ptvsd installed
-  echo "$INFO" "PTVSD Debugger initializing in port 3000 with ${APP_CONFIG}"
+  echo "$INFO" "PTVSD Debugger initializing in port 3000 with ${SC_BUILD_TARGET}"
   eval "$entrypoint" python3 -m ptvsd --host 0.0.0.0 --port 3000 -m \
-    simcore_service_storage --config $APP_CONFIG
+    simcore_service_storage run
 else
-  exec simcore-service-storage --config $APP_CONFIG
+  exec simcore-service-storage run
 fi

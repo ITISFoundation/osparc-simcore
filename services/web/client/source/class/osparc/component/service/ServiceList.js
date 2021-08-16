@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * This is a view to display the available services in a flowing fashion. Creates a ServiceJumbo button
+ * This is a view to display the available services in a flowing fashion. Creates a ServiceButtonSmall button
  * for every service in the model and subscribes it to the filter group.
  */
 qx.Class.define("osparc.component.service.ServiceList", {
@@ -25,7 +25,7 @@ qx.Class.define("osparc.component.service.ServiceList", {
   /**
    * If the optional parameter is given, the elements will be subscribed to the filter group of the given id.
    *
-   * @param {String} [filterGroupId] Id of the filter group the service Jumbo buttons will be subscribed to.
+   * @param {String} [filterGroupId] Id of the filter group the ServiceButtonSmall buttons will be subscribed to.
    */
   construct: function(filterGroupId) {
     this.base(arguments);
@@ -37,7 +37,7 @@ qx.Class.define("osparc.component.service.ServiceList", {
 
   events: {
     "changeValue": "qx.event.type.Data",
-    "serviceadd": "qx.event.type.Data"
+    "serviceAdd": "qx.event.type.Data"
   },
 
   properties: {
@@ -64,18 +64,18 @@ qx.Class.define("osparc.component.service.ServiceList", {
       model.toArray()
         .sort((a, b) => a.getName().localeCompare(b.getName()))
         .forEach(service => {
-          const button = new osparc.component.service.ServiceJumbo(service);
+          const button = new osparc.component.service.ServiceButtonSmall(service);
           if (this.__filterGroup !== null) {
             button.subscribeToFilterGroup(this.__filterGroup);
           }
           group.add(button);
           this._add(button);
           button.addListener("dbltap", e => {
-            this.fireDataEvent("serviceadd", button.getServiceModel());
+            this.fireDataEvent("serviceAdd", button.getServiceModel());
           }, this);
           button.addListener("keypress", e => {
             if (e.getKeyIdentifier() === "Enter") {
-              this.fireDataEvent("serviceadd", button.getServiceModel());
+              this.fireDataEvent("serviceAdd", button.getServiceModel());
             }
           }, this);
         });

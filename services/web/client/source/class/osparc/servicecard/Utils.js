@@ -149,7 +149,7 @@ qx.Class.define("osparc.servicecard.Utils", {
       * @param maxHeight {Number} thumbnail's maxHeight
       */
     createThumbnail: function(serviceData, maxWidth, maxHeight = 160) {
-      const image = new osparc.component.widget.Thumbnail(null, maxWidth, maxHeight);
+      const image = new osparc.ui.basic.Thumbnail(null, maxWidth, maxHeight);
       const img = image.getChildControl("image");
       img.set({
         source: "thumbnail" in serviceData && serviceData["thumbnail"] !== "" ? serviceData["thumbnail"] : osparc.dashboard.StudyBrowserButtonItem.SERVICE_ICON

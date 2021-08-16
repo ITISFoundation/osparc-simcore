@@ -1,21 +1,46 @@
 import asyncio
+import base64
+import json
 import logging
 import tempfile
 import traceback
-from contextlib import contextmanager
+from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, Generator, List, Tuple
+from typing import AsyncGenerator, List, Tuple
 
 import aiodocker
 import aiofiles
 import yaml
-from async_generator import asynccontextmanager
 from async_timeout import timeout
-from fastapi import HTTPException, status
+from fastapi import HTTPException
+from settings_library.docker_registry import RegistrySettings
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
 logger = logging.getLogger(__name__)
+
+
+async def login_registry(settings: RegistrySettings) -> None:
+    def create_docker_config_file(settings: RegistrySettings) -> None:
+        docker_config = {
+            "auths": {
+                f"{settings.resolved_registry_url}": {
+                    "auth": base64.b64encode(
+                        f"{settings.REGISTRY_USER}:{settings.REGISTRY_PW.get_secret_value()}".encode(
+                            "utf-8"
+                        )
+                    ).decode("utf-8")
+                }
+            }
+        }
+        conf_file = Path.home() / ".docker" / "config.json"
+        conf_file.parent.mkdir(exist_ok=True, parents=True)
+        conf_file.write_text(json.dumps(docker_config))
+
+    if settings.REGISTRY_AUTH:
+        await asyncio.get_event_loop().run_in_executor(
+            None, create_docker_config_file, settings
+        )
 
 
 @asynccontextmanager
@@ -31,18 +56,16 @@ async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
         await aiofiles.os.remove(file_path)
 
 
-@contextmanager
-def docker_client() -> Generator[aiodocker.Docker, None, None]:
+@asynccontextmanager
+async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
     docker = aiodocker.Docker()
     try:
         yield docker
     except aiodocker.exceptions.DockerError as error:
         logger.exception("An unexpected Docker error occurred")
-        raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error.message
-        ) from error
+        raise HTTPException(error.status, detail=error.message) from error
     finally:
-        docker.close()
+        await docker.close()
 
 
 async def async_command(command: str, command_timeout: float) -> Tuple[bool, str]:

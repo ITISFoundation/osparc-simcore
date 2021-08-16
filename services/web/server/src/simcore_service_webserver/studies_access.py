@@ -11,28 +11,27 @@
 FIXME: Refactor to reduce modules coupling! See all TODO: .``from ...`` comments
 """
 import logging
-import uuid
 from functools import lru_cache
 from typing import Dict
+from uuid import UUID, uuid5
 
 from aiohttp import web
+from aiohttp_session import get_session
 from aioredlock import Aioredlock
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .constants import INDEX_RESOURCE_NAME
 from .login.decorators import login_required
-from .resource_manager.config import (
-    APP_CLIENT_REDIS_LOCK_KEY,
-    GUEST_USER_RC_LOCK_FORMAT,
-)
+from .resource_manager.config import GUEST_USER_RC_LOCK_FORMAT
+from .resource_manager.redis import get_redis_lock_manager
 from .security_api import is_anonymous, remember
 from .storage_api import copy_data_folders_from_project
 from .utils import compose_error_msg
 
 log = logging.getLogger(__name__)
 
-BASE_UUID = uuid.UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
+BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
 
 @lru_cache()
@@ -42,9 +41,7 @@ def compose_uuid(template_uuid, user_id, query="") -> str:
 
     Enforces a constraint: a user CANNOT have multiple copies of the same template
     """
-    new_uuid = str(
-        uuid.uuid5(BASE_UUID, str(template_uuid) + str(user_id) + str(query))
-    )
+    new_uuid = str(uuid5(BASE_UUID, str(template_uuid) + str(user_id) + str(query)))
     return new_uuid
 
 
@@ -70,7 +67,7 @@ async def create_temporary_user(request: web.Request):
     from .security_api import encrypt_password
 
     db = get_storage(request.app)
-    lock_manager: Aioredlock = request.app[APP_CLIENT_REDIS_LOCK_KEY]
+    lock_manager: Aioredlock = get_redis_lock_manager(request.app)
 
     # TODO: avatar is an icon of the hero!
     random_uname = get_random_string(min_len=5)
@@ -173,7 +170,7 @@ async def copy_study_to_account(
     except ProjectNotFoundError:
         # New project cloned from template
         project, nodes_map = clone_project_document(
-            template_project, forced_copy_project_id=project_uuid
+            template_project, forced_copy_project_id=UUID(project_uuid)
         )
 
         # remove template access rights
@@ -273,9 +270,14 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     if is_anonymous_user:
         log.debug("Auto login for anonymous user %s", user["name"])
         identity = user["email"]
-        await remember(request, response, identity)
 
-    raise response
+        await remember(request, response, identity)
+        assert (await get_session(request))["AIOHTTP_SECURITY"] == identity
+        # NOTE: session is encrypted and stored in a cookie in the session middleware
+
+    # WARNING: do NOT raise this response. From aiohttp 3.7.X, response is rebuild and cookie ignore.
+    # TODO: PC: security with SessionIdentityPolicy, session with EncryptedCookieStorage -> remember() and raise response.
+    return response
 
 
 @app_module_setup(__name__, ModuleCategory.ADDON, logger=log)

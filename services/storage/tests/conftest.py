@@ -13,20 +13,18 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import randrange
-from typing import Dict, Iterator, Tuple
+from typing import Any, Dict, Iterator, Tuple
 
 import dotenv
 import pytest
 import simcore_service_storage
-import tests.utils
 from aiohttp import web
 from aiopg.sa import create_engine
 from servicelib.application import create_safe_application
-from simcore_service_storage.datcore_wrapper import DatcoreWrapper
+from simcore_service_storage.constants import SIMCORE_S3_STR
 from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.s3wrapper.s3_client import MinioClientWrapper
-from simcore_service_storage.settings import SIMCORE_S3_STR
 from tests.utils import (
     ACCESS_KEY,
     BUCKET_NAME,
@@ -38,7 +36,10 @@ from tests.utils import (
     USER_ID,
 )
 
+import tests
+
 pytest_plugins = [
+    "pytest_simcore.cli_runner",
     "pytest_simcore.repository_paths",
     "tests.fixtures.data_models",
 ]
@@ -187,7 +188,7 @@ async def postgres_engine(loop, postgres_service_url):
 
 
 @pytest.fixture(scope="session")
-def minio_service(docker_services, docker_ip):
+def minio_service(docker_services, docker_ip) -> Dict[str, Any]:
 
     # Build URL to service listening on random port.
     url = "http://%s:%d/" % (
@@ -214,7 +215,7 @@ def minio_service(docker_services, docker_ip):
 
 
 @pytest.fixture(scope="module")
-def s3_client(minio_service):
+def s3_client(minio_service: Dict[str, Any]) -> MinioClientWrapper:
 
     s3_client = MinioClientWrapper(
         endpoint=minio_service["endpoint"],
@@ -246,7 +247,9 @@ def mock_files_factory(tmpdir_factory):
 
 
 @pytest.fixture(scope="function")
-def dsm_mockup_complete_db(postgres_service_url, s3_client) -> Tuple[Dict, Dict]:
+def dsm_mockup_complete_db(
+    postgres_service_url, s3_client
+) -> Tuple[Dict[str, str], Dict[str, str]]:
 
     tests.utils.fill_tables_from_csv_files(url=postgres_service_url)
 
@@ -361,29 +364,6 @@ def dsm_mockup_db(
 
 
 @pytest.fixture(scope="function")
-async def datcore_testbucket(loop, mock_files_factory):
-    # TODO: what if I do not have an app to the the config from?
-    api_token = os.environ.get("BF_API_KEY")
-    api_secret = os.environ.get("BF_API_SECRET")
-
-    if api_secret is None:
-        yield "no_bucket"
-        return
-
-    with ThreadPoolExecutor(2) as pool:
-        dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
-
-        await dcw.create_test_dataset(BUCKET_NAME)
-        tmp_files = mock_files_factory(2)
-        for f in tmp_files:
-            await dcw.upload_file(BUCKET_NAME, os.path.normpath(f))
-
-        yield BUCKET_NAME, tmp_files[0], tmp_files[1]
-
-        await dcw.delete_test_dataset(BUCKET_NAME)
-
-
-@pytest.fixture(scope="function")
 def moduleless_app(loop, aiohttp_server) -> web.Application:
     app: web.Application = create_safe_application()
     # creates a dummy server
@@ -414,54 +394,59 @@ def dsm_fixture(s3_client, postgres_engine, loop, moduleless_app):
 
 
 @pytest.fixture(scope="function")
-async def datcore_structured_testbucket(loop, mock_files_factory):
+async def datcore_structured_testbucket(loop, mock_files_factory, moduleless_app):
     api_token = os.environ.get("BF_API_KEY")
     api_secret = os.environ.get("BF_API_SECRET")
 
-    if api_secret is None:
+    if api_token is None or api_secret is None:
         yield "no_bucket"
         return
+    import warnings
 
-    with ThreadPoolExecutor(2) as pool:
-        dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
+    warnings.warn("DISABLED!!!")
+    raise Exception
+    # TODO: there are some missing commands in datcore-adapter before this can run
+    # this shall be used when the time comes and this code should be enabled again
 
-        dataset_id = await dcw.create_test_dataset(BUCKET_NAME)
-        assert dataset_id, f"Could not create dataset {BUCKET_NAME}"
+    # dataset: DatasetMetaData = await datcore_adapter.create_dataset(
+    #     moduleless_app, api_token, api_secret, BUCKET_NAME
+    # )
+    # dataset_id = dataset.dataset_id
+    # assert dataset_id, f"Could not create dataset {BUCKET_NAME}"
 
-        tmp_files = mock_files_factory(3)
+    # tmp_files = mock_files_factory(3)
 
-        # first file to the root
-        filename1 = os.path.normpath(tmp_files[0])
-        file_id1 = await dcw.upload_file_to_id(dataset_id, filename1)
-        assert file_id1, f"Could not upload {filename1} to the root of {BUCKET_NAME}"
+    # # first file to the root
+    # filename1 = os.path.normpath(tmp_files[0])
+    # await datcore_adapter.upload_file(moduleless_app, api_token, api_secret, filename1)
+    # file_id1 = await dcw.upload_file_to_id(dataset_id, filename1)
+    # assert file_id1, f"Could not upload {filename1} to the root of {BUCKET_NAME}"
 
-        # create first level folder
-        collection_id1 = await dcw.create_collection(dataset_id, "level1")
+    # # create first level folder
+    # collection_id1 = await dcw.create_collection(dataset_id, "level1")
 
-        # upload second file
-        filename2 = os.path.normpath(tmp_files[1])
-        file_id2 = await dcw.upload_file_to_id(collection_id1, filename2)
-        assert file_id2, f"Could not upload {filename2} to the {BUCKET_NAME}/level1"
+    # # upload second file
+    # filename2 = os.path.normpath(tmp_files[1])
+    # file_id2 = await dcw.upload_file_to_id(collection_id1, filename2)
+    # assert file_id2, f"Could not upload {filename2} to the {BUCKET_NAME}/level1"
 
-        # create 3rd level folder
-        filename3 = os.path.normpath(tmp_files[2])
-        collection_id2 = await dcw.create_collection(collection_id1, "level2")
-        file_id3 = await dcw.upload_file_to_id(collection_id2, filename3)
-        assert (
-            file_id3
-        ), f"Could not upload {filename3} to the {BUCKET_NAME}/level1/level2"
+    # # create 3rd level folder
+    # filename3 = os.path.normpath(tmp_files[2])
+    # collection_id2 = await dcw.create_collection(collection_id1, "level2")
+    # file_id3 = await dcw.upload_file_to_id(collection_id2, filename3)
+    # assert file_id3, f"Could not upload {filename3} to the {BUCKET_NAME}/level1/level2"
 
-        yield {
-            "dataset_id": dataset_id,
-            "coll1_id": collection_id1,
-            "coll2_id": collection_id2,
-            "file_id1": file_id1,
-            "filename1": tmp_files[0],
-            "file_id2": file_id2,
-            "filename2": tmp_files[1],
-            "file_id3": file_id3,
-            "filename3": tmp_files[2],
-            "dcw": dcw,
-        }
+    # yield {
+    #     "dataset_id": dataset_id,
+    #     "coll1_id": collection_id1,
+    #     "coll2_id": collection_id2,
+    #     "file_id1": file_id1,
+    #     "filename1": tmp_files[0],
+    #     "file_id2": file_id2,
+    #     "filename2": tmp_files[1],
+    #     "file_id3": file_id3,
+    #     "filename3": tmp_files[2],
+    #     "dcw": dcw,
+    # }
 
-        await dcw.delete_test_dataset(BUCKET_NAME)
+    # await dcw.delete_test_dataset(BUCKET_NAME)

@@ -81,6 +81,12 @@ ROLES_PERMISSIONS = {
         ],
         "inherits": [UserRole.USER],
     },
+    UserRole.ADMIN: {
+        "can": [
+            "storage.files.sync",
+        ],
+        "inherits": [UserRole.TESTER],
+    },
 }
 
 

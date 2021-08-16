@@ -47,6 +47,27 @@ function parseCommandLineArgumentsTemplate(args) {
   }
 }
 
+function parseCommandLineArgumentsStudyDispatcherParams(args) {
+  // [url] [download_link] [file_size] [--demo]
+
+  if (args.length < 3) {
+    console.log('More arguments expected: [url] [download_link] [file_size] [--demo]');
+    process.exit(1);
+  }
+
+  const urlPrefix = args[0];
+  const params = {};
+  params["download_link"] = args[1];
+  params["file_size"] = args[2];
+  const enableDemoMode = args.includes("--demo");
+
+  return {
+    urlPrefix,
+    params,
+    enableDemoMode
+  }
+}
+
 function getUserAndPass(args) {
   const userPass = {
     user: null,
@@ -129,6 +150,23 @@ async function getVisibleChildrenIDs(page, parentSelector) {
     return children;
   }, parentSelector);
   return childrenIDs;
+}
+
+async function getDashboardCardLabel(page, selector) {
+  const cardLabel = await page.evaluate((selector) => {
+    let label = null;
+    const card = document.querySelector(selector);
+    if (card.children.length) {
+      // first child is the card layout
+      const cardLayout = card.children[0];
+      if (cardLayout.children.length) {
+        // first child is the label
+        label = cardLayout.children[0].innerText;
+      }
+    }
+    return label;
+  }, selector);
+  return cardLabel;
 }
 
 async function getStyle(page, selector) {
@@ -238,6 +276,7 @@ async function makePingRequest(page, path) {
   // https://github.com/Netflix/pollyjs/issues/149#issuecomment-481108446
   await page.setBypassCSP(true);
   return await page.evaluate(async (path) => {
+    // eslint-disable-next-line no-useless-escape
     const url = (path).replace(/\/\//g, "\/");
     console.log("makePingRequest", url);
     return fetch(url, {
@@ -349,8 +388,6 @@ async function takeScreenshot(page, captureName = "") {
   filename = filename.split(":").join("-")
   filename = filename + ".jpg";
   const path = pathLib.join(__dirname, SCREENSHOTS_DIR, filename);
-  console.log(path);
-
   try {
     await page.screenshot({
       fullPage: true,
@@ -358,6 +395,7 @@ async function takeScreenshot(page, captureName = "") {
       type: 'jpeg',
       quality: 15
     })
+    console.log('screenshot taken', path);
   }
   catch (err) {
     console.error("Error taking screenshot", err);
@@ -432,6 +470,7 @@ module.exports = {
   getNodeTreeItemIDs,
   getFileTreeItemIDs,
   getVisibleChildrenIDs,
+  getDashboardCardLabel,
   getStyle,
   fetchReq,
   makeRequest,
@@ -451,6 +490,7 @@ module.exports = {
   extractWorkbenchData,
   parseCommandLineArguments,
   parseCommandLineArgumentsTemplate,
+  parseCommandLineArgumentsStudyDispatcherParams,
   getGrayLogSnapshotUrl,
   typeInInputElement,
   isElementVisible,

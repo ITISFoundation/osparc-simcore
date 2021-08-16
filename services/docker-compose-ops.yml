@@ -67,7 +67,7 @@ services:
     image: rediscommander/redis-commander:latest
     init: true
     environment:
-      - REDIS_HOSTS=${REDIS_HOST}
+      - REDIS_HOSTS=resources:${REDIS_HOST}:${REDIS_PORT}:0,locks:${REDIS_HOST}:${REDIS_PORT}:1,celery_backend:${REDIS_HOST}:${REDIS_PORT}:2
     ports:
       - "18081:8081"
     networks:

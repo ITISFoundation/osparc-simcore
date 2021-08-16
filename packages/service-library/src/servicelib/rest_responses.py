@@ -29,6 +29,7 @@ def is_enveloped_from_text(text: str) -> bool:
 
 
 def is_enveloped(payload: Union[Mapping, str]) -> bool:
+    # pylint: disable=isinstance-second-argument-not-valid-type
     if isinstance(payload, Mapping):
         return is_enveloped_from_map(payload)
     if isinstance(payload, str):

@@ -17,7 +17,7 @@ async def shutdown_info(app: web.Application):
 def create_safe_application(config: Optional[Dict] = None) -> web.Application:
     app = web.Application()
 
-    # Enxures config entry
+    # Ensures config entry
     app[APP_CONFIG_KEY] = config or {}
 
     app.on_startup.append(startup_info)

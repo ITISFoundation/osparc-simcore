@@ -13,8 +13,8 @@ from celery.contrib.testing.worker import TestWorkController
 from fastapi import FastAPI
 from models_library.settings.celery import CeleryConfig
 from pydantic.types import PositiveInt
-from simcore_service_director_v2.models.domains.comp_tasks import Image
-from simcore_service_director_v2.modules.celery import CeleryClient, CeleryTaskIn
+from simcore_service_director_v2.models.schemas.comp_scheduler import TaskIn
+from simcore_service_director_v2.modules.celery import CeleryClient
 
 
 # Fixtures -----------------------------------------------------------------
@@ -33,16 +33,15 @@ def celery_configuration() -> CeleryConfig:
     return CeleryConfig.create_from_env()
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def minimal_celery_config(
     project_env_devel_environment, monkeypatch, celery_config: Dict[str, Any]
 ):
     """set a minimal configuration for testing the director connection only"""
-    monkeypatch.setenv("DIRECTOR_ENABLED", "0")
-    monkeypatch.setenv("POSTGRES_ENABLED", "0")
-    monkeypatch.setenv("CELERY_ENABLED", "1")
-    monkeypatch.setenv("REGISTRY_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_SCHEDULER_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V0_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_ENABLED", "1")
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
 
     monkeypatch.setattr(CeleryConfig, "broker_url", celery_config["broker_url"])
     monkeypatch.setattr(CeleryConfig, "result_backend", celery_config["result_backend"])
@@ -76,7 +75,9 @@ def celery_enable_logging() -> bool:
 
 # test pytest-celery here
 # https://github.com/celery/celery/issues/3642#issuecomment-369057682 defines why this works
-def test_create_task(celery_app: Celery, celery_worker: TestWorkController):
+def test_create_task(
+    minimal_celery_config: None, celery_app: Celery, celery_worker: TestWorkController
+):
     @celery_app.task
     def mul(x, y):
         return x * y
@@ -87,9 +88,10 @@ def test_create_task(celery_app: Celery, celery_worker: TestWorkController):
 
 @pytest.mark.parametrize("runtime_requirements", ["cpu", "gpu", "mpi", "gpu:mpi"])
 def test_send_computation_tasks(
+    minimal_celery_config,
     minimal_app: FastAPI,
     celery_app: Celery,
-    celery_worker_parameters: None,
+    celery_worker_parameters,
     celery_worker: TestWorkController,
     celery_configuration: CeleryConfig,
     user_id: PositiveInt,
@@ -115,8 +117,8 @@ def test_send_computation_tasks(
     )
     celery_worker.reload()
 
-    list_of_tasks: List[CeleryTaskIn] = [
-        CeleryTaskIn(node_id=f"task_{i}", runtime_requirements=runtime_requirements)
+    list_of_tasks: List[TaskIn] = [
+        TaskIn(node_id=f"{uuid4()}", runtime_requirements=runtime_requirements)
         for i in range(3)
     ]
     celery_client: CeleryClient = minimal_app.state.celery_client
@@ -135,50 +137,3 @@ def test_send_computation_tasks(
         )
 
     callback_fct.assert_called()
-
-
-@pytest.mark.parametrize(
-    "image, exp_requirement",
-    [
-        (
-            Image(
-                name="simcore/services/dynamic/fake",
-                tag="1.2.3",
-                requires_gpu=False,
-                requires_mpi=False,
-            ),
-            "cpu",
-        ),
-        (
-            Image(
-                name="simcore/services/dynamic/fake",
-                tag="1.2.3",
-                requires_gpu=True,
-                requires_mpi=False,
-            ),
-            "gpu",
-        ),
-        (
-            Image(
-                name="simcore/services/dynamic/fake",
-                tag="1.2.3",
-                requires_gpu=False,
-                requires_mpi=True,
-            ),
-            "mpi",
-        ),
-        (
-            Image(
-                name="simcore/services/dynamic/fake",
-                tag="1.2.3",
-                requires_gpu=True,
-                requires_mpi=True,
-            ),
-            "gpu:mpi",
-        ),
-    ],
-)
-def test_celery_in_constructor(image: Image, exp_requirement: str):
-    assert CeleryTaskIn.from_node_image("fake_node_id", image) == CeleryTaskIn(
-        "fake_node_id", exp_requirement
-    )

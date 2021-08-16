@@ -16,11 +16,11 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import aiobotocore
 import attr
 import sqlalchemy as sa
+from aiobotocore.client import AioBaseClient
 from aiobotocore.session import AioSession, ClientCreatorContext
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.result import RowProxy
-from blackfynn.base import UnauthorizedException
 from servicelib.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
@@ -34,18 +34,7 @@ from .access_layer import (
     get_project_access_rights,
     get_readable_project_ids,
 )
-from .datcore_wrapper import DatcoreWrapper
-from .models import (
-    DatasetMetaData,
-    FileMetaData,
-    FileMetaDataEx,
-    file_meta_data,
-    get_location_from_id,
-    projects,
-)
-from .s3 import get_config_s3
-from .s3wrapper.s3_client import MinioClientWrapper
-from .settings import (
+from .constants import (
     APP_CONFIG_KEY,
     APP_DB_ENGINE_KEY,
     APP_DSM_KEY,
@@ -55,6 +44,17 @@ from .settings import (
     SIMCORE_S3_ID,
     SIMCORE_S3_STR,
 )
+from .datcore_adapter import datcore_adapter
+from .models import (
+    DatasetMetaData,
+    FileMetaData,
+    FileMetaDataEx,
+    file_meta_data,
+    get_location_from_id,
+    projects,
+)
+from .s3wrapper.s3_client import MinioClientWrapper
+from .settings import Settings
 from .utils import download_to_file_or_raise, expo
 
 logger = logging.getLogger(__name__)
@@ -64,17 +64,16 @@ postgres_service_retry_policy_kwargs = PostgresRetryPolicyUponOperation(logger).
 
 def setup_dsm(app: web.Application):
     async def _cleanup_context(app: web.Application):
-        main_cfg = app[APP_CONFIG_KEY]
-        s3_cfg = get_config_s3(app)
+        cfg: Settings = app[APP_CONFIG_KEY]
 
-        with ThreadPoolExecutor(max_workers=main_cfg["max_workers"]) as executor:
+        with ThreadPoolExecutor(max_workers=cfg.STORAGE_MAX_WORKERS) as executor:
             dsm = DataStorageManager(
                 s3_client=app.get(APP_S3_KEY),
                 engine=app.get(APP_DB_ENGINE_KEY),
                 loop=asyncio.get_event_loop(),
                 pool=executor,
-                simcore_bucket_name=s3_cfg["bucket_name"],
-                has_project_db=not main_cfg.get("testing", False),
+                simcore_bucket_name=cfg.STORAGE_S3.S3_BUCKET_NAME,
+                has_project_db=not cfg.STORAGE_TESTING,
                 app=app,
             )  # type: ignore
 
@@ -156,6 +155,8 @@ class DataStorageManager:
     def _create_client_context(self) -> ClientCreatorContext:
         assert hasattr(self.session, "create_client")
         # pylint: disable=no-member
+
+        # SEE API in https://botocore.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html
         return self.session.create_client(
             "s3",
             endpoint_url=self.s3_client.endpoint_url,
@@ -173,8 +174,10 @@ class DataStorageManager:
         simcore_s3 = {"name": SIMCORE_S3_STR, "id": SIMCORE_S3_ID}
         locs.append(simcore_s3)
 
-        ping_ok = await self.ping_datcore(user_id=user_id)
-        if ping_ok:
+        api_token, api_secret = self._get_datcore_tokens(user_id)
+        if await datcore_adapter.check_user_can_connect(
+            self.app, api_token, api_secret
+        ):
             datcore = {"name": DATCORE_STR, "id": DATCORE_ID}
             locs.append(datcore)
 
@@ -183,28 +186,6 @@ class DataStorageManager:
     @classmethod
     def location_from_id(cls, location_id: str):
         return get_location_from_id(location_id)
-
-    async def ping_datcore(self, user_id: str) -> bool:
-        """Checks whether user account in datcore is accesible
-
-        :param user_id: user identifier
-        :type user_id: str
-        :return: True if user can access his datcore account
-        :rtype: bool
-        """
-
-        api_token, api_secret = self._get_datcore_tokens(user_id)
-        logger.info("token: %s, secret %s", api_token, api_secret)
-        if api_token:
-            try:
-                dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-                profile = await dcw.ping()
-                if profile:
-                    return True
-            except UnauthorizedException:
-                logger.exception("Connection to datcore not possible")
-
-        return False
 
     # LIST/GET ---------------------------
 
@@ -293,8 +274,9 @@ class DataStorageManager:
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-            data = await dcw.list_files_raw()
+            return await datcore_adapter.list_all_datasets_files_metadatas(
+                self.app, api_token, api_secret
+            )
 
         if uuid_filter:
             # TODO: incorporate this in db query!
@@ -333,8 +315,10 @@ class DataStorageManager:
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-            data: List[FileMetaData] = await dcw.list_files_raw_dataset(dataset_id)
+            # lists all the files inside the dataset
+            return await datcore_adapter.list_all_files_metadatas_in_dataset(
+                self.app, api_token, api_secret, dataset_id
+            )
 
         return data
 
@@ -370,8 +354,7 @@ class DataStorageManager:
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-            data = await dcw.list_datasets()
+            return await datcore_adapter.list_datasets(self.app, api_token, api_secret)
 
         return data
 
@@ -398,20 +381,23 @@ class DataStorageManager:
 
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies
-            api_token, api_secret = self._get_datcore_tokens(user_id)
-            _dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-            data = []  # await _dcw.list_file(file_uuid)
-            return data
+            # api_token, api_secret = self._get_datcore_tokens(user_id)
+            import warnings
+
+            warnings.warn("NOT IMPLEMENTED!!!")
+            return None
 
     # UPLOAD/DOWNLOAD LINKS ---------------------------
 
     async def upload_file_to_datcore(
-        self, user_id: str, local_file_path: str, destination_id: str
+        self, _user_id: str, _local_file_path: str, _destination_id: str
     ):
+        import warnings
+
+        warnings.warn("NOT IMPLEMENTED!!!")
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
-        api_token, api_secret = self._get_datcore_tokens(user_id)
-        dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-        await dcw.upload_file_to_id(destination_id, local_file_path)
+        # api_token, api_secret = self._get_datcore_tokens(user_id)
+        # await dcw.upload_file_to_id(destination_id, local_file_path)
 
     async def _metadata_file_updater(
         self,
@@ -436,7 +422,7 @@ class DataStorageManager:
             continue_loop = True
             sleep_generator = expo()
             update_succeeded = False
-            
+
             while continue_loop:
                 result = await client.list_objects_v2(
                     Bucket=bucket_name, Prefix=object_name
@@ -571,12 +557,11 @@ class DataStorageManager:
         link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
         return link
 
-    async def download_link_datcore(self, user_id: str, file_id: str) -> Dict[str, str]:
-        link = ""
+    async def download_link_datcore(self, user_id: str, file_id: str) -> URL:
         api_token, api_secret = self._get_datcore_tokens(user_id)
-        dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-        link, filename = await dcw.download_link_by_id(file_id)
-        return link, filename
+        return await datcore_adapter.get_file_download_presigned_link(
+            self.app, api_token, api_secret, file_id
+        )
 
     # COPY -----------------------------
 
@@ -624,9 +609,9 @@ class DataStorageManager:
 
             # Uploads local -> DATCore
             await self.upload_file_to_datcore(
-                user_id=user_id,
-                local_file_path=local_file_path,
-                destination_id=dest_uuid,
+                _user_id=user_id,
+                _local_file_path=local_file_path,
+                _destination_id=dest_uuid,
             )
 
     async def copy_file_datcore_s3(
@@ -910,14 +895,13 @@ class DataStorageManager:
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-            # destination, filename = _parse_datcore(file_uuid)
-            file_id = file_uuid
-            return await dcw.delete_file_by_id(file_id)
+            await datcore_adapter.delete_file(
+                self.app, api_token, api_secret, file_uuid
+            )
 
     async def delete_project_simcore_s3(
         self, user_id: str, project_id: str, node_id: Optional[str] = None
-    ) -> web.Response:
+    ) -> Optional[web.Response]:
 
         """Deletes all files from a given node in a project in simcore.s3 and updated db accordingly.
         If node_id is not given, then all the project files db entries are deleted.
@@ -1028,3 +1012,82 @@ class DataStorageManager:
             result = await conn.execute(stmt)
             link = to_meta_data_extended(await result.first())
             return link
+
+    async def synchronise_meta_data_table(
+        self, location: str, dry_run: bool
+    ) -> Dict[str, Any]:
+
+        PRUNE_CHUNK_SIZE = 20
+
+        removed: List[str] = []
+        to_remove: List[str] = []
+
+        async def _prune_db_table(conn):
+            if not dry_run:
+                await conn.execute(
+                    file_meta_data.delete().where(
+                        file_meta_data.c.object_name.in_(to_remove)
+                    )
+                )
+            logger.info(
+                "%s %s orphan items",
+                "Would have deleted" if dry_run else "Deleted",
+                len(to_remove),
+            )
+            removed.extend(to_remove)
+            to_remove.clear()
+
+        # ----------
+
+        assert (  # nosec
+            location == SIMCORE_S3_STR
+        ), "Only with s3, no other sync implemented"  # nosec
+
+        if location == SIMCORE_S3_STR:
+
+            # NOTE: only valid for simcore, since datcore data is not in the database table
+            # let's get all the files in the table
+            logger.warning(
+                "synchronisation of database/s3 storage started, this will take some time..."
+            )
+
+            async with self.engine.acquire() as conn, self._create_client_context() as s3_client:
+
+                number_of_rows_in_db = await conn.scalar(file_meta_data.count()) or 0
+                logger.warning(
+                    "Total number of entries to check %d",
+                    number_of_rows_in_db,
+                )
+
+                assert isinstance(s3_client, AioBaseClient)  # nosec
+
+                async for row in conn.execute(
+                    sa.select([file_meta_data.c.object_name])
+                ):
+                    s3_key = row.object_name  # type: ignore
+
+                    # now check if the file exists in S3
+                    # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
+                    response = await s3_client.list_objects_v2(
+                        Bucket=self.simcore_bucket_name, Prefix=s3_key
+                    )
+                    if response.get("KeyCount", 0) == 0:
+                        # this file does not exist in S3
+                        to_remove.append(s3_key)
+
+                    if len(to_remove) >= PRUNE_CHUNK_SIZE:
+                        await _prune_db_table(conn)
+
+                if to_remove:
+                    await _prune_db_table(conn)
+
+                assert len(to_remove) == 0  # nosec
+                assert len(removed) <= number_of_rows_in_db  # nosec
+
+                logger.info(
+                    "%s %d entries ",
+                    "Would delete" if dry_run else "Deleting",
+                    len(removed),
+                )
+
+        return {"removed": removed}

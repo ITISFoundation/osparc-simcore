@@ -120,9 +120,9 @@ qx.Class.define("osparc.component.widget.NodeOutput", {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const workbench = study.getWorkbench();
       const outputNodes = [];
-      const outputNodeIds = this.getNode().getOutputNodes();
-      outputNodeIds.forEach(outputNodeId => {
-        outputNodes.push(workbench.getNode(outputNodeId));
+      const exposedNodeIds = this.getNode().getExposedNodeIDs();
+      exposedNodeIds.forEach(exposedNodeId => {
+        outputNodes.push(workbench.getNode(exposedNodeId));
       });
       return outputNodes;
     },

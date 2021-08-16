@@ -5,7 +5,7 @@ import logging
 from collections.abc import MutableMapping
 from typing import Dict
 
-from . import exceptions
+from ..node_ports_common import exceptions
 from ._data_item import DataItem
 
 log = logging.getLogger(__name__)

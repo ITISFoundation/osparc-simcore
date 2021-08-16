@@ -6,28 +6,27 @@ import traceback
 from collections import deque
 from itertools import chain
 from pathlib import Path
-from typing import Deque, Dict, List, Optional, Tuple
+from pprint import pformat
+from typing import Any, Deque, Dict, List, Optional, Tuple
 
 import aiofiles
 from aiohttp import ClientSession, ClientTimeout, web
 from models_library.projects import AccessRights, Project
 from models_library.projects_nodes_io import BaseFileLink, NodeID
 from models_library.utils.nodes import compute_node_hash, project_node_io_payload_cb
-from simcore_service_webserver.director_v2 import create_or_update_pipeline
-from simcore_service_webserver.projects.projects_api import (
-    delete_project,
-    get_project_for_user,
-)
-from simcore_service_webserver.projects.projects_db import APP_PROJECT_DBAPI
-from simcore_service_webserver.projects.projects_exceptions import ProjectsException
-from simcore_service_webserver.storage_handlers import (
+
+from ...director_v2 import create_or_update_pipeline
+from ...projects.projects_api import delete_project, get_project_for_user
+from ...projects.projects_db import APP_PROJECT_DBAPI
+from ...projects.projects_exceptions import ProjectsException
+from ...storage_handlers import (
     get_file_download_url,
     get_file_upload_url,
     get_project_files_metadata,
+    get_storage_locations_for_user,
 )
-from simcore_service_webserver.users_api import get_user
-from simcore_service_webserver.utils import now_str
-
+from ...users_api import get_user
+from ...utils import now_str
 from ..exceptions import ExporterException
 from ..file_downloader import ParallelDownloader
 from ..utils import path_getsize
@@ -42,7 +41,7 @@ log = logging.getLogger(__name__)
 async def download_all_files_from_storage(
     app: web.Application, download_links: Deque[LinkAndPath2]
 ) -> None:
-    """ Downloads links to files in their designed storage_path_to_file """
+    """Downloads links to files in their designed storage_path_to_file"""
     parallel_downloader = ParallelDownloader()
     for link_and_path in download_links:
         log.debug(
@@ -70,37 +69,34 @@ async def extract_download_links(
     app: web.Application, dir_path: Path, project_id: str, user_id: int
 ) -> Deque[LinkAndPath2]:
     download_links: Deque[LinkAndPath2] = deque()
-
     try:
-        s3_metadata = await get_project_files_metadata(
-            app=app,
-            location_id="0",
-            uuid_filter=project_id,
-            user_id=user_id,
+        available_locations: List[
+            Dict[str, Any]
+        ] = await get_storage_locations_for_user(app=app, user_id=user_id)
+        log.debug(
+            "will create download links for following locations: %s",
+            pformat(available_locations),
+        )
+
+        all_file_metadata = await asyncio.gather(
+            *[
+                get_project_files_metadata(
+                    app=app,
+                    location_id=str(loc["id"]),
+                    uuid_filter=project_id,
+                    user_id=user_id,
+                )
+                for loc in available_locations
+            ]
         )
     except Exception as e:
         raise ExporterException(
             f"Error while requesting project files metadata for S3 for project {project_id}"
         ) from e
 
-    log.debug("s3 files metadata %s: ", s3_metadata)
+    log.debug("files metadata %s: ", all_file_metadata)
 
-    # Still not sure if these are required, when pulling files from blackfynn they end up in S3
-    # I am not sure there is an example where we need to directly export form blackfynn
-    try:
-        blackfynn_metadata = await get_project_files_metadata(
-            app=app,
-            location_id="1",
-            uuid_filter=project_id,
-            user_id=user_id,
-        )
-    except Exception as e:
-        raise ExporterException(
-            f"Error while requesting project files metadata for blackfynn for project {project_id}"
-        ) from e
-    log.debug("blackfynn files metadata %s: ", blackfynn_metadata)
-
-    for file_metadata in chain(s3_metadata, blackfynn_metadata):
+    for file_metadata in chain.from_iterable(all_file_metadata):
         try:
             download_link = await get_file_download_url(
                 app=app,

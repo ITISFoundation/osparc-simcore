@@ -19,7 +19,6 @@ async function runTutorial () {
   const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, enableDemoMode);
 
   try {
-    tutorial.startScreenshooter();
     const page = await tutorial.beforeScript();
     const studyData = await tutorial.openStudyLink();
     const studyId = studyData["data"]["uuid"];
@@ -28,8 +27,7 @@ async function runTutorial () {
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     const nodeIdViewer = workbenchData["nodeIds"][1];
 
-    // Some time for loading the workbench
-    await tutorial.waitFor(10000);
+    await tutorial.waitFor(10000, 'Some time for loading the workbench');
     await utils.takeScreenshot(page, screenshotPrefix + 'workbench_loaded');
 
     await tutorial.runPipeline();
@@ -39,7 +37,8 @@ async function runTutorial () {
       "logs.zip",
       "outputController.dat"
     ];
-    await tutorial.checkNodeResults(0, outFiles);
+    await tutorial.openNodeFiles(0)
+    await tutorial.checkResults2(outFiles);
 
 
     // open kember viewer
@@ -73,11 +72,12 @@ async function runTutorial () {
 
     // check output
     const outFiles2 = [
-      "Hear_Rate.csv",      
+      "Hear_Rate.csv",
       "Parasympathetic_Cell_Activity.csv",
       "Table_Data.csv"
     ];
-    await tutorial.checkNodeResults(1, outFiles2);
+    await tutorial.openNodeFiles(1)
+    await tutorial.checkResults2(outFiles2, false);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
@@ -85,7 +85,6 @@ async function runTutorial () {
   }
   finally {
     await tutorial.logOut();
-    tutorial.stopScreenshooter();
     await tutorial.close();
   }
 

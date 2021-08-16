@@ -6,7 +6,7 @@
 import random
 from copy import deepcopy
 from itertools import repeat
-from typing import Dict, List
+from typing import Dict, List, Type
 from unittest.mock import MagicMock
 
 import faker
@@ -119,7 +119,7 @@ async def test_get_profile(
     logged_user: Dict,
     client,
     user_role: UserRole,
-    expected: web.HTTPException,
+    expected: Type[web.HTTPException],
     primary_group: Dict[str, str],
     standard_groups: List[Dict[str, str]],
     all_group: Dict[str, str],
@@ -190,7 +190,7 @@ async def test_create_token(client, logged_user, tokens_db, expected):
     assert "/v0/me/tokens" == str(url)
 
     token = {
-        "service": "blackfynn",
+        "service": "pennsieve",
         "token_key": "4k9lyzBTS",
         "token_secret": "my secret",
     }
@@ -312,7 +312,7 @@ async def test_get_profile_with_failing_db_connection(
     logged_user,
     client,
     mock_failing_connection: MagicMock,
-    expected: web.HTTPException,
+    expected: Type[web.HTTPException],
 ):
     """
     Reproduces issue https://github.com/ITISFoundation/osparc-simcore/pull/1160

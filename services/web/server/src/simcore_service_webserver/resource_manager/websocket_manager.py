@@ -15,20 +15,23 @@
 """
 
 import logging
+from collections import namedtuple
 from contextlib import contextmanager
 from typing import Dict, Iterator, List, Optional, Union
 
-import aioredlock
 import attr
 from aiohttp import web
 
 from .config import get_service_deletion_timeout
-from .redis import get_redis_lock
 from .registry import get_registry
 
 log = logging.getLogger(__file__)
 
 SOCKET_ID_KEY = "socket_id"
+PROJECT_ID_KEY = "project_id"
+
+
+UserSessionID = namedtuple("UserSessionID", "user_id client_session_id")
 
 
 @attr.s(auto_attribs=True)
@@ -72,7 +75,7 @@ class WebsocketRegistry:
 
     async def get_socket_id(self) -> Optional[str]:
         log.debug(
-            "user %s/tab %s removing socket from registry...",
+            "user %s/tab %s getting socket from registry...",
             self.user_id,
             self.client_session_id,
         )
@@ -99,7 +102,7 @@ class WebsocketRegistry:
         )
 
     async def set_heartbeat(self) -> None:
-        """Extends TTL to avoid expiration of all resources under this session """
+        """Extends TTL to avoid expiration of all resources under this session"""
         registry = get_registry(self.app)
         await registry.set_key_alive(
             self._resource_key(), get_service_deletion_timeout(self.app)
@@ -150,7 +153,7 @@ class WebsocketRegistry:
         registry = get_registry(self.app)
         await registry.remove_resource(self._resource_key(), key)
 
-    async def find_users_of_resource(self, key: str, value: str) -> List[int]:
+    async def find_users_of_resource(self, key: str, value: str) -> List[UserSessionID]:
         log.debug(
             "user %s/tab %s finding %s:%s in registry...",
             self.user_id,
@@ -160,16 +163,10 @@ class WebsocketRegistry:
         )
         registry = get_registry(self.app)
         registry_keys = await registry.find_keys((key, value))
-        users = [int(x["user_id"]) for x in registry_keys]
-        return users
-
-    async def get_registry_lock(self) -> aioredlock.Lock:
-        log.debug(
-            "user %s/tab %s getting registry lock...",
-            self.user_id,
-            self.client_session_id,
-        )
-        return await get_redis_lock(self.app).lock(__name__, lock_timeout=10)
+        user_session_id_list = [
+            (int(x["user_id"]), x["client_session_id"]) for x in registry_keys
+        ]
+        return user_session_id_list
 
 
 @contextmanager

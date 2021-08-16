@@ -5,7 +5,6 @@
 import asyncio
 
 import pytest
-
 from servicelib.utils import logged_gather
 
 
@@ -63,8 +62,8 @@ async def test_logged_gather(loop, coros, mock_logger):
     # NOTE: only first error in the list is raised, since it is not RuntimeError, that task
     assert isinstance(excinfo.value, ValueError)
 
-    for task in asyncio.Task.all_tasks(loop):
-        if task is not asyncio.Task.current_task():
+    for task in asyncio.all_tasks(loop):
+        if task is not asyncio.current_task():
             # info
             task.print_stack()
 

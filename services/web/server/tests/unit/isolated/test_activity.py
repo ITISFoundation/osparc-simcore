@@ -9,14 +9,22 @@ import pytest
 import yaml
 from aiohttp import web
 from aiohttp.client_exceptions import ClientConnectionError
-
+from celery import Celery
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_mock import future_with_result
 from servicelib.application import create_safe_application
 from simcore_service_webserver.activity import handlers, setup_activity
+from simcore_service_webserver.computation_config import ComputationSettings
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
+
+
+@pytest.fixture
+def mocked_celery_client(celery_app: Celery, mocker):
+    mocker.patch(
+        "simcore_service_webserver.activity.celery_client._get_computation_settings",
+        return_value=ComputationSettings.create_from_env(),
+    )
 
 
 @pytest.fixture
@@ -34,26 +42,26 @@ def mocked_monitoring(loop, mocker, activity_data):
     cpu_ret = prometheus_data.get("cpu_return")
     mocker.patch(
         "simcore_service_webserver.activity.handlers.get_cpu_usage",
-        return_value=future_with_result(cpu_ret),
+        return_value=cpu_ret,
     )
 
     mem_ret = prometheus_data.get("memory_return")
     mocker.patch(
         "simcore_service_webserver.activity.handlers.get_memory_usage",
-        return_value=future_with_result(mem_ret),
+        return_value=mem_ret,
     )
 
     labels_ret = prometheus_data.get("labels_return")
     mocker.patch(
         "simcore_service_webserver.activity.handlers.get_container_metric_for_labels",
-        return_value=future_with_result(labels_ret),
+        return_value=labels_ret,
     )
 
     celery_data = activity_data.get("celery")
     celery_ret = celery_data.get("celery_return")
     mocker.patch(
         "simcore_service_webserver.activity.handlers.get_celery_reserved",
-        return_value=future_with_result(celery_ret),
+        return_value=celery_ret,
     )
 
 
@@ -82,7 +90,9 @@ def app_config(fake_data_dir: Path, osparc_simcore_root_dir: Path):
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_config, mock_orphaned_services):
+def client(
+    mocked_celery_client, loop, aiohttp_client, app_config, mock_orphaned_services
+):
     app = create_safe_application(app_config)
 
     setup_session(app)

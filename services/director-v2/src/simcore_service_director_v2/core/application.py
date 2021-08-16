@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from simcore_service_director_v2.modules import dask_client
 from starlette import status
 from starlette.exceptions import HTTPException
 
@@ -15,12 +16,13 @@ from ..api.errors.validation_error import http422_error_handler
 from ..meta import api_version, api_vtag, project_name, summary
 from ..modules import (
     celery,
+    comp_scheduler,
+    dask_client,
     db,
     director_v0,
-    docker_registry,
     dynamic_services,
+    dynamic_sidecar,
     remote_debug,
-    scheduler,
 )
 from ..utils.logging_utils import config_all_loggers
 from .events import on_shutdown, on_startup
@@ -31,14 +33,15 @@ logger = logging.getLogger(__name__)
 
 def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings is None:
-        settings = AppSettings.create_from_env()
+        settings = AppSettings.create_from_envs()
 
-    logging.basicConfig(level=settings.loglevel)
-    logging.root.setLevel(settings.loglevel)
+    logging.basicConfig(level=settings.LOG_LEVEL.value)
+    logging.root.setLevel(settings.LOG_LEVEL.value)
     logger.debug(settings.json(indent=2))
 
     app = FastAPI(
-        debug=settings.debug,
+        debug=settings.SC_BOOT_MODE
+        in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
         title=project_name,
         description=summary,
         version=api_version,
@@ -47,28 +50,41 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         redoc_url=None,  # default disabled
     )
 
+    logger.debug(settings)
     app.state.settings = settings
 
-    if settings.boot_mode == BootModeEnum.DEBUG:
+    if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug.setup(app)
 
-    if settings.director_v0.enabled:
-        director_v0.setup(app, settings.director_v0)
+    if settings.DIRECTOR_V0.DIRECTOR_V0_ENABLED:
+        director_v0.setup(app, settings.DIRECTOR_V0)
 
-    if settings.dynamic_services.enabled:
-        dynamic_services.setup(app, settings.dynamic_services)
+    if settings.POSTGRES.DIRECTOR_V2_POSTGRES_ENABLED:
+        db.setup(app, settings.POSTGRES)
 
-    if settings.postgres.enabled:
-        db.setup(app, settings.postgres)
+    if settings.CELERY.DIRECTOR_V2_CELERY_ENABLED:
+        celery.setup(app, settings.CELERY)
 
-    if settings.celery.enabled:
-        celery.setup(app, settings.celery)
+    if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
+        dynamic_services.setup(app, settings.DYNAMIC_SERVICES)
 
-    if settings.registry.enabled:
-        docker_registry.setup(app, settings.registry)
+    if settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR and (
+        settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
+        and settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED
+    ):
+        dynamic_sidecar.setup(app)
 
-    if settings.scheduler.enabled:
-        scheduler.setup(app)
+    if (
+        settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_CLIENT_ENABLED
+        or settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
+    ):
+        dask_client.setup(app, settings.DASK_SCHEDULER)
+
+    if (
+        settings.CELERY_SCHEDULER.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED
+        or settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_SCHEDULER_ENABLED
+    ):
+        comp_scheduler.setup(app)
 
     # setup app --
     app.add_event_handler("startup", on_startup)

@@ -14,10 +14,11 @@ import attr
 from aiodocker import Docker
 from aiodocker.containers import DockerContainer
 from aiodocker.exceptions import DockerContainerError, DockerError
-from models_library.service_settings import ServiceSettings
+from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from packaging import version
 from pydantic import BaseModel
 from servicelib.logging_utils import log_decorator
+from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_sdk import node_data, node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager
@@ -90,7 +91,7 @@ class Executor:
     stack_name: str = config.SWARM_STACK_NAME
     shared_folders: TaskSharedVolumes = None
     integration_version: version.Version = version.parse("0.0.0")
-    service_settings: ServiceSettings = []
+    service_settings_labels: SimcoreServiceSettingsLabel = []
     sidecar_mode: BootMode = BootMode.CPU
 
     @log_decorator(logger=log)
@@ -147,7 +148,12 @@ class Executor:
         if self.db_manager is None:
             # Keeps single db engine: simcore_sdk.node_ports.dbmanager_{id}
             self.db_manager = DBManager(self.db_engine)
-        return await node_ports_v2.ports(self.db_manager)
+        return await node_ports_v2.ports(
+            user_id=int(self.user_id),
+            project_id=self.task.project_id,
+            node_uuid=self.task.node_id,
+            db_manager=self.db_manager,
+        )
 
     @log_decorator(logger=log)
     async def _process_task_input(self, port: node_ports_v2.Port, input_ports: Dict):
@@ -242,11 +248,12 @@ class Executor:
                     )["integration-version"]
                 )
             # get service settings
-            self.service_settings = ServiceSettings.parse_raw(
+            self.service_settings_labels = SimcoreServiceSettingsLabel.parse_raw(
                 image_cfg["Config"]["Labels"].get("simcore.service.settings", "[]")
             )
             log.debug(
-                "found following service settings: %s", pformat(self.service_settings)
+                "found following service settings: %s",
+                pformat(self.service_settings_labels),
             )
             await self._post_messages(
                 LogType.LOG,
@@ -281,7 +288,7 @@ class Executor:
                 "Memory": config.SERVICES_MAX_MEMORY_BYTES,
                 "NanoCPUs": config.SERVICES_MAX_NANO_CPUS,
             }
-            for setting in self.service_settings:
+            for setting in self.service_settings_labels:
                 if not setting.name == "Resources":
                     continue
                 if not isinstance(setting.value, dict):
@@ -301,6 +308,15 @@ class Executor:
 
         resource_limitations = await _get_resource_limitations()
 
+        nano_cpus_limit = resource_limitations["NanoCPUs"]
+        mem_limit = resource_limitations["Memory"]
+
+        env_vars.extend(
+            [
+                f"{CPU_RESOURCE_LIMIT_KEY}={str(nano_cpus_limit)}",
+                f"{MEM_RESOURCE_LIMIT_KEY}={str(mem_limit)}",
+            ]
+        )
         docker_container_config = {
             "Env": env_vars,
             "Cmd": "run",
@@ -309,12 +325,12 @@ class Executor:
                 "user_id": str(self.user_id),
                 "study_id": str(self.task.project_id),
                 "node_id": str(self.task.node_id),
-                "nano_cpus_limit": str(resource_limitations["NanoCPUs"]),
-                "mem_limit": str(resource_limitations["Memory"]),
+                "nano_cpus_limit": str(nano_cpus_limit),
+                "mem_limit": str(mem_limit),
             },
             "HostConfig": {
-                "Memory": resource_limitations["Memory"],
-                "NanoCPUs": resource_limitations["NanoCPUs"],
+                "Memory": mem_limit,
+                "NanoCPUs": nano_cpus_limit,
                 "Init": True,
                 "AutoRemove": False,
                 "Binds": [
@@ -522,7 +538,11 @@ class Executor:
         )
         if self.shared_folders.log_folder and self.shared_folders.log_folder.exists():
             await node_data.data_manager.push(
-                self.shared_folders.log_folder, rename_to="logs"
+                int(self.user_id),
+                self.task.project_id,
+                self.task.node_id,
+                self.shared_folders.log_folder,
+                rename_to="logs",
             )
 
     async def _post_messages(self, log_type: LogType, message: str):

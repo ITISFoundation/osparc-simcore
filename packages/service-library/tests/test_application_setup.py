@@ -7,7 +7,6 @@ from typing import Dict
 
 import pytest
 from aiohttp import web
-
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import (
     APP_SETUP_KEY,
@@ -37,7 +36,12 @@ def setup_zee(app: web.Application, arg1, kargs=55):
 
 
 @app_module_setup(
-    "package.needs_foo", ModuleCategory.SYSTEM, depends=["package.foo",], logger=log
+    "package.needs_foo",
+    ModuleCategory.SYSTEM,
+    depends=[
+        "package.foo",
+    ],
+    logger=log,
 )
 def setup_needs_foo(app: web.Application, arg1, kargs=55):
     return True

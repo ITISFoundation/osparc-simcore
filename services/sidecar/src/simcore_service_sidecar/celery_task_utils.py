@@ -1,7 +1,5 @@
-import asyncio
 import logging
 from pprint import pformat
-from typing import Callable
 
 log = logging.getLogger(__name__)
 
@@ -39,12 +37,3 @@ def on_task_success_handler(
         args if args else "none",
         pformat(kwargs) if kwargs else "none",
     )
-
-
-def cancel_task(function: Callable) -> None:
-    tasks = asyncio.Task.all_tasks()
-    for task in tasks:
-        # pylint: disable=protected-access
-        if task._coro.__name__ == function.__name__:
-            log.warning("canceling task....................")
-            task.cancel()

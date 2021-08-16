@@ -24,8 +24,10 @@ from .basic_regex import VERSION_RE
 
 # NOTE: needs to end with / !!
 SERVICE_KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$"
+DYNAMIC_SERVICE_KEY_RE = r"^(simcore)/(services)/dynamic(/[\w/-]+)+$"
 COMPUTATIONAL_SERVICE_KEY_RE = r"^(simcore)/(services)/comp(/[\w/-]+)+$"
 KEY_RE = SERVICE_KEY_RE  # TODO: deprecate this global constant by SERVICE_KEY_RE
+SERVICE_NETWORK_RE = r"^([a-zA-Z0-9_-]+)$"
 
 PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
 PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"
@@ -134,12 +136,13 @@ class ServiceProperty(BaseModel):
     ## management
 
     ### human readable descriptors
-    display_order: float = Field(
-        ...,
+    display_order: Optional[float] = Field(
+        None,
         alias="displayOrder",
-        description="use this to numerically sort the properties for display",
-        examples=[1, -0.2],
+        deprecated=True,
+        description="DEPRECATED: new display order is taken from the item position. This will be removed.",
     )
+
     label: str = Field(..., description="short name for the property", example="Age")
     description: str = Field(
         ...,
@@ -148,7 +151,7 @@ class ServiceProperty(BaseModel):
     )
 
     # mathematical and physics descriptors
-    property_type: constr(regex=PROPERTY_TYPE_RE) = Field(
+    property_type: str = Field(
         ...,
         alias="type",
         description="data type expected on this input glob matching for data type is allowed",
@@ -165,6 +168,7 @@ class ServiceProperty(BaseModel):
             "data:application/hdf5",
             "data:application/edu.ucdavis@ceclancy.xyz",
         ],
+        regex=PROPERTY_TYPE_RE,
     )
 
     # value
@@ -209,9 +213,18 @@ class ServiceInput(ServiceProperty):
                     "description": "Files downloaded from service connected at the input",
                     "type": "data:*/*",
                 },
-                # latest:
+                # v2
                 {
                     "displayOrder": 2,
+                    "label": "Sleep Time",
+                    "description": "Time to wait before completion",
+                    "type": "number",
+                    "defaultValue": 0,
+                    "unit": "second",
+                    "widget": {"type": "TextArea", "details": {"minHeight": 3}},
+                },
+                # latest:
+                {
                     "label": "Sleep Time",
                     "description": "Time to wait before completion",
                     "type": "number",
@@ -233,16 +246,23 @@ class ServiceOutput(ServiceProperty):
     class Config(ServiceProperty.Config):
         schema_extra = {
             "examples": [
-                # previously:
+                # v1
                 {
                     "displayOrder": 2,
                     "label": "Time Slept",
                     "description": "Time the service waited before completion",
                     "type": "number",
                 },
-                # latest:
+                # v2
                 {
                     "displayOrder": 2,
+                    "label": "Time Slept",
+                    "description": "Time the service waited before completion",
+                    "type": "number",
+                    "unit": "second",
+                },
+                # latest:
+                {
                     "label": "Time Slept",
                     "description": "Time the service waited before completion",
                     "type": "number",
@@ -255,17 +275,19 @@ class ServiceOutput(ServiceProperty):
 class ServiceKeyVersion(BaseModel):
     """This pair uniquely identifies a services"""
 
-    key: constr(regex=KEY_RE) = Field(
+    key: str = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
+        regex=KEY_RE,
         examples=[
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
         ],
     )
-    version: constr(regex=VERSION_RE) = Field(
+    version: str = Field(
         ...,
         description="service version number",
+        regex=VERSION_RE,
         examples=["1.0.0", "0.0.1"],
     )
 
@@ -293,6 +315,7 @@ class ServiceCommonData(BaseModel):
     )
 
     @validator("thumbnail", pre=True, always=False)
+    @classmethod
     def validate_thumbnail(cls, value):  # pylint: disable=no-self-argument,no-self-use
         if value == "":
             return None
@@ -308,11 +331,11 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
     Static metadata for a service injected in the image labels
     """
 
-    integration_version: Optional[constr(regex=VERSION_RE)] = Field(
+    integration_version: Optional[str] = Field(
         None,
         alias="integration-version",
         description="integration version number",
-        # regex=VERSION_RE,
+        regex=VERSION_RE,
         examples=["1.0.0"],
     )
     service_type: ServiceType = Field(
@@ -342,44 +365,83 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
         extra = Extra.forbid
 
         schema_extra = {
-            "example": {
-                "name": "oSparc Python Runner",
-                "key": "simcore/services/comp/osparc-python-runner",
-                "type": "computational",
-                "integration-version": "1.0.0",
-                "version": "1.7.0",
-                "description": "oSparc Python Runner",
-                "contact": "smith@company.com",
-                "authors": [
-                    {
-                        "name": "John Smith",
-                        "email": "smith@company.com",
-                        "affiliation": "Company",
+            "examples": [
+                {
+                    "name": "oSparc Python Runner",
+                    "key": "simcore/services/comp/osparc-python-runner",
+                    "type": "computational",
+                    "integration-version": "1.0.0",
+                    "version": "1.7.0",
+                    "description": "oSparc Python Runner",
+                    "contact": "smith@company.com",
+                    "authors": [
+                        {
+                            "name": "John Smith",
+                            "email": "smith@company.com",
+                            "affiliation": "Company",
+                        },
+                        {
+                            "name": "Richard Brown",
+                            "email": "brown@uni.edu",
+                            "affiliation": "University",
+                        },
+                    ],
+                    "inputs": {
+                        "input_1": {
+                            "displayOrder": 1,
+                            "label": "Input data",
+                            "description": "Any code, requirements or data file",
+                            "type": "data:*/*",
+                        }
                     },
-                    {
-                        "name": "Richard Brown",
-                        "email": "brown@uni.edu",
-                        "affiliation": "University",
+                    "outputs": {
+                        "output_1": {
+                            "displayOrder": 1,
+                            "label": "Output data",
+                            "description": "All data produced by the script is zipped as output_data.zip",
+                            "type": "data:*/*",
+                            "fileToKeyMap": {"output_data.zip": "output_1"},
+                        }
                     },
-                ],
-                "inputs": {
-                    "input_1": {
-                        "displayOrder": 1,
-                        "label": "Input data",
-                        "description": "Any code, requirements or data file",
-                        "type": "data:*/*",
-                    }
                 },
-                "outputs": {
-                    "output_1": {
-                        "displayOrder": 1,
-                        "label": "Output data",
-                        "description": "All data produced by the script is zipped as output_data.zip",
-                        "type": "data:*/*",
-                        "fileToKeyMap": {"output_data.zip": "output_1"},
-                    }
+                # latest
+                {
+                    "name": "oSparc Python Runner",
+                    "key": "simcore/services/comp/osparc-python-runner",
+                    "type": "computational",
+                    "integration-version": "1.0.0",
+                    "version": "1.7.0",
+                    "description": "oSparc Python Runner",
+                    "contact": "smith@company.com",
+                    "authors": [
+                        {
+                            "name": "John Smith",
+                            "email": "smith@company.com",
+                            "affiliation": "Company",
+                        },
+                        {
+                            "name": "Richard Brown",
+                            "email": "brown@uni.edu",
+                            "affiliation": "University",
+                        },
+                    ],
+                    "inputs": {
+                        "input_1": {
+                            "label": "Input data",
+                            "description": "Any code, requirements or data file",
+                            "type": "data:*/*",
+                        }
+                    },
+                    "outputs": {
+                        "output_1": {
+                            "label": "Output data",
+                            "description": "All data produced by the script is zipped as output_data.zip",
+                            "type": "data:*/*",
+                            "fileToKeyMap": {"output_data.zip": "output_1"},
+                        }
+                    },
                 },
-            }
+            ]
         }
 
 

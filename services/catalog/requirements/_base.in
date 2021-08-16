@@ -3,16 +3,16 @@
 #
 # NOTE: ALL version constraints MUST be commented
 
--c ../../../requirements/constraints.txt
+--constraint ../../../requirements/constraints.txt
 
--r ../../../packages/models-library/requirements/_base.in
--r ../../../packages/postgres-database/requirements/_base.in
+--requirement ../../../packages/models-library/requirements/_base.in
+--requirement ../../../packages/postgres-database/requirements/_base.in
 
 pyyaml
 
 # fastapi and extensions
 fastapi[all]
-async-exit-stack; python_version < '3.7'
+async-exit-stack ; python_version < '3.7'
 async-generator ; python_version < '3.7'
 dataclasses ; python_version < '3.7'
 

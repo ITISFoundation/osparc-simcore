@@ -1,4 +1,6 @@
 #!/bin/python
+# pylint: disable=consider-using-with
+
 """ Healthcheck script to run inside docker
 
 Example of usage in a Dockerfile
@@ -16,6 +18,7 @@ Q&A:
         - SEE https://blog.sixeyed.com/docker-healthchecks-why-not-to-use-curl-or-iwr/
 """
 
+
 import os
 import sys
 from urllib.request import urlopen
@@ -23,9 +26,10 @@ from urllib.request import urlopen
 SUCCESS, UNHEALTHY = 0, 1
 
 # Disabled if boots with debugger
-ok = os.environ.get("SC_BOOT_MODE").lower() == "debug"
+ok = os.environ.get("SC_BOOT_MODE", "").lower() == "debug"
 
 # Queries host
+# pylint: disable=consider-using-with
 ok = (
     ok
     or urlopen(

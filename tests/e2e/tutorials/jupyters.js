@@ -16,10 +16,8 @@ const templateName = "Jupyters";
 
 async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
-
-  let studyId = null;
+  let studyId
   try {
-    tutorial.startScreenshooter();
     await tutorial.start();
     const studyData = await tutorial.openTemplate(1000);
     studyId = studyData["data"]["uuid"];
@@ -67,13 +65,14 @@ async function runTutorial() {
     const value = await nbIframe.evaluate(el => el.textContent, element);
     console.log('Results for the notebook cell is:', value);
     // NOTE: we need to wait here to get the results.
-    await tutorial.waitFor(15000);
+    await tutorial.waitFor(15000, 'we need to wait here to get the results');
 
     const outFiles = [
       "TheNumberNumber.txt",
       "notebooks.zip"
     ];
-    await tutorial.checkNodeResults(1, outFiles);
+    await tutorial.openNodeFiles(1)
+    await tutorial.checkResults2(outFiles);
 
 
     // open jupyter lab
@@ -109,29 +108,24 @@ async function runTutorial() {
     const jLabVvalue = await jLabIframe.evaluate(el => el.textContent, jLabElement);
     console.log('Checking results for the jupyter lab cell:', jLabVvalue);
     await tutorial.takeScreenshot("pressRunJLab");
-    // wait sufficiently before getting the results
-    await tutorial.waitFor(15000);
+    await tutorial.waitFor(15000, 'wait sufficiently before getting the results');
 
     console.log('Checking results for the jupyter lab:');
     const outFiles2 = [
       "work.zip",
       "TheNumber.txt"
     ];
-    await tutorial.checkNodeResults(2, outFiles2);
+    await tutorial.openNodeFiles(2)
+    await tutorial.checkResults2(outFiles2);
   }
   catch (err) {
     tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
   }
   finally {
-    // delete study if succesfull or puppeteer_XX
-    if (!tutorial.getTutorialFailed() || (user.includes("puppeteer_") && studyId)) {
-      await tutorial.toDashboard();
-      await tutorial.removeStudy(studyId);
-    }
-
+    await tutorial.toDashboard()
+    await tutorial.removeStudy(studyId);
     await tutorial.logOut();
-    tutorial.stopScreenshooter();
     await tutorial.close();
   }
 

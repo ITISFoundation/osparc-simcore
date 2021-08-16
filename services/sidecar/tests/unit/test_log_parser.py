@@ -1,4 +1,4 @@
-from asyncio import Future, ensure_future, sleep
+import asyncio
 from pathlib import Path
 
 import pytest
@@ -42,21 +42,20 @@ async def test_parse_line(log, expected_log_type, expected_parsed_message):
     assert log_message == expected_parsed_message
 
 
-def future_with_result(result):
-    f = Future()
-    f.set_result(result)
-    return f
-
-
 async def test_monitor_log_task(temp_folder: Path, mocker):
-    mock_cb = mocker.Mock(return_value=future_with_result(""))
+    mock_awaitable_callback = mocker.AsyncMock(return_value="")
     log_file = temp_folder / "test_log.txt"
     log_file.touch()
     assert log_file.exists()
-    task = ensure_future(monitor_logs_task(log_file, mock_cb))
+
+    task = asyncio.create_task(monitor_logs_task(log_file, mock_awaitable_callback))
     assert task
-    await sleep(2)
+
+    await asyncio.sleep(2)
     log_file.write_text("this is a test")
-    await sleep(2)
-    mock_cb.assert_called_once()
+
+    await asyncio.sleep(2)
+    mock_awaitable_callback.assert_called_once()
+    mock_awaitable_callback.assert_awaited()
+
     assert task.cancel()

@@ -1,13 +1,12 @@
 """ Main's application module for simcore_service_storage service
 
-    Functions to create, setup and run an aiohttp application provided a configuration object
+    Functions to create, setup and run an aiohttp application provided a settingsuration object
 """
-import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from aiohttp import web
-from servicelib.application import create_safe_application
+from servicelib.application import APP_CONFIG_KEY, create_safe_application
 from servicelib.monitoring import setup_monitoring
 from servicelib.tracing import setup_tracing
 
@@ -16,46 +15,48 @@ from .dsm import setup_dsm
 from .meta import WELCOME_MSG
 from .rest import setup_rest
 from .s3 import setup_s3
+from .settings import Settings
 
 log = logging.getLogger(__name__)
 
 
-def create(config: Dict[str, Any]) -> web.Application:
+def create(settings: Settings) -> web.Application:
     log.debug(
-        "Initializing app with config:\n%s",
-        json.dumps(config, indent=2, sort_keys=True),
+        "Initializing app with settings:\n%s",
+        settings.json(indent=2, sort_keys=True),
     )
 
-    app = create_safe_application(config)
+    # TODO: tmp using dict() until webserver is also pydantic-compatible
+    app = create_safe_application(None)
+    app[APP_CONFIG_KEY] = settings
 
-    tracing = config["tracing"]["enabled"]
-    if tracing:
+    if settings.STORAGE_TRACING.enabled:
         setup_tracing(
             app,
             "simcore_service_storage",
-            config["host"],
-            config["port"],
-            config["tracing"],
+            settings.STORAGE_HOST,
+            settings.STORAGE_PORT,
+            settings.STORAGE_TRACING.dict(),
         )
     setup_db(app)  # -> postgres service
     setup_s3(app)  # -> minio service
     setup_dsm(app)  # core subsystem. Needs s3 and db setups done
     setup_rest(app)  # lastly, we expose API to the world
 
-    if config.get("monitoring_enabled", False):
+    if settings.STORAGE_MONITORING_ENABLED:
         setup_monitoring(app, "simcore_service_storage")
 
     return app
 
 
-def run(config: Dict[str, Any], app: Optional[web.Application] = None):
+def run(settings: Settings, app: Optional[web.Application] = None):
     log.debug("Serving application ")
     if not app:
-        app = create(config)
+        app = create(settings)
 
     async def welcome_banner(_app: web.Application):
         print(WELCOME_MSG, flush=True)
 
     app.on_startup.append(welcome_banner)
 
-    web.run_app(app, host=config["host"], port=config["port"])
+    web.run_app(app, host=settings.STORAGE_HOST, port=settings.STORAGE_PORT)

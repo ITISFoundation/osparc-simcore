@@ -22,6 +22,8 @@ class TutorialBase {
     this.__interval = null;
 
     this.__failed = false;
+
+    this.startScreenshooter()
   }
 
   startScreenshooter() {
@@ -35,7 +37,7 @@ class TutorialBase {
 
     this.__interval = setInterval(async () => {
       await this.takeScreenshot();
-    }, 2000);
+    }, 4000);
   }
 
   stopScreenshooter() {
@@ -70,6 +72,23 @@ class TutorialBase {
     try {
       await this.beforeScript();
       await this.__goTo();
+
+      // Logs notifications
+      const waitForFlash = () => {
+        this.__page.waitForSelector('[qxclass="osparc.ui.message.FlashMessage"]', {
+          timeout: 0
+        }).then(async () => {
+          const messages = await this.__page.$$eval('[qxclass="osparc.ui.message.FlashMessage"]',
+            elements => {
+              const flashText = elements.map(element => element.textContent)
+              elements.forEach(element => element.remove())
+              return flashText
+            })
+          console.log('Flash message', messages)
+          setTimeout(waitForFlash, 0)
+        }).catch(() => {})
+      }
+      setTimeout(waitForFlash, 0)
 
       const needsRegister = await this.registerIfNeeded();
       if (!needsRegister) {
@@ -185,11 +204,11 @@ class TutorialBase {
   }
 
   async openService(waitFor = 1000) {
-    await this.takeScreenshot("dashboardOpenFirstService_before");
+    await this.takeScreenshot("dashboardOpenService_before");
     this.__responsesQueue.addResponseListener("open");
     let resp = null;
     try {
-      const serviceFound = await auto.dashboardOpenFirstService(this.__page, this.__templateName);
+      const serviceFound = await auto.dashboardOpenService(this.__page, this.__templateName);
       assert(serviceFound, "Expected service, got nothing. TIP: is it available??");
       resp = await this.__responsesQueue.waitUntilResponse("open");
     }
@@ -198,7 +217,7 @@ class TutorialBase {
       throw (err);
     }
     await this.waitFor(waitFor);
-    await this.takeScreenshot("dashboardOpenFirstService_after");
+    await this.takeScreenshot("dashboardOpenService_after");
     return resp;
   }
 
@@ -332,6 +351,30 @@ class TutorialBase {
     await this.takeScreenshot("checkNodeResults_after");
   }
 
+  async checkResults2(fileNames, checkNFiles=true) {
+    try {
+      await this.takeScreenshot("checkResults_before");
+      const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
+        elements => elements.map(el => el.textContent.trim()));
+      if (checkNFiles) {
+        assert(files.length === fileNames.length, 'Number of files is incorrect')
+        console.log('Number of files is correct')
+      }
+      assert(
+        fileNames.every(fileName => files.some(file => file.includes(fileName))),
+        'File names are incorrect'
+      )
+      console.log('File names are correct')
+    }
+    catch (err) {
+      throw(err)
+    }
+    finally {
+      await utils.waitAndClick(this.__page, '[osparc-test-id="nodeDataManagerCloseBtn"]');
+      await this.takeScreenshot("checkResults_after");
+    }
+  }
+
   async toDashboard() {
     await this.takeScreenshot("toDashboard_before");
     this.__responsesQueue.addResponseListener("projects");
@@ -367,13 +410,18 @@ class TutorialBase {
     try {
       // await this.waitForStudyUnlocked(studyId);
       const nTries = 3;
-      for (let i = 0; i < nTries; i++) {
+      let i
+      for (i = 0; i < nTries; i++) {
         const cardUnlocked = await auto.deleteFirstStudy(this.__page, this.__templateName);
         if (cardUnlocked) {
           break;
         }
         console.log(studyId, "study card still locked");
-        await this.waitFor(3000);
+        await this.waitFor(3000, 'Waiting in case the study was locked');
+      }
+      if (i === nTries) {
+        console.log(`Failed to delete the study after ${nTries}: Trying without the GUI`)
+        this.fetchRemoveStudy(studyId)
       }
     }
     catch (err) {
@@ -383,17 +431,31 @@ class TutorialBase {
     await this.takeScreenshot("deleteFirstStudy_after");
   }
 
+  async fetchRemoveStudy(studyId) {
+    console.log(`Removing study ${studyId}`)
+    const resp = await this.__page.evaluate(async function(studyId) {
+      return await osparc.data.Resources.fetch('studies', 'delete', {
+        url: {
+          "studyId": studyId
+        }
+      }, studyId);
+    }, studyId);
+  }
+
   async logOut() {
     await auto.logOut(this.__page);
   }
 
   async close() {
+    this.stopScreenshooter()
     await this.waitFor(2000);
     await this.__browser.close();
   }
 
-  async waitFor(waitFor) {
+  async waitFor(waitFor, reason) {
+    console.log(`Waiting for ${waitFor}ms. Reason: ${reason}`)
     await utils.sleep(waitFor);
+    await this.takeScreenshot('waitFor_finished')
   }
 
   async takeScreenshot(screenshotTitle) {
@@ -401,10 +463,6 @@ class TutorialBase {
     const snapshotUrl = utils.getGrayLogSnapshotUrl(this.__url, 30);
     if (snapshotUrl) {
       console.log("Backend Snapshot: ", snapshotUrl)
-    }
-
-    if (this.__demo) {
-      return;
     }
 
     let title = this.__templateName;

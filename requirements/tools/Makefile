@@ -14,10 +14,14 @@
 #
 .DEFAULT_GOAL := help
 
+PYTHON_VERSION=3.8.10
+
 # locations
 REPODIR := $(shell git rev-parse --show-toplevel)
 PACKAGES_DIR := $(abspath $(REPODIR)/packages)
 SERVICES_DIR := $(abspath $(REPODIR)/services)
+
+IMAGE := local/requirements/tools
 
 UPGRADE_OPTION := $(if $(upgrade),upgrade=$(upgrade),)
 
@@ -25,7 +29,7 @@ UPGRADE_OPTION := $(if $(upgrade),upgrade=$(upgrade),)
 MAKE_C := $(MAKE) --directory
 
 
-.PHONY: touch reqs _check_py36_version
+.PHONY: touch reqs info
 
 # requirements in packages and services
 _compiled-all = $(shell find $(REPODIR) -path "*/requirements/*.txt")
@@ -40,12 +44,18 @@ _target-inputs += $(shell find $(REPODIR)/tests/ -type f -name "*.in")
 # services tests libraries, tools and fixtures
 _target-inputs += $(shell find ${SERVICES_DIR} -type f -name "_test.in")
 
-$(info Found $(words $(_target-inputs)) inputs)
 
-
-_check_py36_version:
-	# Checking that runs with correct python version
-	@python3 -c "import sys; assert sys.version_info[:2]==(3,6), f'Expected python 3.6, got {sys.version_info}'"
+info: ## displays some info
+	# dev tools version
+	@echo ' make   : $(shell make --version 2>&1 | head -n 1)'
+	@echo ' jq     : $(shell jq --version 2> /dev/null || echo missing)'
+	@echo ' awk    : $(shell awk -W version 2>&1 | head -n 1)'
+	@echo ' node   : $(shell node --version 2> /dev/null || echo missing)'
+	@echo ' python : $(shell python3 --version)'
+	# installed in .venv
+	@pip list
+	# target reqs found
+	@echo "Found $(words $(_target-inputs)) inputs"
 
 
 touch: ## touches all package requirement inputs
@@ -55,19 +65,23 @@ touch: ## touches all package requirement inputs
 	# Touchs all target input requirements
 	@$(foreach p,${_target-inputs},touch $(p);)
 
-reqs: _check_py36_version ## updates requirements of all package libraries
+reqs: ## updates requirements of all package libraries
 	# Upgrading $(upgrade) requirements
 	@$(foreach p,${_target-inputs},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
 
 
+IMAGE_NAME:=local/python-devkit:${PYTHON_VERSION}
+
 # SEE https://medium.com/faun/set-current-host-user-for-docker-container-4e521cef9ffc
 .PHONY: build
-build build-nc:
-	docker build $(if $(findstring -nc,$@),--no-cache,) --tag local/python-devkit:latest .
+build build-nc: ## builds tooling image ${IMAGE_NAME}
+	docker build $(if $(findstring -nc,$@),--no-cache,) \
+		--build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
+		--tag ${IMAGE_NAME} .
 
 
 .PHONY: run
-run: build ## Runs upgrade in a container
+run: build ## Runs upgrade in a container [WARNING! UNDER DEV. USE CAREFULY]
 	docker run -it \
 		--workdir="/home/$(USER)" \
     --volume="/etc/group:/etc/group:ro" \
@@ -76,12 +90,12 @@ run: build ## Runs upgrade in a container
 		--volume=$(REPODIR):/home/$(USER) \
 		--user=$(shell id -u):$(shell id -g) \
 		--entrypoint=/bin/bash \
-		local/python-devkit:latest \
+		${IMAGE_NAME} \
 		-c "cd requirements/tools; make reqs $(if $(upgrade),upgrade=$(upgrade),)"
 
 
 .PHONY: shell
-shell: build
+shell: build ## Opens shell in ${IMAGE_NAME}
 	docker run -it \
 		--workdir="/home/$(USER)/requirements/tools" \
     --volume="/etc/group:/etc/group:ro" \
@@ -90,7 +104,7 @@ shell: build
 		--volume=$(REPODIR):/home/$(USER) \
 		--user=$(shell id -u):$(shell id -g) \
 		--entrypoint=/bin/bash \
-		local/python-devkit:latest
+		${IMAGE_NAME}
 
 
 .PHONY: help

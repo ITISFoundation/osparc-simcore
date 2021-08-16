@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Sequence
 
-from . import exceptions
+from ..node_ports_common import exceptions
 from ._data_items_list import DataItemsList
 from ._item import Item
 from ._schema_items_list import SchemaItemsList
@@ -12,11 +12,18 @@ log = logging.getLogger(__name__)
 class ItemsList(Sequence):
     def __init__(
         self,
+        user_id: int,
+        project_id: str,
+        node_uuid: str,
         schemas: SchemaItemsList,
         payloads: DataItemsList,
         change_cb=None,
         get_node_from_node_uuid_cb=None,
     ):
+        self._user_id = user_id
+        self._project_id = project_id
+        self._node_uuid = node_uuid
+
         self._schemas = schemas
         self._payloads = payloads
 
@@ -32,7 +39,7 @@ class ItemsList(Sequence):
             payload = None
         except exceptions.UnboundPortError:
             payload = None
-        item = Item(schema, payload)
+        item = Item(self._user_id, self._project_id, self._node_uuid, schema, payload)
         item.new_data_cb = self._item_value_updated_cb
         item.get_node_from_uuid_cb = self.get_node_from_node_uuid_cb
         return item

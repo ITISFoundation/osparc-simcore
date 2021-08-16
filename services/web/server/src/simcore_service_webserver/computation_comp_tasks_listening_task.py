@@ -21,7 +21,7 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
 
-from .computation_api import convert_state_from_db
+from .computation_utils import convert_state_from_db
 from .projects import projects_api, projects_exceptions
 from .projects.projects_utils import project_get_depending_nodes
 
@@ -193,7 +193,7 @@ async def comp_tasks_listening_task(app: web.Application) -> None:
 
 
 async def setup_comp_tasks_listening_task(app: web.Application):
-    task = asyncio.get_event_loop().create_task(comp_tasks_listening_task(app))
+    task = asyncio.create_task(comp_tasks_listening_task(app))
     yield
     task.cancel()
     await task

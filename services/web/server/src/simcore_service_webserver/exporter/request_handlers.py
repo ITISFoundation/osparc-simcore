@@ -3,15 +3,19 @@ from tempfile import TemporaryDirectory
 
 from aiohttp import web
 from aiohttp.web_request import FileField
+from models_library.projects_state import ProjectStatus
+from simcore_service_webserver.projects.project_lock import lock_project
+from simcore_service_webserver.users_api import get_user_name
 
-from ..login.decorators import RQT_USERID_KEY, login_required
-from ..security_decorators import permission_required
 from ..constants import RQ_PRODUCT_KEY
+from ..login.decorators import RQT_USERID_KEY, login_required
+from ..projects.projects_api import retrieve_and_notify_project_locked_state
+from ..security_decorators import permission_required
 from .config import get_settings
 from .exceptions import ExporterException
-from .export_import import study_export, study_import, study_duplicate
-from .utils import CleanupFileResponse, get_empty_tmp_dir, remove_dir
+from .export_import import study_duplicate, study_export, study_import
 from .formatters import FormatterV1
+from .utils import CleanupFileResponse, get_empty_tmp_dir, remove_dir
 
 ONE_GB: int = 1024 * 1024 * 1024
 
@@ -38,24 +42,38 @@ async def export_project(request: web.Request):
     temp_dir: str = await get_empty_tmp_dir()
 
     try:
-        file_to_download = await study_export(
-            app=request.app,
-            tmp_dir=temp_dir,
-            project_id=project_uuid,
-            user_id=user_id,
-            product_name=request[RQ_PRODUCT_KEY],
-            archive=True,
-        )
-        log.info("File to download '%s'", file_to_download)
-
-        if not file_to_download.is_file():
-            raise ExporterException(
-                f"Must provide a file to download, not {str(file_to_download)}"
+        async with await lock_project(
+            request.app,
+            project_uuid,
+            ProjectStatus.EXPORTING,
+            user_id,
+            await get_user_name(request.app, user_id),
+        ):
+            await retrieve_and_notify_project_locked_state(
+                user_id, project_uuid, request.app
             )
+            file_to_download = await study_export(
+                app=request.app,
+                tmp_dir=temp_dir,
+                project_id=project_uuid,
+                user_id=user_id,
+                product_name=request[RQ_PRODUCT_KEY],
+                archive=True,
+            )
+            log.info("File to download '%s'", file_to_download)
+
+            if not file_to_download.is_file():
+                raise ExporterException(
+                    f"Must provide a file to download, not {str(file_to_download)}"
+                )
     except Exception as e:
         # make sure all errors are trapped and the directory where the file is sotred is removed
         await remove_dir(temp_dir)
         raise e
+    finally:
+        await retrieve_and_notify_project_locked_state(
+            user_id, project_uuid, request.app
+        )
 
     headers = {"Content-Disposition": f'attachment; filename="{file_to_download.name}"'}
 
@@ -97,26 +115,40 @@ async def import_project(request: web.Request):
 async def duplicate_project(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
+    try:
+        with TemporaryDirectory() as temp_dir:
+            async with await lock_project(
+                request.app,
+                project_uuid,
+                ProjectStatus.CLONING,
+                user_id,
+                await get_user_name(request.app, user_id),
+            ):
+                await retrieve_and_notify_project_locked_state(
+                    user_id, project_uuid, request.app
+                )
+                exported_project_path = await study_export(
+                    app=request.app,
+                    tmp_dir=temp_dir,
+                    project_id=project_uuid,
+                    user_id=user_id,
+                    product_name=request[RQ_PRODUCT_KEY],
+                    archive=False,
+                    formatter_class=FormatterV1,
+                )
+                log.info("Study to duplicate '%s'", exported_project_path)
 
-    with TemporaryDirectory() as temp_dir:
-        exported_project_path = await study_export(
-            app=request.app,
-            tmp_dir=temp_dir,
-            project_id=project_uuid,
-            user_id=user_id,
-            product_name=request[RQ_PRODUCT_KEY],
-            archive=False,
-            formatter_class=FormatterV1,
+                # return the duplicated study ID
+                duplicated_project_uuid = await study_duplicate(
+                    app=request.app,
+                    user_id=user_id,
+                    exported_project_path=exported_project_path,
+                )
+            return dict(uuid=duplicated_project_uuid)
+    finally:
+        await retrieve_and_notify_project_locked_state(
+            user_id, project_uuid, request.app
         )
-        log.info("Study to duplicate '%s'", exported_project_path)
-
-        # return the duplicated study ID
-        duplicated_project_uuid = await study_duplicate(
-            app=request.app,
-            user_id=user_id,
-            exported_project_path=exported_project_path,
-        )
-        return dict(uuid=duplicated_project_uuid)
 
 
 rest_handler_functions = {
