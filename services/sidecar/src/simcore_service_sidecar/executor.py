@@ -76,9 +76,9 @@ class TaskSharedVolumes:
 
 class ServiceResources(BaseModel):
     memory_reservation: int = 0
-    memory_limit: int = config.SERVICES_MAX_MEMORY_BYTES
+    memory_limit: int = config.CompServices.DEFAULT_MAX_MEMORY
     nano_cpus_reservation: int = 0
-    nano_cpus_limit: int = config.SERVICES_MAX_NANO_CPUS
+    nano_cpus_limit: int = config.CompServices.DEFAULT_MAX_NANO_CPUS
 
 
 @attr.s(auto_attribs=True)
@@ -285,8 +285,8 @@ class Executor:
         # get user-defined IT limitations
         async def _get_resource_limitations() -> Dict[str, int]:
             resource_limitations = {
-                "Memory": config.SERVICES_MAX_MEMORY_BYTES,
-                "NanoCPUs": config.SERVICES_MAX_NANO_CPUS,
+                "Memory": config.CompServices.DEFAULT_MAX_MEMORY,
+                "NanoCPUs": config.CompServices.DEFAULT_MAX_NANO_CPUS,
             }
             for setting in self.service_settings_labels:
                 if not setting.name == "Resources":
@@ -296,10 +296,10 @@ class Executor:
 
                 limits = setting.value.get("Limits", {})
                 resource_limitations["Memory"] = limits.get(
-                    "MemoryBytes", config.SERVICES_MAX_MEMORY_BYTES
+                    "MemoryBytes", config.CompServices.DEFAULT_MAX_MEMORY
                 )
                 resource_limitations["NanoCPUs"] = limits.get(
-                    "NanoCPUs", config.SERVICES_MAX_NANO_CPUS
+                    "NanoCPUs", config.CompServices.DEFAULT_MAX_NANO_CPUS
                 )
             log.debug(
                 "Current resource limitations are %s", pformat(resource_limitations)
@@ -409,12 +409,12 @@ class Executor:
                     container_data = await container.show()
                     if (
                         (time.perf_counter() - start_time)
-                        > config.SERVICES_TIMEOUT_SECONDS
-                        and config.SERVICES_TIMEOUT_SECONDS > 0
+                        > config.CompServices.DEFAULT_RUNTIME_TIMEOUT
+                        and config.CompServices.DEFAULT_RUNTIME_TIMEOUT > 0
                     ):
                         log.error(
                             "Running container timed-out after %ss and will be stopped now\nlogs: %s",
-                            config.SERVICES_TIMEOUT_SECONDS,
+                            config.CompServices.DEFAULT_RUNTIME_TIMEOUT,
                             container.log(stdout=True, stderr=True),
                         )
                         await container.stop()
