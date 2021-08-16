@@ -28,7 +28,6 @@ from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
-from simcore_service_director_v2.models.schemas.comp_scheduler import TaskIn
 from simcore_service_director_v2.models.schemas.constants import UserID
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
