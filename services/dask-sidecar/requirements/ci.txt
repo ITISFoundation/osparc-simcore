@@ -16,6 +16,7 @@
 ../../packages/postgres-database/
 ../../packages/pytest-simcore/
 ../../packages/service-library/
+../../packages/settings-library/
 ../../packages/simcore-sdk/
 ../../services/storage/client-sdk/python/
 ../../services/sidecar
