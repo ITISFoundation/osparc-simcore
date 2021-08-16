@@ -42,10 +42,10 @@ setup_images() {
 
 clean_up() {
   echo "--------------- listing services running..."
-  docker service ls
+  docker service ls || true
   echo "--------------- listing service details..."
   # shellcheck disable=SC2046
-  docker service ps --no-trunc $(docker service ls --quiet)
+  docker service ps --no-trunc $(docker service ls --quiet) || true
   echo "--------------- listing container details..."
   docker container ps -a
   echo "--------------- listing images available..."
