@@ -13,12 +13,12 @@ import pytest
 import sqlalchemy as sa
 from aiohttp import ClientResponse, ClientSession, web
 from aioresponses import aioresponses
-from models_library.projects_state import ProjectLocked, ProjectStatus
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
     ProjectRunningState,
     ProjectState,
+    ProjectStatus,
     RunningState,
 )
 from pytest_simcore.helpers.utils_assert import assert_status
