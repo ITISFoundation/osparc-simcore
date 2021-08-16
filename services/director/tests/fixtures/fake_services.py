@@ -141,7 +141,7 @@ async def _build_push_image(
 
     # create the typical org.label-schema labels
     service_extras = {
-        "node_requirements": {"CPU": 0.5},
+        "node_requirements": {"CPU": 0.5, "RAM": 128 * 1024 * 1024},
         "build_date": "2020-08-19T15:36:27Z",
         "vcs_ref": "ca180ef1",
         "vcs_url": "git@github.com:ITISFoundation/osparc-simcore.git",
