@@ -22,7 +22,6 @@ async def lock_manager(loop, redis_service: URL):
     await lm.destroy()
 
 
-
 async def test_redlocks_features(lock_manager: Aioredlock):
     # Originally https://github.com/joanvila/aioredlock#readme
 

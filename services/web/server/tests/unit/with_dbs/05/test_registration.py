@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 import pytest
 from aiohttp import web
-
 from pytest_simcore.helpers.utils_assert import assert_error, assert_status
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
 from servicelib.rest_responses import unwrap_envelope
