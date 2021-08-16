@@ -39,6 +39,7 @@ async function runTutorial () {
     ];
     await tutorial.openNodeFiles(0)
     await tutorial.checkResults2(outFiles);
+    await tutorial.closeNodeFiles();
 
 
     // open kember viewer
@@ -78,6 +79,7 @@ async function runTutorial () {
     ];
     await tutorial.openNodeFiles(1)
     await tutorial.checkResults2(outFiles2, false);
+    await tutorial.closeNodeFiles();
   }
   catch(err) {
     tutorial.setTutorialFailed(true);

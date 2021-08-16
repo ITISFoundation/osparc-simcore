@@ -73,6 +73,7 @@ async function runTutorial() {
     ];
     await tutorial.openNodeFiles(1)
     await tutorial.checkResults2(outFiles);
+    await tutorial.closeNodeFiles();
 
 
     // open jupyter lab
@@ -117,6 +118,7 @@ async function runTutorial() {
     ];
     await tutorial.openNodeFiles(2)
     await tutorial.checkResults2(outFiles2);
+    await tutorial.closeNodeFiles();
   }
   catch (err) {
     tutorial.setTutorialFailed(true);

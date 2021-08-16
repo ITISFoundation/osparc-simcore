@@ -35,6 +35,7 @@ async function runTutorial() {
     ];
     await tutorial.openNodeFiles(1)
     await tutorial.checkResults2(outFiles);
+    await tutorial.closeNodeFiles();
 
     // check logs
     const mustHave = "Running MPI version 3.1 on 2 processes";

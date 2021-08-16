@@ -313,6 +313,10 @@ class TutorialBase {
     }
   }
 
+  async closeNodeFiles() {
+    await utils.waitAndClick(this.__page, '[osparc-test-id="nodeDataManagerCloseBtn"]');
+  }
+
   async retrieve(waitAfterRetrieve = 5000) {
     await auto.clickRetrieve(this.__page);
     await this.waitFor(waitAfterRetrieve);
@@ -370,7 +374,6 @@ class TutorialBase {
       throw(err)
     }
     finally {
-      await utils.waitAndClick(this.__page, '[osparc-test-id="nodeDataManagerCloseBtn"]');
       await this.takeScreenshot("checkResults_after");
     }
   }

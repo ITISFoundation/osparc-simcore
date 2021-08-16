@@ -36,6 +36,7 @@ async function runTutorial () {
     ];
     await tutorial.openNodeFiles(1)
     await tutorial.checkResults2(outFiles0);
+    await tutorial.closeNodeFiles();
 
     const outFiles1 = [
       "model_INPUT.from1D",
@@ -46,6 +47,7 @@ async function runTutorial () {
     ];
     await tutorial.openNodeFiles(2)
     await tutorial.checkResults2(outFiles1);
+    await tutorial.closeNodeFiles();
 
     const outFiles2 = [
       "aps.zip",
@@ -53,6 +55,7 @@ async function runTutorial () {
     ];
     await tutorial.openNodeFiles(3)
     await tutorial.checkResults2(outFiles2);
+    await tutorial.closeNodeFiles();
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
