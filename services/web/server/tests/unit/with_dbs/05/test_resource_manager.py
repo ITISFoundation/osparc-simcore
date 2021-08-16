@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 
 API_VERSION = "v0"
 GARBAGE_COLLECTOR_INTERVAL = 1
-SERVICE_DELETION_DELAY = 2
+SERVICE_DELETION_DELAY = 1
 CHECK_BACKGROUND_RETRY_POLICY = dict(
     stop=stop_after_attempt(2),
     wait=wait_fixed(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL),
@@ -437,7 +437,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     exp_save_state: bool,
     mocker: MockerFixture,
 ):
-    set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
+    set_service_deletion_delay(SERVICE_DELETION_DELAY + 1, client.server.app)
 
     # login - logged_user fixture
     # create empty study - empty_user_project fixture
