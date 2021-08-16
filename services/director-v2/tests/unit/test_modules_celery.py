@@ -96,7 +96,7 @@ def test_create_task(
         (NodeRequirements(CPU=2, RAM="128 MiB", MPI=1), "mpi"),
     ],
 )
-def test_send_computation_tasks(
+def test_send_computation_tasks(  # pylint: disable=too-many-arguments
     minimal_celery_config,
     minimal_app: FastAPI,
     celery_app: Celery,

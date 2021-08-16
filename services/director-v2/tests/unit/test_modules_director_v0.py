@@ -9,7 +9,7 @@ import urllib.parse
 from collections import namedtuple
 from pathlib import Path
 from random import choice
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict, List
 from uuid import uuid4
 
 import pytest
