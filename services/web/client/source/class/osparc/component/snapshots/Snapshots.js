@@ -47,10 +47,6 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
       DATE: {
         col: 2,
         label: qx.locale.Manager.tr("Created At")
-      },
-      ACTIONS: {
-        col: 3,
-        label: qx.locale.Manager.tr("Actions")
       }
     }
   },
@@ -82,7 +78,6 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
       columnModel.setDataCellRenderer(this.self().T_POS.NAME.col, new qx.ui.table.cellrenderer.String());
       columnModel.setDataCellRenderer(this.self().T_POS.DATE.col, new qx.ui.table.cellrenderer.Date());
       columnModel.setDataCellRenderer(this.self().T_POS.ID.col, new qx.ui.table.cellrenderer.String());
-      columnModel.setDataCellRenderer(this.self().T_POS.ACTIONS.col, new qx.ui.table.cellrenderer.Default());
 
       osparc.data.model.Study.getSnapshots()
         .then(snapshots => {
@@ -93,7 +88,6 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
             row[this.self().T_POS.NAME.col] = snapshot["label"];
             const date = new Date(snapshot["created_at"]);
             row[this.self().T_POS.DATE.col] = osparc.utils.Utils.formatDateAndTime(date);
-            row[this.self().T_POS.ACTIONS.col] = new qx.ui.form.Button();
             rows.push(row);
           });
           this.getTableModel().setData(rows, false);

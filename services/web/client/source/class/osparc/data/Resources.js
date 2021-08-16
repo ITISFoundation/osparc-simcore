@@ -154,7 +154,6 @@ qx.Class.define("osparc.data.Resources", {
        * SNAPSHOTS
        */
       "snapshots": {
-        useCache: true,
         idField: "uuid",
         endpoints: {
           get: {
