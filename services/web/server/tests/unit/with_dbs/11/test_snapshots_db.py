@@ -2,23 +2,27 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections import namedtuple
+from datetime import datetime
 from uuid import UUID
 
 import aiopg.sa
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import make_mocked_request
+from faker import Faker
+from models_library.utils.database_models_factory import sa_table_to_pydantic_model
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.snapshots import snapshots
 from simcore_postgres_database.models.users import users
 from simcore_service_webserver.constants import APP_DB_ENGINE_KEY, RQT_USERID_KEY
 from simcore_service_webserver.snapshots_db import SnapshotsRepository
+from simcore_service_webserver.snapshots_models import Snapshot
 
 USERNAME = "me"
 PARENT_PROJECT_NAME = "parent"
 PROJECT_UUID = "322d8808-cca7-4cc4-9a17-ac79a080e721"
+ANOTHER_UUID = "d337b9a1-9e2b-4d6d-805e-351554d26d1f"
 
 
 @pytest.fixture
@@ -42,6 +46,14 @@ async def engine(loop, postgres_db: sa.engine.Engine):
                     )
                 )
             )
+            # has a project 'another'
+            await conn.execute(
+                projects.insert().values(
+                    **random_project(
+                        prj_owner=user_id, name="another", uuid=ANOTHER_UUID
+                    )
+                )
+            )
         yield pg_engine
 
 
@@ -56,6 +68,16 @@ def snapshots_repo(engine):
     return SnapshotsRepository(request)
 
 
-async def test_read_snapshots(snapshots_repo: SnapshotsRepository):
+async def test_snapshot_repo(snapshots_repo: SnapshotsRepository, faker: Faker):
 
     assert not await snapshots_repo.list(project_uuid=UUID(PROJECT_UUID))
+
+    snapshot = Snapshot(
+        name="dummy",
+        created_at=datetime.now(),
+        parent_uuid=PROJECT_UUID,
+        project_uuid=ANOTHER_UUID,
+    )
+
+    snapshot_orm = await snapshots_repo.create(snapshot)
+    assert snapshot_orm.parent_uuid == PROJECT_UUID
