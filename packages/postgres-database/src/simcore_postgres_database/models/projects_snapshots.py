@@ -2,8 +2,8 @@ import sqlalchemy as sa
 
 from .base import metadata
 
-snapshots = sa.Table(
-    "snapshots",
+projects_snapshots = sa.Table(
+    "projects_snapshots",
     metadata,
     sa.Column(
         "id",
@@ -49,6 +49,3 @@ snapshots = sa.Table(
         "parent_uuid", "created_at", name="snapshot_from_project_uniqueness"
     ),
 )
-
-
-# Snapshot : convert_to_pydantic(snapshot)

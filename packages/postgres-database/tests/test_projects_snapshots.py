@@ -4,7 +4,7 @@
 # pylint: disable=unused-variable
 
 from copy import deepcopy
-from typing import Callable, Optional, Set
+from typing import Callable, Coroutine, Optional, Set
 from uuid import UUID, uuid3
 
 import pytest
@@ -13,7 +13,7 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.projects import projects
-from simcore_postgres_database.models.snapshots import snapshots
+from simcore_postgres_database.models.projects_snapshots import projects_snapshots
 from simcore_postgres_database.models.users import users
 
 USERNAME = "me"
@@ -50,7 +50,7 @@ def exclude() -> Set:
 
 
 @pytest.fixture
-def create_snapshot(exclude: Set) -> Callable:
+def create_snapshot(exclude: Set) -> Coroutine:
     async def _create_snapshot(child_index: int, parent_prj, conn) -> int:
         # NOTE: used as FAKE prototype
 
@@ -80,14 +80,14 @@ def create_snapshot(exclude: Set) -> Callable:
 
         # create snapshot
         snapshot_id = await conn.scalar(
-            snapshots.insert()
+            projects_snapshots.insert()
             .values(
                 name=f"Snapshot {child_index} [{parent_prj.name}]",
                 created_at=parent_prj.last_change_date,
                 parent_uuid=parent_prj.uuid,
                 project_uuid=project_uuid,
             )
-            .returning(snapshots.c.id)
+            .returning(projects_snapshots.c.id)
         )
         return snapshot_id
 
@@ -130,7 +130,9 @@ async def test_creating_snapshots(
 
         second_snapshot = await (
             await conn.execute(
-                snapshots.select().where(snapshots.c.id == second_snapshot_id)
+                projects_snapshots.select().where(
+                    projects_snapshots.c.id == second_snapshot_id
+                )
             )
         ).first()
 
@@ -139,12 +141,14 @@ async def test_creating_snapshots(
         assert second_snapshot.created_at == updated_parent_prj.last_change_date
 
         # get project corresponding to first snapshot
-        j = projects.join(snapshots, projects.c.uuid == snapshots.c.project_uuid)
+        j = projects.join(
+            snapshots, projects.c.uuid == projects_snapshots.c.project_uuid
+        )
         selected_snapshot_project = await (
             await conn.execute(
                 projects.select()
                 .select_from(j)
-                .where(snapshots.c.id == second_snapshot_id)
+                .where(projects_snapshots.c.id == second_snapshot_id)
             )
         ).first()
 

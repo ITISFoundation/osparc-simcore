@@ -10,12 +10,10 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import make_mocked_request
 from faker import Faker
-from models_library.utils.database_models_factory import sa_table_to_pydantic_model
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from simcore_postgres_database.models.projects import projects
-from simcore_postgres_database.models.snapshots import snapshots
 from simcore_postgres_database.models.users import users
-from simcore_service_webserver.constants import APP_DB_ENGINE_KEY, RQT_USERID_KEY
+from simcore_service_webserver.constants import APP_DB_ENGINE_KEY
 from simcore_service_webserver.snapshots_db import SnapshotsRepository
 from simcore_service_webserver.snapshots_models import Snapshot
 
