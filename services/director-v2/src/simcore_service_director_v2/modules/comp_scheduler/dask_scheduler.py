@@ -31,7 +31,7 @@ class DaskScheduler(BaseCompScheduler):
         self.dask_client.send_computation_tasks(
             user_id=user_id,
             project_id=project_id,
-            single_tasks=scheduled_tasks,
+            tasks=scheduled_tasks,
             callback=callback,
         )
 
