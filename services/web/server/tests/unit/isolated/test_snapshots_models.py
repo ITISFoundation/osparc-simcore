@@ -7,10 +7,10 @@ from uuid import uuid4
 
 from faker import Faker
 from models_library.utils.database_models_factory import sa_table_to_pydantic_model
-from simcore_postgres_database.models.snapshots import snapshots
+from simcore_postgres_database.models.projects_snapshots import projects_snapshots
 from simcore_service_webserver.snapshots_models import Snapshot
 
-SnapshotORM = sa_table_to_pydantic_model(snapshots)
+SnapshotORM = sa_table_to_pydantic_model(projects_snapshots)
 
 
 def test_snapshot_orm_to_domain_model(faker: Faker):
