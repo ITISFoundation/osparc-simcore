@@ -66,7 +66,9 @@ else
     num_cpus=1
   fi
   num_gpus=$(python -c "from simcore_service_sidecar.utils import num_available_gpus; print(num_available_gpus());")
-  resources="CPU=$num_cpus"
+  # the amount of RAM is computed similarly as the default dask-sidecar computation
+  ram=$(python -c "import psutil; print(psutil.virtual_memory().total * $num_cpus/$(nproc))")
+  resources="CPU=$num_cpus,RAM=$ram"
   if [ "$num_gpus" -gt 0 ]; then
     resources="$resources,GPU=$num_gpus"
   fi
@@ -87,6 +89,7 @@ else
       --no-nanny \
       --nthreads "$num_cpus" \
       --dashboard-address 8787 \
+      --memory-limit "$ram" \
       --resources "$resources"
 
   else
@@ -98,6 +101,7 @@ else
       --no-nanny \
       --nthreads "$num_cpus" \
       --dashboard-address 8787 \
+      --memory-limit "$ram" \
       --resources "$resources"
 
   fi
