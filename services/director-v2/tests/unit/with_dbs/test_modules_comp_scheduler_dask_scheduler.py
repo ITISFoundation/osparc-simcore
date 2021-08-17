@@ -265,7 +265,7 @@ async def test_proper_pipeline_is_scheduled(
     mocked_dask_client.assert_called_once_with(
         user_id=user_id,
         project_id=sleepers_project.uuid,
-        single_tasks={
+        tasks={
             "3a710d8b-565c-5f46-870b-b45ebe195fc7": NodeRequirements(
                 CPU=1.0, GPU=0, RAM="128 MiB", MPI=0
             ),
@@ -316,7 +316,7 @@ async def test_proper_pipeline_is_scheduled(
     mocked_dask_client.assert_called_once_with(
         user_id=user_id,
         project_id=sleepers_project.uuid,
-        single_tasks={
+        tasks={
             "415fefd1-d08b-53c1-adb0-16bed3a687ef": NodeRequirements(
                 CPU=1.0, GPU=0, RAM="128 MiB", MPI=0
             )
