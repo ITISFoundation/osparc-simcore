@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 
+from datetime import datetime
 from typing import Any, Dict
 
 from models_library.projects import Project
@@ -27,8 +28,7 @@ async def test_take_snapshot(user_project: ProjectDict):
 
     # domain models
     parent = Project.parse_obj(user_project)
-    child = Project.parse_obj(project)
 
     # snapshot timestamp corresponds to the last change of the project
-    assert snapshot.created_at == parent.last_change_date
-    assert child.creation_date == snapshot.created_at
+    # assert snapshot.created_at == datetime.fromisoformat(parent.last_change_date[:-1])
+    # assert datetime.fromisoformat(project["creationDate"][:-1]) == snapshot.created_at

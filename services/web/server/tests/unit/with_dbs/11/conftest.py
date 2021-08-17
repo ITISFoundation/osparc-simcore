@@ -24,7 +24,7 @@ def user_role() -> UserRole:
 @pytest.fixture
 def fake_project() -> ProjectDict:
     # API model project data
-    return random_project(name=f"{__name__}-project")
+    return random_project(name=f"{__file__}-project")
 
 
 @pytest.fixture
