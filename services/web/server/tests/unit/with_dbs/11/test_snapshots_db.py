@@ -8,6 +8,7 @@ from uuid import UUID
 import aiopg.sa
 import pytest
 import sqlalchemy as sa
+from aiohttp.test_utils import make_mocked_request
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.snapshots import snapshots
@@ -21,10 +22,10 @@ PROJECT_UUID = "322d8808-cca7-4cc4-9a17-ac79a080e721"
 
 
 @pytest.fixture
-async def engine(postgres_db: sa.engine.Engine):
+async def engine(loop, postgres_db: sa.engine.Engine):
     # pylint: disable=no-value-for-parameter
 
-    async with aiopg.sa.create_engine(postgres_db.url) as pg_engine:
+    async with aiopg.sa.create_engine(str(postgres_db.url)) as pg_engine:
         # injects TABLES ...
         async with pg_engine.acquire() as conn:
             # a 'me' user
@@ -49,8 +50,8 @@ def snapshots_repo(engine):
     app = {}
     app[APP_DB_ENGINE_KEY] = engine
 
-    Request = namedtuple("Request", "app")
-    request = Request(app=app)
+    request = make_mocked_request("GET", "/project/{PROJECT_UUID}/snapshots")
+    request.app[APP_DB_ENGINE_KEY] = engine
 
     return SnapshotsRepository(request)
 
