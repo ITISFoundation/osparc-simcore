@@ -205,6 +205,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment: &sidecar-environment
+      DEFAULT_MAX_NANO_CPUS: ${DEFAULT_MAX_NANO_CPUS}
+      DEFAULT_MAX_MEMORY: ${DEFAULT_MAX_MEMORY}
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PORT: ${RABBIT_PORT}
       RABBIT_USER: ${RABBIT_USER}
