@@ -18,13 +18,6 @@ BuiltinTypes = Union[StrictBool, StrictInt, StrictFloat, str]
 
 
 ## Domain models --------
-class Parameter(BaseModel):
-    name: str
-    value: BuiltinTypes
-
-    # TODO: same parameter in different nodes?
-    node_id: UUID = Field(..., description="Id of parametrized node")
-    output_id: OutputID = Field(..., description="Output where parameter is exposed")
 
 
 class Snapshot(BaseModel):
@@ -56,11 +49,6 @@ class Snapshot(BaseModel):
 
 
 ## API models ----------
-
-
-class ParameterApiModel(Parameter):
-    url: AnyUrl
-    # url_output: AnyUrl
 
 
 class SnapshotItem(Snapshot):

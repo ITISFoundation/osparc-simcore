@@ -1,3 +1,7 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 from datetime import datetime
 from uuid import uuid4
 
