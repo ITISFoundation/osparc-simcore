@@ -21,6 +21,7 @@ def test_table_to_pydantic_models(table_cls):
 
     PydanticModelAtDB = sa_table_to_pydantic_model(table=table_cls)
     assert issubclass(PydanticModelAtDB, BaseModel)
+
     print(PydanticModelAtDB.schema_json(indent=2))
 
     # TODO: create fakes automatically? SEE packages/pytest-simcore/src/pytest_simcore/helpers/rawdata_fakers.py

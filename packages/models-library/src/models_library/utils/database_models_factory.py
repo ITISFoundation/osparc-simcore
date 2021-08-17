@@ -9,7 +9,7 @@ from uuid import UUID
 
 import sqlalchemy as sa
 from pydantic import BaseConfig, BaseModel, Field, create_model
-from pydantic.types import PositiveInt
+from pydantic.types import NonNegativeInt
 
 warnings.warn(
     "This is still a concept under development. "
@@ -61,8 +61,8 @@ def sa_table_to_pydantic_model(
         assert pydantic_type, f"Could not infer pydantic_type for {column}"  # nosec
 
         # big integer primary keys
-        if column.primary_key and isinstance(pydantic_type, int):
-            pydantic_type = PositiveInt
+        if column.primary_key and issubclass(pydantic_type, int):
+            pydantic_type = NonNegativeInt
 
         default = None
         if column.default is None and not column.nullable:
