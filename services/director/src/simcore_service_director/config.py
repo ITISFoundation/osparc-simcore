@@ -22,12 +22,19 @@ DEBUG_MODE = log_level == logging.DEBUG
 API_VERSION: str = "v0"
 API_ROOT: str = "api"
 
+
+def _from_env_with_default(env: str, python_type, default):
+    env_value = python_type(os.environ.get(env, default))
+
+    return default if env_value <= 0 else env_value
+
+
 # NOTE: these settings must be in sync with settings-library: comp_services.py (since the director is frozen)
-DEFAULT_MAX_NANO_CPUS: int = int(
-    os.environ.get("DEFAULT_MAX_NANO_CPUS", 4 * pow(10, 9))
+DEFAULT_MAX_NANO_CPUS: int = _from_env_with_default(
+    "DEFAULT_MAX_NANO_CPUS", int, 4 * pow(10, 9)
 )
-DEFAULT_MAX_MEMORY: int = int(
-    os.environ.get("DEFAULT_MAX_MEMORY", 2 * pow(1024, 3))
+DEFAULT_MAX_MEMORY: int = _from_env_with_default(
+    "DEFAULT_MAX_MEMORY", int, 4 * pow(10, 9)
 )  # 2 GiB
 
 SERVICE_RUNTIME_SETTINGS: str = "simcore.service.settings"
