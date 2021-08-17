@@ -69,13 +69,13 @@ async def _generate_tasks_list_from_project(
                 director_client.get_service_extras(service_key_version),
             )
 
-        if not node_details or not node_extras:
+        if not node_details:
             continue
 
         image = Image(
             name=service_key_version.key,
             tag=service_key_version.version,
-            node_requirements=node_extras.node_requirements,
+            node_requirements=node_extras.node_requirements if node_extras else None,
         )
 
         assert node.state is not None  # nosec
