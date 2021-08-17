@@ -142,7 +142,7 @@ async def test_creating_snapshots(
 
         # get project corresponding to first snapshot
         j = projects.join(
-            snapshots, projects.c.uuid == projects_snapshots.c.project_uuid
+            projects_snapshots, projects.c.uuid == projects_snapshots.c.project_uuid
         )
         selected_snapshot_project = await (
             await conn.execute(
