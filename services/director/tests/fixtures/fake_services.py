@@ -143,7 +143,7 @@ async def _build_push_image(
     # create the typical org.label-schema labels
     service_extras = {
         "node_requirements": {
-            "CPU": DEFAULT_MAX_NANO_CPUS * 10e9,
+            "CPU": DEFAULT_MAX_NANO_CPUS / 1e9,
             "RAM": DEFAULT_MAX_MEMORY,
         },
         "build_date": "2020-08-19T15:36:27Z",
