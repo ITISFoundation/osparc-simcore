@@ -44,6 +44,8 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
+      - DEFAULT_MAX_NANO_CPUS=${DEFAULT_MAX_NANO_CPUS:-0}
+      - DEFAULT_MAX_MEMORY=${DEFAULT_MAX_MEMORY:-0}
       - REGISTRY_URL=${REGISTRY_URL}
       - REGISTRY_PATH=${REGISTRY_PATH}
       - REGISTRY_AUTH=${REGISTRY_AUTH}
@@ -205,8 +207,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment: &sidecar-environment
-      DEFAULT_MAX_NANO_CPUS: ${DEFAULT_MAX_NANO_CPUS}
-      DEFAULT_MAX_MEMORY: ${DEFAULT_MAX_MEMORY}
+      DEFAULT_MAX_NANO_CPUS: ${DEFAULT_MAX_NANO_CPUS:-0}
+      DEFAULT_MAX_MEMORY: ${DEFAULT_MAX_MEMORY:-0}
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PORT: ${RABBIT_PORT}
       RABBIT_USER: ${RABBIT_USER}
