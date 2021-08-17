@@ -11,3 +11,5 @@
 
 # installs this repo's packages
 ../../packages/pytest-simcore/
+../../packages/settings-library/
+../../packages/service-library/
