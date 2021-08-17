@@ -161,7 +161,7 @@ async def start_project_interactive_services(
             service_version=service["version"],
             service_uuid=service_uuid,
             request_dns=extract_dns_without_default_port(request.url),
-            request_scheme=request.url.scheme,
+            request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
         )
         for service_uuid, service in project_needed_services.items()
     ]
