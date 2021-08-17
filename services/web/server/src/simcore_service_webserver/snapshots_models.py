@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Callable, Optional, Union
 from uuid import UUID, uuid3
 
-from models_library.projects_nodes import OutputID
 from pydantic import (
     AnyUrl,
     BaseModel,
