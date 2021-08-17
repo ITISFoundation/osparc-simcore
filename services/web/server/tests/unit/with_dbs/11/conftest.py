@@ -50,7 +50,7 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, catalog_subsystem_mock, monkey
     """
     cfg = deepcopy(default_app_cfg)
 
-    monkeypatch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", True)
+    monkeypatch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", "1")
 
     cfg["main"]["port"] = aiohttp_unused_port()
     cfg["main"]["studies_access_enabled"] = True

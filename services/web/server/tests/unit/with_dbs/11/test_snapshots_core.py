@@ -2,8 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict
 
 from models_library.projects import Project
@@ -30,5 +29,8 @@ async def test_take_snapshot(user_project: ProjectDict):
     parent = Project.parse_obj(user_project)
 
     # snapshot timestamp corresponds to the last change of the project
-    # assert snapshot.created_at == datetime.fromisoformat(parent.last_change_date[:-1])
-    # assert datetime.fromisoformat(project["creationDate"][:-1]) == snapshot.created_at
+    def to_dt(timestamp):
+        return datetime.fromisoformat(timestamp[:-1]).replace(tzinfo=timezone.utc)
+
+    assert snapshot.created_at == to_dt(parent.last_change_date)
+    assert to_dt(project["creationDate"]) == snapshot.created_at
