@@ -1,14 +1,21 @@
 """ Automatic creation of pydantic model classes from a sqlalchemy table
 
-
 SEE: Copied and adapted from https://github.com/tiangolo/pydantic-sqlalchemy/blob/master/pydantic_sqlalchemy/main.py
 """
 
+import warnings
 from typing import Any, Container, Dict, Optional, Type
 from uuid import UUID
 
 import sqlalchemy as sa
 from pydantic import BaseConfig, BaseModel, Field, create_model
+
+warnings.warn(
+    "This is still a concept under development. "
+    "Currently only inteded for testing. "
+    "DO NOT USE in production.",
+    category=UserWarning,
+)
 
 
 class OrmConfig(BaseConfig):
@@ -57,6 +64,11 @@ def sa_table_to_pydantic_model(
             default = ...
 
         # Policies based on naming conventions
+        #
+        # TODO: implement it as a pluggable policy class.
+        # Base policy class is abstract interface
+        # and user can add as many in a given order in the arguments
+        #
         if "uuid" in name.split("_") and python_type == str:
             python_type = UUID
             if isinstance(default, str):
