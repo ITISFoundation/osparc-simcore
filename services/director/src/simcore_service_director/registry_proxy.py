@@ -404,4 +404,6 @@ async def get_service_extras(
         }
     )
 
+    logger.debug("Following service extras were compiled: %s", pformat(result))
+
     return result

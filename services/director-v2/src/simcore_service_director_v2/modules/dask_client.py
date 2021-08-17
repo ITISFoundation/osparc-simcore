@@ -105,7 +105,9 @@ class DaskClient:
             node_reqs: NodeRequirements,
         ) -> Dict[str, Union[int, float]]:
             """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
-            return node_reqs.dict(exclude_unset=True, by_alias=True)
+            dask_resources = node_reqs.dict(exclude_unset=True, by_alias=True)
+            logger.debug("transformed to dask resources: %s", dask_resources)
+            return dask_resources
 
         for node_id, node_reqs in tasks.items():
             job_id = f"dask_{uuid4()}"
