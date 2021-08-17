@@ -182,12 +182,3 @@ async def test_multiple_snapshots_of_same_project(
         # no changes in the parent!
         with pytest.raises(UniqueViolation):
             await create_snapshot(1, parent_prj, conn)
-
-
-def test_deleting_snapshots():
-    # test delete child project -> deletes snapshot
-    # test delete snapshot -> deletes child project
-
-    # test delete parent project -> deletes snapshots
-    # test delete snapshot does NOT delete parent
-    pass
