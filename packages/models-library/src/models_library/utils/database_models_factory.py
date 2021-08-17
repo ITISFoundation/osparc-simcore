@@ -9,6 +9,7 @@ from uuid import UUID
 
 import sqlalchemy as sa
 from pydantic import BaseConfig, BaseModel, Field, create_model
+from pydantic.types import PositiveInt
 
 warnings.warn(
     "This is still a concept under development. "
@@ -50,14 +51,18 @@ def sa_table_to_pydantic_model(
             field_args["alias"] = name
             name = f"{table.name.lower()}_{name}"
 
-        python_type: Optional[type] = None
+        pydantic_type: Optional[type] = None
         if hasattr(column.type, "impl"):
             if hasattr(column.type.impl, "python_type"):
-                python_type = column.type.impl.python_type
+                pydantic_type = column.type.impl.python_type
         elif hasattr(column.type, "python_type"):
-            python_type = column.type.python_type
+            pydantic_type = column.type.python_type
 
-        assert python_type, f"Could not infer python_type for {column}"  # nosec
+        assert pydantic_type, f"Could not infer pydantic_type for {column}"  # nosec
+
+        # big integer primary keys
+        if column.primary_key and isinstance(pydantic_type, int):
+            pydantic_type = PositiveInt
 
         default = None
         if column.default is None and not column.nullable:
@@ -69,8 +74,8 @@ def sa_table_to_pydantic_model(
         # Base policy class is abstract interface
         # and user can add as many in a given order in the arguments
         #
-        if "uuid" in name.split("_") and python_type == str:
-            python_type = UUID
+        if "uuid" in name.split("_") and pydantic_type == str:
+            pydantic_type = UUID
             if isinstance(default, str):
                 default = UUID(default)
 
@@ -79,7 +84,7 @@ def sa_table_to_pydantic_model(
         if hasattr(column, "doc") and column.doc:
             field_args["description"] = column.doc
 
-        fields[name] = (python_type, Field(**field_args))
+        fields[name] = (pydantic_type, Field(**field_args))
 
     # create domain models from db-schemas
     pydantic_model = create_model(
