@@ -5,7 +5,7 @@ from uuid import UUID
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
-from simcore_postgres_database.models.snapshots import snapshots
+from simcore_postgres_database.models.projects_snapshots import projects_snapshots
 from simcore_service_webserver.snapshots_models import Snapshot
 
 from .db_base_repository import BaseRepository
@@ -27,7 +27,7 @@ class SnapshotsRepository(BaseRepository):
     Gets primitive/standard parameters and returns valid orm objects
     """
 
-    async def list(
+    async def list_all(
         self, project_uuid: UUID, limit: Optional[int] = None
     ) -> List[SnapshotRow]:
         """Returns sorted list of snapshots in project"""
@@ -35,9 +35,9 @@ class SnapshotsRepository(BaseRepository):
 
         async with self.engine.acquire() as conn:
             query = (
-                snapshots.select()
-                .where(snapshots.c.parent_uuid == str(project_uuid))
-                .order_by(snapshots.c.id)
+                projects_snapshots.select()
+                .where(projects_snapshots.c.parent_uuid == str(project_uuid))
+                .order_by(projects_snapshots.c.id)
             )
             if limit and limit > 0:
                 query = query.limit(limit)
@@ -51,18 +51,18 @@ class SnapshotsRepository(BaseRepository):
     async def get_by_name(
         self, project_uuid: UUID, snapshot_name: str
     ) -> Optional[SnapshotRow]:
-        query = snapshots.select().where(
-            (snapshots.c.parent_uuid == str(project_uuid))
-            & (snapshots.c.name == snapshot_name)
+        query = projects_snapshots.select().where(
+            (projects_snapshots.c.parent_uuid == str(project_uuid))
+            & (projects_snapshots.c.name == snapshot_name)
         )
         return await self._first(query)
 
     async def get_by_id(
         self, parent_uuid: UUID, snapshot_id: int
     ) -> Optional[SnapshotRow]:
-        query = snapshots.select().where(
-            (snapshots.c.parent_uuid == str(parent_uuid))
-            & (snapshots.c.id == snapshot_id)
+        query = projects_snapshots.select().where(
+            (projects_snapshots.c.parent_uuid == str(parent_uuid))
+            & (projects_snapshots.c.id == snapshot_id)
         )
         return await self._first(query)
 
@@ -72,17 +72,17 @@ class SnapshotsRepository(BaseRepository):
         snapshot_project_uuid: UUID = Snapshot.compose_project_uuid(
             parent_uuid, created_at
         )
-        query = snapshots.select().where(
-            (snapshots.c.parent_uuid == str(parent_uuid))
-            & (snapshots.c.project_uuid == str(snapshot_project_uuid))
+        query = projects_snapshots.select().where(
+            (projects_snapshots.c.parent_uuid == str(parent_uuid))
+            & (projects_snapshots.c.project_uuid == str(snapshot_project_uuid))
         )
         return await self._first(query)
 
     async def list_snapshot_names(self, parent_uuid: UUID) -> List[Tuple[str, int]]:
         query = (
-            sa.select([snapshots.c.name, snapshots.c.id])
-            .where(snapshots.c.parent_uuid == str(parent_uuid))
-            .order_by(snapshots.c.id)
+            sa.select([projects_snapshots.c.name, projects_snapshots.c.id])
+            .where(projects_snapshots.c.parent_uuid == str(parent_uuid))
+            .order_by(projects_snapshots.c.id)
         )
         async with self.engine.acquire() as conn:
             return await (await conn.execute(query)).fetchall()
@@ -90,9 +90,9 @@ class SnapshotsRepository(BaseRepository):
     async def create(self, snapshot: Snapshot) -> SnapshotRow:
         # pylint: disable=no-value-for-parameter
         query = (
-            snapshots.insert()
+            projects_snapshots.insert()
             .values(**snapshot.dict(by_alias=True, exclude={"id"}))
-            .returning(snapshots)
+            .returning(projects_snapshots)
         )
         row = await self._first(query)
         assert row  # nosec

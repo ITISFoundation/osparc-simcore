@@ -8,36 +8,36 @@ from pathlib import Path
 from typing import Dict
 
 import sqlalchemy as sa
-from simcore_sdk.models.pipeline_models import ComputationalTask
+from simcore_postgres_database.models.comp_tasks import comp_tasks
 
 log = logging.getLogger(__name__)
 
 
 def update_configuration(
-    postgres_session: sa.orm.session.Session,
+    postgres_engine: sa.engine.Engine,
     project_id: str,
     node_uuid: str,
     new_configuration: Dict,
 ) -> None:
     log.debug(
-        "Update configuration of pipeline %s, node %s, on session %s",
+        "Update configuration of pipeline %s, node %s",
         project_id,
         node_uuid,
-        postgres_session,
     )
-    # pylint: disable=no-member
-    task = postgres_session.query(ComputationalTask).filter(
-        ComputationalTask.project_id == str(project_id),
-        ComputationalTask.node_id == str(node_uuid),
-    )
-    task.update(
-        dict(
-            schema=new_configuration["schema"],
-            inputs=new_configuration["inputs"],
-            outputs=new_configuration["outputs"],
+
+    with postgres_engine.connect() as conn:
+        conn.execute(
+            comp_tasks.update()  # pylint: disable=no-value-for-parameter
+            .where(
+                (comp_tasks.c.project_id == project_id)
+                & (comp_tasks.c.node_id == node_uuid)
+            )
+            .values(
+                schema=new_configuration["schema"],
+                inputs=new_configuration["inputs"],
+                outputs=new_configuration["outputs"],
+            )
         )
-    )
-    postgres_session.commit()
     log.debug("Updated configuration")
 
 

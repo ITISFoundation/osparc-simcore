@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import asyncio
 from filecmp import cmpfiles
 from pathlib import Path
 from shutil import copy, make_archive, unpack_archive
@@ -32,7 +31,12 @@ def create_files() -> Callable:
 
 
 async def test_push_folder(
-    loop: asyncio.events.AbstractEventLoop, mocker, tmpdir: Path, create_files: Callable
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    mocker,
+    tmpdir: Path,
+    create_files: Callable,
 ):
     # create some files
     assert tmpdir.exists()
@@ -52,9 +56,6 @@ async def test_push_folder(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
     mock_filemanager.upload_file.return_value = ""
-    mock_config = mocker.patch("simcore_sdk.node_data.data_manager.config", spec=True)
-    mock_config.PROJECT_ID = "some funky ID"
-    mock_config.NODE_UUID = "another funky ID"
     mock_temporary_directory = mocker.patch(
         "simcore_sdk.node_data.data_manager.TemporaryDirectory"
     )
@@ -68,15 +69,14 @@ async def test_push_folder(
     for file_path in test_folder.glob("**/*"):
         assert file_path.exists()
 
-    await data_manager.push(test_folder)
+    await data_manager.push(user_id, project_id, node_uuid, test_folder)
 
     mock_temporary_directory.assert_called_once()
     mock_filemanager.upload_file.assert_called_once_with(
         local_file_path=(test_compression_folder / "{}.zip".format(test_folder.stem)),
-        s3_object="{}/{}/{}.zip".format(
-            mock_config.PROJECT_ID, mock_config.NODE_UUID, test_folder.stem
-        ),
-        store_id=0,
+        s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}.zip",
+        store_id="0",
+        user_id=user_id,
     )
 
     archive_file = test_compression_folder / "{}.zip".format(test_folder.stem)
@@ -96,15 +96,17 @@ async def test_push_folder(
 
 
 async def test_push_file(
-    loop: asyncio.events.AbstractEventLoop, mocker, tmpdir: Path, create_files: Callable
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    mocker,
+    tmpdir: Path,
+    create_files: Callable,
 ):
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
     mock_filemanager.upload_file.return_value = ""
-    mock_config = mocker.patch("simcore_sdk.node_data.data_manager.config", spec=True)
-    mock_config.PROJECT_ID = "some funky ID"
-    mock_config.NODE_UUID = "another funky ID"
     mock_temporary_directory = mocker.patch(
         "simcore_sdk.node_data.data_manager.TemporaryDirectory"
     )
@@ -113,20 +115,24 @@ async def test_push_file(
     assert file_path.exists()
 
     # test push file by file
-    await data_manager.push(file_path)
+    await data_manager.push(user_id, project_id, node_uuid, file_path)
     mock_temporary_directory.assert_not_called()
     mock_filemanager.upload_file.assert_called_once_with(
         local_file_path=file_path,
-        s3_object="{}/{}/{}".format(
-            mock_config.PROJECT_ID, mock_config.NODE_UUID, file_path.name
-        ),
-        store_id=0,
+        s3_object=f"{project_id}/{node_uuid}/{file_path.name}",
+        store_id="0",
+        user_id=user_id,
     )
     mock_filemanager.reset_mock()
 
 
 async def test_pull_folder(
-    loop: asyncio.events.AbstractEventLoop, mocker, tmpdir: Path, create_files: Callable
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    mocker,
+    tmpdir: Path,
+    create_files: Callable,
 ):
     assert tmpdir.exists()
     # create a folder to compress from
@@ -160,9 +166,6 @@ async def test_pull_folder(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
     mock_filemanager.download_file_from_s3.return_value = fake_zipped_folder
-    mock_config = mocker.patch("simcore_sdk.node_data.data_manager.config", spec=True)
-    mock_config.PROJECT_ID = "some funky ID"
-    mock_config.NODE_UUID = "another funky ID"
     mock_temporary_directory = mocker.patch(
         "simcore_sdk.node_data.data_manager.TemporaryDirectory"
     )
@@ -170,14 +173,13 @@ async def test_pull_folder(
         test_compression_folder
     )
 
-    await data_manager.pull(test_folder)
+    await data_manager.pull(user_id, project_id, node_uuid, test_folder)
     mock_temporary_directory.assert_called_once()
     mock_filemanager.download_file_from_s3.assert_called_once_with(
         local_folder=test_compression_folder,
-        s3_object="{}/{}/{}.zip".format(
-            mock_config.PROJECT_ID, mock_config.NODE_UUID, test_folder.stem
-        ),
-        store_id=0,
+        s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}.zip",
+        store_id="0",
+        user_id=user_id,
     )
 
     matchs, mismatchs, errors = cmpfiles(
@@ -191,7 +193,12 @@ async def test_pull_folder(
 
 
 async def test_pull_file(
-    loop: asyncio.events.AbstractEventLoop, mocker, tmpdir: Path, create_files: Callable
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    mocker,
+    tmpdir: Path,
+    create_files: Callable,
 ):
     file_path = create_files(1, Path(tmpdir))[0]
     assert file_path.exists()
@@ -206,19 +213,15 @@ async def test_pull_file(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
     mock_filemanager.download_file_from_s3.return_value = fake_downloaded_file
-    mock_config = mocker.patch("simcore_sdk.node_data.data_manager.config", spec=True)
-    mock_config.PROJECT_ID = "some funky ID"
-    mock_config.NODE_UUID = "another funky ID"
     mock_temporary_directory = mocker.patch(
         "simcore_sdk.node_data.data_manager.TemporaryDirectory"
     )
 
-    await data_manager.pull(file_path)
+    await data_manager.pull(user_id, project_id, node_uuid, file_path)
     mock_temporary_directory.assert_not_called()
     mock_filemanager.download_file_from_s3.assert_called_once_with(
         local_folder=file_path.parent,
-        s3_object="{}/{}/{}".format(
-            mock_config.PROJECT_ID, mock_config.NODE_UUID, file_path.name
-        ),
-        store_id=0,
+        s3_object=f"{project_id}/{node_uuid}/{file_path.name}",
+        store_id="0",
+        user_id=user_id,
     )

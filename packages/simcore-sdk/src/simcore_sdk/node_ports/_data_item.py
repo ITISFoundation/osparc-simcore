@@ -4,7 +4,7 @@ import collections
 import logging
 from typing import Dict, Optional, Union
 
-from . import config, exceptions
+from ..node_ports_common import config, exceptions
 
 log = logging.getLogger(__name__)
 

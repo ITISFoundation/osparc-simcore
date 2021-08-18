@@ -3,7 +3,7 @@ from typing import Dict, ItemsView, Iterator, KeysView, Type, Union, ValuesView
 from models_library.services import PROPERTY_KEY_RE
 from pydantic import BaseModel, constr
 
-from ..node_ports.exceptions import UnboundPortError
+from ..node_ports_common.exceptions import UnboundPortError
 from .port import Port
 
 PortKey: Type[str] = constr(regex=PROPERTY_KEY_RE)

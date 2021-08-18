@@ -11,7 +11,8 @@ import warnings
 from pathlib import Path
 from typing import Optional
 
-from . import data_items_utils, dbmanager, exceptions, serialization
+from ..node_ports_common import data_items_utils, dbmanager, exceptions
+from . import serialization
 from ._data_items_list import DataItemsList
 from ._items_list import ItemsList
 from ._schema_items_list import SchemaItemsList
@@ -24,6 +25,9 @@ class Nodeports:
 
     def __init__(
         self,
+        user_id: int,
+        project_id: str,
+        node_uuid: str,
         input_schemas: SchemaItemsList = None,
         output_schemas: SchemaItemsList = None,
         input_payloads: DataItemsList = None,
@@ -38,6 +42,9 @@ class Nodeports:
             input_payloads,
             outputs_payloads,
         )
+        self.user_id = user_id
+        self.project_id = project_id
+        self.node_uuid = node_uuid
         if not input_schemas:
             input_schemas = SchemaItemsList()
         if not output_schemas:
@@ -74,12 +81,18 @@ class Nodeports:
         self._outputs_payloads = outputs_payloads
 
         self._inputs = ItemsList(
+            self.user_id,
+            self.project_id,
+            self.node_uuid,
             self._input_schemas,
             self._inputs_payloads,
             change_cb=self._save_to_json,
             get_node_from_node_uuid_cb=self._get_node_from_node_uuid,
         )
         self._outputs = ItemsList(
+            self.user_id,
+            self.project_id,
+            self.node_uuid,
             self._output_schemas,
             self._outputs_payloads,
             change_cb=self._save_to_json,
@@ -146,7 +159,12 @@ class Nodeports:
         log.debug("Updating json configuration")
         if not self.db_mgr:
             raise exceptions.NodeportsException("db manager is not initialised")
-        upd_node = await serialization.create_from_json(self.db_mgr)
+        upd_node = await serialization.create_from_json(
+            self.db_mgr,
+            user_id=self.user_id,
+            project_id=self.project_id,
+            node_uuid=self.node_uuid,
+        )
         # copy from updated nodeports
         self._copy_schemas_payloads(
             upd_node._input_schemas,
@@ -163,10 +181,18 @@ class Nodeports:
     async def _get_node_from_node_uuid(self, node_uuid: str):
         if not self.db_mgr:
             raise exceptions.NodeportsException("db manager is not initialised")
-        return await serialization.create_nodeports_from_uuid(self.db_mgr, node_uuid)
+        return await serialization.create_nodeports_from_uuid(
+            self.db_mgr, self.user_id, self.project_id, node_uuid
+        )
 
 
-async def ports(db_manager: Optional[dbmanager.DBManager] = None) -> Nodeports:
+async def ports(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    *,
+    db_manager: Optional[dbmanager.DBManager] = None
+) -> Nodeports:
     warnings.warn(
         "node_ports is deprecated, use node_ports_v2 instead",
         category=DeprecationWarning,
@@ -177,5 +203,10 @@ async def ports(db_manager: Optional[dbmanager.DBManager] = None) -> Nodeports:
 
     # create initial Simcore object
     return await serialization.create_from_json(
-        db_manager, auto_read=True, auto_write=True
+        db_manager,
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
+        auto_read=True,
+        auto_write=True,
     )

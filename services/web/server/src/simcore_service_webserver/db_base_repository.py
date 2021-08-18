@@ -22,6 +22,8 @@ class BaseRepository:
         self._engine: Engine = request.app[APP_DB_ENGINE_KEY]
         self._user_id: Optional[int] = request.get(RQT_USERID_KEY)
 
+        assert isinstance(self._engine, Engine)  # nosec
+
     @property
     def engine(self) -> Engine:
         return self._engine

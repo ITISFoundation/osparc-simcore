@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Callable, Optional, Union
 from uuid import UUID, uuid3
 
-from models_library.projects_nodes import OutputID
 from pydantic import (
     AnyUrl,
     BaseModel,
@@ -18,13 +17,6 @@ BuiltinTypes = Union[StrictBool, StrictInt, StrictFloat, str]
 
 
 ## Domain models --------
-class Parameter(BaseModel):
-    name: str
-    value: BuiltinTypes
-
-    # TODO: same parameter in different nodes?
-    node_id: UUID = Field(..., description="Id of parametrized node")
-    output_id: OutputID = Field(..., description="Output where parameter is exposed")
 
 
 class Snapshot(BaseModel):
@@ -34,7 +26,8 @@ class Snapshot(BaseModel):
     )
     created_at: datetime = Field(
         default_factory=datetime.utcnow,
-        description="Timestamp of the time snapshot was taken from parent. Notice that parent might change with time",
+        description="Timestamp of the time snapshot was taken from parent."
+        "Notice that parent might change with time",
     )
 
     parent_uuid: UUID = Field(..., description="Parent's project uuid")
@@ -55,11 +48,6 @@ class Snapshot(BaseModel):
 
 
 ## API models ----------
-
-
-class ParameterApiModel(Parameter):
-    url: AnyUrl
-    # url_output: AnyUrl
 
 
 class SnapshotItem(Snapshot):

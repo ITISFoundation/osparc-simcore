@@ -32,6 +32,8 @@ coveralls==3.2.0
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
+faker==8.11.0
+    # via -r requirements/_test.in
 icdiff==2.0.4
     # via pytest-icdiff
 idna==2.10
@@ -94,6 +96,8 @@ pytest-runner==5.3.1
     # via -r requirements/_test.in
 pytest-sugar==0.9.4
     # via -r requirements/_test.in
+python-dateutil==2.8.2
+    # via faker
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -101,6 +105,8 @@ pyyaml==5.4.1
     #   -r requirements/_test.in
 requests==2.26.0
     # via coveralls
+six==1.16.0
+    # via python-dateutil
 sqlalchemy==1.3.24
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -108,6 +114,8 @@ sqlalchemy==1.3.24
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
 termcolor==1.1.0
     # via pytest-sugar
+text-unidecode==1.3
+    # via faker
 toml==0.10.2
     # via
     #   pylint
@@ -128,3 +136,6 @@ yarl==1.6.3
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiohttp
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools
