@@ -256,11 +256,9 @@ paths:
                                 - type
                               properties:
                                 displayOrder:
+                                  description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
+                                  deprecated: true
                                   type: number
-                                  description: use this to numerically sort the properties for display
-                                  example:
-                                    - 1
-                                    - -0.2
                                 label:
                                   type: string
                                   description: short name for the property
@@ -649,11 +647,9 @@ paths:
                                 - type
                               properties:
                                 displayOrder:
+                                  description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
+                                  deprecated: true
                                   type: number
-                                  description: use this to numerically sort the properties for display
-                                  example:
-                                    - 1
-                                    - -0.2
                                 label:
                                   type: string
                                   description: short name for the property
@@ -2436,11 +2432,9 @@ components:
                       - type
                     properties:
                       displayOrder:
+                        description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
+                        deprecated: true
                         type: number
-                        description: use this to numerically sort the properties for display
-                        example:
-                          - 1
-                          - -0.2
                       label:
                         type: string
                         description: short name for the property

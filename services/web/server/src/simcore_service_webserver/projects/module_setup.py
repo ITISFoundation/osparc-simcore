@@ -26,7 +26,7 @@ from .projects_db import setup_projects_db
 logger = logging.getLogger(__name__)
 
 
-def _create_routes(tag, specs, *handlers_module, disable_login=False):
+def _create_routes(tag, specs, *handlers_module, disable_login: bool = False):
     """
     :param disable_login: Disables login_required decorator for testing purposes defaults to False
     :type disable_login: bool, optional
@@ -42,7 +42,10 @@ def _create_routes(tag, specs, *handlers_module, disable_login=False):
 
     routes = map_handlers_with_operations(
         handlers,
-        filter(lambda o: tag in o[3], iter_path_operations(specs)),
+        filter(
+            lambda o: tag in o[3] and "snapshot" not in o[2],
+            iter_path_operations(specs),
+        ),
         strict=True,
     )
 

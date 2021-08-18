@@ -9,21 +9,21 @@
 --constraint _base.txt
 
 # testing
-coverage
+
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
-pytest-cov
 pytest-icdiff
 pytest-instafail
 pytest-runner
 pytest-mock
 pytest-sugar
 
-# tools
-pylint  # NOTE: The version in pylint at _text.txt is used as a reference for ci/helpers/install_pylint.bash
+pytest-cov
 coveralls
+coverage
 
-
-# to test units tools
+--requirement ../../../packages/postgres-database/requirements/_base.in
+pylint  # NOTE: The version in pylint at _text.txt is used as a reference for ci/helpers/install_pylint.bash
 pyyaml
 pint
+faker

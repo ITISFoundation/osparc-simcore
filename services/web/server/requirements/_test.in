@@ -8,6 +8,8 @@
 --constraint _base.txt
 
 # testing
+
+# fixtures
 coverage
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
@@ -20,21 +22,19 @@ pytest-mock
 pytest-runner
 pytest-sugar
 websockets
-
-# fixtures
 aioresponses
 alembic
 click
+docker
 Faker
+jsonschema
 openapi-spec-validator
 python-dotenv
-jsonschema
-tenacity
-docker
 redis
+tenacity
 
 # tools
-pylint==2.5.0 # 2.5.3 fails to run in parallel. SEE https://github.com/PyCQA/pylint/releases for updates
-coveralls
 codecov
+coveralls
 ptvsd
+pylint==2.5.0 # 2.5.3 fails to run in parallel. SEE https://github.com/PyCQA/pylint/releases for updates
