@@ -2,11 +2,15 @@
 # Assists on the creation of project's OAS
 #
 
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
+
 import json
-from collections import defaultdict
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-from uuid import UUID, uuid3, uuid4
+from typing import Any, Callable, Dict, List, Optional, Union
+from uuid import UUID, uuid3
 
 from fastapi import Depends, FastAPI
 from fastapi import Path as PathParam
@@ -98,32 +102,11 @@ class SnapshotApiModel(Snapshot):
     url_project: AnyUrl
     url_parameters: Optional[AnyUrl] = None
 
-    @classmethod
-    def from_snapshot(cls, snapshot: Snapshot, url_for: Callable) -> "SnapshotApiModel":
-        return cls(
-            url=url_for(
-                "get_snapshot",
-                project_id=snapshot.project_id,
-                snapshot_id=snapshot.id,
-            ),
-            url_parent=url_for("get_project", project_id=snapshot.parent_uuid),
-            url_project=url_for("get_project", project_id=snapshot.project_id),
-            url_parameters=url_for(
-                "get_snapshot_parameters",
-                project_id=snapshot.parent_uuid,
-                snapshot_id=snapshot.id,
-            ),
-            **snapshot.dict(),
-        )
-
 
 ####################################################################
 
 
 _PROJECTS: Dict[UUID, Project] = {}
-_PROJECT2SNAPSHOT: Dict[UUID, UUID] = {}
-_SNAPSHOTS: Dict[UUID, List[Snapshot]] = defaultdict(list)
-_PARAMETERS: Dict[Tuple[UUID, int], List[Parameter]] = defaultdict(list)
 
 
 ####################################################################
@@ -150,7 +133,9 @@ def get_project(pid: UUID = Depends(get_valid_id)):
     return _PROJECTS[pid]
 
 
-@app.post("/projects/{project_id}", tags=["project"])
+@app.post(
+    "/projects/{project_id}", status_code=status.HTTP_201_CREATED, tags=["project"]
+)
 def create_project(project: Project):
     if project.id not in _PROJECTS:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Invalid id")
@@ -192,6 +177,12 @@ def close_project(pid: UUID = Depends(get_valid_id)):
     pass
 
 
+# project snapshot
+#  - analogous to a git-commit
+#  - takes a snapshot of the current state of the project
+#  -
+
+
 @app.get(
     "/projects/{project_id}/snapshots",
     response_model=List[SnapshotApiModel],
@@ -207,21 +198,13 @@ async def list_snapshots(
     ),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    psid = _PROJECT2SNAPSHOT.get(pid)
-    if not psid:
-        return []
-
-    project_snapshots: List[Snapshot] = _SNAPSHOTS.get(psid, [])
-
-    return [
-        SnapshotApiModel.from_snapshot(snapshot, url_for)
-        for snapshot in project_snapshots
-    ]
+    """ Lists all snapshots taken from a given project """
 
 
 @app.post(
     "/projects/{project_id}/snapshots",
     response_model=SnapshotApiModel,
+    status_code=status.HTTP_201_CREATED,
     tags=["project"],
 )
 async def create_snapshot(
@@ -229,51 +212,9 @@ async def create_snapshot(
     snapshot_label: Optional[str] = None,
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    #
-    # copies project and creates project_id
-    # run will use "use_cache"
-
-    # snapshots already in place
-
-    project_snapshots: List[SnapshotApiModel] = await list_snapshots(pid, url_for)
-    index = project_snapshots[-1].id if len(project_snapshots) else 0
-
-    if snapshot_label:
-        if any(s.label == snapshot_label for s in project_snapshots):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"'{snapshot_label}' already exist",
-            )
-
-    else:
-        snapshot_label = f"snapshot {index}"
-        while any(s.label == snapshot_label for s in project_snapshots):
-            index += 1
-            snapshot_label = f"snapshot {index}"
-
-    # perform snapshot
-    parent_project = _PROJECTS[pid]
-
-    # create new project
-    project_id = uuid3(namespace=parent_project.id, name=snapshot_label)
-    project = parent_project.copy(update={"id": project_id})  # THIS IS WRONG
-
-    snapshot = Snapshot(id=index, parent_uuid=pid, project_id=project_id)
-
-    _PROJECTS[project_id] = project
-
-    psid = _PROJECT2SNAPSHOT.setdefault(pid, uuid3(pid, name="snapshots"))
-    _SNAPSHOTS[psid].append(snapshot)
-
-    # if param-project, then call workflow-compiler to produce parameters
-    # differenciate between snapshots created automatically from those explicit!
-
-    return SnapshotApiModel(
-        url=url_for(
-            "get_snapshot", project_id=snapshot.parent_uuid, snapshot_id=snapshot.id
-        ),
-        **snapshot.dict(),
-    )
+    """ Takes a snapshot of the project at this time """
+    # - hash parent_project as a mechanism to check changes
+    # -
 
 
 @app.get(
@@ -286,16 +227,21 @@ async def get_snapshot(
     pid: UUID = Depends(get_valid_id),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
+    """ Gets commit info for a given snapshot """
 
-    psid = _PROJECT2SNAPSHOT[pid]
-    snapshot = next(s for s in _SNAPSHOTS[psid] if s.id == snapshot_id)
 
-    return SnapshotApiModel(
-        url=url_for(
-            "get_snapshot", project_id=snapshot.parent_uuid, snapshot_id=snapshot.id
-        ),
-        **snapshot.dict(),
-    )
+@app.delete(
+    "/projects/{project_id}/snapshots/{snapshot_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["project"],
+)
+async def delete_snapshot(
+    snapshot_id: PositiveInt,
+    pid: UUID = Depends(get_valid_id),
+):
+    """ Deletes both the commit and the project itself """
+    # delete a snapshot -> project deleted?
+    # delete a project-snapshot -> delete snapshot
 
 
 @app.get(
@@ -308,40 +254,10 @@ async def list_snapshot_parameters(
     pid: UUID = Depends(get_valid_id),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-
-    # get param snapshot
-    params = {"x": 4, "y": "yes"}
-
-    result = [
-        ParameterApiModel(
-            name=name,
-            value=value,
-            node_id=uuid4(),
-            output_id="output",
-            url=url_for(
-                "list_snapshot_parameters",
-                project_id=pid,
-                snapshot_id=snapshot_id,
-            ),
-        )
-        for name, value in params.items()
-    ]
-
-    return result
+    pass
 
 
 ## workflow compiler #######################################
-
-
-def create_snapshots(project_id: UUID):
-    # get project
-
-    # if parametrized
-    # iterate
-    # otherwise
-    # copy workbench and replace uuids
-    pass
-
 
 # print(yaml.safe_dump(app.openapi()))
 # print("-"*100)
