@@ -79,7 +79,7 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
       columnModel.setDataCellRenderer(this.self().T_POS.DATE.col, new qx.ui.table.cellrenderer.Date());
       columnModel.setDataCellRenderer(this.self().T_POS.ID.col, new qx.ui.table.cellrenderer.String());
 
-      osparc.data.model.Study.getSnapshots()
+      this.__primaryStudy.getSnapshots()
         .then(snapshots => {
           const rows = [];
           snapshots.reverse().forEach(snapshot => {
