@@ -25,18 +25,16 @@ async function runTutorial() {
 
     await tutorial.waitFor(5000, 'Some time for loading the workbench');
 
+    await tutorial.showLogger(true);
     await tutorial.runPipeline();
     await tutorial.waitForStudyDone(studyId, 60000);
+    await tutorial.showLogger(false);
 
     const outFiles = [
       "logs.zip",
       "out_1"
     ];
-    await tutorial.openNodeFiles(0)
-    await tutorial.checkResults2(outFiles);
-
-    await tutorial.openNodeFiles(4)
-    await tutorial.checkResults2(outFiles);
+    await tutorial.checkNodeOutputs(0, outFiles);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
