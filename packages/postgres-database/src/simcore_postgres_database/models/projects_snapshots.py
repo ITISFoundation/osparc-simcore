@@ -13,6 +13,7 @@ projects_snapshots = sa.Table(
         doc="Global snapshot identifier index",
     ),
     sa.Column("name", sa.String, nullable=False, doc="Display name"),
+    # TODO: add SHA-1 checksum of workbench to detect changes ?
     sa.Column(
         "created_at",
         sa.DateTime(),
@@ -44,6 +45,12 @@ projects_snapshots = sa.Table(
         nullable=False,
         unique=True,
         doc="UUID of the project associated to this snapshot",
+    ),
+    sa.Column(
+        "deleted",
+        sa.Boolean,
+        default=False,
+        doc="Flags this entry as deleted." "Used for lazy/delayed delete",
     ),
     sa.UniqueConstraint(
         "parent_uuid", "created_at", name="snapshot_from_project_uniqueness"

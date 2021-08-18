@@ -7,6 +7,7 @@ from aiohttp import web
 from aiopg.sa.result import RowProxy
 from simcore_postgres_database.models.projects_snapshots import projects_snapshots
 from simcore_service_webserver.snapshots_models import Snapshot
+from sqlalchemy.sql.selectable import ScalarSelect
 
 from .db_base_repository import BaseRepository
 from .projects.projects_db import APP_PROJECT_DBAPI
@@ -36,7 +37,10 @@ class SnapshotsRepository(BaseRepository):
         async with self.engine.acquire() as conn:
             query = (
                 projects_snapshots.select()
-                .where(projects_snapshots.c.parent_uuid == str(project_uuid))
+                .where(
+                    (projects_snapshots.c.parent_uuid == str(project_uuid))
+                    & (not projects_snapshots.c.deleted)
+                )
                 .order_by(projects_snapshots.c.id)
             )
             if limit and limit > 0:
@@ -54,6 +58,7 @@ class SnapshotsRepository(BaseRepository):
         query = projects_snapshots.select().where(
             (projects_snapshots.c.parent_uuid == str(project_uuid))
             & (projects_snapshots.c.name == snapshot_name)
+            & (not projects_snapshots.c.deleted)
         )
         return await self._first(query)
 
@@ -63,6 +68,7 @@ class SnapshotsRepository(BaseRepository):
         query = projects_snapshots.select().where(
             (projects_snapshots.c.parent_uuid == str(parent_uuid))
             & (projects_snapshots.c.id == snapshot_id)
+            & (not projects_snapshots.c.deleted)
         )
         return await self._first(query)
 
@@ -75,8 +81,32 @@ class SnapshotsRepository(BaseRepository):
         query = projects_snapshots.select().where(
             (projects_snapshots.c.parent_uuid == str(parent_uuid))
             & (projects_snapshots.c.project_uuid == str(snapshot_project_uuid))
+            & (not projects_snapshots.c.deleted)
         )
         return await self._first(query)
+
+    async def exists(self, project_id: UUID, snapshot_id: int) -> bool:
+        query = sa.select([projects_snapshots.c.id]).where(
+            (projects_snapshots.c.parent_uuid == str(project_id))
+            & (projects_snapshots.c.snapshot_id == str(snapshot_id))
+            & (not projects_snapshots.c.deleted)
+        )
+        async with self.engine.acquire() as conn:
+            return await conn.scalar(query) is not None
+
+    async def mark_as_deleted(self, project_id: UUID, snapshot_id: int):
+        # pylint: disable=no-value-for-parameter
+        query = (
+            projects_snapshots.update()
+            .where(
+                (projects_snapshots.c.parent_uuid == str(project_id))
+                & (projects_snapshots.c.snapshot_id == str(snapshot_id))
+            )
+            .values(deleted=True)
+        )
+
+        async with self.engine.acquire() as conn:
+            await conn.execute(query)
 
     async def list_snapshot_names(self, parent_uuid: UUID) -> List[Tuple[str, int]]:
         query = (
