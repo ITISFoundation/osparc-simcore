@@ -30,15 +30,16 @@ async function runTutorial () {
     await tutorial.waitFor(10000, 'Some time for loading the workbench');
     await utils.takeScreenshot(page, screenshotPrefix + 'workbench_loaded');
 
+    await tutorial.showLogger(true);
     await tutorial.runPipeline();
     await tutorial.waitForStudyDone(studyId, 120000);
+    await tutorial.showLogger(false);
 
     const outFiles = [
       "logs.zip",
       "outputController.dat"
     ];
-    await tutorial.openNodeFiles(0)
-    await tutorial.checkResults2(outFiles);
+    await tutorial.checkNodeOutputs(0, outFiles);
 
 
     // open kember viewer
@@ -76,8 +77,7 @@ async function runTutorial () {
       "Parasympathetic_Cell_Activity.csv",
       "Table_Data.csv"
     ];
-    await tutorial.openNodeFiles(1)
-    await tutorial.checkResults2(outFiles2, false);
+    await tutorial.checkNodeOutputs(1, outFiles2, false);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
