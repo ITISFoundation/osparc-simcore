@@ -20,7 +20,7 @@ from .projects.projects_exceptions import ProjectNotFoundError
 from .security_decorators import permission_required
 from .snapshots_core import ProjectDict, take_snapshot
 from .snapshots_db import ProjectsRepository, SnapshotsRepository
-from .snapshots_models import Snapshot, SnapshotItem
+from .snapshots_models import Snapshot, SnapshotItem, SnapshotPatch
 
 logger = logging.getLogger(__name__)
 
@@ -240,7 +240,7 @@ async def get_project_snapshot_handler(request: web.Request):
     name="delete_project_snapshot_handler",
 )
 @login_required
-@permission_required("project.read")
+@permission_required("project.delete")
 @handle_request_errors
 async def delete_project_snapshot_handler(request: web.Request):
     snapshots_repo = SnapshotsRepository(request)
@@ -272,6 +272,41 @@ async def delete_project_snapshot_handler(request: web.Request):
     )
 
     raise web.HTTPNoContent()
+
+
+@routes.patch(
+    f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}",
+    name="patch_project_snapshot_handler",
+)
+@login_required
+@permission_required("project.update")
+@handle_request_errors
+async def patch_project_snapshot_handler(request: web.Request):
+    snapshots_repo = SnapshotsRepository(request)
+    url_for = create_url_for_function(request)
+
+    @validate_arguments
+    async def _update_snapshot(
+        project_id: UUID, snapshot_id: int, update: SnapshotPatch
+    ):
+        snapshot_orm = await snapshots_repo.update_name(
+            project_id, snapshot_id, name=update.label
+        )
+        if not snapshot_orm:
+            raise web.HTTPNotFound(
+                reason=f"snapshot {snapshot_id} for project {project_id} not found"
+            )
+        return Snapshot.from_orm(snapshot_orm)
+
+    snapshot = await _update_snapshot(
+        project_id=request.match_info["project_id"],  # type: ignore
+        snapshot_id=request.match_info["snapshot_id"],  # type: ignore
+        update=SnapshotPatch.parse_obj(await request.json()),
+        # TODO: skip_return_updated
+    )
+
+    data = SnapshotItem.from_snapshot(snapshot, url_for)
+    return enveloped_response(data)
 
 
 ## projects/*/snapshots/*/parameters  -----------------------------

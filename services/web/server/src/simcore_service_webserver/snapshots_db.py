@@ -113,6 +113,24 @@ class SnapshotsRepository(BaseRepository):
         assert row  # nosec
         return row
 
+    async def update_name(
+        self, parent_uuid: UUID, snapshot_id: int, name: str
+    ) -> Optional[SnapshotRow]:
+        # pylint: disable=no-value-for-parameter
+        query = (
+            projects_snapshots.update()
+            .returning(projects_snapshots)
+            .where(
+                (projects_snapshots.c.parent_uuid == str(parent_uuid))
+                & (projects_snapshots.c.id == snapshot_id)
+                & not_(projects_snapshots.c.deleted)
+            )
+            .values(name=name)
+        )
+
+        row = await self._first(query)
+        return row
+
 
 class ProjectsRepository(BaseRepository):
     def __init__(self, request: web.Request):

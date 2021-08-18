@@ -5,11 +5,12 @@
 
 from typing import Any, Dict
 
+import pytest
 from aiohttp import web
 from models_library.projects import Project
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver._meta import api_vtag as vtag
-from simcore_service_webserver.snapshots_models import SnapshotItem
+from simcore_service_webserver.snapshots_models import SnapshotItem, SnapshotPatch
 
 ProjectDict = Dict[str, Any]
 
@@ -129,3 +130,39 @@ async def test_delete_snapshot(
     # project is also deleted
     resp = await client.get(f"/{vtag}/projects/{snapshot.project_uuid}")
     await assert_status(resp, web.HTTPNotFound)
+
+
+@pytest.fixture
+async def fake_snapshot(client, user_project: ProjectDict) -> SnapshotItem:
+    project_uuid = user_project["uuid"]
+
+    # create snapshot
+    resp = await client.post(f"/{vtag}/projects/{project_uuid}/snapshots")
+    data, _ = await assert_status(resp, web.HTTPCreated)
+
+    assert data
+    snapshot = SnapshotItem.parse_obj(data)
+    return snapshot
+
+
+async def test_update_snapshot_label(client, fake_snapshot: SnapshotItem):
+
+    assert SnapshotPatch(name="new label")
+
+    resp = await client.patch(fake_snapshot.url.path, json={"name": "new label"})
+    data, _ = await assert_status(resp, web.HTTPOk)
+
+    assert data
+    updated_snapshot = SnapshotItem.parse_obj(data)
+    assert updated_snapshot.label == "new label"
+
+    # the rest is the same
+    different_fields = {"label"}
+    assert updated_snapshot.dict(exclude=different_fields) == fake_snapshot.dict(
+        exclude=different_fields
+    )
+
+    # let's get it again
+    resp = await client.get(updated_snapshot.url.path)
+    data, _ = await assert_status(resp, web.HTTPOk)
+    assert SnapshotItem.parse_obj(data).label == "new label"
