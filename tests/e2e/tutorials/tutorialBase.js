@@ -414,7 +414,7 @@ class TutorialBase {
 
   async fetchRemoveStudy(studyId) {
     console.log(`Removing study ${studyId}`)
-    const resp = await this.__page.evaluate(async function(studyId) {
+    await this.__page.evaluate(async function(studyId) {
       return await osparc.data.Resources.fetch('studies', 'delete', {
         url: {
           "studyId": studyId
