@@ -283,9 +283,11 @@ class TutorialBase {
     return await auto.findLogMessage(this.__page, text);
   }
 
-  async runPipeline() {
-    await auto.showLogger(this.__page, true);
+  async showLogger(show) {
+    await auto.showLogger(this.__page, show);
+  }
 
+  async runPipeline() {
     await this.takeScreenshot("runStudy_before");
     await auto.runStudy(this.__page);
     await this.takeScreenshot("runStudy_after");
