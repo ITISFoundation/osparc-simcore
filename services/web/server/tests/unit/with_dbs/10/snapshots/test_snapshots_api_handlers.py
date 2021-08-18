@@ -103,20 +103,34 @@ async def test_create_snapshot(client, user_project: ProjectDict):
     assert snapshot_project.uuid == snapshot.project_uuid
 
 
-async def test_delete_snapshot(client, user_project: ProjectDict):
+async def test_delete_snapshot(
+    client, user_project: ProjectDict, storage_subsystem_mock, mocker
+):
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api.director_v2.delete_pipeline",
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api.delete_data_folders_of_project",
+    )
 
     project_uuid = user_project["uuid"]
 
     # create snapshot
     resp = await client.post(f"/{vtag}/projects/{project_uuid}/snapshots")
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, web.HTTPCreated)
 
     assert data
     snapshot = SnapshotItem.parse_obj(data)
 
     # delete snapshot
-    resp = await client.delete(f"/{vtag}/projects/{project_uuid}/snapshots")
+    resp = await client.delete(
+        f"/{vtag}/projects/{project_uuid}/snapshots/{snapshot.id}"
+    )
     await assert_status(resp, web.HTTPNoContent)
+
+    # not there
+    resp = await client.get(f"/{vtag}/projects/{project_uuid}/snapshots/{snapshot.id}")
+    await assert_status(resp, web.HTTPNotFound)
 
     # project is also deleted
     resp = await client.get(f"/{vtag}/projects/{snapshot.project_uuid}")

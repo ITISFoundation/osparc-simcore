@@ -6,6 +6,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
 from simcore_postgres_database.models.projects_snapshots import projects_snapshots
+from sqlalchemy import not_
 
 from .db_base_repository import BaseRepository
 from .projects.projects_db import APP_PROJECT_DBAPI
@@ -38,7 +39,7 @@ class SnapshotsRepository(BaseRepository):
                 projects_snapshots.select()
                 .where(
                     (projects_snapshots.c.parent_uuid == str(project_uuid))
-                    & (not projects_snapshots.c.deleted)
+                    & not_(projects_snapshots.c.deleted)
                 )
                 .order_by(projects_snapshots.c.id)
             )
@@ -51,23 +52,13 @@ class SnapshotsRepository(BaseRepository):
         async with self.engine.acquire() as conn:
             return await (await conn.execute(query)).first()
 
-    async def get_by_name(
-        self, project_uuid: UUID, snapshot_name: str
-    ) -> Optional[SnapshotRow]:
-        query = projects_snapshots.select().where(
-            (projects_snapshots.c.parent_uuid == str(project_uuid))
-            & (projects_snapshots.c.name == snapshot_name)
-            & (not projects_snapshots.c.deleted)
-        )
-        return await self._first(query)
-
     async def get_by_id(
         self, parent_uuid: UUID, snapshot_id: int
     ) -> Optional[SnapshotRow]:
         query = projects_snapshots.select().where(
             (projects_snapshots.c.parent_uuid == str(parent_uuid))
             & (projects_snapshots.c.id == snapshot_id)
-            & (not projects_snapshots.c.deleted)
+            & not_(projects_snapshots.c.deleted)
         )
         return await self._first(query)
 
@@ -80,32 +71,27 @@ class SnapshotsRepository(BaseRepository):
         query = projects_snapshots.select().where(
             (projects_snapshots.c.parent_uuid == str(parent_uuid))
             & (projects_snapshots.c.project_uuid == str(snapshot_project_uuid))
-            & (not projects_snapshots.c.deleted)
+            & not_(projects_snapshots.c.deleted)
         )
         return await self._first(query)
 
-    async def exists(self, project_id: UUID, snapshot_id: int) -> bool:
-        query = sa.select([projects_snapshots.c.id]).where(
-            (projects_snapshots.c.parent_uuid == str(project_id))
-            & (projects_snapshots.c.snapshot_id == str(snapshot_id))
-            & (not projects_snapshots.c.deleted)
-        )
-        async with self.engine.acquire() as conn:
-            return await conn.scalar(query) is not None
-
-    async def mark_as_deleted(self, project_id: UUID, snapshot_id: int):
+    async def mark_as_deleted(
+        self, project_id: UUID, snapshot_id: int
+    ) -> Optional[UUID]:
         # pylint: disable=no-value-for-parameter
         query = (
             projects_snapshots.update()
             .where(
                 (projects_snapshots.c.parent_uuid == str(project_id))
-                & (projects_snapshots.c.snapshot_id == str(snapshot_id))
+                & (projects_snapshots.c.id == snapshot_id)
             )
             .values(deleted=True)
+            .returning(projects_snapshots.c.project_uuid)
         )
 
         async with self.engine.acquire() as conn:
-            await conn.execute(query)
+            if snapshot_project_uuid := await conn.scalar(query):
+                return UUID(snapshot_project_uuid)
 
     async def list_snapshot_names(self, parent_uuid: UUID) -> List[Tuple[str, int]]:
         query = (
