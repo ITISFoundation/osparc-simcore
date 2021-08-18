@@ -1,11 +1,12 @@
 import logging
 from datetime import datetime
 from functools import wraps
-from typing import Any, Awaitable, Callable, List, Optional
+from typing import Any, Awaitable, Callable, List, Optional, Type
 from uuid import UUID
 
 import orjson
 from aiohttp import web
+from aiohttp.web_exceptions import HTTPException
 from pydantic.decorator import validate_arguments
 from pydantic.error_wrappers import ValidationError
 from pydantic.main import BaseModel
@@ -35,10 +36,12 @@ def json_dumps(v) -> str:
     return orjson.dumps(v, default=_default).decode()
 
 
-def enveloped_response(data: Any, status_code=web.HTTPOk, **extra) -> web.Response:
+def enveloped_response(
+    data: Any, status_cls: Type[HTTPException] = web.HTTPOk, **extra
+) -> web.Response:
     enveloped: str = json_dumps({"data": data, **extra})
     return web.Response(
-        text=enveloped, content_type="application/json", status=status_code
+        text=enveloped, content_type="application/json", status=status_cls.status_code
     )
 
 
@@ -161,7 +164,8 @@ async def create_project_snapshot_handler(request: web.Request):
     )
 
     data = SnapshotItem.from_snapshot(snapshot, url_for)
-    return enveloped_response(data, status_code=web.HTTPCreated)
+
+    return enveloped_response(data, status_cls=web.HTTPCreated)
 
 
 @routes.get(
@@ -242,28 +246,29 @@ async def delete_project_snapshot_handler(request: web.Request):
     snapshots_repo = SnapshotsRepository(request)
 
     @validate_arguments
-    async def _delete_snapshot(project_id: UUID, snapshot_id: str):
-        if not await snapshots_repo.exists(project_id, int(snapshot_id)):
+    async def _delete_snapshot(project_id: UUID, snapshot_id: int):
+
+        # - Deletes first the associated project (both data and document)
+        #   when the latter deletes the project from the database, postgres will
+        #   finally delete
+        # - Since projects_api.delete_project is a fire&forget and might take time,
+
+        snapshot_uuid = await snapshots_repo.mark_as_deleted(
+            project_id, int(snapshot_id)
+        )
+        if not snapshot_uuid:
             raise web.HTTPNotFound(
                 reason=f"snapshot {snapshot_id} for project {project_id} not found"
             )
 
-        assert snapshots_repo.user_id
-
-        # - Deletes first the associated project (both data and document)
-        # when the latter deletes the project from the database, postgres will
-        # finally delete
-        # - since projects_api.delete_project is a fire&forget and might take time,
-        #   then
-        await snapshots_repo.mark_as_deleted(project_id, int(snapshot_id))
-
+        assert snapshots_repo.user_id is not None
         await projects_api.delete_project(
-            request.app, str(project_id), snapshots_repo.user_id
+            request.app, str(snapshot_uuid), snapshots_repo.user_id
         )
 
     await _delete_snapshot(
         project_id=request.match_info["project_id"],  # type: ignore
-        snapshot_id=request.match_info["snapshot_id"],
+        snapshot_id=request.match_info["snapshot_id"],  # type: ignore
     )
 
     raise web.HTTPNoContent()
