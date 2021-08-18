@@ -330,34 +330,10 @@ class TutorialBase {
     await this.takeScreenshot("openNodeRetrieveAndRestart_after");
   }
 
-  async checkNodeResults(nodePos, expecedNFiles) {
-    await this.takeScreenshot("checkNodeResults_before");
+  async checkNodeOutputs(nodePos, fileNames, checkNFiles=true) {
     try {
-      let filesFound = false;
-      const tries = 3;
-      for (let i = 0; i < tries && !filesFound; i++) {
-        await this.openNodeFiles(nodePos);
-        try {
-          filesFound = await auto.checkDataProducedByNode(this.__page, expecedNFiles.length);
-        }
-        catch (err) {
-          console.error("Files not found, one more try?", i+1);
-        }
-      }
-      if (!filesFound) {
-        throw ("Expected files not found");
-      }
-    }
-    catch (err) {
-      console.error("Failed checking Data Produced By Node", err);
-      throw (err);
-    }
-    await this.takeScreenshot("checkNodeResults_after");
-  }
-
-  async checkResults2(fileNames, checkNFiles=true) {
-    try {
-      await this.takeScreenshot("checkResults_before");
+      await this.openNodeFiles(nodePos);
+      await this.takeScreenshot("checkNodeOutputs_before");
       const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
         elements => elements.map(el => el.textContent.trim()));
       if (checkNFiles) {
@@ -371,10 +347,12 @@ class TutorialBase {
       console.log('File names are correct')
     }
     catch (err) {
+      console.error("Results don't match", err);
       throw(err)
     }
     finally {
-      await this.takeScreenshot("checkResults_after");
+      await this.takeScreenshot("checkNodeOutputs_after");
+      await this.closeNodeFiles();
     }
   }
 

@@ -71,9 +71,7 @@ async function runTutorial() {
       "TheNumberNumber.txt",
       "notebooks.zip"
     ];
-    await tutorial.openNodeFiles(1)
-    await tutorial.checkResults2(outFiles);
-    await tutorial.closeNodeFiles();
+    await tutorial.checkNodeOutputs(1, outFiles);
 
 
     // open jupyter lab
@@ -116,9 +114,7 @@ async function runTutorial() {
       "work.zip",
       "TheNumber.txt"
     ];
-    await tutorial.openNodeFiles(2)
-    await tutorial.checkResults2(outFiles2);
-    await tutorial.closeNodeFiles();
+    await tutorial.checkNodeOutputs(2, outFiles2);
   }
   catch (err) {
     tutorial.setTutorialFailed(true);

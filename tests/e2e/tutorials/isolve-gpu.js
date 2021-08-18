@@ -35,9 +35,7 @@ async function runTutorial() {
       "output.h5",
       "log.tgz"
     ];
-    await tutorial.openNodeFiles(1)
-    await tutorial.checkResults2(outFiles);
-    await tutorial.closeNodeFiles();
+    await tutorial.checkNodeOutputs(1, outFiles);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);

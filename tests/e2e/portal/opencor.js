@@ -34,9 +34,7 @@ async function runTutorial () {
       "logs.zip",
       "membrane-potential.csv"
     ];
-    await tutorial.openNodeFiles(0)
-    await tutorial.checkResults2(outFiles);
-    await tutorial.closeNodeFiles();
+    await tutorial.checkNodeOutputs(0, outFiles);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);

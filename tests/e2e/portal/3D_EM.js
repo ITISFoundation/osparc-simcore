@@ -32,9 +32,7 @@ async function runTutorial () {
     const outFiles = [
       "data.zip"
     ];
-    await tutorial.openNodeFiles(2)
-    await tutorial.checkResults2(outFiles);
-    await tutorial.closeNodeFiles();
+    await tutorial.checkNodeOutputs(2, outFiles);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);

@@ -37,9 +37,7 @@ async function runTutorial () {
       "logs.zip",
       "outputController.dat"
     ];
-    await tutorial.openNodeFiles(0)
-    await tutorial.checkResults2(outFiles);
-    await tutorial.closeNodeFiles();
+    await tutorial.checkNodeOutputs(0, outFiles);
 
 
     // open kember viewer
@@ -77,9 +75,7 @@ async function runTutorial () {
       "Parasympathetic_Cell_Activity.csv",
       "Table_Data.csv"
     ];
-    await tutorial.openNodeFiles(1)
-    await tutorial.checkResults2(outFiles2, false);
-    await tutorial.closeNodeFiles();
+    await tutorial.checkNodeOutputs(1, outFiles2, false);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);

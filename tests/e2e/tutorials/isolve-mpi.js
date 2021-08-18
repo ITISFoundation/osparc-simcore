@@ -33,9 +33,7 @@ async function runTutorial() {
       "output.h5",
       "log.tgz"
     ];
-    await tutorial.openNodeFiles(1)
-    await tutorial.checkResults2(outFiles);
-    await tutorial.closeNodeFiles();
+    await tutorial.checkNodeOutputs(1, outFiles);
 
     // check logs
     const mustHave = "Running MPI version 3.1 on 2 processes";
