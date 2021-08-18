@@ -1,9 +1,7 @@
 # pylint: disable=unused-argument
 
 import json
-import sys
-from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from fastapi import FastAPI, Query
 from simcore_service_webserver.catalog_api_models import (

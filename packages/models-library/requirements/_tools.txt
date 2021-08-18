@@ -50,7 +50,9 @@ pyyaml==5.4.1
 regex==2021.8.3
     # via black
 six==1.16.0
-    # via virtualenv
+    # via
+    #   -c requirements/_test.txt
+    #   virtualenv
 toml==0.10.2
     # via
     #   -c requirements/_test.txt

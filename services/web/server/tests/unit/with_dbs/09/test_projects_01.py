@@ -10,7 +10,6 @@ from math import ceil
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 from unittest.mock import call
 
-import aiohttp
 import pytest
 from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
