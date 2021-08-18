@@ -68,7 +68,7 @@ def snapshots_repo(engine):
 
 async def test_snapshot_repo(snapshots_repo: SnapshotsRepository, faker: Faker):
 
-    assert not await snapshots_repo.list(project_uuid=UUID(PROJECT_UUID))
+    assert not await snapshots_repo.list_all(project_uuid=UUID(PROJECT_UUID))
 
     snapshot = Snapshot(
         name="dummy",

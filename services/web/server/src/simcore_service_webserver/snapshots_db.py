@@ -27,7 +27,7 @@ class SnapshotsRepository(BaseRepository):
     Gets primitive/standard parameters and returns valid orm objects
     """
 
-    async def list(
+    async def list_all(
         self, project_uuid: UUID, limit: Optional[int] = None
     ) -> List[SnapshotRow]:
         """Returns sorted list of snapshots in project"""

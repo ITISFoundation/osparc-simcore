@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from functools import wraps
-from typing import Any, Callable, List, Optional
+from typing import Any, Awaitable, Callable, List, Optional
 from uuid import UUID
 
 import orjson
@@ -40,7 +40,7 @@ def enveloped_response(data: Any, **extra) -> web.Response:
     return web.Response(text=enveloped, content_type="application/json")
 
 
-def handle_request_errors(handler: Callable):
+def handle_request_errors(handler: Callable[[web.Request], Awaitable[web.Response]]):
     """
     - required and type validation of path and query parameters
     """
@@ -117,7 +117,7 @@ async def list_project_snapshots_handler(request: web.Request):
         # TODO: add pagination
         # TODO: optimizaiton will grow snapshots of a project with time!
         #
-        snapshots_orm = await snapshots_repo.list(project_id)
+        snapshots_orm = await snapshots_repo.list_all(project_id)
         # snapshots:
         #   - ordered (iterations!)
         #   - have a parent project with all the parametrization
