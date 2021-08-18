@@ -13263,10 +13263,6 @@ paths:
           schema:
             title: Offset
             type: integer
-<<<<<<< HEAD
-            description: index to the first item to return (pagination)
-=======
->>>>>>> master
             default: 0
           name: offset
           in: query
