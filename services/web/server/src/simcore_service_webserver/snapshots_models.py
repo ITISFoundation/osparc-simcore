@@ -60,7 +60,9 @@ class Snapshot(BaseSnapshot):
 ## API models ----------
 
 
-class SnapshotPatch(BaseSnapshot):
+class SnapshotPatchBody(BaseSnapshot):
+    """ Model to patch a snapshot resource"""
+
     label: Optional[str] = Snapshot.as_field("label")
 
 
@@ -73,32 +75,26 @@ class SnapshotPatch(BaseSnapshot):
 # )
 
 
-class SnapshotItem(Snapshot):
-    """API model for an array item of snapshots"""
+class SnapshotResource(Snapshot):
+    """Model for a snapshot API resource"""
 
     url: AnyUrl
     url_parent: AnyUrl
     url_project: AnyUrl
-    url_parameters: Optional[AnyUrl] = None
 
     @classmethod
     def from_snapshot(
         cls, snapshot: Snapshot, url_for: Callable[..., URL]
-    ) -> "SnapshotItem":
+    ) -> "SnapshotResource":
         # TODO: is this the right place?  requires pre-defined routes
         # how to guarantee routes names
         return cls(
             url=url_for(
-                "get_project_snapshot_handler",
+                "simcore_service_webserver.snapshots_api_handlers.get_snapshot",
                 project_id=snapshot.parent_uuid,
                 snapshot_id=snapshot.id,
             ),
             url_parent=url_for("get_project", project_id=snapshot.parent_uuid),
             url_project=url_for("get_project", project_id=snapshot.parent_uuid),
-            url_parameters=url_for(
-                "get_snapshot_parameters_handler",
-                project_id=snapshot.parent_uuid,
-                snapshot_id=snapshot.id,
-            ),
             **snapshot.dict(by_alias=True),
         )

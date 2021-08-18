@@ -10,7 +10,10 @@ from aiohttp import web
 from models_library.projects import Project
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver._meta import api_vtag as vtag
-from simcore_service_webserver.snapshots_models import SnapshotItem, SnapshotPatch
+from simcore_service_webserver.snapshots_models import (
+    SnapshotPatchBody,
+    SnapshotResource,
+)
 
 ProjectDict = Dict[str, Any]
 
@@ -37,7 +40,7 @@ async def test_create_snapshot_workflow(client, user_project: ProjectDict):
     data, _ = await assert_status(resp, web.HTTPCreated)
 
     assert data
-    snapshot = SnapshotItem.parse_obj(data)
+    snapshot = SnapshotResource.parse_obj(data)
 
     assert snapshot.parent_uuid == project.uuid
 
@@ -73,7 +76,7 @@ async def test_create_snapshot_workflow(client, user_project: ProjectDict):
     data, _ = await assert_status(resp, web.HTTPOk)
 
     assert len(data) == 1
-    assert snapshot == SnapshotItem.parse_obj(data[0])
+    assert snapshot == SnapshotResource.parse_obj(data[0])
 
 
 async def test_create_snapshot(client, user_project: ProjectDict):
@@ -85,7 +88,7 @@ async def test_create_snapshot(client, user_project: ProjectDict):
     data, _ = await assert_status(resp, web.HTTPCreated)
 
     assert data
-    snapshot = SnapshotItem.parse_obj(data)
+    snapshot = SnapshotResource.parse_obj(data)
 
     assert snapshot.parent_uuid == project_uuid
 
@@ -115,7 +118,7 @@ async def test_delete_snapshot(
     data, _ = await assert_status(resp, web.HTTPCreated)
 
     assert data
-    snapshot = SnapshotItem.parse_obj(data)
+    snapshot = SnapshotResource.parse_obj(data)
 
     # delete snapshot
     resp = await client.delete(
@@ -133,7 +136,7 @@ async def test_delete_snapshot(
 
 
 @pytest.fixture
-async def fake_snapshot(client, user_project: ProjectDict) -> SnapshotItem:
+async def fake_snapshot(client, user_project: ProjectDict) -> SnapshotResource:
     project_uuid = user_project["uuid"]
 
     # create snapshot
@@ -141,19 +144,19 @@ async def fake_snapshot(client, user_project: ProjectDict) -> SnapshotItem:
     data, _ = await assert_status(resp, web.HTTPCreated)
 
     assert data
-    snapshot = SnapshotItem.parse_obj(data)
+    snapshot = SnapshotResource.parse_obj(data)
     return snapshot
 
 
-async def test_update_snapshot_label(client, fake_snapshot: SnapshotItem):
+async def test_update_snapshot_label(client, fake_snapshot: SnapshotResource):
 
-    assert SnapshotPatch(name="new label")
+    assert SnapshotPatchBody(name="new label")
 
     resp = await client.patch(fake_snapshot.url.path, json={"name": "new label"})
     data, _ = await assert_status(resp, web.HTTPOk)
 
     assert data
-    updated_snapshot = SnapshotItem.parse_obj(data)
+    updated_snapshot = SnapshotResource.parse_obj(data)
     assert updated_snapshot.label == "new label"
 
     # the rest is the same
@@ -165,4 +168,4 @@ async def test_update_snapshot_label(client, fake_snapshot: SnapshotItem):
     # let's get it again
     resp = await client.get(updated_snapshot.url.path)
     data, _ = await assert_status(resp, web.HTTPOk)
-    assert SnapshotItem.parse_obj(data).label == "new label"
+    assert SnapshotResource.parse_obj(data).label == "new label"
