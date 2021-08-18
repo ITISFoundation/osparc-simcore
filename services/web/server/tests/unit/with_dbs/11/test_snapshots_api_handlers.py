@@ -8,7 +8,9 @@ from typing import Any, Dict
 import pytest
 from aiohttp import web
 from models_library.projects import Project
+from openapi_core.schema.specs.models import Spec
 from pytest_simcore.helpers.utils_assert import assert_status
+from simcore_service_webserver import snapshots_api_handlers
 from simcore_service_webserver._meta import api_vtag as vtag
 from simcore_service_webserver.snapshots_models import (
     SnapshotPatchBody,
@@ -16,6 +18,24 @@ from simcore_service_webserver.snapshots_models import (
 )
 
 ProjectDict = Dict[str, Any]
+
+
+@pytest.mark.parametrize(
+    "route", snapshots_api_handlers.routes, ids=lambda r: f"{r.method.upper()} {r.path}"
+)
+def test_route_against_openapi_specs(route, openapi_specs: Spec):
+
+    assert route.path.startswith(f"/{vtag}")
+    path = route.path.replace(f"/{vtag}", "")
+
+    assert (
+        route.method.lower() in openapi_specs.paths[path].operations
+    ), f"operation {route.method} undefined in OAS"
+
+    assert (
+        openapi_specs.paths[path].operations[route.method.lower()].operation_id
+        == route.kwargs["name"]
+    ), "route's name differs from OAS operation_id"
 
 
 async def test_create_snapshot_workflow(client, user_project: ProjectDict):

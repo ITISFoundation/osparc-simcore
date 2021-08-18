@@ -15,7 +15,11 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterable
 
 import pytest
+import yaml
+from openapi_core.schema.specs.models import Spec
 from pytest_simcore.helpers.utils_projects import empty_project_data
+from servicelib.openapi import openapi_core
+from simcore_service_webserver._meta import api_vtag
 from simcore_service_webserver.resources import resources
 
 ## current directory
@@ -92,3 +96,11 @@ def disable_gc_manual_guest_users(mocker):
         "simcore_service_webserver.resource_manager.garbage_collector.remove_users_manually_marked_as_guests",
         return_value=None,
     )
+
+
+@pytest.fixture(scope="session")
+def openapi_specs() -> Spec:
+    spec_path: Path = resources.get_path(f"api/{api_vtag}/openapi.yaml")
+    spec_dict: Dict[str, Any] = yaml.safe_load(spec_path.read_text())
+    api_specs = openapi_core.create_spec(spec_dict, spec_path.as_uri())
+    return api_specs
