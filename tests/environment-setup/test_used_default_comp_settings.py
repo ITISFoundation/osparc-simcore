@@ -17,13 +17,15 @@ import pytest
         pytest.param([("DEFAULT_MAX_MEMORY", f"{int(1e09)}")], id="set max memory"),
     ],
 )
-def test_foo(osparc_simcore_root_dir: Path, list_of_envs: Tuple[str, str], monkeypatch):
+def test_default_max_values_are_same_in_director_and_sidecar(
+    osparc_simcore_root_dir: Path, list_of_envs: Tuple[str, str], monkeypatch, request
+):
 
     for env_name, env_value in list_of_envs:
         monkeypatch.setenv(env_name, env_value)
 
     spec_sidecar = importlib.util.spec_from_file_location(
-        "sidecar_defaults",
+        f"sidecar_defaults_{request.node.callspec.id}",
         osparc_simcore_root_dir
         / "packages/settings-library/src/settings_library/comp_services.py",
     )
@@ -33,7 +35,7 @@ def test_foo(osparc_simcore_root_dir: Path, list_of_envs: Tuple[str, str], monke
     sidecar_comp_services = module_sidecar.CompServices()  # type: ignore
 
     spec_director = importlib.util.spec_from_file_location(
-        "director_defaults",
+        f"director_defaults_{request.node.callspec.id}",
         osparc_simcore_root_dir
         / "services/director/src/simcore_service_director/config.py",
     )
