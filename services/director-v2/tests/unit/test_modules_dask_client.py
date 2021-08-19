@@ -141,7 +141,7 @@ async def test_send_computation_task(
 
     # we have 1 futures in the map now (the other one was removed)
     assert len(dask_client._taskid_to_future_map) == 1
-    job_id, future = list(dask_client._taskid_to_future_map.items())[1]
+    job_id, future = list(dask_client._taskid_to_future_map.items())[0]
     # now let's abort the computation
     assert future.key == job_id
     dask_client.abort_computation_tasks([job_id])
