@@ -139,8 +139,8 @@ async def test_send_computation_task(
         remote_fct=fake_sidecar_fct,
     )
 
-    # we have 2 futures in the map now
-    assert len(dask_client._taskid_to_future_map) == 2
+    # we have 1 futures in the map now (the other one was removed)
+    assert len(dask_client._taskid_to_future_map) == 1
     job_id, future = list(dask_client._taskid_to_future_map.items())[1]
     # now let's abort the computation
     assert future.key == job_id
