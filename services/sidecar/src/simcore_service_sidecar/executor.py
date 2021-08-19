@@ -5,7 +5,7 @@ import os
 import shutil
 import time
 import zipfile
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from typing import Any, Dict, Optional, Tuple, Union
