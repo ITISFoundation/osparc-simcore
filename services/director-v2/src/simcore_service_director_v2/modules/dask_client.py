@@ -76,7 +76,10 @@ class DaskClient:
         function that runs container will be started."""
 
         def _done_dask_callback(dask_future: Future):
-            logger.debug("Dask future %s completed", dask_future.key)
+            job_id = dask_future.key
+            logger.debug("Dask future %s completed", job_id)
+            # remove the future from the dict to remove any handle to the future, so the worker can free the memory
+            self._taskid_to_future_map.pop(job_id)
             callback()
 
         def comp_sidecar_fct(
@@ -123,13 +126,15 @@ class DaskClient:
             )
             task_future.add_done_callback(_done_dask_callback)
             self._taskid_to_future_map[job_id] = task_future
-            fire_and_forget(task_future)  # this should ensure the task will run
+            fire_and_forget(
+                task_future
+            )  # this should ensure the task will run even if the future goes out of scope
             logger.debug("Dask task %s started", task_future.key)
 
     def abort_computation_tasks(self, task_ids: List[str]) -> None:
 
         for task_id in task_ids:
-            task_future = self._taskid_to_future_map.pop(task_id, None)
+            task_future = self._taskid_to_future_map.pop(task_id, default=None)
             if task_future:
                 task_future.cancel()
                 logger.debug("Dask task %s cancelled", task_future.key)
