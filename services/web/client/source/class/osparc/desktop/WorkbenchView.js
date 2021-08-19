@@ -185,18 +185,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __showParameters: function() {
-      const study = this.getStudy();
-      const sweeper = new osparc.component.sweeper.Sweeper(study);
-      const title = this.tr("Sweeper");
-      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 400, 500);
-      sweeper.addListener("openPrimaryStudy", e => {
-        win.close();
-        const primaryStudyId = e.getData();
-        this.__switchStudy(primaryStudyId);
-      });
-    },
-
     __takeSnapshot: function() {
       const study = this.getStudy();
       const takeSnapshotView = new osparc.component.snapshots.TakeSnapshotView(study);
@@ -233,33 +221,23 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const sweeper = new osparc.component.snapshots.SnapshotsView(study);
       const title = this.tr("Snapshots");
       const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 600, 500);
-      [
-        "openPrimaryStudy",
-        "openSnapshot"
-      ].forEach(signalName => {
-        sweeper.addListener(signalName, e => {
-          win.close();
-          const studyId = e.getData();
-          this.__switchStudy(studyId);
-        });
+      sweeper.addListener("openSnapshot", e => {
+        win.close();
+        const studyId = e.getData();
+        const params = {
+          url: {
+            "studyId": studyId
+          }
+        };
+        osparc.data.Resources.getOne("studies", params)
+          .then(studyData => {
+            study.removeIFrames();
+            const data = {
+              studyId: studyData.uuid
+            };
+            this.fireDataEvent("startStudy", data);
+          });
       });
-    },
-
-    __switchStudy: function(studyId) {
-      const params = {
-        url: {
-          "studyId": studyId
-        }
-      };
-      osparc.data.Resources.getOne("studies", params)
-        .then(studyData => {
-          const study = this.getStudy();
-          study.removeIFrames();
-          const data = {
-            studyId: studyData.uuid
-          };
-          this.fireDataEvent("startStudy", data);
-        });
     },
 
     __showWorkbenchUI: function() {
@@ -544,10 +522,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.nodeSelected(nodeId);
         }, this);
       });
-      workbenchToolbar.addListener("showSweeper", this.__showParameters, this);
-      if (!workbenchToolbar.hasListener("showParameters")) {
-        workbenchToolbar.addListener("showParameters", this.__showParameters, this);
-      }
       if (!workbenchToolbar.hasListener("takeSnapshot")) {
         workbenchToolbar.addListener("takeSnapshot", this.__takeSnapshot, this);
       }

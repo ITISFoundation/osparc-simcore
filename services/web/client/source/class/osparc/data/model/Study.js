@@ -60,8 +60,6 @@ qx.Class.define("osparc.data.model.Study", {
     const wbData = studyData.workbench || this.getWorkbench();
     this.setWorkbench(new osparc.data.model.Workbench(wbData, studyData.ui));
     this.setUi(new osparc.data.model.StudyUI(studyData.ui));
-
-    this.setSweeper(new osparc.data.model.Sweeper(studyData));
   },
 
   properties: {
@@ -144,11 +142,6 @@ qx.Class.define("osparc.data.model.Study", {
       check: "Array",
       init: [],
       event: "changeClassifiers",
-      nullable: true
-    },
-
-    sweeper: {
-      check: "osparc.data.model.Sweeper",
       nullable: true
     },
 
@@ -276,10 +269,6 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     isSnapshot: function() {
-      if (this.getSweeper()) {
-        const primaryStudyId = this.getSweeper().getPrimaryStudyId();
-        return primaryStudyId !== null;
-      }
       return false;
     },
 
@@ -355,11 +344,6 @@ qx.Class.define("osparc.data.model.Study", {
           jsonObject[key] = this.getUi().serialize();
           return;
         }
-        if (key === "sweeper") {
-          jsonObject["dev"] = {};
-          jsonObject["dev"]["sweeper"] = this.getSweeper().serialize();
-          return;
-        }
         const value = this.get(key);
         if (value !== null) {
           // only put the value in the payload if there is a value
@@ -397,8 +381,7 @@ qx.Class.define("osparc.data.model.Study", {
         creationDate: new Date(data.creationDate),
         lastChangeDate: new Date(data.lastChangeDate),
         workbench: this.getWorkbench(),
-        ui: this.getUi(),
-        sweeper: this.getSweeper()
+        ui: this.getUi()
       });
 
       const nodes = this.getWorkbench().getNodes(true);

@@ -88,7 +88,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         const paramsMenuBtn = this.__getParamsMenuButton(field.key).set({
           visibility: "excluded"
         });
-        osparc.data.model.Sweeper.isSweeperEnabled()
+        osparc.utils.Utils.isSweeperEnabled()
           .then(isSweeperEnabled => {
             field.bind("visibility", paramsMenuBtn, "visibility", {
               converter: visibility => (visibility === "visible" && isSweeperEnabled) ? "visible" : "excluded"

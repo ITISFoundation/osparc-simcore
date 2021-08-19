@@ -235,7 +235,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       startStopButtonsSS.setRunning(true);
       this.updateStudyDocument(true)
         .then(() => {
-          this.__doStartPipeline(partialPipeline);
+          this.__requestStartPipeline(this.getStudy().getUuid(), partialPipeline);
         })
         .catch(() => {
           this.__getStudyLogger().error(null, "Run failed");
@@ -244,36 +244,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
     },
 
-    __doStartPipeline: function(partialPipeline) {
-      if (this.getStudy().getSweeper().hasSecondaryStudies()) {
-        const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
-        secondaryStudyIds.forEach(secondaryStudyId => {
-          this.__requestStartPipeline(secondaryStudyId);
-        });
-      } else {
-        this.__requestStartPipeline(this.getStudy().getUuid(), partialPipeline);
-      }
-    },
-
     __requestStartPipeline: function(studyId, partialPipeline = [], forceRestart = false) {
-      if (this.getStudy().isSnapshot()) {
-        const startPipelineView = new osparc.desktop.StartPipelineView(partialPipeline, forceRestart);
-        const win = osparc.ui.window.Window.popUpInWindow(startPipelineView, "Start Pipeline", 250, 290);
-        startPipelineView.addListener("startPipeline", e => {
-          const data = e.getData();
-          const useCache = data["useCache"];
-          this.__reallyRequestStartPipeline(studyId, partialPipeline, forceRestart, useCache);
-          win.close();
-        }, this);
-        startPipelineView.addListener("cancel", () => {
-          win.close();
-        }, this);
-      } else {
-        this.__reallyRequestStartPipeline(studyId, partialPipeline, forceRestart);
-      }
-    },
-
-    __reallyRequestStartPipeline: function(studyId, partialPipeline = [], forceRestart = false, useCache = false) {
       const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       const startStopButtonsWB = this.__workbenchView.getStartStopButtons();
@@ -307,8 +278,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       req.setRequestData({
         "subgraph": partialPipeline,
-        "force_restart": forceRestart,
-        "use_cache": useCache
+        "force_restart": forceRestart
       });
       req.send();
       if (partialPipeline.length) {
@@ -349,18 +319,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         return;
       }
 
-      this.__doStopPipeline();
-    },
-
-    __doStopPipeline: function() {
-      if (this.getStudy().getSweeper().hasSecondaryStudies()) {
-        const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
-        secondaryStudyIds.forEach(secondaryStudyId => {
-          this.__requestStopPipeline(secondaryStudyId);
-        });
-      } else {
-        this.__requestStopPipeline(this.getStudy().getUuid());
-      }
+      this.__requestStopPipeline(this.getStudy().getUuid());
     },
 
     __requestStopPipeline: function(studyId) {

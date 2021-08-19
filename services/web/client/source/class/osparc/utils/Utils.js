@@ -30,6 +30,19 @@ qx.Class.define("osparc.utils.Utils", {
   type: "static",
 
   statics: {
+    isSweeperEnabled: function() {
+      return new Promise((resolve, reject) => {
+        osparc.utils.LibVersions.getPlatformName()
+          .then(platformName => {
+            if (["dev", "master"].includes(platformName)) {
+              resolve(true);
+            } else {
+              resolve(false);
+            }
+          });
+      });
+    },
+
     getEditButton: function() {
       const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
         allowGrowY: false,

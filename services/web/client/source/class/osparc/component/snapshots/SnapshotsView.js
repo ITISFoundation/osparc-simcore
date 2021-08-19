@@ -23,16 +23,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    if (study.isSnapshot()) {
-      const primaryStudyId = study.getSweeper().getPrimaryStudyId();
-      const openPrimaryStudyParamBtn = new qx.ui.form.Button(this.tr("Open Main Study")).set({
-        allowGrowX: false
-      });
-      openPrimaryStudyParamBtn.addListener("execute", () => {
-        this.fireDataEvent("openPrimaryStudy", primaryStudyId);
-      });
-      this._add(openPrimaryStudyParamBtn);
-    } else {
+    if (study.hasSnapshots()) {
       this.__primaryStudy = study;
       const snapshotsSection = this.__buildSnapshotsSection();
       this._add(snapshotsSection, {
@@ -42,7 +33,6 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
   },
 
   events: {
-    "openPrimaryStudy": "qx.event.type.Data",
     "openSnapshot": "qx.event.type.Data"
   },
 
