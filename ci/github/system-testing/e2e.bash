@@ -12,7 +12,12 @@ export DOCKER_IMAGE_TAG
 
 install() {
   pushd tests/e2e
+  echo "--------------- currently running docker containers (BEFORE)..."
+  docker ps --all
+  echo "--------------- installing for e2e..."
   make install-ci
+  echo "--------------- currently running docker containers (AFTER)..."
+  docker ps --all
   popd
 }
 
