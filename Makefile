@@ -486,7 +486,7 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 					echo configuring host file to redirect $(local_registry) to 127.0.0.1; \
 					sudo echo 127.0.0.1 $(local_registry) | sudo tee -a /etc/hosts;\
 					echo done)
-	@$(if $(shell grep "{\"insecure-registries\": \[\"registry:5000\"\]}" /etc/docker/daemon.json),,\
+	@$(if $(shell grep "{\"insecure-registries\": \[\"$(local_registry):5000\"\]}" /etc/docker/daemon.json),,\
 					echo configuring docker engine to use insecure local registry...; \
 					sudo echo {\"insecure-registries\": [\"$(local_registry):5000\"]} | sudo tee -a /etc/docker/daemon.json; \
 					echo restarting engine...; \
