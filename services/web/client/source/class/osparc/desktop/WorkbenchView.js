@@ -528,12 +528,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (!workbenchToolbar.hasListener("showSnapshots")) {
         workbenchToolbar.addListener("showSnapshots", this.__showSnapshots, this);
       }
-      if (!workbenchToolbar.hasListener("openPrimaryStudy")) {
-        workbenchToolbar.addListener("openPrimaryStudy", e => {
-          const primaryStudyId = e.getData();
-          this.__switchStudy(primaryStudyId);
-        }, this);
-      }
 
       nodesTree.addListener("changeSelectedNode", e => {
         const node = workbenchUI.getNodeUI(e.getData());

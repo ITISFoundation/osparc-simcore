@@ -26,9 +26,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
   events: {
     "takeSnapshot": "qx.event.type.Event",
-    "convertToStudy": "qx.event.type.Event",
-    "showSnapshots": "qx.event.type.Event",
-    "openPrimaryStudy": "qx.event.type.Data"
+    "showSnapshots": "qx.event.type.Event"
   },
 
   members: {
@@ -57,17 +55,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
           });
           control.addListener("execute", () => {
             this.fireDataEvent("takeSnapshot");
-          }, this);
-          this._add(control);
-          break;
-        }
-        case "convert-to-study-btn": {
-          control = new osparc.ui.form.FetchButton(this.tr("Convert To Study")).set({
-            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-            allowGrowX: false
-          });
-          control.addListener("execute", () => {
-            this.fireDataEvent("convertToStudy");
           }, this);
           this._add(control);
           break;
