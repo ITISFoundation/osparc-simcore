@@ -34,7 +34,7 @@ DEFAULT_MAX_NANO_CPUS: int = _from_env_with_default(
     "DEFAULT_MAX_NANO_CPUS", int, 4 * pow(10, 9)
 )
 DEFAULT_MAX_MEMORY: int = _from_env_with_default(
-    "DEFAULT_MAX_MEMORY", int, 4 * pow(10, 9)
+    "DEFAULT_MAX_MEMORY", int, 2 * pow(1024, 3)
 )  # 2 GiB
 
 SERVICE_RUNTIME_SETTINGS: str = "simcore.service.settings"
