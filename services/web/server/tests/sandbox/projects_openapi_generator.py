@@ -1,17 +1,19 @@
 #
 # Assists on the creation of project's OAS
 #
-
-import json
-
+# - Follows https://cloud.google.com/apis/design
+#
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-import logging
-from typing import Any, Callable, Dict, List, Optional, Union
+
+import json
+from types import FunctionType
+from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar, Union
 from uuid import UUID, uuid3
 
 import simcore_service_webserver.projects.projects_handlers
+import simcore_service_webserver.projects.projects_node_handlers
 import simcore_service_webserver.snapshots_api_handlers
 from fastapi import Depends, FastAPI
 from fastapi import Path as PathParam
@@ -27,21 +29,15 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     constr,
+    validator,
 )
-from pydantic.networks import AnyUrl
+from pydantic.generics import GenericModel
+from pydantic.networks import AnyUrl, HttpUrl
+from servicelib.rest_pagination_utils import PageLinks, PageMetaInfoLimitOffset
 from simcore_service_webserver.snapshots_models import (
     SnapshotPatchBody,
     SnapshotResource,
 )
-
-logging.basicConfig(level=logging.DEBUG)
-
-
-error_responses = {
-    status.HTTP_400_BAD_REQUEST: {},
-    status.HTTP_422_UNPROCESSABLE_ENTITY: {},
-}
-
 
 InputID = OutputID = constr(regex=PROPERTY_KEY_RE)
 
@@ -55,6 +51,50 @@ DataLink = AnyUrl
 DataSchema = Union[DataSchema, DataLink]
 
 
+error_responses = {
+    status.HTTP_400_BAD_REQUEST: {},
+    status.HTTP_422_UNPROCESSABLE_ENTITY: {},
+}
+
+DataT = TypeVar("DataT")
+
+
+class Error(BaseModel):
+    code: int
+    message: str
+
+
+class Envelope(GenericModel, Generic[DataT]):
+    data: Optional[DataT]
+    error: Optional[Error]
+
+    @validator("error", always=True)
+    @classmethod
+    def check_consistency(cls, v, values):
+        if v is not None and values["data"] is not None:
+            raise ValueError("must not provide both data and error")
+        if v is None and values.get("data") is None:
+            raise ValueError("must provide data or error")
+        return v
+
+
+ItemT = TypeVar("ItemT")
+
+# FIXME: replace PageResponseLimitOffset
+# FIXME: page envelope is inconstent since DataT != Page ??
+class Page(GenericModel, Generic[ItemT]):
+    meta: PageMetaInfoLimitOffset = Field(alias="_meta")
+    links: PageLinks = Field(alias="_links")
+    data: List[ItemT]
+
+
+# --------------
+
+
+class State(BaseModel):
+    ...
+
+
 class Node(BaseModel):
     key: str
     version: str = Field(..., regex=r"\d+\.\d+\.\d+")
@@ -66,9 +106,40 @@ class Node(BaseModel):
     # var outputs?
 
 
+# --------------
 class Project(BaseModel):
+    """Domain model"""
+
     id: UUID
     pipeline: Dict[UUID, Node]
+
+
+# requests models
+class ProjectNew(BaseModel):
+    pipeline: Dict[UUID, Node]
+
+
+class ProjectUpdate(BaseModel):
+    # same as new but ALL optional??
+    # some validators?
+    pass
+
+
+# response models
+
+
+class ProjectItem(BaseModel):
+    # Lightweight and part of an array
+    id: UUID
+
+    url: HttpUrl
+
+
+class ProjectDetailed(BaseModel):
+    id: UUID
+    pipeline: Dict[UUID, Node]
+
+    url: HttpUrl
 
     def update_ids(self, name: str):
         map_ids: Dict[UUID, UUID] = {}
@@ -94,17 +165,14 @@ class ParameterResource(Parameter):
 ####################################################################
 
 
-_PROJECTS: Dict[UUID, Project] = {}
-
-
-####################################################################
-
-
 def get_reverse_url_mapper(request: Request) -> Callable:
     def reverse_url_mapper(name: str, **path_params: Any) -> str:
         return request.url_for(name, **path_params)
 
     return reverse_url_mapper
+
+
+_PROJECTS: Dict[UUID, Project] = {}
 
 
 def get_valid_uuid(project_uuid: UUID = PathParam(...)) -> UUID:
@@ -113,60 +181,128 @@ def get_valid_uuid(project_uuid: UUID = PathParam(...)) -> UUID:
     return project_uuid
 
 
+def redefine_operation_id_in_router(router: APIRouter, operation_id_prefix: str):
+    for route in router.routes:
+        if isinstance(route, APIRoute):
+            assert isinstance(route.endpoint, FunctionType)  # nosec
+            route.operation_id = f"{operation_id_prefix}.{route.endpoint.__name__}"
+
+
 ####################################################################
 
-project_routes = APIRouter(tags=["project"])
+project_routes = APIRouter(prefix="/projects", tags=["project"])
 
 
-@project_routes.get(
-    "/projects/{project_uuid}", response_model=Project, tags=["project"]
-)
-def get_project(pid: UUID = Depends(get_valid_uuid)):
-    return _PROJECTS[pid]
+@project_routes.get("/", response_model=Page[ProjectItem])
+def list_projects():
+    ...
 
 
 @project_routes.post(
-    "/projects/{project_uuid}", status_code=status.HTTP_201_CREATED, tags=["project"]
+    "/", response_model=Envelope[ProjectDetailed], status_code=status.HTTP_201_CREATED
 )
-def create_project(project: Project):
-    if project.id not in _PROJECTS:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Invalid id")
-    _PROJECTS[project.id] = project
+def create_project(project: ProjectNew):
+    ...
 
 
-@project_routes.put("/projects/{project_uuid}", tags=["project"])
-def replace_project(project: Project, pid: UUID = Depends(get_valid_uuid)):
-    _PROJECTS[pid] = project
+@project_routes.get("/{project_uuid}", response_model=Envelope[ProjectDetailed])
+def get_project(pid: UUID = Depends(get_valid_uuid)):
+    ...
 
 
-@project_routes.patch("/projects/{project_uuid}", tags=["project"])
-def update_project(project: Project, pid: UUID = Depends(get_valid_uuid)):
-    raise NotImplementedError()
+@project_routes.put("/{project_uuid}", response_model=Envelope[ProjectDetailed])
+def replace_project(project: ProjectNew, pid: UUID = Depends(get_valid_uuid)):
+    ...
 
 
-@project_routes.delete("/projects/{project_uuid}", tags=["project"])
+@project_routes.patch("/{project_uuid}", response_model=Envelope[ProjectDetailed])
+def update_project(project: ProjectUpdate, pid: UUID = Depends(get_valid_uuid)):
+    ...
+
+
+@project_routes.delete(
+    "/{project_uuid}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 def delete_project(pid: UUID = Depends(get_valid_uuid)):
-    del _PROJECTS[pid]
+    ...
 
 
-@project_routes.post("/projects/{project_uuid}:open", tags=["project"])
+@project_routes.post(":open")
 def open_project(pid: UUID = Depends(get_valid_uuid)):
-    pass
+    ...
 
 
-@project_routes.post("/projects/{project_uuid}:start", tags=["project"])
+@project_routes.post(":start")
 def start_project(use_cache: bool = True, pid: UUID = Depends(get_valid_uuid)):
-    pass
+    ...
 
 
-@project_routes.post("/projects/{project_uuid}:stop", tags=["project"])
+@project_routes.post(":stop")
 def stop_project(pid: UUID = Depends(get_valid_uuid)):
-    pass
+    ...
 
 
-@project_routes.post("/projects/{project_uuid}:close", tags=["project"])
+@project_routes.post(":close")
 def close_project(pid: UUID = Depends(get_valid_uuid)):
-    pass
+    ...
+
+
+redefine_operation_id_in_router(
+    project_routes,
+    operation_id_prefix=simcore_service_webserver.projects.projects_handlers.__name__,
+)
+
+# project states sub-resource
+
+project_states_routes = APIRouter(prefix="/projects/{project_uuid}", tags=["project"])
+
+
+@project_routes.get("/state", response_model=Envelope[State])
+def get_project_state(pid: UUID = Depends(get_valid_uuid)):
+    ...
+
+
+redefine_operation_id_in_router(
+    project_states_routes,
+    operation_id_prefix=simcore_service_webserver.projects.projects_handlers.__name__,
+)
+
+# project nodes sub-resource
+
+project_nodes_routes = APIRouter(prefix="/projects/{project_uuid}", tags=["project"])
+
+
+@project_nodes_routes.get("/nodes", response_model=Envelope[Node])
+def get_project_node(pid: UUID = Depends(get_valid_uuid)):
+    ...
+
+
+redefine_operation_id_in_router(
+    project_states_routes,
+    operation_id_prefix=simcore_service_webserver.projects.projects_node_handlers.__name__,
+)
+
+
+# project tags sub-resource ---------
+# here we use a different approach just to check
+class Tags:
+    routes = APIRouter(prefix="/projects/{project_uuid}", tags=["project"])
+
+    @staticmethod
+    @routes.put("/tags/{tag_id}")
+    def replace(tag_id: int, pid: UUID = Depends(get_valid_uuid)):
+        """Assigns a tag to a project"""
+        ...
+
+    @staticmethod
+    @routes.delete(
+        "/tags/{tag_id}",
+        status_code=status.HTTP_204_NO_CONTENT,
+    )
+    def delete(tag_id: int, pid: UUID = Depends(get_valid_uuid)):
+        """Un-assigns tag to a project"""
+        ...
 
 
 # project snapshot
@@ -174,12 +310,14 @@ def close_project(pid: UUID = Depends(get_valid_uuid)):
 #  - takes a snapshot of the current state of the project
 #  -
 
-snapshot_routes = APIRouter(tags=["project", "snapshot"])
+snapshot_routes = APIRouter(
+    prefix="/projects/{project_uuid}/snapshots", tags=["project", "snapshot"]
+)
 
 
 @snapshot_routes.get(
-    "/projects/{project_uuid}/snapshots",
-    response_model=List[SnapshotResource],
+    "",
+    response_model=Page[SnapshotResource],
 )
 async def list_snapshots(
     pid: UUID = Depends(get_valid_uuid),
@@ -195,8 +333,8 @@ async def list_snapshots(
 
 
 @snapshot_routes.post(
-    "/projects/{project_uuid}/snapshots",
-    response_model=SnapshotResource,
+    "",
+    response_model=Envelope[SnapshotResource],
     status_code=status.HTTP_201_CREATED,
 )
 async def create_snapshot(
@@ -210,8 +348,8 @@ async def create_snapshot(
 
 
 @snapshot_routes.get(
-    "/projects/{project_uuid}/snapshots/{snapshot_id}",
-    response_model=SnapshotResource,
+    "/{snapshot_id}",
+    response_model=Envelope[SnapshotResource],
 )
 async def get_snapshot(
     snapshot_id: PositiveInt,
@@ -222,7 +360,7 @@ async def get_snapshot(
 
 
 @snapshot_routes.delete(
-    "/projects/{project_uuid}/snapshots/{snapshot_id}",
+    "/{snapshot_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_snapshot(
@@ -235,7 +373,7 @@ async def delete_snapshot(
 
 
 @snapshot_routes.patch(
-    "/projects/{project_uuid}/snapshots/{snapshot_id}",
+    "/{snapshot_id}",
 )
 async def update_snapshot(
     snapshot_id: PositiveInt,
@@ -245,16 +383,22 @@ async def update_snapshot(
     """Updates label/name of a snapshot"""
 
 
+redefine_operation_id_in_router(
+    snapshot_routes,
+    operation_id_prefix=simcore_service_webserver.snapshots_api_handlers.__name__,
+)
 # project parametrization
 
-parameter_routes = APIRouter(tags=["project"])
+parameter_routes = APIRouter(
+    prefix="/projects/{project_uuid}/parameters", tags=["project"]
+)
 
 
 @parameter_routes.get(
-    "/projects/{project_uuid}/parameters",
-    response_model=List[ParameterResource],
+    "",
+    response_model=Page[ParameterResource],
 )
-async def list_snapshot_parameters(
+async def list_project_parameters(
     snapshot_id: str,
     pid: UUID = Depends(get_valid_uuid),
     url_for: Callable = Depends(get_reverse_url_mapper),
@@ -265,31 +409,11 @@ async def list_snapshot_parameters(
 ## workflow compiler #######################################
 
 
-def redifine_operation_id_in_router(router: APIRouter, operation_id_prefix: str):
-    for route in router.routes:
-        if isinstance(route, APIRoute):
-            route.operation_id = f"{operation_id_prefix}.{route.endpoint.__name__}"
-
-
-def include_router(app: FastAPI, router: APIRouter, operation_id_prefix: str):
-    redifine_operation_id_in_router(router, operation_id_prefix)
-    app.include_router(router)
-
-
 app = FastAPI(docs_url="/dev/doc")
 
 
-include_router(
-    app,
-    project_routes,
-    operation_id_prefix=simcore_service_webserver.projects.projects_handlers.__name__,
-)
-include_router(
-    app,
-    snapshot_routes,
-    operation_id_prefix=simcore_service_webserver.snapshots_api_handlers.__name__,
-)
-# app.include_router(parameter_routes)
+for routes in [project_routes, project_nodes_routes, snapshot_routes]:
+    app.include_router(routes)
 
 
 # print(yaml.safe_dump(app.openapi()))
