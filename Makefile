@@ -113,6 +113,7 @@ SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),N
 comma := ,
 
 define _docker_compose_build
+$(if $(create_cache),$(info creating cache file in $(DOCKER_BUILDX_CACHE_TO)),)
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,production);\
 pushd services &&\
 docker buildx bake \
