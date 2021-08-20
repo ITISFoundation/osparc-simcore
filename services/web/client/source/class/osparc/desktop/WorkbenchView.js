@@ -44,7 +44,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   events: {
-    "startStudy": "qx.event.type.Data"
+    "startSnapshot": "qx.event.type.Data"
   },
 
   properties: {
@@ -218,25 +218,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __showSnapshots: function() {
       const study = this.getStudy();
-      const sweeper = new osparc.component.snapshots.SnapshotsView(study);
+      const snapshots = new osparc.component.snapshots.SnapshotsView(study);
       const title = this.tr("Snapshots");
-      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 600, 500);
-      sweeper.addListener("openSnapshot", e => {
+      const win = osparc.ui.window.Window.popUpInWindow(snapshots, title, 600, 500);
+      snapshots.addListener("openSnapshot", e => {
         win.close();
-        const studyId = e.getData();
-        const params = {
-          url: {
-            "studyId": studyId
-          }
-        };
-        osparc.data.Resources.getOne("studies", params)
-          .then(studyData => {
-            study.removeIFrames();
-            const data = {
-              studyId: studyData.uuid
-            };
-            this.fireDataEvent("startStudy", data);
-          });
+        const snapshot = e.getData();
+        this.fireDataEvent("startSnapshot", snapshot);
       });
     },
 

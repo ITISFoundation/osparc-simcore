@@ -242,40 +242,43 @@ qx.Class.define("osparc.desktop.MainPage", {
         }
       };
       osparc.data.Resources.getOne("studies", params)
-        .then(latestStudyData => {
-          if (!latestStudyData) {
+        .then(studyData => {
+          if (!studyData) {
             const msg = this.tr("Study not found");
             throw new Error(msg);
           }
+          this.__loadStudy(studyData, pageContext);
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          this.__showDashboard();
+          return;
+        });
+    },
 
-          let locked = false;
-          let lockedBy = false;
-          if ("state" in latestStudyData && "locked" in latestStudyData["state"]) {
-            locked = latestStudyData["state"]["locked"]["value"];
-            lockedBy = latestStudyData["state"]["locked"]["owner"];
-          }
-          if (locked && lockedBy["user_id"] !== osparc.auth.Data.getInstance().getUserId()) {
-            const msg = this.tr("Study is already open by ") + lockedBy["first_name"];
+    __loadStudy: function(studyData, pageContext) {
+      let locked = false;
+      let lockedBy = false;
+      if ("state" in studyData && "locked" in studyData["state"]) {
+        locked = studyData["state"]["locked"]["value"];
+        lockedBy = studyData["state"]["locked"]["owner"];
+      }
+      if (locked && lockedBy["user_id"] !== osparc.auth.Data.getInstance().getUserId()) {
+        const msg = this.tr("Study is already open by ") + lockedBy["first_name"];
+        throw new Error(msg);
+      }
+      const store = osparc.store.Store.getInstance();
+      store.getInaccessibleServices(studyData)
+        .then(inaccessibleServices => {
+          if (inaccessibleServices.length) {
+            this.__dashboard.getStudyBrowser().resetSelection();
+            const msg = osparc.utils.Study.getInaccessibleServicesMsg(inaccessibleServices);
             throw new Error(msg);
           }
-          const store = osparc.store.Store.getInstance();
-          store.getInaccessibleServices(latestStudyData)
-            .then(inaccessibleServices => {
-              if (inaccessibleServices.length) {
-                this.__dashboard.getStudyBrowser().resetSelection();
-                const msg = osparc.utils.Study.getInaccessibleServicesMsg(inaccessibleServices);
-                throw new Error(msg);
-              }
-              this.__showStudyEditor(this.__getStudyEditor());
-              this.__studyEditor.setStudyData(latestStudyData)
-                .then(() => {
-                  this.__syncStudyEditor(pageContext);
-                });
-            })
-            .catch(err => {
-              osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-              this.__showDashboard();
-              return;
+          this.__showStudyEditor(this.__getStudyEditor());
+          this.__studyEditor.setStudyData(studyData)
+            .then(() => {
+              this.__syncStudyEditor(pageContext);
             });
         })
         .catch(err => {
@@ -309,9 +312,9 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __getStudyEditor: function() {
       const studyEditor = this.__studyEditor || new osparc.desktop.StudyEditor();
-      studyEditor.addListenerOnce("startStudy", e => {
-        const startStudyData = e.getData();
-        this.__startStudy(startStudyData);
+      studyEditor.addListenerOnce("startSnapshot", e => {
+        const snapshotData = e.getData();
+        this.__loadStudy(snapshotData);
       }, this);
       return studyEditor;
     },

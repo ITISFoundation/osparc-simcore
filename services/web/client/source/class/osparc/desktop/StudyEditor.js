@@ -26,8 +26,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     const viewsStack = this.__viewsStack = new qx.ui.container.Stack();
 
     const workbenchView = this.__workbenchView = new osparc.desktop.WorkbenchView();
-    workbenchView.addListener("startStudy", e => {
-      this.fireDataEvent("startStudy", e.getData());
+    workbenchView.addListener("startSnapshot", e => {
+      this.getStudy().removeIFrames();
+      this.fireDataEvent("startSnapshot", e.getData());
     });
     viewsStack.add(workbenchView);
 
@@ -60,7 +61,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
   events: {
     "forceBackToDashboard": "qx.event.type.Event",
-    "startStudy": "qx.event.type.Data"
+    "startSnapshot": "qx.event.type.Data"
   },
 
   properties: {

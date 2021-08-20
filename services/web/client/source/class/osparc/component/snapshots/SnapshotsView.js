@@ -72,7 +72,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
           this.__openSnapshotBtn.setEnabled(true);
         }
         const selectedRow = e.getRow();
-        this.__selectedSnapshot = snapshotsTable.getRowData(selectedRow)["StudyId"];
+        this.__selectedSnapshot = snapshotsTable.getRowData(selectedRow);
       });
 
       this.__snapshotsSection.addAt(snapshotsTable, 1, {
