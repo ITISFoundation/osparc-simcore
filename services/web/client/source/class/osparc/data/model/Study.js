@@ -236,7 +236,6 @@ qx.Class.define("osparc.data.model.Study", {
         };
         osparc.data.Resources.get("snapshots", params)
           .then(snapshots => {
-            console.log(snapshots);
             resolve(snapshots);
           })
           .catch(err => {
