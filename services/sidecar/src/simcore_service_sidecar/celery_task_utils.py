@@ -1,5 +1,6 @@
 import logging
 import subprocess
+import uuid
 from pprint import pformat
 
 import aiodocker
