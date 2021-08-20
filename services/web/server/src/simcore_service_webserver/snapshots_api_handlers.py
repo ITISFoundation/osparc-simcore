@@ -7,7 +7,6 @@ from uuid import UUID
 import orjson
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPException
-from aiohttp.web_routedef import RouteDef, RouteTableDef
 from pydantic.decorator import validate_arguments
 from pydantic.error_wrappers import ValidationError
 from pydantic.main import BaseModel
