@@ -2,14 +2,17 @@
 # Assists on the creation of project's OAS
 #
 # - Follows https://cloud.google.com/apis/design
+# - check in https://editor.swagger.io/
 #
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
 import json
+import sys
 from datetime import datetime
 from math import ceil
+from pathlib import Path
 from types import FunctionType
 from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union
 from uuid import UUID, uuid3
@@ -36,11 +39,15 @@ from pydantic import (
 from pydantic.generics import GenericModel
 from pydantic.networks import HttpUrl
 from servicelib.rest_pagination_utils import PageLinks, PageMetaInfoLimitOffset
-from simcore_service_webserver.snapshots_models import (
-    SnapshotPatchBody,
-    SnapshotResource,
-)
+from simcore_service_webserver.snapshots_models import SnapshotResource
 from starlette.datastructures import URL
+
+CURRENT_FILENAME_STEM = Path(sys.argv[0] if __name__ == "__main__" else __file__).stem
+# FIXME: modify openapi output
+#   - exclusiveMinimum should be boolean. SEE https://github.com/tiangolo/fastapi/issues/240
+#   - examples is NOT allowed
+#   - patternProperties NOT allowed
+
 
 InputID = OutputID = constr(regex=PROPERTY_KEY_RE)
 
@@ -241,7 +248,7 @@ def create_app(routers: List[APIRouter]) -> FastAPI:
     # print(yaml.safe_dump(app.openapi()))
     # print("-"*100)
 
-    with open("openapi-ignore.json", "wt") as f:
+    with open(f"{CURRENT_FILENAME_STEM}-openapi.ignore.json", "wt") as f:
         json.dump(app.openapi(), f, indent=2)
 
     return app
@@ -300,22 +307,22 @@ def delete_project(pid: UUID = Depends(get_valid_project)):
     ...
 
 
-@project_routes.post(":open")
+@project_routes.post("/{project_uuid}:open")
 def open_project(pid: UUID = Depends(get_valid_project)):
     ...
 
 
-@project_routes.post(":start")
+@project_routes.post("/{project_uuid}:start")
 def start_project(use_cache: bool = True, pid: UUID = Depends(get_valid_project)):
     ...
 
 
-@project_routes.post(":stop")
+@project_routes.post("/{project_uuid}:stop")
 def stop_project(pid: UUID = Depends(get_valid_project)):
     ...
 
 
-@project_routes.post(":close")
+@project_routes.post("/{project_uuid}:close")
 def close_project(pid: UUID = Depends(get_valid_project)):
     ...
 
@@ -327,16 +334,16 @@ redefine_operation_id_in_router(
 
 # project states sub-resource --------
 
-project_states_routes = APIRouter(prefix="/projects/{project_uuid}", tags=["project"])
+pr_state_routes = APIRouter(prefix="/projects/{project_uuid}", tags=["project"])
 
 
-@project_routes.get("/state", response_model=Envelope[State])
+@pr_state_routes.get("/state", response_model=Envelope[State])
 def get_project_state(pid: UUID = Depends(get_valid_project)):
     ...
 
 
 redefine_operation_id_in_router(
-    project_states_routes,
+    pr_state_routes,
     operation_id_prefix=simcore_service_webserver.projects.projects_handlers.__name__,
 )
 
@@ -351,7 +358,7 @@ def get_project_node(pid: UUID = Depends(get_valid_project)):
 
 
 redefine_operation_id_in_router(
-    project_states_routes,
+    pr_state_routes,
     operation_id_prefix=simcore_service_webserver.projects.projects_node_handlers.__name__,
 )
 
@@ -442,12 +449,12 @@ def delete_snapshot(
 @snapshot_routes.patch(
     "/{snapshot_id}",
 )
-def update_snapshot(
+def update_snapshot_name(
     snapshot_id: PositiveInt,
-    update: SnapshotPatchBody,
+    snapshot_name: str,
     pid: UUID = Depends(get_valid_project),
 ):
-    """Updates label/name of a snapshot"""
+    ...
 
 
 redefine_operation_id_in_router(
@@ -490,6 +497,7 @@ def list_project_parameters(
 #
 #
 # SEE
+#  - http://git-scm.com/docs/git
 #  - https://gandalf.readthedocs.io/en/latest/api.html
 #  - https://github.com/hulu/restfulgit#readme
 #
@@ -513,6 +521,13 @@ class Commit(CommitRef):
     created_at: datetime
     message: str
     parents: List[CommitRef]
+
+
+class Tag(BaseModel):
+    name: str = Field(..., description="Unique tag name")
+    commit_ref: CommitRef
+
+    url: HttpUrl
 
 
 #
@@ -539,7 +554,11 @@ def list_repos(page=Depends(init_pagination(Repo))):
     ...
 
 
-@repo_routes.post("/{project_uuid}", status_code=status.HTTP_201_CREATED)
+@repo_routes.post(
+    "/{project_uuid}",
+    response_model=Envelope[Repo],
+    status_code=status.HTTP_201_CREATED,
+)
 def create_repo(
     pid: UUID = Depends(get_valid_project),
 ):
@@ -552,7 +571,9 @@ def create_repo(
 
 
 @repo_routes.post(
-    "/{project_uuid}/workbench/commits", status_code=status.HTTP_201_CREATED
+    "/{project_uuid}/workbench/commits",
+    response_model=Envelope[Commit],
+    status_code=status.HTTP_201_CREATED,
 )
 def create_commit(
     message: str,
@@ -576,15 +597,96 @@ def get_logs(
     """Lists commits tree of the project"""
 
 
-@repo_routes.get(
-    "/{project_uuid}/workbench/commits/{commit_id}:checkout",
-    status_code=status.HTTP_201_CREATED,
+@repo_routes.post(
+    "/{project_uuid}/workbench/commits/{ref_id}", response_model=Envelope[Commit]
 )
-def checkout(
-    commit_id,
+def get_commit(
+    ref_id: RepoRef = Field(
+        ..., description="A repository ref (commit, tag or branch)"
+    ),
     pid: UUID = Depends(get_valid_repo),
 ):
-    """Sets commit as current, i.e. all changes will"""
+    ...
+
+
+@repo_routes.patch(
+    "/{project_uuid}/workbench/commits/{ref_id}", response_model=Envelope[Commit]
+)
+def update_commit_message(
+    ref_id: RepoRef = Field(
+        ..., description="A repository ref (commit, tag or branch)"
+    ),
+    message: str = ...,
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
+
+
+@repo_routes.post(
+    "/{project_uuid}/workbench/commits/{ref_id}:checkout",
+    response_model=Envelope[Commit],
+)
+def checkout(
+    ref_id: RepoRef = Field(
+        ..., description="A repository ref (commit, tag or branch)"
+    ),
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
+
+
+# do not expose!?
+def create_branch():
+    ...
+
+
+@repo_routes.get("/{project_uuid}/workbench/tags", response_model=Page[Tag])
+def list_tags(
+    page=Depends(init_pagination(Tag)),
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
+
+
+@repo_routes.post("/{project_uuid}/workbench/tags", response_model=Envelope[Tag])
+def create_tag(
+    commit_sha: RepoRef,
+    tag_name: str,
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
+
+
+@repo_routes.get(
+    "/{project_uuid}/workbench/tags/{ref_id}", response_model=Envelope[Tag]
+)
+def get_tag(
+    ref_id: RepoRef = Field(..., description="A commit sha or a tag name"),
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
+
+
+@repo_routes.patch(
+    "/{project_uuid}/workbench/tags/{ref_id}", response_model=Envelope[Tag]
+)
+def update_tag_name(
+    ref_id: RepoRef = Field(..., description="A commit sha or a tag name"),
+    new_tag_name: str = ...,
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
+
+
+@repo_routes.delete(
+    "/{project_uuid}/workbench/tags/{tag_name}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_tag(
+    tag_name: str,
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
 
 
 #####################################################
@@ -593,7 +695,7 @@ the_app = create_app(
     routers=[
         project_routes,
         project_nodes_routes,
-        project_states_routes,
+        pr_state_routes,
         snapshot_routes,
         parameter_routes,
         repo_routes,
