@@ -137,7 +137,7 @@ endef
 
 .docker-build-registry:
 	# create registry for temporary builds
-	@$(if $(shell docker ps --format="{{.Names}}" | grep $(DOCKER_BUILD_REGISTRY_NAME)),,\
+	@$(if $(shell docker ps --format="{{.Names}}" | grep  --word-regexp $(DOCKER_BUILD_REGISTRY_NAME)),,\
 		docker run --detach \
 				--publish $(DOCKER_BUILD_REGISTRY_PORT):5000 \
 				--name $(DOCKER_BUILD_REGISTRY_NAME) \
@@ -492,7 +492,7 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 					echo restarting engine...; \
 					sudo service docker restart;\
 					echo done)
-	@$(if $(shell docker ps --format="{{.Names}}" | grep $(local_registry)),,\
+	@$(if $(shell docker ps --format="{{.Names}}" | grep --word-regexp $(local_registry)),,\
 					echo starting registry on $(local_registry):5000...; \
 					docker run --detach \
 							--init \
@@ -604,9 +604,9 @@ clean: .check-clean ## cleans all unversioned files in project and temp files cr
 	# Cleaning web/client
 	@$(MAKE_C) services/web/client clean-files
 	# Remove build registry
-	@docker rm --force $(DOCKER_BUILD_REGISTRY_NAME) 2>/dev/null
+	-@docker rm --force $(DOCKER_BUILD_REGISTRY_NAME) 2>/dev/null
 	# Remove docker buildx builder instance
-	@$(if $(findstring osparc-builder,$(shell docker buildx ls | grep osparc-builder)),\
+	@$(if $(findstring osparc-builder,$(shell docker buildx ls | grep  --word-regexp osparc-builder)),\
 		docker buildx rm osparc-builder,\
 	)
 
