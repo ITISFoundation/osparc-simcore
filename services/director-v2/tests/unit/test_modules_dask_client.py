@@ -161,4 +161,4 @@ def test_node_requirements_correctly_convert_to_dask_resources(
     # all the dask resources shall be of type: RESOURCE_NAME: VALUE
     for resource_key, resource_value in dask_resources.items():
         assert isinstance(resource_key, str)
-        assert isinstance(resource_value, (int, str, bool))
+        assert isinstance(resource_value, (int, float, str, bool))
