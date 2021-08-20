@@ -134,7 +134,7 @@ class DaskClient:
     def abort_computation_tasks(self, task_ids: List[str]) -> None:
 
         for task_id in task_ids:
-            task_future = self._taskid_to_future_map.pop(task_id)
+            task_future = self._taskid_to_future_map.get(task_id)
             if task_future:
                 task_future.cancel()
                 logger.debug("Dask task %s cancelled", task_future.key)
