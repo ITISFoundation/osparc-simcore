@@ -64,6 +64,7 @@ async def test_create_snapshot_workflow(client, user_project: ProjectDict):
 
     # FIXME:
     project.ui.workbench = None
+    project.ui.slideshow = None
     assert project == Project.parse_obj(data[0])
 
     # now it has one snapshot
