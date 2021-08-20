@@ -23,7 +23,7 @@ urllib3>=1.26.5                               # https://github.com/advisories/GH
 #
 
 # TODO: https://aioredis.readthedocs.io/en/latest/migration/)
-aioredis<2.0.0
+aioredis<3.0.0
 # with new released version 1.0.0 (https://github.com/aio-libs/aiozipkin/releases).
 # TODO: Check again when moving to py3.8-3.9! SEE https://github.com/ITISFoundation/osparc-simcore/pull/2025
 aiozipkin==0.7.1
