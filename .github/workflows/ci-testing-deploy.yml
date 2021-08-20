@@ -1305,7 +1305,7 @@ jobs:
   integration-test-webserver-01:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 01"
-    needs: [build-test-images]
+    needs: [unit-test-webserver-01, unit-test-webserver-05, build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1394,7 +1394,7 @@ jobs:
   integration-test-webserver-02:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 02"
-    needs: [build-test-images]
+    needs: [unit-test-webserver-01, unit-test-webserver-05, build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1483,7 +1483,7 @@ jobs:
   integration-test-director-v2-01:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] director-v2 01"
-    needs: [build-test-images]
+    needs: [unit-test-director-v2, build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1570,7 +1570,7 @@ jobs:
   integration-test-director-v2-02:
     timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[int] director-v2 02"
-    needs: [build-test-images]
+    needs: [unit-test-director-v2, build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1660,7 +1660,7 @@ jobs:
   integration-test-sidecar:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] sidecar"
-    needs: [build-test-images]
+    needs: [unit-test-sidecar, build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1749,7 +1749,7 @@ jobs:
   integration-test-simcore-sdk:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] simcore-sdk"
-    needs: [build-test-images]
+    needs: [unit-test-simcore-sdk, build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
