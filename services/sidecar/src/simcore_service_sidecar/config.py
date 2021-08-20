@@ -4,9 +4,9 @@ from distutils.util import strtobool
 from pathlib import Path
 
 from models_library.settings.celery import CeleryConfig
-from settings_library.comp_services import CompServices
+from settings_library.comp_services import ComputationalServices
 
-COMP_SERVICES = CompServices()
+COMP_SERVICES = ComputationalServices()
 
 SWARM_STACK_NAME: str = os.environ.get("SWARM_STACK_NAME", "simcore")
 

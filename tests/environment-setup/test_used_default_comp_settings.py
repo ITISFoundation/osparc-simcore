@@ -32,7 +32,7 @@ def test_default_max_values_are_same_in_director_and_sidecar(
     assert spec_sidecar is not None
     module_sidecar = importlib.util.module_from_spec(spec_sidecar)
     spec_sidecar.loader.exec_module(module_sidecar)  # type: ignore
-    sidecar_comp_services = module_sidecar.CompServices()  # type: ignore
+    sidecar_comp_services = module_sidecar.ComputationalServices()  # type: ignore
 
     spec_director = importlib.util.spec_from_file_location(
         f"director_defaults_{request.node.callspec.id}",

@@ -7,7 +7,7 @@ _DEFAULT_MAX_NANO_CPUS_VALUE = 4 * pow(10, 9)
 _DEFAULT_MAX_MEMORY_VALUE = 2 * GB
 
 
-class CompServices(BaseCustomSettings):
+class ComputationalServices(BaseCustomSettings):
     DEFAULT_MAX_NANO_CPUS: NonNegativeInt = _DEFAULT_MAX_NANO_CPUS_VALUE
     DEFAULT_MAX_MEMORY: ByteSize = _DEFAULT_MAX_MEMORY_VALUE
     DEFAULT_RUNTIME_TIMEOUT: NonNegativeInt = 0
