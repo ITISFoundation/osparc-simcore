@@ -1,0 +1,2416 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "FastAPI",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/projects/": {
+      "get": {
+        "tags": [
+          "project"
+        ],
+        "summary": "List Projects",
+        "operationId": "simcore_service_webserver.projects.projects_handlers.list_projects",
+        "parameters": [
+          {
+            "description": "index to the first item to return (pagination)",
+            "required": false,
+            "schema": {
+              "title": "Offset",
+              "exclusiveMinimum": 0.0,
+              "type": "integer",
+              "description": "index to the first item to return (pagination)",
+              "default": 0
+            },
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "description": "maximum number of items to return (pagination)",
+            "required": false,
+            "schema": {
+              "title": "Limit",
+              "maximum": 50.0,
+              "minimum": 1.0,
+              "type": "integer",
+              "description": "maximum number of items to return (pagination)",
+              "default": 20
+            },
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ProjectItem_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "project"
+        ],
+        "summary": "Create Project",
+        "operationId": "simcore_service_webserver.projects.projects_handlers.create_project",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectNew"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ProjectDetail_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{project_uuid}": {
+      "get": {
+        "tags": [
+          "project"
+        ],
+        "summary": "Get Project",
+        "operationId": "simcore_service_webserver.projects.projects_handlers.get_project",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ProjectDetail_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "project"
+        ],
+        "summary": "Replace Project",
+        "operationId": "simcore_service_webserver.projects.projects_handlers.replace_project",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectNew"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ProjectDetail_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "project"
+        ],
+        "summary": "Delete Project",
+        "operationId": "simcore_service_webserver.projects.projects_handlers.delete_project",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "project"
+        ],
+        "summary": "Update Project",
+        "operationId": "simcore_service_webserver.projects.projects_handlers.update_project",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ProjectDetail_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{project_uuid}:open": {
+      "post": {
+        "tags": [
+          "project"
+        ],
+        "summary": "Open Project",
+        "operationId": "simcore_service_webserver.projects.projects_handlers.open_project",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{project_uuid}:start": {
+      "post": {
+        "tags": [
+          "project"
+        ],
+        "summary": "Start Project",
+        "operationId": "simcore_service_webserver.projects.projects_handlers.start_project",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Use Cache",
+              "type": "boolean",
+              "default": true
+            },
+            "name": "use_cache",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{project_uuid}:stop": {
+      "post": {
+        "tags": [
+          "project"
+        ],
+        "summary": "Stop Project",
+        "operationId": "simcore_service_webserver.projects.projects_handlers.stop_project",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{project_uuid}:close": {
+      "post": {
+        "tags": [
+          "project"
+        ],
+        "summary": "Close Project",
+        "operationId": "simcore_service_webserver.projects.projects_handlers.close_project",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{project_uuid}/nodes": {
+      "get": {
+        "tags": [
+          "project"
+        ],
+        "summary": "Get Project Node",
+        "operationId": "get_project_node_projects__project_uuid__nodes_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_Node_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{project_uuid}/state": {
+      "get": {
+        "tags": [
+          "project"
+        ],
+        "summary": "Get Project State",
+        "operationId": "simcore_service_webserver.projects.projects_node_handlers.get_project_state",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_State_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{project_uuid}/snapshots": {
+      "get": {
+        "tags": [
+          "project",
+          "snapshot"
+        ],
+        "summary": "List Snapshots",
+        "description": "Lists all snapshots taken from a given project",
+        "operationId": "simcore_service_webserver.snapshots_api_handlers.list_snapshots",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          },
+          {
+            "description": "index to the first item to return (pagination)",
+            "required": false,
+            "schema": {
+              "title": "Offset",
+              "exclusiveMinimum": 0.0,
+              "type": "integer",
+              "description": "index to the first item to return (pagination)",
+              "default": 0
+            },
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "description": "maximum number of items to return (pagination)",
+            "required": false,
+            "schema": {
+              "title": "Limit",
+              "maximum": 50.0,
+              "minimum": 1.0,
+              "type": "integer",
+              "description": "maximum number of items to return (pagination)",
+              "default": 20
+            },
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_SnapshotResource_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "project",
+          "snapshot"
+        ],
+        "summary": "Create Snapshot",
+        "description": "Takes a snapshot of the project at this time",
+        "operationId": "simcore_service_webserver.snapshots_api_handlers.create_snapshot",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Snapshot Label",
+              "type": "string"
+            },
+            "name": "snapshot_label",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_SnapshotResource_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{project_uuid}/snapshots/{snapshot_id}": {
+      "get": {
+        "tags": [
+          "project",
+          "snapshot"
+        ],
+        "summary": "Get Snapshot",
+        "description": "Gets commit info for a given snapshot",
+        "operationId": "simcore_service_webserver.snapshots_api_handlers.get_snapshot",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Snapshot Id",
+              "exclusiveMinimum": 0.0,
+              "type": "integer"
+            },
+            "name": "snapshot_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_SnapshotResource_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "project",
+          "snapshot"
+        ],
+        "summary": "Delete Snapshot",
+        "description": "Deletes both the commit and the project itself",
+        "operationId": "simcore_service_webserver.snapshots_api_handlers.delete_snapshot",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Snapshot Id",
+              "exclusiveMinimum": 0.0,
+              "type": "integer"
+            },
+            "name": "snapshot_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "project",
+          "snapshot"
+        ],
+        "summary": "Update Snapshot Name",
+        "operationId": "simcore_service_webserver.snapshots_api_handlers.update_snapshot_name",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Snapshot Id",
+              "exclusiveMinimum": 0.0,
+              "type": "integer"
+            },
+            "name": "snapshot_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Snapshot Name",
+              "type": "string"
+            },
+            "name": "snapshot_name",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{project_uuid}/parameters": {
+      "get": {
+        "tags": [
+          "project"
+        ],
+        "summary": "List Project Parameters",
+        "description": "Lists all parameters in a project",
+        "operationId": "list_project_parameters_projects__project_uuid__parameters_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Snapshot Id",
+              "type": "string"
+            },
+            "name": "snapshot_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ParameterDetail_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repos/projects": {
+      "get": {
+        "tags": [
+          "repository"
+        ],
+        "summary": "List Repos",
+        "operationId": "list_repos_repos_projects_get",
+        "parameters": [
+          {
+            "description": "index to the first item to return (pagination)",
+            "required": false,
+            "schema": {
+              "title": "Offset",
+              "exclusiveMinimum": 0.0,
+              "type": "integer",
+              "description": "index to the first item to return (pagination)",
+              "default": 0
+            },
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "description": "maximum number of items to return (pagination)",
+            "required": false,
+            "schema": {
+              "title": "Limit",
+              "maximum": 50.0,
+              "minimum": 1.0,
+              "type": "integer",
+              "description": "maximum number of items to return (pagination)",
+              "default": 20
+            },
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Repo_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repos/projects/{project_uuid}": {
+      "post": {
+        "tags": [
+          "repository"
+        ],
+        "summary": "Create Repo",
+        "description": "Creates a repo to version a project\n\ncd project_uuid\ngit init\ngit add new-project/workbench",
+        "operationId": "create_repo_repos_projects__project_uuid__post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_Repo_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repos/projects/{project_uuid}/workbench/commits": {
+      "get": {
+        "tags": [
+          "repository"
+        ],
+        "summary": "Get Logs",
+        "description": "Lists commits tree of the project",
+        "operationId": "get_logs_repos_projects__project_uuid__workbench_commits_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Ref",
+              "type": "string"
+            },
+            "name": "ref",
+            "in": "query"
+          },
+          {
+            "description": "index to the first item to return (pagination)",
+            "required": false,
+            "schema": {
+              "title": "Offset",
+              "exclusiveMinimum": 0.0,
+              "type": "integer",
+              "description": "index to the first item to return (pagination)",
+              "default": 0
+            },
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "description": "maximum number of items to return (pagination)",
+            "required": false,
+            "schema": {
+              "title": "Limit",
+              "maximum": 50.0,
+              "minimum": 1.0,
+              "type": "integer",
+              "description": "maximum number of items to return (pagination)",
+              "default": 20
+            },
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Commit_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "repository"
+        ],
+        "summary": "Create Commit",
+        "description": "Commit current state of the workbench's project\n\ngit commit -m \"Some changes\"",
+        "operationId": "create_commit_repos_projects__project_uuid__workbench_commits_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Message",
+              "type": "string"
+            },
+            "name": "message",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_Commit_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repos/projects/{project_uuid}/workbench/commits/{ref_id}": {
+      "post": {
+        "tags": [
+          "repository"
+        ],
+        "summary": "Get Commit",
+        "operationId": "get_commit_repos_projects__project_uuid__workbench_commits__ref_id__post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Ref Id",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "name": "ref_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_Commit_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "repository"
+        ],
+        "summary": "Update Commit Message",
+        "operationId": "update_commit_message_repos_projects__project_uuid__workbench_commits__ref_id__patch",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Ref Id",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "name": "ref_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Message",
+              "type": "string"
+            },
+            "name": "message",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_Commit_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repos/projects/{project_uuid}/workbench/commits/{ref_id}:checkout": {
+      "post": {
+        "tags": [
+          "repository"
+        ],
+        "summary": "Checkout",
+        "operationId": "checkout_repos_projects__project_uuid__workbench_commits__ref_id__checkout_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Ref Id",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "name": "ref_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_Commit_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repos/projects/{project_uuid}/workbench/tags": {
+      "get": {
+        "tags": [
+          "repository"
+        ],
+        "summary": "List Tags",
+        "operationId": "list_tags_repos_projects__project_uuid__workbench_tags_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          },
+          {
+            "description": "index to the first item to return (pagination)",
+            "required": false,
+            "schema": {
+              "title": "Offset",
+              "exclusiveMinimum": 0.0,
+              "type": "integer",
+              "description": "index to the first item to return (pagination)",
+              "default": 0
+            },
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "description": "maximum number of items to return (pagination)",
+            "required": false,
+            "schema": {
+              "title": "Limit",
+              "maximum": 50.0,
+              "minimum": 1.0,
+              "type": "integer",
+              "description": "maximum number of items to return (pagination)",
+              "default": 20
+            },
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Tag_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "repository"
+        ],
+        "summary": "Create Tag",
+        "operationId": "create_tag_repos_projects__project_uuid__workbench_tags_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Commit Sha",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "name": "commit_sha",
+            "in": "query"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Tag Name",
+              "type": "string"
+            },
+            "name": "tag_name",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_Tag_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repos/projects/{project_uuid}/workbench/tags/{ref_id}": {
+      "get": {
+        "tags": [
+          "repository"
+        ],
+        "summary": "Get Tag",
+        "operationId": "get_tag_repos_projects__project_uuid__workbench_tags__ref_id__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Ref Id",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "name": "ref_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_Tag_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "repository"
+        ],
+        "summary": "Update Tag Name",
+        "operationId": "update_tag_name_repos_projects__project_uuid__workbench_tags__ref_id__patch",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Ref Id",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "name": "ref_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "New Tag Name",
+              "type": "string"
+            },
+            "name": "new_tag_name",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_Tag_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repos/projects/{project_uuid}/workbench/tags/{tag_name}": {
+      "delete": {
+        "tags": [
+          "repository"
+        ],
+        "summary": "Delete Tag",
+        "operationId": "delete_tag_repos_projects__project_uuid__workbench_tags__tag_name__delete",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Tag Name",
+              "type": "string"
+            },
+            "name": "tag_name",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Author": {
+        "title": "Author",
+        "required": [
+          "name",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "description": "Name of the author",
+            "example": "Jim Knopf"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string",
+            "description": "Email address",
+            "format": "email",
+            "examples": [
+              "sun@sense.eight",
+              "deleen@minbar.bab"
+            ]
+          },
+          "affiliation": {
+            "title": "Affiliation",
+            "type": "string",
+            "description": "Affiliation of the author",
+            "examples": [
+              "Sense8",
+              "Babylon 5"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "Commit": {
+        "title": "Commit",
+        "required": [
+          "sha",
+          "url",
+          "author",
+          "created_at",
+          "message",
+          "parents"
+        ],
+        "type": "object",
+        "properties": {
+          "sha": {
+            "title": "Sha",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          },
+          "author": {
+            "$ref": "#/components/schemas/Author"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "parents": {
+            "title": "Parents",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommitRef"
+            }
+          }
+        }
+      },
+      "CommitRef": {
+        "title": "CommitRef",
+        "required": [
+          "sha",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "sha": {
+            "title": "Sha",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "Envelope_Commit_": {
+        "title": "Envelope[Commit]",
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Commit"
+          },
+          "error": {
+            "$ref": "#/components/schemas/Error"
+          }
+        }
+      },
+      "Envelope_Node_": {
+        "title": "Envelope[Node]",
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Node"
+          },
+          "error": {
+            "$ref": "#/components/schemas/Error"
+          }
+        }
+      },
+      "Envelope_ProjectDetail_": {
+        "title": "Envelope[ProjectDetail]",
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ProjectDetail"
+          },
+          "error": {
+            "$ref": "#/components/schemas/Error"
+          }
+        }
+      },
+      "Envelope_Repo_": {
+        "title": "Envelope[Repo]",
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Repo"
+          },
+          "error": {
+            "$ref": "#/components/schemas/Error"
+          }
+        }
+      },
+      "Envelope_SnapshotResource_": {
+        "title": "Envelope[SnapshotResource]",
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SnapshotResource"
+          },
+          "error": {
+            "$ref": "#/components/schemas/Error"
+          }
+        }
+      },
+      "Envelope_State_": {
+        "title": "Envelope[State]",
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/State"
+          },
+          "error": {
+            "$ref": "#/components/schemas/Error"
+          }
+        }
+      },
+      "Envelope_Tag_": {
+        "title": "Envelope[Tag]",
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Tag"
+          },
+          "error": {
+            "$ref": "#/components/schemas/Error"
+          }
+        }
+      },
+      "Error": {
+        "title": "Error",
+        "required": [
+          "code",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "integer"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        }
+      },
+      "HTTPValidationError": {
+        "title": "HTTPValidationError",
+        "type": "object",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "Node": {
+        "title": "Node",
+        "required": [
+          "key",
+          "version",
+          "label",
+          "inputs",
+          "outputs"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "pattern": "\\d+\\.\\d+\\.\\d+",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "inputs": {
+            "title": "Inputs",
+            "type": "object",
+            "patternProperties": {
+              "^[-_a-zA-Z0-9]+$": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2083,
+                    "format": "uri"
+                  }
+                ]
+              }
+            }
+          },
+          "outputs": {
+            "title": "Outputs",
+            "type": "object",
+            "patternProperties": {
+              "^[-_a-zA-Z0-9]+$": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2083,
+                    "format": "uri"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "PageLinks": {
+        "title": "PageLinks",
+        "required": [
+          "self",
+          "first",
+          "last"
+        ],
+        "type": "object",
+        "properties": {
+          "self": {
+            "title": "Self",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          },
+          "first": {
+            "title": "First",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          },
+          "prev": {
+            "title": "Prev",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          },
+          "next": {
+            "title": "Next",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          },
+          "last": {
+            "title": "Last",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PageMetaInfoLimitOffset": {
+        "title": "PageMetaInfoLimitOffset",
+        "required": [
+          "limit",
+          "total",
+          "count"
+        ],
+        "type": "object",
+        "properties": {
+          "limit": {
+            "title": "Limit",
+            "exclusiveMinimum": 0.0,
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "minimum": 0.0,
+            "type": "integer",
+            "default": 0
+          },
+          "count": {
+            "title": "Count",
+            "minimum": 0.0,
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false,
+        "examples": [
+          {
+            "total": 7,
+            "count": 4,
+            "limit": 4,
+            "offset": 0
+          }
+        ]
+      },
+      "Page_Commit_": {
+        "title": "Page[Commit]",
+        "required": [
+          "_meta",
+          "_links",
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "_meta": {
+            "$ref": "#/components/schemas/PageMetaInfoLimitOffset"
+          },
+          "_links": {
+            "$ref": "#/components/schemas/PageLinks"
+          },
+          "data": {
+            "title": "Data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Commit"
+            }
+          }
+        }
+      },
+      "Page_ParameterDetail_": {
+        "title": "Page[ParameterDetail]",
+        "required": [
+          "_meta",
+          "_links",
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "_meta": {
+            "$ref": "#/components/schemas/PageMetaInfoLimitOffset"
+          },
+          "_links": {
+            "$ref": "#/components/schemas/PageLinks"
+          },
+          "data": {
+            "title": "Data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParameterDetail"
+            }
+          }
+        }
+      },
+      "Page_ProjectItem_": {
+        "title": "Page[ProjectItem]",
+        "required": [
+          "_meta",
+          "_links",
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "_meta": {
+            "$ref": "#/components/schemas/PageMetaInfoLimitOffset"
+          },
+          "_links": {
+            "$ref": "#/components/schemas/PageLinks"
+          },
+          "data": {
+            "title": "Data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectItem"
+            }
+          }
+        }
+      },
+      "Page_Repo_": {
+        "title": "Page[Repo]",
+        "required": [
+          "_meta",
+          "_links",
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "_meta": {
+            "$ref": "#/components/schemas/PageMetaInfoLimitOffset"
+          },
+          "_links": {
+            "$ref": "#/components/schemas/PageLinks"
+          },
+          "data": {
+            "title": "Data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Repo"
+            }
+          }
+        }
+      },
+      "Page_SnapshotResource_": {
+        "title": "Page[SnapshotResource]",
+        "required": [
+          "_meta",
+          "_links",
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "_meta": {
+            "$ref": "#/components/schemas/PageMetaInfoLimitOffset"
+          },
+          "_links": {
+            "$ref": "#/components/schemas/PageLinks"
+          },
+          "data": {
+            "title": "Data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SnapshotResource"
+            }
+          }
+        }
+      },
+      "Page_Tag_": {
+        "title": "Page[Tag]",
+        "required": [
+          "_meta",
+          "_links",
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "_meta": {
+            "$ref": "#/components/schemas/PageMetaInfoLimitOffset"
+          },
+          "_links": {
+            "$ref": "#/components/schemas/PageLinks"
+          },
+          "data": {
+            "title": "Data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Tag"
+            }
+          }
+        }
+      },
+      "ParameterDetail": {
+        "title": "ParameterDetail",
+        "required": [
+          "name",
+          "value",
+          "node_id",
+          "output_id",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "node_id": {
+            "title": "Node Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "output_id": {
+            "title": "Output Id",
+            "pattern": "^[-_a-zA-Z0-9]+$",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "ProjectDetail": {
+        "title": "ProjectDetail",
+        "required": [
+          "id",
+          "pipeline",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "pipeline": {
+            "title": "Pipeline",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Node"
+            }
+          },
+          "url": {
+            "title": "Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "ProjectItem": {
+        "title": "ProjectItem",
+        "required": [
+          "id",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "url": {
+            "title": "Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "ProjectNew": {
+        "title": "ProjectNew",
+        "required": [
+          "pipeline"
+        ],
+        "type": "object",
+        "properties": {
+          "pipeline": {
+            "title": "Pipeline",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Node"
+            }
+          }
+        }
+      },
+      "ProjectUpdate": {
+        "title": "ProjectUpdate",
+        "type": "object",
+        "properties": {}
+      },
+      "Repo": {
+        "title": "Repo",
+        "required": [
+          "project_uuid",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "project_uuid": {
+            "title": "Project Uuid",
+            "type": "string",
+            "format": "uuid"
+          },
+          "url": {
+            "title": "Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "SnapshotResource": {
+        "title": "SnapshotResource",
+        "required": [
+          "parent_uuid",
+          "project_uuid",
+          "url",
+          "url_parent",
+          "url_project"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "exclusiveMinimum": 0.0,
+            "type": "integer",
+            "description": "Unique snapshot identifier"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "description": "Unique human readable display name"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string",
+            "description": "Timestamp of the time snapshot was taken from parent.Notice that parent might change with time",
+            "format": "date-time"
+          },
+          "parent_uuid": {
+            "title": "Parent Uuid",
+            "type": "string",
+            "description": "Parent's project uuid",
+            "format": "uuid"
+          },
+          "project_uuid": {
+            "title": "Project Uuid",
+            "type": "string",
+            "description": "Current project's uuid",
+            "format": "uuid"
+          },
+          "url": {
+            "title": "Url",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          },
+          "url_parent": {
+            "title": "Url Parent",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          },
+          "url_project": {
+            "title": "Url Project",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "description": "Model for a snapshot API resource"
+      },
+      "State": {
+        "title": "State",
+        "type": "object",
+        "properties": {}
+      },
+      "Tag": {
+        "title": "Tag",
+        "required": [
+          "name",
+          "commit_ref",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "description": "Unique tag name"
+          },
+          "commit_ref": {
+            "$ref": "#/components/schemas/CommitRef"
+          },
+          "url": {
+            "title": "Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "ValidationError": {
+        "title": "ValidationError",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "loc": {
+            "title": "Location",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
