@@ -17,11 +17,12 @@ from . import config
 from .boot_mode import BootMode
 from .celery_task import entrypoint
 from .celery_task_utils import (
+    is_gpu_node,
     on_task_failure_handler,
     on_task_retry_handler,
     on_task_success_handler,
+    start_as_mpi_node,
 )
-from .utils import is_gpu_node, start_as_mpi_node
 
 log = logging.getLogger(__name__)
 
