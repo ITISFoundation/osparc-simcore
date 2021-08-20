@@ -64,15 +64,6 @@ class SnapshotPatch(BaseSnapshot):
     label: Optional[str] = Snapshot.as_field("label")
 
 
-#
-# assert Snapshot.Config
-# SnapshotPatch = create_model(
-#     "SnapshotPatch",
-#     __config__=Snapshot.Config,
-#     label=(Snapshot.__fields__["label"].type_, Snapshot.__fields__["label"].field_info),
-# )
-
-
 class SnapshotItem(Snapshot):
     """API model for an array item of snapshots"""
 

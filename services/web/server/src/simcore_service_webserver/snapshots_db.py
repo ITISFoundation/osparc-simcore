@@ -32,7 +32,6 @@ class SnapshotsRepository(BaseRepository):
         self, project_uuid: UUID, limit: Optional[int] = None
     ) -> List[SnapshotRow]:
         """Returns sorted list of snapshots in project"""
-        # TODO: add pagination
 
         async with self.engine.acquire() as conn:
             query = (
@@ -132,7 +131,7 @@ class SnapshotsRepository(BaseRepository):
         return row
 
 
-class ProjectsRepository(TemporaryNoDatabaseSchemasAvailable):
+class ProjectsRepository(BaseRepository):
     def __init__(self, request: web.Request):
         super().__init__(request)
         self._dbapi = request.config_dict[APP_PROJECT_DBAPI]
