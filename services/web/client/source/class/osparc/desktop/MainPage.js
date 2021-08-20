@@ -14,6 +14,9 @@
      * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
+/**
+ * @ignore(fetch)
+ */
 
 /**
  * Widget managing the layout once the user is logged in.
