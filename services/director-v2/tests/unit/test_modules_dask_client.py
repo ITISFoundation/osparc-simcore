@@ -147,3 +147,18 @@ async def test_send_computation_task(
     dask_client.abort_computation_tasks([job_id])
     assert future.cancelled() == True
     await wait_for_call(mocked_done_callback_fct)
+
+
+@pytest.mark.parametrize(
+    "req_example", NodeRequirements.Config.schema_extra["examples"]
+)
+def test_node_requirements_correctly_convert_to_dask_resources(
+    req_example: Dict[str, Any]
+):
+    node_reqs = NodeRequirements(**req_example)
+    assert node_reqs
+    dask_resources = node_reqs.dict(exclude_unset=True, by_alias=True)
+    # all the dask resources shall be of type: RESOURCE_NAME: VALUE
+    for resource_key, resource_value in dask_resources.items():
+        assert isinstance(resource_key, str)
+        assert isinstance(resource_value, (int, str, bool))
