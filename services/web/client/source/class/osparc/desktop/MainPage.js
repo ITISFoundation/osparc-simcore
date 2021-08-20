@@ -342,7 +342,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         return this.__studyEditor;
       }
       const studyEditor = new osparc.desktop.StudyEditor();
-      studyEditor.addListenerOnce("startSnapshot", e => {
+      studyEditor.addListener("startSnapshot", e => {
         const snapshotData = e.getData();
         this.__startSnapshot(snapshotData);
       }, this);
