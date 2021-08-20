@@ -256,6 +256,33 @@ qx.Class.define("osparc.desktop.MainPage", {
         });
     },
 
+    __startSnapshot: function(snapshotData) {
+      this.__showLoadingPage(this.tr("Loading Snapshot"));
+      const params = {
+        url: {
+          "studyId": snapshotData["ParentId"],
+          "snapshotId": snapshotData["SnapshotId"]
+        }
+      };
+      osparc.data.Resources.getOne("snapshots", params)
+        .then(snapshotResp => {
+          if (!snapshotResp) {
+            const msg = this.tr("Snapshot not found");
+            throw new Error(msg);
+          }
+          fetch(snapshotResp["url_project"])
+            .then(response => response.json())
+            .then(data => {
+              this.__loadStudy(data["data"]);
+            });
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          this.__showDashboard();
+          return;
+        });
+    },
+
     __loadStudy: function(studyData, pageContext) {
       let locked = false;
       let lockedBy = false;
@@ -311,10 +338,13 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __getStudyEditor: function() {
-      const studyEditor = this.__studyEditor || new osparc.desktop.StudyEditor();
+      if (this.__studyEditor) {
+        return this.__studyEditor;
+      }
+      const studyEditor = new osparc.desktop.StudyEditor();
       studyEditor.addListenerOnce("startSnapshot", e => {
         const snapshotData = e.getData();
-        this.__loadStudy(snapshotData);
+        this.__startSnapshot(snapshotData);
       }, this);
       return studyEditor;
     },

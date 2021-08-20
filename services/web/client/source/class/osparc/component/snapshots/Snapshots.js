@@ -24,7 +24,11 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
     const model = this.__initModel();
 
     this.base(arguments, model, {
-      initiallyHiddenColumns: [this.self().T_POS.ID.col],
+      initiallyHiddenColumns: [
+        this.self().T_POS.STUDY_ID.col,
+        this.self().T_POS.SNAPSHOT_ID.col,
+        this.self().T_POS.PARENT_ID.col
+      ],
       statusBarVisible: false
     });
 
@@ -36,9 +40,9 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
 
   statics: {
     T_POS: {
-      ID: {
+      STUDY_ID: {
         col: 0,
-        label: qx.locale.Manager.tr("StudyId")
+        label: "StudyId"
       },
       NAME: {
         col: 1,
@@ -47,6 +51,14 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
       DATE: {
         col: 2,
         label: qx.locale.Manager.tr("Created At")
+      },
+      SNAPSHOT_ID: {
+        col: 3,
+        label: "SnapshotId"
+      },
+      PARENT_ID: {
+        col: 4,
+        label: "ParentId"
       }
     }
   },
@@ -74,20 +86,23 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
 
     __populateSnapshotsTable: function() {
       const columnModel = this.getTableColumnModel();
-      columnModel.setDataCellRenderer(this.self().T_POS.ID.col, new qx.ui.table.cellrenderer.String());
+      columnModel.setDataCellRenderer(this.self().T_POS.STUDY_ID.col, new qx.ui.table.cellrenderer.String());
       columnModel.setDataCellRenderer(this.self().T_POS.NAME.col, new qx.ui.table.cellrenderer.String());
       columnModel.setDataCellRenderer(this.self().T_POS.DATE.col, new qx.ui.table.cellrenderer.Date());
-      columnModel.setDataCellRenderer(this.self().T_POS.ID.col, new qx.ui.table.cellrenderer.String());
+      columnModel.setDataCellRenderer(this.self().T_POS.SNAPSHOT_ID.col, new qx.ui.table.cellrenderer.String());
+      columnModel.setDataCellRenderer(this.self().T_POS.PARENT_ID.col, new qx.ui.table.cellrenderer.String());
 
       this.__primaryStudy.getSnapshots()
         .then(snapshots => {
           const rows = [];
           snapshots.reverse().forEach(snapshot => {
             const row = [];
-            row[this.self().T_POS.ID.col] = snapshot["project_uuid"];
+            row[this.self().T_POS.STUDY_ID.col] = snapshot["project_uuid"];
             row[this.self().T_POS.NAME.col] = snapshot["label"];
             const date = new Date(snapshot["created_at"]);
             row[this.self().T_POS.DATE.col] = osparc.utils.Utils.formatDateAndTime(date);
+            row[this.self().T_POS.SNAPSHOT_ID.col] = snapshot["id"];
+            row[this.self().T_POS.PARENT_ID.col] = snapshot["parent_uuid"];
             rows.push(row);
           });
           this.getTableModel().setData(rows, false);
