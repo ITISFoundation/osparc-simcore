@@ -9,6 +9,10 @@ aiodebug==1.1.2
     #   -c requirements/../../../packages/service-library/requirements/_base.in
     #   -c requirements/../../../services/sidecar/requirements/_base.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+aiodocker==0.19.1
+    # via
+    #   -c requirements/../../../services/sidecar/requirements/_base.txt
+    #   -r requirements/_base.in
 aiohttp==3.7.4.post0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -24,6 +28,7 @@ aiohttp==3.7.4.post0
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../services/sidecar/requirements/_base.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   aiodocker
     #   aiozipkin
     #   jupyter-server-proxy
 aiopg==1.2.1
@@ -261,7 +266,7 @@ partd==1.2.0
     # via dask
 pillow==8.2.0
     # via bokeh
-prometheus-client==0.11.0
+prometheus_client==0.11.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.in
     #   -c requirements/../../../services/sidecar/requirements/_base.txt
@@ -449,6 +454,7 @@ traitlets==5.0.5
 typing-extensions==3.7.4.3
     # via
     #   -c requirements/../../../services/sidecar/requirements/_base.txt
+    #   aiodocker
     #   aiohttp
     #   bokeh
     #   pydantic

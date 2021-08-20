@@ -17,6 +17,8 @@
 --constraint ../../../packages/simcore-sdk/requirements/_base.in
 --constraint ../../../services/sidecar/requirements/_base.txt
 
+aiodocker
+
 dask[complete]
 
 # compression

@@ -13,7 +13,9 @@ aiodebug==1.1.2
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../services/sidecar/requirements/_base.txt
 aiodocker==0.19.1
-    # via -r requirements/../../../services/sidecar/requirements/_base.txt
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../services/sidecar/requirements/_base.txt
 aiofile==3.1.0
     # via -r requirements/../../../services/sidecar/requirements/_base.txt
 aiofiles==0.5.0
