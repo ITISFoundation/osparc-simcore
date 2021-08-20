@@ -16,7 +16,7 @@ import textwrap
 from copy import deepcopy
 from importlib import reload
 from pathlib import Path
-from typing import Callable, Dict, Iterator, List
+from typing import Callable, Dict, Iterable, Iterator, List
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -385,13 +385,13 @@ def redis_service(docker_services, docker_ip) -> URL:
 
 
 @pytest.fixture
-async def redis_client(loop, redis_service):
-    client = await aioredis.create_redis_pool(str(redis_service), encoding="utf-8")
-    yield client
-
-    await client.flushall()
-    client.close()
-    await client.wait_closed()
+async def redis_client(loop, redis_service) -> Iterable[aioredis.Redis]:
+    redis = aioredis.from_url(
+        str(redis_service), encoding="utf-8", decode_responses=True
+    )
+    async with redis.client() as conn:
+        yield conn
+        await conn.flushall()
 
 
 def _is_redis_responsive(host: str, port: int) -> bool:

@@ -95,17 +95,6 @@ def __drop_and_recreate_postgres__(database_from_template_before_each_function) 
     yield
 
 
-@pytest.fixture(autouse=True)
-async def __delete_all_redis_keys__(redis_service: RedisConfig):
-    client = await aioredis.create_redis_pool(redis_service.dsn, encoding="utf-8")
-    await client.flushall()
-    client.close()
-    await client.wait_closed()
-
-    yield
-    # do nothing on teadown
-
-
 @pytest.fixture
 async def monkey_patch_aiohttp_request_url() -> None:
     old_request = aiohttp.ClientSession._request

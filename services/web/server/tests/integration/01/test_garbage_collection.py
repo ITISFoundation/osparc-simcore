@@ -61,17 +61,6 @@ def __drop_and_recreate_postgres__(database_from_template_before_each_function) 
     yield
 
 
-@pytest.fixture(autouse=True)
-async def __delete_all_redis_keys__(redis_service: RedisConfig):
-    client = await aioredis.create_redis_pool(redis_service.dsn, encoding="utf-8")
-    await client.flushall()
-    client.close()
-    await client.wait_closed()
-
-    yield
-    # do nothing on teadown
-
-
 @pytest.fixture
 async def director_v2_service_mock() -> aioresponses:
     """uses aioresponses to mock all calls of an aiohttpclient
@@ -371,7 +360,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     aiopg_engine,
     redis_client,
 ):
-    """ after a GUEST users with one opened project closes browser tab regularly (GC cleans everything) """
+    """after a GUEST users with one opened project closes browser tab regularly (GC cleans everything)"""
     logged_guest_user = await login_guest_user(client)
     empty_guest_user_project = await new_project(client, logged_guest_user)
     assert await assert_users_count(aiopg_engine, 1) is True
@@ -405,7 +394,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
 async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     simcore_services, client, socketio_client_factory: Callable, aiopg_engine
 ):
-    """ after a USER disconnects the GC will remove none of its projects or templates nor the user itself """
+    """after a USER disconnects the GC will remove none of its projects or templates nor the user itself"""
     number_of_projects = 5
     number_of_templates = 5
     logged_user = await login_user(client)

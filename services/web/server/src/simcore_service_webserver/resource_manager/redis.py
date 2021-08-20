@@ -1,12 +1,11 @@
 import logging
-from typing import Optional
+from typing import Optional, cast
 
 import aioredis
 from aiohttp import web
 from aioredlock import Aioredlock
-from tenacity import AsyncRetrying, before_log, stop_after_attempt, wait_fixed
-
 from servicelib.application_keys import APP_CONFIG_KEY
+from tenacity import AsyncRetrying, before_log, stop_after_attempt, wait_fixed
 
 from .config import (
     APP_CLIENT_REDIS_CLIENT_KEY,
@@ -37,10 +36,16 @@ async def redis_client(app: web.Application):
         client: Optional[aioredis.Redis] = None
         async for attempt in AsyncRetrying(**retry_upon_init_policy):
             with attempt:
-                client = await aioredis.create_redis_pool(url, encoding="utf-8")
+                client = aioredis.from_url(url, encoding="utf-8", decode_responses=True)
                 if not client:
-                    raise ValueError("Expected aioredis client instance, got {client}")
-        return client
+                    raise ValueError(
+                        f"no client, unexpected error when connecting to {url}"
+                    )
+
+                if not await client.ping():
+                    raise ValueError(f"Redis not available on {url}, attemp {attempt}")
+
+        return cast(aioredis.Redis, client)
 
     app[APP_CLIENT_REDIS_CLIENT_KEY] = client = await create_client(url)
     assert client  # nosec
@@ -65,10 +70,8 @@ async def redis_client(app: web.Application):
         log.critical("Invalid redis lock manager in app")
 
     # close clients
-    client.close()
-    await client.wait_closed()
-    client_lock_db.close()
-    await client_lock_db.wait_closed()
+    await client.close()
+    await client_lock_db.close()
     # delete lock manager
     await lock_manager.destroy()
 

@@ -51,13 +51,10 @@ async def redis_service(redis_config: RedisConfig, monkeypatch) -> RedisConfig:
 
 @pytest.fixture(scope="function")
 async def redis_client(loop, redis_config: RedisConfig) -> Iterator[aioredis.Redis]:
-    client = await aioredis.create_redis_pool(redis_config.dsn, encoding="utf-8")
-
-    yield client
-
-    await client.flushall()
-    client.close()
-    await client.wait_closed()
+    redis = aioredis.from_url(redis_config.dsn, encoding="utf-8", decode_responses=True)
+    async with redis.client() as conn:
+        yield conn
+        await conn.flushall()
 
 
 # HELPERS --
@@ -70,6 +67,8 @@ async def redis_client(loop, redis_config: RedisConfig) -> Iterator[aioredis.Red
     reraise=True,
 )
 async def wait_till_redis_responsive(redis_url: Union[URL, str]) -> None:
-    client = await aioredis.create_redis_pool(str(redis_url), encoding="utf-8")
-    client.close()
-    await client.wait_closed()
+    redis: aioredis.Redis = aioredis.from_url(
+        str(redis_url), encoding="utf-8", decode_responses=True
+    )
+    if not redis.ping():
+        raise ValueError(f"redis not available on {redis_url}")
