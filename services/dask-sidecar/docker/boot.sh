@@ -68,7 +68,7 @@ else
   fi
 
   # GPUs
-  num_gpus=$(python -c "from simcore-service-dask-sidecar.utils import num_available_gpus; print(num_available_gpus());")
+  num_gpus=$(python -c "from simcore_service_dask_sidecar.utils import num_available_gpus; print(num_available_gpus());")
 
   # RAM (is computed similarly as the default dask-sidecar computation)
   ram=$(($(python -c "import psutil; print(int(psutil.virtual_memory().total * $num_cpus/$(nproc)))") - ${DASK_SIDECAR_NON_USABLE_RAM:-0}))
