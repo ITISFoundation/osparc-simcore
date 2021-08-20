@@ -8,8 +8,10 @@
 # pylint: disable=unused-variable
 
 import json
+from datetime import datetime
+from math import ceil
 from types import FunctionType
-from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union
 from uuid import UUID, uuid3
 
 import simcore_service_webserver.projects.projects_handlers
@@ -20,7 +22,7 @@ from fastapi import Path as PathParam
 from fastapi import Query, Request, status
 from fastapi.exceptions import HTTPException
 from fastapi.routing import APIRoute, APIRouter
-from models_library.services import PROPERTY_KEY_RE
+from models_library.services import PROPERTY_KEY_RE, Author
 from pydantic import (
     BaseModel,
     Field,
@@ -32,12 +34,13 @@ from pydantic import (
     validator,
 )
 from pydantic.generics import GenericModel
-from pydantic.networks import AnyUrl, HttpUrl
+from pydantic.networks import HttpUrl
 from servicelib.rest_pagination_utils import PageLinks, PageMetaInfoLimitOffset
 from simcore_service_webserver.snapshots_models import (
     SnapshotPatchBody,
     SnapshotResource,
 )
+from starlette.datastructures import URL
 
 InputID = OutputID = constr(regex=PROPERTY_KEY_RE)
 
@@ -46,15 +49,9 @@ BuiltinTypes = Union[StrictBool, StrictInt, StrictFloat, str]
 DataSchema = Union[
     BuiltinTypes,
 ]  # any json schema?
-DataLink = AnyUrl
+DataLink = HttpUrl
 
 DataSchema = Union[DataSchema, DataLink]
-
-
-error_responses = {
-    status.HTTP_400_BAD_REQUEST: {},
-    status.HTTP_422_UNPROCESSABLE_ENTITY: {},
-}
 
 DataT = TypeVar("DataT")
 
@@ -86,6 +83,34 @@ class Page(GenericModel, Generic[ItemT]):
     meta: PageMetaInfoLimitOffset = Field(alias="_meta")
     links: PageLinks = Field(alias="_links")
     data: List[ItemT]
+
+    @classmethod
+    def create_obj(
+        cls,
+        data: List[Any],
+        request_url: URL,
+        total: int,
+        limit: int,
+        offset: int,
+    ) -> Dict[str, Any]:
+        last_page = ceil(total / limit) - 1
+        return dict(
+            _meta=PageMetaInfoLimitOffset(
+                total=total, count=len(data), limit=limit, offset=offset
+            ),
+            _links=PageLinks(
+                self=f"{request_url.replace_query_params(offset=offset, limit=limit)}",
+                first=f"{request_url.replace_query_params(offset= 0, limit= limit)}",
+                prev=f"{request_url.replace_query_params(offset= max(offset - limit, 0), limit= limit)}"
+                if offset > 0
+                else None,
+                next=f"{request_url.replace_query_params(offset= min(offset + limit, last_page * limit), limit= limit)}"
+                if offset < (last_page * limit)
+                else None,
+                last=f"{request_url.replace_query_params(offset= last_page * limit, limit= limit)}",
+            ),
+            data=data,
+        )
 
 
 # --------------
@@ -126,8 +151,6 @@ class ProjectUpdate(BaseModel):
 
 
 # response models
-
-
 class ProjectItem(BaseModel):
     # Lightweight and part of an array
     id: UUID
@@ -135,7 +158,7 @@ class ProjectItem(BaseModel):
     url: HttpUrl
 
 
-class ProjectDetailed(BaseModel):
+class ProjectDetail(BaseModel):
     id: UUID
     pipeline: Dict[UUID, Node]
 
@@ -149,6 +172,9 @@ class ProjectDetailed(BaseModel):
         # replace ALL references
 
 
+# --------------
+
+
 class Parameter(BaseModel):
     name: str
     value: BuiltinTypes
@@ -157,12 +183,13 @@ class Parameter(BaseModel):
     output_id: OutputID
 
 
-class ParameterResource(Parameter):
-    url: AnyUrl
-    # url_output: AnyUrl
+# reponse models
+class ParameterDetail(Parameter):
+    url: HttpUrl
+    # url_output: HttpUrl
 
 
-####################################################################
+########################### DEPENDENCIES #########################################
 
 
 def get_reverse_url_mapper(request: Request) -> Callable:
@@ -172,13 +199,30 @@ def get_reverse_url_mapper(request: Request) -> Callable:
     return reverse_url_mapper
 
 
-_PROJECTS: Dict[UUID, Project] = {}
+def init_pagination(item_cls: Type):
+    PageType = Page[item_cls]
+
+    def _get(
+        request: Request,
+        offset: PositiveInt = Query(
+            0, description="index to the first item to return (pagination)"
+        ),
+        limit: int = Query(
+            20,
+            description="maximum number of items to return (pagination)",
+            ge=1,
+            le=50,
+        ),
+    ) -> PageType:
+        empty_page: PageType = PageType.parse_obj(
+            Page.create_obj([], request.url, total=0, limit=limit, offset=offset)
+        )
+        return empty_page
+
+    return _get
 
 
-def get_valid_uuid(project_uuid: UUID = PathParam(...)) -> UUID:
-    if project_uuid not in _PROJECTS:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid id")
-    return project_uuid
+########################### HELPERS #########################################
 
 
 def redefine_operation_id_in_router(router: APIRouter, operation_id_prefix: str):
@@ -188,35 +232,63 @@ def redefine_operation_id_in_router(router: APIRouter, operation_id_prefix: str)
             route.operation_id = f"{operation_id_prefix}.{route.endpoint.__name__}"
 
 
+def create_app(routers: List[APIRouter]) -> FastAPI:
+    app = FastAPI(docs_url="/dev/doc")
+
+    for r in routers:
+        app.include_router(r)
+
+    # print(yaml.safe_dump(app.openapi()))
+    # print("-"*100)
+
+    with open("openapi-ignore.json", "wt") as f:
+        json.dump(app.openapi(), f, indent=2)
+
+    return app
+
+
 ####################################################################
+
+# project resource --------
+
+_PROJECTS: Dict[UUID, Project] = {}
+
+
+def get_valid_project(project_uuid: UUID = PathParam(...)) -> UUID:
+    if project_uuid not in _PROJECTS:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Project does not exists"
+        )
+    return project_uuid
+
 
 project_routes = APIRouter(prefix="/projects", tags=["project"])
 
 
 @project_routes.get("/", response_model=Page[ProjectItem])
-def list_projects():
+def list_projects(page=Depends(init_pagination(ProjectItem))):
     ...
 
 
 @project_routes.post(
-    "/", response_model=Envelope[ProjectDetailed], status_code=status.HTTP_201_CREATED
+    "/", response_model=Envelope[ProjectDetail], status_code=status.HTTP_201_CREATED
 )
 def create_project(project: ProjectNew):
     ...
 
 
-@project_routes.get("/{project_uuid}", response_model=Envelope[ProjectDetailed])
-def get_project(pid: UUID = Depends(get_valid_uuid)):
+@project_routes.get("/{project_uuid}", response_model=Envelope[ProjectDetail])
+def get_project(pid: UUID = Depends(get_valid_project)):
     ...
 
 
-@project_routes.put("/{project_uuid}", response_model=Envelope[ProjectDetailed])
-def replace_project(project: ProjectNew, pid: UUID = Depends(get_valid_uuid)):
+@project_routes.put("/{project_uuid}", response_model=Envelope[ProjectDetail])
+def replace_project(project: ProjectNew, pid: UUID = Depends(get_valid_project)):
     ...
 
 
-@project_routes.patch("/{project_uuid}", response_model=Envelope[ProjectDetailed])
-def update_project(project: ProjectUpdate, pid: UUID = Depends(get_valid_uuid)):
+@project_routes.patch("/{project_uuid}", response_model=Envelope[ProjectDetail])
+def update_project(project: ProjectUpdate, pid: UUID = Depends(get_valid_project)):
     ...
 
 
@@ -224,27 +296,27 @@ def update_project(project: ProjectUpdate, pid: UUID = Depends(get_valid_uuid)):
     "/{project_uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_project(pid: UUID = Depends(get_valid_uuid)):
+def delete_project(pid: UUID = Depends(get_valid_project)):
     ...
 
 
 @project_routes.post(":open")
-def open_project(pid: UUID = Depends(get_valid_uuid)):
+def open_project(pid: UUID = Depends(get_valid_project)):
     ...
 
 
 @project_routes.post(":start")
-def start_project(use_cache: bool = True, pid: UUID = Depends(get_valid_uuid)):
+def start_project(use_cache: bool = True, pid: UUID = Depends(get_valid_project)):
     ...
 
 
 @project_routes.post(":stop")
-def stop_project(pid: UUID = Depends(get_valid_uuid)):
+def stop_project(pid: UUID = Depends(get_valid_project)):
     ...
 
 
 @project_routes.post(":close")
-def close_project(pid: UUID = Depends(get_valid_uuid)):
+def close_project(pid: UUID = Depends(get_valid_project)):
     ...
 
 
@@ -253,13 +325,13 @@ redefine_operation_id_in_router(
     operation_id_prefix=simcore_service_webserver.projects.projects_handlers.__name__,
 )
 
-# project states sub-resource
+# project states sub-resource --------
 
 project_states_routes = APIRouter(prefix="/projects/{project_uuid}", tags=["project"])
 
 
 @project_routes.get("/state", response_model=Envelope[State])
-def get_project_state(pid: UUID = Depends(get_valid_uuid)):
+def get_project_state(pid: UUID = Depends(get_valid_project)):
     ...
 
 
@@ -268,13 +340,13 @@ redefine_operation_id_in_router(
     operation_id_prefix=simcore_service_webserver.projects.projects_handlers.__name__,
 )
 
-# project nodes sub-resource
+# project nodes sub-resource --------
 
 project_nodes_routes = APIRouter(prefix="/projects/{project_uuid}", tags=["project"])
 
 
 @project_nodes_routes.get("/nodes", response_model=Envelope[Node])
-def get_project_node(pid: UUID = Depends(get_valid_uuid)):
+def get_project_node(pid: UUID = Depends(get_valid_project)):
     ...
 
 
@@ -284,14 +356,14 @@ redefine_operation_id_in_router(
 )
 
 
-# project tags sub-resource ---------
+# project tags sub-resource --------
 # here we use a different approach just to check
 class Tags:
     routes = APIRouter(prefix="/projects/{project_uuid}", tags=["project"])
 
     @staticmethod
     @routes.put("/tags/{tag_id}")
-    def replace(tag_id: int, pid: UUID = Depends(get_valid_uuid)):
+    def replace(tag_id: int, pid: UUID = Depends(get_valid_project)):
         """Assigns a tag to a project"""
         ...
 
@@ -300,15 +372,15 @@ class Tags:
         "/tags/{tag_id}",
         status_code=status.HTTP_204_NO_CONTENT,
     )
-    def delete(tag_id: int, pid: UUID = Depends(get_valid_uuid)):
+    def delete(tag_id: int, pid: UUID = Depends(get_valid_project)):
         """Un-assigns tag to a project"""
         ...
 
 
-# project snapshot
+# project snapshot subresource --------
 #  - analogous to a git-commit
 #  - takes a snapshot of the current state of the project
-#  -
+#  - WILL NOT USE?
 
 snapshot_routes = APIRouter(
     prefix="/projects/{project_uuid}/snapshots", tags=["project", "snapshot"]
@@ -319,14 +391,9 @@ snapshot_routes = APIRouter(
     "",
     response_model=Page[SnapshotResource],
 )
-async def list_snapshots(
-    pid: UUID = Depends(get_valid_uuid),
-    offset: PositiveInt = Query(
-        0, description="index to the first item to return (pagination)"
-    ),
-    limit: int = Query(
-        20, description="maximum number of items to return (pagination)", ge=1, le=50
-    ),
+def list_snapshots(
+    page=Depends(init_pagination(SnapshotResource)),
+    pid: UUID = Depends(get_valid_project),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """Lists all snapshots taken from a given project"""
@@ -337,8 +404,8 @@ async def list_snapshots(
     response_model=Envelope[SnapshotResource],
     status_code=status.HTTP_201_CREATED,
 )
-async def create_snapshot(
-    pid: UUID = Depends(get_valid_uuid),
+def create_snapshot(
+    pid: UUID = Depends(get_valid_project),
     snapshot_label: Optional[str] = None,
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
@@ -351,9 +418,9 @@ async def create_snapshot(
     "/{snapshot_id}",
     response_model=Envelope[SnapshotResource],
 )
-async def get_snapshot(
+def get_snapshot(
     snapshot_id: PositiveInt,
-    pid: UUID = Depends(get_valid_uuid),
+    pid: UUID = Depends(get_valid_project),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """Gets commit info for a given snapshot"""
@@ -363,9 +430,9 @@ async def get_snapshot(
     "/{snapshot_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_snapshot(
+def delete_snapshot(
     snapshot_id: PositiveInt,
-    pid: UUID = Depends(get_valid_uuid),
+    pid: UUID = Depends(get_valid_project),
 ):
     """Deletes both the commit and the project itself"""
     # delete a snapshot -> project deleted?
@@ -375,10 +442,10 @@ async def delete_snapshot(
 @snapshot_routes.patch(
     "/{snapshot_id}",
 )
-async def update_snapshot(
+def update_snapshot(
     snapshot_id: PositiveInt,
     update: SnapshotPatchBody,
-    pid: UUID = Depends(get_valid_uuid),
+    pid: UUID = Depends(get_valid_project),
 ):
     """Updates label/name of a snapshot"""
 
@@ -387,7 +454,9 @@ redefine_operation_id_in_router(
     snapshot_routes,
     operation_id_prefix=simcore_service_webserver.snapshots_api_handlers.__name__,
 )
-# project parametrization
+
+
+# project parametrization subresource --------
 
 parameter_routes = APIRouter(
     prefix="/projects/{project_uuid}/parameters", tags=["project"]
@@ -396,30 +465,142 @@ parameter_routes = APIRouter(
 
 @parameter_routes.get(
     "",
-    response_model=Page[ParameterResource],
+    response_model=Page[ParameterDetail],
 )
-async def list_project_parameters(
+def list_project_parameters(
     snapshot_id: str,
-    pid: UUID = Depends(get_valid_uuid),
+    pid: UUID = Depends(get_valid_project),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """Lists all parameters in a project"""
 
 
-## workflow compiler #######################################
+# repositories
+#
+#  -  versions workbench subresource
+#  - Like a git system but with a "single file": the project's workbench
+#
+# cd new-project
+# git init
+# git add new-project/workbench
+#
+# git commit -m "Some changes"
+#
+# git add new-project.workbench
+#
+#
+# SEE
+#  - https://gandalf.readthedocs.io/en/latest/api.html
+#  - https://github.com/hulu/restfulgit#readme
+#
 
 
-app = FastAPI(docs_url="/dev/doc")
+RepoRef = Union[UUID, str]  # :ref is the repository ref (commit, tag or branch)
+
+# response models
+class Repo(BaseModel):
+    project_uuid: UUID
+    url: HttpUrl
 
 
-for routes in [project_routes, project_nodes_routes, snapshot_routes]:
-    app.include_router(routes)
+class CommitRef(BaseModel):
+    sha: str  #
+    url: HttpUrl
 
 
-# print(yaml.safe_dump(app.openapi()))
-# print("-"*100)
+class Commit(CommitRef):
+    author: Author
+    created_at: datetime
+    message: str
+    parents: List[CommitRef]
 
-with open("openapi-ignore.json", "wt") as f:
-    json.dump(app.openapi(), f, indent=2)
 
-# uvicorn --reload projects_openapi_generator:app
+#
+_PROJECTS_WITH_REPO = {}
+
+
+def get_valid_repo(pid: UUID = Depends(get_valid_project)):
+    if pid in _PROJECTS_WITH_REPO:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project does not has a repository",
+        )
+    return pid
+
+
+repo_routes = APIRouter(prefix="/repos/projects", tags=["repository"])
+
+
+@repo_routes.get(
+    "",
+    response_model=Page[Repo],
+)
+def list_repos(page=Depends(init_pagination(Repo))):
+    ...
+
+
+@repo_routes.post("/{project_uuid}", status_code=status.HTTP_201_CREATED)
+def create_repo(
+    pid: UUID = Depends(get_valid_project),
+):
+    """Creates a repo to version a project
+
+    cd project_uuid
+    git init
+    git add new-project/workbench
+    """
+
+
+@repo_routes.post(
+    "/{project_uuid}/workbench/commits", status_code=status.HTTP_201_CREATED
+)
+def create_commit(
+    message: str,
+    pid: UUID = Depends(get_valid_repo),
+):
+    """Commit current state of the workbench's project
+
+    git commit -m "Some changes"
+    """
+
+
+@repo_routes.get(
+    "/{project_uuid}/workbench/commits",
+    response_model=Page[Commit],
+)
+def get_logs(
+    ref: str,
+    page=Depends(init_pagination(Commit)),
+    pid: UUID = Depends(get_valid_repo),
+):
+    """Lists commits tree of the project"""
+
+
+@repo_routes.get(
+    "/{project_uuid}/workbench/commits/{commit_id}:checkout",
+    status_code=status.HTTP_201_CREATED,
+)
+def checkout(
+    commit_id,
+    pid: UUID = Depends(get_valid_repo),
+):
+    """Sets commit as current, i.e. all changes will"""
+
+
+#####################################################
+# uvicorn --reload projects_openapi_generator:the_app
+the_app = create_app(
+    routers=[
+        project_routes,
+        project_nodes_routes,
+        project_states_routes,
+        snapshot_routes,
+        parameter_routes,
+        repo_routes,
+    ]
+)
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("projects_openapi_generator:the_app", reload=True, log_level="debug")
