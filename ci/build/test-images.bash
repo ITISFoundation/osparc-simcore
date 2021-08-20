@@ -7,7 +7,7 @@ DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
 export DOCKER_IMAGE_TAG
 
 build_images() {
-  make build
+  make build create_cache=1
   make info-images
 }
 

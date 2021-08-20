@@ -110,6 +110,8 @@ SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),N
 
 .PHONY: build build-nc rebuild build-devel build-devel-nc
 
+comma := ,
+
 define _docker_compose_build
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,production);\
 pushd services &&\
@@ -117,7 +119,7 @@ docker buildx bake \
 	$(if $(findstring -devel,$@),,\
 	$(foreach service, $(SERVICES_LIST),\
 		--set $(service).cache-from="type=local,src=$(DOCKER_BUILDX_CACHE_FROM)/$(service)" \
-		--set $(service).cache-to="type=local,mode=max,dest=$(DOCKER_BUILDX_CACHE_TO)/$(service)" \
+		$(if $(create_cache),--set $(service).cache-to="type=local$(comma)mode=max$(comma)dest=$(DOCKER_BUILDX_CACHE_TO)/$(service)",) \
 	)\
 	)\
 	--set static-webserver.args.DOCKER_BUILD_REGISTRY_PORT="$(DOCKER_BUILD_REGISTRY_PORT)" \
