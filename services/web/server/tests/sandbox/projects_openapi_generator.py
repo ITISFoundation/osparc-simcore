@@ -11,7 +11,8 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Union
 from uuid import UUID, uuid3
 
-import simcore_service_webserver.snapshots_api_handlers as api_handlers
+import simcore_service_webserver.projects.projects_handlers
+import simcore_service_webserver.snapshots_api_handlers
 from fastapi import Depends, FastAPI
 from fastapi import Path as PathParam
 from fastapi import Query, Request, status
@@ -106,10 +107,10 @@ def get_reverse_url_mapper(request: Request) -> Callable:
     return reverse_url_mapper
 
 
-def get_valid_id(project_id: UUID = PathParam(...)) -> UUID:
-    if project_id not in _PROJECTS:
+def get_valid_uuid(project_uuid: UUID = PathParam(...)) -> UUID:
+    if project_uuid not in _PROJECTS:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid id")
-    return project_id
+    return project_uuid
 
 
 ####################################################################
@@ -117,13 +118,15 @@ def get_valid_id(project_id: UUID = PathParam(...)) -> UUID:
 project_routes = APIRouter(tags=["project"])
 
 
-@project_routes.get("/projects/{project_id}", response_model=Project, tags=["project"])
-def get_project(pid: UUID = Depends(get_valid_id)):
+@project_routes.get(
+    "/projects/{project_uuid}", response_model=Project, tags=["project"]
+)
+def get_project(pid: UUID = Depends(get_valid_uuid)):
     return _PROJECTS[pid]
 
 
 @project_routes.post(
-    "/projects/{project_id}", status_code=status.HTTP_201_CREATED, tags=["project"]
+    "/projects/{project_uuid}", status_code=status.HTTP_201_CREATED, tags=["project"]
 )
 def create_project(project: Project):
     if project.id not in _PROJECTS:
@@ -131,38 +134,38 @@ def create_project(project: Project):
     _PROJECTS[project.id] = project
 
 
-@project_routes.put("/projects/{project_id}", tags=["project"])
-def replace_project(project: Project, pid: UUID = Depends(get_valid_id)):
+@project_routes.put("/projects/{project_uuid}", tags=["project"])
+def replace_project(project: Project, pid: UUID = Depends(get_valid_uuid)):
     _PROJECTS[pid] = project
 
 
-@project_routes.patch("/projects/{project_id}", tags=["project"])
-def update_project(project: Project, pid: UUID = Depends(get_valid_id)):
+@project_routes.patch("/projects/{project_uuid}", tags=["project"])
+def update_project(project: Project, pid: UUID = Depends(get_valid_uuid)):
     raise NotImplementedError()
 
 
-@project_routes.delete("/projects/{project_id}", tags=["project"])
-def delete_project(pid: UUID = Depends(get_valid_id)):
+@project_routes.delete("/projects/{project_uuid}", tags=["project"])
+def delete_project(pid: UUID = Depends(get_valid_uuid)):
     del _PROJECTS[pid]
 
 
-@project_routes.post("/projects/{project_id}:open", tags=["project"])
-def open_project(pid: UUID = Depends(get_valid_id)):
+@project_routes.post("/projects/{project_uuid}:open", tags=["project"])
+def open_project(pid: UUID = Depends(get_valid_uuid)):
     pass
 
 
-@project_routes.post("/projects/{project_id}:start", tags=["project"])
-def start_project(use_cache: bool = True, pid: UUID = Depends(get_valid_id)):
+@project_routes.post("/projects/{project_uuid}:start", tags=["project"])
+def start_project(use_cache: bool = True, pid: UUID = Depends(get_valid_uuid)):
     pass
 
 
-@project_routes.post("/projects/{project_id}:stop", tags=["project"])
-def stop_project(pid: UUID = Depends(get_valid_id)):
+@project_routes.post("/projects/{project_uuid}:stop", tags=["project"])
+def stop_project(pid: UUID = Depends(get_valid_uuid)):
     pass
 
 
-@project_routes.post("/projects/{project_id}:close", tags=["project"])
-def close_project(pid: UUID = Depends(get_valid_id)):
+@project_routes.post("/projects/{project_uuid}:close", tags=["project"])
+def close_project(pid: UUID = Depends(get_valid_uuid)):
     pass
 
 
@@ -175,11 +178,11 @@ snapshot_routes = APIRouter(tags=["project", "snapshot"])
 
 
 @snapshot_routes.get(
-    "/projects/{project_id}/snapshots",
+    "/projects/{project_uuid}/snapshots",
     response_model=List[SnapshotResource],
 )
 async def list_snapshots(
-    pid: UUID = Depends(get_valid_id),
+    pid: UUID = Depends(get_valid_uuid),
     offset: PositiveInt = Query(
         0, description="index to the first item to return (pagination)"
     ),
@@ -192,12 +195,12 @@ async def list_snapshots(
 
 
 @snapshot_routes.post(
-    "/projects/{project_id}/snapshots",
+    "/projects/{project_uuid}/snapshots",
     response_model=SnapshotResource,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_snapshot(
-    pid: UUID = Depends(get_valid_id),
+    pid: UUID = Depends(get_valid_uuid),
     snapshot_label: Optional[str] = None,
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
@@ -207,24 +210,24 @@ async def create_snapshot(
 
 
 @snapshot_routes.get(
-    "/projects/{project_id}/snapshots/{snapshot_id}",
+    "/projects/{project_uuid}/snapshots/{snapshot_id}",
     response_model=SnapshotResource,
 )
 async def get_snapshot(
     snapshot_id: PositiveInt,
-    pid: UUID = Depends(get_valid_id),
+    pid: UUID = Depends(get_valid_uuid),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """Gets commit info for a given snapshot"""
 
 
 @snapshot_routes.delete(
-    "/projects/{project_id}/snapshots/{snapshot_id}",
+    "/projects/{project_uuid}/snapshots/{snapshot_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_snapshot(
     snapshot_id: PositiveInt,
-    pid: UUID = Depends(get_valid_id),
+    pid: UUID = Depends(get_valid_uuid),
 ):
     """Deletes both the commit and the project itself"""
     # delete a snapshot -> project deleted?
@@ -232,12 +235,12 @@ async def delete_snapshot(
 
 
 @snapshot_routes.patch(
-    "/projects/{project_id}/snapshots/{snapshot_id}",
+    "/projects/{project_uuid}/snapshots/{snapshot_id}",
 )
 async def update_snapshot(
     snapshot_id: PositiveInt,
     update: SnapshotPatchBody,
-    pid: UUID = Depends(get_valid_id),
+    pid: UUID = Depends(get_valid_uuid),
 ):
     """Updates label/name of a snapshot"""
 
@@ -248,12 +251,12 @@ parameter_routes = APIRouter(tags=["project"])
 
 
 @parameter_routes.get(
-    "/projects/{project_id}/parameters",
+    "/projects/{project_uuid}/parameters",
     response_model=List[ParameterResource],
 )
 async def list_snapshot_parameters(
     snapshot_id: str,
-    pid: UUID = Depends(get_valid_id),
+    pid: UUID = Depends(get_valid_uuid),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """Lists all parameters in a project"""
@@ -270,14 +273,22 @@ def redifine_operation_id_in_router(router: APIRouter, operation_id_prefix: str)
 
 def include_router(app: FastAPI, router: APIRouter, operation_id_prefix: str):
     redifine_operation_id_in_router(router, operation_id_prefix)
-    app.include_router(snapshot_routes)
+    app.include_router(router)
 
 
-app = FastAPI()
+app = FastAPI(docs_url="/dev/doc")
 
 
-# app.include_router(project_routes)
-include_router(app, snapshot_routes, api_handlers.__name__)
+include_router(
+    app,
+    project_routes,
+    operation_id_prefix=simcore_service_webserver.projects.projects_handlers.__name__,
+)
+include_router(
+    app,
+    snapshot_routes,
+    operation_id_prefix=simcore_service_webserver.snapshots_api_handlers.__name__,
+)
 # app.include_router(parameter_routes)
 
 
