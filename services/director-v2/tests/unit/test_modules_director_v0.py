@@ -9,7 +9,7 @@ import urllib.parse
 from collections import namedtuple
 from pathlib import Path
 from random import choice
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict, List
 from uuid import uuid4
 
 import pytest
@@ -148,11 +148,11 @@ def fake_service_details(mocks_dir: Path) -> ServiceDockerData:
     return ServiceDockerData(**fake_service_data)
 
 
-@pytest.fixture
-def fake_service_extras(random_json_from_schema: Callable) -> ServiceExtras:
-    random_extras = ServiceExtras(
-        **random_json_from_schema(ServiceExtras.schema_json(indent=2))
-    )
+@pytest.fixture(params=range(len(ServiceExtras.Config.schema_extra["examples"])))
+def fake_service_extras(request) -> ServiceExtras:
+    extra_example = ServiceExtras.Config.schema_extra["examples"][request.param]
+    random_extras = ServiceExtras(**extra_example)
+    assert random_extras is not None
     return random_extras
 
 

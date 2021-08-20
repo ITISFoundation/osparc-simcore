@@ -14,6 +14,7 @@ import requests
 from aiodocker import utils
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
+from simcore_service_director.config import DEFAULT_MAX_MEMORY, DEFAULT_MAX_NANO_CPUS
 
 _logger = logging.getLogger(__name__)
 
@@ -141,7 +142,10 @@ async def _build_push_image(
 
     # create the typical org.label-schema labels
     service_extras = {
-        "node_requirements": ["CPU"],
+        "node_requirements": {
+            "CPU": DEFAULT_MAX_NANO_CPUS / 1e9,
+            "RAM": DEFAULT_MAX_MEMORY,
+        },
         "build_date": "2020-08-19T15:36:27Z",
         "vcs_ref": "ca180ef1",
         "vcs_url": "git@github.com:ITISFoundation/osparc-simcore.git",

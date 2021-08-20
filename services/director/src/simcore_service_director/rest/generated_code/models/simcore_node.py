@@ -1,14 +1,13 @@
 # coding: utf-8
 
+import re
 from datetime import date, datetime
+from typing import Dict, List, Type
 
-from typing import List, Dict, Type
-
+from .. import util
 from .base_model_ import Model
 from .inline_response2001_authors import InlineResponse2001Authors
 from .inline_response2001_badges import InlineResponse2001Badges
-import re
-from .. import util
 
 
 class SimcoreNode(Model):
@@ -17,7 +16,21 @@ class SimcoreNode(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, key: str=None, integration_version: str=None, version: str=None, type: str=None, name: str=None, thumbnail: str=None, badges: List[InlineResponse2001Badges]=None, description: str=None, authors: List[InlineResponse2001Authors]=None, contact: str=None, inputs: Dict[str, object]=None, outputs: Dict[str, object]=None):
+    def __init__(
+        self,
+        key: str = None,
+        integration_version: str = None,
+        version: str = None,
+        type: str = None,
+        name: str = None,
+        thumbnail: str = None,
+        badges: List[InlineResponse2001Badges] = None,
+        description: str = None,
+        authors: List[InlineResponse2001Authors] = None,
+        contact: str = None,
+        inputs: Dict[str, object] = None,
+        outputs: Dict[str, object] = None,
+    ):
         """SimcoreNode - a model defined in OpenAPI
 
         :param key: The key of this SimcoreNode.
@@ -34,33 +47,33 @@ class SimcoreNode(Model):
         :param outputs: The outputs of this SimcoreNode.
         """
         self.openapi_types = {
-            'key': str,
-            'integration_version': str,
-            'version': str,
-            'type': str,
-            'name': str,
-            'thumbnail': str,
-            'badges': List[InlineResponse2001Badges],
-            'description': str,
-            'authors': List[InlineResponse2001Authors],
-            'contact': str,
-            'inputs': Dict[str, object],
-            'outputs': Dict[str, object]
+            "key": str,
+            "integration_version": str,
+            "version": str,
+            "type": str,
+            "name": str,
+            "thumbnail": str,
+            "badges": List[InlineResponse2001Badges],
+            "description": str,
+            "authors": List[InlineResponse2001Authors],
+            "contact": str,
+            "inputs": Dict[str, object],
+            "outputs": Dict[str, object],
         }
 
         self.attribute_map = {
-            'key': 'key',
-            'integration_version': 'integration-version',
-            'version': 'version',
-            'type': 'type',
-            'name': 'name',
-            'thumbnail': 'thumbnail',
-            'badges': 'badges',
-            'description': 'description',
-            'authors': 'authors',
-            'contact': 'contact',
-            'inputs': 'inputs',
-            'outputs': 'outputs'
+            "key": "key",
+            "integration_version": "integration-version",
+            "version": "version",
+            "type": "type",
+            "name": "name",
+            "thumbnail": "thumbnail",
+            "badges": "badges",
+            "description": "description",
+            "authors": "authors",
+            "contact": "contact",
+            "inputs": "inputs",
+            "outputs": "outputs",
         }
 
         self._key = key
@@ -77,7 +90,7 @@ class SimcoreNode(Model):
         self._outputs = outputs
 
     @classmethod
-    def from_dict(cls, dikt: dict) -> 'SimcoreNode':
+    def from_dict(cls, dikt: dict) -> "SimcoreNode":
         """Returns the dict as a model
 
         :param dikt: A dict.
@@ -107,8 +120,12 @@ class SimcoreNode(Model):
         """
         if key is None:
             raise ValueError("Invalid value for `key`, must not be `None`")
-        if key is not None and not re.search(r'^(simcore)\/(services)\/(comp|dynamic)(\/[\w\/-]+)+$', key):
-            raise ValueError("Invalid value for `key`, must be a follow pattern or equal to `/^(simcore)\/(services)\/(comp|dynamic)(\/[\w\/-]+)+$/`")
+        if key is not None and not re.search(
+            r"^(simcore)\/(services)\/(comp|dynamic|frontend)(\/[\w\/-]+)+$", key
+        ):
+            raise ValueError(
+                "Invalid value for `key`, must be a follow pattern or equal to `/^(simcore)\/(services)\/(comp|dynamic|frontend)(\/[\w\/-]+)+$/`"
+            )
 
         self._key = key
 
@@ -132,8 +149,13 @@ class SimcoreNode(Model):
         :param integration_version: The integration_version of this SimcoreNode.
         :type integration_version: str
         """
-        if integration_version is not None and not re.search(r'^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$', integration_version):
-            raise ValueError("Invalid value for `integration_version`, must be a follow pattern or equal to `/^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$/`")
+        if integration_version is not None and not re.search(
+            r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$",
+            integration_version,
+        ):
+            raise ValueError(
+                "Invalid value for `integration_version`, must be a follow pattern or equal to `/^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$/`"
+            )
 
         self._integration_version = integration_version
 
@@ -159,8 +181,13 @@ class SimcoreNode(Model):
         """
         if version is None:
             raise ValueError("Invalid value for `version`, must not be `None`")
-        if version is not None and not re.search(r'^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$', version):
-            raise ValueError("Invalid value for `version`, must be a follow pattern or equal to `/^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$/`")
+        if version is not None and not re.search(
+            r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$",
+            version,
+        ):
+            raise ValueError(
+                "Invalid value for `version`, must be a follow pattern or equal to `/^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$/`"
+            )
 
         self._version = version
 
@@ -187,8 +214,9 @@ class SimcoreNode(Model):
         allowed_values = ["frontend", "computational", "dynamic"]
         if type not in allowed_values:
             raise ValueError(
-                "Invalid value for `type` ({0}), must be one of {1}"
-                .format(type, allowed_values)
+                "Invalid value for `type` ({0}), must be one of {1}".format(
+                    type, allowed_values
+                )
             )
 
         self._type = type

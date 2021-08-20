@@ -6,13 +6,12 @@ import logging
 import re
 from http import HTTPStatus
 from pprint import pformat
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from aiohttp import BasicAuth, ClientSession, client_exceptions, web
-from yarl import URL
-
 from simcore_service_director import config, exceptions
 from simcore_service_director.cache_request_decorator import cache_requests
+from yarl import URL
 
 from .config import APP_CLIENT_SESSION_KEY
 
@@ -335,14 +334,17 @@ def get_service_last_names(image_key: str) -> str:
 
 async def get_service_extras(
     app: web.Application, image_key: str, image_tag: str
-) -> Dict[str, str]:
+) -> Dict[str, Any]:
     result = {}
     labels = await get_image_labels(app, image_key, image_tag)
     logger.debug("Compiling service extras from labels %s", pformat(labels))
 
     # check physical node requirements
     # all nodes require "CPU"
-    result["node_requirements"] = ["CPU"]
+    result["node_requirements"] = {
+        "CPU": config.DEFAULT_MAX_NANO_CPUS / 1.0e09,
+        "RAM": config.DEFAULT_MAX_MEMORY,
+    }
     # check if the service requires GPU support
 
     def validate_kind(entry_to_validate, kind_name):
@@ -358,10 +360,40 @@ async def get_service_extras(
     if config.SERVICE_RUNTIME_SETTINGS in labels:
         service_settings = json.loads(labels[config.SERVICE_RUNTIME_SETTINGS])
         for entry in service_settings:
-            if entry.get("name") == "Resources" and validate_kind(entry, "VRAM"):
-                result["node_requirements"].append("GPU")
-            if entry.get("name") == "Resources" and validate_kind(entry, "MPI"):
-                result["node_requirements"].append("MPI")
+            if entry.get("name", "").lower() != "resources":
+                continue
+
+            resource_value = entry.get("value")
+            if resource_value:
+                if not isinstance(resource_value, dict):
+                    logger.warning(
+                        "invalid type for resource %s in service settings in %s:%s",
+                        entry,
+                        image_key,
+                        image_tag,
+                    )
+                    continue
+                res_limit = resource_value.get("Limits", {})
+                res_reservation = resource_value.get("Reservations", {})
+                # CPU
+                result["node_requirements"]["CPU"] = (
+                    float(res_limit.get("NanoCPUs", 0))
+                    or float(res_reservation.get("NanoCPUs", 0))
+                    or config.DEFAULT_MAX_NANO_CPUS
+                ) / 1.0e09
+                # RAM
+                result["node_requirements"]["RAM"] = (
+                    res_limit.get("MemoryBytes", 0)
+                    or res_reservation.get("MemoryBytes", 0)
+                    or config.DEFAULT_MAX_MEMORY
+                )
+
+            # discrete resources (custom made ones)
+            # TODO: this could be adjusted to separate between GPU and/or VRAM
+            if validate_kind(entry, "VRAM"):
+                result["node_requirements"]["GPU"] = 1
+            if validate_kind(entry, "MPI"):
+                result["node_requirements"]["MPI"] = 1
 
     # get org labels
     result.update(
@@ -371,5 +403,7 @@ async def get_service_extras(
             if dl in labels
         }
     )
+
+    logger.debug("Following service extras were compiled: %s", pformat(result))
 
     return result

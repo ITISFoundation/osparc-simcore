@@ -49,6 +49,7 @@ async def test_create_snapshot_workflow(client, user_project: ProjectDict):
 
     # FIXME: project is None and snapshot_project is {}
     project.ui.workbench = {}
+    project.ui.slideshow = {}
 
     different_fields = {"name", "uuid", "creation_date", "last_change_date"}
     assert snapshot_project.dict(exclude=different_fields) == project.dict(
@@ -63,6 +64,7 @@ async def test_create_snapshot_workflow(client, user_project: ProjectDict):
 
     # FIXME:
     project.ui.workbench = None
+    project.ui.slideshow = None
     assert project == Project.parse_obj(data[0])
 
     # now it has one snapshot

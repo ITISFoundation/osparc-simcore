@@ -1,12 +1,16 @@
 # coding: utf-8
 
 from datetime import date, datetime
+from typing import Dict, List, Type
 
-from typing import List, Dict, Type
-
-from .base_model_ import Model
-from .inline_response2002_data_service_build_details import InlineResponse2002DataServiceBuildDetails
 from .. import util
+from .base_model_ import Model
+from .inline_response2002_data_node_requirements import (
+    InlineResponse2002DataNodeRequirements,
+)
+from .inline_response2002_data_service_build_details import (
+    InlineResponse2002DataServiceBuildDetails,
+)
 
 
 class InlineResponse2002Data(Model):
@@ -15,27 +19,31 @@ class InlineResponse2002Data(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, node_requirements: List[str]=None, service_build_details: InlineResponse2002DataServiceBuildDetails=None):
+    def __init__(
+        self,
+        node_requirements: InlineResponse2002DataNodeRequirements = None,
+        service_build_details: InlineResponse2002DataServiceBuildDetails = None,
+    ):
         """InlineResponse2002Data - a model defined in OpenAPI
 
         :param node_requirements: The node_requirements of this InlineResponse2002Data.
         :param service_build_details: The service_build_details of this InlineResponse2002Data.
         """
         self.openapi_types = {
-            'node_requirements': List[str],
-            'service_build_details': InlineResponse2002DataServiceBuildDetails
+            "node_requirements": InlineResponse2002DataNodeRequirements,
+            "service_build_details": InlineResponse2002DataServiceBuildDetails,
         }
 
         self.attribute_map = {
-            'node_requirements': 'node_requirements',
-            'service_build_details': 'service_build_details'
+            "node_requirements": "node_requirements",
+            "service_build_details": "service_build_details",
         }
 
         self._node_requirements = node_requirements
         self._service_build_details = service_build_details
 
     @classmethod
-    def from_dict(cls, dikt: dict) -> 'InlineResponse2002Data':
+    def from_dict(cls, dikt: dict) -> "InlineResponse2002Data":
         """Returns the dict as a model
 
         :param dikt: A dict.
@@ -49,7 +57,7 @@ class InlineResponse2002Data(Model):
 
 
         :return: The node_requirements of this InlineResponse2002Data.
-        :rtype: List[str]
+        :rtype: InlineResponse2002DataNodeRequirements
         """
         return self._node_requirements
 
@@ -59,14 +67,11 @@ class InlineResponse2002Data(Model):
 
 
         :param node_requirements: The node_requirements of this InlineResponse2002Data.
-        :type node_requirements: List[str]
+        :type node_requirements: InlineResponse2002DataNodeRequirements
         """
-        allowed_values = ["CPU", "GPU"]
-        if not set(node_requirements).issubset(set(allowed_values)):
+        if node_requirements is None:
             raise ValueError(
-                "Invalid values for `node_requirements` [{0}], must be a subset of [{1}]"
-                .format(", ".join(map(str, set(node_requirements) - set(allowed_values))),
-                        ", ".join(map(str, allowed_values)))
+                "Invalid value for `node_requirements`, must not be `None`"
             )
 
         self._node_requirements = node_requirements
