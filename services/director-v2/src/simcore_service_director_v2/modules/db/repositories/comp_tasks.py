@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -14,7 +15,7 @@ from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
-from ....models.schemas.services import NodeRequirement, ServiceExtras
+from ....models.schemas.services import ServiceExtras
 from ....utils.computations import to_node_class
 from ....utils.db import RUNNING_STATE_TO_DB
 from ....utils.logging_utils import log_decorator
@@ -50,7 +51,6 @@ async def _generate_tasks_list_from_project(
 ) -> List[CompTaskAtDB]:
 
     list_comp_tasks = []
-
     for internal_id, node_id in enumerate(project.workbench, 1):
         node: Node = project.workbench[node_id]
 
@@ -64,24 +64,18 @@ async def _generate_tasks_list_from_project(
         if node_class == NodeClass.FRONTEND:
             node_details = _FRONTEND_SERVICES_CATALOG.get(service_key_version.key, None)
         else:
-            node_details = await director_client.get_service_details(
-                service_key_version
+            node_details, node_extras = await asyncio.gather(
+                director_client.get_service_details(service_key_version),
+                director_client.get_service_extras(service_key_version),
             )
-            node_extras = await director_client.get_service_extras(service_key_version)
+
         if not node_details:
             continue
-
-        requires_mpi = False
-        requires_gpu = False
-        if node_extras:
-            requires_gpu = NodeRequirement.GPU in node_extras.node_requirements
-            requires_mpi = NodeRequirement.MPI in node_extras.node_requirements
 
         image = Image(
             name=service_key_version.key,
             tag=service_key_version.version,
-            requires_gpu=requires_gpu,
-            requires_mpi=requires_mpi,
+            node_requirements=node_extras.node_requirements if node_extras else None,
         )
 
         assert node.state is not None  # nosec

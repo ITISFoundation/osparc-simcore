@@ -375,11 +375,9 @@ paths:
                                 - type
                               properties:
                                 displayOrder:
+                                  description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
+                                  deprecated: true
                                   type: number
-                                  description: use this to numerically sort the properties for display
-                                  example:
-                                    - 1
-                                    - -0.2
                                 label:
                                   type: string
                                   description: short name for the property
@@ -766,11 +764,9 @@ paths:
                                 - type
                               properties:
                                 displayOrder:
+                                  description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
+                                  deprecated: true
                                   type: number
-                                  description: use this to numerically sort the properties for display
-                                  example:
-                                    - 1
-                                    - -0.2
                                 label:
                                   type: string
                                   description: short name for the property
@@ -1100,12 +1096,25 @@ paths:
                       - node_requirements
                     properties:
                       node_requirements:
-                        type: array
-                        items:
-                          type: string
-                          enum:
-                            - CPU
-                            - GPU
+                        type: object
+                        required:
+                          - CPU
+                          - RAM
+                        properties:
+                          CPU:
+                            type: number
+                            default: 1
+                            minimum: 1
+                          GPU:
+                            type: integer
+                            minimum: 0
+                          RAM:
+                            type: integer
+                            format: int64
+                            minimum: 1024
+                          MPI:
+                            type: integer
+                            maximum: 1
                       service_build_details:
                         type: object
                         properties:
@@ -2551,11 +2560,9 @@ components:
                       - type
                     properties:
                       displayOrder:
+                        description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
+                        deprecated: true
                         type: number
-                        description: use this to numerically sort the properties for display
-                        example:
-                          - 1
-                          - -0.2
                       label:
                         type: string
                         description: short name for the property
@@ -2608,12 +2615,25 @@ components:
             - node_requirements
           properties:
             node_requirements:
-              type: array
-              items:
-                type: string
-                enum:
-                  - CPU
-                  - GPU
+              type: object
+              required:
+                - CPU
+                - RAM
+              properties:
+                CPU:
+                  type: number
+                  default: 1
+                  minimum: 1
+                GPU:
+                  type: integer
+                  minimum: 0
+                RAM:
+                  type: integer
+                  format: int64
+                  minimum: 1024
+                MPI:
+                  type: integer
+                  maximum: 1
             service_build_details:
               type: object
               properties:

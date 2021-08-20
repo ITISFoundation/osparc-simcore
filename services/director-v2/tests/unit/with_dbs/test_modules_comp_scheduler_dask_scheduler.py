@@ -28,8 +28,8 @@ from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
-from simcore_service_director_v2.models.schemas.comp_scheduler import TaskIn
 from simcore_service_director_v2.models.schemas.constants import UserID
+from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
     BaseCompScheduler,
 )
@@ -265,16 +265,14 @@ async def test_proper_pipeline_is_scheduled(
     mocked_dask_client.assert_called_once_with(
         user_id=user_id,
         project_id=sleepers_project.uuid,
-        single_tasks=[
-            TaskIn(
-                node_id="3a710d8b-565c-5f46-870b-b45ebe195fc7",
-                runtime_requirements="cpu",
+        tasks={
+            "3a710d8b-565c-5f46-870b-b45ebe195fc7": NodeRequirements(
+                CPU=1.0, GPU=0, RAM="128 MiB", MPI=0
             ),
-            TaskIn(
-                node_id="e1e2ea96-ce8f-5abc-8712-b8ed312a782c",
-                runtime_requirements="cpu",
+            "e1e2ea96-ce8f-5abc-8712-b8ed312a782c": NodeRequirements(
+                CPU=1.0, GPU=0, RAM="128 MiB", MPI=0
             ),
-        ],
+        },
         callback=scheduler._wake_up_scheduler_now,
     )
     mocked_dask_client.reset_mock()
@@ -318,12 +316,11 @@ async def test_proper_pipeline_is_scheduled(
     mocked_dask_client.assert_called_once_with(
         user_id=user_id,
         project_id=sleepers_project.uuid,
-        single_tasks=[
-            TaskIn(
-                node_id="415fefd1-d08b-53c1-adb0-16bed3a687ef",
-                runtime_requirements="cpu",
-            ),
-        ],
+        tasks={
+            "415fefd1-d08b-53c1-adb0-16bed3a687ef": NodeRequirements(
+                CPU=1.0, GPU=0, RAM="128 MiB", MPI=0
+            )
+        },
         callback=scheduler._wake_up_scheduler_now,
     )
     mocked_dask_client.reset_mock()

@@ -14,7 +14,7 @@ from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import ConfigurationError
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.models.schemas.comp_scheduler import TaskIn
+from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.modules.dask_client import DaskClient
 from starlette.testclient import TestClient
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
@@ -75,10 +75,17 @@ def test_local_dask_cluster_through_client(dask_client: DaskClient):
     assert result == 7
 
 
-@pytest.mark.parametrize("runtime_requirements", ["cpu", "gpu", "mpi", "gpu:mpi"])
+@pytest.mark.parametrize(
+    "node_requirements",
+    [
+        NodeRequirements(CPU=1, RAM="128 MiB"),
+        NodeRequirements(CPU=1, GPU=1, RAM="256 MiB"),
+        NodeRequirements(CPU=2, RAM="128 MiB", MPI=1),
+    ],
+)
 async def test_send_computation_task(
     dask_client: DaskClient,
-    runtime_requirements: str,
+    node_requirements: NodeRequirements,
     mocker: MockerFixture,
 ):
     @retry(
@@ -93,7 +100,7 @@ async def test_send_computation_task(
     user_id = 12
     project_id = uuid4()
     node_id = uuid4()
-    fake_task = TaskIn(node_id=node_id, runtime_requirements=runtime_requirements)
+    fake_task = {node_id: node_requirements}
     mocked_done_callback_fct = mocker.Mock()
 
     def fake_sidecar_fct(job_id: str, u_id: str, prj_id: str, n_id: str) -> int:
@@ -106,7 +113,7 @@ async def test_send_computation_task(
     dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
-        single_tasks=[fake_task],
+        tasks=fake_task,
         callback=mocked_done_callback_fct,
         remote_fct=fake_sidecar_fct,
     )
@@ -127,16 +134,31 @@ async def test_send_computation_task(
     dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
-        single_tasks=[fake_task],
+        tasks=fake_task,
         callback=mocked_done_callback_fct,
         remote_fct=fake_sidecar_fct,
     )
 
-    # we have 2 futures in the map now
-    assert len(dask_client._taskid_to_future_map) == 2
-    job_id, future = list(dask_client._taskid_to_future_map.items())[1]
+    # we have 1 futures in the map now (the other one was removed)
+    assert len(dask_client._taskid_to_future_map) == 1
+    job_id, future = list(dask_client._taskid_to_future_map.items())[0]
     # now let's abort the computation
     assert future.key == job_id
     dask_client.abort_computation_tasks([job_id])
     assert future.cancelled() == True
     await wait_for_call(mocked_done_callback_fct)
+
+
+@pytest.mark.parametrize(
+    "req_example", NodeRequirements.Config.schema_extra["examples"]
+)
+def test_node_requirements_correctly_convert_to_dask_resources(
+    req_example: Dict[str, Any]
+):
+    node_reqs = NodeRequirements(**req_example)
+    assert node_reqs
+    dask_resources = node_reqs.dict(exclude_unset=True, by_alias=True)
+    # all the dask resources shall be of type: RESOURCE_NAME: VALUE
+    for resource_key, resource_value in dask_resources.items():
+        assert isinstance(resource_key, str)
+        assert isinstance(resource_value, (int, float, str, bool))
