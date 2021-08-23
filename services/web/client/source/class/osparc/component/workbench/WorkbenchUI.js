@@ -755,7 +755,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __pointerEventToWorkbenchPos: function(pointerEvent, scale = false) {
       const leftOffset = this.__getSidePanelWidth();
-      const inputNodesLayoutWidth = this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
+      const inputNodesLayoutWidth = this.__inputNodesLayout && this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
       const x = pointerEvent.getDocumentLeft() - leftOffset - inputNodesLayoutWidth;
       const y = pointerEvent.getDocumentTop() - this.self().TOP_OFFSET;
       if (scale) {
@@ -1014,7 +1014,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.fireDataEvent("changeSelectedNode", newID);
       }
 
-      this.__unlinkButton.setVisibility(this.__isSelectedItemAnEdge() ? "visible" : "excluded");
+      if (this.__unlinkButton) {
+        this.__unlinkButton.setVisibility(this.__isSelectedItemAnEdge() ? "visible" : "excluded");
+      }
     },
 
     __isSelectedItemAnEdge: function() {
