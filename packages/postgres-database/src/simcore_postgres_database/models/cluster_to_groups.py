@@ -1,6 +1,5 @@
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.sql import func
+from sqlalchemy.sql import expression, func
 
 from .base import metadata
 
@@ -29,15 +28,29 @@ cluster_to_groups = sa.Table(
         ),
         doc="Group unique IDentifier",
     ),
+    # Access Rights flags ---
     sa.Column(
-        "access_rights",
-        JSONB,
+        "read_access",
+        sa.Boolean,
         nullable=False,
-        server_default=sa.text(
-            '\'{"read": true, "write": false, "delete": false}\'::jsonb'
-        ),
-        doc="Group's access rights to the cluster",
+        server_default=expression.false(),
+        doc="If true, group can use the cluster",
     ),
+    sa.Column(
+        "write_access",
+        sa.Boolean,
+        nullable=False,
+        server_default=expression.false(),
+        doc="If true, group can modify the cluster",
+    ),
+    sa.Column(
+        "delete_access",
+        sa.Boolean,
+        nullable=False,
+        server_default=expression.false(),
+        doc="If true, group can delete the cluster",
+    ),
+    # -----
     sa.Column(
         "created",
         sa.DateTime(),

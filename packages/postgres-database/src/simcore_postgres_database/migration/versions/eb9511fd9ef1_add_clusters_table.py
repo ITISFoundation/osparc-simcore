@@ -1,16 +1,15 @@
 """add clusters table
 
-Revision ID: 2e5ddee48879
+Revision ID: eb9511fd9ef1
 Revises: 5860ac6ad178
-Create Date: 2021-08-23 12:00:00.878016+00:00
+Create Date: 2021-08-23 12:48:47.186737+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "2e5ddee48879"
+revision = "eb9511fd9ef1"
 down_revision = "5860ac6ad178"
 branch_labels = None
 depends_on = None
@@ -47,11 +46,18 @@ def upgrade():
         sa.Column("cluster_id", sa.BigInteger(), nullable=True),
         sa.Column("gid", sa.BigInteger(), nullable=True),
         sa.Column(
-            "access_rights",
-            postgresql.JSONB(astext_type=sa.Text()),
-            server_default=sa.text(
-                '\'{"read": true, "write": false, "delete": false}\'::jsonb'
-            ),
+            "read_access", sa.Boolean(), server_default=sa.text("false"), nullable=False
+        ),
+        sa.Column(
+            "write_access",
+            sa.Boolean(),
+            server_default=sa.text("false"),
+            nullable=False,
+        ),
+        sa.Column(
+            "delete_access",
+            sa.Boolean(),
+            server_default=sa.text("false"),
             nullable=False,
         ),
         sa.Column(
