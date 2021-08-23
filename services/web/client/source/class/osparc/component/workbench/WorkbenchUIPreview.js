@@ -33,6 +33,14 @@
 qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
   extend: osparc.component.workbench.WorkbenchUI,
 
+  construct: function() {
+    this.base(arguments);
+
+    this.set({
+      backgroundColor: "background-main"
+    });
+  },
+
   members: {
     // overriden
     _addItemsToLayout: function() {
