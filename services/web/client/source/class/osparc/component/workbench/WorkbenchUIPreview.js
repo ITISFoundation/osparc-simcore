@@ -63,6 +63,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
     _loadModel: function(model) {
       this.clearAll();
       this.resetSelectedNodes();
+      this._currentModel = model;
 
       // create nodes
       let nodes = model.getNodes();

@@ -109,7 +109,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __tempEdgeRepr: null,
     __pointerPos: null,
     __selectedItemId: null,
-    __currentModel: null,
+    _currentModel: null,
     __startHint: null,
     __dropHint: null,
 
@@ -301,8 +301,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __addNode: function(service, pos) {
       let parent = null;
-      if (this.__currentModel.isContainer()) {
-        parent = this.__currentModel;
+      if (this._currentModel.isContainer()) {
+        parent = this._currentModel;
       }
       const node = this.__getWorkbench().createNode(service.getKey(), service.getVersion(), null, parent);
       if (!node) {
@@ -406,7 +406,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     getCurrentModel: function() {
-      return this.__currentModel;
+      return this._currentModel;
     },
 
     getSelectedNodes: function() {
@@ -471,8 +471,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const port1 = nodeUI1.getOutputPort();
       const port2 = nodeUI2.getInputPort();
       if (port1 && port2) {
-        if (this.__currentModel.isContainer() && nodeUI2.getNodeId() === this.__currentModel.getNodeId()) {
-          this.__currentModel.addOutputNode(nodeUI1.getNodeId());
+        if (this._currentModel.isContainer() && nodeUI2.getNodeId() === this._currentModel.getNodeId()) {
+          this._currentModel.addOutputNode(nodeUI1.getNodeId());
         } else {
           nodeUI2.getNode().addInputNode(node1Id);
         }
@@ -940,7 +940,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     _loadModel: function(model) {
       this.clearAll();
       this.resetSelectedNodes();
-      this.__currentModel = model;
+      this._currentModel = model;
       if (model) {
         const isContainer = model.isContainer();
         if (isContainer) {
