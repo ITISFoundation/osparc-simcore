@@ -19,12 +19,26 @@ components:
         - node_requirements
       properties:
         node_requirements:
-          type: array
-          items:
-            type: string
-            enum:
-              - CPU
-              - GPU
+          type: object
+          required:
+            - CPU
+            - RAM
+          properties:
+            CPU:
+              type: number
+              default: 1.0
+              minimum: 1.0
+            GPU:
+              type: integer
+              minimum: 0
+            RAM:
+              type: integer
+              format: int64
+              minimum: 1024
+            MPI:
+              type: integer
+              maximum: 1
+
         service_build_details:
           type: object
           properties:

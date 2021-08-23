@@ -18,12 +18,30 @@ class ModuleCategory(Enum):
     ADDON = 1
 
 
+class SkipModuleSetup(Exception):
+    def __init__(self, *, reason) -> None:
+        self.reason = reason
+        super().__init__(reason)
+
+
 class ApplicationSetupError(Exception):
     pass
 
 
 class DependencyError(ApplicationSetupError):
     pass
+
+
+def _is_app_module_enabled(cfg: Dict, parts: List[str], section) -> bool:
+    # navigates app_config (cfg) searching for section
+    for part in parts:
+        if section and part == "enabled":
+            # if section exists, no need to explicitly enable it
+            cfg = cfg.get(part, True)
+        else:
+            cfg = cfg[part]
+    assert isinstance(cfg, bool)  # nosec
+    return cfg
 
 
 def app_module_setup(
@@ -33,9 +51,9 @@ def app_module_setup(
     depends: Optional[List[str]] = None,
     config_section: str = None,
     config_enabled: str = None,
-    logger: Optional[logging.Logger] = None,
+    logger: logging.Logger = log,
 ) -> Callable:
-    """ Decorator that marks a function as 'a setup function' for a given module in an application
+    """Decorator that marks a function as 'a setup function' for a given module in an application
 
         - Marks a function as 'setup' of a given module in an application
         - Ensures setup executed ONLY ONCE per app
@@ -51,7 +69,7 @@ def app_module_setup(
     :param config_enabled: option in config to enable, defaults to None which is '$(module-section).enabled' (config_section and config_enabled are mutually exclusive)
     :raises DependencyError
     :raises ApplicationSetupError
-    :return: False if setup was skipped
+    :return: True if setup was completed or False if setup was skipped
     :rtype: bool
 
     :Example:
@@ -75,8 +93,6 @@ def app_module_setup(
     else:
         # if passes config_enabled, invalidates info on section
         section = None
-
-    logger = logger or log
 
     def decorate(setup_func):
 
@@ -108,18 +124,10 @@ def app_module_setup(
                 # TODO: sometimes section is optional, check in config schema
                 cfg = app[APP_CONFIG_KEY]
 
-                def _get(cfg_, parts):
-                    for part in parts:
-                        if (
-                            section and part == "enabled"
-                        ):  # if section exists, no need to explicitly enable it
-                            cfg_ = cfg_.get(part, True)
-                        else:
-                            cfg_ = cfg_[part]
-                    return cfg_
-
                 try:
-                    is_enabled = _get(cfg, config_enabled.split("."))
+                    is_enabled = _is_app_module_enabled(
+                        cfg, config_enabled.split("."), section
+                    )
                 except KeyError as ee:
                     raise ApplicationSetupError(
                         f"Cannot find required option '{config_enabled}' in app config's section '{ee}'"
@@ -137,7 +145,7 @@ def app_module_setup(
                     dep for dep in depends if dep not in app[APP_SETUP_KEY]
                 ]
                 if uninitialized:
-                    msg = f"The following '{module_name}'' dependencies are still uninitialized: {uninitialized}"
+                    msg = f"Cannot setup app module '{module_name}' because the following dependencies are still uninitialized: {uninitialized}"
                     log.error(msg)
                     raise DependencyError(msg)
 
@@ -147,17 +155,26 @@ def app_module_setup(
                 raise ApplicationSetupError(msg)
 
             # execution of setup
-            ok = setup_func(app, *args, **kargs)
+            try:
+                completed = setup_func(app, *args, **kargs)
 
-            # post-setup
-            if ok is None:
-                ok = True
+                # post-setup
+                if completed is None:
+                    completed = True
 
-            if ok:
-                app[APP_SETUP_KEY].append(module_name)
+                if completed:
+                    app[APP_SETUP_KEY].append(module_name)
+                else:
+                    raise SkipModuleSetup(reason="Undefined")
 
-            logger.debug("'%s' setup completed [%s]", module_name, ok)
-            return ok
+            except SkipModuleSetup as exc:
+                logger.warning("Skipping '%s' setup: %s", module_name, exc.reason)
+                completed = False
+
+            logger.debug(
+                "'%s' setup %s", module_name, "completed" if completed else "skipped"
+            )
+            return completed
 
         setup_wrapper.metadata = setup_metadata
         setup_wrapper.MARK = "setup"
@@ -170,10 +187,9 @@ def app_module_setup(
 def is_setup_function(fun):
     return (
         inspect.isfunction(fun)
-        and hasattr(fun, "MARK")
-        and fun.MARK == "setup"
+        and getattr(fun, "MARK", None) == "setup"
         and any(
             param.annotation == web.Application
-            for name, param in inspect.signature(fun).parameters.items()
+            for _, param in inspect.signature(fun).parameters.items()
         )
     )

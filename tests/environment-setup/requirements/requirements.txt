@@ -6,18 +6,24 @@
 #
 aiohttp==3.7.4.post0
     # via
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/_base.in
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   pytest-aiohttp
 async-timeout==3.0.1
     # via aiohttp
-attrs==21.2.0
+attrs==20.3.0
     # via
+    #   -c requirements/../../../packages/service-library/requirements/_base.in
     #   aiohttp
     #   pytest
 chardet==4.0.0
     # via aiohttp
-idna==3.2
-    # via yarl
+idna==2.10
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/_base.in
+    #   yarl
 iniconfig==1.1.1
     # via pytest
 multidict==5.1.0
@@ -32,6 +38,14 @@ pluggy==0.13.1
     # via pytest
 py==1.10.0
     # via pytest
+pydantic==1.8.2
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/_base.in
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/_base.in
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/requirements.in
 pyparsing==2.4.7
     # via packaging
 pytest==6.2.4
@@ -50,6 +64,9 @@ pytest-sugar==0.9.4
     # via -r requirements/requirements.in
 pyyaml==5.4.1
     # via
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/_base.in
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/requirements.in
 termcolor==1.1.0
@@ -57,6 +74,8 @@ termcolor==1.1.0
 toml==0.10.2
     # via pytest
 typing-extensions==3.10.0.0
-    # via aiohttp
+    # via
+    #   aiohttp
+    #   pydantic
 yarl==1.6.3
     # via aiohttp

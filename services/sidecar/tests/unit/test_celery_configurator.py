@@ -7,7 +7,7 @@ from celery import Celery
 from simcore_service_sidecar import config
 from simcore_service_sidecar.boot_mode import BootMode
 from simcore_service_sidecar.celery_configurator import create_celery_app
-from simcore_service_sidecar.utils import is_gpu_node
+from simcore_service_sidecar.celery_task_utils import is_gpu_node
 
 
 def _toggle_gpu_mock(mocker, has_gpu: bool) -> None:

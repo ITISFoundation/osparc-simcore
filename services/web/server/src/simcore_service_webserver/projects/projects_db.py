@@ -275,7 +275,7 @@ class ProjectDBAPI:
 
             # must be valid uuid
             try:
-                uuidlib.UUID(kargs.get("uuid"))
+                uuidlib.UUID(str(kargs.get("uuid")))
             except ValueError:
                 if force_project_uuid:
                     raise

@@ -2,8 +2,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import logging
 from typing import Dict
+from unittest.mock import Mock
 
 import pytest
 from aiohttp import web
@@ -12,19 +12,22 @@ from servicelib.application_setup import (
     APP_SETUP_KEY,
     DependencyError,
     ModuleCategory,
+    SkipModuleSetup,
     app_module_setup,
 )
 
-log = logging.getLogger(__name__)
+log = Mock()
 
 
 @app_module_setup("package.bar", ModuleCategory.ADDON, logger=log)
-def setup_bar(app: web.Application, arg1, kargs=55):
+def setup_bar(app: web.Application, arg1, *, raise_skip: bool = False):
     return True
 
 
 @app_module_setup("package.foo", ModuleCategory.ADDON, logger=log)
-def setup_foo(app: web.Application, arg1, kargs=33):
+def setup_foo(app: web.Application, arg1, kargs=33, *, raise_skip: bool = False):
+    if raise_skip:
+        raise SkipModuleSetup(reason="explicit skip")
     return True
 
 
@@ -92,3 +95,20 @@ def test_marked_setup(app_config, app):
 
     app_config["foo"]["enabled"] = False
     assert not setup_foo(app, 2)
+
+
+def test_skip_setup(app_config, app):
+    try:
+        log.reset_mock()
+
+        assert not setup_foo(app, 1, raise_skip=True)
+
+        # FIXME: mock logger
+        # assert log.warning.called
+        # warn_msg = log.warning.call_args()[0]
+        # assert "package.foo" in warn_msg
+        # assert "explicit skip" in warn_msg
+
+        assert setup_foo(app, 1)
+    finally:
+        log.reset_mock()
