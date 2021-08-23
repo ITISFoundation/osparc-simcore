@@ -33,12 +33,6 @@
 qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
   extend: osparc.component.workbench.WorkbenchUI,
 
-  construct: function() {
-    this.base(arguments);
-
-    this.setScale(0.25);
-  },
-
   members: {
     // overriden
     _addItemsToLayout: function() {
@@ -92,6 +86,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
           }
         });
       }
+
+      this.setScale(0.25);
     }
   }
 });

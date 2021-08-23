@@ -518,6 +518,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const previewButton = new qx.ui.menu.Button(this.tr("Preview"));
       previewButton.addListener("execute", () => {
         const study = new osparc.data.model.Study(studyData);
+        study.buildWorkbench();
         const workbenchUIPreview = new osparc.component.workbench.WorkbenchUIPreview().set({
           study: study
         });
