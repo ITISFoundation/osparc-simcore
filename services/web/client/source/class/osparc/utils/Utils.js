@@ -30,7 +30,7 @@ qx.Class.define("osparc.utils.Utils", {
   type: "static",
 
   statics: {
-    isSweeperEnabled: function() {
+    isDevelopmentPlatform: function() {
       return new Promise((resolve, reject) => {
         osparc.utils.LibVersions.getPlatformName()
           .then(platformName => {
