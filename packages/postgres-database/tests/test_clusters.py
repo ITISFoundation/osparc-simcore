@@ -1,8 +1,7 @@
 # pylint: disable=no-value-for-parameter
 # pylint: disable=redefined-outer-name
 
-import pdb
-from typing import Any, Awaitable, Callable, Coroutine
+from typing import Awaitable, Callable
 
 import psycopg2
 import pytest
