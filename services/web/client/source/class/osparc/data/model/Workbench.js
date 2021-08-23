@@ -253,7 +253,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.__initNodeSignals(node);
 
       node.populateNodeData();
-      node.giveUniqueName();
+      this.__giveUniqueNameToNode(node, node.getLabel());
       node.startInBackend();
 
       const metaData = node.getMetaData();
@@ -556,8 +556,22 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.__populateNodesData(workbenchData, workbenchUIData);
 
       nodeIds.forEach(nodeId => {
-        this.getNode(nodeId).giveUniqueName();
+        const node = this.getNode(nodeId);
+        this.__giveUniqueNameToNode(node, node.getLabel());
       });
+    },
+
+    __giveUniqueNameToNode: function(node, label, suffix = 2) {
+      const newLabel = label + "_" + suffix;
+      const allModels = this.getNodes(true);
+      const nodes = Object.values(allModels);
+      for (const node2 of nodes) {
+        if (node2.getNodeId() !== node.getNodeId() &&
+            node2.getLabel().localeCompare(node.getLabel()) === 0) {
+          node.setLabel(newLabel);
+          this.__giveUniqueNameToNode(node, label, suffix+1);
+        }
+      }
     },
 
     __populateNodesData: function(workbenchData, workbenchUIData) {

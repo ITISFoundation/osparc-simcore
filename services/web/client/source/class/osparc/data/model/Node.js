@@ -32,7 +32,6 @@
  * <pre class='javascript'>
  *   let node = new osparc.data.model.Node(key, version, uuid);
  *   node.populateNodeData(nodeData);
- *   node.giveUniqueName();
  *   node.startDynamicService();
  * </pre>
  */
@@ -424,24 +423,6 @@ qx.Class.define("osparc.data.model.Node", {
           } else {
             this.getStatus().setModified(null);
           }
-        }
-      }
-    },
-
-    giveUniqueName: function() {
-      const label = this.getLabel();
-      this.__giveUniqueName(label, 2);
-    },
-
-    __giveUniqueName: function(label, suffix) {
-      const newLabel = label + "_" + suffix;
-      const allModels = this.getWorkbench().getNodes(true);
-      const nodes = Object.values(allModels);
-      for (const node of nodes) {
-        if (node.getNodeId() !== this.getNodeId() &&
-            node.getLabel().localeCompare(this.getLabel()) === 0) {
-          this.setLabel(newLabel);
-          this.__giveUniqueName(label, suffix+1);
         }
       }
     },
