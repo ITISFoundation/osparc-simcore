@@ -59,3 +59,39 @@ clusters = sa.Table(
         doc="Timestamp with last update",
     ),
 )
+
+# ------------------------ TRIGGERS
+new_cluster_trigger = sa.DDL(
+    """
+DROP TRIGGER IF EXISTS cluster_modification on clusters;
+CREATE TRIGGER cluster_modification
+AFTER INSERT ON clusters
+    FOR EACH ROW
+    EXECUTE PROCEDURE set_cluster_to_owner_group();
+"""
+)
+
+
+# --------------------------- PROCEDURES
+assign_cluster_access_rights_to_owner_group_procedure = sa.DDL(
+    """
+CREATE OR REPLACE FUNCTION set_cluster_to_owner_group() RETURNS TRIGGER AS $$
+DECLARE
+    group_id BIGINT;
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO "cluster_to_groups" ("gid", "cluster_id", "read_access", "write_access", "delete_access") VALUES (NEW.owner, NEW.id, TRUE, TRUE, TRUE);
+    END IF;
+    RETURN NULL;
+END; $$ LANGUAGE 'plpgsql';
+    """
+)
+
+sa.event.listen(
+    clusters, "after_create", assign_cluster_access_rights_to_owner_group_procedure
+)
+sa.event.listen(
+    clusters,
+    "after_create",
+    new_cluster_trigger,
+)

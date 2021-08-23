@@ -8,6 +8,7 @@ import psycopg2
 import pytest
 import sqlalchemy as sa
 from aiopg.sa.engine import Engine
+from aiopg.sa.result import ResultProxy, RowProxy
 from pytest_simcore.helpers.rawdata_fakers import random_user
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import ClusterType, clusters
@@ -106,7 +107,24 @@ async def test_cannot_remove_owner_that_owns_cluster(
         await conn.execute(users.delete().where(users.c.id == user_id))
 
 
-# async def test_cluster_owner_has_all_rights(
-#     pg_engine: Engine, user_id: int, user_group_id: int
-# ):
-#     cluster_id = await _create_cluster(pg_engine, owner=user_group_id)
+async def test_cluster_owner_has_all_rights(
+    pg_engine: Engine,
+    user_group_id: int,
+    create_cluster: Callable[..., Awaitable[int]],
+):
+    cluster_id = await create_cluster(owner=user_group_id)
+
+    async with pg_engine.acquire() as conn:
+        result: ResultProxy = await conn.execute(
+            cluster_to_groups.select().where(
+                cluster_to_groups.c.cluster_id == cluster_id
+            )
+        )
+
+        assert result.rowcount == 1
+        row = await result.fetchone()
+        assert row is not None
+
+        assert row.read_access == True
+        assert row.write_access == True
+        assert row.delete_access == True

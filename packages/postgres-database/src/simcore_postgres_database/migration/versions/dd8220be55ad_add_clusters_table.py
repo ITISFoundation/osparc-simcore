@@ -1,18 +1,45 @@
 """add clusters table
 
-Revision ID: eb9511fd9ef1
+Revision ID: dd8220be55ad
 Revises: 5860ac6ad178
-Create Date: 2021-08-23 12:48:47.186737+00:00
+Create Date: 2021-08-23 13:00:25.803959+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "eb9511fd9ef1"
+revision = "dd8220be55ad"
 down_revision = "5860ac6ad178"
 branch_labels = None
 depends_on = None
+
+# ------------------------ TRIGGERS
+new_cluster_trigger = sa.DDL(
+    """
+DROP TRIGGER IF EXISTS cluster_modification on clusters;
+CREATE TRIGGER cluster_modification
+AFTER INSERT ON clusters
+    FOR EACH ROW
+    EXECUTE PROCEDURE set_cluster_to_owner_group();
+"""
+)
+
+
+# --------------------------- PROCEDURES
+assign_cluster_access_rights_to_owner_group_procedure = sa.DDL(
+    """
+CREATE OR REPLACE FUNCTION set_cluster_to_owner_group() RETURNS TRIGGER AS $$
+DECLARE
+    group_id BIGINT;
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO "cluster_to_groups" ("gid", "cluster_id", "read_access", "write_access", "delete_access") VALUES (NEW.owner, NEW.id, TRUE, TRUE, TRUE);
+    END IF;
+    RETURN NULL;
+END; $$ LANGUAGE 'plpgsql';
+    """
+)
 
 
 def upgrade():
@@ -83,6 +110,8 @@ def upgrade():
         sa.UniqueConstraint("cluster_id", "gid"),
     )
     # ### end Alembic commands ###
+    op.execute(assign_cluster_access_rights_to_owner_group_procedure)
+    op.execute(new_cluster_trigger)
 
 
 def downgrade():
@@ -90,3 +119,6 @@ def downgrade():
     op.drop_table("cluster_to_groups")
     op.drop_table("clusters")
     # ### end Alembic commands ###
+    op.execute("DROP TYPE IF EXISTS clustertype")
+    op.execute("DROP TRIGGER IF EXISTS cluster_modification on clusters;")
+    op.execute("DROP FUNCTION set_cluster_to_owner_group() CASCADE")
