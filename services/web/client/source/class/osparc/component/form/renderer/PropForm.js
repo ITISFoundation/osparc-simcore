@@ -119,11 +119,13 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       paramsMenu.add(newParamBtn);
 
       const existingParamMenu = new qx.ui.menu.Menu();
-      this.__populateExistingParamsMenu(portId, existingParamMenu);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      study.addListener("changeParameters", () => {
+      if (study) {
         this.__populateExistingParamsMenu(portId, existingParamMenu);
-      }, this);
+        study.addListener("changeParameters", () => {
+          this.__populateExistingParamsMenu(portId, existingParamMenu);
+        }, this);
+      }
 
       const existingParamBtn = new qx.ui.menu.Button(this.tr("Set existing parameter"), null, null, existingParamMenu);
       paramsMenu.add(existingParamBtn);
@@ -562,6 +564,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     addPortLink: function(toPortId, fromNodeId, fromPortId) {
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      if (!study) {
+        return null;
+      }
       if (!this.__isPortAvailable(toPortId)) {
         return false;
       }
@@ -571,7 +577,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         output: fromPortId
       };
 
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
       const workbench = study.getWorkbench();
       const fromNode = workbench.getNode(fromNodeId);
       const port = fromNode.getOutput(fromPortId);
