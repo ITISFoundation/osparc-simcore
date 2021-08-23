@@ -15662,7 +15662,7 @@ paths:
   /clusters:
     get:
       summary: List my clusters
-      operationId: list_clusters
+      operationId: list_clusters_handler
       tags:
         - cluster
       responses:
@@ -15800,7 +15800,7 @@ paths:
                         status: 400
     post:
       summary: Create a new cluster
-      operationId: create_cluster
+      operationId: create_cluster_handler
       tags:
         - cluster
       requestBody:
@@ -15985,7 +15985,7 @@ paths:
       tags:
         - cluster
       summary: Gets one cluster details
-      operationId: get_cluster
+      operationId: get_cluster_handler
       responses:
         '200':
           description: got cluster
@@ -16119,7 +16119,7 @@ paths:
                         status: 400
     patch:
       summary: Update one cluster
-      operationId: update_cluster
+      operationId: update_cluster_handler
       tags:
         - cluster
       requestBody:
@@ -16297,7 +16297,7 @@ paths:
       tags:
         - cluster
       summary: Deletes one cluster
-      operationId: delete_cluster
+      operationId: delete_cluster_handler
       responses:
         '204':
           description: cluster has been successfully deleted
