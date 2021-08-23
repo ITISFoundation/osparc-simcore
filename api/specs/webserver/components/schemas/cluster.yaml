@@ -1,0 +1,62 @@
+ClusterAccessRights:
+  description: defines acesss rights for the cluster
+  type: object
+  properties:
+    read:
+      type: boolean
+      description: allows usage of the cluster
+    write:
+      type: boolean
+      description: allows modification of the cluster
+    delete:
+      type: boolean
+      description: allows deletion of the cluster
+  required:
+    - read
+    - write
+    - delete
+
+Cluster:
+  type: object
+  properties:
+    name:
+      description: the cluster name
+      type: string
+    description:
+      description: the cluster description
+      type: string
+    accessRights:
+      type: array
+      items:
+        $ref: "#/ClusterAccessRights"
+  required:
+    - name
+    - description
+    - accessRights
+  example:
+    - name: AWS cluster
+      description: My institution cluster
+
+ClusterEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: "#/Cluster"
+    error:
+      nullable: true
+      default: null
+
+ClustersEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      type: array
+      items:
+        $ref: "#/Cluster"
+    error:
+      nullable: true
+      default: null
