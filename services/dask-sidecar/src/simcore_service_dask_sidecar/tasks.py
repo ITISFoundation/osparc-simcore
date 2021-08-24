@@ -3,7 +3,7 @@ import logging
 from pprint import pformat
 from typing import Optional
 
-from dask.distributed import get_worker, worker_client
+from dask.distributed import get_worker
 from distributed.worker import TaskState
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
