@@ -26,6 +26,7 @@ from simcore_service_webserver.scicrunch.scicrunch_models import (
     ResourceView,
 )
 from simcore_service_webserver.scicrunch.service_client import (
+    ResolvedItem,
     autocomplete_by_name,
     get_all_versions,
     get_resource_fields,
@@ -235,32 +236,17 @@ async def test_scicrunch_service_autocomplete_by_name(settings: SciCrunchSetting
     + CELL_LINE_CITATIONS,
 )
 async def test_scicrunch_resolves_all_valid_rrids(
-    name: Optional[str], rrid: str, settings: SciCrunchSettings
+    name: str, rrid: str, settings: SciCrunchSettings
 ):
     async with ClientSession() as client:
-        resp = await resolve_rrid(rrid, client, settings)
+        resolved = await resolve_rrid(rrid, client, settings)
 
-        assert resp["hits"]["total"] == 1
+        assert resolved
+        assert isinstance(resolved, ResolvedItem)
 
-    #  "hits": {
-    #    "total": 1,
-    #    "hits": [ { "_source" : { "item"}} ]
-    #    "resolver": {
-    #      "uri": "scicrunch.org/resolver",
-    #      "timestamp": "2021-01-26T10:51:33-08:00"
-    #    }
-    # }
+        if resolved.is_unique:
+            assert name in resolved.proper_citation
 
-    # {
-    #   "hits": {
-    #     "total": 0,
-    #     "hits": [
-    #
-    #     ]
-    #   },
-    #   "resolver": {
-    #     "uri": "scicrunch.org/resolver",
-    #     "timestamp": "2021-01-26T11:05:57-08:00",
-    #     "error": "RRID not found"
-    #   }
-    # }
+        assert rrid in resolved.proper_citation
+        # assert resolved.proper_citation == (f"({name}, RRID:{rrid})" if name else rrid)
+        # assert resolved.proper_citation == (f"{name} (RRID:{rrid})" if name else rrid)
