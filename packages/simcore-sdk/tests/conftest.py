@@ -8,7 +8,7 @@ from typing import Any, Dict
 
 import pytest
 import simcore_sdk
-from simcore_sdk.node_ports import config as node_config
+from simcore_sdk.node_ports_common import config as node_config
 
 ## HELPERS
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -37,7 +37,7 @@ def package_dir():
 
 @pytest.fixture(scope="session")
 def osparc_simcore_root_dir() -> Path:
-    """ osparc-simcore repo root dir """
+    """osparc-simcore repo root dir"""
     WILDCARD = "packages/simcore-sdk"
 
     root_dir = Path(current_dir)

@@ -51,6 +51,7 @@ def random_project(**overrides) -> Dict[str, Any]:
         name=fake.word(),
         description=fake.sentence(),
         prj_owner=fake.pyint(),
+        thumbnail=fake.image_url(width=120, height=120),
         access_rights={},
         workbench={},
         published=False,

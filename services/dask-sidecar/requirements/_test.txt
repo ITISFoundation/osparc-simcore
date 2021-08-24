@@ -20,7 +20,7 @@ alembic==1.6.5
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   -r requirements/_test.in
-astroid==2.5.6
+astroid==2.6.6
     # via pylint
 async-timeout==3.0.1
     # via
@@ -51,7 +51,7 @@ coverage==5.5
     #   -r requirements/_test.in
     #   coveralls
     #   pytest-cov
-coveralls==3.1.0
+coveralls==3.2.0
     # via -r requirements/_test.in
 docker==5.0.0
     # via
@@ -60,9 +60,9 @@ docker==5.0.0
     #   -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
-faker==8.8.1
+faker==8.11.0
     # via -r requirements/_test.in
-icdiff==1.9.1
+icdiff==2.0.4
     # via pytest-icdiff
 idna==2.10
     # via
@@ -72,7 +72,7 @@ idna==2.10
     #   yarl
 iniconfig==1.1.1
     # via pytest
-isort==5.9.1
+isort==5.9.3
     # via pylint
 lazy-object-proxy==1.4.3
     # via
@@ -92,7 +92,9 @@ markupsafe==2.0.1
 mccabe==0.6.1
     # via pylint
 minio==7.0.4
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 multidict==5.1.0
     # via
     #   -c requirements/_base.txt
@@ -119,7 +121,7 @@ ptvsd==4.3.2
     # via -r requirements/_test.in
 py==1.10.0
     # via pytest
-pylint==2.8.3
+pylint==2.9.6
     # via -r requirements/_test.in
 pyparsing==2.4.7
     # via
@@ -156,7 +158,7 @@ python-dateutil==2.8.1
     #   -c requirements/_packages.txt
     #   alembic
     #   faker
-python-dotenv==0.18.0
+python-dotenv==0.19.0
     # via -r requirements/_test.in
 python-editor==1.0.4
     # via
@@ -215,3 +217,6 @@ yarl==1.6.3
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   aiohttp
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

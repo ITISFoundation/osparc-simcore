@@ -4,7 +4,7 @@ import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectAtDB, ProjectID
 
-from ....utils.exceptions import ProjectNotFoundError
+from ....core.errors import ProjectNotFoundError
 from ..tables import projects
 from ._base import BaseRepository
 

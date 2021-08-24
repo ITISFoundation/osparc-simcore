@@ -7,15 +7,14 @@ import json
 import re
 import uuid as uuidlib
 from typing import Dict
-from simcore_service_webserver.utils import now_str
 
 from aiohttp import web
-
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
     DB_EXCLUSIVE_COLUMNS,
 )
 from simcore_service_webserver.resources import resources
+from simcore_service_webserver.utils import now_str
 
 fake_template_resources = [
     "data/" + name
@@ -49,21 +48,25 @@ def load_data(name):
 
 
 async def create_project(
-    app: web.Application, params: Dict = None, user_id=None, *, force_uuid=False
+    app: web.Application,
+    params_override: Dict = None,
+    user_id=None,
+    *,
+    force_uuid=False,
 ) -> Dict:
     """Injects new project in database for user or as template
 
-    :param params: predefined project properties (except for non-writeable e.g. uuid), defaults to None
-    :type params: Dict, optional
+    :param params_override: predefined project properties (except for non-writeable e.g. uuid), defaults to None
+    :type params_override: Dict, optional
     :param user_id: assigns this project to user or template project if None, defaults to None
     :type user_id: int, optional
     :return: schema-compliant project
     :rtype: Dict
     """
-    params = params or {}
+    params_override = params_override or {}
 
     project_data = load_data("data/fake-template-projects.isan.json")[0]
-    project_data.update(params)
+    project_data.update(params_override)
 
     db = app[APP_PROJECT_DBAPI]
 
@@ -71,7 +74,7 @@ async def create_project(
         project_data, user_id, force_project_uuid=force_uuid
     )
     try:
-        uuidlib.UUID(project_data["uuid"])
+        uuidlib.UUID(str(project_data["uuid"]))
         assert new_project["uuid"] == project_data["uuid"]
     except (ValueError, AssertionError):
         # in that case the uuid gets replaced
@@ -96,14 +99,16 @@ async def delete_all_projects(app: web.Application):
 class NewProject:
     def __init__(
         self,
-        params: Dict = None,
+        params_override: Dict = None,
         app: web.Application = None,
         clear_all=True,
         user_id=None,
         *,
         force_uuid=False,
     ):
-        self.params = params
+        assert app  # nosec
+
+        self.params_override = params_override
         self.user_id = user_id
         self.app = app
         self.prj = {}
@@ -117,11 +122,13 @@ class NewProject:
             )
 
     async def __aenter__(self):
+        assert self.app  # nosec
         self.prj = await create_project(
-            self.app, self.params, self.user_id, force_uuid=self.force_uuid
+            self.app, self.params_override, self.user_id, force_uuid=self.force_uuid
         )
         return self.prj
 
     async def __aexit__(self, *args):
+        assert self.app  # nosec
         if self.clear_all:
             await delete_all_projects(self.app)

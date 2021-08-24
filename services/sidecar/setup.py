@@ -27,6 +27,7 @@ install_requirements = read_reqs(current_dir / "requirements" / "_base.txt") + [
     "simcore-sdk",
     "simcore-service-library",
     "simcore-models-library",
+    "simcore-settings-library",
 ]
 
 test_requirements = read_reqs(current_dir / "requirements" / "_test.txt") + [

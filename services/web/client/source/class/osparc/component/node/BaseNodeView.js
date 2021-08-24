@@ -391,12 +391,20 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
     },
 
+    getHeaderLayout: function() {
+      return this.__header;
+    },
+
     getInputsView: function() {
       return this.__inputsView;
     },
 
     getOutputsView: function() {
       return this.__outputsView;
+    },
+
+    getSettingsLayout: function() {
+      return this._settingsLayout;
     },
 
     __attachEventHandlers: function() {

@@ -64,6 +64,9 @@ def clone_project_document(
         project_copy["ui"]["workbench"] = _replace_uuids(
             project_copy["ui"].get("workbench", {})
         )
+        project_copy["ui"]["slideshow"] = _replace_uuids(
+            project_copy["ui"].get("slideshow", {})
+        )
     return project_copy, nodes_map
 
 

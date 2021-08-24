@@ -37,6 +37,8 @@ from yarl import URL
 
 pytest_simcore_core_services_selection = [
     "director",
+    "dask-scheduler",
+    "dask-sidecar",
     "redis",
     "rabbit",
     "sidecar",
@@ -136,40 +138,41 @@ def _assert_computation_task_out_obj(
 # FIXTURES ---------------------------------------
 
 
-@pytest.fixture(scope="function")
-def mock_env(monkeypatch: MonkeyPatch) -> None:
+@pytest.fixture(scope="function", params=["dask", "celery"])
+def mock_env(monkeypatch: MonkeyPatch, request) -> None:
     # used by the client fixture
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "itisfoundation/dynamic-sidecar:MOCKED")
 
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv(
+        "DIRECTOR_V2_DASK_CLIENT_ENABLED",
+        "1" if request.param == "dask" else "0",
+    )
+    monkeypatch.setenv(
+        "DIRECTOR_V2_DASK_SCHEDULER_ENABLED",
+        "1" if request.param == "dask" else "0",
+    )
+    monkeypatch.setenv(
+        "DIRECTOR_V2_CELERY_SCHEDULER_ENABLED",
+        "1" if request.param == "celery" else "0",
+    )
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def minimal_configuration(
     sleeper_service: Dict[str, str],
     jupyter_service: Dict[str, str],
+    dask_scheduler_service: None,
+    dask_sidecar_service: None,
     redis_service: RedisConfig,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitConfig,
     simcore_services: Dict[str, URL],
-):
+) -> None:
     pass
-
-
-@pytest.fixture
-def fake_workbench_without_outputs(
-    fake_workbench_as_dict: Dict[str, Any]
-) -> Dict[str, Any]:
-    workbench = deepcopy(fake_workbench_as_dict)
-    # remove all the outputs from the workbench
-    for _, data in workbench.items():
-        data["outputs"] = {}
-
-    return workbench
 
 
 @pytest.fixture
@@ -262,7 +265,12 @@ def fake_workbench_computational_pipeline_details_not_started(
         ),
     ],
 )
-def test_invalid_computation(client: TestClient, body: Dict, exp_response: int):
+def test_invalid_computation(
+    minimal_configuration: None,
+    client: TestClient,
+    body: Dict,
+    exp_response: int,
+):
     # create a bunch of invalid stuff
     response = client.post(
         COMPUTATION_URL,
@@ -274,6 +282,7 @@ def test_invalid_computation(client: TestClient, body: Dict, exp_response: int):
 
 
 def test_start_empty_computation(
+    minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -397,6 +406,7 @@ PartialComputationParams = namedtuple(
     ],
 )
 def test_run_partial_computation(
+    minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -531,6 +541,7 @@ def test_run_partial_computation(
 
 
 def test_run_computation(
+    minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -635,6 +646,7 @@ def test_run_computation(
 
 
 def test_abort_computation(
+    minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -702,6 +714,7 @@ def test_abort_computation(
 
 
 def test_update_and_delete_computation(
+    minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -820,6 +833,7 @@ def test_update_and_delete_computation(
 
 
 def test_pipeline_with_no_comp_services_still_create_correct_comp_tasks(
+    minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -859,6 +873,7 @@ def test_pipeline_with_no_comp_services_still_create_correct_comp_tasks(
 
 
 def test_pipeline_with_control_pipeline_made_of_dynamic_services_are_allowed(
+    minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -922,6 +937,7 @@ def test_pipeline_with_control_pipeline_made_of_dynamic_services_are_allowed(
 
 
 def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
+    minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -998,6 +1014,7 @@ def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
 
 
 async def test_burst_create_computations(
+    minimal_configuration: None,
     async_client: AsyncClient,
     user_id: PositiveInt,
     project: Callable,

@@ -1,10 +1,10 @@
 from pathlib import Path
 from typing import Optional
 
-import simcore_service_sidecar.config as config
 from models_library.settings.base import BaseCustomSettings
 from models_library.settings.celery import CeleryConfig
 from pydantic import Field
+from simcore_service_sidecar import config
 
 
 class Settings(BaseCustomSettings):

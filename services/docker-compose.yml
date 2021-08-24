@@ -44,6 +44,8 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
+      - DEFAULT_MAX_NANO_CPUS=${DEFAULT_MAX_NANO_CPUS:-0}
+      - DEFAULT_MAX_MEMORY=${DEFAULT_MAX_MEMORY:-0}
       - REGISTRY_URL=${REGISTRY_URL}
       - REGISTRY_PATH=${REGISTRY_PATH}
       - REGISTRY_AUTH=${REGISTRY_AUTH}
@@ -90,13 +92,19 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director-v2:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
+      - DASK_SCHEDULER_HOST=${DASK_SCHEDULER_HOST:-dask-scheduler}
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
       - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
+      - DIRECTOR_SELF_SIGNED_SSL_FILENAME=${DIRECTOR_SELF_SIGNED_SSL_FILENAME}
+      - DIRECTOR_SELF_SIGNED_SSL_SECRET_ID=${DIRECTOR_SELF_SIGNED_SSL_SECRET_ID}
+      - DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME=${DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME}
+      - DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS=${DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS}
+      - DIRECTOR_V2_DEV_FEATURES_ENABLED=${DIRECTOR_V2_DEV_FEATURES_ENABLED}
       - DYNAMIC_SIDECAR_IMAGE=${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
       - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX:-undefined}
-      - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
-      - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+      - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
+      - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
     env_file:
       - ../.env
     volumes:
@@ -199,6 +207,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment: &sidecar-environment
+      DEFAULT_MAX_NANO_CPUS: ${DEFAULT_MAX_NANO_CPUS:-0}
+      DEFAULT_MAX_MEMORY: ${DEFAULT_MAX_MEMORY:-0}
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PORT: ${RABBIT_PORT}
       RABBIT_USER: ${RABBIT_USER}
@@ -232,9 +242,8 @@ services:
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    deploy:
-      mode: replicated
-      replicas: 2
+    deploy: &dask-sidecar-deploy
+      mode: global
       endpoint_mode: dnsrr
       resources:
         reservations:
@@ -394,7 +403,7 @@ services:
       retries: 50
 
   traefik:
-    image: traefik:v2.2.1
+    image: traefik:v2.4.13
     init: true
     command:
       - "--api=true"
