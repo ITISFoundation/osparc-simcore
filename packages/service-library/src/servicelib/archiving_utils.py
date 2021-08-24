@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import zipfile
-from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator, List, Set, Union
 
@@ -14,18 +13,6 @@ log = logging.getLogger(__name__)
 
 def _surrogate_replace_in_path(path: Path) -> Path:
     return Path(str(path).encode(errors="replace").decode("utf-8"))
-
-
-@contextmanager
-def _tmp_symlink(source: Path, destination: Path):
-    """skip symlink creation if source == destination"""
-    if destination == source:
-        yield
-        return
-
-    destination.symlink_to(source)
-    yield
-    destination.unlink()
 
 
 def _full_file_path_from_dir_and_subdirs(dir_path: Path) -> Iterator[Path]:
@@ -154,20 +141,11 @@ def _serial_add_to_archive(
 
                     # because surrogates are not allowed in zip files,
                     # replacing them will ensure errors will not happen.
-                    escaped_file_to_add = _surrogate_replace_in_path(file_to_add)
                     escaped_file_name_in_archive = _surrogate_replace_in_path(
                         file_name_in_archive
                     )
 
-                    # ensure original file is not changed by
-                    # creteing a symlink with an archivable filename by zipfile
-                    # simlink is removed after archiving
-                    with _tmp_symlink(
-                        source=file_to_add, destination=escaped_file_to_add
-                    ):
-                        zip_file_handler.write(
-                            escaped_file_to_add, escaped_file_name_in_archive
-                        )
+                    zip_file_handler.write(file_to_add, escaped_file_name_in_archive)
                 except ValueError as value_error:
                     log.exception("Could write files to archive, please check logs")
                     raise value_error
