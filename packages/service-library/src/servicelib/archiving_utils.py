@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import zipfile
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator, List, Set, Union
 
@@ -9,6 +10,17 @@ from servicelib.pools import non_blocking_process_pool_executor
 MAX_UNARCHIVING_WORKER_COUNT = 2
 
 log = logging.getLogger(__name__)
+
+
+def _surrogate_replace_in_path(path: Path) -> Path:
+    return Path(str(path).encode(errors="replace").decode("utf-8"))
+
+
+@contextmanager
+def _tmp_symlink(source: Path, destination: Path):
+    destination.symlink_to(source)
+    yield
+    destination.unlink()
 
 
 def _full_file_path_from_dir_and_subdirs(dir_path: Path) -> Iterator[Path]:
@@ -134,7 +146,23 @@ def _serial_add_to_archive(
                         if store_relative_path
                         else file_to_add
                     )
-                    zip_file_handler.write(file_to_add, file_name_in_archive)
+
+                    # because surrogates are not allowed in zip files,
+                    # replacing them will ensure errors will not happen.
+                    escaped_file_to_add = _surrogate_replace_in_path(file_to_add)
+                    escaped_file_name_in_archive = _surrogate_replace_in_path(
+                        file_name_in_archive
+                    )
+
+                    # ensure original file is not changed by
+                    # creteing a symlink with an archivable filename by zipfile
+                    # simlink is removed after archiving
+                    with _tmp_symlink(
+                        source=file_to_add, destination=escaped_file_to_add
+                    ):
+                        zip_file_handler.write(
+                            escaped_file_to_add, escaped_file_name_in_archive
+                        )
                 except ValueError as value_error:
                     log.exception("Could write files to archive, please check logs")
                     raise value_error
@@ -146,6 +174,11 @@ def _serial_add_to_archive(
 async def archive_dir(
     dir_to_compress: Path, destination: Path, compress: bool, store_relative_path: bool
 ) -> None:
+    """
+    When archiving, surrogates in filenames will be escaped because zipfile
+    does not like them.
+    When unarchiveing, the escaped version of the files will be contained.
+    """
     with non_blocking_process_pool_executor(max_workers=1) as pool:
         add_to_archive_error: Union[
             None, Exception
