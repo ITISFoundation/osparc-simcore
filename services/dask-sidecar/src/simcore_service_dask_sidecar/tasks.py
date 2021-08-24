@@ -4,7 +4,7 @@ from pprint import pformat
 from typing import Optional
 
 from dask.distributed import get_worker
-from distributed.scheduler import TaskState
+from distributed.worker import TaskState
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from simcore_service_sidecar.boot_mode import BootMode
@@ -50,19 +50,19 @@ def run_task_in_service(
     task: Optional[TaskState] = _get_dask_task_state()
 
     sidecar_bootmode = BootMode.CPU
-    retry = 1
+    retry = 0
     max_retries = 1
     if task:
-        log.debug("dask task set as: %s", pformat(task))
+        log.debug("dask task set as: %s", pformat(task.__dict__))
         if task.resource_restrictions.get("MPI", 0) > 0:
             sidecar_bootmode = BootMode.MPI
         elif task.resource_restrictions.get("GPU", 0) > 0:
             sidecar_bootmode = BootMode.GPU
 
-        max_retries = task.annotations.get("retries", 1)
-        # this number is decremented by dask by each new trial
-        remaining_retries = task.retries
-        retry = (max_retries - remaining_retries) + 1
+        max_retries = task.annotations.get("retries", 1) + 1
+        retry = -task.priority[
+            -1
+        ]  # this contains 0 for first retry, -1 for second retry
 
     asyncio.get_event_loop().run_until_complete(
         run_sidecar(
