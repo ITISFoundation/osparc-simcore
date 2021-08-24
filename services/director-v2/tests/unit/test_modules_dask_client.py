@@ -86,7 +86,7 @@ def test_local_dask_cluster_through_client(dask_client: DaskClient):
                 tag="1.4.5",
                 node_requirements=NodeRequirements(CPU=1, RAM="128 MiB"),
             ),
-            {"resources": {"CPU": 1.0, "RAM": 128 * 1024 * 1024}, "retries": 2},
+            {"resources": {"CPU": 1.0, "RAM": 128 * 1024 * 1024}},
         ),
         (
             Image(
@@ -96,7 +96,6 @@ def test_local_dask_cluster_through_client(dask_client: DaskClient):
             ),
             {
                 "resources": {"CPU": 1.0, "GPU": 1.0, "RAM": 256 * 1024 * 1024},
-                "retries": 2,
             },
         ),
         (
@@ -107,7 +106,6 @@ def test_local_dask_cluster_through_client(dask_client: DaskClient):
             ),
             {
                 "resources": {"CPU": 2.0, "MPI": 1.0, "RAM": 128 * 1024 * 1024},
-                "retries": 2,
             },
         ),
     ],
