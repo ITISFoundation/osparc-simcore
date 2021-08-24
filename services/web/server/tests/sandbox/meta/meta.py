@@ -272,13 +272,13 @@ def get_valid_project(project_uuid: UUID = PathParam(...)) -> UUID:
 project_routes = APIRouter(prefix="/projects", tags=["project"])
 
 
-@project_routes.get("/", response_model=Page[ProjectItem])
+@project_routes.get("", response_model=Page[ProjectItem])
 def list_projects(page=Depends(init_pagination(ProjectItem))):
     ...
 
 
 @project_routes.post(
-    "/", response_model=Envelope[ProjectDetail], status_code=status.HTTP_201_CREATED
+    "", response_model=Envelope[ProjectDetail], status_code=status.HTTP_201_CREATED
 )
 def create_project(project: ProjectNew):
     ...
