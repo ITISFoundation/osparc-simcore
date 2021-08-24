@@ -11,6 +11,7 @@ from models_library.projects_nodes_io import NodeID
 from settings_library.celery import CelerySettings
 
 from ..core.errors import ConfigurationError
+from ..models.domains.comp_tasks import Image
 from ..models.schemas.constants import UserID
 from ..models.schemas.services import NodeRequirements
 
@@ -82,7 +83,7 @@ class CeleryClient:
         self,
         user_id: UserID,
         project_id: ProjectID,
-        tasks: Dict[NodeID, NodeRequirements],
+        tasks: Dict[NodeID, Image],
         callback: Callable,
     ) -> Dict[NodeID, CeleryTaskOut]:
         def _from_node_reqs_to_routing_queue(node_reqs: NodeRequirements) -> str:
@@ -95,13 +96,13 @@ class CeleryClient:
             return req or "cpu"
 
         async_tasks = {}
-        for node_id, node_reqs in tasks.items():
+        for node_id, node_image in tasks.items():
             celery_task_signature = _computation_task_signature(
                 self.settings,
                 user_id,
                 project_id,
                 node_id,
-                _from_node_reqs_to_routing_queue(node_reqs),
+                _from_node_reqs_to_routing_queue(node_image.node_requirements),
             )
             async_tasks[node_id] = celery_task = celery_task_signature.apply_async()
             logger.info("Published celery task %s", celery_task)

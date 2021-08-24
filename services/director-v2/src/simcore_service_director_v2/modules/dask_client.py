@@ -11,6 +11,7 @@ from tenacity import before_sleep_log, retry, stop_after_attempt, wait_random
 
 from ..core.errors import ConfigurationError
 from ..core.settings import DaskSchedulerSettings
+from ..models.domains.comp_tasks import Image
 from ..models.schemas.constants import UserID
 from ..models.schemas.services import NodeRequirements
 
@@ -68,7 +69,7 @@ class DaskClient:
         self,
         user_id: UserID,
         project_id: ProjectID,
-        tasks: Dict[NodeID, NodeRequirements],
+        tasks: Dict[NodeID, Image],
         callback: Callable[[], None],
         remote_fct: Callable = None,
     ):
@@ -100,8 +101,8 @@ class DaskClient:
             logger.debug("transformed to dask resources: %s", dask_resources)
             return dask_resources
 
-        for node_id, node_reqs in tasks.items():
-            job_id = f"dask_{uuid4()}"
+        for node_id, node_image in tasks.items():
+            job_id = f"{node_image.name}:{node_image.tag}_pid:{project_id}_nid:{node_id}_{uuid4()}"
             task_future = self.client.submit(
                 remote_fct,
                 job_id,
@@ -109,7 +110,9 @@ class DaskClient:
                 project_id,
                 node_id,
                 key=job_id,
-                resources=_from_node_reqs_to_dask_resources(node_reqs),
+                resources=_from_node_reqs_to_dask_resources(
+                    node_image.node_requirements
+                ),
                 retries=2,
             )
             task_future.add_done_callback(_done_dask_callback)
