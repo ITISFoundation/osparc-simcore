@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from pprint import pformat
 from typing import Optional
 
 from dask.distributed import get_worker
@@ -50,6 +51,7 @@ def run_task_in_service(
 
     sidecar_bootmode = BootMode.CPU
     if task:
+        log.debug("dask task set as: %s", pformat(task))
         if task.resource_restrictions.get("MPI", 0) > 0:
             sidecar_bootmode = BootMode.MPI
         elif task.resource_restrictions.get("GPU", 0) > 0:
