@@ -77,7 +77,7 @@ def test_run_task_in_service(
         str(user_id),
         str(project_id),
         node_id=str(node_id),
-        retry=1,
+        retry=0,
         max_retries=1,
         sidecar_mode=exp_bootmode,
         is_aborted_cb=_is_aborted_cb,
