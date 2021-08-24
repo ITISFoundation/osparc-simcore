@@ -117,14 +117,28 @@ def full_file_path_from_dir_and_subdirs(dir_path: Path) -> List[Path]:
     return [x for x in dir_path.rglob("*") if x.is_file()]
 
 
+def _escape_surrogates_str(s: str) -> str:
+    return s.encode(errors="replace").decode("utf-8")
+
+
+def _escape_surrogates_path(path: Path) -> Path:
+    return Path(_escape_surrogates_str(str(path)))
+
+
 async def assert_same_directory_content(
-    dir_to_compress: Path, output_dir: Path, inject_relative_path: Path = None
+    dir_to_compress: Path,
+    output_dir: Path,
+    inject_relative_path: Path = None,
+    surrogate_replace: bool = False,
 ) -> None:
     def _relative_path(input_path: Path) -> Path:
         return Path(str(inject_relative_path / str(input_path))[1:])
 
     input_set = get_all_files_in_dir(dir_to_compress)
     output_set = get_all_files_in_dir(output_dir)
+
+    if surrogate_replace:
+        input_set = {_escape_surrogates_path(x) for x in input_set}
 
     if inject_relative_path is not None:
         input_set = {_relative_path(x) for x in input_set}
@@ -140,6 +154,9 @@ async def assert_same_directory_content(
         for k, v in (
             await compute_hashes(full_file_path_from_dir_and_subdirs(dir_to_compress))
         ).items()
+    }
+    dir_to_compress_hashes = {
+        _escape_surrogates_path(k): v for k, v in dir_to_compress_hashes.items()
     }
 
     # computing the hashes for output_dir and map in a dict
@@ -187,9 +204,7 @@ def assert_unarchived_paths(
         if is_file_or_emptydir(f)
     )
     if surrogate_replace:
-        expected_tails = {
-            x.encode(errors="replace").decode("utf-8") for x in expected_tails
-        }
+        expected_tails = {_escape_surrogates_str(x) for x in expected_tails}
     assert got_tails == expected_tails
 
 
@@ -284,35 +299,44 @@ async def test_regression_unsupported_characters(
     compress: bool,
     store_relative_path: bool,
 ) -> None:
-    with tempfile.TemporaryDirectory() as src_dir:
-        dir_to_archive = Path(src_dir)
-        content = "payload"
-        unsupported_file_name = "something\udce6likethis.zip"
+    archive_path = tmp_path / "archive.zip"
+    dir_to_archive = tmp_path / "to_compress"
+    dir_to_archive.mkdir()
+    dst_dir = tmp_path / "decompressed"
+    dst_dir.mkdir()
 
-        # assert can write data to file
-        file_path = dir_to_archive / unsupported_file_name
+    def _create_file(file_name: str, content: str) -> None:
+        file_path = dir_to_archive / file_name
         file_path.write_text(content)
         assert file_path.read_text() == content
 
-        archive_file = tmp_path / "archive.zip"
+    # unsupported file name
+    _create_file("something\udce6likethis.txt", "payload1")
+    # supported name
+    _create_file("this_file_name_works.txt", "payload2")
 
-        await archive_dir(
-            dir_to_compress=dir_to_archive,
-            destination=archive_file,
-            store_relative_path=store_relative_path,
-            compress=compress,
-        )
+    await archive_dir(
+        dir_to_compress=dir_to_archive,
+        destination=archive_path,
+        store_relative_path=store_relative_path,
+        compress=compress,
+    )
 
-        unarchived_paths = await unarchive_dir(
-            archive_to_extract=archive_file, destination_folder=tmp_path
-        )
+    unarchived_paths = await unarchive_dir(
+        archive_to_extract=archive_path, destination_folder=dst_dir
+    )
 
-        archive_file.unlink()  # delete before comparing contents
+    assert_unarchived_paths(
+        unarchived_paths,
+        src_dir=dir_to_archive,
+        dst_dir=dst_dir,
+        is_saved_as_relpath=store_relative_path,
+        surrogate_replace=True,
+    )
 
-        assert_unarchived_paths(
-            unarchived_paths,
-            src_dir=dir_to_archive,
-            dst_dir=tmp_path,
-            is_saved_as_relpath=store_relative_path,
-            surrogate_replace=True,
-        )
+    await assert_same_directory_content(
+        dir_to_compress=dir_to_archive,
+        output_dir=dst_dir,
+        inject_relative_path=None if store_relative_path else dir_to_archive,
+        surrogate_replace=True,
+    )
