@@ -3,12 +3,12 @@
 
 from typing import Awaitable, Callable
 
-import psycopg2
 import pytest
 import sqlalchemy as sa
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy
 from pytest_simcore.helpers.rawdata_fakers import random_user
+from simcore_postgres_database.errors import ForeignKeyViolation, NotNullViolation
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import ClusterType, clusters
 from simcore_postgres_database.models.users import users
@@ -65,7 +65,7 @@ async def create_cluster(pg_engine: Engine) -> Callable[..., Awaitable[int]]:
 async def test_cluster_without_owner_forbidden(
     create_cluster: Callable[..., Awaitable[int]]
 ):
-    with pytest.raises(psycopg2.errors.NotNullViolation):
+    with pytest.raises(NotNullViolation):
         await create_cluster()
 
 
@@ -94,7 +94,7 @@ async def test_cannot_remove_owner_that_owns_cluster(
     cluster_id = await create_cluster(owner=user_group_id)
     # now try removing the user
     async with pg_engine.acquire() as conn:
-        with pytest.raises(psycopg2.errors.ForeignKeyViolation):
+        with pytest.raises(ForeignKeyViolation):
             await conn.execute(users.delete().where(users.c.id == user_id))
 
     # now remove the cluster

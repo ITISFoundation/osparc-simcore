@@ -30,7 +30,7 @@ from psycopg2 import (
 )
 
 # pylint: disable=no-name-in-module
-from psycopg2.errors import UniqueViolation
+from psycopg2.errors import ForeignKeyViolation, NotNullViolation, UniqueViolation
 
 # pylint: enable=no-name-in-module
 
