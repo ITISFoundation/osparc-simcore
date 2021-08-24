@@ -50,6 +50,8 @@ def run_task_in_service(
     task: Optional[TaskState] = _get_dask_task_state()
 
     sidecar_bootmode = BootMode.CPU
+    retry = 1
+    max_retries = 1
     if task:
         log.debug("dask task set as: %s", pformat(task))
         if task.resource_restrictions.get("MPI", 0) > 0:
@@ -57,7 +59,12 @@ def run_task_in_service(
         elif task.resource_restrictions.get("GPU", 0) > 0:
             sidecar_bootmode = BootMode.GPU
 
-    asyncio.run(
+        max_retries = task.annotations.get("retries", 1)
+        # this number is decremented by dask by each new trial
+        remaining_retries = task.retries
+        retry = (max_retries - remaining_retries) + 1
+
+    asyncio.get_event_loop().run_until_complete(
         run_sidecar(
             job_id,
             str(user_id),
@@ -65,5 +72,7 @@ def run_task_in_service(
             node_id=str(node_id),
             sidecar_mode=sidecar_bootmode,
             is_aborted_cb=_is_aborted_cb,
+            retry=retry,
+            max_retries=max_retries,
         )
     )
