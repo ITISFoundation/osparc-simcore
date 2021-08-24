@@ -18,6 +18,11 @@ def _surrogate_replace_in_path(path: Path) -> Path:
 
 @contextmanager
 def _tmp_symlink(source: Path, destination: Path):
+    """skip symlink creation if source == destination"""
+    if destination == source:
+        yield
+        return
+
     destination.symlink_to(source)
     yield
     destination.unlink()
