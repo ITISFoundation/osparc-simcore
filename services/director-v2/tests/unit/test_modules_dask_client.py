@@ -104,9 +104,9 @@ async def test_send_computation_task(
     mocked_done_callback_fct = mocker.Mock()
 
     def fake_sidecar_fct(job_id: str, u_id: str, prj_id: str, n_id: str) -> int:
-        assert u_id == f"{user_id}"
-        assert prj_id == f"{project_id}"
-        assert n_id == f"{node_id}"
+        assert u_id == user_id
+        assert prj_id == project_id
+        assert n_id == node_id
         return 123
 
     # start a computation

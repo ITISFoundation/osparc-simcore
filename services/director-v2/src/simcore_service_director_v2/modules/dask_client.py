@@ -82,27 +82,15 @@ class DaskClient:
             self._taskid_to_future_map.pop(job_id)
             callback()
 
-        def comp_sidecar_fct(
-            job_id: str, user_id: str, project_id: str, node_id: str
+        def _comp_sidecar_fct(
+            job_id: str, user_id: int, project_id: ProjectID, node_id: NodeID
         ) -> None:
-            import asyncio
+            from simcore_service_dask_sidecar.tasks import run_task_in_service
 
-            from dask.distributed import get_worker
-            from simcore_service_sidecar.cli import run_sidecar
-
-            def _is_aborted_cb() -> bool:
-                w = get_worker()
-                t = w.tasks.get(w.get_current_task())
-                return t is None
-
-            asyncio.run(
-                run_sidecar(
-                    job_id, user_id, project_id, node_id, is_aborted_cb=_is_aborted_cb
-                )
-            )
+            run_task_in_service(job_id, user_id, project_id, node_id)
 
         if remote_fct is None:
-            remote_fct = comp_sidecar_fct
+            remote_fct = _comp_sidecar_fct
 
         def _from_node_reqs_to_dask_resources(
             node_reqs: NodeRequirements,
@@ -117,9 +105,9 @@ class DaskClient:
             task_future = self.client.submit(
                 remote_fct,
                 job_id,
-                f"{user_id}",
-                f"{project_id}",
-                f"{node_id}",
+                user_id,
+                project_id,
+                node_id,
                 key=job_id,
                 resources=_from_node_reqs_to_dask_resources(node_reqs),
                 retries=2,
