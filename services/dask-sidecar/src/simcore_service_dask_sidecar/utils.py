@@ -14,6 +14,23 @@ def wrap_async_call(fct: Awaitable) -> ...:
     return asyncio.get_event_loop().run_until_complete(fct)
 
 
+def cluster_id() -> Optional[str]:
+    """Returns the cluster id this docker engine belongs to, if any"""
+
+    async def async_get_engine_cluster_id() -> Optional[str]:
+        async with aiodocker.Docker() as docker:
+            docker_system_info = await docker.system.info()
+        node_labels = docker_system_info.get("Labels", [])
+        node_labels_dict = {}
+        for entry in node_labels:
+            key, value = str(entry).split("=", maxsplit=2)
+            if key and value:
+                node_labels_dict[key] = value
+        return node_labels_dict.get("cluster_id")
+
+    return wrap_async_call(async_get_engine_cluster_id())
+
+
 def num_available_gpus() -> int:
     """Returns the number of available GPUs, 0 if not a gpu node"""
 
