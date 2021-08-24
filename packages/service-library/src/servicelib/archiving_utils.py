@@ -11,7 +11,7 @@ MAX_UNARCHIVING_WORKER_COUNT = 2
 log = logging.getLogger(__name__)
 
 
-def _surrogate_replace_in_path(path: Path) -> Path:
+def _strip_undecodable_in_path(path: Path) -> Path:
     return Path(str(path).encode(errors="replace").decode("utf-8"))
 
 
@@ -141,7 +141,7 @@ def _serial_add_to_archive(
 
                     # because surrogates are not allowed in zip files,
                     # replacing them will ensure errors will not happen.
-                    escaped_file_name_in_archive = _surrogate_replace_in_path(
+                    escaped_file_name_in_archive = _strip_undecodable_in_path(
                         file_name_in_archive
                     )
 
