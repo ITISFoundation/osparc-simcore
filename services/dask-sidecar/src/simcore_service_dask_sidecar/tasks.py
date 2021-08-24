@@ -3,7 +3,7 @@ import logging
 from pprint import pformat
 from typing import Optional
 
-from dask.distributed import get_worker
+from dask.distributed import get_worker, worker_client
 from distributed.worker import TaskState
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -59,10 +59,7 @@ def run_task_in_service(
         elif task.resource_restrictions.get("GPU", 0) > 0:
             sidecar_bootmode = BootMode.GPU
 
-        max_retries = task.annotations.get("retries", 1) + 1
-        retry = -task.priority[
-            -1
-        ]  # this contains 0 for first retry, -1 for second retry
+        max_retries = task.annotations.get("retries", 1)
 
     asyncio.get_event_loop().run_until_complete(
         run_sidecar(
