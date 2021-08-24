@@ -102,7 +102,9 @@ class DaskClient:
             return dask_resources
 
         for node_id, node_image in tasks.items():
-            job_id = f"{node_image.name}:{node_image.tag}_pid:{project_id}_nid:{node_id}_{uuid4()}"
+            # NOTE: the job id is used to create a folder in the sidecar, so it must be a valid file name too
+            # Also, it must be unique
+            job_id = f"{node_image.name}_{node_image.tag}__projectid_{project_id}__nodeid_{node_id}__{uuid4()}"
             task_future = self.client.submit(
                 remote_fct,
                 job_id,
