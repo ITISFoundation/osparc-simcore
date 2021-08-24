@@ -115,7 +115,7 @@ class DaskClient:
                 resources=_from_node_reqs_to_dask_resources(
                     node_image.node_requirements
                 ),
-                retries=2,
+                retries=0,
             )
             task_future.add_done_callback(_done_dask_callback)
             self._taskid_to_future_map[job_id] = task_future
