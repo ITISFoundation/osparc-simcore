@@ -41,8 +41,8 @@ class SciCrunch:
         self.settings = settings
         self.client = client
         self.base_url = URL.build(
-            scheme=self.settings.api_base_url.scheme,
-            host=self.settings.api_base_url.host,
+            scheme=self.settings.SCICRUNCH_API_BASE_URL.scheme,
+            host=self.settings.SCICRUNCH_API_BASE_URL.host,
         )
 
         self.portal_site_url = str(self.base_url.with_path("/resources/"))

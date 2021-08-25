@@ -1,10 +1,6 @@
 """
-    Layer to interact with with scicrunch service resolver API (SEE https://scicrunch.org/resolver)
-
-    - http client for API requests
-    - Error handling:
-        - translates network errors
-        - translates request error codes
+    Layer to interact withscicrunch service resolver API
+    SEE https://scicrunch.org/resolver
 
 """
 
@@ -16,7 +12,6 @@ from aiohttp import ClientSession
 from pydantic import Field
 from pydantic.main import BaseModel
 from pydantic.types import NonNegativeInt
-from yarl import URL
 
 from ._config import SciCrunchSettings
 
@@ -89,11 +84,8 @@ async def resolve_rrid(
 
     """
     # Example https://scicrunch.org/resolver/RRID:AB_90755.json
-    url = (
-        URL(str(settings.api_base_url))
-        .origin()
-        .with_path(f"/resolver/{identifier.strip()}.json")
-    )
+    identifier = identifier.strip()
+    url = f"{settings.SCICRUNCH_RESOLVER_BASE_URL}/{identifier}.json"
 
     async with client.get(url, raise_for_status=True) as resp:
         body = await resp.json()

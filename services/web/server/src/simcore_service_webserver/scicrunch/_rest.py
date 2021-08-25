@@ -83,8 +83,8 @@ async def get_all_versions(
     unprefixed_rrid: str, client: ClientSession, settings: SciCrunchSettings
 ) -> List[Dict[str, Any]]:
     async with client.get(
-        f"{settings.api_base_url}/resource/versions/all/{unprefixed_rrid}",
-        params={"key": settings.api_key.get_secret_value()},
+        f"{settings.SCICRUNCH_API_BASE_URL}/resource/versions/all/{unprefixed_rrid}",
+        params={"key": settings.SCICRUNCH_API_KEY.get_secret_value()},
         raise_for_status=True,
     ) as resp:
         body = await resp.json()
@@ -95,8 +95,8 @@ async def get_resource_fields(
     rrid: str, client: ClientSession, settings: SciCrunchSettings
 ) -> ResourceView:
     async with client.get(
-        f"{settings.api_base_url}/resource/fields/view/{rrid}",
-        params={"key": settings.api_key.get_secret_value()},
+        f"{settings.SCICRUNCH_API_BASE_URL}/resource/fields/view/{rrid}",
+        params={"key": settings.SCICRUNCH_API_KEY.get_secret_value()},
         raise_for_status=True,
     ) as resp:
         body = await resp.json()
@@ -109,9 +109,9 @@ async def autocomplete_by_name(
     guess_name: str, client: ClientSession, settings: SciCrunchSettings
 ) -> ListOfResourceHits:
     async with client.get(
-        f"{settings.api_base_url}/resource/fields/autocomplete",
+        f"{settings.SCICRUNCH_API_BASE_URL}/resource/fields/autocomplete",
         params={
-            "key": settings.api_key.get_secret_value(),
+            "key": settings.SCICRUNCH_API_KEY.get_secret_value(),
             "field": "Resource Name",
             "value": guess_name.strip(),
         },

@@ -52,7 +52,7 @@ async def test_scicrunch_openapi_specs(settings: SciCrunchSettings):
         assert openapi_specs["info"]["version"] == expected_api_version
 
         assert (
-            str(settings.api_base_url)
+            str(settings.SCICRUNCH_API_BASE_URL)
             == f"{SCICRUNCH_DEFAULT_URL}/api/{expected_api_version}"
         )
 

@@ -5,9 +5,8 @@
 import logging
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Union
 
-from pydantic import BaseModel, Field, constr, validator
+from pydantic import BaseModel, Field, validator
 
 logger = logging.getLogger(__name__)
 

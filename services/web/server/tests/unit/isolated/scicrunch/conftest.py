@@ -2,9 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import os
-import sys
-from pathlib import Path
 
 import pytest
 from simcore_service_webserver.scicrunch.submodule_setup import SciCrunchSettings
@@ -12,4 +9,4 @@ from simcore_service_webserver.scicrunch.submodule_setup import SciCrunchSetting
 
 @pytest.fixture
 async def settings(loop) -> SciCrunchSettings:
-    return SciCrunchSettings(api_key=os.environ.get("SCICRUNCH_API_KEY", "FAKE"))
+    return SciCrunchSettings(SCICRUNCH_API_KEY="fake-secret-key")
