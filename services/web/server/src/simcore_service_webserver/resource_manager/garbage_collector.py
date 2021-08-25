@@ -263,11 +263,22 @@ async def remove_disconnected_user_resources(
                 if resource_name == "project_id":
                     # inform that the project can be closed on the backend side
                     #
-                    await remove_project_interactive_services(
-                        user_id=int(dead_key["user_id"]),
-                        project_uuid=resource_value,
-                        app=app,
-                    )
+                    try:
+                        await remove_project_interactive_services(
+                            user_id=int(dead_key["user_id"]),
+                            project_uuid=resource_value,
+                            app=app,
+                        )
+                    except database_errors as err:
+                        logger.warning(
+                            (
+                                "Could not remove project interactive services user_id=%s "
+                                "project_uuid=%s. Check the logs above for details [%s]"
+                            ),
+                            user_id,
+                            resource_value,
+                            err,
+                        )
 
                 # ONLY GUESTS: if this user was a GUEST also remove it from the database
                 # with the only associated project owned
