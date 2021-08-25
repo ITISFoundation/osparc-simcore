@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field, HttpUrl, ValidationError, constr, validat
 from simcore_postgres_database.models.classifiers import group_classifiers
 
 from .constants import APP_DB_ENGINE_KEY
-from .scicrunch.scicrunch_db import ResearchResourceRepository
+from .scicrunch.db import ResearchResourceRepository
 from .scicrunch.service_client import SciCrunch
 
 logger = logging.getLogger(__name__)
