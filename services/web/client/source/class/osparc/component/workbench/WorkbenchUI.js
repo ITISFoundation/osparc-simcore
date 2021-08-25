@@ -170,7 +170,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     _addSVGLayer: function(desktop) {
-      this.__svgWidgetWorkbench = new osparc.component.workbench.SvgWidget("SvgWidget_Workbench");
+      this.__svgWidgetWorkbench = new osparc.component.workbench.SvgWidget();
       desktop.add(this.__svgWidgetWorkbench, {
         left: 0,
         top: 0,
