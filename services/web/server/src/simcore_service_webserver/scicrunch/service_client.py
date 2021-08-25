@@ -105,7 +105,7 @@ class SciCrunch:
 
         return rrid
 
-    async def _get_resource_field_using_api(self, rrid: str):
+    async def _get_resource_field_using_api(self, rrid: str) -> ResearchResource:
         # NOTE: This is currently replaced by 'resolve_rrid'.
         # This option uses rest API which requires authentication
         #
@@ -128,7 +128,7 @@ class SciCrunch:
                 rrid, self.client, self.settings
             )
             if not resolved:
-                raise InvalidRRID(rrid)
+                raise InvalidRRID(f".Could not resolve {rrid}")
 
             return ResearchResource(
                 rrid=rrid,

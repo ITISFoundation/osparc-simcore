@@ -38,5 +38,16 @@ async def test_scicrunch_resolves_all_valid_rrids(
             assert name in resolved.proper_citation
 
         assert rrid in resolved.proper_citation
-        # assert resolved.proper_citation == (f"({name}, RRID:{rrid})" if name else rrid)
-        # assert resolved.proper_citation == (f"{name} (RRID:{rrid})" if name else rrid)
+
+        # NOTE: proper_citation does not seem to have a standard format.
+        # So far I found four different formats!! :-o
+        if not name:
+            # only rrid with a prefix
+            assert resolved.proper_citation == f"RRID:{rrid}"
+        else:
+            # includes name and rrid
+            assert resolved.proper_citation in (
+                f"({name}, RRID:{rrid})",
+                f"({name},RRID:{rrid})",
+                f"{name} (RRID:{rrid})",
+            )
