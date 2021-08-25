@@ -41,11 +41,12 @@ qx.Class.define("osparc.data.model.Node", {
   include: qx.locale.MTranslation,
 
   /**
+    * @param study {osparc.data.model.Study} Study or Serialized Study Object
     * @param key {String} key of the service represented by the node
     * @param version {String} version of the service represented by the node
     * @param uuid {String} uuid of the service represented by the node (not needed for new Nodes)
   */
-  construct: function(key, version, uuid) {
+  construct: function(study, key, version, uuid) {
     this.base(arguments);
 
     this.__metaData = {};
@@ -57,6 +58,9 @@ qx.Class.define("osparc.data.model.Node", {
     this.__inputNodes = [];
     this.__exposedNodes = [];
 
+    if (study) {
+      this.setStudy(study);
+    }
     this.set({
       key,
       version,
@@ -499,28 +503,11 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     /**
-     * Remove those inputs that can't be respresented in the settings form
-     * (Those are needed for creating connections between nodes)
-     *
-     */
-    __removeNonSettingInputs: function(inputs) {
-      let filteredInputs = JSON.parse(JSON.stringify(inputs));
-      for (const inputId in filteredInputs) {
-        let input = filteredInputs[inputId];
-        if (input.type.includes("data:application/s4l-api/")) {
-          delete filteredInputs[inputId];
-        }
-      }
-      return filteredInputs;
-    },
-
-    /**
      * Add settings widget with those inputs that can be represented in a form
      */
     __addSettings: function(inputs) {
       const form = this.__settingsForm = new osparc.component.form.Auto(inputs);
-      const propsForm = new osparc.component.form.renderer.PropForm(form, this);
-      this.bind("study", propsForm, "study");
+      const propsForm = new osparc.component.form.renderer.PropForm(form, this, this.getStudy());
       this.setPropsForm(propsForm);
       propsForm.addListener("linkFieldModified", e => {
         const linkFieldModified = e.getData();

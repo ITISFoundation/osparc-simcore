@@ -17,9 +17,14 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
   /**
    * @param form {osparc.component.form.Auto} form widget to embed
    * @param node {osparc.data.model.Node} Node owning the widget
+   * @param study {osparc.data.model.Study} Study owning the node
    */
-  construct: function(form, node) {
+  construct: function(form, node, study) {
     this.base(arguments, form, node);
+
+    if (study) {
+      this.setStudy(study);
+    }
 
     this.__ctrlLinkMap = {};
     this.__ctrlParamMap = {};
@@ -42,8 +47,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     study: {
       check: "osparc.data.model.Study",
       init: null,
-      nullable: false,
-      event: "changeStudy"
+      nullable: false
     }
   },
 

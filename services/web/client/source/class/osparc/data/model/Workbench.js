@@ -259,8 +259,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         return null;
       }
 
-      const node = new osparc.data.model.Node(key, version, uuid);
-      this.bind("study", node, "study");
+      const node = new osparc.data.model.Node(this.getStudy(), key, version, uuid);
       this.addNode(node, parent);
 
       this.__initNodeSignals(node);
@@ -557,8 +556,7 @@ qx.Class.define("osparc.data.model.Workbench", {
             continue;
           }
         }
-        const node = new osparc.data.model.Node(nodeData.key, nodeData.version, nodeId);
-        this.bind("study", node, "study");
+        const node = new osparc.data.model.Node(this.getStudy(), nodeData.key, nodeData.version, nodeId);
         this.__initNodeSignals(node);
         let parentNode = null;
         if (nodeData.parent) {
