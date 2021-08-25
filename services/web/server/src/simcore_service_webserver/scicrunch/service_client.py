@@ -76,14 +76,19 @@ class SciCrunch:
 
     # MEMBERS --------
 
-    def get_rrid_link(self, rrid: str) -> str:
+    def get_search_web_url(self, rrid: str) -> str:
         # NOTE: for some reason scicrunch query does not like prefix!
         prefixless_rrid = rrid.replace("RRID:", "").strip()
+        # example https://scicrunch.org/resources/Any/search?q=AB_90755&l=AB_90755
         return str(
             self.base_url.with_path("/resources/Any/search").with_query(
                 q="undefined", l=prefixless_rrid
             )
         )
+
+    def get_resolver_web_url(self, rrid: str) -> str:
+        # example https://scicrunch.org/resolver/RRID:AB_90755
+        return f"{self.settings.SCICRUNCH_RESOLVER_BASE_URL}/{rrid}"
 
     @classmethod
     def validate_identifier(cls, rrid: str) -> str:

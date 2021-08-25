@@ -124,7 +124,7 @@ async def build_rrids_tree_view(app, tree_view_mode="std") -> Dict[str, Any]:
                 classifier=resource.rrid,
                 display_name=resource.name.title(),
                 short_description=resource.description,
-                url=scicrunch.get_rrid_link(resource.rrid),
+                url=scicrunch.get_resolver_web_url(resource.rrid),
             )
 
             node = validated_item.display_name.replace(":", " ")
