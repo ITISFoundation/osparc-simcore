@@ -86,7 +86,8 @@ qx.Class.define("osparc.data.model.Node", {
     study: {
       check: "osparc.data.model.Study",
       init: null,
-      nullable: false
+      nullable: false,
+      event: "changeStudy"
     },
 
     key: {
