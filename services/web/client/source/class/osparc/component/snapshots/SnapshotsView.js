@@ -100,13 +100,21 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
       };
       osparc.data.Resources.getOne("snapshots", params)
         .then(snapshotResp => {
-          console.log(snapshotResp);
-          const study = new osparc.data.model.Study(snapshotResp);
-          study.buildWorkbench();
-          const workbenchUIPreview = new osparc.component.workbench.WorkbenchUIPreview().set({
-            study: study
-          });
-          workbenchUIPreview.loadModel(study.getWorkbench());
+          if (!snapshotResp) {
+            const msg = this.tr("Snapshot not found");
+            throw new Error(msg);
+          }
+          fetch(snapshotResp["url_project"])
+            .then(response => response.json())
+            .then(data => {
+              const studyData = data["data"];
+              const study = new osparc.data.model.Study(studyData);
+              study.buildWorkbench();
+              const workbenchUIPreview = new osparc.component.workbench.WorkbenchUIPreview().set({
+                study: study
+              });
+              workbenchUIPreview.loadModel(study.getWorkbench());
+            });
         });
     },
 
