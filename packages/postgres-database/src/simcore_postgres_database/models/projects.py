@@ -100,6 +100,8 @@ projects = sa.Table(
         "classifiers",
         ARRAY(sa.String, dimensions=1),
         nullable=False,
+        # NOTE: server default for empty array
+        # https://stackoverflow.com/questions/30933266/empty-array-as-postgresql-array-column-default-value
         server_default="{}",
         doc="A list of standard labels to classify this project",
     ),
