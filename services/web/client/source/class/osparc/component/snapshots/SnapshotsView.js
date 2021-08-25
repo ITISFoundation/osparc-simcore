@@ -29,10 +29,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
 
     if (study.hasSnapshots()) {
       this.__primaryStudy = study;
-      const snapshotsSection = this.__buildSnapshotsSection();
-      this._add(snapshotsSection, {
-        flex: 1
-      });
+      this.__buildLayout();
     }
   },
 
@@ -47,28 +44,22 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
     __selectedSnapshot: null,
     __openSnapshotBtn: null,
 
-    __buildSnapshotsSection: function() {
-      const layout = new qx.ui.groupbox.GroupBox(this.tr("Snapshots")).set({
-        layout: new qx.ui.layout.VBox(5)
+    __buildLayout: function() {
+      const snapshotsSection = this.__snapshotsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      this._add(snapshotsSection, {
+        flex: 1
       });
-
-      const snapshotsSection = this.__snapshotsSection = new qx.ui.groupbox.GroupBox(this.tr("Snapshots")).set({
-        layout: new qx.ui.layout.HBox(5)
-      });
-
       this.__rebuildSnapshotsTable();
       this.__buildSnapshotPreview();
 
       const openSnapshotBtn = this.__openSnapshotBtn = this.__createOpenSnapshotBtn();
       openSnapshotBtn.setEnabled(false);
-      layout.addAt(openSnapshotBtn, 2);
       openSnapshotBtn.addListener("execute", () => {
         if (this.__selectedSnapshot) {
           this.fireDataEvent("openSnapshot", this.__selectedSnapshot);
         }
       });
-
-      return snapshotsSection;
+      this._add(openSnapshotBtn);
     },
 
     __rebuildSnapshotsTable: function() {
@@ -82,16 +73,14 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
       });
 
       this.__snapshotsSection.addAt(snapshotsTable, 0, {
-        flex: 1
+        width: "50%"
       });
-
-      return snapshotsTable;
     },
 
     __buildSnapshotPreview: function() {
       const snapshotPreview = this.__snapshotPreview = new osparc.component.workbench.WorkbenchUIPreview();
       this.__snapshotsSection.addAt(snapshotPreview, 1, {
-        flex: 1
+        width: "50%"
       });
     },
 
