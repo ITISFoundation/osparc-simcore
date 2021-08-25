@@ -83,6 +83,12 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   properties: {
+    study: {
+      check: "osparc.data.model.Study",
+      init: null,
+      nullable: false
+    },
+
     key: {
       check: "String",
       nullable: true
@@ -240,8 +246,7 @@ qx.Class.define("osparc.data.model.Node", {
     __posY: null,
 
     getWorkbench: function() {
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      return study.getWorkbench();
+      return this.getStudy().getWorkbench();
     },
 
     isInKey: function(str) {
@@ -439,10 +444,9 @@ qx.Class.define("osparc.data.model.Node", {
       // create the node in the backend here
       const key = this.getKey();
       const version = this.getVersion();
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
       const params = {
         url: {
-          studyId: study.getUuid()
+          studyId: this.getStudy().getUuid()
         },
         data: {
           "service_id": this.getNodeId(),
@@ -468,10 +472,9 @@ qx.Class.define("osparc.data.model.Node", {
 
     stopInBackend: function() {
       // remove node in the backend
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
       const params = {
         url: {
-          studyId: study.getUuid(),
+          studyId: this.getStudy().getUuid(),
           nodeId: this.getNodeId()
         }
       };
@@ -648,7 +651,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.getPropsFormEditor().setAccessLevel(inputAccess);
       }
 
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const study = this.getStudy();
       if (study && study.isReadOnly() && this.getPropsForm()) {
         this.getPropsForm().setEnabled(false);
       }
@@ -1064,19 +1067,18 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
     __nodeState: function() {
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
       // Check if study is still there
-      if (study === null) {
+      if (this.getStudy() === null) {
         return;
       }
       // Check if node is still there
-      if (study.getWorkbench().getNode(this.getNodeId()) === null) {
+      if (this.getWorkbench().getNode(this.getNodeId()) === null) {
         return;
       }
 
       const params = {
         url: {
-          studyId: study.getUuid(),
+          studyId: this.getStudy().getUuid(),
           nodeId: this.getNodeId()
         }
       };
@@ -1122,8 +1124,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.getStatus().setInteractive("connecting");
         console.log("service not ready yet, waiting... " + error);
         // Check if node is still there
-        const study = osparc.store.Store.getInstance().getCurrentStudy();
-        if (study.getWorkbench().getNode(this.getNodeId()) === null) {
+        if (this.getWorkbench().getNode(this.getNodeId()) === null) {
           return;
         }
         const interval = 1000;

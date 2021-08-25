@@ -55,16 +55,19 @@ qx.Class.define("osparc.data.model.Workbench", {
     "showInLogger": "qx.event.type.Data"
   },
 
+  properties: {
+    study: {
+      check: "osparc.data.model.Study",
+      init: null,
+      nullable: false
+    }
+  },
+
   members: {
-    __study: null,
     __workbenchInitData: null,
     __workbenchUIInitData: null,
     __rootNodes: null,
     __edges: null,
-
-    setStudy: function(study) {
-      this.__study = study;
-    },
 
     buildWorkbench: function() {
       this.__rootNodes = {};
@@ -153,7 +156,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     getPathIds: function(nodeId) {
-      const study = this.__study;
+      const study = this.getStudy();
       if (study === null) {
         return [];
       }
@@ -256,6 +259,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
 
       const node = new osparc.data.model.Node(key, version, uuid);
+      this.bind("study", node, "study");
       this.addNode(node, parent);
 
       this.__initNodeSignals(node);
@@ -441,8 +445,8 @@ qx.Class.define("osparc.data.model.Workbench", {
       node.setParentNodeId(parentNode ? parentNode.getNodeId() : null);
       this.fireEvent("pipelineChanged");
       if (node.isParameter()) {
-        if (this.__study) {
-          this.__study.fireEvent("changeParameters");
+        if (this.getStudy()) {
+          this.getStudy().fireEvent("changeParameters");
         }
       }
     },
@@ -483,8 +487,9 @@ qx.Class.define("osparc.data.model.Workbench", {
         }
 
         // remove it from slideshow
-        if (this.__study) {
-          this.__study.getUi().getSlideshow().removeNode(nodeId);
+        if (this.getStudy()) {
+          this.getStudy().getUi().getSlideshow()
+            .removeNode(nodeId);
         }
 
         this.fireEvent("pipelineChanged");
@@ -552,6 +557,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           }
         }
         const node = new osparc.data.model.Node(nodeData.key, nodeData.version, nodeId);
+        this.bind("study", node, "study");
         this.__initNodeSignals(node);
         let parentNode = null;
         if (nodeData.parent) {
