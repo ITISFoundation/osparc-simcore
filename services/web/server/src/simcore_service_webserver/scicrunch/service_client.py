@@ -5,7 +5,7 @@
 """
 
 import logging
-from typing import Any, List, MutableMapping
+from typing import Any, List, MutableMapping, Optional
 
 from aiohttp import ClientSession, client_exceptions
 from pydantic import ValidationError
@@ -13,6 +13,7 @@ from servicelib.client_session import get_client_session
 from yarl import URL
 
 from ._config import SciCrunchSettings
+from ._resolver import ResolvedItem, resolve_rrid
 from ._rest import ResourceHit, autocomplete_by_name, get_resource_fields
 from .errors import (
     InvalidRRID,
@@ -91,28 +92,48 @@ class SciCrunch:
         return f"{self.settings.SCICRUNCH_RESOLVER_BASE_URL}/{rrid}"
 
     @classmethod
-    def validate_identifier(cls, rrid: str) -> str:
+    def validate_identifier(cls, rrid: str, *, for_api: bool = False) -> str:
         try:
             rrid = normalize_rrid_tags(rrid, with_prefix=False)
         except ValueError:
             raise InvalidRRID(rrid)
 
-        if not rrid.startswith("SCR_"):
+        if for_api and not rrid.startswith("SCR_"):
             # "SCR" for the SciCrunch registry of tools
             # scicrunch API does not support anything else but tools (see test_scicrunch_services.py)
             raise InvalidRRID(": only 'SCR' from scicrunch registry of tools allowed")
 
         return rrid
 
+    async def _get_resource_field_using_api(self, rrid: str):
+        # NOTE: This is currently replaced by 'resolve_rrid'.
+        # This option uses rest API which requires authentication
+        #
+        rrid = self.validate_identifier(rrid, for_api=True)
+        resource_view = await get_resource_fields(rrid, self.client, self.settings)
+
+        # convert to domain model
+        return ResearchResource(
+            rrid=resource_view.scicrunch_id,
+            name=resource_view.get_name(),
+            description=resource_view.get_description(),
+        )
+
     async def get_resource_fields(self, rrid: str) -> ResearchResource:
         try:
-            rrid = self.validate_identifier(rrid)
-            resource_view = await get_resource_fields(rrid, self.client, self.settings)
-            # convert to domain model
+            # NOTE: replaces former call to API.
+            # Resolver entrypoint does NOT require authentication
+            # and has an associated website
+            resolved: Optional[ResolvedItem] = await resolve_rrid(
+                rrid, self.client, self.settings
+            )
+            if not resolved:
+                raise InvalidRRID(rrid)
+
             return ResearchResource(
-                rrid=resource_view.scicrunch_id,
-                name=resource_view.get_name(),
-                description=resource_view.get_description(),
+                rrid=rrid,
+                name=resolved.name,
+                description=resolved.description,
             )
 
         except client_exceptions.ClientResponseError as err:
