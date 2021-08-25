@@ -15,6 +15,10 @@
 
 ************************************************************************ */
 
+/**
+ * @ignore(fetch)
+ */
+
 qx.Class.define("osparc.component.snapshots.SnapshotsView", {
   extend: qx.ui.core.Widget,
 
