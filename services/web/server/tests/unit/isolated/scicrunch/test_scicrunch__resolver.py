@@ -5,6 +5,7 @@
 
 import pytest
 from aiohttp import ClientSession
+from aiohttp.client import ClientTimeout
 from simcore_service_webserver.scicrunch._resolver import ResolvedItem, resolve_rrid
 from simcore_service_webserver.scicrunch.submodule_setup import SciCrunchSettings
 
@@ -28,7 +29,7 @@ from ._citations import (
 async def test_scicrunch_resolves_all_valid_rrids(
     name: str, rrid: str, settings: SciCrunchSettings
 ):
-    async with ClientSession() as client:
+    async with ClientSession(timeout=ClientTimeout(total=30)) as client:
         resolved = await resolve_rrid(rrid, client, settings)
 
         assert resolved
