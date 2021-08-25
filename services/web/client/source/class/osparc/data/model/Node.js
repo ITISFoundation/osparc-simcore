@@ -520,6 +520,7 @@ qx.Class.define("osparc.data.model.Node", {
     __addSettings: function(inputs) {
       const form = this.__settingsForm = new osparc.component.form.Auto(inputs);
       const propsForm = new osparc.component.form.renderer.PropForm(form, this);
+      this.bind("study", propsForm, "study");
       this.setPropsForm(propsForm);
       propsForm.addListener("linkFieldModified", e => {
         const linkFieldModified = e.getData();

@@ -38,6 +38,15 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     "changeChildVisibility": "qx.event.type.Event"
   },
 
+  properties: {
+    study: {
+      check: "osparc.data.model.Study",
+      init: null,
+      nullable: false,
+      event: "changeStudy"
+    }
+  },
+
   statics: {
     getRetrievingAtom: function() {
       return new qx.ui.basic.Atom("", "osparc/loading.gif");
@@ -119,7 +128,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       paramsMenu.add(newParamBtn);
 
       const existingParamMenu = new qx.ui.menu.Menu();
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const study = this.getStudy();
       if (study) {
         this.__populateExistingParamsMenu(portId, existingParamMenu);
         study.addListener("changeParameters", () => {
@@ -142,8 +151,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __populateExistingParamsMenu: function(fieldKey, existingParamMenu) {
       existingParamMenu.removeAll();
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      study.getParameters().forEach(paramNode => {
+      this.getStudy().getParameters().forEach(paramNode => {
         osparc.utils.Ports.arePortsCompatible(paramNode, "out_1", this.getNode(), fieldKey)
           .then(compatible => {
             if (compatible) {
@@ -310,8 +318,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           resolve(false);
           return;
         }
-        const study = osparc.store.Store.getInstance().getCurrentStudy();
-        const workbench = study.getWorkbench();
+        const workbench = this.getStudy().getWorkbench();
         const node1 = workbench.getNode(node1Id);
         const node2 = workbench.getNode(node2Id);
         if (workbench && node1 && node2) {
@@ -564,7 +571,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     addPortLink: function(toPortId, fromNodeId, fromPortId) {
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const study = this.getStudy();
       if (!study) {
         return null;
       }
