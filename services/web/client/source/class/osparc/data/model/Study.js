@@ -58,7 +58,10 @@ qx.Class.define("osparc.data.model.Study", {
     });
 
     const wbData = studyData.workbench || this.getWorkbench();
-    this.setWorkbench(new osparc.data.model.Workbench(wbData, studyData.ui));
+    const workbench = new osparc.data.model.Workbench(wbData, studyData.ui);
+    this.setWorkbench(workbench);
+    workbench.setStudy(this);
+
     this.setUi(new osparc.data.model.StudyUI(studyData.ui));
   },
 

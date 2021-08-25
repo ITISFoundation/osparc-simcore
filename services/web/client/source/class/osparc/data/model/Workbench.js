@@ -56,10 +56,15 @@ qx.Class.define("osparc.data.model.Workbench", {
   },
 
   members: {
+    __study: null,
     __workbenchInitData: null,
     __workbenchUIInitData: null,
     __rootNodes: null,
     __edges: null,
+
+    setStudy: function(study) {
+      this.__study = study;
+    },
 
     buildWorkbench: function() {
       this.__rootNodes = {};
@@ -148,7 +153,10 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     getPathIds: function(nodeId) {
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const study = this.__study;
+      if (study === null) {
+        return [];
+      }
       const studyId = study.getUuid();
       if (nodeId === studyId || nodeId === undefined) {
         return [studyId];
@@ -433,9 +441,8 @@ qx.Class.define("osparc.data.model.Workbench", {
       node.setParentNodeId(parentNode ? parentNode.getNodeId() : null);
       this.fireEvent("pipelineChanged");
       if (node.isParameter()) {
-        const study = osparc.store.Store.getInstance().getCurrentStudy();
-        if (study) {
-          study.fireEvent("changeParameters");
+        if (this.__study) {
+          this.__study.fireEvent("changeParameters");
         }
       }
     },
@@ -476,8 +483,9 @@ qx.Class.define("osparc.data.model.Workbench", {
         }
 
         // remove it from slideshow
-        const study = osparc.store.Store.getInstance().getCurrentStudy();
-        study.getUi().getSlideshow().removeNode(nodeId);
+        if (this.__study) {
+          this.__study.getUi().getSlideshow().removeNode(nodeId);
+        }
 
         this.fireEvent("pipelineChanged");
         return true;
