@@ -88,10 +88,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         const paramsMenuBtn = this.__getParamsMenuButton(field.key).set({
           visibility: "excluded"
         });
-        osparc.data.model.Sweeper.isSweeperEnabled()
-          .then(isSweeperEnabled => {
+        osparc.utils.Utils.isDevelopmentPlatform()
+          .then(areParamsEnabled => {
             field.bind("visibility", paramsMenuBtn, "visibility", {
-              converter: visibility => (visibility === "visible" && isSweeperEnabled) ? "visible" : "excluded"
+              converter: visibility => (visibility === "visible" && areParamsEnabled) ? "visible" : "excluded"
             });
           });
         return paramsMenuBtn;
