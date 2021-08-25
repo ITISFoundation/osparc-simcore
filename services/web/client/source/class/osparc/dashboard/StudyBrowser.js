@@ -507,26 +507,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(deleteButton);
       }
 
-      const previewButton = this.__getPreviewStudyMenuButton(studyData);
-      menu.addSeparator();
-      menu.add(previewButton);
-
       return menu;
-    },
-
-    __getPreviewStudyMenuButton: function(studyData) {
-      const previewButton = new qx.ui.menu.Button(this.tr("Preview"));
-      previewButton.addListener("execute", () => {
-        const study = new osparc.data.model.Study(studyData);
-        study.buildWorkbench();
-        const workbenchUIPreview = new osparc.component.workbench.WorkbenchUIPreview().set({
-          study: study
-        });
-        workbenchUIPreview.loadModel(study.getWorkbench());
-        const title = this.tr("Preview");
-        osparc.ui.window.Window.popUpInWindow(workbenchUIPreview, title, 600, 400);
-      }, this);
-      return previewButton;
     },
 
     __getSelectMenuButton: function(item) {
