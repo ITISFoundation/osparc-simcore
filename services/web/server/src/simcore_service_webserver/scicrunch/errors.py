@@ -12,23 +12,26 @@ class ScicrunchError(Exception):
 
 
 class ScicrunchServiceError(ScicrunchError):
-    # service down
-    # requests time-out
-    # not reachable (e.g. network slow)
-    pass
+    """Typically raised when
+    - service down
+    - requests time-out
+    - not reachable (e.g. network slow)
+    """
 
 
 class ScicrunchAPIError(ScicrunchError):
-    # service API changed?
-    # ValidationError in response
-    # Different entrypoint?
-    pass
+    """Typically raised when
+    - service API changed
+    - ValidatinError in response
+    - Different entrypoint
+    """
 
 
 class ScicrunchConfigError(ScicrunchError):
-    # wrong token?
-    # wrong formatting?
-    pass
+    """Typicall raised when
+    - Invalid token
+    - submodule disabled
+    """
 
 
 class InvalidRRID(ScicrunchError):
@@ -42,15 +45,17 @@ def map_to_scicrunch_error(rrid: str, error_code: int, message: str) -> Scicrunc
 
     custom_error = ScicrunchError("Unexpected error in scicrunch.org")
 
-    if error_code in (
-        web_exceptions.HTTPBadRequest.status_code,
-        web_exceptions.HTTPNotFound.status_code,
-    ):
+    if error_code == web_exceptions.HTTPBadRequest.status_code:
         custom_error = InvalidRRID(rrid)
 
+    elif error_code == web_exceptions.HTTPNotFound.status_code:
+        custom_error = InvalidRRID(f". Did not find any '{rrid}'")
+
     elif error_code == web_exceptions.HTTPUnauthorized.status_code:
-        # might not have correct cookie?
-        custom_error = ScicrunchConfigError("scicrunch.org authentication failed")
+        custom_error = ScicrunchConfigError(
+            "osparc was not authorized to access scicrunch.org."
+            "Please check API access tokens."
+        )
 
     elif error_code >= 500:  # scicrunch.org server error
         custom_error = ScicrunchServiceError(
