@@ -63,10 +63,12 @@ def num_available_gpus() -> int:
                 if not container:
                     return 0
 
-                container_data = await container.wait(timeout=30)
+                container_data = await container.wait(timeout=10)
                 container_logs = await container.log(stdout=True, stderr=True)
                 num_gpus = (
-                    len(container_logs) if container_data["StatusCode"] == 0 else 0
+                    len(container_logs)
+                    if container_data.setdefault("StatusCode", 127) == 0
+                    else 0
                 )
                 logger.debug(
                     "testing for GPU presence with docker run %s %s completed with status code %s, found %d gpus:\nlogs:\n%s",
@@ -76,8 +78,12 @@ def num_available_gpus() -> int:
                     num_gpus,
                     pformat(container_logs),
                 )
+            except asyncio.TimeoutError as err:
+                logger.warning(
+                    "num_gpus timedout while check-run %s: %s", spec_config, err
+                )
             except aiodocker.exceptions.DockerError as err:
-                logger.debug(
+                logger.warning(
                     "num_gpus DockerError while check-run %s: %s", spec_config, err
                 )
             finally:
