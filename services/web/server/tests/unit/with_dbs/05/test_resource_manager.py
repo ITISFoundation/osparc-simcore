@@ -437,10 +437,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     exp_save_state: bool,
     mocker: MockerFixture,
 ):
-    _LONG_SERVICE_DELETION_DELAY = (
-        SERVICE_DELETION_DELAY + 5
-    )  # special long one here, cause the CI is slow
-    set_service_deletion_delay(_LONG_SERVICE_DELETION_DELAY, client.server.app)
+    set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
 
     # login - logged_user fixture
     # create empty study - empty_user_project fixture
@@ -468,9 +465,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     # We have no mock-up for the heatbeat...
     await sio.disconnect()
     assert not sio.sid
-    await asyncio.sleep(
-        _LONG_SERVICE_DELETION_DELAY / 2.0
-    )  # let the thread call the method
+    await asyncio.sleep(0.5)  # let the thread call the method
     socket_project_state_update_mock_callable.assert_called_with(
         json.dumps(
             {
@@ -493,7 +488,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     # open project in second client
     await open_project(client, empty_user_project["uuid"], client_session_id2)
     # ensure sufficient time is wasted here
-    await asyncio.sleep(_LONG_SERVICE_DELETION_DELAY + 1)
+    await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await garbage_collector.collect_garbage(client.app)
     # assert dynamic service is still around
     mocked_director_v2_api["director_v2.stop_service"].assert_not_called()
@@ -505,7 +500,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     # reconnect websocket
     sio2 = await socketio_client_factory(client_session_id2)
     # it should still be there even after waiting for auto deletion from garbage collector
-    await asyncio.sleep(_LONG_SERVICE_DELETION_DELAY + 1)
+    await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await garbage_collector.collect_garbage(client.app)
     mocked_director_v2_api["director_v2.stop_service"].assert_not_called()
     # now really disconnect
@@ -513,7 +508,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     assert not sio2.sid
     # run the garbage collector
     # event after waiting some time
-    await asyncio.sleep(_LONG_SERVICE_DELETION_DELAY + 1)
+    await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await garbage_collector.collect_garbage(client.app)
     # assert dynamic service is gone
     calls = [
