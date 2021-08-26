@@ -23,7 +23,7 @@ log = logging.getLogger(__file__)
 
 
 @app_module_setup(
-    __name__,
+    "simcore_service_webserver.clusters",
     ModuleCategory.ADDON,
     depends=["simcore_service_webserver.groups"],
     logger=log,
