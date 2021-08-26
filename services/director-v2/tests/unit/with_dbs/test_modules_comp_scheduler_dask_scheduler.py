@@ -29,7 +29,6 @@ from simcore_service_director_v2.models.domains.comp_pipelines import CompPipeli
 from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.models.schemas.constants import UserID
-from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
     BaseCompScheduler,
 )
@@ -266,12 +265,8 @@ async def test_proper_pipeline_is_scheduled(
         user_id=user_id,
         project_id=sleepers_project.uuid,
         tasks={
-            "3a710d8b-565c-5f46-870b-b45ebe195fc7": NodeRequirements(
-                CPU=1.0, GPU=0, RAM="128 MiB", MPI=0
-            ),
-            "e1e2ea96-ce8f-5abc-8712-b8ed312a782c": NodeRequirements(
-                CPU=1.0, GPU=0, RAM="128 MiB", MPI=0
-            ),
+            f"{sleeper_tasks[1].node_id}": sleeper_tasks[1].image,
+            f"{sleeper_tasks[3].node_id}": sleeper_tasks[3].image,
         },
         callback=scheduler._wake_up_scheduler_now,
     )
@@ -317,9 +312,7 @@ async def test_proper_pipeline_is_scheduled(
         user_id=user_id,
         project_id=sleepers_project.uuid,
         tasks={
-            "415fefd1-d08b-53c1-adb0-16bed3a687ef": NodeRequirements(
-                CPU=1.0, GPU=0, RAM="128 MiB", MPI=0
-            )
+            f"{sleeper_tasks[2].node_id}": sleeper_tasks[2].image,
         },
         callback=scheduler._wake_up_scheduler_now,
     )

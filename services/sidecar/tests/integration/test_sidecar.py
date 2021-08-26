@@ -20,6 +20,7 @@ from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.storage_models import projects, users
 from simcore_service_sidecar import config, utils
+from simcore_service_sidecar.boot_mode import BootMode
 from yarl import URL
 
 SIMCORE_S3_ID = 0
@@ -476,7 +477,9 @@ async def test_run_services(
     # run nodes
     for node_id in pipeline_cfg:
         job_id += 1
-        await cli.run_sidecar(job_id, user_id, project_id, node_id)
+        await cli.run_sidecar(
+            job_id, user_id, project_id, node_id, sidecar_mode=BootMode.CPU
+        )
 
     await asyncio.sleep(15)  # wait a little bit for logs to come in
     _sidecar_logs, tasks_logs, _progress_logs = await _assert_incoming_data_logs(
