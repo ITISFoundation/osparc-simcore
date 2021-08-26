@@ -320,13 +320,8 @@ class DynamicSidecarsScheduler:
 
         logger.warning("Scheduler was shut down")
 
-    async def start(self) -> None:
-        # run as a background task
-        logging.info("Starting dynamic-sidecar scheduler")
-        self._keep_running = True
-        self._scheduler_task = asyncio.create_task(self._run_scheduler_task())
-
-        # discover all services which were started before and add them to the scheduler
+    async def _discover_running_services(self) -> None:
+        """discover all services which were started before and add them to the scheduler"""
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
@@ -344,6 +339,14 @@ class DynamicSidecarsScheduler:
                 port=dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
             )
             await self.add_service(scheduler_data)
+
+    async def start(self) -> None:
+        # run as a background task
+        logging.info("Starting dynamic-sidecar scheduler")
+        self._keep_running = True
+        self._scheduler_task = asyncio.create_task(self._run_scheduler_task())
+
+        await self._discover_running_services()
 
     async def shutdown(self):
         logging.info("Shutting down dynamic-sidecar scheduler")
