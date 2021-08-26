@@ -319,7 +319,11 @@ class ProjectDBAPI:
 
         async with self.engine.acquire() as conn:
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
-            groups_array = ", ".join(f"'{group.gid}'" for group in user_groups)
+            groups_array = (
+                "array[]::text[]"
+                if len(user_groups) == 0
+                else ", ".join(f"'{group.gid}'" for group in user_groups)
+            )
 
             query = (
                 select([projects])
@@ -443,6 +447,12 @@ class ProjectDBAPI:
         user_groups: List[RowProxy] = await self.__load_user_groups(connection, user_id)
 
         # NOTE: in order to use specific postgresql function jsonb_exists_any we use raw call here
+
+        access_rights_array = (
+            "array[]::text[]"
+            if len(user_groups) == 0
+            else f"""array[{', '.join(f"'{group.gid}'" for group in user_groups)}]"""
+        )
         query = textwrap.dedent(
             f"""\
             SELECT *
@@ -450,7 +460,7 @@ class ProjectDBAPI:
             WHERE
             {"" if include_templates else "projects.type != 'TEMPLATE' AND"}
             uuid = '{project_uuid}'
-            AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
+            AND (jsonb_exists_any(projects.access_rights, {access_rights_array})
             OR prj_owner = {user_id})
             {"FOR UPDATE" if for_update else ""}
             """
