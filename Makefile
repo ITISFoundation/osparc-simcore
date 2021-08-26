@@ -619,6 +619,7 @@ clean-more: ## cleans containers and unused volumes
 	@$(if $(_running_containers), docker rm --force $(_running_containers),)
 	# pruning unused volumes
 	docker volume prune --force
+	docker buildx prune --force
 
 clean-images: ## removes all created images
 	# Cleaning all service images
