@@ -182,6 +182,14 @@ def _find_changed_dict_keys(
 # FIXME: not clear when data is schema-compliant and db-compliant
 
 
+def _assemble_array_groups(user_groups: List[RowProxy]) -> str:
+    return (
+        "array[]::text[]"
+        if len(user_groups) == 0
+        else f"""array[{', '.join(f"'{group.gid}'" for group in user_groups)}]"""
+    )
+
+
 class ProjectDBAPI:
     def __init__(self, app: web.Application):
         # TODO: shall be a weak pointer since it is also contained by app??
@@ -319,11 +327,6 @@ class ProjectDBAPI:
 
         async with self.engine.acquire() as conn:
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
-            groups_array = (
-                "array[]::text[]"
-                if len(user_groups) == 0
-                else ", ".join(f"'{group.gid}'" for group in user_groups)
-            )
 
             query = (
                 select([projects])
@@ -345,7 +348,7 @@ class ProjectDBAPI:
                     )
                     & (
                         sa.text(
-                            f"jsonb_exists_any(projects.access_rights, array[{groups_array}])"
+                            f"jsonb_exists_any(projects.access_rights, {_assemble_array_groups(user_groups)}"
                         )
                         | (projects.c.prj_owner == user_id)
                     )
@@ -448,11 +451,6 @@ class ProjectDBAPI:
 
         # NOTE: in order to use specific postgresql function jsonb_exists_any we use raw call here
 
-        access_rights_array = (
-            "array[]::text[]"
-            if len(user_groups) == 0
-            else f"""array[{', '.join(f"'{group.gid}'" for group in user_groups)}]"""
-        )
         query = textwrap.dedent(
             f"""\
             SELECT *
@@ -460,7 +458,7 @@ class ProjectDBAPI:
             WHERE
             {"" if include_templates else "projects.type != 'TEMPLATE' AND"}
             uuid = '{project_uuid}'
-            AND (jsonb_exists_any(projects.access_rights, {access_rights_array})
+            AND (jsonb_exists_any(projects.access_rights, {_assemble_array_groups(user_groups)})
             OR prj_owner = {user_id})
             {"FOR UPDATE" if for_update else ""}
             """
