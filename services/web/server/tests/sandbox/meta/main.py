@@ -497,9 +497,11 @@ def list_project_parameters(
 #
 #
 # SEE
-#  - http://git-scm.com/docs/git
+#  - https://www.talentica.com/blogs/explanation-git-design-principles-git-internals/
 #  - https://gandalf.readthedocs.io/en/latest/api.html
 #  - https://github.com/hulu/restfulgit#readme
+#  - http://git-scm.com/docs/git
+#
 #
 
 
@@ -705,4 +707,4 @@ the_app = create_app(
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("projects_openapi_generator:the_app", reload=True, log_level="debug")
+    uvicorn.run("main:the_app", reload=True, log_level="debug")
