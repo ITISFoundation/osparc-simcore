@@ -76,9 +76,7 @@ ROLES_PERMISSIONS = {
         "inherits": [UserRole.GUEST, UserRole.ANONYMOUS],
     },
     UserRole.TESTER: {
-        "can": [
-            "diagnostics.read",
-        ],
+        "can": ["diagnostics.read", "clusters.*"],
         "inherits": [UserRole.USER],
     },
     UserRole.ADMIN: {
