@@ -2,7 +2,7 @@ import asyncio
 import logging
 import zipfile
 from pathlib import Path
-from typing import Iterator, List, Set, Union
+from typing import Iterator, Optional, Set, Tuple, Union
 
 from servicelib.pools import non_blocking_process_pool_executor
 
@@ -110,7 +110,7 @@ async def unarchive_dir(
                 for zip_entry in zip_file_handler.infolist()
             ]
 
-            extracted_paths: List[Path] = await asyncio.gather(*tasks)
+            extracted_paths: Tuple[Path] = await asyncio.gather(*tasks)
 
             # NOTE: extracted_paths includes all tree leafs, which might include files and empty folders
             return set(
@@ -122,7 +122,7 @@ async def unarchive_dir(
 
 def _serial_add_to_archive(
     dir_to_compress: Path, destination: Path, compress: bool, store_relative_path: bool
-) -> Union[None, Exception]:
+) -> Optional[Exception]:
     try:
         compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
         with zipfile.ZipFile(
