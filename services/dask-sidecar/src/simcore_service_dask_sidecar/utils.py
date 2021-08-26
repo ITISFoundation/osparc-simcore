@@ -21,12 +21,17 @@ def cluster_id() -> Optional[str]:
         async with aiodocker.Docker() as docker:
             docker_system_info = await docker.system.info()
         node_labels = docker_system_info.get("Labels", [])
-        node_labels_dict = {}
+
         for entry in node_labels:
-            key, value = str(entry).split("=", maxsplit=2)
-            if key and value:
-                node_labels_dict[key] = value
-        return node_labels_dict.get("cluster_id")
+            try:
+                key, value = f"{entry}".split("=", maxsplit=1)
+                if key == "cluster_id" and value:
+                    return value
+            except ValueError:
+                logger.warning(
+                    "The docker engine labels are not following the pattern `key=value`. Please check %s",
+                    entry,
+                )
 
     return wrap_async_call(async_get_engine_cluster_id())
 
