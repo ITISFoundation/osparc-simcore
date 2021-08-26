@@ -5,10 +5,8 @@
 import logging
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Union
 
-from pydantic import BaseModel, Field, constr, validator
-from yarl import URL
+from pydantic import BaseModel, Field, validator
 
 logger = logging.getLogger(__name__)
 
@@ -45,11 +43,17 @@ def normalize_rrid_tags(rrid_tag: str, *, with_prefix: bool = True) -> str:
         raise ValueError(f"'{rrid_tag}' does not match a RRID pattern")
 
 
+class ResourceHit(BaseModel):
+    rrid: str = Field(..., alias="rid")
+    name: str
+
+
 # webserver API models -----------------------------------------
 class ResearchResource(BaseModel):
-    rrid: constr(regex=STRICT_RRID_PATTERN) = Field(
+    rrid: str = Field(
         ...,
         description="Unique identifier used as classifier, i.e. to tag studies and services",
+        regex=STRICT_RRID_PATTERN,
     )
     name: str
     description: str
@@ -68,54 +72,3 @@ class ResearchResource(BaseModel):
 class ResearchResourceAtdB(ResearchResource):
     creation_date: datetime
     last_change_date: datetime
-
-
-# scrunch service API models -----------------------------------
-#
-# NOTE: These models are a trucated version of the data payload for a scicrunch response.#
-# NOTE: Examples of complete responsens can be found in test_scicrunch.py::mock_scicrunch_service_api
-class FieldItem(BaseModel):
-    field_name: str = Field(..., alias="field")
-    required: bool
-    value: Union[str, None, List[Any]] = None
-
-
-class ResourceView(BaseModel):
-    resource_fields: List[FieldItem] = Field([], alias="fields")
-    version: int
-    curation_status: str
-    last_curated_version: int
-    scicrunch_id: str
-
-    @classmethod
-    def from_response_payload(cls, payload: Dict):
-        assert payload["success"] == True  # nosec
-        return cls(**payload["data"])
-
-    @property
-    def is_curated(self) -> bool:
-        return self.curation_status.lower() == "curated"
-
-    def _get_field(self, fieldname: str):
-        for field in self.resource_fields:
-            if field.field_name == fieldname:
-                return field.value
-        raise ValueError(f"Cannot file expected field {fieldname}")
-
-    def get_name(self):
-        return str(self._get_field("Resource Name"))
-
-    def get_description(self):
-        return str(self._get_field("Description"))
-
-    def get_resource_url(self):
-        return URL(str(self._get_field("Resource URL")))
-
-
-class ResourceHit(BaseModel):
-    rrid: str = Field(..., alias="rid")
-    name: str
-
-
-class ListOfResourceHits(BaseModel):
-    __root__: List[ResourceHit]

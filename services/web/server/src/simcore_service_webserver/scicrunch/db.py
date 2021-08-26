@@ -12,7 +12,7 @@ from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.scicrunch_resources import scicrunch_resources
 from sqlalchemy.dialects.postgresql import insert as sa_pg_insert
 
-from .scicrunch_models import ResearchResource, ResearchResourceAtdB
+from .models import ResearchResource, ResearchResourceAtdB
 
 logger = logging.getLogger(__name__)
 
