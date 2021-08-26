@@ -1,0 +1,213 @@
+{
+  "hits": {
+    "total": 1,
+    "hits": [
+      {
+        "_source": {
+          "item": {
+            "supercategory": [
+              {
+                "type": "supercategory",
+                "name": "Resource"
+              }
+            ],
+            "contentTypes": [
+              {
+                "name": "product",
+                "curie": "ilx:0381348"
+              }
+            ],
+            "language": "en",
+            "name": "o\u00b2S\u00b2PARC",
+            "types": [
+              {
+                "name": "Resource"
+              },
+              {
+                "name": "software resource"
+              },
+              {
+                "name": "software application"
+              },
+              {
+                "name": "simulation software"
+              },
+              {
+                "type": "category"
+              },
+              {
+                "type": "category"
+              },
+              {
+                "type": "category"
+              },
+              {
+                "type": "category"
+              }
+            ],
+            "alternateIdentifiers": [
+              {
+                "identifier": ""
+              }
+            ],
+            "identifier": "SCR_018997",
+            "docid": "rrid:scr_018997",
+            "uuid": "de333517-cb5b-582a-a6a4-a899259a7a55",
+            "status": "Last checked down",
+            "abbreviations": [
+              {
+                "name": "osparc"
+              }
+            ],
+            "synonyms": [
+              {
+                "name": "open online Simulation platform for Stimulating Peripheral Activity to Relieve Conditions"
+              }
+            ],
+            "keywords": [
+              {
+                "keyword": "SPARC"
+              },
+              {
+                "keyword": "SPARC computational model"
+              },
+              {
+                "keyword": "data sharing"
+              },
+              {
+                "keyword": "model coupling"
+              },
+              {
+                "keyword": "cloud based execution"
+              },
+              {
+                "keyword": "data visualization"
+              },
+              {
+                "keyword": "data analysis"
+              },
+              {
+                "keyword": "peripheral nervous system"
+              },
+              {
+                "keyword": "organ functional response"
+              }
+            ],
+            "curie": "SCR:018997",
+            "availability": [
+              {
+                "description": "Free, Freely available",
+                "keyword": "Free, Freely available"
+              }
+            ],
+            "description": "Simulation platform that enables users to create, access, tune, and run models or computational algorithms through web based interface. Web interactive simulation platform that hosts SPARC computational models and solvers.  Allows collaborative development and sharing, model coupling and cloud based execution, data visualization and analysis, and ensures sustainability of computational models developed within SPARC. Enables users to create predictive, multiscale, multi-physics models spanning from modulation sources acting on peripheral nervous system (PNS) to resulting modulation of organ functional response."
+          },
+          "authority": {
+            "name": "SciCrunch Registry"
+          },
+          "distributions": {
+            "current": [
+              {
+                "type": "landing page",
+                "uri": "https:\/\/docs.osparc.io\/#"
+              }
+            ],
+            "alternate": [
+              {
+                "uri": ""
+              }
+            ],
+            "deprecated": [
+              {
+                "uri": ""
+              }
+            ]
+          },
+          "rrid": {
+            "is_unique": "true",
+            "curie": "RRID:SCR_018997",
+            "properCitation": "o\u00b2S\u00b2PARC (RRID:SCR_018997)"
+          },
+          "graph": {
+            "related": [
+              {
+                "name": ""
+              }
+            ],
+            "child": [
+              {
+                "name": ""
+              }
+            ],
+            "parent": [
+              {
+                "name": ""
+              }
+            ]
+          },
+          "references": [
+            {
+              "curie": ""
+            }
+          ],
+          "diseases": {
+            "related": [
+              {
+                "name": ""
+              },
+              {
+                "role": "Related Disease"
+              }
+            ]
+          },
+          "supportingAwards": [
+            {
+              "agency": {
+                "name": ""
+              }
+            }
+          ],
+          "disco": {
+            "v_uuid": "809fab1f-ef98-5f56-8239-b87ffee728eb"
+          },
+          "organisms": {
+            "related": [
+              {
+                "role": "Related Species"
+              },
+              {
+                "species": {
+                  "name": ""
+                }
+              }
+            ]
+          },
+          "mentions": [
+            {
+              "totalRRIDMentions": {
+                "count": 0
+              },
+              "totalResourceMentions": {
+                "count": 0
+              },
+              "totalMentions": {
+                "count": 0
+              },
+              "availability": {
+                "keyword": ""
+              },
+              "timestamp": "2021-03-18 18:38:25.0"
+            }
+          ],
+          "organization": {
+            "hierarchy": []
+          }
+        }
+      }
+    ]
+  },
+  "resolver": {
+    "uri": "scicrunch.org\/resolver",
+    "timestamp": "2021-08-25T02:51:33-07:00"
+  }
+}

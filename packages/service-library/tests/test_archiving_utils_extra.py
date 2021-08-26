@@ -146,7 +146,7 @@ async def test_override_and_prune_from_archive(
     )
 
     # archive new_state_dir -> download.zip
-    assert await archive_dir(
+    await archive_dir(
         dir_to_compress=new_state_dir,
         destination=download_file,
         compress=compress,
