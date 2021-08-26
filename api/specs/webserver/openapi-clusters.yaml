@@ -37,9 +37,9 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /clusters/{id}:
+  /clusters/{cluster_id}:
     parameters:
-      - name: id
+      - name: cluster_id
         in: path
         required: true
         schema:

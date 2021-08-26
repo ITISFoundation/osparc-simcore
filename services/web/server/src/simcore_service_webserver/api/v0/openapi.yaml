@@ -15976,7 +15976,7 @@ paths:
                         status: 400
   '/clusters/{id]}':
     parameters:
-      - name: id
+      - name: cluster_id
         in: path
         required: true
         schema:
