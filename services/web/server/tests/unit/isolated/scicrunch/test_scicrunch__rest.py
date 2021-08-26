@@ -14,23 +14,22 @@
 """
 
 import os
-import re
 from pprint import pprint
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import pytest
 from aiohttp import ClientResponseError, ClientSession, web
 from simcore_service_webserver.scicrunch._config import SCICRUNCH_DEFAULT_URL
-from simcore_service_webserver.scicrunch.scicrunch_models import (
+from simcore_service_webserver.scicrunch._rest import (
     ListOfResourceHits,
     ResourceView,
-)
-from simcore_service_webserver.scicrunch.service_client import (
     autocomplete_by_name,
     get_all_versions,
     get_resource_fields,
 )
 from simcore_service_webserver.scicrunch.submodule_setup import SciCrunchSettings
+
+from ._citations import NOT_TOOL_CITATIONS, TOOL_CITATIONS
 
 SCICRUNCH_API_KEY = os.environ.get("SCICRUNCH_API_KEY")
 
@@ -41,60 +40,6 @@ pytestmark = pytest.mark.skipif(
         " Set environment valid SCICRUNCH_API_KEY to reactivate"
     ),
 )
-
-# Citations according to https://scicrunch.org/resources -------------------
-"""
-    NOTES:
-
-    - scicrunch API ONLY recognizes RRIDs from SciCrunch registry of tools (i.e. with prefix "SCR")
-    - scicrunch web search handles ALL RRIDs (see below example of citations from other)
-    - scicrunch API does NOT uses 'RRID:' prefix in rrid request parameters
-
-"""
-
-
-def split_citations(citations: List[str]) -> List[Tuple[str, str]]:
-    def _split(citation: str) -> Tuple[str, str]:
-        if "," not in citation:
-            citation = citation.replace("(", "(,")
-        name, rrid = re.match(r"^\((.*),\s*RRID:(.+)\)$", citation).groups()
-        return name, rrid
-
-    return list(map(_split, citations))
-
-
-# http://antibodyregistry.org/AB_90755
-ANTIBODY_CITATIONS = split_citations(["(Millipore Cat# AB1542, RRID:AB_90755)"])
-
-# https://www.addgene.org/44362/
-PLAMID_CITATIONS = split_citations(["(RRID:Addgene_44362)"])
-
-#  MMRRC, catalog https://www.mmrrc.org/catalog/cellLineSDS.php?mmrrc_id=26409
-ORGANISM_CITATIONS = split_citations(["(MMRRC Cat# 026409-UCD, RRID:MMRRC_026409-UCD)"])
-
-# https://web.expasy.org/cellosaurus/CVCL_0033
-CELL_LINE_CITATIONS = split_citations(["(NCBI_Iran Cat# C207, RRID:CVCL_0033)"])
-
-# https://scicrunch.org/resources/Tools/search?q=SCR_018315&l=SCR_018315
-TOOL_CITATIONS = split_citations(
-    [
-        "(CellProfiler Image Analysis Software, RRID:SCR_007358)",
-        "(Jupyter Notebook, RRID:SCR_018315)",
-        "(Python Programming Language, RRID:SCR_008394)",
-        "(GNU Octave, RRID:SCR_014398)",
-        "(o²S²PARC, RRID:SCR_018997)",
-    ]
-)
-
-
-NOT_TOOL_CITATIONS = (
-    ANTIBODY_CITATIONS + PLAMID_CITATIONS + ORGANISM_CITATIONS + CELL_LINE_CITATIONS
-)
-
-
-@pytest.fixture
-async def settings(loop) -> SciCrunchSettings:
-    return SciCrunchSettings(api_key=SCICRUNCH_API_KEY)
 
 
 async def test_scicrunch_openapi_specs(settings: SciCrunchSettings):
@@ -107,7 +52,7 @@ async def test_scicrunch_openapi_specs(settings: SciCrunchSettings):
         assert openapi_specs["info"]["version"] == expected_api_version
 
         assert (
-            str(settings.api_base_url)
+            str(settings.SCICRUNCH_API_BASE_URL)
             == f"{SCICRUNCH_DEFAULT_URL}/api/{expected_api_version}"
         )
 
