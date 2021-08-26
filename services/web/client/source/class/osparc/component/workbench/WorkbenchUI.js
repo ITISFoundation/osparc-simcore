@@ -934,12 +934,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__svgWidgetWorkbench.getReady()) {
         this._loadModel(model);
       } else {
-        /*
         this.__svgWidgetWorkbench.addListenerOnce("SvgWidgetReady", () => {
           this._loadModel(model);
         }, this);
-        */
-        setTimeout(() => this._loadModel(model), 300);
       }
     },
 
