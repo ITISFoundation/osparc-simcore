@@ -158,9 +158,10 @@ async def archive_dir(
     dir_to_compress: Path, destination: Path, compress: bool, store_relative_path: bool
 ) -> None:
     """
-    When archiving, surrogates in filenames will be escaped because zipfile
-    does not like them.
-    When unarchiveing, the escaped version of the files will be contained.
+    When archiving, undecodable bytes in filenames will be escaped,
+    zipfile does not like them.
+    When unarchiveing, the **escaped version** of the file names
+    will be created.
     """
     with non_blocking_process_pool_executor(max_workers=1) as pool:
         add_to_archive_error: Union[
