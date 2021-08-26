@@ -15974,7 +15974,7 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
-  '/clusters/{id]}':
+  '/clusters/{cluster_id}':
     parameters:
       - name: cluster_id
         in: path

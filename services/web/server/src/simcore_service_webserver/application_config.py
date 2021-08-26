@@ -95,6 +95,7 @@ def create_schema() -> T.Dict:
             addon_section("studies_dispatcher", optional=True): minimal_addon_schema(),
             addon_section("exporter", optional=True): minimal_addon_schema(),
             addon_section("snapshots", optional=True): minimal_addon_schema(),
+            addon_section("clusters", optional=True): minimal_addon_schema(),
         }
     )
 
