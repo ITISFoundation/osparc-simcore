@@ -348,7 +348,7 @@ class ProjectDBAPI:
                     )
                     & (
                         sa.text(
-                            f"jsonb_exists_any(projects.access_rights, {_assemble_array_groups(user_groups)}"
+                            f"jsonb_exists_any(projects.access_rights, {_assemble_array_groups(user_groups)})"
                         )
                         | (projects.c.prj_owner == user_id)
                     )
