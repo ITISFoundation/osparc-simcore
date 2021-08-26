@@ -117,19 +117,19 @@ def full_file_path_from_dir_and_subdirs(dir_path: Path) -> List[Path]:
     return [x for x in dir_path.rglob("*") if x.is_file()]
 
 
-def _escape_surrogates_str(s: str) -> str:
+def _escape_undecodable_str(s: str) -> str:
     return s.encode(errors="replace").decode("utf-8")
 
 
-def _escape_surrogates_path(path: Path) -> Path:
-    return Path(_escape_surrogates_str(str(path)))
+def _escape_undecodable_path(path: Path) -> Path:
+    return Path(_escape_undecodable_str(str(path)))
 
 
 async def assert_same_directory_content(
     dir_to_compress: Path,
     output_dir: Path,
     inject_relative_path: Path = None,
-    surrogate_replace: bool = False,
+    undecodable_replace: bool = False,
 ) -> None:
     def _relative_path(input_path: Path) -> Path:
         return Path(str(inject_relative_path / str(input_path))[1:])
@@ -137,8 +137,8 @@ async def assert_same_directory_content(
     input_set = get_all_files_in_dir(dir_to_compress)
     output_set = get_all_files_in_dir(output_dir)
 
-    if surrogate_replace:
-        input_set = {_escape_surrogates_path(x) for x in input_set}
+    if undecodable_replace:
+        input_set = {_escape_undecodable_path(x) for x in input_set}
 
     if inject_relative_path is not None:
         input_set = {_relative_path(x) for x in input_set}
@@ -156,7 +156,7 @@ async def assert_same_directory_content(
         ).items()
     }
     dir_to_compress_hashes = {
-        _escape_surrogates_path(k): v for k, v in dir_to_compress_hashes.items()
+        _escape_undecodable_path(k): v for k, v in dir_to_compress_hashes.items()
     }
 
     # computing the hashes for output_dir and map in a dict
@@ -182,7 +182,7 @@ def assert_unarchived_paths(
     src_dir: Path,
     dst_dir: Path,
     is_saved_as_relpath: bool,
-    surrogate_replace: bool = False,
+    undecodable_replace: bool = False,
 ):
     is_file_or_emptydir = lambda p: p.is_file() or (p.is_dir() and not any(p.glob("*")))
 
@@ -203,8 +203,8 @@ def assert_unarchived_paths(
         for f in src_dir.rglob("*")
         if is_file_or_emptydir(f)
     )
-    if surrogate_replace:
-        expected_tails = {_escape_surrogates_str(x) for x in expected_tails}
+    if undecodable_replace:
+        expected_tails = {_escape_undecodable_str(x) for x in expected_tails}
     assert got_tails == expected_tails
 
 
@@ -331,12 +331,12 @@ async def test_regression_unsupported_characters(
         src_dir=dir_to_archive,
         dst_dir=dst_dir,
         is_saved_as_relpath=store_relative_path,
-        surrogate_replace=True,
+        undecodable_replace=True,
     )
 
     await assert_same_directory_content(
         dir_to_compress=dir_to_archive,
         output_dir=dst_dir,
         inject_relative_path=None if store_relative_path else dir_to_archive,
-        surrogate_replace=True,
+        undecodable_replace=True,
     )
