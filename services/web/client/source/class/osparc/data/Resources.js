@@ -128,6 +128,7 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/projects/{studyId}"
           },
           addNode: {
+            useCache: false,
             method: "POST",
             url: statics.API + "/projects/{studyId}/nodes"
           },
@@ -137,16 +138,49 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}"
           },
           deleteNode: {
+            useCache: false,
             method: "DELETE",
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}"
           },
           addTag: {
+            useCache: false,
             method: "PUT",
             url: statics.API + "/projects/{studyId}/tags/{tagId}"
           },
           removeTag: {
+            useCache: false,
             method: "DELETE",
             url: statics.API + "/projects/{studyId}/tags/{tagId}"
+          }
+        }
+      },
+      /*
+       * SNAPSHOTS
+       */
+      "snapshots": {
+        idField: "uuid",
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/snapshots"
+          },
+          getPage: {
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/snapshots?offset={offset}&limit={limit}"
+          },
+          getOne: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/snapshots/{snapshotId}"
+          },
+          getParameters: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/snapshots/{snapshotId}/parameters"
+          },
+          takeSnapshot: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/snapshots?snapshot_label={snapshot_label}"
           }
         }
       },
