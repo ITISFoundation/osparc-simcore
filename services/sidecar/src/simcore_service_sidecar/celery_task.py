@@ -43,10 +43,10 @@ def _shared_task_dispatch(
                 user_id,
                 project_id,
                 node_id,
-                celery_request.is_aborted,
+                sidecar_mode=celery_request.app.conf.osparc_sidecar_bootmode,
+                is_aborted_cb=celery_request.is_aborted,
                 retry=celery_request.request.retries,
                 max_retries=celery_request.max_retries,
-                sidecar_mode=celery_request.app.conf.osparc_sidecar_bootmode,
             )
         )
     except CancelledError:
