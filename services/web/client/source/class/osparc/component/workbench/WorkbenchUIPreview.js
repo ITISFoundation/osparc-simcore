@@ -62,7 +62,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
           this._addNodeUIToWorkbench(nodeUI, node.getPosition());
         }
 
-        /*
         // create edges
         for (const nodeId in nodes) {
           const node = nodes[nodeId];
@@ -77,9 +76,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
             }
           });
         }
-        */
 
-        // this.setScale(0.25);
+        this.setScale(0.25);
       }
     }
   }

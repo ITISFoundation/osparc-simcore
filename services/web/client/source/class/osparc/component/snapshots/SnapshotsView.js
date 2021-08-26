@@ -103,10 +103,10 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
               const studyData = data["data"];
               const study = new osparc.data.model.Study(studyData);
               study.buildWorkbench();
-              const workbenchUIPreview = new osparc.component.workbench.WorkbenchUIPreview().set({
+              this.__snapshotPreview.set({
                 study: study
               });
-              workbenchUIPreview.loadModel(study.getWorkbench());
+              this.__snapshotPreview.loadModel(study.getWorkbench());
             });
         });
     },
