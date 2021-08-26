@@ -179,6 +179,13 @@ class ProjectDetail(BaseModel):
         # replace ALL references
 
 
+class WorkbenchView(BaseModel):
+    """A view (i.e. read-only and visual) of the project's workbench"""
+
+    workbench: Dict[UUID, Node] = {}
+    ui: Dict[UUID, Any] = {}
+
+
 # --------------
 
 
@@ -261,7 +268,9 @@ def create_app(routers: List[APIRouter]) -> FastAPI:
 _PROJECTS: Dict[UUID, Project] = {}
 
 
-def get_valid_project(project_uuid: UUID = PathParam(...)) -> UUID:
+def get_valid_project(
+    project_uuid: UUID = PathParam(..., description="Project unique identifier")
+) -> UUID:
     if project_uuid not in _PROJECTS:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Project does not exists"
@@ -513,26 +522,7 @@ class Repo(BaseModel):
     url: HttpUrl
 
 
-class CommitRef(BaseModel):
-    sha: str  #
-    url: HttpUrl
-
-
-class Commit(CommitRef):
-    author: Author
-    created_at: datetime
-    message: str
-    parents: List[CommitRef]
-
-
-class Tag(BaseModel):
-    name: str = Field(..., description="Unique tag name")
-    commit_ref: CommitRef
-
-    url: HttpUrl
-
-
-#
+# -
 _PROJECTS_WITH_REPO = {}
 
 
@@ -553,14 +543,17 @@ repo_routes = APIRouter(prefix="/repos/projects", tags=["repository"])
     response_model=Page[Repo],
 )
 def list_repos(page=Depends(init_pagination(Repo))):
+    """List info about versioned projects"""
     ...
 
 
-@repo_routes.post(
-    "/{project_uuid}",
-    response_model=Envelope[Repo],
-    status_code=status.HTTP_201_CREATED,
-)
+# Should be automatic after first commit
+#
+# @repo_routes.post(
+#    "/{project_uuid}",
+#    response_model=Envelope[Repo],
+#    status_code=status.HTTP_201_CREATED,
+# )
 def create_repo(
     pid: UUID = Depends(get_valid_project),
 ):
@@ -570,15 +563,32 @@ def create_repo(
     git init
     git add new-project/workbench
     """
+    ...
+
+
+class CommitRef(BaseModel):
+    sha: str  #
+    url: HttpUrl
+
+
+class Commit(CommitRef):
+    author: Author
+    created_at: datetime
+    message: str
+    parents: List[CommitRef]
+
+
+class CommitMessage(BaseModel):
+    message: str
 
 
 @repo_routes.post(
-    "/{project_uuid}/workbench/commits",
+    "/{project_uuid}/commits",
     response_model=Envelope[Commit],
     status_code=status.HTTP_201_CREATED,
 )
 def create_commit(
-    message: str,
+    message: CommitMessage,
     pid: UUID = Depends(get_valid_repo),
 ):
     """Commit current state of the workbench's project
@@ -588,7 +598,7 @@ def create_commit(
 
 
 @repo_routes.get(
-    "/{project_uuid}/workbench/commits",
+    "/{project_uuid}/commits",
     response_model=Page[Commit],
 )
 def get_logs(
@@ -599,11 +609,9 @@ def get_logs(
     """Lists commits tree of the project"""
 
 
-@repo_routes.post(
-    "/{project_uuid}/workbench/commits/{ref_id}", response_model=Envelope[Commit]
-)
+@repo_routes.get("/{project_uuid}/commits/{ref_id}", response_model=Envelope[Commit])
 def get_commit(
-    ref_id: RepoRef = Field(
+    ref_id: RepoRef = PathParam(
         ..., description="A repository ref (commit, tag or branch)"
     ),
     pid: UUID = Depends(get_valid_repo),
@@ -611,25 +619,10 @@ def get_commit(
     ...
 
 
-@repo_routes.patch(
-    "/{project_uuid}/workbench/commits/{ref_id}", response_model=Envelope[Commit]
-)
+@repo_routes.patch("/{project_uuid}/commits/{ref_id}", response_model=Envelope[Commit])
 def update_commit_message(
-    ref_id: RepoRef = Field(
-        ..., description="A repository ref (commit, tag or branch)"
-    ),
-    message: str = ...,
-    pid: UUID = Depends(get_valid_repo),
-):
-    ...
-
-
-@repo_routes.post(
-    "/{project_uuid}/workbench/commits/{ref_id}:checkout",
-    response_model=Envelope[Commit],
-)
-def checkout(
-    ref_id: RepoRef = Field(
+    message: CommitMessage,
+    ref_id: RepoRef = PathParam(
         ..., description="A repository ref (commit, tag or branch)"
     ),
     pid: UUID = Depends(get_valid_repo),
@@ -642,7 +635,14 @@ def create_branch():
     ...
 
 
-@repo_routes.get("/{project_uuid}/workbench/tags", response_model=Page[Tag])
+class Tag(BaseModel):
+    name: str = Field(..., description="Unique tag name")
+    commit_ref: CommitRef
+
+    url: HttpUrl
+
+
+@repo_routes.get("/{project_uuid}/tags", response_model=Page[Tag])
 def list_tags(
     page=Depends(init_pagination(Tag)),
     pid: UUID = Depends(get_valid_repo),
@@ -650,7 +650,7 @@ def list_tags(
     ...
 
 
-@repo_routes.post("/{project_uuid}/workbench/tags", response_model=Envelope[Tag])
+@repo_routes.post("/{project_uuid}/tags", response_model=Envelope[Tag])
 def create_tag(
     commit_sha: RepoRef,
     tag_name: str,
@@ -659,21 +659,17 @@ def create_tag(
     ...
 
 
-@repo_routes.get(
-    "/{project_uuid}/workbench/tags/{ref_id}", response_model=Envelope[Tag]
-)
+@repo_routes.get("/{project_uuid}/tags/{ref_id}", response_model=Envelope[Tag])
 def get_tag(
-    ref_id: RepoRef = Field(..., description="A commit sha or a tag name"),
+    ref_id: RepoRef = PathParam(..., description="A commit sha or a tag name"),
     pid: UUID = Depends(get_valid_repo),
 ):
     ...
 
 
-@repo_routes.patch(
-    "/{project_uuid}/workbench/tags/{ref_id}", response_model=Envelope[Tag]
-)
-def update_tag_name(
-    ref_id: RepoRef = Field(..., description="A commit sha or a tag name"),
+@repo_routes.patch("/{project_uuid}/tags/{ref_id}", response_model=Envelope[Tag])
+def update_tag_annotations(
+    ref_id: RepoRef = PathParam(..., description="A commit sha or a tag name"),
     new_tag_name: str = ...,
     pid: UUID = Depends(get_valid_repo),
 ):
@@ -681,13 +677,103 @@ def update_tag_name(
 
 
 @repo_routes.delete(
-    "/{project_uuid}/workbench/tags/{tag_name}",
+    "/{project_uuid}/tags/{tag_name}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_tag(
     tag_name: str,
     pid: UUID = Depends(get_valid_repo),
 ):
+    ...
+
+
+#
+# a checkpoint is a combination of tags and commits in one
+# Used to simplify in the front-end
+#
+class Checkpoint(Commit):
+    # Two in one:
+    tags: List[Tag] = []
+
+    url: HttpUrl
+
+
+class CheckpointNew(BaseModel):
+    tag: str
+    message: str
+
+
+class CheckpointAnnotations(BaseModel):
+    tags: Optional[List[Tag]] = None
+    message: Optional[str]
+
+
+@repo_routes.get(
+    "/{project_uuid}/checkpoints",
+    response_model=Page[Checkpoint],
+)
+def list_checkpoints(
+    ref: str,
+    page=Depends(init_pagination(Checkpoint)),
+    pid: UUID = Depends(get_valid_repo),
+):
+    """Lists commits&tags tree of the project"""
+
+
+@repo_routes.post(
+    "/{project_uuid}/checkpoints",
+    response_model=Envelope[Checkpoint],
+    status_code=status.HTTP_201_CREATED,
+)
+def create_checkpoint(
+    new: CheckpointNew,
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
+
+
+@repo_routes.patch(
+    "/{project_uuid}/checkpoint/{ref_id}", response_model=Envelope[Commit]
+)
+def update_checkpoint_annotations(
+    annotations: CheckpointAnnotations,
+    ref_id: RepoRef = PathParam(
+        ..., description="A repository ref (commit, tag or branch)"
+    ),
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
+
+
+@repo_routes.post(
+    "/{project_uuid}/checkpoint/{ref_id}:checkout",
+    response_model=Envelope[Commit],
+)
+def checkout(
+    ref_id: RepoRef = PathParam(
+        ..., description="A repository ref (commit, tag or branch)"
+    ),
+    pid: UUID = Depends(get_valid_repo),
+):
+    """
+    Affect current working copy of the project, i.e. get_project will now return
+    the check out
+    """
+    ...
+
+
+@repo_routes.get(
+    "/{project_uuid}/checkpoint/{ref_id}/workbench/view",
+    response_model=Envelope[WorkbenchView],
+)
+def view_project_workbench(
+    ref_id: RepoRef = PathParam(
+        ..., description="A repository ref (commit, tag or branch)"
+    ),
+    pid: UUID = Depends(get_valid_project),
+    url_for: Callable = Depends(get_reverse_url_mapper),
+):
+    """Returns a view of the workbench for a given project's version"""
     ...
 
 
@@ -698,7 +784,7 @@ the_app = create_app(
         project_routes,
         project_nodes_routes,
         pr_state_routes,
-        snapshot_routes,
+        # snapshot_routes,
         parameter_routes,
         repo_routes,
     ]

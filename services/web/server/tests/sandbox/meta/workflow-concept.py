@@ -61,16 +61,17 @@ def get_project_workbench(
         return deepcopy(_fetch_project(uuid).workbench)
 
 
-# /projects/{project_uuid}/commits
+# GET /repos/projects/{project_uuid}/commits
 def list_commits(project_uuid: str):
     ...
 
 
-# GET /projects/{project_uuid}/commits/{rev_id}
+# GET /repos/projects/{project_uuid}/commits/{rev_id}
 def get_commit(project_uuid: str, rev_id: Union[CommitID, TagID]):
     ...
 
 
+# GET /repos/projects/{project_uuid}/commits
 def create_commit(
     project_uuid: str, *, message: Optional[str] = None, tag: Optional[str] = None
 ):
@@ -78,11 +79,12 @@ def create_commit(
     pass
 
 
-def get_project_workbench_view(project_uuid: str, tag: Optional[str] = None):
+# GET /repos/projects/{project_uuid}/commits/{rev_id}/workbench/view
+def get_project_workbench_view(project_uuid: str, rev_id: Optional[str] = None):
     ...
 
 
-# /projects/{project_uuid}/commits/{rev_id}:checkout
+# POST /repos/projects/{project_uuid}/commits/{rev_id}:checkout
 def checkout(project_uuid: str, rev_id: Union[CommitID, TagID]):
     ...
 
