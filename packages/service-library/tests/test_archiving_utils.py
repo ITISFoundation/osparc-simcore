@@ -129,7 +129,7 @@ async def assert_same_directory_content(
     dir_to_compress: Path,
     output_dir: Path,
     inject_relative_path: Path = None,
-    undecodable_replace: bool = False,
+    unsupported_replace: bool = False,
 ) -> None:
     def _relative_path(input_path: Path) -> Path:
         return Path(str(inject_relative_path / str(input_path))[1:])
@@ -137,7 +137,7 @@ async def assert_same_directory_content(
     input_set = get_all_files_in_dir(dir_to_compress)
     output_set = get_all_files_in_dir(output_dir)
 
-    if undecodable_replace:
+    if unsupported_replace:
         input_set = {_escape_undecodable_path(x) for x in input_set}
 
     if inject_relative_path is not None:
@@ -182,7 +182,7 @@ def assert_unarchived_paths(
     src_dir: Path,
     dst_dir: Path,
     is_saved_as_relpath: bool,
-    undecodable_replace: bool = False,
+    unsupported_replace: bool = False,
 ):
     is_file_or_emptydir = lambda p: p.is_file() or (p.is_dir() and not any(p.glob("*")))
 
@@ -203,7 +203,7 @@ def assert_unarchived_paths(
         for f in src_dir.rglob("*")
         if is_file_or_emptydir(f)
     )
-    if undecodable_replace:
+    if unsupported_replace:
         expected_tails = {_escape_undecodable_str(x) for x in expected_tails}
     assert got_tails == expected_tails
 
@@ -331,12 +331,12 @@ async def test_regression_unsupported_characters(
         src_dir=dir_to_archive,
         dst_dir=dst_dir,
         is_saved_as_relpath=store_relative_path,
-        undecodable_replace=True,
+        unsupported_replace=True,
     )
 
     await assert_same_directory_content(
         dir_to_compress=dir_to_archive,
         output_dir=dst_dir,
         inject_relative_path=None if store_relative_path else dir_to_archive,
-        undecodable_replace=True,
+        unsupported_replace=True,
     )
