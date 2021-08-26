@@ -6,11 +6,15 @@ from datetime import datetime
 from uuid import uuid4
 
 from faker import Faker
-from models_library.utils.database_models_factory import sa_table_to_pydantic_model
+from models_library.utils.database_models_factory import (
+    convert_sa_table_to_pydantic_model,
+)
 from simcore_postgres_database.models.projects_snapshots import projects_snapshots
 from simcore_service_webserver.snapshots_models import Snapshot, SnapshotPatchBody
 
-SnapshotORM = sa_table_to_pydantic_model(projects_snapshots, exclude={"deleted"})
+SnapshotORM = convert_sa_table_to_pydantic_model(
+    projects_snapshots, exclude={"deleted"}
+)
 
 
 def test_snapshot_orm_to_domain_model(faker: Faker):
