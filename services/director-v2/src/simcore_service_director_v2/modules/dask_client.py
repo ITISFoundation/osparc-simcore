@@ -86,6 +86,8 @@ class DaskClient:
         def _comp_sidecar_fct(
             job_id: str, user_id: int, project_id: ProjectID, node_id: NodeID
         ) -> None:
+            """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
+            Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
             from simcore_service_dask_sidecar.tasks import run_task_in_service
 
             run_task_in_service(job_id, user_id, project_id, node_id)
