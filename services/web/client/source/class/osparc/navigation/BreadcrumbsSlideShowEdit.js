@@ -47,7 +47,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
 
       const slideShow = study.getUi().getSlideshow();
       let currentPos = 0;
-      nodeIds.forEach(nodeId => {
+      nodeIds.forEach((nodeId, i) => {
         newServiceBtn.rightNodeId = nodeId;
         if (!study.getWorkbench().getNode(nodeId).hasInputs()) {
           newServiceBtn.exclude();
@@ -80,13 +80,16 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
 
         this.__addEditNodeMenu(btn, currentPos);
 
-        newServiceBtn = this.__createNewServiceBtn();
-        newServiceBtn.leftNodeId = nodeId;
-        newServiceBtn.rightNodeId = null;
-        this._add(newServiceBtn);
+        if (i === nodeIds.length-1) {
+          // for now, plus buttons only at the beginning and end
+          newServiceBtn = this.__createNewServiceBtn();
+          newServiceBtn.leftNodeId = nodeId;
+          newServiceBtn.rightNodeId = null;
+          this._add(newServiceBtn);
 
-        if (!study.getWorkbench().getNode(nodeId).hasOutputs()) {
-          newServiceBtn.exclude();
+          if (!study.getWorkbench().getNode(nodeId).hasOutputs()) {
+            newServiceBtn.exclude();
+          }
         }
       });
     },
