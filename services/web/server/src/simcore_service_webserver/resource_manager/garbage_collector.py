@@ -36,7 +36,11 @@ from .config import GUEST_USER_RC_LOCK_FORMAT, get_garbage_collector_interval
 from .registry import RedisResourceRegistry, get_registry
 
 logger = logging.getLogger(__name__)
-database_errors = (psycopg2.DatabaseError, asyncpg.exceptions.PostgresError)
+database_errors = (
+    psycopg2.DatabaseError,
+    asyncpg.exceptions.PostgresError,
+    ProjectNotFoundError,
+)
 
 TASK_NAME = f"{__name__}.collect_garbage_periodically"
 TASK_CONFIG = f"{TASK_NAME}.config"
