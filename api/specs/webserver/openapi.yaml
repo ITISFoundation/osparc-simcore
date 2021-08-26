@@ -258,7 +258,7 @@ paths:
   # CLUSTER -------------------------------------------------------------------------
   /clusters:
     $ref: "./openapi-clusters.yaml#/paths/~1clusters"
-  /clusters/{id]}:
+  /clusters/{cluster_id}:
     $ref: "./openapi-clusters.yaml#/paths/~1clusters~1{cluster_id}"
 
   # VIEWER -------------------------------------------------------------------------
