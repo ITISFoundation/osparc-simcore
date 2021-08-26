@@ -78,6 +78,19 @@ async def mock_scicrunch_service_api(fake_data_dir: Path, mock_env_devel_environ
 
 
 @pytest.fixture
+async def mock_scicrunch_service_resolver(
+    fake_data_dir: Path, mock_env_devel_environment, aioresponses_mocker
+):
+    aioresponses_mocker.get(
+        "https://scicrunch.org/resolver/SCR_018997.json",
+        status=200,
+        payload=json.loads(
+            (fake_data_dir / "get_scicrunch_resolver_response.json").read_text()
+        ),
+    )
+
+
+@pytest.fixture
 async def fake_app(mock_env_devel_environment, loop):
     # By using .env-devel we ensure all needed variables are at
     # least defined there
@@ -103,7 +116,8 @@ def test_setup_scicrunch_submodule(fake_app):
     assert scicrunch.client == get_client_session(fake_app)
 
 
-async def test_get_research_resource(fake_app, mock_scicrunch_service_api):
+async def test_get_research_resource(fake_app, mock_scicrunch_service_resolver):
+    # mock_scicrunch_service_api):
     scicrunch = SciCrunch.get_instance(fake_app)
     resource: ResearchResource = await scicrunch.get_resource_fields(rrid="SCR_018997")
 
