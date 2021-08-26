@@ -484,7 +484,7 @@ async def remove_guest_user_with_all_its_resources(
         await remove_all_projects_for_user(app=app, user_id=user_id)
         await remove_user(app=app, user_id=user_id)
 
-    except ProjectNotFoundError as err:
+    except database_errors as err:
         logger.warning(
             "Could not remove GUEST with id=%s. Check the logs above for details [%s]",
             user_id,
