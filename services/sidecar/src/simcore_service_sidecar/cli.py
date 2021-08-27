@@ -23,7 +23,11 @@ log = logging.getLogger(__name__)
 def main(job_id: str, user_id: str, project_id: str, node_id: str) -> None:
 
     try:
-        asyncio.run(run_sidecar(job_id, user_id, project_id, node_id=node_id))
+        asyncio.run(
+            run_sidecar(
+                job_id, user_id, project_id, node_id=node_id, sidecar_mode=BootMode.CPU
+            )
+        )
     except Exception:  # pylint: disable=broad-except
         log.exception("Unexpected problem while running sidecar")
 
@@ -49,10 +53,10 @@ async def run_sidecar(  # pylint: disable=too-many-arguments
     user_id: str,
     project_id: str,
     node_id: str,
+    sidecar_mode: BootMode,
     is_aborted_cb: Optional[Callable[[], bool]] = None,
     retry: int = 1,
     max_retries: int = 1,
-    sidecar_mode: BootMode = BootMode.CPU,
 ) -> None:
 
     abortion_task: Optional[asyncio.Task] = None

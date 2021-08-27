@@ -60,8 +60,6 @@ qx.Class.define("osparc.data.model.Study", {
     const wbData = studyData.workbench || this.getWorkbench();
     this.setWorkbench(new osparc.data.model.Workbench(wbData, studyData.ui));
     this.setUi(new osparc.data.model.StudyUI(studyData.ui));
-
-    this.setSweeper(new osparc.data.model.Sweeper(studyData));
   },
 
   properties: {
@@ -147,11 +145,6 @@ qx.Class.define("osparc.data.model.Study", {
       nullable: true
     },
 
-    sweeper: {
-      check: "osparc.data.model.Sweeper",
-      nullable: true
-    },
-
     state: {
       check: "Object",
       nullable: true,
@@ -232,6 +225,37 @@ qx.Class.define("osparc.data.model.Study", {
         return true;
       }
       return false;
+    },
+
+    getSnapshots: function(studyId) {
+      return new Promise((resolve, reject) => {
+        const params = {
+          url: {
+            "studyId": studyId
+          }
+        };
+        osparc.data.Resources.get("snapshots", params)
+          .then(snapshots => {
+            resolve(snapshots);
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
+    },
+
+    hasSnapshots: function(studyId) {
+      return new Promise((resolve, reject) => {
+        this.self().getSnapshots(studyId)
+          .then(snapshots => {
+            resolve(Boolean(snapshots.length));
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
     }
   },
 
@@ -244,12 +268,24 @@ qx.Class.define("osparc.data.model.Study", {
       this.getWorkbench().initWorkbench();
     },
 
+    isSnapshot: function() {
+      return false;
+    },
+
+    getSnapshots: function() {
+      return this.self().getSnapshots(this.getUuid());
+    },
+
+    hasSnapshots: function() {
+      return this.self().hasSnapshots(this.getUuid());
+    },
+
     __applyAccessRights: function(value) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(myGid);
 
-      if (myGid) {
+      if (myGid && !this.isSnapshot()) {
         const canIWrite = osparc.component.permissions.Study.canGroupsWrite(value, orgIDs);
         this.setReadOnly(!canIWrite);
       } else {
@@ -308,11 +344,6 @@ qx.Class.define("osparc.data.model.Study", {
           jsonObject[key] = this.getUi().serialize();
           return;
         }
-        if (key === "sweeper") {
-          jsonObject["dev"] = {};
-          jsonObject["dev"]["sweeper"] = this.getSweeper().serialize();
-          return;
-        }
         const value = this.get(key);
         if (value !== null) {
           // only put the value in the payload if there is a value
@@ -350,8 +381,7 @@ qx.Class.define("osparc.data.model.Study", {
         creationDate: new Date(data.creationDate),
         lastChangeDate: new Date(data.lastChangeDate),
         workbench: this.getWorkbench(),
-        ui: this.getUi(),
-        sweeper: this.getSweeper()
+        ui: this.getUi()
       });
 
       const nodes = this.getWorkbench().getNodes(true);

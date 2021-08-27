@@ -27,9 +27,8 @@ from pydantic import PositiveInt
 from ...core.errors import InvalidPipelineError, PipelineNotFoundError, SchedulerError
 from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_runs import CompRunsAtDB
-from ...models.domains.comp_tasks import CompTaskAtDB
+from ...models.domains.comp_tasks import CompTaskAtDB, Image
 from ...models.schemas.constants import UserID
-from ...models.schemas.services import NodeRequirements
 from ...utils.computations import get_pipeline_state_from_task_states
 from ...utils.scheduler import COMPLETED_STATES, Iteration, get_repository
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
@@ -182,7 +181,7 @@ class BaseCompScheduler(ABC):
         self,
         user_id: UserID,
         project_id: ProjectID,
-        scheduled_tasks: Dict[NodeID, NodeRequirements],
+        scheduled_tasks: Dict[NodeID, Image],
         callback: Callable[[], None],
     ) -> None:
         ...
@@ -317,9 +316,8 @@ class BaseCompScheduler(ABC):
         tasks: List[NodeID],
     ):
         # get tasks runtime requirements
-        tasks_to_reqs: Dict[NodeID, NodeRequirements] = {
-            node_id: comp_tasks[f"{node_id}"].image.node_requirements
-            for node_id in tasks
+        tasks_to_reqs: Dict[NodeID, Image] = {
+            node_id: comp_tasks[f"{node_id}"].image for node_id in tasks
         }
 
         # The sidecar only pick up tasks that are in PENDING state

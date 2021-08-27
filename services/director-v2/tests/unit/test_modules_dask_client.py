@@ -9,11 +9,13 @@ from uuid import uuid4
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from distributed.deploy.spec import SpecCluster
+from distributed.worker import TaskState
 from fastapi.applications import FastAPI
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import ConfigurationError
 from simcore_service_director_v2.core.settings import AppSettings
+from simcore_service_director_v2.models.domains.comp_tasks import Image
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.modules.dask_client import DaskClient
 from starlette.testclient import TestClient
@@ -76,16 +78,42 @@ def test_local_dask_cluster_through_client(dask_client: DaskClient):
 
 
 @pytest.mark.parametrize(
-    "node_requirements",
+    "image, exp_annotations",
     [
-        NodeRequirements(CPU=1, RAM="128 MiB"),
-        NodeRequirements(CPU=1, GPU=1, RAM="256 MiB"),
-        NodeRequirements(CPU=2, RAM="128 MiB", MPI=1),
+        (
+            Image(
+                name="simcore/services/comp/pytest",
+                tag="1.4.5",
+                node_requirements=NodeRequirements(CPU=1, RAM="128 MiB"),
+            ),
+            {"resources": {"CPU": 1.0, "RAM": 128 * 1024 * 1024}},
+        ),
+        (
+            Image(
+                name="simcore/services/comp/pytest",
+                tag="1.4.5",
+                node_requirements=NodeRequirements(CPU=1, GPU=1, RAM="256 MiB"),
+            ),
+            {
+                "resources": {"CPU": 1.0, "GPU": 1.0, "RAM": 256 * 1024 * 1024},
+            },
+        ),
+        (
+            Image(
+                name="simcore/services/comp/pytest",
+                tag="1.4.5",
+                node_requirements=NodeRequirements(CPU=2, RAM="128 MiB", MPI=1),
+            ),
+            {
+                "resources": {"CPU": 2.0, "MPI": 1.0, "RAM": 128 * 1024 * 1024},
+            },
+        ),
     ],
 )
 async def test_send_computation_task(
     dask_client: DaskClient,
-    node_requirements: NodeRequirements,
+    image: Image,
+    exp_annotations: Dict[str, Any],
     mocker: MockerFixture,
 ):
     @retry(
@@ -100,13 +128,20 @@ async def test_send_computation_task(
     user_id = 12
     project_id = uuid4()
     node_id = uuid4()
-    fake_task = {node_id: node_requirements}
+    fake_task = {node_id: image}
     mocked_done_callback_fct = mocker.Mock()
 
     def fake_sidecar_fct(job_id: str, u_id: str, prj_id: str, n_id: str) -> int:
-        assert u_id == f"{user_id}"
-        assert prj_id == f"{project_id}"
-        assert n_id == f"{node_id}"
+        from dask.distributed import get_worker
+
+        worker = get_worker()
+        task: TaskState = worker.tasks.get(worker.get_current_task())
+        assert task is not None
+        assert task.annotations == exp_annotations
+
+        assert u_id == user_id
+        assert prj_id == project_id
+        assert n_id == node_id
         return 123
 
     # start a computation

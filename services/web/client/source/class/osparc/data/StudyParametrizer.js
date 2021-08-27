@@ -82,7 +82,7 @@ qx.Class.define("osparc.data.StudyParametrizer", {
       return activeParams;
     },
 
-    recreateIterations: function(primaryStudyData, parameters, combinations) {
+    recreateSnaphots: function(primaryStudyData, parameters, combinations) {
       return new Promise((resolve, reject) => {
         const store = osparc.store.Store.getInstance();
         store.getGroupsMe()
