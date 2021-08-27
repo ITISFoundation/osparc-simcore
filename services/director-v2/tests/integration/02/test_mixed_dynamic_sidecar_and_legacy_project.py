@@ -149,7 +149,9 @@ async def director_v2_client(
 
 
 @pytest.fixture
-async def ensure_services_stopped(dy_static_file_server_project: ProjectAtDB) -> None:
+async def ensure_services_stopped(
+    dy_static_file_server_project: ProjectAtDB, director_v2_client: httpx.AsyncClient
+) -> None:
     yield
     # ensure service cleanup when done testing
     async with aiodocker.Docker() as docker_client:
@@ -164,6 +166,13 @@ async def ensure_services_stopped(dy_static_file_server_project: ProjectAtDB) ->
                     assert delete_result is True
 
         project_id = f"{dy_static_file_server_project.uuid}"
+
+        # pylint: disable=protected-access
+        scheduler_interval = (
+            director_v2_client._transport.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS
+        )
+        # sleep enough to ensure the observation cycle properly stopped the service
+        await asyncio.sleep(2 * scheduler_interval)
         await ensure_network_cleanup(docker_client, project_id)
 
 
@@ -340,7 +349,7 @@ async def _assert_service_is_available(exposed_port: PositiveInt) -> None:
     print(f"checking service @ {service_address}")
 
     async for attempt in tenacity.AsyncRetrying(
-        wait=tenacity.wait_exponential(), stop=tenacity.stop_after_delay(15)
+        wait=tenacity.wait_exponential(), stop=tenacity.stop_after_delay(20)
     ):
         with attempt:
             async with httpx.AsyncClient() as client:

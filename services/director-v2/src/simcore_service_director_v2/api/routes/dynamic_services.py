@@ -168,7 +168,7 @@ async def stop_dynamic_service(
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> Union[NoContentResponse, RedirectResponse]:
     try:
-        await scheduler.remove_service(node_uuid, save_state)
+        await scheduler.mark_service_for_removal(node_uuid, save_state)
     except DynamicSidecarNotFoundError:
         # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0

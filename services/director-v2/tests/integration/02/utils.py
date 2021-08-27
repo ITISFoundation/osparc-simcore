@@ -28,7 +28,7 @@ async def ensure_network_cleanup(
                 delete_result = await network.delete()
                 assert delete_result is True
             except aiodocker.exceptions.DockerError as e:
-                # if the tests succeeds the network will nto exists
+                # if the tests succeeds the network will not exists
                 str_error = str(e)
                 assert "network" in str_error
                 assert "not found" in str_error

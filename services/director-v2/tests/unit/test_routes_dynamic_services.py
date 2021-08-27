@@ -102,7 +102,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
             raise DynamicSidecarNotFoundError(node_uuid)
 
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler.remove_service",
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler.mark_service_for_removal",
         side_effect=remove_service,
     )
 

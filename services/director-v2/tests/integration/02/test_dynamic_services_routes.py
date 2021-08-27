@@ -98,7 +98,9 @@ async def test_client(
 
 
 @pytest.fixture
-async def ensure_services_stopped(start_request_data: Dict[str, Any]) -> None:
+async def ensure_services_stopped(
+    start_request_data: Dict[str, Any], test_client: TestClient
+) -> None:
     yield
     # ensure service cleanup when done testing
     async with aiodocker.Docker() as docker_client:
@@ -110,6 +112,12 @@ async def ensure_services_stopped(start_request_data: Dict[str, Any]) -> None:
             if project_id in service_name:
                 delete_result = await docker_client.services.delete(service_name)
                 assert delete_result is True
+
+        scheduler_interval = (
+            test_client.application.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS
+        )
+        # sleep enough to ensure the observation cycle properly stopped the service
+        await asyncio.sleep(2 * scheduler_interval)
 
         await ensure_network_cleanup(docker_client, project_id)
 

@@ -13,13 +13,15 @@ from ....models.schemas.dynamic_services import (
     SchedulerData,
 )
 from ....modules.director_v0 import DirectorV0Client
-from ..client_api import get_dynamic_sidecar_client
+from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
     are_services_missing,
     create_network,
     create_service_and_get_id,
     get_node_id_from_task_for_service,
     get_swarm_network,
+    remove_dynamic_sidecar_network,
+    remove_dynamic_sidecar_stack,
 )
 from ..docker_compose_specs import assemble_spec
 from ..docker_service_specs import (
@@ -194,11 +196,15 @@ class GetStatus(DynamicSchedulerEvent):
         )
 
 
-class CreateUserServices(DynamicSchedulerEvent):
+class PrepareServicesEnvironment(DynamicSchedulerEvent):
     """
     Triggered when the dynamic-sidecar is responding to http requests.
-    The docker compose spec for the service is assembled.
-    The dynamic-sidecar is asked to start a service for that service spec.
+    This step runs before CreateUserServices.
+
+
+
+    Sets up the environment on the host required by the service.
+    - pulls data via nodeports
     """
 
     @classmethod
@@ -206,6 +212,28 @@ class CreateUserServices(DynamicSchedulerEvent):
         return (
             scheduler_data.dynamic_sidecar.status.current == DynamicSidecarStatus.OK
             and scheduler_data.dynamic_sidecar.is_available == True
+            and scheduler_data.dynamic_sidecar.service_environment_prepared == False
+        )
+
+    @classmethod
+    async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+        # TODO: implemnet nodeports data pulling
+        logging.info("implemnet nodeports data pulling")
+
+        scheduler_data.dynamic_sidecar.service_environment_prepared = True
+
+
+class CreateUserServices(DynamicSchedulerEvent):
+    """
+    Triggered when the the environment was prepared.
+    The docker compose spec for the service is assembled.
+    The dynamic-sidecar is asked to start a service for that service spec.
+    """
+
+    @classmethod
+    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+        return (
+            scheduler_data.dynamic_sidecar.service_environment_prepared
             and scheduler_data.dynamic_sidecar.compose_spec_submitted == False
         )
 
@@ -238,10 +266,70 @@ class CreateUserServices(DynamicSchedulerEvent):
         scheduler_data.dynamic_sidecar.was_compose_spec_submitted = True
 
 
+class RemoveUserCreatedServices(DynamicSchedulerEvent):
+    """
+    Triggered if the service is marked for remova.
+    The state of the service will be stored.
+    The dynamic-sidcar together with spawned containers
+    and dedicated network will be removed.
+    """
+
+    @classmethod
+    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+        return scheduler_data.dynamic_sidecar.service_removal_data.can_remove
+
+    @classmethod
+    async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+        # invoke container cleanup at this point
+        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(app)
+
+        try:
+            await dynamic_sidecar_client.begin_service_destruction(
+                dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
+            )
+        except httpx.HTTPError:
+            logger.warning(
+                "Could not begin destruction of %s", scheduler_data.service_name
+            )
+
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
+
+        _ = scheduler_data.dynamic_sidecar.service_removal_data.save_state
+        # TODO: save state and others go here
+        logger.info("implement save nodeports data")
+        # is this the correct place to do it? needs discussion
+        # TODO: ask SAN/MaG
+
+        # remove the 2 services
+        await remove_dynamic_sidecar_stack(
+            node_uuid=scheduler_data.node_uuid,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+        )
+        # remove network
+        await remove_dynamic_sidecar_network(
+            scheduler_data.dynamic_sidecar_network_name
+        )
+
+        logger.debug(
+            "Removed dynamic-sidecar created services for '%s'",
+            scheduler_data.service_name,
+        )
+
+        await app.state.dynamic_sidecar_scheduler.finish_service_removal(
+            scheduler_data.node_uuid
+        )
+
+        scheduler_data.dynamic_sidecar.service_removal_data.mark_removed()
+
+
 # register all handlers defined in this module here
 # A list is essential to guarantee execution order
 REGISTERED_EVENTS: List[Type[DynamicSchedulerEvent]] = [
     CreateSidecars,
     GetStatus,
+    PrepareServicesEnvironment,
     CreateUserServices,
+    RemoveUserCreatedServices,
 ]
