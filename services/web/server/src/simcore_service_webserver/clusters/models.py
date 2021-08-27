@@ -22,7 +22,6 @@ CLUSTER_USER_RIGHTS = ClusterAccessRights(read=True, write=False, delete=False)
 
 
 class Cluster(BaseModel):
-    id: PositiveInt = Field(..., description="The cluster identifier")
     name: str = Field(..., description="The human readable name of the cluster")
     description: Optional[str] = None
     type: ClusterType
@@ -31,17 +30,16 @@ class Cluster(BaseModel):
 
     class Config:
         extra = Extra.forbid
+        use_enum_values = True
         schema_extra = {
             "examples": [
                 {
-                    "id": 1,
                     "name": "My awesome cluster",
                     "type": ClusterType.ON_PREMISE,
                     "owner": 12,
                     "access_rights": {12: CLUSTER_ADMIN_RIGHTS},
                 },
                 {
-                    "id": 50,
                     "name": "My AWS cluster",
                     "description": "a AWS cluster administered by me",
                     "type": ClusterType.AWS,
@@ -66,9 +64,3 @@ class Cluster(BaseModel):
         if v[owner_gid] != CLUSTER_ADMIN_RIGHTS:
             raise ValueError("the cluster owner access rights are incorrectly set")
         return v
-
-
-class ClusterAtDB(Cluster):
-    id: int = Field(..., description="DB table primary key")
-    created: datetime
-    modified: datetime
