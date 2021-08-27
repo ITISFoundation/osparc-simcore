@@ -4,11 +4,11 @@ from itertools import chain
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import asyncpg.exceptions
-import psycopg2
 from aiohttp import web
 from aiopg.sa.result import RowProxy
 from aioredlock import Aioredlock
 from servicelib.utils import logged_gather
+from simcore_postgres_database.errors import DatabaseError
 
 from .. import users_exceptions
 from ..db_models import GroupType
@@ -37,7 +37,11 @@ from .config import GUEST_USER_RC_LOCK_FORMAT, get_garbage_collector_interval
 from .registry import RedisResourceRegistry, get_registry
 
 logger = logging.getLogger(__name__)
-database_errors = (psycopg2.DatabaseError, asyncpg.exceptions.PostgresError)
+database_errors = (
+    DatabaseError,
+    asyncpg.exceptions.PostgresError,
+    ProjectNotFoundError,
+)
 
 TASK_NAME = f"{__name__}.collect_garbage_periodically"
 TASK_CONFIG = f"{TASK_NAME}.config"
@@ -264,11 +268,22 @@ async def remove_disconnected_user_resources(
                 if resource_name == "project_id":
                     # inform that the project can be closed on the backend side
                     #
-                    await remove_project_interactive_services(
-                        user_id=int(dead_key["user_id"]),
-                        project_uuid=resource_value,
-                        app=app,
-                    )
+                    try:
+                        await remove_project_interactive_services(
+                            user_id=int(dead_key["user_id"]),
+                            project_uuid=resource_value,
+                            app=app,
+                        )
+                    except ProjectNotFoundError as err:
+                        logger.warning(
+                            (
+                                "Could not remove project interactive services user_id=%s "
+                                "project_uuid=%s. Check the logs above for details [%s]"
+                            ),
+                            user_id,
+                            resource_value,
+                            err,
+                        )
 
                 # ONLY GUESTS: if this user was a GUEST also remove it from the database
                 # with the only associated project owned
