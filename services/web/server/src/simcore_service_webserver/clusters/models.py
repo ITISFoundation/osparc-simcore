@@ -1,9 +1,9 @@
 from datetime import datetime
 from typing import Dict, Optional
-from uuid import UUID, uuid4
 
 from models_library.users import GroupID
 from pydantic import BaseModel, Extra, Field, validator
+from pydantic.types import PositiveInt
 from simcore_postgres_database.models.clusters import ClusterType
 
 
@@ -22,9 +22,9 @@ CLUSTER_USER_RIGHTS = ClusterAccessRights(read=True, write=False, delete=False)
 
 
 class Cluster(BaseModel):
+    id: PositiveInt = Field(..., description="The cluster identifier")
     name: str = Field(..., description="The human readable name of the cluster")
     description: Optional[str] = None
-    cluster_id: UUID = Field(..., description="The unique identifier of the cluster")
     type: ClusterType
     owner: GroupID
     access_rights: Dict[GroupID, ClusterAccessRights]
@@ -34,15 +34,15 @@ class Cluster(BaseModel):
         schema_extra = {
             "examples": [
                 {
+                    "id": 1,
                     "name": "My awesome cluster",
-                    "cluster_id": uuid4(),
                     "type": ClusterType.ON_PREMISE,
                     "owner": 12,
                     "access_rights": {12: CLUSTER_ADMIN_RIGHTS},
                 },
                 {
+                    "id": 50,
                     "name": "My AWS cluster",
-                    "cluster_id": uuid4(),
                     "description": "a AWS cluster administered by me",
                     "type": ClusterType.AWS,
                     "owner": 154,
