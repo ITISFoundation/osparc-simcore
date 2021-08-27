@@ -5,12 +5,9 @@
 import re
 
 import pytest
-from simcore_service_webserver.scicrunch.scicrunch_models import (
+from simcore_service_webserver.scicrunch.models import (
     STRICT_RRID_PATTERN,
-    ListOfResourceHits,
     ResearchResource,
-    ResearchResourceAtdB,
-    ResourceView,
     normalize_rrid_tags,
 )
 

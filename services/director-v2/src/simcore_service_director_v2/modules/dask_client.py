@@ -11,6 +11,7 @@ from tenacity import before_sleep_log, retry, stop_after_attempt, wait_random
 
 from ..core.errors import ConfigurationError
 from ..core.settings import DaskSchedulerSettings
+from ..models.domains.comp_tasks import Image
 from ..models.schemas.constants import UserID
 from ..models.schemas.services import NodeRequirements
 
@@ -68,7 +69,7 @@ class DaskClient:
         self,
         user_id: UserID,
         project_id: ProjectID,
-        tasks: Dict[NodeID, NodeRequirements],
+        tasks: Dict[NodeID, Image],
         callback: Callable[[], None],
         remote_fct: Callable = None,
     ):
@@ -82,27 +83,17 @@ class DaskClient:
             self._taskid_to_future_map.pop(job_id)
             callback()
 
-        def comp_sidecar_fct(
-            job_id: str, user_id: str, project_id: str, node_id: str
+        def _comp_sidecar_fct(
+            job_id: str, user_id: int, project_id: ProjectID, node_id: NodeID
         ) -> None:
-            import asyncio
+            """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
+            Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
+            from simcore_service_dask_sidecar.tasks import run_task_in_service
 
-            from dask.distributed import get_worker
-            from simcore_service_sidecar.cli import run_sidecar
-
-            def _is_aborted_cb() -> bool:
-                w = get_worker()
-                t = w.tasks.get(w.get_current_task())
-                return t is None
-
-            asyncio.run(
-                run_sidecar(
-                    job_id, user_id, project_id, node_id, is_aborted_cb=_is_aborted_cb
-                )
-            )
+            run_task_in_service(job_id, user_id, project_id, node_id)
 
         if remote_fct is None:
-            remote_fct = comp_sidecar_fct
+            remote_fct = _comp_sidecar_fct
 
         def _from_node_reqs_to_dask_resources(
             node_reqs: NodeRequirements,
@@ -112,17 +103,23 @@ class DaskClient:
             logger.debug("transformed to dask resources: %s", dask_resources)
             return dask_resources
 
-        for node_id, node_reqs in tasks.items():
-            job_id = f"dask_{uuid4()}"
+        for node_id, node_image in tasks.items():
+            # NOTE: the job id is used to create a folder in the sidecar,
+            # so it must be a valid file name too
+            # Also, it must be unique
+            # and it is shown in the Dask scheduler dashboard website
+            job_id = f"{node_image.name}_{node_image.tag}__projectid_{project_id}__nodeid_{node_id}__{uuid4()}"
             task_future = self.client.submit(
                 remote_fct,
                 job_id,
-                f"{user_id}",
-                f"{project_id}",
-                f"{node_id}",
+                user_id,
+                project_id,
+                node_id,
                 key=job_id,
-                resources=_from_node_reqs_to_dask_resources(node_reqs),
-                retries=2,
+                resources=_from_node_reqs_to_dask_resources(
+                    node_image.node_requirements
+                ),
+                retries=0,
             )
             task_future.add_done_callback(_done_dask_callback)
             self._taskid_to_future_map[job_id] = task_future

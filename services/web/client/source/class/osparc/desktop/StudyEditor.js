@@ -26,8 +26,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     const viewsStack = this.__viewsStack = new qx.ui.container.Stack();
 
     const workbenchView = this.__workbenchView = new osparc.desktop.WorkbenchView();
-    workbenchView.addListener("startStudy", e => {
-      this.fireDataEvent("startStudy", e.getData());
+    workbenchView.addListener("startSnapshot", e => {
+      this.getStudy().removeIFrames();
+      this.fireDataEvent("startSnapshot", e.getData());
     });
     viewsStack.add(workbenchView);
 
@@ -60,7 +61,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
   events: {
     "forceBackToDashboard": "qx.event.type.Event",
-    "startStudy": "qx.event.type.Data"
+    "startSnapshot": "qx.event.type.Data"
   },
 
   properties: {
@@ -235,24 +236,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       startStopButtonsSS.setRunning(true);
       this.updateStudyDocument(true)
         .then(() => {
-          this.__doStartPipeline(partialPipeline);
+          this.__requestStartPipeline(this.getStudy().getUuid(), partialPipeline);
         })
         .catch(() => {
           this.__getStudyLogger().error(null, "Run failed");
           startStopButtonsWB.setRunning(false);
           startStopButtonsSS.setRunning(false);
         });
-    },
-
-    __doStartPipeline: function(partialPipeline) {
-      if (this.getStudy().getSweeper().hasSecondaryStudies()) {
-        const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
-        secondaryStudyIds.forEach(secondaryStudyId => {
-          this.__requestStartPipeline(secondaryStudyId);
-        });
-      } else {
-        this.__requestStartPipeline(this.getStudy().getUuid(), partialPipeline);
-      }
     },
 
     __requestStartPipeline: function(studyId, partialPipeline = [], forceRestart = false) {
@@ -330,18 +320,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         return;
       }
 
-      this.__doStopPipeline();
-    },
-
-    __doStopPipeline: function() {
-      if (this.getStudy().getSweeper().hasSecondaryStudies()) {
-        const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
-        secondaryStudyIds.forEach(secondaryStudyId => {
-          this.__requestStopPipeline(secondaryStudyId);
-        });
-      } else {
-        this.__requestStopPipeline(this.getStudy().getUuid());
-      }
+      this.__requestStopPipeline(this.getStudy().getUuid());
     },
 
     __requestStopPipeline: function(studyId) {
