@@ -9,9 +9,8 @@ from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
     BaseCompScheduler,
 )
 
-from ...models.domains.comp_tasks import CompTaskAtDB
+from ...models.domains.comp_tasks import CompTaskAtDB, Image
 from ...models.schemas.constants import UserID
-from ...models.schemas.services import NodeRequirements
 from ...modules.celery import CeleryClient
 
 logger = logging.getLogger(__name__)
@@ -26,7 +25,7 @@ class CeleryScheduler(BaseCompScheduler):
         self,
         user_id: UserID,
         project_id: ProjectID,
-        scheduled_tasks: Dict[NodeID, NodeRequirements],
+        scheduled_tasks: Dict[NodeID, Image],
         callback: Callable[[], None],
     ):
         # notify the sidecar they should start now

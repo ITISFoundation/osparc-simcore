@@ -9,3 +9,13 @@ ops/
 
 # virtualenv
 .venv
+
+#python eggs
+**/*.egg-info
+
+
+#pytest folders
+**/.pytest_cache
+
+# coverage files
+.coverage*
