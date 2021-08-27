@@ -45,6 +45,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
     // overriden
     _addItemsToLayout: function() {
       this._addWorkbenchLayer();
+      this._workbenchLayoutScroll.set({
+        scrollbarX: "off",
+        scrollbarY: "off"
+      });
     },
 
     _loadModel: function(model) {
@@ -55,7 +59,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
         qx.ui.core.queue.Visibility.flush();
 
         // create nodes
-        let nodes = model.getNodes();
+        const nodes = model.getNodes();
         for (const nodeId in nodes) {
           const node = nodes[nodeId];
           const nodeUI = this._createNodeUI(nodeId);
@@ -79,6 +83,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
 
         this.setScale(0.4);
       }
+    },
+
+    // overriden
+    _addEventListeners: function() {
+      return;
     }
   }
 });

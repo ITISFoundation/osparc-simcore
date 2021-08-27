@@ -132,6 +132,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       });
 
       const workbenchLayoutScroll = this._workbenchLayoutScroll = new qx.ui.container.Scroll();
+      osparc.utils.Utils.setIdToWidget(workbenchLayoutScroll, "hithere");
       const workbenchLayout = this.__workbenchLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
       workbenchLayoutScroll.add(workbenchLayout);
       workbenchLayer.add(workbenchLayoutScroll, {
