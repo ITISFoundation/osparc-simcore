@@ -1,10 +1,12 @@
 import logging
 
 from aiohttp import web
+from servicelib.application_keys import APP_DB_ENGINE_KEY
+from servicelib.rest_utils import extract_and_validate
 from simcore_service_webserver.security_decorators import permission_required
 
 from .._meta import api_version_prefix
-from ..login.decorators import login_required
+from ..login.decorators import RQT_USERID_KEY, login_required
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +18,12 @@ routes = web.RouteTableDef()
 @login_required
 @permission_required("clusters.read")
 async def list_clusters_handler(request: web.Request) -> web.Response:
+    params, query, body = await extract_and_validate(request)
+    user_id: int = request[RQT_USERID_KEY]
+    db_engine = request.app[APP_DB_ENGINE_KEY]
+
+    async with db_engine.acquire() as conn:
+        pass
     raise web.HTTPNotImplemented(reason="not yet implemented")
 
 
