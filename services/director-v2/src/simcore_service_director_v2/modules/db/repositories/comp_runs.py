@@ -75,7 +75,7 @@ class CompRunsRepository(BaseRepository):
 
     async def update(
         self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt, **values
-    ) -> CompRunsAtDB:
+    ) -> Optional[CompRunsAtDB]:
         async with self.db_engine.acquire() as conn:
             result = await conn.execute(
                 sa.update(comp_runs)
@@ -88,7 +88,7 @@ class CompRunsRepository(BaseRepository):
                 .returning(literal_column("*"))
             )
             row: RowProxy = await result.first()
-            return CompRunsAtDB.from_orm(row)
+            return CompRunsAtDB.from_orm(row) if row else None
 
     async def set_run_result(
         self,
@@ -97,7 +97,7 @@ class CompRunsRepository(BaseRepository):
         iteration: PositiveInt,
         result_state: RunningState,
         final_state: Optional[bool] = False,
-    ) -> CompRunsAtDB:
+    ) -> Optional[CompRunsAtDB]:
         values = {"result": RUNNING_STATE_TO_DB[result_state]}
         if final_state:
             values.update({"ended": datetime.utcnow()})
