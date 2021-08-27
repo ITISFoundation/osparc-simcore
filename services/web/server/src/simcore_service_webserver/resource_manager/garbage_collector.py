@@ -4,11 +4,11 @@ from itertools import chain
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import asyncpg.exceptions
-import psycopg2
 from aiohttp import web
 from aiopg.sa.result import RowProxy
 from aioredlock import Aioredlock
 from servicelib.utils import logged_gather
+from simcore_postgres_database.errors import DatabaseError
 
 from .. import director_v2, users_exceptions
 from ..db_models import GroupType
@@ -37,7 +37,7 @@ from .registry import RedisResourceRegistry, get_registry
 
 logger = logging.getLogger(__name__)
 database_errors = (
-    psycopg2.DatabaseError,
+    DatabaseError,
     asyncpg.exceptions.PostgresError,
     ProjectNotFoundError,
 )
