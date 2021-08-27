@@ -1,8 +1,12 @@
 import logging
 
 from aiohttp import web
+from models_library.users import UserID
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from servicelib.rest_utils import extract_and_validate
+from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
+from simcore_postgres_database.models.clusters import clusters
+from simcore_service_webserver.groups_api import list_user_groups
 from simcore_service_webserver.security_decorators import permission_required
 
 from .._meta import api_version_prefix
@@ -18,13 +22,17 @@ routes = web.RouteTableDef()
 @login_required
 @permission_required("clusters.read")
 async def list_clusters_handler(request: web.Request) -> web.Response:
-    params, query, body = await extract_and_validate(request)
-    user_id: int = request[RQT_USERID_KEY]
+    await extract_and_validate(request)
+    user_id: UserID = request[RQT_USERID_KEY]
     db_engine = request.app[APP_DB_ENGINE_KEY]
 
-    async with db_engine.acquire() as conn:
-        pass
-    raise web.HTTPNotImplemented(reason="not yet implemented")
+    primary_group, std_groups, all_group = await list_user_groups(request.app, user_id)
+
+    data = []
+    # async with db_engine.acquire() as conn:
+    #     async for row in conn.execute()
+
+    return web.json_response(data=data)
 
 
 @routes.post(f"/{api_version_prefix}/clusters", name="create_cluster_handler")
