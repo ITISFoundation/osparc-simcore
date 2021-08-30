@@ -41,7 +41,7 @@ qx.Class.define("osparc.component.node.FilePickerNodeView", {
 
     // overridden
     _addIFrame: function() {
-      this.__buildMyLayout();
+      this.__addFilePickerViewer();
     },
 
     // overridden
@@ -56,7 +56,8 @@ qx.Class.define("osparc.component.node.FilePickerNodeView", {
       }
       this.base(arguments, node);
     },
-    __buildMyLayout: function() {
+
+    __addFilePickerViewer: function() {
       const node = this.getNode();
       if (!node) {
         return;
