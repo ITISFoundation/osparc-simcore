@@ -17,6 +17,7 @@ install_requires = read_reqs(current_dir / "requirements" / "_base.txt") + [
     "simcore-models-library",
     "simcore-settings-library",
     "simcore-postgres-database",
+    "simcore-sdk",
 ]
 
 tests_require = read_reqs(current_dir / "requirements" / "_test.txt")
