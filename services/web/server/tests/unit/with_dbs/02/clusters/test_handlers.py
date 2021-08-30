@@ -109,7 +109,8 @@ async def test_list_clusters(
     postgres_db: sa.engine.Engine,
     logged_user: Dict[str, Any],
     second_user: Dict[str, Any],
-    primary_group: Dict[str, str],
+    primary_group: Dict[str, Any],
+    all_group: Dict[str, Any],
     cluster: Callable[..., Coroutine[Any, Any, Cluster]],
     expected: ExpectedResponse,
 ):
@@ -142,12 +143,17 @@ async def test_list_clusters(
         {GroupID(primary_group["gid"]): CLUSTER_USER_RIGHTS},
     )
 
+    a_cluster_that_is_not_shared: Cluster = await cluster(
+        GroupID(another_primary_group["gid"]),
+    )
+
     a_cluster_that_may_not_be_used: Cluster = await cluster(
         GroupID(another_primary_group["gid"]),
         {
+            GroupID(all_group["gid"]): CLUSTER_USER_RIGHTS,
             GroupID(primary_group["gid"]): ClusterAccessRights(
                 read=False, write=False, delete=False
-            )
+            ),
         },
     )
 
@@ -164,6 +170,12 @@ async def test_list_clusters(
 
 
 def test_create_cluster(client: TestClient):
+    # url = client.app.router["list_clusters_handler"].url_for()
+    # rsp = await client.get(f"{url}")
+    # data, error = await assert_status(rsp, expected.ok)
+    # if error:
+    #     # we are done here
+    #     return
     pass
 
 
