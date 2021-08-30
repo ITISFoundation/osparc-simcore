@@ -90,7 +90,7 @@ qx.Class.define("osparc.wrapper.CodeMirror", {
         mode: "python",
         theme: "3024-night"
       });
-      
+
       const themeManager = qx.theme.manager.Meta.getInstance();
       themeManager.addListener("changeTheme", () => {
       });
