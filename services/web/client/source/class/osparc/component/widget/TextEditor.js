@@ -99,7 +99,6 @@ qx.Class.define("osparc.component.widget.TextEditor", {
         if (textArea.getValue()) {
           textArea.setTextSelection(0, textArea.getValue().length);
         }
-        osparc.wrapper.CodeMirror.getInstance().convertTextArea(textArea);
       }, this);
     },
 
