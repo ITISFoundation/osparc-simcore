@@ -27,6 +27,7 @@ from simcore_service_webserver.clusters.models import (
 )
 from simcore_service_webserver.groups_api import list_user_groups
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.engine.result import ResultProxy, RowProxy
 from sqlalchemy.sql.elements import literal_column
 
 
@@ -169,14 +170,50 @@ async def test_list_clusters(
         ]
 
 
-def test_create_cluster(client: TestClient):
-    # url = client.app.router["list_clusters_handler"].url_for()
-    # rsp = await client.get(f"{url}")
-    # data, error = await assert_status(rsp, expected.ok)
-    # if error:
-    #     # we are done here
-    #     return
-    pass
+@pytest.mark.parametrize(
+    *standard_role_response(),
+)
+async def test_create_cluster(
+    enable_dev_features: None,
+    client: TestClient,
+    postgres_db: sa.engine.Engine,
+    logged_user: Dict[str, Any],
+    primary_group: Dict[str, Any],
+    faker: Faker,
+    expected: ExpectedResponse,
+):
+    url = client.app.router["create_cluster_handler"].url_for()
+    cluster_data = {"name": faker.name()}
+    rsp = await client.post(f"{url}", json=cluster_data)
+    data, error = await assert_status(rsp, expected.ok)
+    if error:
+        # we are done here
+        return
+
+    created_cluster = Cluster.parse_obj(data)
+    assert created_cluster
+
+    # check database entry was correctly created
+    result: ResultProxy = postgres_db.execute(
+        sa.select([clusters]).where(clusters.c.name == cluster_data["name"])
+    )
+    assert result, "could not find cluster in database"
+    row = result.fetchone()
+    assert row, "could not find cluster in database"
+    assert row[clusters.c.name] == cluster_data["name"]
+    assert row[clusters.c.owner] == primary_group["gid"]
+    assert (
+        Cluster(
+            name=cluster_data["name"],
+            type=row[clusters.c.type],
+            owner=primary_group["gid"],
+            access_rights={primary_group["gid"]: CLUSTER_ADMIN_RIGHTS},
+        )
+        == created_cluster
+    )
+
+    # cleanup
+    postgres_db.execute(clusters.delete().where(clusters.c.id == row[clusters.c.id]))
 
 
 def test_get_cluster(client: TestClient):

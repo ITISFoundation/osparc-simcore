@@ -15838,11 +15838,6 @@ paths:
                       - delete
               required:
                 - name
-                - description
-                - accessRights
-              example:
-                - name: AWS cluster
-                  description: My institution cluster
       responses:
         '201':
           description: cluster created

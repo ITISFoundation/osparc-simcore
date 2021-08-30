@@ -4,6 +4,7 @@ from typing import List
 from aiohttp import web
 from models_library.users import GroupID, UserID
 from servicelib.rest_utils import extract_and_validate
+from simcore_postgres_database.models.clusters import ClusterType
 from simcore_service_webserver.clusters.models import Cluster
 from simcore_service_webserver.groups_api import list_user_groups
 from simcore_service_webserver.security_decorators import permission_required
@@ -35,7 +36,7 @@ async def list_clusters_handler(request: web.Request) -> web.Response:
         GroupID(all_group["gid"]),
     )
 
-    data = [d.dict(by_alias=True, exclude_unset=True) for d in clusters_list]
+    data = [d.dict(by_alias=True) for d in clusters_list]
 
     return web.json_response(data={"data": data})
 
@@ -44,7 +45,22 @@ async def list_clusters_handler(request: web.Request) -> web.Response:
 @login_required
 @permission_required("clusters.create")
 async def create_cluster_handler(request: web.Request) -> web.Response:
-    raise web.HTTPNotImplemented(reason="not yet implemented")
+    _, _, body = await extract_and_validate(request)
+    user_id: UserID = request[RQT_USERID_KEY]
+    primary_group, _, _ = await list_user_groups(request.app, user_id)
+
+    new_cluster = Cluster(
+        name=body.name,
+        description=body.description if hasattr(body, "description") else None,
+        type=ClusterType.ON_PREMISE,
+        owner=primary_group["gid"],
+    )
+
+    clusters_repo = ClustersRepository(request)
+    new_cluster = await clusters_repo.create_cluster(new_cluster)
+
+    data = new_cluster.dict(by_alias=True)
+    return web.json_response(data={"data": data})
 
 
 @routes.get(f"/{api_version_prefix}/clusters/{{id}}", name="get_cluster_handler")

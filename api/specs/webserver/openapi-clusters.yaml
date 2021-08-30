@@ -25,7 +25,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./components/schemas/cluster.yaml#/Cluster"
+              $ref: "./components/schemas/cluster.yaml#/ClusterCreate"
       responses:
         "201":
           description: cluster created
