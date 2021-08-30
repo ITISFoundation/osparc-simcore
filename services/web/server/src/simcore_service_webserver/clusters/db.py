@@ -13,8 +13,8 @@ from .models import Cluster
 
 
 class ClustersRepository(BaseRepository):
-    async def list_clusters(
-        self, gid: GroupID, offset: int = 0, limit: Optional[int] = None
+    async def list_clusters_for_groups(
+        self, gids: List[GroupID], offset: int = 0, limit: Optional[int] = None
     ) -> List[Cluster]:
         cluster_id_to_cluster: Dict[PositiveInt, Cluster] = {}
         async with self.engine.acquire() as conn:
@@ -34,7 +34,7 @@ class ClustersRepository(BaseRepository):
                         clusters.c.id == cluster_to_groups.c.cluster_id,
                     )
                 )
-                .where(cluster_to_groups.c.gid == gid)
+                .where(cluster_to_groups.c.gid.in_(gids))
                 .offset(offset)
                 .limit(limit)
             ):

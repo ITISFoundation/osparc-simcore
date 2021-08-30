@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import Any, Dict, List
 
 from aiohttp import web
 from models_library.users import UserID
@@ -29,6 +29,7 @@ async def list_clusters_handler(request: web.Request) -> web.Response:
     user_id: UserID = request[RQT_USERID_KEY]
 
     primary_group, std_groups, all_group = await list_user_groups(request.app, user_id)
+    user_groups: List[Dict[str, Any]] = [primary_group] + std_groups + [all_group]
 
     clusters_repo = ClustersRepository(request)
 
