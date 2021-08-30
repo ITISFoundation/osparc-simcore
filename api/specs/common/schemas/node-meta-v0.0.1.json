@@ -264,7 +264,8 @@
                       "description": "type of the property",
                       "type": "string",
                       "enum": [
-                        "TextArea"
+                        "TextArea",
+                        "CodeArea"
                       ]
                     },
                     "minHeight": {

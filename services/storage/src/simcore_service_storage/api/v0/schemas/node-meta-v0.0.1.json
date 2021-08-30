@@ -264,7 +264,8 @@
                       "description": "type of the property",
                       "type": "string",
                       "enum": [
-                        "TextArea"
+                        "TextArea",
+                        "CodeArea"
                       ]
                     },
                     "minHeight": {
@@ -349,9 +350,12 @@
           ],
           "properties": {
             "displayOrder": {
-            "description": "DEPRECATED: new display order is taken from the item position. This property will be removed.",
-            "deprecated": true,
-            "type": "number"
+              "type": "number",
+              "description": "use this to numerically sort the properties for display",
+              "examples": [
+                1,
+                -0.2
+              ]
             },
             "label": {
               "type": "string",
