@@ -230,7 +230,7 @@ async def test_get_cluster(
 ):
     url = client.app.router["get_cluster_handler"].url_for(id=f"{25}")
     rsp = await client.get(f"{url}")
-    data, error = await assert_status(rsp, expected.ok)
+    data, error = await assert_status(rsp, expected.not_found)
     if error:
         # we are done here
         return
