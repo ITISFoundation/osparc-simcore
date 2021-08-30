@@ -62,7 +62,7 @@ def upgrade():
         sa.ForeignKeyConstraint(
             ["owner"],
             ["groups.gid"],
-            name="fk_services_meta_data_gid_groups",
+            name="fk_clusters_gid_groups",
             onupdate="CASCADE",
             ondelete="RESTRICT",
         ),
