@@ -2,6 +2,7 @@ from typing import Dict, Optional
 
 from models_library.users import GroupID
 from pydantic import BaseModel, Extra, Field, validator
+from pydantic.types import PositiveInt
 from simcore_postgres_database.models.clusters import ClusterType
 
 
@@ -21,6 +22,7 @@ CLUSTER_NO_RIGHTS = ClusterAccessRights(read=False, write=False, delete=False)
 
 
 class Cluster(BaseModel):
+    id: PositiveInt = Field(..., description="The cluster ID")
     name: str = Field(..., description="The human readable name of the cluster")
     description: Optional[str] = None
     type: ClusterType
@@ -33,11 +35,13 @@ class Cluster(BaseModel):
         schema_extra = {
             "examples": [
                 {
+                    "id": 432,
                     "name": "My awesome cluster",
                     "type": ClusterType.ON_PREMISE,
                     "owner": 12,
                 },
                 {
+                    "id": 432546,
                     "name": "My AWS cluster",
                     "description": "a AWS cluster administered by me",
                     "type": ClusterType.AWS,
@@ -62,3 +66,7 @@ class Cluster(BaseModel):
         if v[owner_gid] != CLUSTER_ADMIN_RIGHTS:
             raise ValueError("the cluster owner access rights are incorrectly set")
         return v
+
+
+class ClusterCreate(Cluster):
+    id: Optional[PositiveInt]
