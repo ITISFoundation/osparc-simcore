@@ -26,14 +26,13 @@ async def list_clusters_handler(request: web.Request) -> web.Response:
     user_id: UserID = request[RQT_USERID_KEY]
 
     primary_group, std_groups, all_group = await list_user_groups(request.app, user_id)
-    user_gids: List[GroupID] = [
-        group["gid"] for group in ([primary_group] + std_groups + [all_group])
-    ]
 
     clusters_repo = ClustersRepository(request)
 
-    clusters_list: List[Cluster] = await clusters_repo.list_clusters_for_groups(
-        user_gids
+    clusters_list: List[Cluster] = await clusters_repo.list_clusters_for_user_groups(
+        GroupID(primary_group["gid"]),
+        [GroupID(g["gid"]) for g in std_groups],
+        GroupID(all_group["gid"]),
     )
 
     data = [d.dict(by_alias=True, exclude_unset=True) for d in clusters_list]

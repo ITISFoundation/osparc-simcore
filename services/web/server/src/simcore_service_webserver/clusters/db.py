@@ -8,19 +8,29 @@ from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 
 from ..db_base_repository import BaseRepository
-from .models import Cluster
+from .models import CLUSTER_NO_RIGHTS, Cluster
+
+# Cluster access rights:
+# All group comes first, then standard groups, then primary group
 
 
 class ClustersRepository(BaseRepository):
-    async def list_clusters_for_groups(
-        self, gids: List[GroupID], offset: int = 0, limit: Optional[int] = None
+    async def list_clusters_for_user_groups(
+        self,
+        primary_group: GroupID,
+        standard_groups: List[GroupID],
+        all_group: GroupID,
+        offset: int = 0,
+        limit: Optional[int] = None,
     ) -> List[Cluster]:
         cluster_id_to_cluster: Dict[PositiveInt, Cluster] = {}
 
         async with self.engine.acquire() as conn:
             result: ResultProxy = await conn.execute(
                 sa.select([cluster_to_groups.c.cluster_id]).where(
-                    cluster_to_groups.c.gid.in_(gids)
+                    cluster_to_groups.c.gid.in_(
+                        [all_group, *standard_groups, primary_group]
+                    )
                     & (
                         cluster_to_groups.c.read_access
                         | cluster_to_groups.c.write_access
@@ -32,9 +42,9 @@ class ClustersRepository(BaseRepository):
             if result is None:
                 return []
 
-            cluster_ids = [
+            cluster_ids = {
                 r[cluster_to_groups.c.cluster_id] for r in await result.fetchall()
-            ]
+            }
 
             if not cluster_ids:
                 return []
@@ -80,4 +90,24 @@ class ClustersRepository(BaseRepository):
                         cluster_access_rights
                     )
 
-        return list(cluster_id_to_cluster.values())
+        list_of_clusters = list(cluster_id_to_cluster.values())
+
+        def solve_access_rights(
+            cluster: Cluster,
+            primary_group: GroupID,
+        ) -> bool:
+            if primary_group_access_rights := cluster.access_rights.get(
+                primary_group, None
+            ):
+                if (primary_group != cluster.owner) and (
+                    primary_group_access_rights == CLUSTER_NO_RIGHTS
+                ):
+                    return False
+            return True
+
+        return list(
+            filter(
+                lambda cluster: solve_access_rights(cluster, primary_group),
+                list_of_clusters,
+            )
+        )

@@ -1,9 +1,7 @@
-from datetime import datetime
 from typing import Dict, Optional
 
 from models_library.users import GroupID
 from pydantic import BaseModel, Extra, Field, validator
-from pydantic.types import PositiveInt
 from simcore_postgres_database.models.clusters import ClusterType
 
 
@@ -19,6 +17,7 @@ class ClusterAccessRights(BaseModel):
 CLUSTER_ADMIN_RIGHTS = ClusterAccessRights(read=True, write=True, delete=True)
 CLUSTER_MANAGER_RIGHTS = ClusterAccessRights(read=True, write=True, delete=False)
 CLUSTER_USER_RIGHTS = ClusterAccessRights(read=True, write=False, delete=False)
+CLUSTER_NO_RIGHTS = ClusterAccessRights(read=False, write=False, delete=False)
 
 
 class Cluster(BaseModel):
