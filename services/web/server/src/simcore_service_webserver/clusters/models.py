@@ -25,9 +25,7 @@ class Cluster(BaseModel):
     description: Optional[str] = None
     type: ClusterType
     owner: GroupID
-    access_rights: Optional[Dict[GroupID, ClusterAccessRights]] = Field(
-        default_factory=dict
-    )
+    access_rights: Dict[GroupID, ClusterAccessRights] = Field(default_factory=dict)
 
     class Config:
         extra = Extra.forbid
@@ -38,7 +36,6 @@ class Cluster(BaseModel):
                     "name": "My awesome cluster",
                     "type": ClusterType.ON_PREMISE,
                     "owner": 12,
-                    "access_rights": {12: CLUSTER_ADMIN_RIGHTS},
                 },
                 {
                     "name": "My AWS cluster",

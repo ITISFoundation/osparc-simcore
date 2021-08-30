@@ -6,9 +6,10 @@ from models_library.users import GroupID
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
+from sqlalchemy.sql.elements import literal_column
 
 from ..db_base_repository import BaseRepository
-from .models import CLUSTER_NO_RIGHTS, Cluster
+from .models import CLUSTER_NO_RIGHTS, Cluster, ClusterAccessRights
 
 # Cluster access rights:
 # All group comes first, then standard groups, then primary group
@@ -70,11 +71,13 @@ class ClustersRepository(BaseRepository):
                 .limit(limit)
             ):
                 cluster_access_rights = {
-                    row[cluster_to_groups.c.gid]: {
-                        "read": row[cluster_to_groups.c.read_access],
-                        "write": row[cluster_to_groups.c.write_access],
-                        "delete": row[cluster_to_groups.c.delete_access],
-                    }
+                    row[cluster_to_groups.c.gid]: ClusterAccessRights(
+                        **{
+                            "read": row[cluster_to_groups.c.read_access],
+                            "write": row[cluster_to_groups.c.write_access],
+                            "delete": row[cluster_to_groups.c.delete_access],
+                        }
+                    )
                 }
                 cluster_id = row[clusters.c.id]
                 if cluster_id not in cluster_id_to_cluster:
@@ -111,3 +114,49 @@ class ClustersRepository(BaseRepository):
                 list_of_clusters,
             )
         )
+
+    async def create_cluster(self, new_cluster: Cluster) -> Cluster:
+        async with self.engine.acquire() as conn:
+            created_cluser_id: int = await conn.scalar(
+                # pylint: disable=no-value-for-parameter
+                clusters.insert()
+                .values(new_cluster.dict(by_alias=True, exclude={"access_rights"}))
+                .returning(clusters.c.id)
+            )
+
+            result = await conn.execute(
+                sa.select(
+                    [
+                        clusters,
+                        cluster_to_groups.c.gid,
+                        cluster_to_groups.c.read_access,
+                        cluster_to_groups.c.write_access,
+                        cluster_to_groups.c.delete_access,
+                    ]
+                )
+                .select_from(
+                    clusters.join(
+                        cluster_to_groups,
+                        clusters.c.id == cluster_to_groups.c.cluster_id,
+                    )
+                )
+                .where(clusters.c.id == created_cluser_id)
+            )
+
+            row = await result.fetchone()
+
+            assert row  # nosec
+
+            return Cluster.construct(
+                name=row[clusters.c.name],
+                description=row[clusters.c.description],
+                type=row[clusters.c.type],
+                owner=row[clusters.c.owner],
+                access_rights={
+                    row[clusters.c.owner]: {
+                        "read": row[cluster_to_groups.c.read_access],
+                        "write": row[cluster_to_groups.c.read_access],
+                        "delete": row[cluster_to_groups.c.read_access],
+                    }
+                },
+            )
