@@ -16,16 +16,31 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.component.widget.CodeEditor", {
-  extend: osparc.component.widget.TextEditor,
+  extend: qx.ui.core.Widget,
+
+  construct: function() {
+    this.base(arguments);
+
+    this._setLayout(new qx.ui.layout.Canvas());
+
+    const textArea = this.__textArea = new qx.ui.form.TextArea();
+    this.addListener("appear", () => {
+      this.__codeArea = osparc.wrapper.CodeMirror.getInstance().convertTextArea(this.__textArea);
+    }, this);
+    this._add(textArea, {
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0
+    });
+  },
 
   members: {
+    __textArea: null,
     __codeArea: null,
 
-    _populateTextArea: function() {
-      this.base(arguments);
-      this.addListener("appear", () => {
-        this.__codeArea = osparc.wrapper.CodeMirror.getInstance().convertTextArea(this.__textArea);
-      }, this);
+    setValue: function() {
+      return this.__codeArea.setValue();
     },
 
     getValue: function() {

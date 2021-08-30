@@ -49,6 +49,11 @@ qx.Class.define("osparc.component.node.CodeEditorNodeView", {
       this.__addCodeEditor();
     },
 
+    __checkSettingsVisibility: function() {
+      const isSettingsGroupShowable = this.isSettingsGroupShowable();
+      this._settingsLayout.setVisibility(isSettingsGroupShowable ? "visible" : "excluded");
+    },
+
     // overridden
     _addIFrame: function() {
       return;
