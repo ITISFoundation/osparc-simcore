@@ -27,31 +27,12 @@ qx.Class.define("osparc.component.node.CodeEditorNodeView", {
 
     // overridden
     isSettingsGroupShowable: function() {
-      return true;
+      return false;
     },
 
     // overridden
     _addSettings: function() {
-      this._settingsLayout.removeAll();
-
-      const node = this.getNode();
-      const propsForm = node.getPropsForm();
-      if (propsForm && Object.keys(node.getInputs()).length) {
-        propsForm.addListener("changeChildVisibility", () => {
-          this.__checkSettingsVisibility();
-        }, this);
-        this._settingsLayout.add(propsForm);
-      }
-      this.__checkSettingsVisibility();
-
-      this._addToMainView(this._settingsLayout);
-
       this.__addCodeEditor();
-    },
-
-    __checkSettingsVisibility: function() {
-      const isSettingsGroupShowable = this.isSettingsGroupShowable();
-      this._settingsLayout.setVisibility(isSettingsGroupShowable ? "visible" : "excluded");
     },
 
     // overridden
