@@ -23,6 +23,7 @@ from simcore_service_webserver.clusters.models import (
     CLUSTER_USER_RIGHTS,
     Cluster,
     ClusterAccessRights,
+    ClusterCreate,
     ClusterType,
 )
 from simcore_service_webserver.groups_api import list_user_groups
@@ -45,23 +46,18 @@ def cluster(
     async def creator(
         gid: GroupID, cluster_access_rights: Dict[GroupID, ClusterAccessRights] = None
     ) -> Cluster:
-
-        default_cluster_access_rights = {gid: CLUSTER_ADMIN_RIGHTS}
-        if cluster_access_rights:
-            default_cluster_access_rights.update(cluster_access_rights)
-
-        new_cluster = Cluster(
+        new_cluster = ClusterCreate(
             **{
                 "name": faker.name(),
                 "type": random.choice(list(ClusterType)),
                 "owner": gid,
-                "access_rights": default_cluster_access_rights,
+                "access_rights": cluster_access_rights or {},
             }
         )
 
         result = postgres_db.execute(
             clusters.insert()
-            .values(new_cluster.dict(by_alias=True, exclude={"access_rights"}))
+            .values(new_cluster.dict(by_alias=True, exclude={"id", "access_rights"}))
             .returning(literal_column("*"))
         )
         cluster_in_db = result.first()
@@ -85,7 +81,9 @@ def cluster(
                 .on_conflict_do_nothing()
             )
 
-        return new_cluster
+        return Cluster(
+            id=new_cluster_id, **new_cluster.dict(by_alias=True, exclude={"id"})
+        )
 
     yield creator
 
@@ -204,6 +202,7 @@ async def test_create_cluster(
     assert row[clusters.c.owner] == primary_group["gid"]
     assert (
         Cluster(
+            id=row[clusters.c.id],
             name=cluster_data["name"],
             type=row[clusters.c.type],
             owner=primary_group["gid"],

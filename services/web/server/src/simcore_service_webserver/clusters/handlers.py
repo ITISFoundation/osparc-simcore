@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.users import GroupID, UserID
 from servicelib.rest_utils import extract_and_validate
 from simcore_postgres_database.models.clusters import ClusterType
-from simcore_service_webserver.clusters.models import Cluster
+from simcore_service_webserver.clusters.models import Cluster, ClusterCreate
 from simcore_service_webserver.groups_api import list_user_groups
 from simcore_service_webserver.security_decorators import permission_required
 
@@ -49,7 +49,7 @@ async def create_cluster_handler(request: web.Request) -> web.Response:
     user_id: UserID = request[RQT_USERID_KEY]
     primary_group, _, _ = await list_user_groups(request.app, user_id)
 
-    new_cluster = Cluster(
+    new_cluster = ClusterCreate(
         name=body.name,
         description=body.description if hasattr(body, "description") else None,
         type=ClusterType.ON_PREMISE,

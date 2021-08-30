@@ -15680,12 +15680,22 @@ paths:
                     items:
                       type: object
                       properties:
+                        id:
+                          description: the cluster id
+                          type: integer
+                          minimum: 1
                         name:
                           description: the cluster name
                           type: string
                         description:
                           description: the cluster description
                           type: string
+                        type:
+                          description: the cluster type
+                          type: string
+                          enum:
+                            - ON_PREMISE
+                            - AWS
                         accessRights:
                           type: array
                           items:
@@ -15706,6 +15716,7 @@ paths:
                               - write
                               - delete
                       required:
+                        - id
                         - name
                         - description
                         - accessRights
@@ -15851,12 +15862,22 @@ paths:
                   data:
                     type: object
                     properties:
+                      id:
+                        description: the cluster id
+                        type: integer
+                        minimum: 1
                       name:
                         description: the cluster name
                         type: string
                       description:
                         description: the cluster description
                         type: string
+                      type:
+                        description: the cluster type
+                        type: string
+                        enum:
+                          - ON_PREMISE
+                          - AWS
                       accessRights:
                         type: array
                         items:
@@ -15877,6 +15898,7 @@ paths:
                             - write
                             - delete
                     required:
+                      - id
                       - name
                       - description
                       - accessRights
@@ -15994,12 +16016,22 @@ paths:
                   data:
                     type: object
                     properties:
+                      id:
+                        description: the cluster id
+                        type: integer
+                        minimum: 1
                       name:
                         description: the cluster name
                         type: string
                       description:
                         description: the cluster description
                         type: string
+                      type:
+                        description: the cluster type
+                        type: string
+                        enum:
+                          - ON_PREMISE
+                          - AWS
                       accessRights:
                         type: array
                         items:
@@ -16020,6 +16052,7 @@ paths:
                             - write
                             - delete
                     required:
+                      - id
                       - name
                       - description
                       - accessRights
@@ -16125,12 +16158,22 @@ paths:
             schema:
               type: object
               properties:
+                id:
+                  description: the cluster id
+                  type: integer
+                  minimum: 1
                 name:
                   description: the cluster name
                   type: string
                 description:
                   description: the cluster description
                   type: string
+                type:
+                  description: the cluster type
+                  type: string
+                  enum:
+                    - ON_PREMISE
+                    - AWS
                 accessRights:
                   type: array
                   items:
@@ -16151,6 +16194,7 @@ paths:
                       - write
                       - delete
               required:
+                - id
                 - name
                 - description
                 - accessRights
@@ -16170,12 +16214,22 @@ paths:
                   data:
                     type: object
                     properties:
+                      id:
+                        description: the cluster id
+                        type: integer
+                        minimum: 1
                       name:
                         description: the cluster name
                         type: string
                       description:
                         description: the cluster description
                         type: string
+                      type:
+                        description: the cluster type
+                        type: string
+                        enum:
+                          - ON_PREMISE
+                          - AWS
                       accessRights:
                         type: array
                         items:
@@ -16196,6 +16250,7 @@ paths:
                             - write
                             - delete
                     required:
+                      - id
                       - name
                       - description
                       - accessRights
