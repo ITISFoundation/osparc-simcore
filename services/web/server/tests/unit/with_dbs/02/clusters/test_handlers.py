@@ -52,6 +52,7 @@ def cluster(
         new_cluster_id = cluster_in_db[clusters.c.id]
         list_of_created_cluster_ids.append(new_cluster_id)
 
+        # when a cluster is created, the DB automatically creates the owner access rights
         for gid, access_rights in new_cluster.access_rights.items():
             result = postgres_db.execute(
                 insert(cluster_to_groups)
@@ -99,7 +100,7 @@ async def test_list_clusters(
     # there are no clusters yet
     assert data == []
 
-    # create a cluster
+    # create a cluster with admin rights
     new_cluster: Cluster = await cluster(GroupID(primary_group["gid"]))
 
     rsp = await client.get(f"{url}")

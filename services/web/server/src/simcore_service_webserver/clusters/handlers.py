@@ -1,12 +1,9 @@
 import logging
-from typing import Any, Dict, List
+from typing import List
 
 from aiohttp import web
-from models_library.users import UserID
-from servicelib.application_keys import APP_DB_ENGINE_KEY
+from models_library.users import GroupID, UserID
 from servicelib.rest_utils import extract_and_validate
-from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
-from simcore_postgres_database.models.clusters import clusters
 from simcore_service_webserver.clusters.models import Cluster
 from simcore_service_webserver.groups_api import list_user_groups
 from simcore_service_webserver.security_decorators import permission_required
@@ -29,12 +26,14 @@ async def list_clusters_handler(request: web.Request) -> web.Response:
     user_id: UserID = request[RQT_USERID_KEY]
 
     primary_group, std_groups, all_group = await list_user_groups(request.app, user_id)
-    user_groups: List[Dict[str, Any]] = [primary_group] + std_groups + [all_group]
+    user_gids: List[GroupID] = [
+        group["gid"] for group in ([primary_group] + std_groups + [all_group])
+    ]
 
     clusters_repo = ClustersRepository(request)
 
-    clusters_list: List[Cluster] = await clusters_repo.list_clusters(
-        primary_group["gid"]
+    clusters_list: List[Cluster] = await clusters_repo.list_clusters_for_groups(
+        user_gids
     )
 
     data = [d.dict(by_alias=True, exclude_unset=True) for d in clusters_list]
