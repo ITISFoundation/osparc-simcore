@@ -84,11 +84,11 @@ qx.Class.define("osparc.component.node.CodeEditorNodeView", {
       this._mainView.add(codeEditor, {
         flex: 1
       });
+      const propsForm = this.getNode().getPropsForm();
+      // eslint-disable-next-line no-underscore-dangle
+      const ctrlCodeText = propsForm._form.getControl(portId);
       codeEditor.addListener("changeValue", e => {
-        const value = e.getData();
-        const propsForm = this.getNode().getPropsForm();
-        // eslint-disable-next-line no-underscore-dangle
-        propsForm._form.getControl(portId).setValue(value);
+        ctrlCodeText.setValue(e.getData());
       }, this);
     }
   }
