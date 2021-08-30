@@ -9,7 +9,7 @@ from simcore_postgres_database.models.clusters import clusters
 from sqlalchemy.sql.elements import literal_column
 
 from ..db_base_repository import BaseRepository
-from .models import CLUSTER_NO_RIGHTS, Cluster, ClusterAccessRights
+from .models import CLUSTER_NO_RIGHTS, Cluster, ClusterAccessRights, ClusterCreate
 
 # Cluster access rights:
 # All group comes first, then standard groups, then primary group
@@ -82,6 +82,7 @@ class ClustersRepository(BaseRepository):
                 cluster_id = row[clusters.c.id]
                 if cluster_id not in cluster_id_to_cluster:
                     cluster_id_to_cluster[cluster_id] = Cluster.construct(
+                        id=cluster_id,
                         name=row[clusters.c.name],
                         description=row[clusters.c.description],
                         type=row[clusters.c.type],
@@ -115,12 +116,14 @@ class ClustersRepository(BaseRepository):
             )
         )
 
-    async def create_cluster(self, new_cluster: Cluster) -> Cluster:
+    async def create_cluster(self, new_cluster: ClusterCreate) -> Cluster:
         async with self.engine.acquire() as conn:
             created_cluser_id: int = await conn.scalar(
                 # pylint: disable=no-value-for-parameter
                 clusters.insert()
-                .values(new_cluster.dict(by_alias=True, exclude={"access_rights"}))
+                .values(
+                    new_cluster.dict(by_alias=True, exclude={"id", "access_rights"})
+                )
                 .returning(clusters.c.id)
             )
 
@@ -148,6 +151,7 @@ class ClustersRepository(BaseRepository):
             assert row  # nosec
 
             return Cluster.construct(
+                id=row[clusters.c.id],
                 name=row[clusters.c.name],
                 description=row[clusters.c.description],
                 type=row[clusters.c.type],
