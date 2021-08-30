@@ -1,8 +1,7 @@
-from collections import defaultdict
 from typing import Dict, List, Optional
 
 import sqlalchemy as sa
-from aiopg.sa.result import ResultProxy, RowProxy
+from aiopg.sa.result import ResultProxy
 from models_library.users import GroupID
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
@@ -17,7 +16,29 @@ class ClustersRepository(BaseRepository):
         self, gids: List[GroupID], offset: int = 0, limit: Optional[int] = None
     ) -> List[Cluster]:
         cluster_id_to_cluster: Dict[PositiveInt, Cluster] = {}
+
         async with self.engine.acquire() as conn:
+            result: ResultProxy = await conn.execute(
+                sa.select([cluster_to_groups.c.cluster_id]).where(
+                    cluster_to_groups.c.gid.in_(gids)
+                    & (
+                        cluster_to_groups.c.read_access
+                        | cluster_to_groups.c.write_access
+                        | cluster_to_groups.c.delete_access
+                    )
+                )
+            )
+
+            if result is None:
+                return []
+
+            cluster_ids = [
+                r[cluster_to_groups.c.cluster_id] for r in await result.fetchall()
+            ]
+
+            if not cluster_ids:
+                return []
+
             async for row in conn.execute(
                 sa.select(
                     [
@@ -34,7 +55,7 @@ class ClustersRepository(BaseRepository):
                         clusters.c.id == cluster_to_groups.c.cluster_id,
                     )
                 )
-                .where(cluster_to_groups.c.gid.in_(gids))
+                .where(clusters.c.id.in_(cluster_ids))
                 .offset(offset)
                 .limit(limit)
             ):
@@ -47,7 +68,7 @@ class ClustersRepository(BaseRepository):
                 }
                 cluster_id = row[clusters.c.id]
                 if cluster_id not in cluster_id_to_cluster:
-                    cluster_id_to_cluster[cluster_id] = Cluster(
+                    cluster_id_to_cluster[cluster_id] = Cluster.construct(
                         name=row[clusters.c.name],
                         description=row[clusters.c.description],
                         type=row[clusters.c.type],
