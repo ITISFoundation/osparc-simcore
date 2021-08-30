@@ -216,8 +216,27 @@ async def test_create_cluster(
     postgres_db.execute(clusters.delete().where(clusters.c.id == row[clusters.c.id]))
 
 
-def test_get_cluster(client: TestClient):
-    pass
+@pytest.mark.parametrize(
+    *standard_role_response(),
+)
+async def test_get_cluster(
+    enable_dev_features: None,
+    client: TestClient,
+    postgres_db: sa.engine.Engine,
+    logged_user: Dict[str, Any],
+    primary_group: Dict[str, Any],
+    cluster: Callable[..., Coroutine[Any, Any, Cluster]],
+    faker: Faker,
+    expected: ExpectedResponse,
+):
+    url = client.app.router["get_cluster_handler"].url_for(id=f"{25}")
+    rsp = await client.get(f"{url}")
+    data, error = await assert_status(rsp, expected.ok)
+    if error:
+        # we are done here
+        return
+    # there are no clusters yet
+    assert data == []
 
 
 def test_update_cluster(client: TestClient):
