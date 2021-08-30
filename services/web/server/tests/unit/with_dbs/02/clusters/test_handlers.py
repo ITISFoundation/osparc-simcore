@@ -14,13 +14,18 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.users import GroupID
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import NewUser, create_user
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 from simcore_service_webserver.clusters.models import (
     CLUSTER_ADMIN_RIGHTS,
+    CLUSTER_MANAGER_RIGHTS,
+    CLUSTER_USER_RIGHTS,
     Cluster,
+    ClusterAccessRights,
     ClusterType,
 )
+from simcore_service_webserver.groups_api import list_user_groups
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.elements import literal_column
 
@@ -28,17 +33,28 @@ from sqlalchemy.sql.elements import literal_column
 @pytest.fixture
 def cluster(
     postgres_db: sa.engine.Engine, faker: Faker
-) -> Iterable[Callable[[GroupID], Coroutine[Any, Any, Cluster]]]:
+) -> Iterable[
+    Callable[
+        [GroupID, Dict[GroupID, ClusterAccessRights]], Coroutine[Any, Any, Cluster]
+    ]
+]:
 
     list_of_created_cluster_ids = []
 
-    async def creator(gid: GroupID) -> Cluster:
+    async def creator(
+        gid: GroupID, cluster_access_rights: Dict[GroupID, ClusterAccessRights] = None
+    ) -> Cluster:
+
+        default_cluster_access_rights = {gid: CLUSTER_ADMIN_RIGHTS}
+        if cluster_access_rights:
+            default_cluster_access_rights.update(cluster_access_rights)
+
         new_cluster = Cluster(
             **{
                 "name": faker.name(),
                 "type": random.choice(list(ClusterType)),
                 "owner": gid,
-                "access_rights": {gid: CLUSTER_ADMIN_RIGHTS},
+                "access_rights": default_cluster_access_rights,
             }
         )
 
@@ -78,16 +94,22 @@ def cluster(
     )
 
 
+@pytest.fixture(scope="function")
+async def second_user(client: TestClient) -> Callable[..., Dict[str, Any]]:
+    async with NewUser({"name": "Second User", "role": "USER"}, client.app) as user:
+        yield user
+
+
 @pytest.mark.parametrize(
     *standard_role_response(),
 )
 async def test_list_clusters(
     enable_dev_features: None,
     client: TestClient,
+    postgres_db: sa.engine.Engine,
     logged_user: Dict[str, Any],
+    second_user: Dict[str, Any],
     primary_group: Dict[str, str],
-    standard_groups: List[Dict[str, str]],
-    all_group: Dict[str, str],
     cluster: Callable[..., Coroutine[Any, Any, Cluster]],
     expected: ExpectedResponse,
 ):
@@ -100,12 +122,45 @@ async def test_list_clusters(
     # there are no clusters yet
     assert data == []
 
-    # create a cluster with admin rights
-    new_cluster: Cluster = await cluster(GroupID(primary_group["gid"]))
-
+    # create our own cluster
+    admin_cluster: Cluster = await cluster(GroupID(primary_group["gid"]))
+    # now the listing should retrieve our cluster
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected.ok)
     assert len(data) == 1
+    assert Cluster.parse_obj(data[0]) == admin_cluster
+
+    # we have a second user that creates a few clusters, some are shared with the first user
+    another_primary_group, _, _ = await list_user_groups(client.app, second_user["id"])
+    a_cluster_that_may_be_managed: Cluster = await cluster(
+        GroupID(another_primary_group["gid"]),
+        {GroupID(primary_group["gid"]): CLUSTER_MANAGER_RIGHTS},
+    )
+
+    a_cluster_that_may_be_used: Cluster = await cluster(
+        GroupID(another_primary_group["gid"]),
+        {GroupID(primary_group["gid"]): CLUSTER_USER_RIGHTS},
+    )
+
+    a_cluster_that_may_not_be_used: Cluster = await cluster(
+        GroupID(another_primary_group["gid"]),
+        {
+            GroupID(primary_group["gid"]): ClusterAccessRights(
+                read=False, write=False, delete=False
+            )
+        },
+    )
+
+    # now listing should retrieve both clusters
+    rsp = await client.get(f"{url}")
+    data, error = await assert_status(rsp, expected.ok)
+    assert len(data) == (1 + 2)
+    for d in data:
+        assert Cluster.parse_obj(d) in [
+            admin_cluster,
+            a_cluster_that_may_be_managed,
+            a_cluster_that_may_be_used,
+        ]
 
 
 def test_create_cluster(client: TestClient):
