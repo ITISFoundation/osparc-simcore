@@ -25,7 +25,9 @@ class Cluster(BaseModel):
     description: Optional[str] = None
     type: ClusterType
     owner: GroupID
-    access_rights: Dict[GroupID, ClusterAccessRights]
+    access_rights: Optional[Dict[GroupID, ClusterAccessRights]] = Field(
+        default_factory=dict
+    )
 
     class Config:
         extra = Extra.forbid
@@ -52,13 +54,13 @@ class Cluster(BaseModel):
             ]
         }
 
-    @validator("access_rights", always=True)
+    @validator("access_rights", always=True, pre=True)
     @classmethod
     def check_owner_has_access_rights(cls, v, values):
         owner_gid = values["owner"]
-        # check owner is in the access rights
+        # check owner is in the access rights, if not add it
         if owner_gid not in v:
-            raise ValueError("access rights object does not contain owner access right")
+            v[owner_gid] = CLUSTER_ADMIN_RIGHTS
         # check owner has full access
         if v[owner_gid] != CLUSTER_ADMIN_RIGHTS:
             raise ValueError("the cluster owner access rights are incorrectly set")
