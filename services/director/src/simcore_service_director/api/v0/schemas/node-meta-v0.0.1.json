@@ -180,9 +180,9 @@
           ],
           "properties": {
             "displayOrder": {
-            "description": "DEPRECATED: new display order is taken from the item position. This property will be removed.",
-            "deprecated": true,
-            "type": "number"
+              "type": "number",
+              "description": "DEPRECATED: new display order is taken from the item position. This property will be removed.",
+              "deprecated": true
             },
             "label": {
               "type": "string",

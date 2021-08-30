@@ -256,9 +256,9 @@ paths:
                                 - type
                               properties:
                                 displayOrder:
+                                  type: number
                                   description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
                                   deprecated: true
-                                  type: number
                                 label:
                                   type: string
                                   description: short name for the property
@@ -376,9 +376,9 @@ paths:
                                 - type
                               properties:
                                 displayOrder:
+                                  type: number
                                   description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
                                   deprecated: true
-                                  type: number
                                 label:
                                   type: string
                                   description: short name for the property
@@ -646,9 +646,9 @@ paths:
                                 - type
                               properties:
                                 displayOrder:
+                                  type: number
                                   description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
                                   deprecated: true
-                                  type: number
                                 label:
                                   type: string
                                   description: short name for the property
@@ -766,9 +766,9 @@ paths:
                                 - type
                               properties:
                                 displayOrder:
+                                  type: number
                                   description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
                                   deprecated: true
-                                  type: number
                                 label:
                                   type: string
                                   description: short name for the property
@@ -2443,9 +2443,9 @@ components:
                       - type
                     properties:
                       displayOrder:
+                        type: number
                         description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
                         deprecated: true
-                        type: number
                       label:
                         type: string
                         description: short name for the property
@@ -2563,9 +2563,9 @@ components:
                       - type
                     properties:
                       displayOrder:
+                        type: number
                         description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
                         deprecated: true
-                        type: number
                       label:
                         type: string
                         description: short name for the property
