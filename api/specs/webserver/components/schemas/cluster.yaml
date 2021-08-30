@@ -16,6 +16,22 @@ ClusterAccessRights:
     - write
     - delete
 
+ClusterCreate:
+  type: object
+  properties:
+    name:
+      description: the cluster name
+      type: string
+    description:
+      description: the cluster description
+      type: string
+    accessRights:
+      type: array
+      items:
+        $ref: "#/ClusterAccessRights"
+  required:
+    - name
+
 Cluster:
   type: object
   properties:
