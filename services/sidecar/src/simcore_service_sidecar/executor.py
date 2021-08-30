@@ -236,7 +236,7 @@ class Executor:
     ) -> Dict:
         # NOTE: Env/Binds for log folder is only necessary for integraion "0"
         env_vars = [
-            f"{name.upper()}_FOLDER=/{name}/{self.task.job_id}"
+            f"{name.upper()}_FOLDER=/{name}"
             for name in [
                 "input",
                 "output",
@@ -308,9 +308,9 @@ class Executor:
                 "Binds": [
                     # NOTE: the docker engine is mounted, so only named volumes are usable. Therefore for a selective
                     # subfolder mount we need to get the path as seen from the host computer (see https://github.com/ITISFoundation/osparc-simcore/issues/1723)
-                    f"{host_input_path}/{self.task.job_id}:/input/{self.task.job_id}",
-                    f"{host_output_path}/{self.task.job_id}:/output/{self.task.job_id}",
-                    f"{host_log_path}/{self.task.job_id}:/log/{self.task.job_id}",
+                    f"{host_input_path}/{self.task.job_id}:/input",
+                    f"{host_output_path}/{self.task.job_id}:/output",
+                    f"{host_log_path}/{self.task.job_id}:/log",
                 ],
             },
         }
