@@ -19,6 +19,8 @@
 
 /**
  * @asset(code-mirror/codemirror.min.js)
+ * @asset(code-mirror/python.min.js)
+ * @asset(code-mirror/javascript.min.js)
  * @asset(code-mirror/codemirror.min.css)
  * @asset(code-mirror/3024-day.min.css)
  * @asset(code-mirror/3024-night.min.css)
@@ -56,6 +58,8 @@ qx.Class.define("osparc.wrapper.CodeMirror", {
     init: function() {
       // initialize the script loading
       const codeMirrorPath = "code-mirror/codemirror.min.js";
+      const pythonHLPath = "code-mirror/python.min.js";
+      const javascriptHLPath = "code-mirror/javascript.min.js";
       const codeMirrorCss = "code-mirror/codemirror.min.css";
       const codeMirrorDayCss = "code-mirror/3024-day.min.css";
       const codeMirrorNightCss = "code-mirror/3024-night.min.css";
@@ -66,7 +70,9 @@ qx.Class.define("osparc.wrapper.CodeMirror", {
       qx.module.Css.includeStylesheet(codeMirrorDayCssUri);
       qx.module.Css.includeStylesheet(codeMirrorNightCssUri);
       const dynLoader = new qx.util.DynamicScriptLoader([
-        codeMirrorPath
+        codeMirrorPath,
+        pythonHLPath,
+        javascriptHLPath
       ]);
 
       dynLoader.addListenerOnce("ready", e => {
