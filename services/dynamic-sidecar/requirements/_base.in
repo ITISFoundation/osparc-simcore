@@ -19,3 +19,4 @@ aiofiles
 PyYAML
 async-timeout
 async_generator
+watchdog

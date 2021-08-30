@@ -294,6 +294,8 @@ urllib3==1.26.6
     #   requests
 uvicorn==0.15.0
     # via -r requirements/_base.in
+watchdog==2.1.5
+    # via -r requirements/_base.in
 websocket-client==0.59.0
     # via
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_migration.in
