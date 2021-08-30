@@ -27,7 +27,7 @@ qx.Class.define("osparc.component.node.CodeEditorNodeView", {
 
     // overridden
     isSettingsGroupShowable: function() {
-      return false;
+      return true;
     },
 
     // overridden
@@ -78,10 +78,18 @@ qx.Class.define("osparc.component.node.CodeEditorNodeView", {
         return;
       }
 
-      const codeEditor = this.__codeEditor = new osparc.component.widget.CodeEditor();
+      const inputvalues = node.getInputValues();
+      const portId = "codeText";
+      const codeEditor = this.__codeEditor = new osparc.component.widget.CodeEditor(inputvalues[portId]);
       this._mainView.add(codeEditor, {
         flex: 1
       });
+      codeEditor.addListener("changeValue", e => {
+        const value = e.getData();
+        const propsForm = this.getNode().getPropsForm();
+        // eslint-disable-next-line no-underscore-dangle
+        propsForm._form.getControl(portId).setValue(value);
+      }, this);
     }
   }
 });

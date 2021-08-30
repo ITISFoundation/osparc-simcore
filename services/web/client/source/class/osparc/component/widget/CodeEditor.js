@@ -18,14 +18,18 @@
 qx.Class.define("osparc.component.widget.CodeEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(initCode) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.Canvas());
 
-    const textArea = this.__textArea = new qx.ui.form.TextArea();
+    const textArea = new qx.ui.form.TextArea(initCode);
     this.addListener("appear", () => {
-      this.__codeArea = osparc.wrapper.CodeMirror.getInstance().convertTextArea(this.__textArea);
+      const codeArea = osparc.wrapper.CodeMirror.getInstance().convertTextArea(textArea);
+      codeArea.on("change", cm => {
+        const value = cm.getValue();
+        this.setValue(value);
+      });
     }, this);
     this._add(textArea, {
       top: 0,
@@ -35,16 +39,12 @@ qx.Class.define("osparc.component.widget.CodeEditor", {
     });
   },
 
-  members: {
-    __textArea: null,
-    __codeArea: null,
-
-    setValue: function() {
-      return this.__codeArea.setValue();
-    },
-
-    getValue: function() {
-      return this.__codeArea.getValue();
+  properties: {
+    value: {
+      check: "String",
+      nullable: false,
+      init: "",
+      event: "changeValue"
     }
   }
 });
