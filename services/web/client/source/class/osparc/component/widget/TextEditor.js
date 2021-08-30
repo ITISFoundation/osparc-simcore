@@ -32,7 +32,7 @@ qx.Class.define("osparc.component.widget.TextEditor", {
 
     this._setLayout(new qx.ui.layout.VBox(2));
 
-    this.__populateTextArea(initText);
+    this._populateTextArea(initText);
     this.__addSubtitle(subtitleText);
     this.__addButtons();
   },
@@ -43,7 +43,7 @@ qx.Class.define("osparc.component.widget.TextEditor", {
   },
 
   members: {
-    __textArea: null,
+    _textArea: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -81,7 +81,7 @@ qx.Class.define("osparc.component.widget.TextEditor", {
           const buttons = this.getChildControl("buttons");
           control = new qx.ui.form.Button(this.tr("Save"));
           control.addListener("execute", () => {
-            const newText = this.__textArea.getValue();
+            const newText = this._textArea.getValue();
             this.fireDataEvent("textChanged", newText);
           }, this);
           buttons.add(control);
@@ -91,14 +91,15 @@ qx.Class.define("osparc.component.widget.TextEditor", {
       return control || this.base(arguments, id);
     },
 
-    __populateTextArea: function(initText) {
-      const textArea = this.__textArea = this.getChildControl("text-area").set({
+    _populateTextArea: function(initText) {
+      const textArea = this._textArea = this.getChildControl("text-area").set({
         value: initText
       });
       this.addListener("appear", () => {
         if (textArea.getValue()) {
           textArea.setTextSelection(0, textArea.getValue().length);
         }
+        osparc.wrapper.CodeMirror.getInstance().convertTextArea(textArea);
       }, this);
     },
 

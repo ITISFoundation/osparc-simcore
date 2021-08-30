@@ -210,6 +210,10 @@ qx.Class.define("osparc.data.model.Node", {
       return (metaData && metaData.key && metaData.key.includes("/parameter/"));
     },
 
+    isCodeEditor: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("code-editor"));
+    },
+
     isContainer: function(metaData) {
       return (metaData && metaData.key && metaData.key.includes("nodes-group"));
     },
@@ -261,6 +265,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     isParameter: function() {
       return osparc.data.model.Node.isParameter(this.getMetaData());
+    },
+
+    isCodeEditor: function() {
+      return osparc.data.model.Node.isCodeEditor(this.getMetaData());
     },
 
     isContainer: function() {

@@ -134,6 +134,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         nodeView.addListener("itemSelected", () => {
           this.nodeSelected(prevNodeId);
         }, this);
+      } else if (node.isCodeEditor()) {
+        const nodeView = new osparc.component.node.CodeEditorNodeView();
+        nodeView.setNode(node);
+        this.__showInMainView(nodeView, nodeId);
+        nodeView.populateLayout();
       } else {
         this.__nodeView.setNode(node);
         this.__showInMainView(this.__nodeView, nodeId);
