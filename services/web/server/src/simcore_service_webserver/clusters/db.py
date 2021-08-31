@@ -7,8 +7,6 @@ from pydantic.types import PositiveInt
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.engine.result import RowProxy
-from sqlalchemy.sql.elements import literal_column
 
 from ..db_base_repository import BaseRepository
 from .exceptions import ClusterAccessForbidden, ClusterNotFoundError
