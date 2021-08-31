@@ -1,6 +1,6 @@
 import re
 from copy import deepcopy
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 import sqlalchemy as sa
 from sqlalchemy.engine import Engine
@@ -34,30 +34,36 @@ def build_url(
 
 
 def create_tables(dsn: URL):
+    engine: Optional[Engine] = None
     try:
-        engine: Engine = sa.create_engine(str(dsn))
+        engine = sa.create_engine(str(dsn))
+        assert engine  # nosec
         metadata.create_all(engine)
     finally:
-        engine.dispose()
+        if engine:
+            engine.dispose()
 
 
 def raise_if_not_responsive(dsn: URL, *, verbose=False):
-    """ checks whether database is responsive, otherwise it throws exception"""
+    """Checks whether database is responsive, otherwise it throws exception"""
+    engine: Optional[Engine] = None
     try:
-        engine: Engine = sa.create_engine(
+        engine = sa.create_engine(
             str(dsn), echo=verbose, echo_pool=verbose, pool_timeout=5
         )
+        assert engine  # nosec
         conn = engine.connect()
         conn.close()
     finally:
-        engine.dispose()
+        if engine:
+            engine.dispose()
 
 
-url_pass_re = re.compile(r":(\w+)@")
+_URL_PASS_RE = re.compile(r":(\w+)@")
 
 
 def hide_url_pass(url: Union[str, URL]) -> str:
-    return url_pass_re.sub(":********@", str(url))
+    return _URL_PASS_RE.sub(":********@", str(url))
 
 
 def hide_dict_pass(data: Dict) -> Dict:
