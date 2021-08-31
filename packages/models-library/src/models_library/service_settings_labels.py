@@ -96,7 +96,7 @@ class PathMappingsLabel(BaseModel):
 
     class Config(_BaseConfig):
         schema_extra = {
-            "examples": {
+            "example": {
                 "outputs_path": "/tmp/outputs",  # nosec
                 "inputs_path": "/tmp/inputs",  # nosec
                 "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # nosec
@@ -202,7 +202,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
                     "simcore.service.paths-mapping": json.dumps(
-                        PathMappingsLabel.Config.schema_extra["examples"]
+                        PathMappingsLabel.Config.schema_extra["example"]
                     ),
                 },
                 # dynamic-service with compose spec
@@ -211,7 +211,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
                     "simcore.service.paths-mapping": json.dumps(
-                        PathMappingsLabel.Config.schema_extra["examples"]
+                        PathMappingsLabel.Config.schema_extra["example"]
                     ),
                     "simcore.service.compose-spec": json.dumps(
                         {
