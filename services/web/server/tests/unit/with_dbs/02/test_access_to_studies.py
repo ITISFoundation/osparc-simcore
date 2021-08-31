@@ -53,6 +53,7 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, redis_service):
         "publications",
         "catalog",
         "computation",
+        "clusters",
     }
     include = {
         "db",
