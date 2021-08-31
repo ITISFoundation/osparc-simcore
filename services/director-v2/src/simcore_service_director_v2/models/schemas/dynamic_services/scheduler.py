@@ -213,7 +213,7 @@ class ServiceLabelsStoredData(CommonServiceDetails, DynamicSidecarServiceLabels)
                 "key": "simcore/services/dynamic/3dviewer",
                 "version": "2.4.5",
                 "paths_mapping": PathMappingsLabel.parse_obj(
-                    PathMappingsLabel.Config.schema_extra["examples"]
+                    PathMappingsLabel.Config.schema_extra["example"]
                 ),
                 "compose_spec": SimcoreServiceLabels.Config.schema_extra["examples"][2][
                     "simcore.service.compose-spec"
