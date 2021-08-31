@@ -414,15 +414,15 @@ qx.Class.define("osparc.data.Resources", {
           },
           getOne: {
             method: "GET",
-            url: statics.API + "/clusters/{gid}"
+            url: statics.API + "/clusters/{cid}"
           },
           delete: {
             method: "DELETE",
-            url: statics.API + "/clusters/{gid}"
+            url: statics.API + "/clusters/{cid}"
           },
           patch: {
             method: "PATCH",
-            url: statics.API + "/clusters/{gid}"
+            url: statics.API + "/clusters/{cid}"
           }
         }
       },
