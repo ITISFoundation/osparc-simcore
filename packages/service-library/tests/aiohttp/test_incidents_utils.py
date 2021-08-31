@@ -5,7 +5,7 @@
 import operator
 
 import attr
-from servicelib.incidents import BaseIncident, LimitedOrderedStack
+from servicelib.aiohttp.incidents import BaseIncident, LimitedOrderedStack
 
 
 def test_limited_ordered_stack():

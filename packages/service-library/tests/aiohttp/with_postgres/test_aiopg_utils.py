@@ -14,7 +14,7 @@ import pytest
 import sqlalchemy as sa
 import sqlalchemy.exc as sa_exceptions
 from aiohttp import web
-from servicelib.aiopg_utils import (
+from servicelib.aiohttp.aiopg_utils import (
     DatabaseError,
     DataSourceName,
     PostgresRetryPolicyUponOperation,

@@ -9,15 +9,15 @@
 
 import pytest
 from aiohttp import web
-from servicelib import openapi
-from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
-from servicelib.rest_middlewares import (
+from servicelib.aiohttp import openapi
+from servicelib.aiohttp.application_keys import APP_OPENAPI_SPECS_KEY
+from servicelib.aiohttp.rest_middlewares import (
     envelope_middleware_factory,
     error_middleware_factory,
     validate_middleware_factory,
 )
-from servicelib.rest_responses import is_enveloped, unwrap_envelope
-from servicelib.rest_routing import create_routes_from_namespace
+from servicelib.aiohttp.rest_responses import is_enveloped, unwrap_envelope
+from servicelib.aiohttp.rest_routing import create_routes_from_namespace
 from tutils import Handlers
 
 
