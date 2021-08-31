@@ -14,3 +14,11 @@ class ClusterNotFoundError(ClustersException):
     def __init__(self, cluster_id: int):
         super().__init__(f"Cluster with id {cluster_id} not found")
         self.cluster_id = cluster_id
+
+
+class ClusterAccessForbidden(ClustersException):
+    """Cluster access is forbidden"""
+
+    def __init__(self, cluster_id: int):
+        super().__init__(f"Cluster with id {cluster_id} is not accessible")
+        self.cluster_id = cluster_id

@@ -11,7 +11,7 @@ from ..groups_api import list_user_groups
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
 from .db import ClustersRepository
-from .exceptions import ClusterNotFoundError
+from .exceptions import ClusterAccessForbidden, ClusterNotFoundError
 from .models import Cluster, ClusterCreate
 
 logger = logging.getLogger(__name__)
@@ -86,6 +86,8 @@ async def get_cluster_handler(request: web.Request) -> web.Response:
         return web.json_response(data={"data": data})
     except ClusterNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"{exc}")
+    except ClusterAccessForbidden as exc:
+        raise web.HTTPForbidden(reason=f"{exc}")
 
 
 @routes.patch(

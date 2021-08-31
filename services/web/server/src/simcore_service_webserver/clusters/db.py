@@ -8,7 +8,7 @@ from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 
 from ..db_base_repository import BaseRepository
-from .exceptions import ClusterNotFoundError
+from .exceptions import ClusterAccessForbidden, ClusterNotFoundError
 from .models import CLUSTER_NO_RIGHTS, Cluster, ClusterAccessRights, ClusterCreate
 
 # Cluster access rights:
@@ -18,7 +18,7 @@ from .models import CLUSTER_NO_RIGHTS, Cluster, ClusterAccessRights, ClusterCrea
 class ClustersRepository(BaseRepository):
     async def _clusters_from_cluster_ids(
         self,
-        conn,
+        conn: sa.engine.Connection,
         cluster_ids: Set[PositiveInt],
         offset: int = 0,
         limit: Optional[int] = None,
@@ -79,6 +79,7 @@ class ClustersRepository(BaseRepository):
         limit: Optional[int] = None,
     ) -> List[Cluster]:
         async with self.engine.acquire() as conn:
+            # let's first find which clusters are available for our user
             result: ResultProxy = await conn.execute(
                 sa.select([cluster_to_groups.c.cluster_id]).where(
                     cluster_to_groups.c.gid.in_(
@@ -169,8 +170,8 @@ class ClustersRepository(BaseRepository):
                 access_rights={
                     row[clusters.c.owner]: {
                         "read": row[cluster_to_groups.c.read_access],
-                        "write": row[cluster_to_groups.c.read_access],
-                        "delete": row[cluster_to_groups.c.read_access],
+                        "write": row[cluster_to_groups.c.write_access],
+                        "delete": row[cluster_to_groups.c.delete_access],
                     }
                 },
             )
@@ -188,4 +189,31 @@ class ClustersRepository(BaseRepository):
             )
         if not clusters_list:
             raise ClusterNotFoundError(cluster_id)
-        return clusters_list[0]
+
+        def solve_access_rights(
+            cluster: Cluster,
+            primary_group: GroupID,
+            standard_groups: List[GroupID],
+            all_group: GroupID,
+        ) -> ClusterAccessRights:
+            # primary access dominates all others
+            if primary_grp_rights := cluster.access_rights.get(primary_group):
+                return primary_grp_rights
+
+            # solve access by checking all group first, then composing using standard groups
+            solved_rights = cluster.access_rights.get(
+                all_group, CLUSTER_NO_RIGHTS
+            ).dict()
+            for grp in standard_groups:
+                grp_access = cluster.access_rights.get(grp, CLUSTER_NO_RIGHTS).dict()
+                for operation in ["read", "write", "delete"]:
+                    solved_rights[operation] |= grp_access[operation]
+            return ClusterAccessRights(**solved_rights)
+
+        the_cluster = clusters_list[0]
+        if not solve_access_rights(
+            the_cluster, primary_group, standard_groups, all_group
+        ).read:
+            raise ClusterAccessForbidden(cluster_id)
+
+        return the_cluster
