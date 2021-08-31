@@ -15701,24 +15701,26 @@ paths:
                           type: integer
                           minimum: 1
                         accessRights:
-                          type: array
-                          items:
-                            description: defines acesss rights for the cluster
-                            type: object
-                            properties:
-                              read:
-                                type: boolean
-                                description: allows usage of the cluster
-                              write:
-                                type: boolean
-                                description: allows modification of the cluster
-                              delete:
-                                type: boolean
-                                description: allows deletion of the cluster
-                            required:
-                              - read
-                              - write
-                              - delete
+                          type: object
+                          description: object containing the GroupID as key and read/write/execution permissions as value
+                          x-patternProperties:
+                            ^\S+$:
+                              description: defines acesss rights for the cluster
+                              type: object
+                              properties:
+                                read:
+                                  type: boolean
+                                  description: allows usage of the cluster
+                                write:
+                                  type: boolean
+                                  description: allows modification of the cluster
+                                delete:
+                                  type: boolean
+                                  description: allows deletion of the cluster
+                              required:
+                                - read
+                                - write
+                                - delete
                       required:
                         - id
                         - name
@@ -15875,24 +15877,26 @@ paths:
                         type: integer
                         minimum: 1
                       accessRights:
-                        type: array
-                        items:
-                          description: defines acesss rights for the cluster
-                          type: object
-                          properties:
-                            read:
-                              type: boolean
-                              description: allows usage of the cluster
-                            write:
-                              type: boolean
-                              description: allows modification of the cluster
-                            delete:
-                              type: boolean
-                              description: allows deletion of the cluster
-                          required:
-                            - read
-                            - write
-                            - delete
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
+                        x-patternProperties:
+                          ^\S+$:
+                            description: defines acesss rights for the cluster
+                            type: object
+                            properties:
+                              read:
+                                type: boolean
+                                description: allows usage of the cluster
+                              write:
+                                type: boolean
+                                description: allows modification of the cluster
+                              delete:
+                                type: boolean
+                                description: allows deletion of the cluster
+                            required:
+                              - read
+                              - write
+                              - delete
                     required:
                       - id
                       - name
@@ -16033,24 +16037,26 @@ paths:
                         type: integer
                         minimum: 1
                       accessRights:
-                        type: array
-                        items:
-                          description: defines acesss rights for the cluster
-                          type: object
-                          properties:
-                            read:
-                              type: boolean
-                              description: allows usage of the cluster
-                            write:
-                              type: boolean
-                              description: allows modification of the cluster
-                            delete:
-                              type: boolean
-                              description: allows deletion of the cluster
-                          required:
-                            - read
-                            - write
-                            - delete
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
+                        x-patternProperties:
+                          ^\S+$:
+                            description: defines acesss rights for the cluster
+                            type: object
+                            properties:
+                              read:
+                                type: boolean
+                                description: allows usage of the cluster
+                              write:
+                                type: boolean
+                                description: allows modification of the cluster
+                              delete:
+                                type: boolean
+                                description: allows deletion of the cluster
+                            required:
+                              - read
+                              - write
+                              - delete
                     required:
                       - id
                       - name
@@ -16175,24 +16181,26 @@ paths:
                   type: integer
                   minimum: 1
                 accessRights:
-                  type: array
-                  items:
-                    description: defines acesss rights for the cluster
-                    type: object
-                    properties:
-                      read:
-                        type: boolean
-                        description: allows usage of the cluster
-                      write:
-                        type: boolean
-                        description: allows modification of the cluster
-                      delete:
-                        type: boolean
-                        description: allows deletion of the cluster
-                    required:
-                      - read
-                      - write
-                      - delete
+                  type: object
+                  description: object containing the GroupID as key and read/write/execution permissions as value
+                  x-patternProperties:
+                    ^\S+$:
+                      description: defines acesss rights for the cluster
+                      type: object
+                      properties:
+                        read:
+                          type: boolean
+                          description: allows usage of the cluster
+                        write:
+                          type: boolean
+                          description: allows modification of the cluster
+                        delete:
+                          type: boolean
+                          description: allows deletion of the cluster
+                      required:
+                        - read
+                        - write
+                        - delete
       responses:
         '200':
           description: the modified cluster
@@ -16227,24 +16235,26 @@ paths:
                         type: integer
                         minimum: 1
                       accessRights:
-                        type: array
-                        items:
-                          description: defines acesss rights for the cluster
-                          type: object
-                          properties:
-                            read:
-                              type: boolean
-                              description: allows usage of the cluster
-                            write:
-                              type: boolean
-                              description: allows modification of the cluster
-                            delete:
-                              type: boolean
-                              description: allows deletion of the cluster
-                          required:
-                            - read
-                            - write
-                            - delete
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
+                        x-patternProperties:
+                          ^\S+$:
+                            description: defines acesss rights for the cluster
+                            type: object
+                            properties:
+                              read:
+                                type: boolean
+                                description: allows usage of the cluster
+                              write:
+                                type: boolean
+                                description: allows modification of the cluster
+                              delete:
+                                type: boolean
+                                description: allows deletion of the cluster
+                            required:
+                              - read
+                              - write
+                              - delete
                     required:
                       - id
                       - name
