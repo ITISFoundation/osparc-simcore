@@ -1,6 +1,6 @@
 """
     Collection of functions that create fake raw data that can be used
-    to populate postgres database, create datasets with consistent values, etc
+    to populate postgres DATABASE, create datasets with consistent values, etc
 
     Built on top of the idea of Faker library (https://faker.readthedocs.io/en/master/),
     that generate fake data to bootstrap a database, fill-in stress tests, anonymize data ...
@@ -46,8 +46,9 @@ def random_user(**overrides) -> Dict[str, Any]:
 
 
 def random_project(**overrides) -> Dict[str, Any]:
+    """Generates random fake data projects DATABASE table"""
     data = dict(
-        uuid=uuid4(),
+        uuid=fake.uuid4(),
         name=fake.word(),
         description=fake.sentence(),
         prj_owner=fake.pyint(),
