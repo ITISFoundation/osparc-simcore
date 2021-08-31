@@ -15838,29 +15838,6 @@ paths:
                   enum:
                     - ON_PREMISE
                     - AWS
-                owner:
-                  description: the cluster owner group
-                  type: integer
-                  minimum: 1
-                accessRights:
-                  type: array
-                  items:
-                    description: defines acesss rights for the cluster
-                    type: object
-                    properties:
-                      read:
-                        type: boolean
-                        description: allows usage of the cluster
-                      write:
-                        type: boolean
-                        description: allows modification of the cluster
-                      delete:
-                        type: boolean
-                        description: allows deletion of the cluster
-                    required:
-                      - read
-                      - write
-                      - delete
               required:
                 - name
                 - type
