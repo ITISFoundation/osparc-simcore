@@ -233,25 +233,23 @@ async def test_create_cluster(
 async def test_get_cluster(
     enable_dev_features: None,
     client: TestClient,
-    postgres_db: sa.engine.Engine,
     logged_user: Dict[str, Any],
     second_user: Dict[str, Any],
-    primary_group: Dict[str, Any],
     all_group: Dict[str, Any],
     cluster: Callable[..., Coroutine[Any, Any, Cluster]],
-    faker: Faker,
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
+    # check not found
     url = client.app.router["get_cluster_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected.not_found)
     if error and user_role in [UserRole.ANONYMOUS, UserRole.GUEST]:
         return
     assert data is None
-    # create our own cluster
+
+    # create our own cluster, and we can get it
     admin_cluster: Cluster = await cluster(GroupID(logged_user["primary_gid"]))
-    # now we should be able to get it
     url = client.app.router["get_cluster_handler"].url_for(
         cluster_id=f"{admin_cluster.id}"
     )
@@ -260,21 +258,21 @@ async def test_get_cluster(
     assert Cluster.parse_obj(data) == admin_cluster
 
     # we have a second user that creates a few clusters, some are shared with the first user
-    another_primary_group, _, _ = await list_user_groups(client.app, second_user["id"])
+    a_cluster_that_may_be_administrated: Cluster = await cluster(
+        GroupID(second_user["primary_gid"]),
+        {GroupID(logged_user["primary_gid"]): CLUSTER_MANAGER_RIGHTS},
+    )
     a_cluster_that_may_be_managed: Cluster = await cluster(
         GroupID(second_user["primary_gid"]),
         {GroupID(logged_user["primary_gid"]): CLUSTER_MANAGER_RIGHTS},
     )
-
     a_cluster_that_may_be_used: Cluster = await cluster(
         GroupID(second_user["primary_gid"]),
         {GroupID(logged_user["primary_gid"]): CLUSTER_USER_RIGHTS},
     )
-
     a_cluster_that_is_not_shared: Cluster = await cluster(
         GroupID(second_user["primary_gid"]),
     )
-
     a_cluster_that_may_not_be_used: Cluster = await cluster(
         GroupID(second_user["primary_gid"]),
         {
@@ -286,7 +284,11 @@ async def test_get_cluster(
     )
 
     # we should have access to that one
-    for cl in [a_cluster_that_may_be_managed, a_cluster_that_may_be_used]:
+    for cl in [
+        a_cluster_that_may_be_administrated,
+        a_cluster_that_may_be_managed,
+        a_cluster_that_may_be_used,
+    ]:
         url = client.app.router["get_cluster_handler"].url_for(cluster_id=f"{cl.id}")
         rsp = await client.get(f"{url}")
         data, error = await assert_status(rsp, expected.ok)
