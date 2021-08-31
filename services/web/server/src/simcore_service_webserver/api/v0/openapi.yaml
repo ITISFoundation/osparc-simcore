@@ -15696,6 +15696,10 @@ paths:
                           enum:
                             - ON_PREMISE
                             - AWS
+                        owner:
+                          description: the cluster owner group
+                          type: integer
+                          minimum: 1
                         accessRights:
                           type: array
                           items:
@@ -15834,6 +15838,10 @@ paths:
                   enum:
                     - ON_PREMISE
                     - AWS
+                owner:
+                  description: the cluster owner group
+                  type: integer
+                  minimum: 1
                 accessRights:
                   type: array
                   items:
@@ -15885,6 +15893,10 @@ paths:
                         enum:
                           - ON_PREMISE
                           - AWS
+                      owner:
+                        description: the cluster owner group
+                        type: integer
+                        minimum: 1
                       accessRights:
                         type: array
                         items:
@@ -16039,6 +16051,10 @@ paths:
                         enum:
                           - ON_PREMISE
                           - AWS
+                      owner:
+                        description: the cluster owner group
+                        type: integer
+                        minimum: 1
                       accessRights:
                         type: array
                         items:
@@ -16177,6 +16193,10 @@ paths:
                   enum:
                     - ON_PREMISE
                     - AWS
+                owner:
+                  description: the cluster owner group
+                  type: integer
+                  minimum: 1
                 accessRights:
                   type: array
                   items:
@@ -16225,6 +16245,10 @@ paths:
                         enum:
                           - ON_PREMISE
                           - AWS
+                      owner:
+                        description: the cluster owner group
+                        type: integer
+                        minimum: 1
                       accessRights:
                         type: array
                         items:
