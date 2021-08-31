@@ -70,7 +70,7 @@ class ClustersRepository(BaseRepository):
 
         return list(cluster_id_to_cluster.values())
 
-    async def list_clusters_for_user_groups(
+    async def list_clusters(
         self,
         primary_group: GroupID,
         standard_groups: List[GroupID],

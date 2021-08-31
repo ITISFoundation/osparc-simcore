@@ -31,7 +31,7 @@ async def list_clusters_handler(request: web.Request) -> web.Response:
 
     clusters_repo = ClustersRepository(request)
 
-    clusters_list: List[Cluster] = await clusters_repo.list_clusters_for_user_groups(
+    clusters_list: List[Cluster] = await clusters_repo.list_clusters(
         GroupID(primary_group["gid"]),
         [GroupID(g["gid"]) for g in std_groups],
         GroupID(all_group["gid"]),
