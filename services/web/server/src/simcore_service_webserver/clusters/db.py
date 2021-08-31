@@ -121,16 +121,16 @@ class ClustersRepository(BaseRepository):
             if result is None:
                 return []
 
-            cluster_ids = {
+            cluster_ids: Set[PositiveInt] = {
                 r[cluster_to_groups.c.cluster_id] for r in await result.fetchall()
             }
 
             if not cluster_ids:
                 return []
 
-        list_of_clusters = await self._clusters_from_cluster_ids(
-            conn, cluster_ids, offset, limit
-        )
+            list_of_clusters = await self._clusters_from_cluster_ids(
+                conn, cluster_ids, offset, limit
+            )
 
         def solve_access_rights(
             cluster: Cluster,
