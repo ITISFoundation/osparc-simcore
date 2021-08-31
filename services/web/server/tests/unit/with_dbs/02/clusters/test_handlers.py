@@ -293,9 +293,27 @@ async def test_get_cluster(
 
 
 @pytest.mark.parametrize(
+    "cluster_patch",
+    [
+        pytest.param(ClusterPatch(), id="no changes"),
+        pytest.param(
+            ClusterPatch(name="My patched cluster name"),
+            id="patch name",
+        ),
+        pytest.param(
+            ClusterPatch(description="My patched cluster description"),
+            id="patch description",
+        ),
+        pytest.param(
+            ClusterPatch(type=ClusterType.ON_PREMISE),
+            id="patch type",
+        ),
+    ],
+)
+@pytest.mark.parametrize(
     *standard_role_response(),
 )
-async def test_update_cluster(
+async def test_update_cluster_simple_changes(
     enable_dev_features: None,
     client: TestClient,
     postgres_db: sa.engine.Engine,
@@ -304,15 +322,15 @@ async def test_update_cluster(
     primary_group: Dict[str, Any],
     all_group: Dict[str, Any],
     cluster: Callable[..., Coroutine[Any, Any, Cluster]],
+    cluster_patch: ClusterPatch,
     faker: Faker,
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
     # check this one cluster is not existing
-    updated_cluster = ClusterPatch(name="My patched cluster name")
     url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.patch(
-        f"{url}", json=updated_cluster.dict(by_alias=True, exclude_unset=True)
+        f"{url}", json=cluster_patch.dict(by_alias=True, exclude_unset=True)
     )
     data, error = await assert_status(rsp, expected.not_found)
     if error and user_role in [UserRole.ANONYMOUS, UserRole.GUEST]:
@@ -325,11 +343,56 @@ async def test_update_cluster(
         cluster_id=f"{admin_cluster.id}"
     )
     rsp = await client.patch(
-        f"{url}", json=updated_cluster.dict(by_alias=True, exclude_unset=True)
+        f"{url}", json=cluster_patch.dict(by_alias=True, exclude_unset=True)
     )
     data, error = await assert_status(rsp, expected.ok)
-    expected_admin_cluster = admin_cluster.copy(update={"name": updated_cluster.name})
+    expected_admin_cluster = admin_cluster.copy(
+        update=cluster_patch.dict(by_alias=True, exclude_unset=True)
+    )
     assert Cluster.parse_obj(data) == expected_admin_cluster
+
+    # we have a second user that creates a few clusters, some are shared with the first user
+    a_cluster_that_may_be_managed: Cluster = await cluster(
+        GroupID(second_user["primary_gid"]),
+        {GroupID(primary_group["gid"]): CLUSTER_MANAGER_RIGHTS},
+    )
+
+    a_cluster_that_may_be_used: Cluster = await cluster(
+        GroupID(second_user["primary_gid"]),
+        {GroupID(primary_group["gid"]): CLUSTER_USER_RIGHTS},
+    )
+
+    a_cluster_that_is_not_shared: Cluster = await cluster(
+        GroupID(second_user["primary_gid"]),
+    )
+
+    a_cluster_that_may_not_be_used: Cluster = await cluster(
+        GroupID(second_user["primary_gid"]),
+        {
+            GroupID(all_group["gid"]): CLUSTER_USER_RIGHTS,
+            GroupID(primary_group["gid"]): ClusterAccessRights(
+                read=False, write=False, delete=False
+            ),
+        },
+    )
+
+    for cl in [a_cluster_that_may_be_managed]:
+        url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{cl.id}")
+        rsp = await client.patch(
+            f"{url}", json=cluster_patch.dict(by_alias=True, exclude_unset=True)
+        )
+        data, error = await assert_status(rsp, expected.ok)
+
+    for cl in [
+        a_cluster_that_may_be_used,
+        a_cluster_that_may_not_be_used,
+        a_cluster_that_is_not_shared,
+    ]:
+        url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{cl.id}")
+        rsp = await client.patch(
+            f"{url}", json=cluster_patch.dict(by_alias=True, exclude_unset=True)
+        )
+        data, error = await assert_status(rsp, expected.forbidden)
 
 
 def test_delete_cluster(client: TestClient):
