@@ -8,6 +8,7 @@ import logging
 from aiohttp import web
 from openapi_core.schema.exceptions import OpenAPIError
 
+from ..utils import is_production_environ
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
 from .rest_responses import (
     JSON_CONTENT_TYPE,
@@ -19,7 +20,6 @@ from .rest_responses import (
 )
 from .rest_utils import EnvelopeFactory
 from .rest_validators import OpenApiValidator
-from .utils import is_production_environ
 
 DEFAULT_API_VERSION = "v0"
 

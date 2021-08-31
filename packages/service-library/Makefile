@@ -10,7 +10,15 @@ install-dev install-dev_aiohttp install-ci: _check_venv_active ## install app in
 	pip-sync requirements/$(subst install-,,$@).txt
 
 
-.PHONY: tests
-tests: ## runs unit tests
-	# running unit tests
+.PHONY: tests test-minimal test-aiohttp
+test-minimal: ## runs unit tests w/o extras (assumes 'make install-dev')
+	# running unit tests [minimal]
+	@pytest -vv --exitfirst --ignore=tests/aiohttp --failed-first --durations=10 --pdb $(CURDIR)/tests
+
+test-aiohttp: ## runs unit aiohttp tests (assumes 'make install-dev_aiohttp')
+	# running unit tests [aiohttp]
+	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/aiohttp
+
+tests: ## runs ALL tests (assumes 'make install-dev_aiohttp')
+	# running unit tests [ALL[]
 	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests

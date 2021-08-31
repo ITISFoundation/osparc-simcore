@@ -18,6 +18,7 @@ All keys are constants with a unique name convention:
 #
 # web.Application keys, i.e. app[APP_*_KEY]
 #
+
 APP_CONFIG_KEY = f"{__name__ }.config"
 APP_OPENAPI_SPECS_KEY = f"{__name__ }.openapi_specs"
 APP_JSONSCHEMA_SPECS_KEY = f"{__name__ }.jsonschema_specs"
