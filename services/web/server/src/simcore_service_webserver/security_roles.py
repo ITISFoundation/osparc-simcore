@@ -45,7 +45,6 @@ ROLES_PERMISSIONS = {
     },
     UserRole.USER: {
         "can": [
-            "clusters.create",
             "clusters.delete",
             "clusters.read",
             "clusters.write",
@@ -80,7 +79,7 @@ ROLES_PERMISSIONS = {
         "inherits": [UserRole.GUEST, UserRole.ANONYMOUS],
     },
     UserRole.TESTER: {
-        "can": ["diagnostics.read"],
+        "can": ["clusters.create", "diagnostics.read"],
         "inherits": [UserRole.USER],
     },
     UserRole.ADMIN: {
