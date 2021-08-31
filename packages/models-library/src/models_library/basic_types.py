@@ -1,12 +1,16 @@
 from enum import Enum
 
-from pydantic import confloat, conint, constr
+from pydantic import conint, constr
 
+# url port
 PortInt = conint(gt=0, lt=65535)
 
+#
 VersionTag = constr(regex=r"^v\d$")
 
-NonNegativeFloat = confloat(ge=0)  # NOTE: = 0.0 + PositiveFloat
+# checksums
+SHA1Str = constr(regex=r"^[a-fA-F0-9]{40}$")
+MD5Str = constr(regex=r"^[a-fA-F0-9]{32}$")
 
 
 class LogLevel(str, Enum):
