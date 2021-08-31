@@ -27,7 +27,7 @@ class FileMetaData(BaseModel):
     size: int
     created_at: datetime
     last_modified_at: datetime
-    data_type: DataType
+    data_type: Optional[DataType]
 
     @classmethod
     def from_pennsieve_package(

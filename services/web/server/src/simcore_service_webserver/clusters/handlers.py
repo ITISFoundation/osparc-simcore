@@ -130,4 +130,19 @@ async def update_cluster_handler(request: web.Request) -> web.Response:
 @login_required
 @permission_required("clusters.delete")
 async def delete_cluster_handler(request: web.Request) -> web.Response:
-    raise web.HTTPNotImplemented(reason="not yet implemented")
+    path, _, _ = await extract_and_validate(request)
+    user_id: UserID = request[RQT_USERID_KEY]
+    primary_group, std_groups, all_group = await list_user_groups(request.app, user_id)
+    clusters_repo = ClustersRepository(request)
+    try:
+        cluster = await clusters_repo.delete_cluster(
+            GroupID(primary_group["gid"]),
+            [GroupID(g["gid"]) for g in std_groups],
+            GroupID(all_group["gid"]),
+            path["cluster_id"],
+        )
+        return web.json_response(status=web.HTTPNoContent.status_code)
+    except ClusterNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"{exc}")
+    except ClusterAccessForbidden as exc:
+        raise web.HTTPForbidden(reason=f"{exc}")
