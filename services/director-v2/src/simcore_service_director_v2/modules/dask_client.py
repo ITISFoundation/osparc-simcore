@@ -30,17 +30,18 @@ CLUSTER_RESOURCE_MOCK_USAGE: float = 1e-9
 
 def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
     @retry(**dask_retry_policy)
-    def on_startup() -> None:
+    async def on_startup() -> None:
         DaskClient.create(
             app,
-            client=Client(
+            client=await Client(
                 f"tcp://{settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
+                asynchronous=True,
             ),
             settings=settings,
         )
 
     async def on_shutdown() -> None:
-        app.state.dask_client.client.close()
+        await app.state.dask_client.client.close()
         del app.state.dask_client  # type: ignore
 
     app.add_event_handler("startup", on_startup)
