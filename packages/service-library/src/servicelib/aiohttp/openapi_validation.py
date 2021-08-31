@@ -24,7 +24,7 @@ PATH_KEY, QUERY_KEY, HEADER_KEY, COOKIE_KEY = PARAMETERS_KEYS
 
 
 async def validate_request(request: web.Request, spec: OpenApiSpec):
-    """ Validates aiohttp.web.Request against an opeapi specification
+    """Validates aiohttp.web.Request against an opeapi specification
 
     Returns parameters dict, body object and list of errors (exceptions objects)
     """
@@ -75,9 +75,9 @@ async def validate_response(
     spec: OpenApiSpec, request: web.Request, response: web.Response
 ):
     """
-      Validates server response against openapi specs
+    Validates server response against openapi specs
 
-      Raises exceptions OpenAPIError, OpenAPIMappingError
+    Raises exceptions OpenAPIError, OpenAPIMappingError
     """
     validator = ResponseValidator(spec)
 

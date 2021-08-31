@@ -39,7 +39,9 @@ def error_middleware_factory(
 
     def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
         resp = create_error_response(
-            [err,],
+            [
+                err,
+            ],
             "Unexpected Server error",
             web.HTTPInternalServerError,
             skip_internal_error_details=_is_prod,
@@ -61,7 +63,7 @@ def error_middleware_factory(
     @web.middleware
     async def _middleware_handler(request: web.Request, handler):
         """
-            Ensure all error raised are properly enveloped and json responses
+        Ensure all error raised are properly enveloped and json responses
         """
         if not is_api_request(request, api_version):
             return await handler(request)
@@ -80,9 +82,13 @@ def error_middleware_factory(
 
             if not err.text or not is_enveloped_from_text(err.text):
                 error = ErrorType(
-                    errors=[ErrorItemType.from_error(err),],
+                    errors=[
+                        ErrorItemType.from_error(err),
+                    ],
                     status=err.status,
-                    logs=[LogMessageType(message=err.reason, level="ERROR"),],
+                    logs=[
+                        LogMessageType(message=err.reason, level="ERROR"),
+                    ],
                 )
                 err.text = EnvelopeFactory(error=error).as_text()
 
@@ -117,8 +123,8 @@ def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
     @web.middleware
     async def _middleware_handler(request: web.Request, handler):
         """
-            Validates requests against openapi specs and extracts body, params, etc ...
-            Validate response against openapi specs
+        Validates requests against openapi specs and extracts body, params, etc ...
+        Validate response against openapi specs
         """
         if not is_api_request(request, api_version):
             return await handler(request)
@@ -165,7 +171,7 @@ def envelope_middleware_factory(api_version: str = DEFAULT_API_VERSION):
     @web.middleware
     async def _middleware_handler(request: web.Request, handler):
         """
-            Ensures all responses are enveloped as {'data': .. , 'error', ...} in json
+        Ensures all responses are enveloped as {'data': .. , 'error', ...} in json
         """
         if not is_api_request(request, api_version):
             return await handler(request)
@@ -177,7 +183,8 @@ def envelope_middleware_factory(api_version: str = DEFAULT_API_VERSION):
 
         if not isinstance(resp, web.Response):
             response = create_data_response(
-                data=resp, skip_internal_error_details=_is_prod,
+                data=resp,
+                skip_internal_error_details=_is_prod,
             )
         else:
             # Enforced by user. Should check it is json?
@@ -193,9 +200,7 @@ def envelope_middleware_factory(api_version: str = DEFAULT_API_VERSION):
 def append_rest_middlewares(
     app: web.Application, api_version: str = DEFAULT_API_VERSION
 ):
-    """ Helper that appends rest-middlewares in the correct order
-
-    """
+    """Helper that appends rest-middlewares in the correct order"""
     app.middlewares.append(error_middleware_factory(api_version))
     # FIXME:  openapi-core fails to validate response when specs are in separate files!
     # FIXME: disabled so webserver and storage do not get this issue

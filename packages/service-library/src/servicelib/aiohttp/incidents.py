@@ -9,14 +9,14 @@ ItemT = TypeVar("ItemT")
 
 @attr.s(auto_attribs=True)
 class LimitedOrderedStack(Generic[ItemT]):
-    """ Container designed only to keep the most
-        relevant items (i.e called max) and drop
-        everything else
+    """Container designed only to keep the most
+    relevant items (i.e called max) and drop
+    everything else
 
-        Can be used as base class for incidence registry
-        A running app might have endless amount of incidence
-        over-time and we aim only to keep the most relevant ones
-        provided we have limited resources.
+    Can be used as base class for incidence registry
+    A running app might have endless amount of incidence
+    over-time and we aim only to keep the most relevant ones
+    provided we have limited resources.
     """
 
     max_size: int = 100

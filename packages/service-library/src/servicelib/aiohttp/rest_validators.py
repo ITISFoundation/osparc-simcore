@@ -14,7 +14,7 @@ from .rest_responses import create_error_response
 
 class OpenApiValidator:
     """
-        Used to validate data in the request->response cycle against openapi specs
+    Used to validate data in the request->response cycle against openapi specs
     """
 
     @classmethod
