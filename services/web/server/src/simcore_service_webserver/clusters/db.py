@@ -235,6 +235,7 @@ class ClustersRepository(BaseRepository):
         cluster_id: PositiveInt,
         updated_cluster: ClusterPatch,
     ) -> Cluster:
+        # pylint: disable=too-many-branches
         async with self.engine.acquire() as conn:
             clusters_list: List[Cluster] = await self._clusters_from_cluster_ids(
                 conn, {cluster_id}
