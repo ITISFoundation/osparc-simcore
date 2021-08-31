@@ -228,7 +228,7 @@ async def test_get_cluster(
     faker: Faker,
     expected: ExpectedResponse,
 ):
-    url = client.app.router["get_cluster_handler"].url_for(id=f"{25}")
+    url = client.app.router["get_cluster_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected.not_found)
     if error:
