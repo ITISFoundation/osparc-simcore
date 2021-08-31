@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.OrgMemberListItem", {
+qx.Class.define("osparc.dashboard.MemberListItem", {
   extend: osparc.dashboard.ServiceBrowserListItem,
 
   construct: function() {
@@ -39,8 +39,8 @@ qx.Class.define("osparc.dashboard.OrgMemberListItem", {
   },
 
   events: {
-    "promoteOrgMember": "qx.event.type.Data",
-    "removeOrgMember": "qx.event.type.Data"
+    "promoteMember": "qx.event.type.Data",
+    "removeMember": "qx.event.type.Data"
   },
 
   members: {
@@ -57,7 +57,6 @@ qx.Class.define("osparc.dashboard.OrgMemberListItem", {
             icon: "@FontAwesome5Solid/ellipsis-v/"+(iconSize-11),
             focusable: false
           });
-          osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           this._add(control, {
             row: 0,
             column: 3,
@@ -102,7 +101,7 @@ qx.Class.define("osparc.dashboard.OrgMemberListItem", {
       if (accessRights && !accessRights.getDelete() && !accessRights.getWrite()) {
         const promoteButton = new qx.ui.menu.Button(this.tr("Promote to Manager"));
         promoteButton.addListener("execute", () => {
-          this.fireDataEvent("promoteOrgMember", {
+          this.fireDataEvent("promoteMember", {
             key: this.getKey(),
             name: this.getTitle()
           });
@@ -112,7 +111,7 @@ qx.Class.define("osparc.dashboard.OrgMemberListItem", {
 
       const removeButton = new qx.ui.menu.Button(this.tr("Remove Member"));
       removeButton.addListener("execute", () => {
-        this.fireDataEvent("removeOrgMember", {
+        this.fireDataEvent("removeMember", {
           key: this.getKey(),
           name: this.getTitle()
         });
