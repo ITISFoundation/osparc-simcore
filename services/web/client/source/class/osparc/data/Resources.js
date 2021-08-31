@@ -399,6 +399,34 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * CLUSTERS
+       */
+      "clusters": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/clusters"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/clusters"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/clusters/{gid}"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/clusters/{gid}"
+          },
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/clusters/{gid}"
+          }
+        }
+      },
+      /*
        * CLASSIFIERS
        * Gets the json object containing sample classifiers
        */
