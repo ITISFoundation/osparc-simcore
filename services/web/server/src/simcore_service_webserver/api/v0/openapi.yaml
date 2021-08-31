@@ -15828,6 +15828,12 @@ paths:
                 description:
                   description: the cluster description
                   type: string
+                type:
+                  description: the cluster type
+                  type: string
+                  enum:
+                    - ON_PREMISE
+                    - AWS
                 accessRights:
                   type: array
                   items:
@@ -15849,6 +15855,7 @@ paths:
                       - delete
               required:
                 - name
+                - type
       responses:
         '201':
           description: cluster created
@@ -16158,10 +16165,6 @@ paths:
             schema:
               type: object
               properties:
-                id:
-                  description: the cluster id
-                  type: integer
-                  minimum: 1
                 name:
                   description: the cluster name
                   type: string
@@ -16193,14 +16196,6 @@ paths:
                       - read
                       - write
                       - delete
-              required:
-                - id
-                - name
-                - description
-                - accessRights
-              example:
-                - name: AWS cluster
-                  description: My institution cluster
       responses:
         '200':
           description: the modified cluster
