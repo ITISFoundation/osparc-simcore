@@ -17,6 +17,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser, create_user
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
+from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.clusters.models import (
     CLUSTER_ADMIN_RIGHTS,
     CLUSTER_MANAGER_RIGHTS,
@@ -226,16 +227,28 @@ async def test_get_cluster(
     primary_group: Dict[str, Any],
     cluster: Callable[..., Coroutine[Any, Any, Cluster]],
     faker: Faker,
+    user_role: UserRole,
     expected: ExpectedResponse,
 ):
     url = client.app.router["get_cluster_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected.not_found)
-    if error:
-        # we are done here
+    if error and user_role in [UserRole.ANONYMOUS, UserRole.GUEST]:
         return
-    # there are no clusters yet
-    assert data == []
+    assert data is None
+    # create our own cluster
+    admin_cluster: Cluster = await cluster(GroupID(primary_group["gid"]))
+    # now the listing should retrieve our cluster
+    url = client.app.router["get_cluster_handler"].url_for(
+        cluster_id=f"{admin_cluster.id}"
+    )
+    rsp = await client.get(f"{url}")
+    data, error = await assert_status(rsp, expected.ok)
+    if error:
+        # we are done here for anonymous/guest
+        return
+
+    assert Cluster.parse_obj(data) == admin_cluster
 
 
 def test_update_cluster(client: TestClient):
