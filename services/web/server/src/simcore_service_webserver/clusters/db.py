@@ -58,9 +58,9 @@ class ClustersRepository(BaseRepository):
                 [
                     clusters,
                     cluster_to_groups.c.gid,
-                    cluster_to_groups.c.read_access,
-                    cluster_to_groups.c.write_access,
-                    cluster_to_groups.c.delete_access,
+                    cluster_to_groups.c.read,
+                    cluster_to_groups.c.write,
+                    cluster_to_groups.c.delete,
                 ]
             )
             .select_from(
@@ -76,9 +76,9 @@ class ClustersRepository(BaseRepository):
             cluster_access_rights = {
                 row[cluster_to_groups.c.gid]: ClusterAccessRights(
                     **{
-                        "read": row[cluster_to_groups.c.read_access],
-                        "write": row[cluster_to_groups.c.write_access],
-                        "delete": row[cluster_to_groups.c.delete_access],
+                        "read": row[cluster_to_groups.c.read],
+                        "write": row[cluster_to_groups.c.write],
+                        "delete": row[cluster_to_groups.c.delete],
                     }
                 )
             }
@@ -115,9 +115,9 @@ class ClustersRepository(BaseRepository):
                         [all_group, *standard_groups, primary_group]
                     )
                     & (
-                        cluster_to_groups.c.read_access
-                        | cluster_to_groups.c.write_access
-                        | cluster_to_groups.c.delete_access
+                        cluster_to_groups.c.read
+                        | cluster_to_groups.c.write
+                        | cluster_to_groups.c.delete
                     )
                 )
             )
@@ -172,9 +172,9 @@ class ClustersRepository(BaseRepository):
                     [
                         clusters,
                         cluster_to_groups.c.gid,
-                        cluster_to_groups.c.read_access,
-                        cluster_to_groups.c.write_access,
-                        cluster_to_groups.c.delete_access,
+                        cluster_to_groups.c.read,
+                        cluster_to_groups.c.write,
+                        cluster_to_groups.c.delete,
                     ]
                 )
                 .select_from(
@@ -198,9 +198,9 @@ class ClustersRepository(BaseRepository):
                 owner=row[clusters.c.owner],
                 access_rights={
                     row[clusters.c.owner]: {
-                        "read": row[cluster_to_groups.c.read_access],
-                        "write": row[cluster_to_groups.c.write_access],
-                        "delete": row[cluster_to_groups.c.delete_access],
+                        "read": row[cluster_to_groups.c.read],
+                        "write": row[cluster_to_groups.c.write],
+                        "delete": row[cluster_to_groups.c.delete],
                     }
                 },
             )

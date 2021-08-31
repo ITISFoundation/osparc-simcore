@@ -30,21 +30,21 @@ cluster_to_groups = sa.Table(
     ),
     # Access Rights flags ---
     sa.Column(
-        "read_access",
+        "read",
         sa.Boolean,
         nullable=False,
         server_default=expression.false(),
         doc="If true, group can use the cluster",
     ),
     sa.Column(
-        "write_access",
+        "write",
         sa.Boolean,
         nullable=False,
         server_default=expression.false(),
         doc="If true, group can modify the cluster",
     ),
     sa.Column(
-        "delete_access",
+        "delete",
         sa.Boolean,
         nullable=False,
         server_default=expression.false(),
