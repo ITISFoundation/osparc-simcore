@@ -4,7 +4,7 @@
 
 import pytest
 from models_library.utils.database_models_factory import (
-    convert_sa_table_to_pydantic_model,
+    create_pydantic_model_from_sa_table,
 )
 from pydantic import BaseModel
 
@@ -21,7 +21,7 @@ from simcore_postgres_database.models.projects_snapshots import projects_snapsho
 @pytest.mark.parametrize("table_cls", metadata.tables.values(), ids=lambda t: t.name)
 def test_table_to_pydantic_models(table_cls):
 
-    PydanticOrm = convert_sa_table_to_pydantic_model(
+    PydanticOrm = create_pydantic_model_from_sa_table(
         table=table_cls, include_server_defaults=True
     )
     assert issubclass(PydanticOrm, BaseModel)
@@ -34,7 +34,7 @@ def test_table_to_pydantic_models(table_cls):
 
 
 def test_snapshot_pydantic_model(faker):
-    Snapshot = convert_sa_table_to_pydantic_model(
+    Snapshot = create_pydantic_model_from_sa_table(
         projects_snapshots, include_server_defaults=True
     )
 

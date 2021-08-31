@@ -32,7 +32,7 @@ _RESERVED = {
 }
 
 
-def convert_sa_table_to_pydantic_model(
+def create_pydantic_model_from_sa_table(
     table: sa.Table,
     *,
     config: Type = OrmConfig,

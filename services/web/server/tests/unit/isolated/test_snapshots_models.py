@@ -7,12 +7,12 @@ from uuid import uuid4
 
 from faker import Faker
 from models_library.utils.database_models_factory import (
-    convert_sa_table_to_pydantic_model,
+    create_pydantic_model_from_sa_table,
 )
 from simcore_postgres_database.models.projects_snapshots import projects_snapshots
 from simcore_service_webserver.snapshots_models import Snapshot
 
-SnapshotORM = convert_sa_table_to_pydantic_model(
+SnapshotORM = create_pydantic_model_from_sa_table(
     projects_snapshots, exclude={"deleted"}
 )
 
