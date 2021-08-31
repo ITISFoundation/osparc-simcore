@@ -5,7 +5,7 @@
 
 
 import random
-from typing import Any, Callable, Coroutine, Dict, Iterable, List
+from typing import Any, Callable, Coroutine, Dict, Iterable
 
 import pytest
 import sqlalchemy as sa
@@ -14,7 +14,7 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.users import GroupID
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import NewUser, create_user
+from pytest_simcore.helpers.utils_login import NewUser
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 from simcore_postgres_database.models.users import UserRole
@@ -29,7 +29,7 @@ from simcore_service_webserver.clusters.models import (
 )
 from simcore_service_webserver.groups_api import list_user_groups
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.engine.result import ResultProxy, RowProxy
+from sqlalchemy.engine.result import ResultProxy
 from sqlalchemy.sql.elements import literal_column
 
 
