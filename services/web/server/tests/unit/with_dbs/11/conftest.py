@@ -58,6 +58,7 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, catalog_subsystem_mock, monkey
     exclude = {
         "activity",
         "catalog",
+        "clusters",
         "computation",
         "diagnostics",
         "director",
