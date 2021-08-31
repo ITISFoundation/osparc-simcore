@@ -135,7 +135,7 @@ async def delete_cluster_handler(request: web.Request) -> web.Response:
     primary_group, std_groups, all_group = await list_user_groups(request.app, user_id)
     clusters_repo = ClustersRepository(request)
     try:
-        cluster = await clusters_repo.delete_cluster(
+        await clusters_repo.delete_cluster(
             GroupID(primary_group["gid"]),
             [GroupID(g["gid"]) for g in std_groups],
             GroupID(all_group["gid"]),
