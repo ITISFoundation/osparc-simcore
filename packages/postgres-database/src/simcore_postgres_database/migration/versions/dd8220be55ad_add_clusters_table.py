@@ -34,7 +34,7 @@ DECLARE
     group_id BIGINT;
 BEGIN
     IF TG_OP = 'INSERT' THEN
-        INSERT INTO "cluster_to_groups" ("gid", "cluster_id", "read_access", "write_access", "delete_access") VALUES (NEW.owner, NEW.id, TRUE, TRUE, TRUE);
+        INSERT INTO "cluster_to_groups" ("gid", "cluster_id", "read", "write", "delete") VALUES (NEW.owner, NEW.id, TRUE, TRUE, TRUE);
     END IF;
     RETURN NULL;
 END; $$ LANGUAGE 'plpgsql';
@@ -73,16 +73,16 @@ def upgrade():
         sa.Column("cluster_id", sa.BigInteger(), nullable=True),
         sa.Column("gid", sa.BigInteger(), nullable=True),
         sa.Column(
-            "read_access", sa.Boolean(), server_default=sa.text("false"), nullable=False
+            "read", sa.Boolean(), server_default=sa.text("false"), nullable=False
         ),
         sa.Column(
-            "write_access",
+            "write",
             sa.Boolean(),
             server_default=sa.text("false"),
             nullable=False,
         ),
         sa.Column(
-            "delete_access",
+            "delete",
             sa.Boolean(),
             server_default=sa.text("false"),
             nullable=False,

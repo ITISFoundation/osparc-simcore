@@ -124,6 +124,6 @@ async def test_cluster_owner_has_all_rights(
         row = await result.fetchone()
         assert row is not None
 
-        assert row.read_access == True
-        assert row.write_access == True
-        assert row.delete_access == True
+        assert row.read == True
+        assert row.write == True
+        assert row.delete == True
