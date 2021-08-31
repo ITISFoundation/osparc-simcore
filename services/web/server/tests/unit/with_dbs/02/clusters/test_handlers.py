@@ -76,9 +76,9 @@ def cluster(
                     **{
                         "cluster_id": new_cluster_id,
                         "gid": group_id,
-                        "read_access": access_rights.read,
-                        "write_access": access_rights.write,
-                        "delete_access": access_rights.delete,
+                        "read": access_rights.read,
+                        "write": access_rights.write,
+                        "delete": access_rights.delete,
                     }
                 )
                 .on_conflict_do_nothing()
@@ -302,111 +302,109 @@ async def test_get_cluster(
 
 
 @pytest.mark.parametrize(
-    "cluster_patch",
-    [
-        pytest.param(ClusterPatch(), id="no changes"),
-        pytest.param(
-            ClusterPatch(name="My patched cluster name"),
-            id="patch name",
-        ),
-        pytest.param(
-            ClusterPatch(description="My patched cluster description"),
-            id="patch description",
-        ),
-        pytest.param(
-            ClusterPatch(type=ClusterType.ON_PREMISE),
-            id="patch type",
-        ),
-    ],
-)
-@pytest.mark.parametrize(
     *standard_role_response(),
 )
-async def test_update_cluster_simple_changes(
+async def test_update_cluster(
     enable_dev_features: None,
     client: TestClient,
-    postgres_db: sa.engine.Engine,
     logged_user: Dict[str, Any],
     second_user: Dict[str, Any],
-    primary_group: Dict[str, Any],
     all_group: Dict[str, Any],
     cluster: Callable[..., Coroutine[Any, Any, Cluster]],
-    cluster_patch: ClusterPatch,
-    faker: Faker,
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
-    # check this one cluster is not existing
+    # check modifying invalid returns not found
     url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.patch(
-        f"{url}", json=cluster_patch.dict(by_alias=True, exclude_unset=True)
+        f"{url}", json=ClusterPatch().dict(by_alias=True, exclude_unset=True)
     )
     data, error = await assert_status(rsp, expected.not_found)
     if error and user_role in [UserRole.ANONYMOUS, UserRole.GUEST]:
         return
 
-    # create our own cluster
+    # create our own cluster, allows us to modify it
     admin_cluster: Cluster = await cluster(GroupID(logged_user["primary_gid"]))
-    # now we should be able to patch it
     url = client.app.router["update_cluster_handler"].url_for(
         cluster_id=f"{admin_cluster.id}"
     )
-    rsp = await client.patch(
-        f"{url}", json=cluster_patch.dict(by_alias=True, exclude_unset=True)
-    )
-    data, error = await assert_status(rsp, expected.ok)
-    expected_admin_cluster = admin_cluster.copy(
-        update=cluster_patch.dict(by_alias=True, exclude_unset=True)
-    )
-    assert Cluster.parse_obj(data) == expected_admin_cluster
-
-    # we have a second user that creates a few clusters, some are shared with the first user
-    a_cluster_that_may_be_administrated: Cluster = await cluster(
-        GroupID(second_user["primary_gid"]),
-        {GroupID(logged_user["primary_gid"]): CLUSTER_ADMIN_RIGHTS},
-    )
-
-    a_cluster_that_may_be_managed: Cluster = await cluster(
-        GroupID(second_user["primary_gid"]),
-        {GroupID(logged_user["primary_gid"]): CLUSTER_MANAGER_RIGHTS},
-    )
-
-    a_cluster_that_may_be_used: Cluster = await cluster(
-        GroupID(second_user["primary_gid"]),
-        {GroupID(logged_user["primary_gid"]): CLUSTER_USER_RIGHTS},
-    )
-
-    a_cluster_that_is_not_shared: Cluster = await cluster(
-        GroupID(second_user["primary_gid"]),
-    )
-
-    a_cluster_that_may_not_be_used: Cluster = await cluster(
-        GroupID(second_user["primary_gid"]),
-        {
-            GroupID(all_group["gid"]): CLUSTER_USER_RIGHTS,
-            GroupID(logged_user["primary_gid"]): ClusterAccessRights(
-                read=False, write=False, delete=False
-            ),
-        },
-    )
-    # we can manage so we shall be ok
-    for cl in [a_cluster_that_may_be_administrated, a_cluster_that_may_be_managed]:
-        url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{cl.id}")
+    # we can modify these simple things
+    expected_admin_cluster = admin_cluster.copy()
+    for cluster_patch in [
+        ClusterPatch(name="My patched cluster name"),
+        ClusterPatch(description="My patched cluster description"),
+        ClusterPatch(type=ClusterType.ON_PREMISE),
+    ]:
         rsp = await client.patch(
             f"{url}", json=cluster_patch.dict(by_alias=True, exclude_unset=True)
         )
         data, error = await assert_status(rsp, expected.ok)
-
-    for cl in [
-        a_cluster_that_may_be_used,
-        a_cluster_that_may_not_be_used,
-        a_cluster_that_is_not_shared,
-    ]:
-        url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{cl.id}")
-        rsp = await client.patch(
-            f"{url}", json=cluster_patch.dict(by_alias=True, exclude_unset=True)
+        expected_admin_cluster = expected_admin_cluster.copy(
+            update=cluster_patch.dict(by_alias=True, exclude_unset=True)
         )
-        data, error = await assert_status(rsp, expected.forbidden)
+        assert Cluster.parse_obj(data) == expected_admin_cluster
+
+    # we can change the access rights
+    cluster_patch = ClusterPatch(
+        accessRights={second_user["primary_gid"]: CLUSTER_USER_RIGHTS}
+    )
+    rsp = await client.patch(
+        f"{url}",
+        json=cluster_patch.dict(by_alias=True, exclude_unset=True),
+    )
+    data, error = await assert_status(rsp, expected.ok)
+    expected_admin_cluster.access_rights[
+        second_user["primary_gid"]
+    ] = CLUSTER_USER_RIGHTS
+    assert Cluster.parse_obj(data) == expected_admin_cluster
+
+    # we have a second user that creates a few clusters, some are shared with the first user
+    # a_cluster_that_may_be_administrated: Cluster = await cluster(
+    #     GroupID(second_user["primary_gid"]),
+    #     {GroupID(logged_user["primary_gid"]): CLUSTER_ADMIN_RIGHTS},
+    # )
+
+    # a_cluster_that_may_be_managed: Cluster = await cluster(
+    #     GroupID(second_user["primary_gid"]),
+    #     {GroupID(logged_user["primary_gid"]): CLUSTER_MANAGER_RIGHTS},
+    # )
+
+    # a_cluster_that_may_be_used: Cluster = await cluster(
+    #     GroupID(second_user["primary_gid"]),
+    #     {GroupID(logged_user["primary_gid"]): CLUSTER_USER_RIGHTS},
+    # )
+
+    # a_cluster_that_is_not_shared: Cluster = await cluster(
+    #     GroupID(second_user["primary_gid"]),
+    # )
+
+    # a_cluster_that_may_not_be_used: Cluster = await cluster(
+    #     GroupID(second_user["primary_gid"]),
+    #     {
+    #         GroupID(all_group["gid"]): CLUSTER_USER_RIGHTS,
+    #         GroupID(logged_user["primary_gid"]): ClusterAccessRights(
+    #             read=False, write=False, delete=False
+    #         ),
+    #     },
+    # )
+    # # we can manage so we shall be ok
+    # for cl in [a_cluster_that_may_be_administrated, a_cluster_that_may_be_managed]:
+    #     url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{cl.id}")
+    #     rsp = await client.patch(
+    #         f"{url}", json=cluster_patch.dict(by_alias=True, exclude_unset=True)
+    #     )
+    #     data, error = await assert_status(rsp, expected.ok)
+
+    # for cl in [
+    #     a_cluster_that_may_be_used,
+    #     a_cluster_that_may_not_be_used,
+    #     a_cluster_that_is_not_shared,
+    # ]:
+    #     url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{cl.id}")
+    #     rsp = await client.patch(
+    #         f"{url}", json=cluster_patch.dict(by_alias=True, exclude_unset=True)
+    #     )
+    #     data, error = await assert_status(rsp, expected.forbidden)
 
 
 # TODO: simplify this one
@@ -510,15 +508,16 @@ async def test_delete_cluster(
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
+    # deleting a non-existing cluster returns not found
     url = client.app.router["delete_cluster_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.delete(f"{url}")
     data, error = await assert_status(rsp, expected.not_found)
     if error and user_role in [UserRole.ANONYMOUS, UserRole.GUEST]:
         return
     assert data is None
-    # create our own cluster
+
+    # create our own cluster allows us to delete it
     admin_cluster: Cluster = await cluster(GroupID(logged_user["primary_gid"]))
-    # now we should be able to delete it
     url = client.app.router["delete_cluster_handler"].url_for(
         cluster_id=f"{admin_cluster.id}"
     )
