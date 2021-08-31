@@ -5998,6 +5998,11 @@ paths:
                   type: boolean
                   default: false
                   description: if true will force re-running all dependent nodes
+                cluster_id:
+                  type: integer
+                  description: 'if set the computation shall use the cluster described by the id, 0 is the default cluster'
+                  default: 0
+                  minimum: 0
                 subgraph:
                   description: The node uuids selected for running a partial pipeline
                   type: array
