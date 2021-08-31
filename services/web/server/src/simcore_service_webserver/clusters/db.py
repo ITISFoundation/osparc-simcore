@@ -6,6 +6,7 @@ from models_library.users import GroupID
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.engine.result import RowProxy
 from sqlalchemy.sql.elements import literal_column
 
@@ -277,6 +278,20 @@ class ClustersRepository(BaseRepository):
                     )
                 )
             )
+            # upsert the rights
+            if updated_cluster.access_rights:
+                for grp, rights in updated_cluster.access_rights.items():
+                    insert_stmt = pg_insert(cluster_to_groups).values(
+                        **rights.dict(by_alias=True), gid=grp, cluster_id=the_cluster.id
+                    )
+                    on_update_stmt = insert_stmt.on_conflict_do_update(
+                        index_elements=[
+                            cluster_to_groups.c.cluster_id,
+                            cluster_to_groups.c.gid,
+                        ],
+                        set_=rights.dict(by_alias=True),
+                    )
+                    await conn.execute(on_update_stmt)
 
             clusters_list: List[Cluster] = await self._clusters_from_cluster_ids(
                 conn, {cluster_id}
@@ -286,3 +301,26 @@ class ClustersRepository(BaseRepository):
             the_cluster = clusters_list[0]
 
             return the_cluster
+
+    async def delete_cluster(
+        self,
+        primary_group: GroupID,
+        standard_groups: List[GroupID],
+        all_group: GroupID,
+        cluster_id: PositiveInt,
+    ) -> None:
+        async with self.engine.acquire() as conn:
+            clusters_list: List[Cluster] = await self._clusters_from_cluster_ids(
+                conn, {cluster_id}
+            )
+            if not clusters_list:
+                raise ClusterNotFoundError(cluster_id)
+
+            the_cluster = clusters_list[0]
+            this_user_cluster_access_rights = compute_cluster_access_rights(
+                the_cluster, primary_group, standard_groups, all_group
+            )
+            if not this_user_cluster_access_rights.delete:
+                raise ClusterAccessForbidden(cluster_id)
+
+            await conn.execute(sa.delete(clusters).where(clusters.c.id == cluster_id))
