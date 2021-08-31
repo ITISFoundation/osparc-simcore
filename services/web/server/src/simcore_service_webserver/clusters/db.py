@@ -242,17 +242,17 @@ class ClustersRepository(BaseRepository):
                 raise ClusterNotFoundError(cluster_id)
             the_cluster = clusters_list[0]
 
-            the_cluster_access_rights = compute_cluster_access_rights(
+            this_user_cluster_access_rights = compute_cluster_access_rights(
                 the_cluster, primary_group, standard_groups, all_group
             )
 
-            if not the_cluster_access_rights.write:
-                # minimal access right necessary to change anything
+            # check that minimal access right necessary to change anything
+            if not this_user_cluster_access_rights.write:
                 raise ClusterAccessForbidden(cluster_id)
 
             if updated_cluster.owner and updated_cluster.owner != the_cluster.owner:
                 # the user wants to change the owner here, admin rights needed
-                if the_cluster_access_rights != CLUSTER_ADMIN_RIGHTS:
+                if this_user_cluster_access_rights != CLUSTER_ADMIN_RIGHTS:
                     raise ClusterAccessForbidden(cluster_id)
 
                 if not updated_cluster.access_rights:

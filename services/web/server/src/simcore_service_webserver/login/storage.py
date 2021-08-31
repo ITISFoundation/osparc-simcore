@@ -30,6 +30,8 @@ class AsyncpgStorage:
         data.setdefault("created_at", datetime.utcnow())
         async with self.pool.acquire() as conn:
             data["id"] = await sql.insert(conn, self.user_tbl, data)
+            new_user = await sql.find_one(conn, self.user_tbl, {"id": data["id"]})
+            data["primary_gid"] = new_user["primary_gid"]
         return data
 
     async def update_user(self, user, updates) -> asyncpg.Record:
