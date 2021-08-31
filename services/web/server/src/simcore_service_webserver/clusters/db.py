@@ -6,10 +6,13 @@ from models_library.users import GroupID
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
+from sqlalchemy.engine.result import RowProxy
+from sqlalchemy.sql.elements import literal_column
 
 from ..db_base_repository import BaseRepository
 from .exceptions import ClusterAccessForbidden, ClusterNotFoundError
 from .models import (
+    CLUSTER_ADMIN_RIGHTS,
     CLUSTER_NO_RIGHTS,
     Cluster,
     ClusterAccessRights,
@@ -238,9 +241,48 @@ class ClustersRepository(BaseRepository):
             if not clusters_list:
                 raise ClusterNotFoundError(cluster_id)
             the_cluster = clusters_list[0]
-            if not compute_cluster_access_rights(
+
+            the_cluster_access_rights = compute_cluster_access_rights(
                 the_cluster, primary_group, standard_groups, all_group
-            ).write:
+            )
+
+            if not the_cluster_access_rights.write:
+                # minimal access right necessary to change anything
                 raise ClusterAccessForbidden(cluster_id)
 
-            await conn.execute(sa.update())
+            if updated_cluster.owner and updated_cluster.owner != the_cluster.owner:
+                # the user wants to change the owner here, admin rights needed
+                if the_cluster_access_rights != CLUSTER_ADMIN_RIGHTS:
+                    raise ClusterAccessForbidden(cluster_id)
+
+                if not updated_cluster.access_rights:
+                    updated_cluster.access_rights = {
+                        updated_cluster.owner: CLUSTER_ADMIN_RIGHTS
+                    }
+                else:
+                    updated_cluster.access_rights[
+                        updated_cluster.owner
+                    ] = CLUSTER_ADMIN_RIGHTS
+
+            # ok we can update now
+            await conn.execute(
+                sa.update(clusters)
+                .where(clusters.c.id == the_cluster.id)
+                .values(
+                    updated_cluster.dict(
+                        by_alias=True,
+                        exclude_unset=True,
+                        exclude_none=True,
+                        exclude={"access_rights"},
+                    )
+                )
+            )
+
+            clusters_list: List[Cluster] = await self._clusters_from_cluster_ids(
+                conn, {cluster_id}
+            )
+            if not clusters_list:
+                raise ClusterNotFoundError(cluster_id)
+            the_cluster = clusters_list[0]
+
+            return the_cluster
