@@ -32,7 +32,6 @@
  * <pre class='javascript'>
  *   let node = new osparc.data.model.Node(key, version, uuid);
  *   node.populateNodeData(nodeData);
- *   node.giveUniqueName();
  *   node.startDynamicService();
  * </pre>
  */
@@ -42,11 +41,12 @@ qx.Class.define("osparc.data.model.Node", {
   include: qx.locale.MTranslation,
 
   /**
+    * @param study {osparc.data.model.Study} Study or Serialized Study Object
     * @param key {String} key of the service represented by the node
     * @param version {String} version of the service represented by the node
     * @param uuid {String} uuid of the service represented by the node (not needed for new Nodes)
   */
-  construct: function(key, version, uuid) {
+  construct: function(study, key, version, uuid) {
     this.base(arguments);
 
     this.__metaData = {};
@@ -58,6 +58,9 @@ qx.Class.define("osparc.data.model.Node", {
     this.__inputNodes = [];
     this.__exposedNodes = [];
 
+    if (study) {
+      this.setStudy(study);
+    }
     this.set({
       key,
       version,
@@ -84,6 +87,13 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   properties: {
+    study: {
+      check: "osparc.data.model.Study",
+      init: null,
+      nullable: false,
+      event: "changeStudy"
+    },
+
     key: {
       check: "String",
       nullable: true
@@ -245,8 +255,7 @@ qx.Class.define("osparc.data.model.Node", {
     __posY: null,
 
     getWorkbench: function() {
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      return study.getWorkbench();
+      return this.getStudy().getWorkbench();
     },
 
     isInKey: function(str) {
@@ -444,32 +453,13 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    giveUniqueName: function() {
-      const label = this.getLabel();
-      this.__giveUniqueName(label, 2);
-    },
-
-    __giveUniqueName: function(label, suffix) {
-      const newLabel = label + "_" + suffix;
-      const allModels = this.getWorkbench().getNodes(true);
-      const nodes = Object.values(allModels);
-      for (const node of nodes) {
-        if (node.getNodeId() !== this.getNodeId() &&
-            node.getLabel().localeCompare(this.getLabel()) === 0) {
-          this.setLabel(newLabel);
-          this.__giveUniqueName(label, suffix+1);
-        }
-      }
-    },
-
     startInBackend: function() {
       // create the node in the backend here
       const key = this.getKey();
       const version = this.getVersion();
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
       const params = {
         url: {
-          studyId: study.getUuid()
+          studyId: this.getStudy().getUuid()
         },
         data: {
           "service_id": this.getNodeId(),
@@ -495,10 +485,9 @@ qx.Class.define("osparc.data.model.Node", {
 
     stopInBackend: function() {
       // remove node in the backend
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
       const params = {
         url: {
-          studyId: study.getUuid(),
+          studyId: this.getStudy().getUuid(),
           nodeId: this.getNodeId()
         }
       };
@@ -522,27 +511,11 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     /**
-     * Remove those inputs that can't be respresented in the settings form
-     * (Those are needed for creating connections between nodes)
-     *
-     */
-    __removeNonSettingInputs: function(inputs) {
-      let filteredInputs = JSON.parse(JSON.stringify(inputs));
-      for (const inputId in filteredInputs) {
-        let input = filteredInputs[inputId];
-        if (input.type.includes("data:application/s4l-api/")) {
-          delete filteredInputs[inputId];
-        }
-      }
-      return filteredInputs;
-    },
-
-    /**
      * Add settings widget with those inputs that can be represented in a form
      */
     __addSettings: function(inputs) {
       const form = this.__settingsForm = new osparc.component.form.Auto(inputs);
-      const propsForm = new osparc.component.form.renderer.PropForm(form, this);
+      const propsForm = new osparc.component.form.renderer.PropForm(form, this, this.getStudy());
       this.setPropsForm(propsForm);
       propsForm.addListener("linkFieldModified", e => {
         const linkFieldModified = e.getData();
@@ -675,7 +648,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.getPropsFormEditor().setAccessLevel(inputAccess);
       }
 
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const study = this.getStudy();
       if (study && study.isReadOnly() && this.getPropsForm()) {
         this.getPropsForm().setEnabled(false);
       }
@@ -1091,19 +1064,18 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
     __nodeState: function() {
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
       // Check if study is still there
-      if (study === null) {
+      if (this.getStudy() === null) {
         return;
       }
       // Check if node is still there
-      if (study.getWorkbench().getNode(this.getNodeId()) === null) {
+      if (this.getWorkbench().getNode(this.getNodeId()) === null) {
         return;
       }
 
       const params = {
         url: {
-          studyId: study.getUuid(),
+          studyId: this.getStudy().getUuid(),
           nodeId: this.getNodeId()
         }
       };
@@ -1149,8 +1121,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.getStatus().setInteractive("connecting");
         console.log("service not ready yet, waiting... " + error);
         // Check if node is still there
-        const study = osparc.store.Store.getInstance().getCurrentStudy();
-        if (study.getWorkbench().getNode(this.getNodeId()) === null) {
+        if (this.getWorkbench().getNode(this.getNodeId()) === null) {
           return;
         }
         const interval = 1000;
