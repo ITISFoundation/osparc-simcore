@@ -22,6 +22,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.clusters.models import (
     CLUSTER_ADMIN_RIGHTS,
     CLUSTER_MANAGER_RIGHTS,
+    CLUSTER_NO_RIGHTS,
     CLUSTER_USER_RIGHTS,
     Cluster,
     ClusterAccessRights,
@@ -344,19 +345,21 @@ async def test_update_cluster(
         )
         assert Cluster.parse_obj(data) == expected_admin_cluster
 
-    # we can change the access rights
-    cluster_patch = ClusterPatch(
-        accessRights={second_user["primary_gid"]: CLUSTER_USER_RIGHTS}
-    )
-    rsp = await client.patch(
-        f"{url}",
-        json=cluster_patch.dict(by_alias=True, exclude_unset=True),
-    )
-    data, error = await assert_status(rsp, expected.ok)
-    expected_admin_cluster.access_rights[
-        second_user["primary_gid"]
-    ] = CLUSTER_USER_RIGHTS
-    assert Cluster.parse_obj(data) == expected_admin_cluster
+    # we can change the access rights, the owner rights are always kept
+    for rights in [
+        CLUSTER_NO_RIGHTS,
+        CLUSTER_USER_RIGHTS,
+        CLUSTER_MANAGER_RIGHTS,
+        CLUSTER_ADMIN_RIGHTS,
+    ]:
+        cluster_patch = ClusterPatch(accessRights={second_user["primary_gid"]: rights})
+        rsp = await client.patch(
+            f"{url}",
+            json=cluster_patch.dict(by_alias=True, exclude_unset=True),
+        )
+        data, error = await assert_status(rsp, expected.ok)
+        expected_admin_cluster.access_rights[second_user["primary_gid"]] = rights
+        assert Cluster.parse_obj(data) == expected_admin_cluster
 
     # we have a second user that creates a few clusters, some are shared with the first user
     # a_cluster_that_may_be_administrated: Cluster = await cluster(
