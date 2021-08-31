@@ -224,7 +224,9 @@ async def test_get_cluster(
     client: TestClient,
     postgres_db: sa.engine.Engine,
     logged_user: Dict[str, Any],
+    second_user: Dict[str, Any],
     primary_group: Dict[str, Any],
+    all_group: Dict[str, Any],
     cluster: Callable[..., Coroutine[Any, Any, Cluster]],
     faker: Faker,
     user_role: UserRole,
@@ -244,11 +246,46 @@ async def test_get_cluster(
     )
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected.ok)
-    if error:
-        # we are done here for anonymous/guest
-        return
-
     assert Cluster.parse_obj(data) == admin_cluster
+
+    # we have a second user that creates a few clusters, some are shared with the first user
+    another_primary_group, _, _ = await list_user_groups(client.app, second_user["id"])
+    a_cluster_that_may_be_managed: Cluster = await cluster(
+        GroupID(another_primary_group["gid"]),
+        {GroupID(primary_group["gid"]): CLUSTER_MANAGER_RIGHTS},
+    )
+
+    a_cluster_that_may_be_used: Cluster = await cluster(
+        GroupID(another_primary_group["gid"]),
+        {GroupID(primary_group["gid"]): CLUSTER_USER_RIGHTS},
+    )
+
+    a_cluster_that_is_not_shared: Cluster = await cluster(
+        GroupID(another_primary_group["gid"]),
+    )
+
+    a_cluster_that_may_not_be_used: Cluster = await cluster(
+        GroupID(another_primary_group["gid"]),
+        {
+            GroupID(all_group["gid"]): CLUSTER_USER_RIGHTS,
+            GroupID(primary_group["gid"]): ClusterAccessRights(
+                read=False, write=False, delete=False
+            ),
+        },
+    )
+
+    # we should have access to that one
+    for cl in [a_cluster_that_may_be_managed, a_cluster_that_may_be_used]:
+        url = client.app.router["get_cluster_handler"].url_for(cluster_id=f"{cl.id}")
+        rsp = await client.get(f"{url}")
+        data, error = await assert_status(rsp, expected.ok)
+        assert Cluster.parse_obj(data) == cl
+
+    # we should not have access to these
+    for cl in [a_cluster_that_is_not_shared, a_cluster_that_may_not_be_used]:
+        url = client.app.router["get_cluster_handler"].url_for(cluster_id=f"{cl.id}")
+        rsp = await client.get(f"{url}")
+        data, error = await assert_status(rsp, expected.forbidden)
 
 
 def test_update_cluster(client: TestClient):
