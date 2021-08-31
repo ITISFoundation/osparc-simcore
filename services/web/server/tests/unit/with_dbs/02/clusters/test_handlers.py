@@ -1,7 +1,8 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-# pylint: disable=no-value-for-parameter
+# pylint:disable=no-value-for-parameter
+# pylint:disable=too-many-arguments
 
 
 import random
@@ -25,6 +26,7 @@ from simcore_service_webserver.clusters.models import (
     Cluster,
     ClusterAccessRights,
     ClusterCreate,
+    ClusterPatch,
     ClusterType,
 )
 from simcore_service_webserver.groups_api import list_user_groups
@@ -288,8 +290,30 @@ async def test_get_cluster(
         data, error = await assert_status(rsp, expected.forbidden)
 
 
-def test_update_cluster(client: TestClient):
-    pass
+@pytest.mark.parametrize(
+    *standard_role_response(),
+)
+async def test_update_cluster(
+    enable_dev_features: None,
+    client: TestClient,
+    postgres_db: sa.engine.Engine,
+    logged_user: Dict[str, Any],
+    second_user: Dict[str, Any],
+    primary_group: Dict[str, Any],
+    all_group: Dict[str, Any],
+    cluster: Callable[..., Coroutine[Any, Any, Cluster]],
+    faker: Faker,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+):
+    updated_cluster = ClusterPatch()
+    url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{25}")
+    rsp = await client.patch(
+        f"{url}", json=updated_cluster.dict(by_alias=True, exclude_unset=True)
+    )
+    data, error = await assert_status(rsp, expected.not_found)
+    if error and user_role in [UserRole.ANONYMOUS, UserRole.GUEST]:
+        return
 
 
 def test_delete_cluster(client: TestClient):
