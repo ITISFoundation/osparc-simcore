@@ -188,7 +188,7 @@ async def test_create_cluster(
         name=faker.name(), type=random.choice(list(ClusterType))
     ).dict(by_alias=True, exclude_unset=True)
     rsp = await client.post(f"{url}", json=cluster_data)
-    data, error = await assert_status(rsp, expected.ok)
+    data, error = await assert_status(rsp, expected.created)
     if error:
         # we are done here
         return
