@@ -184,7 +184,9 @@ async def test_create_cluster(
     expected: ExpectedResponse,
 ):
     url = client.app.router["create_cluster_handler"].url_for()
-    cluster_data = {"name": faker.name()}
+    cluster_data = ClusterCreate(
+        name=faker.name(), type=random.choice(list(ClusterType))
+    ).dict(by_alias=True, exclude_unset=True)
     rsp = await client.post(f"{url}", json=cluster_data)
     data, error = await assert_status(rsp, expected.ok)
     if error:

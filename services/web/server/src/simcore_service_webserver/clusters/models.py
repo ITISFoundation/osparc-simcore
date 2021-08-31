@@ -74,7 +74,7 @@ class Cluster(ClusterBase):
 
 
 class ClusterCreate(ClusterBase):
-    ...
+    owner: Optional[GroupID]
 
 
 class ClusterPatch(ClusterBase):
