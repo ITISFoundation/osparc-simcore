@@ -123,9 +123,7 @@ class DaskClient:
                 project_id,
                 node_id,
                 key=job_id,
-                resources=_from_node_reqs_to_dask_resources(
-                    node_image.node_requirements
-                ),
+                resources=dask_resources,
                 retries=0,
             )
             task_future.add_done_callback(_done_dask_callback)
