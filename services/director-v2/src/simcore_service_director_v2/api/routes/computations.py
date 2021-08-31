@@ -132,7 +132,7 @@ async def create_computation(
                 )
 
             await scheduler.run_new_pipeline(
-                job.user_id, job.project_id, job.cluster_id
+                job.user_id, job.project_id, job.cluster_id or 0
             )
 
         return ComputationTaskOut(

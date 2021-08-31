@@ -51,7 +51,8 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
             celery_client=CeleryClient.instance(app),
             scheduled_pipelines={
                 (r.user_id, r.project_uuid, r.iteration): ScheduledPipelineParams(
-                    mark_for_cancellation=False
+                    cluster_id=r.cluster_id if r.cluster_id is not None else 0,
+                    mark_for_cancellation=False,
                 )
                 for r in runs
             },
@@ -64,7 +65,8 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
         db_engine=db_engine,
         scheduled_pipelines={
             (r.user_id, r.project_uuid, r.iteration): ScheduledPipelineParams(
-                mark_for_cancellation=False
+                cluster_id=r.cluster_id if r.cluster_id is not None else 0,
+                mark_for_cancellation=False,
             )
             for r in runs
         },
