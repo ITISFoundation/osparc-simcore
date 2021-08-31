@@ -12,7 +12,7 @@ from tenacity import before_sleep_log, retry, stop_after_attempt, wait_random
 from ..core.errors import ConfigurationError
 from ..core.settings import DaskSchedulerSettings
 from ..models.domains.comp_tasks import Image
-from ..models.schemas.constants import UserID
+from ..models.schemas.constants import ClusterID, UserID
 from ..models.schemas.services import NodeRequirements
 
 logger = logging.getLogger(__name__)
@@ -69,6 +69,7 @@ class DaskClient:
         self,
         user_id: UserID,
         project_id: ProjectID,
+        cluster_id: ClusterID,
         tasks: Dict[NodeID, Image],
         callback: Callable[[], None],
         remote_fct: Callable = None,
@@ -109,6 +110,12 @@ class DaskClient:
             # Also, it must be unique
             # and it is shown in the Dask scheduler dashboard website
             job_id = f"{node_image.name}_{node_image.tag}__projectid_{project_id}__nodeid_{node_id}__{uuid4()}"
+            dask_resources = _from_node_reqs_to_dask_resources(
+                node_image.node_requirements
+            )
+            if cluster_id > 0:
+                # TODO: we will probably have to give the default cluster a resource as well
+                dask_resources.update({f"CLUSTER_{cluster_id}": 1.0})
             task_future = self.client.submit(
                 remote_fct,
                 job_id,

@@ -131,7 +131,9 @@ async def create_computation(
                     detail=f"Project {job.project_id} has no computational services, or contains cycles",
                 )
 
-            await scheduler.run_new_pipeline(job.user_id, job.project_id)
+            await scheduler.run_new_pipeline(
+                job.user_id, job.project_id, job.cluster_id
+            )
 
         return ComputationTaskOut(
             id=job.project_id,

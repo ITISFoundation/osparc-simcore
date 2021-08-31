@@ -148,6 +148,7 @@ async def test_send_computation_task(
     dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
+        cluster_id=0,
         tasks=fake_task,
         callback=mocked_done_callback_fct,
         remote_fct=fake_sidecar_fct,
@@ -169,6 +170,7 @@ async def test_send_computation_task(
     dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
+        cluster_id=0,
         tasks=fake_task,
         callback=mocked_done_callback_fct,
         remote_fct=fake_sidecar_fct,

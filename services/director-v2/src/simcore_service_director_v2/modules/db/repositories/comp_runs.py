@@ -8,13 +8,13 @@ from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
-from simcore_service_director_v2.utils.db import RUNNING_STATE_TO_DB
 from sqlalchemy.sql import or_
 from sqlalchemy.sql.elements import literal_column
 from sqlalchemy.sql.expression import desc
 
 from ....models.domains.comp_runs import CompRunsAtDB
-from ....models.schemas.constants import UserID
+from ....models.schemas.constants import ClusterID, UserID
+from ....utils.db import RUNNING_STATE_TO_DB
 from ..tables import comp_runs
 from ._base import BaseRepository
 
@@ -44,6 +44,7 @@ class CompRunsRepository(BaseRepository):
         self,
         user_id: UserID,
         project_id: ProjectID,
+        cluster_id: ClusterID,
         iteration: Optional[PositiveInt] = None,
     ) -> CompRunsAtDB:
         async with self.db_engine.acquire() as conn:
@@ -63,7 +64,8 @@ class CompRunsRepository(BaseRepository):
                 comp_runs.insert()  # pylint: disable=no-value-for-parameter
                 .values(
                     user_id=user_id,
-                    project_uuid=str(project_id),
+                    project_uuid=f"{project_id}",
+                    cluster_id=None if cluster_id == 0 else cluster_id,
                     iteration=iteration,
                     result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
                     started=datetime.utcnow(),
