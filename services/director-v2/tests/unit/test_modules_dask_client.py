@@ -10,6 +10,8 @@ from uuid import uuid4
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
+from distributed import Client
+from distributed.deploy.local import LocalCluster
 from distributed.deploy.spec import SpecCluster
 from distributed.worker import TaskState
 from fastapi.applications import FastAPI
@@ -28,6 +30,7 @@ from simcore_service_director_v2.modules.dask_client import (
 )
 from starlette.testclient import TestClient
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
+from yarl import URL
 
 
 @retry(
@@ -83,6 +86,42 @@ def dask_client(
 
 def test_dask_client_is_created(dask_client: DaskClient):
     pass
+
+
+async def test_dask_cluster():
+    cluster = await LocalCluster(n_workers=2, threads_per_worker=1, asynchronous=True)
+    scheduler_address = URL(cluster.scheduler_address)
+
+    client = await Client(cluster, asynchronous=True)
+    import pdb
+
+    pdb.set_trace()
+
+    await cluster.close()
+
+    cluster = LocalCluster(
+        n_workers=2,
+        threads_per_worker=1,
+        host=scheduler_address.host,
+        scheduler_port=scheduler_address.port,
+    )
+    cluster.close()
+
+
+async def test_dask_client_reconnects_when_scheduler_restarts(
+    dask_spec_local_cluster: SpecCluster, dask_client: DaskClient
+):
+    status = dask_client.client.status
+    assert status == "running"
+    scheduler_address = URL(dask_spec_local_cluster.scheduler_address)
+    dask_spec_local_cluster.close()
+    status = dask_client.client.status
+    assert status == "connecting"
+    new_cluster = LocalCluster(
+        host=scheduler_address.host, scheduler_port=scheduler_address.port
+    )
+    status = dask_client.client.status
+    assert status == "running"
 
 
 def test_local_dask_cluster_through_client(dask_client: DaskClient):
