@@ -444,6 +444,18 @@ async def test_update_cluster(
     )
     data, error = await assert_status(rsp, expected.ok)
 
+    # and I shall be able to remove a user
+    url = client.app.router["update_cluster_handler"].url_for(
+        cluster_id=f"{a_cluster_that_may_be_managed.id}"
+    )
+    rsp = await client.patch(
+        f"{url}",
+        json=ClusterPatch(accessRights={all_group["gid"]: CLUSTER_NO_RIGHTS}).dict(
+            by_alias=True, exclude_unset=True
+        ),
+    )
+    data, error = await assert_status(rsp, expected.ok)
+
     # but I canNOT add a manager or an admin
     for rights in [CLUSTER_ADMIN_RIGHTS, CLUSTER_MANAGER_RIGHTS]:
         url = client.app.router["update_cluster_handler"].url_for(
