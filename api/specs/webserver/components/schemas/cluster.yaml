@@ -31,14 +31,7 @@ ClusterCreate:
       enum:
         - ON_PREMISE
         - AWS
-    owner:
-      description: the cluster owner group
-      type: integer
-      minimum: 1
-    accessRights:
-      type: array
-      items:
-        $ref: "#/ClusterAccessRights"
+
   required:
     - name
     - type
