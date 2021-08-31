@@ -244,7 +244,7 @@ async def test_get_cluster(
     assert data is None
     # create our own cluster
     admin_cluster: Cluster = await cluster(GroupID(primary_group["gid"]))
-    # now the listing should retrieve our cluster
+    # now we should be able to get it
     url = client.app.router["get_cluster_handler"].url_for(
         cluster_id=f"{admin_cluster.id}"
     )
@@ -308,7 +308,8 @@ async def test_update_cluster(
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
-    updated_cluster = ClusterPatch()
+    # check this one cluster is not existing
+    updated_cluster = ClusterPatch(name="My patched cluster name")
     url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.patch(
         f"{url}", json=updated_cluster.dict(by_alias=True, exclude_unset=True)
@@ -316,6 +317,19 @@ async def test_update_cluster(
     data, error = await assert_status(rsp, expected.not_found)
     if error and user_role in [UserRole.ANONYMOUS, UserRole.GUEST]:
         return
+
+    # create our own cluster
+    admin_cluster: Cluster = await cluster(GroupID(primary_group["gid"]))
+    # now we should be able to patch it
+    url = client.app.router["update_cluster_handler"].url_for(
+        cluster_id=f"{admin_cluster.id}"
+    )
+    rsp = await client.patch(
+        f"{url}", json=updated_cluster.dict(by_alias=True, exclude_unset=True)
+    )
+    data, error = await assert_status(rsp, expected.ok)
+    expected_admin_cluster = admin_cluster.copy(update={"name": updated_cluster.name})
+    assert Cluster.parse_obj(data) == expected_admin_cluster
 
 
 def test_delete_cluster(client: TestClient):
