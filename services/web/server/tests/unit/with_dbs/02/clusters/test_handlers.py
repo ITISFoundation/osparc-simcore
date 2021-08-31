@@ -69,13 +69,13 @@ def cluster(
         list_of_created_cluster_ids.append(new_cluster_id)
 
         # when a cluster is created, the DB automatically creates the owner access rights
-        for gid, access_rights in new_cluster.access_rights.items():
+        for group_id, access_rights in new_cluster.access_rights.items():
             result = postgres_db.execute(
                 insert(cluster_to_groups)
                 .values(
                     **{
                         "cluster_id": new_cluster_id,
-                        "gid": gid,
+                        "gid": group_id,
                         "read_access": access_rights.read,
                         "write_access": access_rights.write,
                         "delete_access": access_rights.delete,
@@ -510,8 +510,15 @@ async def test_delete_cluster(
     # create our own cluster
     admin_cluster: Cluster = await cluster(GroupID(logged_user["primary_gid"]))
     # now we should be able to delete it
-    url = client.app.router["get_cluster_handler"].url_for(
+    url = client.app.router["delete_cluster_handler"].url_for(
         cluster_id=f"{admin_cluster.id}"
     )
     rsp = await client.delete(f"{url}")
     data, error = await assert_status(rsp, expected.no_content)
+    assert data is None
+
+    # check it was deleted
+    result: ResultProxy = postgres_db.execute(
+        sa.select([clusters]).where(clusters.c.id == admin_cluster.id)
+    )
+    assert result.rowcount == 0
