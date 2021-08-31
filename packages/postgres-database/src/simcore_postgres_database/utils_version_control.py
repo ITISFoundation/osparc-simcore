@@ -1,93 +1,42 @@
+"""
+
+    TODO: generic version control abstraction applicable to version rows in any table
+    - starts with versioning a given project, i.e. a row in a simcore_postgres_database.models.projects table
+
+"""
 # pylint: disable=no-value-for-parameter
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
 
 from abc import ABC, abstractmethod
-from collections import OrderedDict
-from copy import deepcopy
-from typing import Callable, List, Optional, Set, Tuple
-from uuid import UUID, uuid3
+from typing import Callable, List, Optional
+from uuid import UUID
 
-import pytest
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
-from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
-from models_library.projects import Workbench
-from pydantic import constr
-from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
-from simcore_postgres_database.errors import UniqueViolation
-from simcore_postgres_database.models.projects import projects
-from simcore_postgres_database.models.projects_repos import (
-    projects_checkpoints,
-    projects_repos,
-)
-from simcore_postgres_database.models.users import users
 from sqlalchemy.sql.elements import not_
-from sqlalchemy.sql.operators import is_
 
-SHA1Str = str
-EXCLUDE = {
-    "id",
-    "uuid",
-    "creation_date",
-    "last_change_date",
-    "hidden",
-    "published",
-}
-
-
-class SnapshotPolicy(ABC):
-    @abstractmethod
-    def eval_checksum(self, item) -> SHA1Str:
-        ...
-
-    @abstractmethod
-    async def clone_as_snapshot(
-        self, data: RowProxy, repo_id: int, data_checksum: str, conn: SAConnection
-    ):
-        ...
-
-
-def eval_checksum(workbench) -> SHA1Str:
-    # pipeline = OrderedDict((key, Node(**value)) for key, value in workbench.items())
-    # FIXME:  implement checksum
-
-    # NOTE: must capture changes in the workbnehc despite possible changes in the uuids
-    return "1" * 40
-
-
-async def clone_as_snapshot(
-    project: RowProxy, repo_id: int, snapshot_checksum: str, conn: SAConnection
-):
-    # create project-snapshot
-    snapshot = {c: deepcopy(project[c]) for c in project if c not in EXCLUDE}
-
-    snapshot["name"] = f"snapshot.{repo_id}.{snapshot_checksum}"
-    snapshot["uuid"] = snapshot_uuid = str(
-        uuid3(UUID(project.uuid), f"{repo_id}.{snapshot_checksum}")
-    )
-    # creation_data = state of parent upon copy! WARNING: changes can be state changes and not project definition?
-    snapshot["creation_date"] = project.last_change_date
-    snapshot["hidden"] = True
-    snapshot["published"] = False
-
-    # NOTE: a snapshot has no results but workbench stores some states,
-    #  - input hashes
-    #  - node ids
-
-    query = projects.insert().values(**snapshot).returning(projects)
-    snapshot_project: Optional[RowProxy] = await (await conn.execute(query)).first()
-    assert snapshot_project
-    assert snapshot_project.uuid == snapshot_uuid
-    return snapshot_project
+from .models.projects import projects
+from .models.projects_repos import projects_checkpoints, projects_repos
 
 
 class ProjectRepository:
     def __init__(self, repo_id: int, conn: SAConnection):
         self._repo_id = repo_id
         self._conn = conn
+
+    @classmethod
+    async def create_repo(
+        cls, project_uuid: UUID, conn: SAConnection
+    ) -> "ProjectRepository":
+        # TODO: if does not exists, then create
+        repo_id = await conn.scalar(
+            projects_repos.insert()
+            .values(project_uuid=project_uuid)
+            .returning(projects_repos.c.id)
+        )
+        if not repo_id:
+            raise ValueError(f"Failed to init repo for {project_uuid}")
+        return ProjectRepository(repo_id, conn)
 
     @property
     def id(self) -> int:
@@ -177,7 +126,30 @@ class ProjectRepository:
         return checkpoints
 
 
-async def add_to_staging(repo_id: int, conn: SAConnection):
+SHA1Str = str
+
+
+class VersionControlPolicy(ABC):
+
+    # policies ---
+
+    @abstractmethod
+    def eval_checksum(self, item) -> SHA1Str:
+        ...
+
+    @abstractmethod
+    async def clone_row_as_snapshot(
+        self, data: RowProxy, repo_id: int, data_checksum: str, conn: SAConnection
+    ):
+        ...
+
+
+async def add_to_staging(
+    repo_id: int,
+    conn: SAConnection,
+    eval_checksum: Callable,
+    clone_as_snapshot: Callable,
+):
     """Adds project wc's changes to staging"""
 
     # fetch project
@@ -257,7 +229,7 @@ async def add_to_staging(repo_id: int, conn: SAConnection):
                 await conn.execute(cleanup_query)
 
 
-async def commit_staging(repo_id: int, tag: str, message: str, conn: SAConnection):
+async def commit(repo_id: int, tag: str, message: str, conn: SAConnection):
     """Commit staging"""
 
     async with conn.begin():
