@@ -60,7 +60,7 @@ async def create_cluster_handler(request: web.Request) -> web.Response:
     new_cluster = await clusters_repo.create_cluster(new_cluster)
 
     data = new_cluster.dict(by_alias=True)
-    return web.json_response(data={"data": data})
+    return web.json_response(data={"data": data}, status=web.HTTPCreated.status_code)
 
 
 @routes.get(
