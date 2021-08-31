@@ -4,7 +4,6 @@ from typing import List
 from aiohttp import web
 from models_library.users import GroupID, UserID
 from servicelib.rest_utils import extract_and_validate
-from simcore_postgres_database.models.clusters import ClusterType
 
 from .._meta import api_version_prefix
 from ..groups_api import list_user_groups
@@ -12,7 +11,7 @@ from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
 from .db import ClustersRepository
 from .exceptions import ClusterAccessForbidden, ClusterNotFoundError
-from .models import Cluster, ClusterCreate
+from .models import Cluster, ClusterCreate, ClusterPatch
 
 logger = logging.getLogger(__name__)
 
@@ -51,9 +50,9 @@ async def create_cluster_handler(request: web.Request) -> web.Response:
     primary_group, _, _ = await list_user_groups(request.app, user_id)
 
     new_cluster = ClusterCreate(
-        name=body.name,
+        name=body.name if hasattr(body, "name") else None,
         description=body.description if hasattr(body, "description") else None,
-        type=ClusterType.ON_PREMISE,
+        type=body.type if hasattr(body, "type") else None,
         owner=primary_group["gid"],
     )
 
@@ -96,7 +95,33 @@ async def get_cluster_handler(request: web.Request) -> web.Response:
 @login_required
 @permission_required("clusters.write")
 async def update_cluster_handler(request: web.Request) -> web.Response:
-    raise web.HTTPNotImplemented(reason="not yet implemented")
+    path, _, body = await extract_and_validate(request)
+    user_id: UserID = request[RQT_USERID_KEY]
+    primary_group, std_groups, all_group = await list_user_groups(request.app, user_id)
+
+    updated_cluster = ClusterPatch(
+        name=body.name if hasattr(body, "name") else None,
+        description=body.description if hasattr(body, "description") else None,
+        type=body.type if hasattr(body, "type") else None,
+        owner=body.owner if hasattr(body, "owner") else None,
+        access_rights=body.access_rights if hasattr(body, "access_rights") else None,
+    )
+
+    clusters_repo = ClustersRepository(request)
+    try:
+        cluster = await clusters_repo.update_cluster(
+            GroupID(primary_group["gid"]),
+            [GroupID(g["gid"]) for g in std_groups],
+            GroupID(all_group["gid"]),
+            path["cluster_id"],
+            updated_cluster,
+        )
+        data = cluster.dict(by_alias=True)
+        return web.json_response(data={"data": data})
+    except ClusterNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"{exc}")
+    except ClusterAccessForbidden as exc:
+        raise web.HTTPForbidden(reason=f"{exc}")
 
 
 @routes.delete(

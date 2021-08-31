@@ -21,8 +21,7 @@ CLUSTER_USER_RIGHTS = ClusterAccessRights(read=True, write=False, delete=False)
 CLUSTER_NO_RIGHTS = ClusterAccessRights(read=False, write=False, delete=False)
 
 
-class Cluster(BaseModel):
-    id: PositiveInt = Field(..., description="The cluster ID")
+class ClusterBase(BaseModel):
     name: str = Field(..., description="The human readable name of the cluster")
     description: Optional[str] = None
     type: ClusterType
@@ -32,6 +31,12 @@ class Cluster(BaseModel):
     class Config:
         extra = Extra.forbid
         use_enum_values = True
+
+
+class Cluster(ClusterBase):
+    id: PositiveInt = Field(..., description="The cluster ID")
+
+    class Config(ClusterBase.Config):
         schema_extra = {
             "examples": [
                 {
@@ -68,5 +73,13 @@ class Cluster(BaseModel):
         return v
 
 
-class ClusterCreate(Cluster):
-    id: Optional[PositiveInt]
+class ClusterCreate(ClusterBase):
+    ...
+
+
+class ClusterPatch(ClusterBase):
+    name: Optional[str]
+    description: Optional[str]
+    type: Optional[ClusterType]
+    owner: Optional[GroupID]
+    access_rights: Optional[Dict[GroupID, ClusterAccessRights]]
