@@ -93,14 +93,24 @@ qx.Class.define("osparc.wrapper.CodeMirror", {
       // eslint-disable-next-line new-cap
       const cm = new CodeMirror.fromTextArea(el, {
         lineNumbers: true,
-        mode: "python",
-        theme: "3024-night"
+        mode: "python"
       });
+      const theme = this.__getThemeForCM();
+      cm.setOption("theme", theme);
 
       const themeManager = qx.theme.manager.Meta.getInstance();
       themeManager.addListener("changeTheme", () => {
+        const newTheme = this.__getThemeForCM();
+        cm.setOption("theme", newTheme);
       });
       return cm;
+    },
+
+    __getThemeForCM: function() {
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const luminanceBG = osparc.utils.Utils.getColorLuminance(colorManager.resolve("background-color"));
+      const theme = (luminanceBG > 0.3) ? "3024-night" : "3024-day";
+      return theme;
     }
   }
 });
