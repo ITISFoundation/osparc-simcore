@@ -103,12 +103,12 @@ async def create_computation(
         computational_dag = await create_minimal_computational_graph_based_on_selection(
             complete_dag=complete_dag,
             selected_nodes=job.subgraph or [],
-            force_restart=job.force_restart,
+            force_restart=job.force_restart or False,
         )
 
         # ok so put the tasks in the db
         await computation_pipelines.upsert_pipeline(
-            job.user_id, project.uuid, computational_dag, job.start_pipeline
+            job.user_id, project.uuid, computational_dag, job.start_pipeline or False
         )
         inserted_comp_tasks = await computation_tasks.upsert_tasks_from_project(
             project,
