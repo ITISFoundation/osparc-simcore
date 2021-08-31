@@ -51,14 +51,14 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         allowGrowX: false
       });
       createClusterBtn.addListener("execute", function() {
-        const newOrg = true;
-        const orgEditor = new osparc.dashboard.ClusterEditor(newOrg);
+        const newCluster = true;
+        const clusterEditor = new osparc.dashboard.ClusterEditor(newCluster);
         const title = this.tr("Cluster Details Editor");
-        const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 250);
-        orgEditor.addListener("createCluster", () => {
-          this.__createCluster(win, orgEditor.getChildControl("create"), orgEditor);
+        const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 250);
+        clusterEditor.addListener("createCluster", () => {
+          this.__createCluster(win, clusterEditor.getChildControl("create"), clusterEditor);
         });
-        orgEditor.addListener("cancel", () => win.close());
+        clusterEditor.addListener("cancel", () => win.close());
       }, this);
       return createClusterBtn;
     },
@@ -102,13 +102,13 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
             });
 
           item.addListener("openEditCluster", e => {
-            // const orgKey = e.getData();
-            // this.__openEditCluster(orgKey);
+            const clusterId = e.getData();
+            this.__openEditCluster(clusterId);
           });
 
           item.addListener("deleteCluster", e => {
-            const orgKey = e.getData();
-            this.__deleteCluster(orgKey);
+            const clusterId = e.getData();
+            this.__deleteCluster(clusterId);
           });
         }
       });
@@ -165,7 +165,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       const membersModel = this.__membersModel = new qx.data.Array();
       const membersCtrl = new qx.data.controller.List(membersModel, memebersUIList, "name");
       membersCtrl.setDelegate({
-        createItem: () => new osparc.dashboard.OrgMemberListItem(),
+        createItem: () => new osparc.dashboard.ClusterMemberListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("id", "model", null, item, id);
           ctrl.bindProperty("id", "key", null, item, id);
@@ -180,13 +180,13 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
             .setStyles({
               "border-radius": "16px"
             });
-          item.addListener("promoteOrgMember", e => {
-            const orgMember = e.getData();
-            this.__promoteMember(orgMember);
+          item.addListener("promoteClusterMember", e => {
+            const clusterMember = e.getData();
+            this.__promoteMember(clusterMember);
           });
-          item.addListener("removeOrgMember", e => {
-            const orgMember = e.getData();
-            this.__deleteMember(orgMember);
+          item.addListener("removeClusterMember", e => {
+            const clusterMember = e.getData();
+            this.__deleteMember(clusterMember);
           });
         }
       });
@@ -201,51 +201,50 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       } else {
         this.__currentCluster = null;
       }
-      this.__reloadOrgMembers();
+      this.__reloadClusterMembers();
     },
 
     __reloadClusters: function() {
-      const orgsModel = this.__clustersModel;
-      orgsModel.removeAll();
+      const clustersModel = this.__clustersModel;
+      clustersModel.removeAll();
 
-      osparc.data.Resources.get("organizations")
-        .then(respOrgs => {
-          const orgs = respOrgs["organizations"];
-          orgs.forEach(org => {
+      osparc.data.Resources.get("clusters")
+        .then(clusters => {
+          clusters.forEach(cluster => {
             const params = {
               url: {
-                gid: org["gid"]
+                "cid": cluster["gid"]
               }
             };
-            osparc.data.Resources.get("organizationMembers", params)
-              .then(respOrgMembers => {
-                org["nMembers"] = Object.keys(respOrgMembers).length + this.tr(" members");
-                orgsModel.append(qx.data.marshal.Json.createModel(org));
+            osparc.data.Resources.get("clusterMembers", params)
+              .then(respClusterMembers => {
+                cluster["nMembers"] = Object.keys(respClusterMembers).length + this.tr(" members");
+                clustersModel.append(qx.data.marshal.Json.createModel(cluster));
               });
           });
         });
     },
 
-    __reloadOrgMembers: function() {
+    __reloadClusterMembers: function() {
       const membersModel = this.__membersModel;
       membersModel.removeAll();
 
-      const orgModel = this.__currentCluster;
-      if (orgModel === null) {
+      const clusterModel = this.__currentCluster;
+      if (clusterModel === null) {
         return;
       }
 
-      const canWrite = orgModel.getAccessRights().getWrite();
+      const canWrite = clusterModel.getAccessRights().getWrite();
       if (canWrite) {
         this.__memberInvitation.show();
       }
 
       const params = {
         url: {
-          "gid": orgModel.getKey()
+          "cid": clusterModel.getKey()
         }
       };
-      osparc.data.Resources.get("organizationMembers", params)
+      osparc.data.Resources.get("clusterMembers", params)
         .then(members => {
           members.forEach(member => {
             member["thumbnail"] = osparc.utils.Avatar.getUrl(member["login"], 32);
@@ -256,42 +255,42 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         });
     },
 
-    __openEditCluster: function(orgKey) {
-      let org = null;
-      this.__clustersModel.forEach(orgModel => {
-        if (orgModel.getGid() === parseInt(orgKey)) {
-          org = orgModel;
+    __openEditCluster: function(clusterId) {
+      let cluster = null;
+      this.__clustersModel.forEach(clusterModel => {
+        if (clusterModel.getCid() === parseInt(clusterId)) {
+          cluster = clusterModel;
         }
       });
-      if (org === null) {
+      if (cluster === null) {
         return;
       }
 
-      const newOrg = false;
-      const orgEditor = new osparc.dashboard.ClusterEditor(newOrg);
-      org.bind("gid", orgEditor, "gid");
-      org.bind("name", orgEditor, "label");
-      org.bind("description", orgEditor, "description");
+      const newCluster = false;
+      const clusterEditor = new osparc.dashboard.ClusterEditor(newCluster);
+      cluster.bind("gid", clusterEditor, "gid");
+      cluster.bind("name", clusterEditor, "label");
+      cluster.bind("description", clusterEditor, "description");
       const title = this.tr("Cluster Details Editor");
-      const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 250);
-      orgEditor.addListener("updateOrg", () => {
-        this.__updateCluster(win, orgEditor.getChildControl("save"), orgEditor);
+      const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 250);
+      clusterEditor.addListener("updateCluster", () => {
+        this.__updateCluster(win, clusterEditor.getChildControl("save"), clusterEditor);
       });
-      orgEditor.addListener("cancel", () => win.close());
+      clusterEditor.addListener("cancel", () => win.close());
     },
 
-    __deleteCluster: function(orgKey) {
-      let org = null;
-      this.__clustersModel.forEach(orgModel => {
-        if (orgModel.getGid() === parseInt(orgKey)) {
-          org = orgModel;
+    __deleteCluster: function(clusterId) {
+      let cluster = null;
+      this.__clustersModel.forEach(clusterModel => {
+        if (clusterModel.getCid() === parseInt(clusterId)) {
+          cluster = clusterModel;
         }
       });
-      if (org === null) {
+      if (cluster === null) {
         return;
       }
 
-      const name = org.getLabel();
+      const name = cluster.getLabel();
       const msg = this.tr("Are you sure you want to delete ") + name + "?";
       const win = new osparc.ui.window.Confirmation(msg);
       win.center();
@@ -300,17 +299,13 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         if (win.getConfirmed()) {
           const params = {
             url: {
-              "gid": orgKey
+              "cid": clusterId
             }
           };
-          osparc.data.Resources.fetch("organizations", "delete", params)
+          osparc.data.Resources.fetch("clusters", "delete", params)
             .then(() => {
-              osparc.store.Store.getInstance().reset("organizations");
-              // reload "profile", "organizations" are part of the information in this endpoint
-              osparc.data.Resources.getOne("profile", {}, null, false)
-                .then(() => {
-                  this.__reloadClusters();
-                });
+              osparc.store.Store.getInstance().reset("clusters");
+              this.__reloadClusters();
             })
             .catch(err => {
               osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong deleting ") + name, "ERROR");
@@ -323,10 +318,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       }, this);
     },
 
-    __createCluster: function(win, button, orgEditor) {
-      const clusterKey = orgEditor.getCid();
-      const name = orgEditor.getLabel();
-      const description = orgEditor.getDescription();
+    __createCluster: function(win, button, clusterEditor) {
+      const clusterKey = clusterEditor.getCid();
+      const name = clusterEditor.getLabel();
+      const description = clusterEditor.getDescription();
       const params = {
         url: {
           "cid": clusterKey
@@ -342,11 +337,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
           osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
           button.setFetching(false);
           osparc.store.Store.getInstance().reset("clusters");
-          // reload "profile", "organizations" are part of the information in this endpoint
-          osparc.data.Resources.getOne("profile", {}, null, false)
-            .then(() => {
-              this.__reloadClusters();
-            });
+          this.__reloadClusters();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong creating ") + name, "ERROR");
@@ -358,27 +349,26 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         });
     },
 
-    __updateCluster: function(win, button, orgEditor) {
-      const orgKey = orgEditor.getGid();
-      const name = orgEditor.getLabel();
-      const description = orgEditor.getDescription();
-      const thumbnail = orgEditor.getThumbnail();
+    __updateCluster: function(win, button, clusterEditor) {
+      const clusterId = clusterEditor.getCid();
+      const name = clusterEditor.getLabel();
+      const description = clusterEditor.getDescription();
       const params = {
         url: {
-          "gid": orgKey
+          "cid": clusterId
         },
         data: {
           "name": name,
           "description": description,
-          "thumbnail": thumbnail || null
+          "type": "AWS"
         }
       };
-      osparc.data.Resources.fetch("organizations", "patch", params)
+      osparc.data.Resources.fetch("clusters", "patch", params)
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
           button.setFetching(false);
           win.close();
-          osparc.store.Store.getInstance().reset("organizations");
+          osparc.store.Store.getInstance().reset("clusters");
           this.__reloadClusters();
         })
         .catch(err => {
@@ -388,24 +378,24 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         });
     },
 
-    __addMember: function(orgMemberEmail) {
+    __addMember: function(clusterMemberEmail) {
       if (this.__currentCluster === null) {
         return;
       }
 
       const params = {
         url: {
-          "gid": this.__currentCluster.getKey()
+          "cid": this.__currentCluster.getKey()
         },
         data: {
-          "email": orgMemberEmail
+          "email": clusterMemberEmail
         }
       };
-      osparc.data.Resources.fetch("organizationMembers", "post", params)
+      osparc.data.Resources.fetch("clusterMembers", "post", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(orgMemberEmail + this.tr(" added"));
-          osparc.store.Store.getInstance().reset("organizationMembers");
-          this.__reloadOrgMembers();
+          osparc.component.message.FlashMessenger.getInstance().logAs(clusterMemberEmail + this.tr(" added"));
+          osparc.store.Store.getInstance().reset("clusterMembers");
+          this.__reloadClusterMembers();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong with the invitation"), "ERROR");
@@ -413,15 +403,15 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         });
     },
 
-    __promoteMember: function(orgMember) {
+    __promoteMember: function(clusterMember) {
       if (this.__currentCluster === null) {
         return;
       }
 
       const params = {
         url: {
-          "gid": this.__currentCluster.getKey(),
-          "uid": orgMember["key"]
+          "cid": this.__currentCluster.getKey(),
+          "uid": clusterMember["key"]
         },
         data: {
           "accessRights": {
@@ -431,19 +421,19 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
           }
         }
       };
-      osparc.data.Resources.fetch("organizationMembers", "patch", params)
+      osparc.data.Resources.fetch("clusterMembers", "patch", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully promoted"));
-          osparc.store.Store.getInstance().reset("organizationMembers");
-          this.__reloadOrgMembers();
+          osparc.component.message.FlashMessenger.getInstance().logAs(clusterMember["name"] + this.tr(" successfully promoted"));
+          osparc.store.Store.getInstance().reset("clusterMembers");
+          this.__reloadClusterMembers();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting ") + orgMember["name"], "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting ") + clusterMember["name"], "ERROR");
           console.error(err);
         });
     },
 
-    __deleteMember: function(orgMember) {
+    __deleteMember: function(clusterMember) {
       if (this.__currentCluster === null) {
         return;
       }
@@ -451,17 +441,17 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       const params = {
         url: {
           "gid": this.__currentCluster.getKey(),
-          "uid": orgMember["key"]
+          "uid": clusterMember["key"]
         }
       };
-      osparc.data.Resources.fetch("organizationMembers", "delete", params)
+      osparc.data.Resources.fetch("clusterMembers", "delete", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully removed"));
-          osparc.store.Store.getInstance().reset("organizationMembers");
-          this.__reloadOrgMembers();
+          osparc.component.message.FlashMessenger.getInstance().logAs(clusterMember["name"] + this.tr(" successfully removed"));
+          osparc.store.Store.getInstance().reset("clusterMembers");
+          this.__reloadClusterMembers();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + orgMember["name"], "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + clusterMember["name"], "ERROR");
           console.error(err);
         });
     }
