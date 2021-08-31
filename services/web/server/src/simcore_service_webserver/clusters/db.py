@@ -14,7 +14,9 @@ from ..db_base_repository import BaseRepository
 from .exceptions import ClusterAccessForbidden, ClusterNotFoundError
 from .models import (
     CLUSTER_ADMIN_RIGHTS,
+    CLUSTER_MANAGER_RIGHTS,
     CLUSTER_NO_RIGHTS,
+    CLUSTER_USER_RIGHTS,
     Cluster,
     ClusterAccessRights,
     ClusterCreate,
@@ -264,6 +266,26 @@ class ClustersRepository(BaseRepository):
                     updated_cluster.access_rights[
                         updated_cluster.owner
                     ] = CLUSTER_ADMIN_RIGHTS
+
+            if (
+                updated_cluster.access_rights
+                and updated_cluster.access_rights != the_cluster.access_rights
+            ):
+                # ensure the owner rights are always admin
+                if (
+                    updated_cluster.access_rights.get(
+                        the_cluster.owner, CLUSTER_ADMIN_RIGHTS
+                    )
+                    != CLUSTER_ADMIN_RIGHTS
+                ):
+                    # it's forbidden to mess around with the owner access rights
+                    raise ClusterAccessForbidden(cluster_id)
+
+                # ensure a manager can only add users
+                if this_user_cluster_access_rights == CLUSTER_MANAGER_RIGHTS:
+                    for grp, rights in updated_cluster.access_rights.items():
+                        if rights not in [CLUSTER_USER_RIGHTS, CLUSTER_NO_RIGHTS]:
+                            raise ClusterAccessForbidden(cluster_id)
 
             # ok we can update now
             await conn.execute(
