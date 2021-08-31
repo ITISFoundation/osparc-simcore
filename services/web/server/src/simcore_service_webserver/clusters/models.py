@@ -82,4 +82,6 @@ class ClusterPatch(ClusterBase):
     description: Optional[str]
     type: Optional[ClusterType]
     owner: Optional[GroupID]
-    access_rights: Optional[Dict[GroupID, ClusterAccessRights]]
+    access_rights: Optional[Dict[GroupID, ClusterAccessRights]] = Field(
+        alias="accessRights"
+    )
