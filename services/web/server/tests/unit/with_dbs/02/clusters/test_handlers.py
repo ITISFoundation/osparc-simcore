@@ -347,10 +347,10 @@ async def test_update_cluster(
 
     # we can change the access rights, the owner rights are always kept
     for rights in [
-        CLUSTER_NO_RIGHTS,
-        CLUSTER_USER_RIGHTS,
-        CLUSTER_MANAGER_RIGHTS,
         CLUSTER_ADMIN_RIGHTS,
+        CLUSTER_MANAGER_RIGHTS,
+        CLUSTER_USER_RIGHTS,
+        CLUSTER_NO_RIGHTS,
     ]:
         cluster_patch = ClusterPatch(accessRights={second_user["primary_gid"]: rights})
         rsp = await client.patch(
@@ -361,140 +361,116 @@ async def test_update_cluster(
         expected_admin_cluster.access_rights[second_user["primary_gid"]] = rights
         assert Cluster.parse_obj(data) == expected_admin_cluster
 
+    # we can change the owner since we are admin
+    cluster_patch = ClusterPatch(owner=second_user["primary_gid"])
+    rsp = await client.patch(
+        f"{url}",
+        json=cluster_patch.dict(by_alias=True, exclude_unset=True),
+    )
+    data, error = await assert_status(rsp, expected.ok)
+    expected_admin_cluster.owner = second_user["primary_gid"]
+    expected_admin_cluster.access_rights[
+        second_user["primary_gid"]
+    ] = CLUSTER_ADMIN_RIGHTS
+    assert Cluster.parse_obj(data) == expected_admin_cluster
+
+    # we should not be able to reduce the rights of the new owner
+    cluster_patch = ClusterPatch(
+        accessRights={second_user["primary_gid"]: CLUSTER_NO_RIGHTS}
+    )
+    rsp = await client.patch(
+        f"{url}",
+        json=cluster_patch.dict(by_alias=True, exclude_unset=True),
+    )
+    data, error = await assert_status(rsp, expected.forbidden)
+
     # we have a second user that creates a few clusters, some are shared with the first user
-    # a_cluster_that_may_be_administrated: Cluster = await cluster(
-    #     GroupID(second_user["primary_gid"]),
-    #     {GroupID(logged_user["primary_gid"]): CLUSTER_ADMIN_RIGHTS},
-    # )
+    a_cluster_that_may_be_administrated: Cluster = await cluster(
+        GroupID(second_user["primary_gid"]),
+        {GroupID(logged_user["primary_gid"]): CLUSTER_ADMIN_RIGHTS},
+    )
+    a_cluster_that_may_be_managed: Cluster = await cluster(
+        GroupID(second_user["primary_gid"]),
+        {GroupID(logged_user["primary_gid"]): CLUSTER_MANAGER_RIGHTS},
+    )
+    a_cluster_that_may_be_used: Cluster = await cluster(
+        GroupID(second_user["primary_gid"]),
+        {GroupID(logged_user["primary_gid"]): CLUSTER_USER_RIGHTS},
+    )
+    a_cluster_that_is_not_shared: Cluster = await cluster(
+        GroupID(second_user["primary_gid"]),
+    )
+    a_cluster_that_may_not_be_used: Cluster = await cluster(
+        GroupID(second_user["primary_gid"]),
+        {
+            GroupID(all_group["gid"]): CLUSTER_ADMIN_RIGHTS,
+            GroupID(logged_user["primary_gid"]): ClusterAccessRights(
+                read=False, write=False, delete=False
+            ),
+        },
+    )
+    # we can manage so we shall be ok here changing the name
+    for cl in [a_cluster_that_may_be_administrated, a_cluster_that_may_be_managed]:
+        url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{cl.id}")
+        rsp = await client.patch(
+            f"{url}",
+            json=ClusterPatch(name="I prefer this new name here").dict(
+                by_alias=True, exclude_unset=True
+            ),
+        )
+        data, error = await assert_status(rsp, expected.ok)
 
-    # a_cluster_that_may_be_managed: Cluster = await cluster(
-    #     GroupID(second_user["primary_gid"]),
-    #     {GroupID(logged_user["primary_gid"]): CLUSTER_MANAGER_RIGHTS},
-    # )
+    # we can NOT change the owner of this one
+    url = client.app.router["update_cluster_handler"].url_for(
+        cluster_id=f"{a_cluster_that_may_be_managed.id}"
+    )
+    rsp = await client.patch(
+        f"{url}",
+        json=ClusterPatch(owner=logged_user["primary_gid"]).dict(
+            by_alias=True, exclude_unset=True
+        ),
+    )
+    data, error = await assert_status(rsp, expected.forbidden)
 
-    # a_cluster_that_may_be_used: Cluster = await cluster(
-    #     GroupID(second_user["primary_gid"]),
-    #     {GroupID(logged_user["primary_gid"]): CLUSTER_USER_RIGHTS},
-    # )
+    # but I can add a user
+    url = client.app.router["update_cluster_handler"].url_for(
+        cluster_id=f"{a_cluster_that_may_be_managed.id}"
+    )
+    rsp = await client.patch(
+        f"{url}",
+        json=ClusterPatch(accessRights={all_group["gid"]: CLUSTER_USER_RIGHTS}).dict(
+            by_alias=True, exclude_unset=True
+        ),
+    )
+    data, error = await assert_status(rsp, expected.ok)
 
-    # a_cluster_that_is_not_shared: Cluster = await cluster(
-    #     GroupID(second_user["primary_gid"]),
-    # )
+    # but I canNOT add a manager or an admin
+    for rights in [CLUSTER_ADMIN_RIGHTS, CLUSTER_MANAGER_RIGHTS]:
+        url = client.app.router["update_cluster_handler"].url_for(
+            cluster_id=f"{a_cluster_that_may_be_managed.id}"
+        )
+        rsp = await client.patch(
+            f"{url}",
+            json=ClusterPatch(accessRights={all_group["gid"]: rights}).dict(
+                by_alias=True, exclude_unset=True
+            ),
+        )
+        data, error = await assert_status(rsp, expected.forbidden)
 
-    # a_cluster_that_may_not_be_used: Cluster = await cluster(
-    #     GroupID(second_user["primary_gid"]),
-    #     {
-    #         GroupID(all_group["gid"]): CLUSTER_USER_RIGHTS,
-    #         GroupID(logged_user["primary_gid"]): ClusterAccessRights(
-    #             read=False, write=False, delete=False
-    #         ),
-    #     },
-    # )
-    # # we can manage so we shall be ok
-    # for cl in [a_cluster_that_may_be_administrated, a_cluster_that_may_be_managed]:
-    #     url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{cl.id}")
-    #     rsp = await client.patch(
-    #         f"{url}", json=cluster_patch.dict(by_alias=True, exclude_unset=True)
-    #     )
-    #     data, error = await assert_status(rsp, expected.ok)
-
-    # for cl in [
-    #     a_cluster_that_may_be_used,
-    #     a_cluster_that_may_not_be_used,
-    #     a_cluster_that_is_not_shared,
-    # ]:
-    #     url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{cl.id}")
-    #     rsp = await client.patch(
-    #         f"{url}", json=cluster_patch.dict(by_alias=True, exclude_unset=True)
-    #     )
-    #     data, error = await assert_status(rsp, expected.forbidden)
-
-
-# TODO: simplify this one
-# @pytest.mark.parametrize(
-#     *standard_role_response(),
-# )
-# async def test_update_cluster_access_rights(
-#     enable_dev_features: None,
-#     client: TestClient,
-#     postgres_db: sa.engine.Engine,
-#     logged_user: Dict[str, Any],
-#     second_user: Dict[str, Any],
-#     primary_group: Dict[str, Any],
-#     all_group: Dict[str, Any],
-#     cluster: Callable[..., Coroutine[Any, Any, Cluster]],
-#     faker: Faker,
-#     user_role: UserRole,
-#     expected: ExpectedResponse,
-# ):
-
-#     # create our own cluster
-#     admin_cluster: Cluster = await cluster(GroupID(logged_user["primary_gid"]))
-#     # now we should be able to patch it
-#     url = client.app.router["update_cluster_handler"].url_for(
-#         cluster_id=f"{admin_cluster.id}"
-#     )
-
-#     # add access rights for second user
-#     rsp = await client.patch(
-#         f"{url}",
-#         json=ClusterPatch(
-#             access_rights={second_user["primary_gid"]: CLUSTER_USER_RIGHTS}
-#         ).dict(by_alias=True, exclude_unset=True),
-#     )
-#     data, error = await assert_status(rsp, expected.ok)
-#     if error and user_role in [UserRole.ANONYMOUS, UserRole.GUEST]:
-#         # we are done with anonymous and guest here
-#         return
-
-#     expected_admin_cluster = admin_cluster.copy(
-#         update={
-#             "access_rights": {
-#                 logged_user["primary_gid"]: CLUSTER_ADMIN_RIGHTS,
-#                 second_user["primary_gid"]: CLUSTER_USER_RIGHTS,
-#             },
-#         }
-#     )
-#     assert Cluster.parse_obj(data) == expected_admin_cluster
-
-#     # now change the access rights again to a manager
-#     rsp = await client.patch(
-#         f"{url}",
-#         json=ClusterPatch(
-#             access_rights={second_user["primary_gid"]: CLUSTER_MANAGER_RIGHTS}
-#         ).dict(by_alias=True, exclude_unset=True),
-#     )
-#     data, error = await assert_status(rsp, expected.ok)
-#     expected_admin_cluster = admin_cluster.copy(
-#         update={
-#             "access_rights": {
-#                 logged_user["primary_gid"]: CLUSTER_ADMIN_RIGHTS,
-#                 second_user["primary_gid"]: CLUSTER_MANAGER_RIGHTS,
-#             },
-#         }
-#     )
-#     assert Cluster.parse_obj(data) == expected_admin_cluster
-
-#     # change the owner
-#     rsp = await client.patch(
-#         f"{url}",
-#         json=ClusterPatch(owner=second_user["primary_gid"]).dict(
-#             by_alias=True, exclude_unset=True
-#         ),
-#     )
-#     data, error = await assert_status(rsp, expected.ok)
-
-#     # the new owner gets ADMIN rights, and the old owner still has his
-#     expected_admin_cluster = admin_cluster.copy(
-#         update={
-#             "owner": second_user["primary_gid"],
-#             "access_rights": {
-#                 logged_user["primary_gid"]: CLUSTER_ADMIN_RIGHTS,
-#                 second_user["primary_gid"]: CLUSTER_ADMIN_RIGHTS,
-#             },
-#         }
-#     )
-#     assert Cluster.parse_obj(data) == expected_admin_cluster
+    # we can NOT manage so we shall be forbidden changing the name
+    for cl in [
+        a_cluster_that_may_be_used,
+        a_cluster_that_may_not_be_used,
+        a_cluster_that_is_not_shared,
+    ]:
+        url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{cl.id}")
+        rsp = await client.patch(
+            f"{url}",
+            json=ClusterPatch(
+                name="I prefer this new name here, but I am not allowed"
+            ).dict(by_alias=True, exclude_unset=True),
+        )
+        data, error = await assert_status(rsp, expected.forbidden)
 
 
 @pytest.mark.parametrize(
