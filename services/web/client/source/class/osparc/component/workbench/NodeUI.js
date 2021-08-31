@@ -130,7 +130,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.setThumbnail(node.getThumbnail());
       }
       const chipContainer = this.getChildControl("chips");
-      if (node.isComputational() || node.isFilePicker()) {
+      if (node.isComputational() || node.isFilePicker() || node.isCodeEditor()) {
         this.__progressBar = this.getChildControl("progress");
       }
 
@@ -148,7 +148,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const metaData = node.getMetaData();
       this._createPorts(true, Boolean((metaData && metaData.inputs && Object.keys(metaData.inputs).length) || this.getNode().isContainer()));
       this._createPorts(false, Boolean((metaData && metaData.outputs && Object.keys(metaData.outputs).length) || this.getNode().isContainer()));
-      if (node.isComputational() || node.isFilePicker()) {
+      if (node.isComputational() || node.isFilePicker() || node.isCodeEditor()) {
         node.getStatus().bind("progress", this.__progressBar, "value");
       }
       if (node.isFilePicker()) {

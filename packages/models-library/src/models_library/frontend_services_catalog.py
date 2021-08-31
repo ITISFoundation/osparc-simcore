@@ -106,6 +106,36 @@ def _create_parameter(param_type: str) -> ServiceDockerData:
     return meta
 
 
+def _create_code_editor() -> ServiceDockerData:
+    return ServiceDockerData(
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/code-editor",
+        version="1.0.0",
+        type=ServiceType.FRONTEND,
+        name="Code Editor",
+        description="Code Editor",
+        authors=[
+            OM,
+        ],
+        contact=OM.email,
+        inputs={
+            "codeText": {
+                "displayOrder": 0,
+                "label": "Code editor",
+                "description": "Type your code",
+                "type": "string",
+            }
+        },
+        outputs={
+            "outFile": {
+                "displayOrder": 0,
+                "label": "File",
+                "description": "Output File",
+                "type": "data:*/*",
+            }
+        },
+    )
+
+
 def is_frontend_service(service_key: str) -> bool:
     return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/")
 
@@ -114,7 +144,15 @@ def is_parameter_service(service_key: str) -> bool:
     return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/")
 
 
-_FACTORY_FUNCTIONS = [_create_file_picker_service, _create_node_group_service,] + [
+def is_code_editor(service_key: str) -> bool:
+    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/code-editor/")
+
+
+_FACTORY_FUNCTIONS = [
+    _create_file_picker_service,
+    _create_node_group_service,
+    _create_code_editor,
+] + [
     functools.partial(_create_parameter, param_type=p)
     for p in ["number", "boolean", "integer"]
 ]

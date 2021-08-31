@@ -66,7 +66,6 @@ qx.Class.define("osparc.component.form.Auto", {
     this.__ctrlMap = {};
     let formCtrl = this.__formCtrl = new qx.data.controller.Form(null, this);
     this.__boxCtrl = {};
-    this.__typeMap = {};
     for (let key in structure) {
       this.__addField(structure[key], key);
     }
@@ -94,7 +93,6 @@ qx.Class.define("osparc.component.form.Auto", {
     __formCtrl: null,
     __model: null,
     __settingData: false,
-    __typeMap: null,
 
 
     /**

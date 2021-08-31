@@ -256,9 +256,9 @@ paths:
                                 - type
                               properties:
                                 displayOrder:
+                                  type: number
                                   description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
                                   deprecated: true
-                                  type: number
                                 label:
                                   type: string
                                   description: short name for the property
@@ -322,6 +322,7 @@ paths:
                                           type: string
                                           enum:
                                             - TextArea
+                                            - CodeArea
                                         minHeight:
                                           description: minimum Height of the textarea
                                           type: integer
@@ -375,9 +376,9 @@ paths:
                                 - type
                               properties:
                                 displayOrder:
+                                  type: number
                                   description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
                                   deprecated: true
-                                  type: number
                                 label:
                                   type: string
                                   description: short name for the property
@@ -645,9 +646,9 @@ paths:
                                 - type
                               properties:
                                 displayOrder:
+                                  type: number
                                   description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
                                   deprecated: true
-                                  type: number
                                 label:
                                   type: string
                                   description: short name for the property
@@ -711,6 +712,7 @@ paths:
                                           type: string
                                           enum:
                                             - TextArea
+                                            - CodeArea
                                         minHeight:
                                           description: minimum Height of the textarea
                                           type: integer
@@ -764,9 +766,9 @@ paths:
                                 - type
                               properties:
                                 displayOrder:
+                                  type: number
                                   description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
                                   deprecated: true
-                                  type: number
                                 label:
                                   type: string
                                   description: short name for the property
@@ -2441,9 +2443,9 @@ components:
                       - type
                     properties:
                       displayOrder:
+                        type: number
                         description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
                         deprecated: true
-                        type: number
                       label:
                         type: string
                         description: short name for the property
@@ -2507,6 +2509,7 @@ components:
                                 type: string
                                 enum:
                                   - TextArea
+                                  - CodeArea
                               minHeight:
                                 description: minimum Height of the textarea
                                 type: integer
@@ -2560,9 +2563,9 @@ components:
                       - type
                     properties:
                       displayOrder:
+                        type: number
                         description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
                         deprecated: true
-                        type: number
                       label:
                         type: string
                         description: short name for the property

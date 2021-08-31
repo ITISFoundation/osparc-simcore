@@ -8,6 +8,7 @@ from fastapi import status
 from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
 from models_library.frontend_services_catalog import (
+    is_code_editor,
     is_frontend_service,
     is_parameter_service,
     iter_service_docker_data,
@@ -51,7 +52,9 @@ def setup_frontend_services(app: FastAPI):
                 app.state.settings.CATALOG_DEV_FEATURES_ENABLED
                 # STILL UNDER DEVELOPMENT
                 #  - Parameter services
+                #  - Code Editor
                 or not is_parameter_service(key)
+                or not is_code_editor(key)
             )
 
         catalog = [

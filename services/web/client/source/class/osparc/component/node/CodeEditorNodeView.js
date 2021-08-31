@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2020 IT'IS Foundation, https://itis.swiss
+     2021 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -19,15 +19,11 @@
   *
   */
 
-qx.Class.define("osparc.component.node.FilePickerNodeView", {
+qx.Class.define("osparc.component.node.CodeEditorNodeView", {
   extend: osparc.component.node.BaseNodeView,
 
-  events: {
-    "itemSelected": "qx.event.type.Event"
-  },
-
   members: {
-    __filePicker: null,
+    __codeEditor: null,
 
     // overridden
     isSettingsGroupShowable: function() {
@@ -36,12 +32,12 @@ qx.Class.define("osparc.component.node.FilePickerNodeView", {
 
     // overridden
     _addSettings: function() {
-      return;
+      this.__addCodeEditor();
     },
 
     // overridden
     _addIFrame: function() {
-      this.__addFilePickerViewer();
+      return;
     },
 
     // overridden
@@ -51,26 +47,30 @@ qx.Class.define("osparc.component.node.FilePickerNodeView", {
 
     // overridden
     _applyNode: function(node) {
-      if (!node.isFilePicker()) {
-        console.error("Only file picker nodes are supported");
+      if (!node.isCodeEditor()) {
+        console.error("Only code editor nodes are supported");
       }
       this.base(arguments, node);
     },
 
-    __addFilePickerViewer: function() {
+    __addCodeEditor: function() {
       const node = this.getNode();
       if (!node) {
         return;
       }
 
-      const filePicker = this.__filePicker = new osparc.file.FilePicker(node);
-      filePicker.buildLayout();
-      filePicker.init();
-      filePicker.addListener("itemSelected", () => this.fireEvent("itemSelected"));
-
-      this._mainView.add(filePicker, {
+      const inputvalues = node.getInputValues();
+      const portId = "codeText";
+      const codeEditor = this.__codeEditor = new osparc.component.widget.CodeEditor(inputvalues[portId]);
+      this._mainView.add(codeEditor, {
         flex: 1
       });
+      const propsForm = this.getNode().getPropsForm();
+      // eslint-disable-next-line no-underscore-dangle
+      const ctrlCodeText = propsForm._form.getControl(portId);
+      codeEditor.addListener("changeValue", e => {
+        ctrlCodeText.setValue(e.getData());
+      }, this);
     }
   }
 });
