@@ -5,14 +5,14 @@ from aiohttp import web
 from models_library.users import GroupID, UserID
 from servicelib.rest_utils import extract_and_validate
 from simcore_postgres_database.models.clusters import ClusterType
-from simcore_service_webserver.clusters.exceptions import ClusterNotFoundError
-from simcore_service_webserver.clusters.models import Cluster, ClusterCreate
-from simcore_service_webserver.groups_api import list_user_groups
-from simcore_service_webserver.security_decorators import permission_required
 
 from .._meta import api_version_prefix
+from ..groups_api import list_user_groups
 from ..login.decorators import RQT_USERID_KEY, login_required
+from ..security_decorators import permission_required
 from .db import ClustersRepository
+from .exceptions import ClusterNotFoundError
+from .models import Cluster, ClusterCreate
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,9 @@ async def create_cluster_handler(request: web.Request) -> web.Response:
     return web.json_response(data={"data": data})
 
 
-@routes.get(f"/{api_version_prefix}/clusters/{{id}}", name="get_cluster_handler")
+@routes.get(
+    f"/{api_version_prefix}/clusters/{{cluster_id}}", name="get_cluster_handler"
+)
 @login_required
 @permission_required("clusters.read")
 async def get_cluster_handler(request: web.Request) -> web.Response:
@@ -74,24 +76,30 @@ async def get_cluster_handler(request: web.Request) -> web.Response:
 
     clusters_repo = ClustersRepository(request)
     try:
-        cluster = clusters_repo.get_cluster(
+        cluster = await clusters_repo.get_cluster(
             GroupID(primary_group["gid"]),
             [GroupID(g["gid"]) for g in std_groups],
             GroupID(all_group["gid"]),
-            path["id"],
+            path["cluster_id"],
         )
+        data = cluster.dict(by_alias=True)
+        return web.json_response(data={"data": data})
     except ClusterNotFoundError as exc:
-        raise web.HTTPNotFound(reason=exc.msg)
+        raise web.HTTPNotFound(reason=f"{exc}")
 
 
-@routes.patch(f"/{api_version_prefix}/clusters/{{id}}", name="update_cluster_handler")
+@routes.patch(
+    f"/{api_version_prefix}/clusters/{{cluster_id}}", name="update_cluster_handler"
+)
 @login_required
 @permission_required("clusters.write")
 async def update_cluster_handler(request: web.Request) -> web.Response:
     raise web.HTTPNotImplemented(reason="not yet implemented")
 
 
-@routes.delete(f"/{api_version_prefix}/clusters/{{id}}", name="delete_cluster_handler")
+@routes.delete(
+    f"/{api_version_prefix}/clusters/{{cluster_id}}", name="delete_cluster_handler"
+)
 @login_required
 @permission_required("clusters.delete")
 async def delete_cluster_handler(request: web.Request) -> web.Response:

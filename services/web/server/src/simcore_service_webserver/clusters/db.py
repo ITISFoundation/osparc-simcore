@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 import sqlalchemy as sa
 from aiopg.sa.result import ResultProxy
@@ -6,9 +6,9 @@ from models_library.users import GroupID
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
-from sqlalchemy.sql.elements import literal_column
 
 from ..db_base_repository import BaseRepository
+from .exceptions import ClusterNotFoundError
 from .models import CLUSTER_NO_RIGHTS, Cluster, ClusterAccessRights, ClusterCreate
 
 # Cluster access rights:
@@ -16,6 +16,60 @@ from .models import CLUSTER_NO_RIGHTS, Cluster, ClusterAccessRights, ClusterCrea
 
 
 class ClustersRepository(BaseRepository):
+    async def _clusters_from_cluster_ids(
+        self,
+        conn,
+        cluster_ids: Set[PositiveInt],
+        offset: int = 0,
+        limit: Optional[int] = None,
+    ) -> List[Cluster]:
+        cluster_id_to_cluster: Dict[PositiveInt, Cluster] = {}
+        async for row in conn.execute(
+            sa.select(
+                [
+                    clusters,
+                    cluster_to_groups.c.gid,
+                    cluster_to_groups.c.read_access,
+                    cluster_to_groups.c.write_access,
+                    cluster_to_groups.c.delete_access,
+                ]
+            )
+            .select_from(
+                clusters.join(
+                    cluster_to_groups,
+                    clusters.c.id == cluster_to_groups.c.cluster_id,
+                )
+            )
+            .where(clusters.c.id.in_(cluster_ids))
+            .offset(offset)
+            .limit(limit)
+        ):
+            cluster_access_rights = {
+                row[cluster_to_groups.c.gid]: ClusterAccessRights(
+                    **{
+                        "read": row[cluster_to_groups.c.read_access],
+                        "write": row[cluster_to_groups.c.write_access],
+                        "delete": row[cluster_to_groups.c.delete_access],
+                    }
+                )
+            }
+            cluster_id = row[clusters.c.id]
+            if cluster_id not in cluster_id_to_cluster:
+                cluster_id_to_cluster[cluster_id] = Cluster.construct(
+                    id=cluster_id,
+                    name=row[clusters.c.name],
+                    description=row[clusters.c.description],
+                    type=row[clusters.c.type],
+                    owner=row[clusters.c.owner],
+                    access_rights=cluster_access_rights,
+                )
+            else:
+                cluster_id_to_cluster[cluster_id].access_rights.update(
+                    cluster_access_rights
+                )
+
+        return list(cluster_id_to_cluster.values())
+
     async def list_clusters_for_user_groups(
         self,
         primary_group: GroupID,
@@ -24,8 +78,6 @@ class ClustersRepository(BaseRepository):
         offset: int = 0,
         limit: Optional[int] = None,
     ) -> List[Cluster]:
-        cluster_id_to_cluster: Dict[PositiveInt, Cluster] = {}
-
         async with self.engine.acquire() as conn:
             result: ResultProxy = await conn.execute(
                 sa.select([cluster_to_groups.c.cluster_id]).where(
@@ -50,51 +102,9 @@ class ClustersRepository(BaseRepository):
             if not cluster_ids:
                 return []
 
-            async for row in conn.execute(
-                sa.select(
-                    [
-                        clusters,
-                        cluster_to_groups.c.gid,
-                        cluster_to_groups.c.read_access,
-                        cluster_to_groups.c.write_access,
-                        cluster_to_groups.c.delete_access,
-                    ]
-                )
-                .select_from(
-                    clusters.join(
-                        cluster_to_groups,
-                        clusters.c.id == cluster_to_groups.c.cluster_id,
-                    )
-                )
-                .where(clusters.c.id.in_(cluster_ids))
-                .offset(offset)
-                .limit(limit)
-            ):
-                cluster_access_rights = {
-                    row[cluster_to_groups.c.gid]: ClusterAccessRights(
-                        **{
-                            "read": row[cluster_to_groups.c.read_access],
-                            "write": row[cluster_to_groups.c.write_access],
-                            "delete": row[cluster_to_groups.c.delete_access],
-                        }
-                    )
-                }
-                cluster_id = row[clusters.c.id]
-                if cluster_id not in cluster_id_to_cluster:
-                    cluster_id_to_cluster[cluster_id] = Cluster.construct(
-                        id=cluster_id,
-                        name=row[clusters.c.name],
-                        description=row[clusters.c.description],
-                        type=row[clusters.c.type],
-                        owner=row[clusters.c.owner],
-                        access_rights=cluster_access_rights,
-                    )
-                else:
-                    cluster_id_to_cluster[cluster_id].access_rights.update(
-                        cluster_access_rights
-                    )
-
-        list_of_clusters = list(cluster_id_to_cluster.values())
+        list_of_clusters = await self._clusters_from_cluster_ids(
+            conn, cluster_ids, offset, limit
+        )
 
         def solve_access_rights(
             cluster: Cluster,
@@ -164,3 +174,18 @@ class ClustersRepository(BaseRepository):
                     }
                 },
             )
+
+    async def get_cluster(
+        self,
+        primary_group: GroupID,
+        standard_groups: List[GroupID],
+        all_group: GroupID,
+        cluster_id: PositiveInt,
+    ) -> Cluster:
+        async with self.engine.acquire() as conn:
+            clusters_list: List[Cluster] = await self._clusters_from_cluster_ids(
+                conn, {cluster_id}
+            )
+        if not clusters_list:
+            raise ClusterNotFoundError(cluster_id)
+        return clusters_list[0]
