@@ -87,6 +87,19 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
         }
       });
 
+    const clustersPage = new osparc.desktop.preferences.pages.ClustersPage();
+    const clustersBtn = clustersPage.getChildControl("button");
+    osparc.utils.Utils.setIdToWidget(clustersBtn, "preferencesClustersTabBtn");
+    tabView.add(clustersPage);
+    clustersPage.exclude();
+    osparc.data.Resources.get("clusters")
+      .then(resp => {
+        const orgs = resp["clusters"];
+        if (orgs.length || osparc.data.Permissions.getInstance().canDo("user.clusters.create")) {
+          clustersPage.show();
+        }
+      });
+
     if (osparc.data.Permissions.getInstance().canDo("statics.read")) {
       const testerPage = new osparc.desktop.preferences.pages.TesterPage();
       tabView.add(testerPage);
