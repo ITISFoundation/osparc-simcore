@@ -108,8 +108,8 @@ qx.Class.define("osparc.wrapper.CodeMirror", {
 
     __getThemeForCM: function() {
       const colorManager = qx.theme.manager.Color.getInstance();
-      const luminanceBG = osparc.utils.Utils.getColorLuminance(colorManager.resolve("background-color"));
-      const theme = (luminanceBG > 0.3) ? "3024-night" : "3024-day";
+      const luminanceBG = osparc.utils.Utils.getColorLuminance(colorManager.resolve("background-main"));
+      const theme = (luminanceBG > 0.3) ? "3024-day" : "3024-night";
       return theme;
     }
   }
