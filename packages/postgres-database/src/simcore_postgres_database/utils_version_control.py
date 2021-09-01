@@ -6,6 +6,7 @@
 """
 # pylint: disable=no-value-for-parameter
 
+import logging
 from abc import ABC, abstractmethod
 from typing import Callable, List, Optional
 from uuid import UUID
@@ -18,8 +19,12 @@ from sqlalchemy.sql.elements import not_
 from .models.projects import projects
 from .models.projects_repos import projects_checkpoints, projects_repos
 
+log = logging.getLogger(__name__)
+
 
 class ProjectRepository:
+    # TODO: fetch row upon construction -> ORM?
+
     def __init__(self, repo_id: int, conn: SAConnection):
         self._repo_id = repo_id
         self._conn = conn
@@ -28,26 +33,37 @@ class ProjectRepository:
     async def create_repo(
         cls, project_uuid: UUID, conn: SAConnection
     ) -> "ProjectRepository":
-        # TODO: if does not exists, then create
-        repo_id = await conn.scalar(
-            projects_repos.insert()
-            .values(project_uuid=project_uuid)
-            .returning(projects_repos.c.id)
+        query = sa.select([projects_repos.c.id]).where(
+            projects_repos.c.project_uuid == project_uuid
         )
-        if not repo_id:
-            raise ValueError(f"Failed to init repo for {project_uuid}")
+        repo_id = await conn.scalar(query)
+
+        if repo_id is None:
+            query = (
+                projects_repos.insert()
+                .values(project_uuid=project_uuid)
+                .returning(projects_repos.c.id)
+            )
+            repo_id = await conn.scalar(query)
+        assert repo_id is not None
         return ProjectRepository(repo_id, conn)
 
     @property
     def id(self) -> int:
         return self._repo_id
 
+    async def fetch(self) -> RowProxy:
+        query = projects_repos.select().where(projects_repos.c.id == self._repo_id)
+        repo: Optional[RowProxy] = await (await self._conn.execute(query)).first()
+        assert repo
+        return repo
+
     async def _fetch_entrypoint(self, column_id) -> Optional[RowProxy]:
         query = sa.select(
             [
                 column_id,
             ]
-        ).where(projects_repos.c.repo_id == self.id)
+        ).where(projects_repos.c.id == self.id)
         if entrypoint_id := await self._conn.scalar(query):
             query = projects_checkpoints.select().where(
                 projects_checkpoints.c.id == entrypoint_id
@@ -69,9 +85,9 @@ class ProjectRepository:
 
     async def assert_unique_staging(self):
 
-        if staging_id := await self.fetch_staging():
+        if staging := await self.fetch_staging():
             query = projects_checkpoints.select().where(
-                (projects_checkpoints.c.id == staging_id)
+                (projects_checkpoints.c.id == staging.id)
             )
             result: ResultProxy = await self._conn.execute(query)
             assert result.rowcount == 1
@@ -100,9 +116,9 @@ class ProjectRepository:
         #
         query = sa.select(
             [
-                projects_repos.c.projects_uuid,
+                projects_repos.c.project_uuid,
             ]
-        ).where((projects_repos.c.repo_id == self.id))
+        ).where((projects_repos.c.id == self.id))
         project_uuid = await self._conn.scalar(query)
         # non-nullable project_uuid
         assert project_uuid  # nosec
@@ -149,7 +165,7 @@ async def add_to_staging(
     conn: SAConnection,
     eval_checksum: Callable,
     clone_as_snapshot: Callable,
-):
+) -> RowProxy:
     """Adds project wc's changes to staging"""
 
     # fetch project
@@ -165,16 +181,17 @@ async def add_to_staging(
     checkpoint_id = None
     cleanup_query = None
 
+    head = await repo.fetch_head()
     staging = await repo.fetch_staging()
     # if exists, it is valid since ondelete="RESTRICT"
 
-    if staging:
+    if staging:  # something in staging
 
         # wc and staging snapshot are identical?
         if staging.snapshot_checksum == checksum:
             checkpoint_id = staging.id
 
-        else:
+        else:  # invalidate staging
             checkpoint_id = None
             # eliminate snapshot entrypoint and project when new-one is in place!!!!
             # del project -> projects_checkpoints
@@ -182,20 +199,19 @@ async def add_to_staging(
                 projects.c.uuid == staging.snapshot_uuid
             )
 
-    # Write ---
-
-    if not checkpoint_id:
+    if checkpoint_id is None:  # create staging
         async with conn.begin():
             # clone it
             snapshot: RowProxy = await clone_as_snapshot(
                 project, repo.id, checksum, conn
             )
 
-            # update staged in projects_checkpoints
+            # update projects_checkpoints
             query = (
                 projects_checkpoints.insert()
                 .values(
                     repo_id=repo.id,
+                    parent=head.id if head else None,
                     snapshot_checksum=checksum,
                     snapshot_uuid=snapshot.uuid,
                 )
@@ -203,33 +219,23 @@ async def add_to_staging(
             )
             checkpoint_id = await conn.scalar(query)
 
-            # update projects_repos tables
+            # update new stagin
             query = (
                 projects_repos.update()
                 .where(projects_repos.c.id == repo_id)
-                .values(staging=checkpoint_id)
+                .values(staging_id=checkpoint_id)
             )
             await conn.execute(query)
 
             if cleanup_query:
                 await conn.execute(cleanup_query)
 
-    else:
-        #
-        async with conn.begin():
-            # update projects_repos tables
-            query = (
-                projects_repos.update()
-                .where(projects_repos.c.id == repo_id)
-                .values(staging=checkpoint_id)
-            )
-            await conn.execute(query)
-
-            if cleanup_query:
-                await conn.execute(cleanup_query)
+    staging = await repo.fetch_staging()
+    assert staging
+    return staging
 
 
-async def commit(repo_id: int, tag: str, message: str, conn: SAConnection):
+async def commit(repo_id: int, tag: str, message: str, conn: SAConnection) -> RowProxy:
     """Commit staging"""
 
     async with conn.begin():
@@ -245,30 +251,45 @@ async def commit(repo_id: int, tag: str, message: str, conn: SAConnection):
                 projects_checkpoints.c.snapshot_checksum,
                 projects_checkpoints.c.snapshot_uuid,
             ]
-        ).where(projects_checkpoints.c.id == repo.staging)
-        staged: Optional[RowProxy] = await (await conn.execute(query)).first()
+        ).where(projects_checkpoints.c.id == repo.staging_id)
+        staging: Optional[RowProxy] = await (await conn.execute(query)).first()
 
-        assert staged
-
-        if staged:
-            head_id = await conn.scalar(
-                projects_checkpoints.update()
-                .values(
-                    repo_id=repo.id,
-                    parent=repo.head,
-                    tag=tag,
-                    message=message,
-                    # redundant
-                    snapshot_checksum=staged.staged_checksum,
-                    snapshot_uuid=staged.staged_project_uuid,
+        if staging:
+            async with conn.begin():
+                query = (
+                    projects_checkpoints.update()
+                    .values(
+                        repo_id=repo.id,
+                        parent=repo.head_id,
+                        tag=tag,
+                        message=message,
+                        # redundant
+                        snapshot_checksum=staging.snapshot_checksum,
+                        snapshot_uuid=staging.snapshot_uuid,
+                    )
+                    .returning(projects_checkpoints)
                 )
-                .returning(projects_checkpoints.c.id)
-            )
+                head_id = await conn.scalar(query)
 
-            await conn.execute(
-                projects_repos.update()
-                .where(projects_repos.c.id == repo_id)
-                .values(head=head_id, staging=None)
-            )
+                query = (
+                    projects_repos.update()
+                    .where(projects_repos.c.id == repo_id)
+                    .values(head_id=head_id, staging_id=None)
+                )
+                await conn.execute(query)
         else:
-            print("WARNING: nothing staged")
+            log.info("Nothing to commit, working tree clean")
+
+        query = sa.select([projects_repos.c.head_id]).where(
+            projects_repos.c.id == repo_id
+        )
+        head_id = await conn.scalar(query)
+        assert head_id  # nosec
+        # TODO: use sub-query
+        query = projects_checkpoints.select().where(
+            projects_checkpoints.c.id == head_id
+        )
+        checkpoint: Optional[RowProxy] = await (await conn.execute(query)).first()
+        assert checkpoint  # nosec
+
+        return checkpoint
