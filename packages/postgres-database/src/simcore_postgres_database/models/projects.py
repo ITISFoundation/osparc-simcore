@@ -144,7 +144,7 @@ projects = sa.Table("projects", metadata, *[deepcopy(c) for c in _columns])
 #    - advisable to have an extra unique identifier (e.g. projects.uuid)
 #    - what about other tables with foreign keys and ondelete clauses?
 #      can hook 'trash' procedure to ondelete clauses instead of CASCADE?
-#
+# - ALTERNATIVE: avoid separate trash and add deleted column in 'table' as a marker
 
 _trash_columns = _columns + [
     sa.Column(
