@@ -133,7 +133,7 @@ _columns = [
 projects = sa.Table("projects", metadata, *[deepcopy(c) for c in _columns])
 
 
-# TRASH table
+# TRASH table (experimental)
 #
 # NOTE: this is the rationale around "trash" tables
 #
@@ -142,6 +142,8 @@ projects = sa.Table("projects", metadata, *[deepcopy(c) for c in _columns])
 # - Is this pattern applicable to any 'table' with disposable rows? Probably but ...
 #    - primary_key might be a problem when a row is "restored" from trash
 #    - advisable to have an extra unique identifier (e.g. projects.uuid)
+#    - what about other tables with foreign keys and ondelete clauses?
+#      can hook 'trash' procedure to ondelete clauses instead of CASCADE?
 #
 
 _trash_columns = _columns + [
