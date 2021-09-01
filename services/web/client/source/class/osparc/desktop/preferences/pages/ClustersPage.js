@@ -24,8 +24,8 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
   extend: osparc.desktop.preferences.pages.BasePage,
 
   construct: function() {
-    // const iconSrc = "@FontAwesome5Solid/hubspot/24";
-    const iconSrc = "@FontAwesome5Solid/cat/24";
+    const iconSrc = "@FontAwesome5Solid/server/24";
+    // const iconSrc = "@FontAwesome5Brands/hubspot/24";
     const title = this.tr("Clusters");
     this.base(arguments, title, iconSrc);
 
@@ -165,7 +165,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       const membersModel = this.__membersModel = new qx.data.Array();
       const membersCtrl = new qx.data.controller.List(membersModel, memebersUIList, "name");
       membersCtrl.setDelegate({
-        createItem: () => new osparc.dashboard.ClusterMemberListItem(),
+        createItem: () => new osparc.dashboard.MemberListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("id", "model", null, item, id);
           ctrl.bindProperty("id", "key", null, item, id);
