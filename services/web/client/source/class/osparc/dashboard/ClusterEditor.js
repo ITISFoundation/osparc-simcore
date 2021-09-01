@@ -18,7 +18,7 @@
 qx.Class.define("osparc.dashboard.ClusterEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(newOrg = true) {
+  construct: function(newCluster = true) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(8));
@@ -28,7 +28,7 @@ qx.Class.define("osparc.dashboard.ClusterEditor", {
     title.setRequired(true);
     manager.add(title);
     this.getChildControl("description");
-    newOrg ? this.getChildControl("create") : this.getChildControl("save");
+    newCluster ? this.getChildControl("create") : this.getChildControl("save");
   },
 
   properties: {

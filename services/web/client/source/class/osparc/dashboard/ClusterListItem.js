@@ -70,6 +70,10 @@ qx.Class.define("osparc.dashboard.ClusterListItem", {
     },
 
     __applyMembers: function(members) {
+      if (members === null) {
+        return;
+      }
+
       const nMembers = Object.keys(members).filter(prop => prop.includes("user_")).length + this.tr(" members");
       this.setContact(nMembers);
 
@@ -79,11 +83,12 @@ qx.Class.define("osparc.dashboard.ClusterListItem", {
       }
     },
 
-    __applyAccessRights: function(value) {
-      if (value === null) {
+    __applyAccessRights: function(accessRights) {
+      if (accessRights === null) {
         return;
       }
-      if (value.getDelete()) {
+
+      if (accessRights.getDelete()) {
         const optionsMenu = this.getChildControl("options");
         const menu = this.__getOptionsMenu();
         optionsMenu.setMenu(menu);

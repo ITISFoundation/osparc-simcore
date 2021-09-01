@@ -54,7 +54,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         const newCluster = true;
         const clusterEditor = new osparc.dashboard.ClusterEditor(newCluster);
         const title = this.tr("Cluster Details Editor");
-        const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 250);
+        const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 200);
         clusterEditor.addListener("createCluster", () => {
           this.__createCluster(win, clusterEditor.getChildControl("create"), clusterEditor);
         });
@@ -240,7 +240,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     __openEditCluster: function(clusterId) {
       let cluster = null;
       this.__clustersModel.forEach(clusterModel => {
-        if (clusterModel.getCid() === parseInt(clusterId)) {
+        if (clusterModel.getId() === parseInt(clusterId)) {
           cluster = clusterModel;
         }
       });
@@ -250,11 +250,11 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
 
       const newCluster = false;
       const clusterEditor = new osparc.dashboard.ClusterEditor(newCluster);
-      cluster.bind("gid", clusterEditor, "gid");
+      cluster.bind("id", clusterEditor, "cid");
       cluster.bind("name", clusterEditor, "label");
       cluster.bind("description", clusterEditor, "description");
       const title = this.tr("Cluster Details Editor");
-      const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 250);
+      const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 200);
       clusterEditor.addListener("updateCluster", () => {
         this.__updateCluster(win, clusterEditor.getChildControl("save"), clusterEditor);
       });
@@ -264,7 +264,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     __deleteCluster: function(clusterId) {
       let cluster = null;
       this.__clustersModel.forEach(clusterModel => {
-        if (clusterModel.getCid() === parseInt(clusterId)) {
+        if (clusterModel.getId() === parseInt(clusterId)) {
           cluster = clusterModel;
         }
       });
