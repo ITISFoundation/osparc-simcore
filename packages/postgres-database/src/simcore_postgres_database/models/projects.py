@@ -4,6 +4,7 @@
 
 """
 import enum
+from copy import deepcopy
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
@@ -22,9 +23,7 @@ class ProjectType(enum.Enum):
     STANDARD = "STANDARD"
 
 
-projects = sa.Table(
-    "projects",
-    metadata,
+_columns = [
     sa.Column(
         "id", sa.BigInteger, nullable=False, primary_key=True, doc="Identifier index"
     ),
@@ -128,4 +127,32 @@ projects = sa.Table(
         default=False,
         doc="If true, the project is by default not listed in the API",
     ),
+]
+
+
+projects = sa.Table("projects", metadata, *[deepcopy(c) for c in _columns])
+
+
+# TRASH table
+#
+# NOTE: this is the rationale around "trash" tables
+#
+# - This table holds deleted rows
+# - deleted timestamp determines when it was trashed and a gc can flush the trash when needed.
+# - Is this pattern applicable to any 'table' with disposable rows? Probably but ...
+#    - primary_key might be a problem when a row is "restored" from trash
+#    - advisable to have an extra unique identifier (e.g. projects.uuid)
+#
+
+_trash_columns = _columns + [
+    sa.Column(
+        "deleted",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        doc="Timestamp of deletion",
+    ),
+]
+projects_trash = sa.Table(
+    "projects_trash", metadata, *[deepcopy(c) for c in _trash_columns]
 )
