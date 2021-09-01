@@ -173,11 +173,11 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
             .setStyles({
               "border-radius": "16px"
             });
-          item.addListener("promoteClusterMember", e => {
+          item.addListener("promoteMember", e => {
             const clusterMember = e.getData();
             this.__promoteMember(clusterMember);
           });
-          item.addListener("removeClusterMember", e => {
+          item.addListener("removeMember", e => {
             const clusterMember = e.getData();
             this.__deleteMember(clusterMember);
           });
@@ -231,11 +231,19 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
 
           clusterMembers.forEach(clusterMember => {
             if (clusterMember.gid in members) {
+              const memberObj = {};
               const member = members[clusterMember.gid];
-              member["thumbnail"] = osparc.utils.Avatar.getUrl(member["login"], 32);
-              member["name"] = osparc.utils.Utils.firstsUp(member["first_name"], member["last_name"]);
-              member["showOptions"] = canWrite;
-              membersModel.append(qx.data.marshal.Json.createModel(member));
+              memberObj["thumbnail"] = osparc.utils.Avatar.getUrl(member["login"], 32);
+              memberObj["name"] = osparc.utils.Utils.firstsUp(member["first_name"], member["last_name"]);
+              memberObj["showOptions"] = canWrite;
+              memberObj["accessRights"] = {
+                "read": clusterMember.getRead(),
+                "write": clusterMember.getWrite(),
+                "delete": clusterMember.getDelete()
+              };
+              memberObj["subtitle"] = member["login"];
+              memberObj["id"] = member["gid"];
+              membersModel.append(qx.data.marshal.Json.createModel(memberObj));
             }
           });
         });
@@ -424,16 +432,24 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         return;
       }
 
+      const accessRights = JSON.parse(qx.util.Serializer.toJson(this.__currentCluster.getMembers()));
+      if (!(clusterMember["key"] in accessRights)) {
+        return;
+      }
+
+      delete accessRights[clusterMember["key"]];
       const params = {
         url: {
-          "gid": this.__currentCluster.getKey(),
-          "uid": clusterMember["key"]
+          "cid": this.__currentCluster.getKey()
+        },
+        data: {
+          "accessRights": accessRights
         }
       };
-      osparc.data.Resources.fetch("clusterMembers", "delete", params)
+      osparc.data.Resources.fetch("clusters", "patch", params)
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(clusterMember["name"] + this.tr(" successfully removed"));
-          osparc.store.Store.getInstance().reset("clusterMembers");
+          osparc.store.Store.getInstance().reset("clusters");
           this.__reloadClusterMembers();
         })
         .catch(err => {
