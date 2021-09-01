@@ -6,6 +6,8 @@ import sqlalchemy as sa
 from sqlalchemy.sql import func
 
 from .base import metadata
+from .projects import projects
+from .projects_snapshots import projects_snapshots
 
 # REPOSITORES
 #
@@ -27,9 +29,8 @@ projects_vc_repos = sa.Table(
         "project_uuid",
         sa.String,
         sa.ForeignKey(
-            "projects.uuid",
+            projects.c.uuid,
             name="fk_projects_vc_repos_project_uuid",
-            onupdate="CASCADE",
             # ondelete: if project is deleted, this repo is invalidated.
         ),
         nullable=False,
@@ -40,22 +41,21 @@ projects_vc_repos = sa.Table(
     sa.Column(
         "project_checksum",
         sa.String,
-        nullable=False,
+        nullable=True,
         doc="SHA-1 checksum of current working copy."
         "Used as a cache mechanism stored at 'modified'"
         "or to detect changes in state due to race conditions",
     ),
     sa.Column(
-        "head_id",
+        "branch_id",
         sa.BigInteger,
         sa.ForeignKey(
             "projects_vc_branches.id",
-            name="fk_projects_vc_repos_head_id",
+            name="fk_projects_vc_repos_branch_id",
             onupdate="CASCADE",
-            ondelete="RESTRICT",
         ),
         nullable=True,
-        doc="Points to the last commit, known as HEAD in the git jargon"
+        doc="Points to the branch whose head is the last commit, known as HEAD in the git jargon"
         "Actually it points to the current branch that holds a head"
         "Null is used for detached head",
     ),
@@ -95,6 +95,11 @@ projects_vc_commits = sa.Table(
     sa.Column(
         "repo_id",
         sa.BigInteger,
+        sa.ForeignKey(
+            projects_vc_repos.c.id,
+            name="fk_projects_vc_commits_repo_id",
+            ondelete="CASCADE",
+        ),
         nullable=False,
         doc="Repository to which this commit belongs",
     ),
@@ -120,7 +125,7 @@ projects_vc_commits = sa.Table(
         "snapshot_uuid",
         sa.String,
         sa.ForeignKey(
-            "projects_snapshots.uuid",
+            projects_snapshots.c.uuid,
             name="fk_projects_vc_commits_snapshot_uuid",
             ondelete="CASCADE",
             onupdate="CASCADE",
@@ -157,6 +162,11 @@ projects_vc_tags = sa.Table(
     sa.Column(
         "repo_id",
         sa.BigInteger,
+        sa.ForeignKey(
+            projects_vc_repos.c.id,
+            name="fk_projects_vc_tags_repo_id",
+            ondelete="CASCADE",
+        ),
         nullable=False,
         doc="Repository to which this commit belongs",
     ),
@@ -164,7 +174,7 @@ projects_vc_tags = sa.Table(
         "commit_id",
         sa.BigInteger,
         sa.ForeignKey(
-            "projects_vc_commits.id",
+            projects_vc_commits.c.id,
             name="fk_projects_vc_tags_commit_id",
             onupdate="CASCADE",
             ondelete="RESTRICT",
@@ -216,6 +226,11 @@ projects_vc_branches = sa.Table(
     sa.Column(
         "repo_id",
         sa.BigInteger,
+        sa.ForeignKey(
+            projects_vc_repos.c.id,
+            name="projects_vc_branches_repo_id",
+            ondelete="CASCADE",
+        ),
         nullable=False,
         doc="Repository to which this branch belongs",
     ),
@@ -228,10 +243,10 @@ projects_vc_branches = sa.Table(
             onupdate="CASCADE",
             ondelete="RESTRICT",
         ),
-        nullable=False,
-        doc="Points to the head commit of this branch",
+        nullable=True,
+        doc="Points to the head commit of this branch" "Null heads are detached",
     ),
-    sa.Column("name", sa.String, doc="Branch display name"),
+    sa.Column("name", sa.String, default="main", doc="Branch display name"),
     sa.Column(
         "created",
         sa.DateTime(),
