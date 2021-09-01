@@ -74,13 +74,25 @@ qx.Class.define("osparc.dashboard.ClusterListItem", {
         return;
       }
 
-      const nMembers = Object.keys(members).filter(prop => prop.includes("user_")).length + this.tr(" members");
+      const nMembers = this.getMembersList().length + this.tr(" members");
       this.setContact(nMembers);
 
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       if ("get"+myGid in members) {
         this.setAccessRights(members.get(myGid));
       }
+    },
+
+    getMembersList: function() {
+      const membersList = [];
+      const members = this.getMembers();
+      const memberGids = members.basename.split("|");
+      memberGids.forEach(memberGid => {
+        const member = members.get(memberGid);
+        member.gid = memberGid;
+        membersList.push(member);
+      });
+      return membersList;
     },
 
     __applyAccessRights: function(accessRights) {

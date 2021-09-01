@@ -33,7 +33,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       this.add(this.__getCreateClusterSection());
     }
     this.add(this.__getClustersSection());
-    this.add(this.__getMembersSection(), {
+    this.add(this.__getOrgsAndMembersSection(), {
       flex: 1
     });
 
@@ -109,8 +109,8 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       return clustersUIList;
     },
 
-    __getMembersSection: function() {
-      const box = this._createSectionBox(this.tr("Members"));
+    __getOrgsAndMembersSection: function() {
+      const box = this._createSectionBox(this.tr("Organization and Members"));
       box.add(this.__getMemberInvitation());
       box.add(this.__getMembersList(), {
         flex: 1
@@ -221,18 +221,22 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         this.__memberInvitation.show();
       }
 
-      const params = {
-        url: {
-          "cid": clusterModel.getKey()
-        }
-      };
-      osparc.data.Resources.get("clusterMembers", params)
-        .then(members => {
-          members.forEach(member => {
-            member["thumbnail"] = osparc.utils.Avatar.getUrl(member["login"], 32);
-            member["name"] = osparc.utils.Utils.firstsUp(member["first_name"], member["last_name"]);
-            member["showOptions"] = canWrite;
-            membersModel.append(qx.data.marshal.Json.createModel(member));
+      const clusterMembers = clusterModel.getMembersList();
+      const store = osparc.store.Store.getInstance();
+      const promises = [];
+      promises.push(store.getVisibleMembers());
+      Promise.all(promises)
+        .then(values => {
+          const members = values[0]; // object
+
+          clusterMembers.forEach(clusterMember => {
+            if (clusterMember.gid in members) {
+              const member = members[clusterMember.gid];
+              member["thumbnail"] = osparc.utils.Avatar.getUrl(member["login"], 32);
+              member["name"] = osparc.utils.Utils.firstsUp(member["first_name"], member["last_name"]);
+              member["showOptions"] = canWrite;
+              membersModel.append(qx.data.marshal.Json.createModel(member));
+            }
           });
         });
     },
