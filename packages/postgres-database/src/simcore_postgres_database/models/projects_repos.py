@@ -1,4 +1,5 @@
 import sqlalchemy as sa
+from sqlalchemy.sql import func
 
 from .base import metadata
 
@@ -53,6 +54,21 @@ projects_repos = sa.Table(
         nullable=True,
         doc="Current commit this repository is viewing"
         "First checkout will replace the working copy with this snapshot",
+    ),
+    sa.Column(
+        "created",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        doc="creation timestamp for this row.",
+    ),
+    sa.Column(
+        "changed",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+        doc="Timestamp with last update of this row",
     ),
 )
 
@@ -113,6 +129,7 @@ projects_checkpoints = sa.Table(
         "created",
         sa.DateTime(),
         nullable=False,
+        server_default=func.now(),
         doc="Timestamp for this snapshot."
         "It corresponds to the last_change_date of the parent project "
         "at the time the snapshot was taken.",

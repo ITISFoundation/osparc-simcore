@@ -4,7 +4,7 @@
 # pylint: disable=unused-variable
 
 from copy import deepcopy
-from typing import Callable, List, Optional, Set, Tuple
+from typing import Optional
 from uuid import UUID, uuid3
 
 import pytest
@@ -111,9 +111,21 @@ async def test_it(fake_project: RowProxy, conn: SAConnection):
     wc_uuid = fake_project.uuid
 
     # init repo
-    repo = ProjectRepository.create_repo(wc_uuid, conn)
+    repo = await ProjectRepository.create_repo(wc_uuid, conn)
 
-    # hash wc
+    assert await repo.fetch_working_copy()
+
+    # adds to staging
+    staging_checkpoint = await add_to_staging(
+        repo.id, conn, eval_checksum, clone_as_snapshot
+    )
+    assert staging_checkpoint
+
+    await repo.assert_unique_staging()
+
+    # commit
+    head = await commit(repo.id, "init", "first commit", conn)
+    assert head == await repo.fetch_head()
 
     # add  : stages the file
     # commit(tag: Optional[], message:, author: (auto) )
