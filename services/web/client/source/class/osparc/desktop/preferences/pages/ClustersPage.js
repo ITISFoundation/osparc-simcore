@@ -87,20 +87,13 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       clustersCtrl.setDelegate({
         createItem: () => new osparc.dashboard.ClusterListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("gid", "model", null, item, id);
-          ctrl.bindProperty("gid", "key", null, item, id);
+          ctrl.bindProperty("id", "model", null, item, id);
+          ctrl.bindProperty("id", "key", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
-          ctrl.bindProperty("nMembers", "contact", null, item, id);
-          ctrl.bindProperty("accessRights", "accessRights", null, item, id);
+          ctrl.bindProperty("access_rights", "members", null, item, id);
         },
         configureItem: item => {
-          const thumbanil = item.getChildControl("thumbnail");
-          thumbanil.getContentElement()
-            .setStyles({
-              "border-radius": "16px"
-            });
-
           item.addListener("openEditCluster", e => {
             const clusterId = e.getData();
             this.__openEditCluster(clusterId);
@@ -210,18 +203,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
 
       osparc.data.Resources.get("clusters")
         .then(clusters => {
-          clusters.forEach(cluster => {
-            const params = {
-              url: {
-                "cid": cluster["gid"]
-              }
-            };
-            osparc.data.Resources.get("clusterMembers", params)
-              .then(respClusterMembers => {
-                cluster["nMembers"] = Object.keys(respClusterMembers).length + this.tr(" members");
-                clustersModel.append(qx.data.marshal.Json.createModel(cluster));
-              });
-          });
+          clusters.forEach(cluster => clustersModel.append(qx.data.marshal.Json.createModel(cluster)));
         });
     },
 

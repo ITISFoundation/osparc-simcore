@@ -23,10 +23,17 @@ qx.Class.define("osparc.dashboard.ClusterListItem", {
   },
 
   properties: {
+    members: {
+      check: "Object",
+      nullable: false,
+      apply: "__applyMembers",
+      event: "changeMembers"
+    },
+
     accessRights: {
       check: "Object",
       nullable: false,
-      apply: "_applyAccessRights",
+      apply: "__applyAccessRights",
       event: "changeAcessRights"
     }
   },
@@ -62,7 +69,17 @@ qx.Class.define("osparc.dashboard.ClusterListItem", {
       return control || this.base(arguments, id);
     },
 
-    _applyAccessRights: function(value) {
+    __applyMembers: function(members) {
+      const nMembers = Object.keys(members).filter(prop => prop.includes("user_")).length + this.tr(" members");
+      this.setContact(nMembers);
+
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      if ("get"+myGid in members) {
+        this.setAccessRights(members.get(myGid));
+      }
+    },
+
+    __applyAccessRights: function(value) {
       if (value === null) {
         return;
       }
