@@ -120,14 +120,15 @@ projects_vc_commits = sa.Table(
         "snapshot_uuid",
         sa.String,
         sa.ForeignKey(
-            "projects.uuid",
+            "projects_snapshots.uuid",
             name="fk_projects_vc_commits_snapshot_uuid",
             ondelete="CASCADE",
             onupdate="CASCADE",
         ),
         nullable=False,
         unique=True,
-        doc="UUID of the project snapshot associated to this commit",
+        doc="UUID of the snapshot associated to this commit."
+        "Note that it links to the projects_snapshots table.",
     ),
     sa.Column(
         "created",

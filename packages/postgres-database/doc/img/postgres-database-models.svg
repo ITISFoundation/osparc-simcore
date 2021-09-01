@@ -108,23 +108,23 @@
 <!-- user_to_groups -->
 <g id="node3" class="node">
 <title>user_to_groups</title>
-<polygon fill="none" stroke="black" points="649.5,-2088 649.5,-2116 814.5,-2116 814.5,-2088 649.5,-2088"/>
-<text text-anchor="start" x="662.5" y="-2099.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">user_to_groups</text>
-<polygon fill="none" stroke="black" points="649.5,-2063 649.5,-2088 814.5,-2088 814.5,-2063 649.5,-2063"/>
-<text text-anchor="start" x="654.5" y="-2072.8" font-family="Helvetica,sans-Serif" font-size="14.00">uid</text>
-<text text-anchor="start" x="676.5" y="-2072.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
-<polygon fill="none" stroke="black" points="649.5,-2038 649.5,-2063 814.5,-2063 814.5,-2038 649.5,-2038"/>
-<text text-anchor="start" x="654.5" y="-2047.8" font-family="Helvetica,sans-Serif" font-size="14.00">gid</text>
-<text text-anchor="start" x="676.5" y="-2047.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
-<polygon fill="none" stroke="black" points="649.5,-2013 649.5,-2038 814.5,-2038 814.5,-2013 649.5,-2013"/>
-<text text-anchor="start" x="654.5" y="-2022.8" font-family="Helvetica,sans-Serif" font-size="14.00">access_rights</text>
-<text text-anchor="start" x="748.5" y="-2022.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [JSONB]</text>
-<polygon fill="none" stroke="black" points="649.5,-1988 649.5,-2013 814.5,-2013 814.5,-1988 649.5,-1988"/>
-<text text-anchor="start" x="654.5" y="-1997.8" font-family="Helvetica,sans-Serif" font-size="14.00">created</text>
-<text text-anchor="start" x="706.5" y="-1997.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
-<polygon fill="none" stroke="black" points="649.5,-1963 649.5,-1988 814.5,-1988 814.5,-1963 649.5,-1963"/>
-<text text-anchor="start" x="654.5" y="-1972.8" font-family="Helvetica,sans-Serif" font-size="14.00">modified</text>
-<text text-anchor="start" x="715.5" y="-1972.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="684.5,-2363.04 684.5,-2391.04 849.5,-2391.04 849.5,-2363.04 684.5,-2363.04"/>
+<text text-anchor="start" x="697.5" y="-2374.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">user_to_groups</text>
+<polygon fill="none" stroke="black" points="684.5,-2338.04 684.5,-2363.04 849.5,-2363.04 849.5,-2338.04 684.5,-2338.04"/>
+<text text-anchor="start" x="689.5" y="-2347.84" font-family="Helvetica,sans-Serif" font-size="14.00">uid</text>
+<text text-anchor="start" x="711.5" y="-2347.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="684.5,-2313.04 684.5,-2338.04 849.5,-2338.04 849.5,-2313.04 684.5,-2313.04"/>
+<text text-anchor="start" x="689.5" y="-2322.84" font-family="Helvetica,sans-Serif" font-size="14.00">gid</text>
+<text text-anchor="start" x="711.5" y="-2322.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="684.5,-2288.04 684.5,-2313.04 849.5,-2313.04 849.5,-2288.04 684.5,-2288.04"/>
+<text text-anchor="start" x="689.5" y="-2297.84" font-family="Helvetica,sans-Serif" font-size="14.00">access_rights</text>
+<text text-anchor="start" x="783.5" y="-2297.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [JSONB]</text>
+<polygon fill="none" stroke="black" points="684.5,-2263.04 684.5,-2288.04 849.5,-2288.04 849.5,-2263.04 684.5,-2263.04"/>
+<text text-anchor="start" x="689.5" y="-2272.84" font-family="Helvetica,sans-Serif" font-size="14.00">created</text>
+<text text-anchor="start" x="741.5" y="-2272.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="684.5,-2238.04 684.5,-2263.04 849.5,-2263.04 849.5,-2238.04 684.5,-2238.04"/>
+<text text-anchor="start" x="689.5" y="-2247.84" font-family="Helvetica,sans-Serif" font-size="14.00">modified</text>
+<text text-anchor="start" x="750.5" y="-2247.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
 </g>
 <!-- groups&#45;&#45;user_to_groups -->
 <g id="edge1" class="edge">
@@ -136,38 +136,38 @@
 <!-- users -->
 <g id="node4" class="node">
 <title>users</title>
-<polygon fill="none" stroke="black" points="313,-1346 313,-1374 513,-1374 513,-1346 313,-1346"/>
-<text text-anchor="start" x="388" y="-1357.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">users</text>
-<polygon fill="none" stroke="black" points="313,-1321 313,-1346 513,-1346 513,-1321 313,-1321"/>
-<text text-anchor="start" x="318" y="-1330.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">id</text>
-<text text-anchor="start" x="331" y="-1330.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
-<polygon fill="none" stroke="black" points="313,-1296 313,-1321 513,-1321 513,-1296 313,-1296"/>
-<text text-anchor="start" x="318" y="-1305.8" font-family="Helvetica,sans-Serif" font-size="14.00">name</text>
-<text text-anchor="start" x="358" y="-1305.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="313,-1271 313,-1296 513,-1296 513,-1271 313,-1271"/>
-<text text-anchor="start" x="318" y="-1280.8" font-family="Helvetica,sans-Serif" font-size="14.00">email</text>
-<text text-anchor="start" x="356" y="-1280.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="313,-1246 313,-1271 513,-1271 513,-1246 313,-1246"/>
-<text text-anchor="start" x="318" y="-1255.8" font-family="Helvetica,sans-Serif" font-size="14.00">password_hash</text>
-<text text-anchor="start" x="425" y="-1255.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="313,-1221 313,-1246 513,-1246 513,-1221 313,-1221"/>
-<text text-anchor="start" x="318" y="-1230.8" font-family="Helvetica,sans-Serif" font-size="14.00">primary_gid</text>
-<text text-anchor="start" x="402" y="-1230.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
-<polygon fill="none" stroke="black" points="313,-1196 313,-1221 513,-1221 513,-1196 313,-1196"/>
-<text text-anchor="start" x="318" y="-1205.8" font-family="Helvetica,sans-Serif" font-size="14.00">status</text>
-<text text-anchor="start" x="361" y="-1205.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR(20)]</text>
-<polygon fill="none" stroke="black" points="313,-1171 313,-1196 513,-1196 513,-1171 313,-1171"/>
-<text text-anchor="start" x="318" y="-1180.8" font-family="Helvetica,sans-Serif" font-size="14.00">role</text>
-<text text-anchor="start" x="344" y="-1180.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR(9)]</text>
-<polygon fill="none" stroke="black" points="313,-1146 313,-1171 513,-1171 513,-1146 313,-1146"/>
-<text text-anchor="start" x="318" y="-1155.8" font-family="Helvetica,sans-Serif" font-size="14.00">created_at</text>
-<text text-anchor="start" x="391" y="-1155.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
-<polygon fill="none" stroke="black" points="313,-1121 313,-1146 513,-1146 513,-1121 313,-1121"/>
-<text text-anchor="start" x="318" y="-1130.8" font-family="Helvetica,sans-Serif" font-size="14.00">modified</text>
-<text text-anchor="start" x="379" y="-1130.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
-<polygon fill="none" stroke="black" points="313,-1096 313,-1121 513,-1121 513,-1096 313,-1096"/>
-<text text-anchor="start" x="318" y="-1105.8" font-family="Helvetica,sans-Serif" font-size="14.00">created_ip</text>
-<text text-anchor="start" x="390" y="-1105.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="330.5,-1700.04 330.5,-1728.04 530.5,-1728.04 530.5,-1700.04 330.5,-1700.04"/>
+<text text-anchor="start" x="405.5" y="-1711.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">users</text>
+<polygon fill="none" stroke="black" points="330.5,-1675.04 330.5,-1700.04 530.5,-1700.04 530.5,-1675.04 330.5,-1675.04"/>
+<text text-anchor="start" x="335.5" y="-1684.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">id</text>
+<text text-anchor="start" x="348.5" y="-1684.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="330.5,-1650.04 330.5,-1675.04 530.5,-1675.04 530.5,-1650.04 330.5,-1650.04"/>
+<text text-anchor="start" x="335.5" y="-1659.84" font-family="Helvetica,sans-Serif" font-size="14.00">name</text>
+<text text-anchor="start" x="375.5" y="-1659.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="330.5,-1625.04 330.5,-1650.04 530.5,-1650.04 530.5,-1625.04 330.5,-1625.04"/>
+<text text-anchor="start" x="335.5" y="-1634.84" font-family="Helvetica,sans-Serif" font-size="14.00">email</text>
+<text text-anchor="start" x="373.5" y="-1634.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="330.5,-1600.04 330.5,-1625.04 530.5,-1625.04 530.5,-1600.04 330.5,-1600.04"/>
+<text text-anchor="start" x="335.5" y="-1609.84" font-family="Helvetica,sans-Serif" font-size="14.00">password_hash</text>
+<text text-anchor="start" x="442.5" y="-1609.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="330.5,-1575.04 330.5,-1600.04 530.5,-1600.04 530.5,-1575.04 330.5,-1575.04"/>
+<text text-anchor="start" x="335.5" y="-1584.84" font-family="Helvetica,sans-Serif" font-size="14.00">primary_gid</text>
+<text text-anchor="start" x="419.5" y="-1584.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="330.5,-1550.04 330.5,-1575.04 530.5,-1575.04 530.5,-1550.04 330.5,-1550.04"/>
+<text text-anchor="start" x="335.5" y="-1559.84" font-family="Helvetica,sans-Serif" font-size="14.00">status</text>
+<text text-anchor="start" x="378.5" y="-1559.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR(20)]</text>
+<polygon fill="none" stroke="black" points="330.5,-1525.04 330.5,-1550.04 530.5,-1550.04 530.5,-1525.04 330.5,-1525.04"/>
+<text text-anchor="start" x="335.5" y="-1534.84" font-family="Helvetica,sans-Serif" font-size="14.00">role</text>
+<text text-anchor="start" x="361.5" y="-1534.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR(9)]</text>
+<polygon fill="none" stroke="black" points="330.5,-1500.04 330.5,-1525.04 530.5,-1525.04 530.5,-1500.04 330.5,-1500.04"/>
+<text text-anchor="start" x="335.5" y="-1509.84" font-family="Helvetica,sans-Serif" font-size="14.00">created_at</text>
+<text text-anchor="start" x="408.5" y="-1509.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="330.5,-1475.04 330.5,-1500.04 530.5,-1500.04 530.5,-1475.04 330.5,-1475.04"/>
+<text text-anchor="start" x="335.5" y="-1484.84" font-family="Helvetica,sans-Serif" font-size="14.00">modified</text>
+<text text-anchor="start" x="396.5" y="-1484.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="330.5,-1450.04 330.5,-1475.04 530.5,-1475.04 530.5,-1450.04 330.5,-1450.04"/>
+<text text-anchor="start" x="335.5" y="-1459.84" font-family="Helvetica,sans-Serif" font-size="14.00">created_ip</text>
+<text text-anchor="start" x="407.5" y="-1459.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
 </g>
 <!-- groups&#45;&#45;users -->
 <g id="edge2" class="edge">
@@ -244,29 +244,29 @@
 <!-- cluster_to_groups -->
 <g id="node7" class="node">
 <title>cluster_to_groups</title>
-<polygon fill="none" stroke="black" points="636.5,-662 636.5,-690 827.5,-690 827.5,-662 636.5,-662"/>
-<text text-anchor="start" x="651.5" y="-673.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">cluster_to_groups</text>
-<polygon fill="none" stroke="black" points="636.5,-637 636.5,-662 827.5,-662 827.5,-637 636.5,-637"/>
-<text text-anchor="start" x="641.5" y="-646.8" font-family="Helvetica,sans-Serif" font-size="14.00">cluster_id</text>
-<text text-anchor="start" x="708.5" y="-646.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
-<polygon fill="none" stroke="black" points="636.5,-612 636.5,-637 827.5,-637 827.5,-612 636.5,-612"/>
-<text text-anchor="start" x="641.5" y="-621.8" font-family="Helvetica,sans-Serif" font-size="14.00">gid</text>
-<text text-anchor="start" x="663.5" y="-621.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
-<polygon fill="none" stroke="black" points="636.5,-587 636.5,-612 827.5,-612 827.5,-587 636.5,-587"/>
-<text text-anchor="start" x="641.5" y="-596.8" font-family="Helvetica,sans-Serif" font-size="14.00">read_access</text>
-<text text-anchor="start" x="726.5" y="-596.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BOOLEAN]</text>
-<polygon fill="none" stroke="black" points="636.5,-562 636.5,-587 827.5,-587 827.5,-562 636.5,-562"/>
-<text text-anchor="start" x="641.5" y="-571.8" font-family="Helvetica,sans-Serif" font-size="14.00">write_access</text>
-<text text-anchor="start" x="729.5" y="-571.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BOOLEAN]</text>
-<polygon fill="none" stroke="black" points="636.5,-537 636.5,-562 827.5,-562 827.5,-537 636.5,-537"/>
-<text text-anchor="start" x="641.5" y="-546.8" font-family="Helvetica,sans-Serif" font-size="14.00">delete_access</text>
-<text text-anchor="start" x="738.5" y="-546.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BOOLEAN]</text>
-<polygon fill="none" stroke="black" points="636.5,-512 636.5,-537 827.5,-537 827.5,-512 636.5,-512"/>
-<text text-anchor="start" x="641.5" y="-521.8" font-family="Helvetica,sans-Serif" font-size="14.00">created</text>
-<text text-anchor="start" x="693.5" y="-521.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
-<polygon fill="none" stroke="black" points="636.5,-487 636.5,-512 827.5,-512 827.5,-487 636.5,-487"/>
-<text text-anchor="start" x="641.5" y="-496.8" font-family="Helvetica,sans-Serif" font-size="14.00">modified</text>
-<text text-anchor="start" x="702.5" y="-496.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="671.5,-925.04 671.5,-953.04 862.5,-953.04 862.5,-925.04 671.5,-925.04"/>
+<text text-anchor="start" x="686.5" y="-936.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">cluster_to_groups</text>
+<polygon fill="none" stroke="black" points="671.5,-900.04 671.5,-925.04 862.5,-925.04 862.5,-900.04 671.5,-900.04"/>
+<text text-anchor="start" x="676.5" y="-909.84" font-family="Helvetica,sans-Serif" font-size="14.00">cluster_id</text>
+<text text-anchor="start" x="743.5" y="-909.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="671.5,-875.04 671.5,-900.04 862.5,-900.04 862.5,-875.04 671.5,-875.04"/>
+<text text-anchor="start" x="676.5" y="-884.84" font-family="Helvetica,sans-Serif" font-size="14.00">gid</text>
+<text text-anchor="start" x="698.5" y="-884.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="671.5,-850.04 671.5,-875.04 862.5,-875.04 862.5,-850.04 671.5,-850.04"/>
+<text text-anchor="start" x="676.5" y="-859.84" font-family="Helvetica,sans-Serif" font-size="14.00">read_access</text>
+<text text-anchor="start" x="761.5" y="-859.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BOOLEAN]</text>
+<polygon fill="none" stroke="black" points="671.5,-825.04 671.5,-850.04 862.5,-850.04 862.5,-825.04 671.5,-825.04"/>
+<text text-anchor="start" x="676.5" y="-834.84" font-family="Helvetica,sans-Serif" font-size="14.00">write_access</text>
+<text text-anchor="start" x="764.5" y="-834.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BOOLEAN]</text>
+<polygon fill="none" stroke="black" points="671.5,-800.04 671.5,-825.04 862.5,-825.04 862.5,-800.04 671.5,-800.04"/>
+<text text-anchor="start" x="676.5" y="-809.84" font-family="Helvetica,sans-Serif" font-size="14.00">delete_access</text>
+<text text-anchor="start" x="773.5" y="-809.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BOOLEAN]</text>
+<polygon fill="none" stroke="black" points="671.5,-775.04 671.5,-800.04 862.5,-800.04 862.5,-775.04 671.5,-775.04"/>
+<text text-anchor="start" x="676.5" y="-784.84" font-family="Helvetica,sans-Serif" font-size="14.00">created</text>
+<text text-anchor="start" x="728.5" y="-784.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="671.5,-750.04 671.5,-775.04 862.5,-775.04 862.5,-750.04 671.5,-750.04"/>
+<text text-anchor="start" x="676.5" y="-759.84" font-family="Helvetica,sans-Serif" font-size="14.00">modified</text>
+<text text-anchor="start" x="737.5" y="-759.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
 </g>
 <!-- groups&#45;&#45;cluster_to_groups -->
 <g id="edge5" class="edge">
@@ -278,38 +278,38 @@
 <!-- services_meta_data -->
 <g id="node8" class="node">
 <title>services_meta_data</title>
-<polygon fill="none" stroke="black" points="320,-471 320,-499 506,-499 506,-471 320,-471"/>
-<text text-anchor="start" x="325" y="-482.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">services_meta_data</text>
-<polygon fill="none" stroke="black" points="320,-446 320,-471 506,-471 506,-446 320,-446"/>
-<text text-anchor="start" x="325" y="-455.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">key</text>
-<text text-anchor="start" x="350" y="-455.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="320,-421 320,-446 506,-446 506,-421 320,-421"/>
-<text text-anchor="start" x="325" y="-430.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">version</text>
-<text text-anchor="start" x="377" y="-430.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="320,-396 320,-421 506,-421 506,-396 320,-396"/>
-<text text-anchor="start" x="325" y="-405.8" font-family="Helvetica,sans-Serif" font-size="14.00">owner</text>
-<text text-anchor="start" x="368" y="-405.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
-<polygon fill="none" stroke="black" points="320,-371 320,-396 506,-396 506,-371 320,-371"/>
-<text text-anchor="start" x="325" y="-380.8" font-family="Helvetica,sans-Serif" font-size="14.00">name</text>
-<text text-anchor="start" x="365" y="-380.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="320,-346 320,-371 506,-371 506,-346 320,-346"/>
-<text text-anchor="start" x="325" y="-355.8" font-family="Helvetica,sans-Serif" font-size="14.00">description</text>
-<text text-anchor="start" x="403" y="-355.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="320,-321 320,-346 506,-346 506,-321 320,-321"/>
-<text text-anchor="start" x="325" y="-330.8" font-family="Helvetica,sans-Serif" font-size="14.00">thumbnail</text>
-<text text-anchor="start" x="396" y="-330.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="320,-296 320,-321 506,-321 506,-296 320,-296"/>
-<text text-anchor="start" x="325" y="-305.8" font-family="Helvetica,sans-Serif" font-size="14.00">classifiers</text>
-<text text-anchor="start" x="395" y="-305.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR[]]</text>
-<polygon fill="none" stroke="black" points="320,-271 320,-296 506,-296 506,-271 320,-271"/>
-<text text-anchor="start" x="325" y="-280.8" font-family="Helvetica,sans-Serif" font-size="14.00">created</text>
-<text text-anchor="start" x="377" y="-280.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
-<polygon fill="none" stroke="black" points="320,-246 320,-271 506,-271 506,-246 320,-246"/>
-<text text-anchor="start" x="325" y="-255.8" font-family="Helvetica,sans-Serif" font-size="14.00">modified</text>
-<text text-anchor="start" x="386" y="-255.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
-<polygon fill="none" stroke="black" points="320,-221 320,-246 506,-246 506,-221 320,-221"/>
-<text text-anchor="start" x="325" y="-230.8" font-family="Helvetica,sans-Serif" font-size="14.00">quality</text>
-<text text-anchor="start" x="373" y="-230.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [JSONB]</text>
+<polygon fill="none" stroke="black" points="337.5,-668.04 337.5,-696.04 523.5,-696.04 523.5,-668.04 337.5,-668.04"/>
+<text text-anchor="start" x="342.5" y="-679.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">services_meta_data</text>
+<polygon fill="none" stroke="black" points="337.5,-643.04 337.5,-668.04 523.5,-668.04 523.5,-643.04 337.5,-643.04"/>
+<text text-anchor="start" x="342.5" y="-652.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">key</text>
+<text text-anchor="start" x="367.5" y="-652.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="337.5,-618.04 337.5,-643.04 523.5,-643.04 523.5,-618.04 337.5,-618.04"/>
+<text text-anchor="start" x="342.5" y="-627.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">version</text>
+<text text-anchor="start" x="394.5" y="-627.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="337.5,-593.04 337.5,-618.04 523.5,-618.04 523.5,-593.04 337.5,-593.04"/>
+<text text-anchor="start" x="342.5" y="-602.84" font-family="Helvetica,sans-Serif" font-size="14.00">owner</text>
+<text text-anchor="start" x="385.5" y="-602.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="337.5,-568.04 337.5,-593.04 523.5,-593.04 523.5,-568.04 337.5,-568.04"/>
+<text text-anchor="start" x="342.5" y="-577.84" font-family="Helvetica,sans-Serif" font-size="14.00">name</text>
+<text text-anchor="start" x="382.5" y="-577.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="337.5,-543.04 337.5,-568.04 523.5,-568.04 523.5,-543.04 337.5,-543.04"/>
+<text text-anchor="start" x="342.5" y="-552.84" font-family="Helvetica,sans-Serif" font-size="14.00">description</text>
+<text text-anchor="start" x="420.5" y="-552.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="337.5,-518.04 337.5,-543.04 523.5,-543.04 523.5,-518.04 337.5,-518.04"/>
+<text text-anchor="start" x="342.5" y="-527.84" font-family="Helvetica,sans-Serif" font-size="14.00">thumbnail</text>
+<text text-anchor="start" x="413.5" y="-527.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="337.5,-493.04 337.5,-518.04 523.5,-518.04 523.5,-493.04 337.5,-493.04"/>
+<text text-anchor="start" x="342.5" y="-502.84" font-family="Helvetica,sans-Serif" font-size="14.00">classifiers</text>
+<text text-anchor="start" x="412.5" y="-502.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR[]]</text>
+<polygon fill="none" stroke="black" points="337.5,-468.04 337.5,-493.04 523.5,-493.04 523.5,-468.04 337.5,-468.04"/>
+<text text-anchor="start" x="342.5" y="-477.84" font-family="Helvetica,sans-Serif" font-size="14.00">created</text>
+<text text-anchor="start" x="394.5" y="-477.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="337.5,-443.04 337.5,-468.04 523.5,-468.04 523.5,-443.04 337.5,-443.04"/>
+<text text-anchor="start" x="342.5" y="-452.84" font-family="Helvetica,sans-Serif" font-size="14.00">modified</text>
+<text text-anchor="start" x="403.5" y="-452.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="337.5,-418.04 337.5,-443.04 523.5,-443.04 523.5,-418.04 337.5,-418.04"/>
+<text text-anchor="start" x="342.5" y="-427.84" font-family="Helvetica,sans-Serif" font-size="14.00">quality</text>
+<text text-anchor="start" x="390.5" y="-427.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [JSONB]</text>
 </g>
 <!-- groups&#45;&#45;services_meta_data -->
 <g id="edge6" class="edge">
@@ -321,32 +321,32 @@
 <!-- services_access_rights -->
 <g id="node9" class="node">
 <title>services_access_rights</title>
-<polygon fill="none" stroke="black" points="624.5,-204 624.5,-232 839.5,-232 839.5,-204 624.5,-204"/>
-<text text-anchor="start" x="629.5" y="-215.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">services_access_rights</text>
-<polygon fill="none" stroke="black" points="624.5,-179 624.5,-204 839.5,-204 839.5,-179 624.5,-179"/>
-<text text-anchor="start" x="629.5" y="-188.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">key</text>
-<text text-anchor="start" x="654.5" y="-188.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="624.5,-154 624.5,-179 839.5,-179 839.5,-154 624.5,-154"/>
-<text text-anchor="start" x="629.5" y="-163.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">version</text>
-<text text-anchor="start" x="681.5" y="-163.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="624.5,-129 624.5,-154 839.5,-154 839.5,-129 624.5,-129"/>
-<text text-anchor="start" x="629.5" y="-138.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">gid</text>
-<text text-anchor="start" x="651.5" y="-138.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
-<polygon fill="none" stroke="black" points="624.5,-104 624.5,-129 839.5,-129 839.5,-104 624.5,-104"/>
-<text text-anchor="start" x="629.5" y="-113.8" font-family="Helvetica,sans-Serif" font-size="14.00">execute_access</text>
-<text text-anchor="start" x="737.5" y="-113.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BOOLEAN]</text>
-<polygon fill="none" stroke="black" points="624.5,-79 624.5,-104 839.5,-104 839.5,-79 624.5,-79"/>
-<text text-anchor="start" x="629.5" y="-88.8" font-family="Helvetica,sans-Serif" font-size="14.00">write_access</text>
-<text text-anchor="start" x="717.5" y="-88.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BOOLEAN]</text>
-<polygon fill="none" stroke="black" points="624.5,-54 624.5,-79 839.5,-79 839.5,-54 624.5,-54"/>
-<text text-anchor="start" x="629.5" y="-63.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">product_name</text>
-<text text-anchor="start" x="729.5" y="-63.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="624.5,-29 624.5,-54 839.5,-54 839.5,-29 624.5,-29"/>
-<text text-anchor="start" x="629.5" y="-38.8" font-family="Helvetica,sans-Serif" font-size="14.00">created</text>
-<text text-anchor="start" x="681.5" y="-38.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
-<polygon fill="none" stroke="black" points="624.5,-4 624.5,-29 839.5,-29 839.5,-4 624.5,-4"/>
-<text text-anchor="start" x="629.5" y="-13.8" font-family="Helvetica,sans-Serif" font-size="14.00">modified</text>
-<text text-anchor="start" x="690.5" y="-13.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="659.5,-410.04 659.5,-438.04 874.5,-438.04 874.5,-410.04 659.5,-410.04"/>
+<text text-anchor="start" x="664.5" y="-421.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">services_access_rights</text>
+<polygon fill="none" stroke="black" points="659.5,-385.04 659.5,-410.04 874.5,-410.04 874.5,-385.04 659.5,-385.04"/>
+<text text-anchor="start" x="664.5" y="-394.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">key</text>
+<text text-anchor="start" x="689.5" y="-394.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="659.5,-360.04 659.5,-385.04 874.5,-385.04 874.5,-360.04 659.5,-360.04"/>
+<text text-anchor="start" x="664.5" y="-369.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">version</text>
+<text text-anchor="start" x="716.5" y="-369.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="659.5,-335.04 659.5,-360.04 874.5,-360.04 874.5,-335.04 659.5,-335.04"/>
+<text text-anchor="start" x="664.5" y="-344.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">gid</text>
+<text text-anchor="start" x="686.5" y="-344.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="659.5,-310.04 659.5,-335.04 874.5,-335.04 874.5,-310.04 659.5,-310.04"/>
+<text text-anchor="start" x="664.5" y="-319.84" font-family="Helvetica,sans-Serif" font-size="14.00">execute_access</text>
+<text text-anchor="start" x="772.5" y="-319.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BOOLEAN]</text>
+<polygon fill="none" stroke="black" points="659.5,-285.04 659.5,-310.04 874.5,-310.04 874.5,-285.04 659.5,-285.04"/>
+<text text-anchor="start" x="664.5" y="-294.84" font-family="Helvetica,sans-Serif" font-size="14.00">write_access</text>
+<text text-anchor="start" x="752.5" y="-294.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BOOLEAN]</text>
+<polygon fill="none" stroke="black" points="659.5,-260.04 659.5,-285.04 874.5,-285.04 874.5,-260.04 659.5,-260.04"/>
+<text text-anchor="start" x="664.5" y="-269.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">product_name</text>
+<text text-anchor="start" x="764.5" y="-269.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="659.5,-235.04 659.5,-260.04 874.5,-260.04 874.5,-235.04 659.5,-235.04"/>
+<text text-anchor="start" x="664.5" y="-244.84" font-family="Helvetica,sans-Serif" font-size="14.00">created</text>
+<text text-anchor="start" x="716.5" y="-244.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="659.5,-210.04 659.5,-235.04 874.5,-235.04 874.5,-210.04 659.5,-210.04"/>
+<text text-anchor="start" x="664.5" y="-219.84" font-family="Helvetica,sans-Serif" font-size="14.00">modified</text>
+<text text-anchor="start" x="725.5" y="-219.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
 </g>
 <!-- groups&#45;&#45;services_access_rights -->
 <g id="edge7" class="edge">
@@ -356,75 +356,75 @@
 <text text-anchor="start" x="211" y="-594.64" font-family="Times,serif" font-size="14.00">0..N</text>
 </g>
 <!-- users&#45;&#45;user_to_groups -->
-<g id="edge13" class="edge">
+<g id="edge12" class="edge">
 <title>users&#45;&#45;user_to_groups</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M419.87,-1378.27C432.61,-1532.4 472.22,-1778.42 594,-1950 606.32,-1967.36 623.14,-1982.27 640.76,-1994.68"/>
-<text text-anchor="start" x="599.76" y="-1998.48" font-family="Times,serif" font-size="14.00">{0,1}</text>
-<text text-anchor="start" x="388.87" y="-1382.07" font-family="Times,serif" font-size="14.00">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M435.84,-1732.29C446.86,-1870.3 482.23,-2078.45 592,-2220.04 613.46,-2247.73 645.36,-2268.43 675.98,-2283.32"/>
+<text text-anchor="start" x="634.98" y="-2287.12" font-family="Times,serif" font-size="14.00">{0,1}</text>
+<text text-anchor="start" x="404.84" y="-1736.09" font-family="Times,serif" font-size="14.00">0..N</text>
 </g>
 <!-- projects -->
 <g id="node10" class="node">
 <title>projects</title>
-<polygon fill="none" stroke="black" points="623.5,-1730 623.5,-1758 839.5,-1758 839.5,-1730 623.5,-1730"/>
-<text text-anchor="start" x="694.5" y="-1741.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">projects</text>
-<polygon fill="none" stroke="black" points="623.5,-1705 623.5,-1730 839.5,-1730 839.5,-1705 623.5,-1705"/>
-<text text-anchor="start" x="628.5" y="-1714.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">id</text>
-<text text-anchor="start" x="641.5" y="-1714.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
-<polygon fill="none" stroke="black" points="623.5,-1680 623.5,-1705 839.5,-1705 839.5,-1680 623.5,-1680"/>
-<text text-anchor="start" x="628.5" y="-1689.8" font-family="Helvetica,sans-Serif" font-size="14.00">type</text>
-<text text-anchor="start" x="659.5" y="-1689.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR(8)]</text>
-<polygon fill="none" stroke="black" points="623.5,-1655 623.5,-1680 839.5,-1680 839.5,-1655 623.5,-1655"/>
-<text text-anchor="start" x="628.5" y="-1664.8" font-family="Helvetica,sans-Serif" font-size="14.00">uuid</text>
-<text text-anchor="start" x="659.5" y="-1664.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="623.5,-1630 623.5,-1655 839.5,-1655 839.5,-1630 623.5,-1630"/>
-<text text-anchor="start" x="628.5" y="-1639.8" font-family="Helvetica,sans-Serif" font-size="14.00">name</text>
-<text text-anchor="start" x="668.5" y="-1639.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="623.5,-1605 623.5,-1630 839.5,-1630 839.5,-1605 623.5,-1605"/>
-<text text-anchor="start" x="628.5" y="-1614.8" font-family="Helvetica,sans-Serif" font-size="14.00">description</text>
-<text text-anchor="start" x="706.5" y="-1614.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="623.5,-1580 623.5,-1605 839.5,-1605 839.5,-1580 623.5,-1580"/>
-<text text-anchor="start" x="628.5" y="-1589.8" font-family="Helvetica,sans-Serif" font-size="14.00">thumbnail</text>
-<text text-anchor="start" x="699.5" y="-1589.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="623.5,-1555 623.5,-1580 839.5,-1580 839.5,-1555 623.5,-1555"/>
-<text text-anchor="start" x="628.5" y="-1564.8" font-family="Helvetica,sans-Serif" font-size="14.00">prj_owner</text>
-<text text-anchor="start" x="697.5" y="-1564.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
-<polygon fill="none" stroke="black" points="623.5,-1530 623.5,-1555 839.5,-1555 839.5,-1530 623.5,-1530"/>
-<text text-anchor="start" x="628.5" y="-1539.8" font-family="Helvetica,sans-Serif" font-size="14.00">creation_date</text>
-<text text-anchor="start" x="722.5" y="-1539.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
-<polygon fill="none" stroke="black" points="623.5,-1505 623.5,-1530 839.5,-1530 839.5,-1505 623.5,-1505"/>
-<text text-anchor="start" x="628.5" y="-1514.8" font-family="Helvetica,sans-Serif" font-size="14.00">last_change_date</text>
-<text text-anchor="start" x="749.5" y="-1514.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
-<polygon fill="none" stroke="black" points="623.5,-1480 623.5,-1505 839.5,-1505 839.5,-1480 623.5,-1480"/>
-<text text-anchor="start" x="628.5" y="-1489.8" font-family="Helvetica,sans-Serif" font-size="14.00">access_rights</text>
-<text text-anchor="start" x="722.5" y="-1489.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [JSONB]</text>
-<polygon fill="none" stroke="black" points="623.5,-1455 623.5,-1480 839.5,-1480 839.5,-1455 623.5,-1455"/>
-<text text-anchor="start" x="628.5" y="-1464.8" font-family="Helvetica,sans-Serif" font-size="14.00">workbench</text>
-<text text-anchor="start" x="705.5" y="-1464.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [Null]</text>
-<polygon fill="none" stroke="black" points="623.5,-1430 623.5,-1455 839.5,-1455 839.5,-1430 623.5,-1430"/>
-<text text-anchor="start" x="628.5" y="-1439.8" font-family="Helvetica,sans-Serif" font-size="14.00">ui</text>
-<text text-anchor="start" x="641.5" y="-1439.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [JSONB]</text>
-<polygon fill="none" stroke="black" points="623.5,-1405 623.5,-1430 839.5,-1430 839.5,-1405 623.5,-1405"/>
-<text text-anchor="start" x="628.5" y="-1414.8" font-family="Helvetica,sans-Serif" font-size="14.00">classifiers</text>
-<text text-anchor="start" x="698.5" y="-1414.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR[]]</text>
-<polygon fill="none" stroke="black" points="623.5,-1380 623.5,-1405 839.5,-1405 839.5,-1380 623.5,-1380"/>
-<text text-anchor="start" x="628.5" y="-1389.8" font-family="Helvetica,sans-Serif" font-size="14.00">dev</text>
-<text text-anchor="start" x="654.5" y="-1389.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [JSONB]</text>
-<polygon fill="none" stroke="black" points="623.5,-1355 623.5,-1380 839.5,-1380 839.5,-1355 623.5,-1355"/>
-<text text-anchor="start" x="628.5" y="-1364.8" font-family="Helvetica,sans-Serif" font-size="14.00">quality</text>
-<text text-anchor="start" x="676.5" y="-1364.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [JSONB]</text>
-<polygon fill="none" stroke="black" points="623.5,-1330 623.5,-1355 839.5,-1355 839.5,-1330 623.5,-1330"/>
-<text text-anchor="start" x="628.5" y="-1339.8" font-family="Helvetica,sans-Serif" font-size="14.00">published</text>
-<text text-anchor="start" x="697.5" y="-1339.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BOOLEAN]</text>
-<polygon fill="none" stroke="black" points="623.5,-1305 623.5,-1330 839.5,-1330 839.5,-1305 623.5,-1305"/>
-<text text-anchor="start" x="628.5" y="-1314.8" font-family="Helvetica,sans-Serif" font-size="14.00">hidden</text>
-<text text-anchor="start" x="677.5" y="-1314.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BOOLEAN]</text>
+<polygon fill="none" stroke="black" points="658.5,-1787.04 658.5,-1815.04 874.5,-1815.04 874.5,-1787.04 658.5,-1787.04"/>
+<text text-anchor="start" x="729.5" y="-1798.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">projects</text>
+<polygon fill="none" stroke="black" points="658.5,-1762.04 658.5,-1787.04 874.5,-1787.04 874.5,-1762.04 658.5,-1762.04"/>
+<text text-anchor="start" x="663.5" y="-1771.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">id</text>
+<text text-anchor="start" x="676.5" y="-1771.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="658.5,-1737.04 658.5,-1762.04 874.5,-1762.04 874.5,-1737.04 658.5,-1737.04"/>
+<text text-anchor="start" x="663.5" y="-1746.84" font-family="Helvetica,sans-Serif" font-size="14.00">type</text>
+<text text-anchor="start" x="694.5" y="-1746.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR(8)]</text>
+<polygon fill="none" stroke="black" points="658.5,-1712.04 658.5,-1737.04 874.5,-1737.04 874.5,-1712.04 658.5,-1712.04"/>
+<text text-anchor="start" x="663.5" y="-1721.84" font-family="Helvetica,sans-Serif" font-size="14.00">uuid</text>
+<text text-anchor="start" x="694.5" y="-1721.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="658.5,-1687.04 658.5,-1712.04 874.5,-1712.04 874.5,-1687.04 658.5,-1687.04"/>
+<text text-anchor="start" x="663.5" y="-1696.84" font-family="Helvetica,sans-Serif" font-size="14.00">name</text>
+<text text-anchor="start" x="703.5" y="-1696.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="658.5,-1662.04 658.5,-1687.04 874.5,-1687.04 874.5,-1662.04 658.5,-1662.04"/>
+<text text-anchor="start" x="663.5" y="-1671.84" font-family="Helvetica,sans-Serif" font-size="14.00">description</text>
+<text text-anchor="start" x="741.5" y="-1671.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="658.5,-1637.04 658.5,-1662.04 874.5,-1662.04 874.5,-1637.04 658.5,-1637.04"/>
+<text text-anchor="start" x="663.5" y="-1646.84" font-family="Helvetica,sans-Serif" font-size="14.00">thumbnail</text>
+<text text-anchor="start" x="734.5" y="-1646.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="658.5,-1612.04 658.5,-1637.04 874.5,-1637.04 874.5,-1612.04 658.5,-1612.04"/>
+<text text-anchor="start" x="663.5" y="-1621.84" font-family="Helvetica,sans-Serif" font-size="14.00">prj_owner</text>
+<text text-anchor="start" x="732.5" y="-1621.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="658.5,-1587.04 658.5,-1612.04 874.5,-1612.04 874.5,-1587.04 658.5,-1587.04"/>
+<text text-anchor="start" x="663.5" y="-1596.84" font-family="Helvetica,sans-Serif" font-size="14.00">creation_date</text>
+<text text-anchor="start" x="757.5" y="-1596.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="658.5,-1562.04 658.5,-1587.04 874.5,-1587.04 874.5,-1562.04 658.5,-1562.04"/>
+<text text-anchor="start" x="663.5" y="-1571.84" font-family="Helvetica,sans-Serif" font-size="14.00">last_change_date</text>
+<text text-anchor="start" x="784.5" y="-1571.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="658.5,-1537.04 658.5,-1562.04 874.5,-1562.04 874.5,-1537.04 658.5,-1537.04"/>
+<text text-anchor="start" x="663.5" y="-1546.84" font-family="Helvetica,sans-Serif" font-size="14.00">access_rights</text>
+<text text-anchor="start" x="757.5" y="-1546.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [JSONB]</text>
+<polygon fill="none" stroke="black" points="658.5,-1512.04 658.5,-1537.04 874.5,-1537.04 874.5,-1512.04 658.5,-1512.04"/>
+<text text-anchor="start" x="663.5" y="-1521.84" font-family="Helvetica,sans-Serif" font-size="14.00">workbench</text>
+<text text-anchor="start" x="740.5" y="-1521.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [Null]</text>
+<polygon fill="none" stroke="black" points="658.5,-1487.04 658.5,-1512.04 874.5,-1512.04 874.5,-1487.04 658.5,-1487.04"/>
+<text text-anchor="start" x="663.5" y="-1496.84" font-family="Helvetica,sans-Serif" font-size="14.00">ui</text>
+<text text-anchor="start" x="676.5" y="-1496.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [JSONB]</text>
+<polygon fill="none" stroke="black" points="658.5,-1462.04 658.5,-1487.04 874.5,-1487.04 874.5,-1462.04 658.5,-1462.04"/>
+<text text-anchor="start" x="663.5" y="-1471.84" font-family="Helvetica,sans-Serif" font-size="14.00">classifiers</text>
+<text text-anchor="start" x="733.5" y="-1471.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR[]]</text>
+<polygon fill="none" stroke="black" points="658.5,-1437.04 658.5,-1462.04 874.5,-1462.04 874.5,-1437.04 658.5,-1437.04"/>
+<text text-anchor="start" x="663.5" y="-1446.84" font-family="Helvetica,sans-Serif" font-size="14.00">dev</text>
+<text text-anchor="start" x="689.5" y="-1446.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [JSONB]</text>
+<polygon fill="none" stroke="black" points="658.5,-1412.04 658.5,-1437.04 874.5,-1437.04 874.5,-1412.04 658.5,-1412.04"/>
+<text text-anchor="start" x="663.5" y="-1421.84" font-family="Helvetica,sans-Serif" font-size="14.00">quality</text>
+<text text-anchor="start" x="711.5" y="-1421.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [JSONB]</text>
+<polygon fill="none" stroke="black" points="658.5,-1387.04 658.5,-1412.04 874.5,-1412.04 874.5,-1387.04 658.5,-1387.04"/>
+<text text-anchor="start" x="663.5" y="-1396.84" font-family="Helvetica,sans-Serif" font-size="14.00">published</text>
+<text text-anchor="start" x="732.5" y="-1396.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BOOLEAN]</text>
+<polygon fill="none" stroke="black" points="658.5,-1362.04 658.5,-1387.04 874.5,-1387.04 874.5,-1362.04 658.5,-1362.04"/>
+<text text-anchor="start" x="663.5" y="-1371.84" font-family="Helvetica,sans-Serif" font-size="14.00">hidden</text>
+<text text-anchor="start" x="712.5" y="-1371.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BOOLEAN]</text>
 </g>
 <!-- users&#45;&#45;projects -->
-<g id="edge14" class="edge">
+<g id="edge13" class="edge">
 <title>users&#45;&#45;projects</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M521.15,-1335.55C551.46,-1363.99 584.57,-1395.06 615.33,-1423.92"/>
-<text text-anchor="start" x="574.33" y="-1412.72" font-family="Times,serif" font-size="14.00">{0,1}</text>
-<text text-anchor="start" x="521.15" y="-1324.35" font-family="Times,serif" font-size="14.00">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M538.56,-1589.04C574.24,-1589.04 614.13,-1589.04 650.39,-1589.04"/>
+<text text-anchor="start" x="609.39" y="-1577.84" font-family="Times,serif" font-size="14.00">{0,1}</text>
+<text text-anchor="start" x="538.56" y="-1577.84" font-family="Times,serif" font-size="14.00">0..N</text>
 </g>
 <!-- comp_runs -->
 <g id="node12" class="node">
@@ -460,7 +460,7 @@
 <text text-anchor="start" x="999" y="-1362.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
 </g>
 <!-- users&#45;&#45;comp_runs -->
-<g id="edge19" class="edge">
+<g id="edge18" class="edge">
 <title>users&#45;&#45;comp_runs</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M521.32,-1251.13C533.35,-1252.82 545.43,-1254.48 557,-1256 626.2,-1265.07 806.99,-1259.97 869,-1292 896.49,-1306.2 921.66,-1326.83 943.69,-1349.28"/>
 <text text-anchor="start" x="902.69" y="-1338.08" font-family="Times,serif" font-size="14.00">{0,1}</text>
@@ -482,7 +482,7 @@
 <text text-anchor="start" x="1032" y="-1219.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
 </g>
 <!-- users&#45;&#45;user_to_projects -->
-<g id="edge20" class="edge">
+<g id="edge19" class="edge">
 <title>users&#45;&#45;user_to_projects</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M521.27,-1239.64C642.88,-1244.9 838.79,-1253.38 951.21,-1258.24"/>
 <text text-anchor="start" x="910.21" y="-1247.04" font-family="Times,serif" font-size="14.00">{0,1}</text>
@@ -491,79 +491,79 @@
 <!-- tokens -->
 <g id="node14" class="node">
 <title>tokens</title>
-<polygon fill="none" stroke="black" points="637.5,-1175 637.5,-1203 825.5,-1203 825.5,-1175 637.5,-1175"/>
-<text text-anchor="start" x="701" y="-1186.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">tokens</text>
-<polygon fill="none" stroke="black" points="637.5,-1150 637.5,-1175 825.5,-1175 825.5,-1150 637.5,-1150"/>
-<text text-anchor="start" x="642.5" y="-1159.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">token_id</text>
-<text text-anchor="start" x="700.5" y="-1159.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
-<polygon fill="none" stroke="black" points="637.5,-1125 637.5,-1150 825.5,-1150 825.5,-1125 637.5,-1125"/>
-<text text-anchor="start" x="642.5" y="-1134.8" font-family="Helvetica,sans-Serif" font-size="14.00">user_id</text>
-<text text-anchor="start" x="693.5" y="-1134.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
-<polygon fill="none" stroke="black" points="637.5,-1100 637.5,-1125 825.5,-1125 825.5,-1100 637.5,-1100"/>
-<text text-anchor="start" x="642.5" y="-1109.8" font-family="Helvetica,sans-Serif" font-size="14.00">token_service</text>
-<text text-anchor="start" x="737.5" y="-1109.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="637.5,-1075 637.5,-1100 825.5,-1100 825.5,-1075 637.5,-1075"/>
-<text text-anchor="start" x="642.5" y="-1084.8" font-family="Helvetica,sans-Serif" font-size="14.00">token_data</text>
-<text text-anchor="start" x="718.5" y="-1084.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [Null]</text>
+<polygon fill="none" stroke="black" points="672.5,-1308.04 672.5,-1336.04 860.5,-1336.04 860.5,-1308.04 672.5,-1308.04"/>
+<text text-anchor="start" x="736" y="-1319.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">tokens</text>
+<polygon fill="none" stroke="black" points="672.5,-1283.04 672.5,-1308.04 860.5,-1308.04 860.5,-1283.04 672.5,-1283.04"/>
+<text text-anchor="start" x="677.5" y="-1292.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">token_id</text>
+<text text-anchor="start" x="735.5" y="-1292.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="672.5,-1258.04 672.5,-1283.04 860.5,-1283.04 860.5,-1258.04 672.5,-1258.04"/>
+<text text-anchor="start" x="677.5" y="-1267.84" font-family="Helvetica,sans-Serif" font-size="14.00">user_id</text>
+<text text-anchor="start" x="728.5" y="-1267.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="672.5,-1233.04 672.5,-1258.04 860.5,-1258.04 860.5,-1233.04 672.5,-1233.04"/>
+<text text-anchor="start" x="677.5" y="-1242.84" font-family="Helvetica,sans-Serif" font-size="14.00">token_service</text>
+<text text-anchor="start" x="772.5" y="-1242.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="672.5,-1208.04 672.5,-1233.04 860.5,-1233.04 860.5,-1208.04 672.5,-1208.04"/>
+<text text-anchor="start" x="677.5" y="-1217.84" font-family="Helvetica,sans-Serif" font-size="14.00">token_data</text>
+<text text-anchor="start" x="753.5" y="-1217.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [Null]</text>
 </g>
 <!-- users&#45;&#45;tokens -->
-<g id="edge15" class="edge">
+<g id="edge14" class="edge">
 <title>users&#45;&#45;tokens</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M521.15,-1202.5C556.12,-1191.89 594.82,-1180.15 629.34,-1169.68"/>
-<text text-anchor="start" x="588.34" y="-1158.48" font-family="Times,serif" font-size="14.00">{0,1}</text>
-<text text-anchor="start" x="521.15" y="-1191.3" font-family="Times,serif" font-size="14.00">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M534.73,-1445.92C563.05,-1411.9 595.3,-1377.31 629,-1349.04 639.84,-1339.95 651.91,-1331.38 664.26,-1323.48"/>
+<text text-anchor="start" x="623.26" y="-1312.28" font-family="Times,serif" font-size="14.00">{0,1}</text>
+<text text-anchor="start" x="503.73" y="-1434.72" font-family="Times,serif" font-size="14.00">0..N</text>
 </g>
 <!-- api_keys -->
 <g id="node15" class="node">
 <title>api_keys</title>
-<polygon fill="none" stroke="black" points="637.5,-1020 637.5,-1048 826.5,-1048 826.5,-1020 637.5,-1020"/>
-<text text-anchor="start" x="693.5" y="-1031.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">api_keys</text>
-<polygon fill="none" stroke="black" points="637.5,-995 637.5,-1020 826.5,-1020 826.5,-995 637.5,-995"/>
-<text text-anchor="start" x="642.5" y="-1004.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">id</text>
-<text text-anchor="start" x="655.5" y="-1004.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
-<polygon fill="none" stroke="black" points="637.5,-970 637.5,-995 826.5,-995 826.5,-970 637.5,-970"/>
-<text text-anchor="start" x="642.5" y="-979.8" font-family="Helvetica,sans-Serif" font-size="14.00">display_name</text>
-<text text-anchor="start" x="738.5" y="-979.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="637.5,-945 637.5,-970 826.5,-970 826.5,-945 637.5,-945"/>
-<text text-anchor="start" x="642.5" y="-954.8" font-family="Helvetica,sans-Serif" font-size="14.00">user_id</text>
-<text text-anchor="start" x="693.5" y="-954.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
-<polygon fill="none" stroke="black" points="637.5,-920 637.5,-945 826.5,-945 826.5,-920 637.5,-920"/>
-<text text-anchor="start" x="642.5" y="-929.8" font-family="Helvetica,sans-Serif" font-size="14.00">api_key</text>
-<text text-anchor="start" x="694.5" y="-929.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="637.5,-895 637.5,-920 826.5,-920 826.5,-895 637.5,-895"/>
-<text text-anchor="start" x="642.5" y="-904.8" font-family="Helvetica,sans-Serif" font-size="14.00">api_secret</text>
-<text text-anchor="start" x="712.5" y="-904.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="672.5,-2145.04 672.5,-2173.04 861.5,-2173.04 861.5,-2145.04 672.5,-2145.04"/>
+<text text-anchor="start" x="728.5" y="-2156.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">api_keys</text>
+<polygon fill="none" stroke="black" points="672.5,-2120.04 672.5,-2145.04 861.5,-2145.04 861.5,-2120.04 672.5,-2120.04"/>
+<text text-anchor="start" x="677.5" y="-2129.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">id</text>
+<text text-anchor="start" x="690.5" y="-2129.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="672.5,-2095.04 672.5,-2120.04 861.5,-2120.04 861.5,-2095.04 672.5,-2095.04"/>
+<text text-anchor="start" x="677.5" y="-2104.84" font-family="Helvetica,sans-Serif" font-size="14.00">display_name</text>
+<text text-anchor="start" x="773.5" y="-2104.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="672.5,-2070.04 672.5,-2095.04 861.5,-2095.04 861.5,-2070.04 672.5,-2070.04"/>
+<text text-anchor="start" x="677.5" y="-2079.84" font-family="Helvetica,sans-Serif" font-size="14.00">user_id</text>
+<text text-anchor="start" x="728.5" y="-2079.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="672.5,-2045.04 672.5,-2070.04 861.5,-2070.04 861.5,-2045.04 672.5,-2045.04"/>
+<text text-anchor="start" x="677.5" y="-2054.84" font-family="Helvetica,sans-Serif" font-size="14.00">api_key</text>
+<text text-anchor="start" x="729.5" y="-2054.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="672.5,-2020.04 672.5,-2045.04 861.5,-2045.04 861.5,-2020.04 672.5,-2020.04"/>
+<text text-anchor="start" x="677.5" y="-2029.84" font-family="Helvetica,sans-Serif" font-size="14.00">api_secret</text>
+<text text-anchor="start" x="747.5" y="-2029.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
 </g>
 <!-- users&#45;&#45;api_keys -->
-<g id="edge16" class="edge">
+<g id="edge15" class="edge">
 <title>users&#45;&#45;api_keys</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M521.03,-1126.01C544.37,-1104 569.45,-1081.62 594,-1062 604.98,-1053.23 616.81,-1044.48 628.76,-1036.08"/>
-<text text-anchor="start" x="587.76" y="-1024.88" font-family="Times,serif" font-size="14.00">{0,1}</text>
-<text text-anchor="start" x="521.03" y="-1114.81" font-family="Times,serif" font-size="14.00">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M476.94,-1732.42C509.42,-1818.8 559.7,-1927.17 629,-2007.04 639.14,-2018.73 651.15,-2029.52 663.77,-2039.26"/>
+<text text-anchor="start" x="622.77" y="-2028.06" font-family="Times,serif" font-size="14.00">{0,1}</text>
+<text text-anchor="start" x="476.94" y="-1736.22" font-family="Times,serif" font-size="14.00">0..N</text>
 </g>
 <!-- confirmations -->
 <g id="node16" class="node">
 <title>confirmations</title>
-<polygon fill="none" stroke="black" points="647.5,-841 647.5,-869 815.5,-869 815.5,-841 647.5,-841"/>
-<text text-anchor="start" x="669" y="-852.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">confirmations</text>
-<polygon fill="none" stroke="black" points="647.5,-816 647.5,-841 815.5,-841 815.5,-816 647.5,-816"/>
-<text text-anchor="start" x="652.5" y="-825.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">code</text>
-<text text-anchor="start" x="686.5" y="-825.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [TEXT]</text>
-<polygon fill="none" stroke="black" points="647.5,-791 647.5,-816 815.5,-816 815.5,-791 647.5,-791"/>
-<text text-anchor="start" x="652.5" y="-800.8" font-family="Helvetica,sans-Serif" font-size="14.00">user_id</text>
-<text text-anchor="start" x="703.5" y="-800.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
-<polygon fill="none" stroke="black" points="647.5,-766 647.5,-791 815.5,-791 815.5,-766 647.5,-766"/>
-<text text-anchor="start" x="652.5" y="-775.8" font-family="Helvetica,sans-Serif" font-size="14.00">action</text>
-<text text-anchor="start" x="695.5" y="-775.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR(14)]</text>
-<polygon fill="none" stroke="black" points="647.5,-741 647.5,-766 815.5,-766 815.5,-741 647.5,-741"/>
-<text text-anchor="start" x="652.5" y="-750.8" font-family="Helvetica,sans-Serif" font-size="14.00">data</text>
-<text text-anchor="start" x="683.5" y="-750.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [TEXT]</text>
-<polygon fill="none" stroke="black" points="647.5,-716 647.5,-741 815.5,-741 815.5,-716 647.5,-716"/>
-<text text-anchor="start" x="652.5" y="-725.8" font-family="Helvetica,sans-Serif" font-size="14.00">created_at</text>
-<text text-anchor="start" x="725.5" y="-725.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="682.5,-1966.04 682.5,-1994.04 850.5,-1994.04 850.5,-1966.04 682.5,-1966.04"/>
+<text text-anchor="start" x="704" y="-1977.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">confirmations</text>
+<polygon fill="none" stroke="black" points="682.5,-1941.04 682.5,-1966.04 850.5,-1966.04 850.5,-1941.04 682.5,-1941.04"/>
+<text text-anchor="start" x="687.5" y="-1950.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">code</text>
+<text text-anchor="start" x="721.5" y="-1950.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [TEXT]</text>
+<polygon fill="none" stroke="black" points="682.5,-1916.04 682.5,-1941.04 850.5,-1941.04 850.5,-1916.04 682.5,-1916.04"/>
+<text text-anchor="start" x="687.5" y="-1925.84" font-family="Helvetica,sans-Serif" font-size="14.00">user_id</text>
+<text text-anchor="start" x="738.5" y="-1925.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="682.5,-1891.04 682.5,-1916.04 850.5,-1916.04 850.5,-1891.04 682.5,-1891.04"/>
+<text text-anchor="start" x="687.5" y="-1900.84" font-family="Helvetica,sans-Serif" font-size="14.00">action</text>
+<text text-anchor="start" x="730.5" y="-1900.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR(14)]</text>
+<polygon fill="none" stroke="black" points="682.5,-1866.04 682.5,-1891.04 850.5,-1891.04 850.5,-1866.04 682.5,-1866.04"/>
+<text text-anchor="start" x="687.5" y="-1875.84" font-family="Helvetica,sans-Serif" font-size="14.00">data</text>
+<text text-anchor="start" x="718.5" y="-1875.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [TEXT]</text>
+<polygon fill="none" stroke="black" points="682.5,-1841.04 682.5,-1866.04 850.5,-1866.04 850.5,-1841.04 682.5,-1841.04"/>
+<text text-anchor="start" x="687.5" y="-1850.84" font-family="Helvetica,sans-Serif" font-size="14.00">created_at</text>
+<text text-anchor="start" x="760.5" y="-1850.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
 </g>
 <!-- users&#45;&#45;confirmations -->
-<g id="edge17" class="edge">
+<g id="edge16" class="edge">
 <title>users&#45;&#45;confirmations</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M482.65,-1091.85C526.51,-1001.95 578.05,-899.75 594,-882 607.05,-867.48 622.98,-854.33 639.29,-842.85"/>
 <text text-anchor="start" x="598.29" y="-831.65" font-family="Times,serif" font-size="14.00">{0,1}</text>
@@ -572,30 +572,30 @@
 <!-- tags -->
 <g id="node17" class="node">
 <title>tags</title>
-<polygon fill="none" stroke="black" points="646.5,-1909 646.5,-1937 817.5,-1937 817.5,-1909 646.5,-1909"/>
-<text text-anchor="start" x="712" y="-1920.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">tags</text>
-<polygon fill="none" stroke="black" points="646.5,-1884 646.5,-1909 817.5,-1909 817.5,-1884 646.5,-1884"/>
-<text text-anchor="start" x="651.5" y="-1893.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">id</text>
-<text text-anchor="start" x="664.5" y="-1893.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
-<polygon fill="none" stroke="black" points="646.5,-1859 646.5,-1884 817.5,-1884 817.5,-1859 646.5,-1859"/>
-<text text-anchor="start" x="651.5" y="-1868.8" font-family="Helvetica,sans-Serif" font-size="14.00">user_id</text>
-<text text-anchor="start" x="702.5" y="-1868.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
-<polygon fill="none" stroke="black" points="646.5,-1834 646.5,-1859 817.5,-1859 817.5,-1834 646.5,-1834"/>
-<text text-anchor="start" x="651.5" y="-1843.8" font-family="Helvetica,sans-Serif" font-size="14.00">name</text>
-<text text-anchor="start" x="691.5" y="-1843.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="646.5,-1809 646.5,-1834 817.5,-1834 817.5,-1809 646.5,-1809"/>
-<text text-anchor="start" x="651.5" y="-1818.8" font-family="Helvetica,sans-Serif" font-size="14.00">description</text>
-<text text-anchor="start" x="729.5" y="-1818.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="646.5,-1784 646.5,-1809 817.5,-1809 817.5,-1784 646.5,-1784"/>
-<text text-anchor="start" x="651.5" y="-1793.8" font-family="Helvetica,sans-Serif" font-size="14.00">color</text>
-<text text-anchor="start" x="685.5" y="-1793.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="681.5,-1153.04 681.5,-1181.04 852.5,-1181.04 852.5,-1153.04 681.5,-1153.04"/>
+<text text-anchor="start" x="747" y="-1164.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">tags</text>
+<polygon fill="none" stroke="black" points="681.5,-1128.04 681.5,-1153.04 852.5,-1153.04 852.5,-1128.04 681.5,-1128.04"/>
+<text text-anchor="start" x="686.5" y="-1137.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">id</text>
+<text text-anchor="start" x="699.5" y="-1137.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="681.5,-1103.04 681.5,-1128.04 852.5,-1128.04 852.5,-1103.04 681.5,-1103.04"/>
+<text text-anchor="start" x="686.5" y="-1112.84" font-family="Helvetica,sans-Serif" font-size="14.00">user_id</text>
+<text text-anchor="start" x="737.5" y="-1112.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="681.5,-1078.04 681.5,-1103.04 852.5,-1103.04 852.5,-1078.04 681.5,-1078.04"/>
+<text text-anchor="start" x="686.5" y="-1087.84" font-family="Helvetica,sans-Serif" font-size="14.00">name</text>
+<text text-anchor="start" x="726.5" y="-1087.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="681.5,-1053.04 681.5,-1078.04 852.5,-1078.04 852.5,-1053.04 681.5,-1053.04"/>
+<text text-anchor="start" x="686.5" y="-1062.84" font-family="Helvetica,sans-Serif" font-size="14.00">description</text>
+<text text-anchor="start" x="764.5" y="-1062.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="681.5,-1028.04 681.5,-1053.04 852.5,-1053.04 852.5,-1028.04 681.5,-1028.04"/>
+<text text-anchor="start" x="686.5" y="-1037.84" font-family="Helvetica,sans-Serif" font-size="14.00">color</text>
+<text text-anchor="start" x="720.5" y="-1037.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
 </g>
 <!-- users&#45;&#45;tags -->
-<g id="edge18" class="edge">
+<g id="edge17" class="edge">
 <title>users&#45;&#45;tags</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M435.53,-1378.06C458.76,-1493.62 505.09,-1655.48 594,-1771 606.03,-1786.63 621.59,-1800.41 637.88,-1812.19"/>
-<text text-anchor="start" x="596.88" y="-1800.99" font-family="Times,serif" font-size="14.00">{0,1}</text>
-<text text-anchor="start" x="435.53" y="-1381.86" font-family="Times,serif" font-size="14.00">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M481.86,-1446.02C514.97,-1366 564.21,-1267.98 629,-1195.04 641.63,-1180.83 657,-1167.88 672.81,-1156.53"/>
+<text text-anchor="start" x="631.81" y="-1145.33" font-family="Times,serif" font-size="14.00">{0,1}</text>
+<text text-anchor="start" x="450.86" y="-1434.82" font-family="Times,serif" font-size="14.00">0..N</text>
 </g>
 <!-- clusters&#45;&#45;cluster_to_groups -->
 <g id="edge22" class="edge">
@@ -607,57 +607,57 @@
 <!-- services_meta_data&#45;&#45;services_access_rights -->
 <g id="edge25" class="edge">
 <title>services_meta_data&#45;&#45;services_access_rights</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M514.14,-277.1C546.47,-251.89 582.55,-224.24 615.84,-199.15"/>
-<text text-anchor="start" x="574.84" y="-187.95" font-family="Times,serif" font-size="14.00">{0,1}</text>
-<text text-anchor="start" x="514.14" y="-265.9" font-family="Times,serif" font-size="14.00">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M531.71,-480.89C569.18,-454.16 612.02,-424.2 650.71,-397.68"/>
+<text text-anchor="start" x="609.71" y="-386.48" font-family="Times,serif" font-size="14.00">{0,1}</text>
+<text text-anchor="start" x="531.71" y="-469.69" font-family="Times,serif" font-size="14.00">0..N</text>
 </g>
 <!-- services_meta_data&#45;&#45;services_access_rights -->
 <g id="edge26" class="edge">
 <title>services_meta_data&#45;&#45;services_access_rights</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M514.14,-289.76C546.47,-265.53 582.55,-238 615.84,-212.18"/>
-<text text-anchor="start" x="574.84" y="-215.98" font-family="Times,serif" font-size="14.00">{0,1}</text>
-<text text-anchor="start" x="514.14" y="-293.56" font-family="Times,serif" font-size="14.00">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M531.71,-493.38C569.18,-467.84 612.02,-438.02 650.71,-410.57"/>
+<text text-anchor="start" x="609.71" y="-414.37" font-family="Times,serif" font-size="14.00">{0,1}</text>
+<text text-anchor="start" x="531.71" y="-497.18" font-family="Times,serif" font-size="14.00">0..N</text>
 </g>
 <!-- services_consume_filetypes -->
 <g id="node22" class="node">
 <title>services_consume_filetypes</title>
-<polygon fill="none" stroke="black" points="602.5,-433 602.5,-461 861.5,-461 861.5,-433 602.5,-433"/>
-<text text-anchor="start" x="607.5" y="-444.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">services_consume_filetypes</text>
-<polygon fill="none" stroke="black" points="602.5,-408 602.5,-433 861.5,-433 861.5,-408 602.5,-408"/>
-<text text-anchor="start" x="607.5" y="-417.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">service_key</text>
-<text text-anchor="start" x="688.5" y="-417.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="602.5,-383 602.5,-408 861.5,-408 861.5,-383 602.5,-383"/>
-<text text-anchor="start" x="607.5" y="-392.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">service_version</text>
-<text text-anchor="start" x="715.5" y="-392.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="602.5,-358 602.5,-383 861.5,-383 861.5,-358 602.5,-358"/>
-<text text-anchor="start" x="607.5" y="-367.8" font-family="Helvetica,sans-Serif" font-size="14.00">service_display_name</text>
-<text text-anchor="start" x="759.5" y="-367.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="602.5,-333 602.5,-358 861.5,-358 861.5,-333 602.5,-333"/>
-<text text-anchor="start" x="607.5" y="-342.8" font-family="Helvetica,sans-Serif" font-size="14.00">service_input_port</text>
-<text text-anchor="start" x="735.5" y="-342.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="602.5,-308 602.5,-333 861.5,-333 861.5,-308 602.5,-308"/>
-<text text-anchor="start" x="607.5" y="-317.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">filetype</text>
-<text text-anchor="start" x="659.5" y="-317.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="602.5,-283 602.5,-308 861.5,-308 861.5,-283 602.5,-283"/>
-<text text-anchor="start" x="607.5" y="-292.8" font-family="Helvetica,sans-Serif" font-size="14.00">preference_order</text>
-<text text-anchor="start" x="725.5" y="-292.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [SMALLINT]</text>
-<polygon fill="none" stroke="black" points="602.5,-258 602.5,-283 861.5,-283 861.5,-258 602.5,-258"/>
-<text text-anchor="start" x="607.5" y="-267.8" font-family="Helvetica,sans-Serif" font-size="14.00">is_guest_allowed</text>
-<text text-anchor="start" x="724.5" y="-267.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [BOOLEAN]</text>
+<polygon fill="none" stroke="black" points="637.5,-639.04 637.5,-667.04 896.5,-667.04 896.5,-639.04 637.5,-639.04"/>
+<text text-anchor="start" x="642.5" y="-650.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">services_consume_filetypes</text>
+<polygon fill="none" stroke="black" points="637.5,-614.04 637.5,-639.04 896.5,-639.04 896.5,-614.04 637.5,-614.04"/>
+<text text-anchor="start" x="642.5" y="-623.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">service_key</text>
+<text text-anchor="start" x="723.5" y="-623.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="637.5,-589.04 637.5,-614.04 896.5,-614.04 896.5,-589.04 637.5,-589.04"/>
+<text text-anchor="start" x="642.5" y="-598.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">service_version</text>
+<text text-anchor="start" x="750.5" y="-598.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="637.5,-564.04 637.5,-589.04 896.5,-589.04 896.5,-564.04 637.5,-564.04"/>
+<text text-anchor="start" x="642.5" y="-573.84" font-family="Helvetica,sans-Serif" font-size="14.00">service_display_name</text>
+<text text-anchor="start" x="794.5" y="-573.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="637.5,-539.04 637.5,-564.04 896.5,-564.04 896.5,-539.04 637.5,-539.04"/>
+<text text-anchor="start" x="642.5" y="-548.84" font-family="Helvetica,sans-Serif" font-size="14.00">service_input_port</text>
+<text text-anchor="start" x="770.5" y="-548.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="637.5,-514.04 637.5,-539.04 896.5,-539.04 896.5,-514.04 637.5,-514.04"/>
+<text text-anchor="start" x="642.5" y="-523.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">filetype</text>
+<text text-anchor="start" x="694.5" y="-523.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="637.5,-489.04 637.5,-514.04 896.5,-514.04 896.5,-489.04 637.5,-489.04"/>
+<text text-anchor="start" x="642.5" y="-498.84" font-family="Helvetica,sans-Serif" font-size="14.00">preference_order</text>
+<text text-anchor="start" x="760.5" y="-498.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [SMALLINT]</text>
+<polygon fill="none" stroke="black" points="637.5,-464.04 637.5,-489.04 896.5,-489.04 896.5,-464.04 637.5,-464.04"/>
+<text text-anchor="start" x="642.5" y="-473.84" font-family="Helvetica,sans-Serif" font-size="14.00">is_guest_allowed</text>
+<text text-anchor="start" x="759.5" y="-473.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BOOLEAN]</text>
 </g>
 <!-- services_meta_data&#45;&#45;services_consume_filetypes -->
 <g id="edge23" class="edge">
 <title>services_meta_data&#45;&#45;services_consume_filetypes</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M514.14,-353.67C539.5,-353.29 567.16,-353.17 593.98,-353.31"/>
-<text text-anchor="start" x="552.98" y="-342.11" font-family="Times,serif" font-size="14.00">{0,1}</text>
-<text text-anchor="start" x="514.14" y="-342.47" font-family="Times,serif" font-size="14.00">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M531.71,-553.5C562.26,-553.84 596.39,-554.62 628.92,-555.71"/>
+<text text-anchor="start" x="587.92" y="-544.51" font-family="Times,serif" font-size="14.00">{0,1}</text>
+<text text-anchor="start" x="531.71" y="-542.3" font-family="Times,serif" font-size="14.00">0..N</text>
 </g>
 <!-- services_meta_data&#45;&#45;services_consume_filetypes -->
 <g id="edge24" class="edge">
 <title>services_meta_data&#45;&#45;services_consume_filetypes</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M514.14,-366.33C539.5,-366.71 567.16,-366.83 593.98,-366.69"/>
-<text text-anchor="start" x="552.98" y="-370.49" font-family="Times,serif" font-size="14.00">{0,1}</text>
-<text text-anchor="start" x="514.14" y="-370.13" font-family="Times,serif" font-size="14.00">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M531.71,-565.99C562.26,-567.3 596.39,-568.35 628.92,-569.01"/>
+<text text-anchor="start" x="587.92" y="-572.81" font-family="Times,serif" font-size="14.00">{0,1}</text>
+<text text-anchor="start" x="531.71" y="-569.79" font-family="Times,serif" font-size="14.00">0..N</text>
 </g>
 <!-- study_tags -->
 <g id="node11" class="node">
@@ -679,21 +679,21 @@
 <text text-anchor="start" x="847.56" y="-1608.93" font-family="Times,serif" font-size="14.00">0..N</text>
 </g>
 <!-- projects&#45;&#45;comp_runs -->
-<g id="edge11" class="edge">
+<g id="edge10" class="edge">
 <title>projects&#45;&#45;comp_runs</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M847.56,-1512.42C878.68,-1507.12 912.03,-1501.44 941.99,-1496.34"/>
 <text text-anchor="start" x="900.99" y="-1485.14" font-family="Times,serif" font-size="14.00">{0,1}</text>
 <text text-anchor="start" x="847.56" y="-1501.22" font-family="Times,serif" font-size="14.00">0..N</text>
 </g>
 <!-- projects&#45;&#45;user_to_projects -->
-<g id="edge12" class="edge">
+<g id="edge11" class="edge">
 <title>projects&#45;&#45;user_to_projects</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M847.74,-1424.12C878.08,-1396.35 911,-1366.76 942,-1340 950.53,-1332.63 959.61,-1325.01 968.64,-1317.54"/>
 <text text-anchor="start" x="927.64" y="-1321.34" font-family="Times,serif" font-size="14.00">{0,1}</text>
 <text text-anchor="start" x="847.74" y="-1412.92" font-family="Times,serif" font-size="14.00">0..N</text>
 </g>
 <!-- tags&#45;&#45;study_tags -->
-<g id="edge23" class="edge">
+<g id="edge22" class="edge">
 <title>tags&#45;&#45;study_tags</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M825.4,-1832.11C869.99,-1818.24 922.66,-1801.87 964.42,-1788.88"/>
 <text text-anchor="start" x="923.42" y="-1777.68" font-family="Times,serif" font-size="14.00">{0,1}</text>
@@ -702,148 +702,269 @@
 <!-- comp_pipeline -->
 <g id="node18" class="node">
 <title>comp_pipeline</title>
-<polygon fill="none" stroke="black" points="25,-2221 25,-2249 208,-2249 208,-2221 25,-2221"/>
-<text text-anchor="start" x="52.5" y="-2232.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">comp_pipeline</text>
-<polygon fill="none" stroke="black" points="25,-2196 25,-2221 208,-2221 208,-2196 25,-2196"/>
-<text text-anchor="start" x="30" y="-2205.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">project_id</text>
-<text text-anchor="start" x="97" y="-2205.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="25,-2171 25,-2196 208,-2196 208,-2171 25,-2171"/>
-<text text-anchor="start" x="30" y="-2180.8" font-family="Helvetica,sans-Serif" font-size="14.00">dag_adjacency_list</text>
-<text text-anchor="start" x="160" y="-2180.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [Null]</text>
-<polygon fill="none" stroke="black" points="25,-2146 25,-2171 208,-2171 208,-2146 25,-2146"/>
-<text text-anchor="start" x="30" y="-2155.8" font-family="Helvetica,sans-Serif" font-size="14.00">state</text>
-<text text-anchor="start" x="65" y="-2155.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR(11)]</text>
+<polygon fill="none" stroke="black" points="25,-3027.04 25,-3055.04 208,-3055.04 208,-3027.04 25,-3027.04"/>
+<text text-anchor="start" x="52.5" y="-3038.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">comp_pipeline</text>
+<polygon fill="none" stroke="black" points="25,-3002.04 25,-3027.04 208,-3027.04 208,-3002.04 25,-3002.04"/>
+<text text-anchor="start" x="30" y="-3011.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">project_id</text>
+<text text-anchor="start" x="97" y="-3011.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="25,-2977.04 25,-3002.04 208,-3002.04 208,-2977.04 25,-2977.04"/>
+<text text-anchor="start" x="30" y="-2986.84" font-family="Helvetica,sans-Serif" font-size="14.00">dag_adjacency_list</text>
+<text text-anchor="start" x="160" y="-2986.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [Null]</text>
+<polygon fill="none" stroke="black" points="25,-2952.04 25,-2977.04 208,-2977.04 208,-2952.04 25,-2952.04"/>
+<text text-anchor="start" x="30" y="-2961.84" font-family="Helvetica,sans-Serif" font-size="14.00">state</text>
+<text text-anchor="start" x="65" y="-2961.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR(11)]</text>
 </g>
 <!-- comp_tasks -->
 <g id="node19" class="node">
 <title>comp_tasks</title>
-<polygon fill="none" stroke="black" points="314,-2371 314,-2399 512,-2399 512,-2371 314,-2371"/>
-<text text-anchor="start" x="360" y="-2382.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">comp_tasks</text>
-<polygon fill="none" stroke="black" points="314,-2346 314,-2371 512,-2371 512,-2346 314,-2346"/>
-<text text-anchor="start" x="319" y="-2355.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">task_id</text>
-<text text-anchor="start" x="368" y="-2355.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [INTEGER]</text>
-<polygon fill="none" stroke="black" points="314,-2321 314,-2346 512,-2346 512,-2321 314,-2321"/>
-<text text-anchor="start" x="319" y="-2330.8" font-family="Helvetica,sans-Serif" font-size="14.00">project_id</text>
-<text text-anchor="start" x="386" y="-2330.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="314,-2296 314,-2321 512,-2321 512,-2296 314,-2296"/>
-<text text-anchor="start" x="319" y="-2305.8" font-family="Helvetica,sans-Serif" font-size="14.00">node_id</text>
-<text text-anchor="start" x="374" y="-2305.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="314,-2271 314,-2296 512,-2296 512,-2271 314,-2271"/>
-<text text-anchor="start" x="319" y="-2280.8" font-family="Helvetica,sans-Serif" font-size="14.00">node_class</text>
-<text text-anchor="start" x="395" y="-2280.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR(13)]</text>
-<polygon fill="none" stroke="black" points="314,-2246 314,-2271 512,-2271 512,-2246 314,-2246"/>
-<text text-anchor="start" x="319" y="-2255.8" font-family="Helvetica,sans-Serif" font-size="14.00">job_id</text>
-<text text-anchor="start" x="360" y="-2255.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="314,-2221 314,-2246 512,-2246 512,-2221 314,-2221"/>
-<text text-anchor="start" x="319" y="-2230.8" font-family="Helvetica,sans-Serif" font-size="14.00">internal_id</text>
-<text text-anchor="start" x="392" y="-2230.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [INTEGER]</text>
-<polygon fill="none" stroke="black" points="314,-2196 314,-2221 512,-2221 512,-2196 314,-2196"/>
-<text text-anchor="start" x="319" y="-2205.8" font-family="Helvetica,sans-Serif" font-size="14.00">schema</text>
-<text text-anchor="start" x="374" y="-2205.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [Null]</text>
-<polygon fill="none" stroke="black" points="314,-2171 314,-2196 512,-2196 512,-2171 314,-2171"/>
-<text text-anchor="start" x="319" y="-2180.8" font-family="Helvetica,sans-Serif" font-size="14.00">inputs</text>
-<text text-anchor="start" x="363" y="-2180.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [Null]</text>
-<polygon fill="none" stroke="black" points="314,-2146 314,-2171 512,-2171 512,-2146 314,-2146"/>
-<text text-anchor="start" x="319" y="-2155.8" font-family="Helvetica,sans-Serif" font-size="14.00">outputs</text>
-<text text-anchor="start" x="373" y="-2155.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [Null]</text>
-<polygon fill="none" stroke="black" points="314,-2121 314,-2146 512,-2146 512,-2121 314,-2121"/>
-<text text-anchor="start" x="319" y="-2130.8" font-family="Helvetica,sans-Serif" font-size="14.00">run_hash</text>
-<text text-anchor="start" x="384" y="-2130.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="314,-2096 314,-2121 512,-2121 512,-2096 314,-2096"/>
-<text text-anchor="start" x="319" y="-2105.8" font-family="Helvetica,sans-Serif" font-size="14.00">image</text>
-<text text-anchor="start" x="362" y="-2105.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [Null]</text>
-<polygon fill="none" stroke="black" points="314,-2071 314,-2096 512,-2096 512,-2071 314,-2071"/>
-<text text-anchor="start" x="319" y="-2080.8" font-family="Helvetica,sans-Serif" font-size="14.00">state</text>
-<text text-anchor="start" x="354" y="-2080.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR(11)]</text>
-<polygon fill="none" stroke="black" points="314,-2046 314,-2071 512,-2071 512,-2046 314,-2046"/>
-<text text-anchor="start" x="319" y="-2055.8" font-family="Helvetica,sans-Serif" font-size="14.00">submit</text>
-<text text-anchor="start" x="368" y="-2055.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
-<polygon fill="none" stroke="black" points="314,-2021 314,-2046 512,-2046 512,-2021 314,-2021"/>
-<text text-anchor="start" x="319" y="-2030.8" font-family="Helvetica,sans-Serif" font-size="14.00">start</text>
-<text text-anchor="start" x="352" y="-2030.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
-<polygon fill="none" stroke="black" points="314,-1996 314,-2021 512,-2021 512,-1996 314,-1996"/>
-<text text-anchor="start" x="319" y="-2005.8" font-family="Helvetica,sans-Serif" font-size="14.00">end</text>
-<text text-anchor="start" x="346" y="-2005.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="331.5,-3177.04 331.5,-3205.04 529.5,-3205.04 529.5,-3177.04 331.5,-3177.04"/>
+<text text-anchor="start" x="377.5" y="-3188.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">comp_tasks</text>
+<polygon fill="none" stroke="black" points="331.5,-3152.04 331.5,-3177.04 529.5,-3177.04 529.5,-3152.04 331.5,-3152.04"/>
+<text text-anchor="start" x="336.5" y="-3161.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">task_id</text>
+<text text-anchor="start" x="385.5" y="-3161.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [INTEGER]</text>
+<polygon fill="none" stroke="black" points="331.5,-3127.04 331.5,-3152.04 529.5,-3152.04 529.5,-3127.04 331.5,-3127.04"/>
+<text text-anchor="start" x="336.5" y="-3136.84" font-family="Helvetica,sans-Serif" font-size="14.00">project_id</text>
+<text text-anchor="start" x="403.5" y="-3136.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="331.5,-3102.04 331.5,-3127.04 529.5,-3127.04 529.5,-3102.04 331.5,-3102.04"/>
+<text text-anchor="start" x="336.5" y="-3111.84" font-family="Helvetica,sans-Serif" font-size="14.00">node_id</text>
+<text text-anchor="start" x="391.5" y="-3111.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="331.5,-3077.04 331.5,-3102.04 529.5,-3102.04 529.5,-3077.04 331.5,-3077.04"/>
+<text text-anchor="start" x="336.5" y="-3086.84" font-family="Helvetica,sans-Serif" font-size="14.00">node_class</text>
+<text text-anchor="start" x="412.5" y="-3086.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR(13)]</text>
+<polygon fill="none" stroke="black" points="331.5,-3052.04 331.5,-3077.04 529.5,-3077.04 529.5,-3052.04 331.5,-3052.04"/>
+<text text-anchor="start" x="336.5" y="-3061.84" font-family="Helvetica,sans-Serif" font-size="14.00">job_id</text>
+<text text-anchor="start" x="377.5" y="-3061.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="331.5,-3027.04 331.5,-3052.04 529.5,-3052.04 529.5,-3027.04 331.5,-3027.04"/>
+<text text-anchor="start" x="336.5" y="-3036.84" font-family="Helvetica,sans-Serif" font-size="14.00">internal_id</text>
+<text text-anchor="start" x="409.5" y="-3036.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [INTEGER]</text>
+<polygon fill="none" stroke="black" points="331.5,-3002.04 331.5,-3027.04 529.5,-3027.04 529.5,-3002.04 331.5,-3002.04"/>
+<text text-anchor="start" x="336.5" y="-3011.84" font-family="Helvetica,sans-Serif" font-size="14.00">schema</text>
+<text text-anchor="start" x="391.5" y="-3011.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [Null]</text>
+<polygon fill="none" stroke="black" points="331.5,-2977.04 331.5,-3002.04 529.5,-3002.04 529.5,-2977.04 331.5,-2977.04"/>
+<text text-anchor="start" x="336.5" y="-2986.84" font-family="Helvetica,sans-Serif" font-size="14.00">inputs</text>
+<text text-anchor="start" x="380.5" y="-2986.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [Null]</text>
+<polygon fill="none" stroke="black" points="331.5,-2952.04 331.5,-2977.04 529.5,-2977.04 529.5,-2952.04 331.5,-2952.04"/>
+<text text-anchor="start" x="336.5" y="-2961.84" font-family="Helvetica,sans-Serif" font-size="14.00">outputs</text>
+<text text-anchor="start" x="390.5" y="-2961.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [Null]</text>
+<polygon fill="none" stroke="black" points="331.5,-2927.04 331.5,-2952.04 529.5,-2952.04 529.5,-2927.04 331.5,-2927.04"/>
+<text text-anchor="start" x="336.5" y="-2936.84" font-family="Helvetica,sans-Serif" font-size="14.00">run_hash</text>
+<text text-anchor="start" x="401.5" y="-2936.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="331.5,-2902.04 331.5,-2927.04 529.5,-2927.04 529.5,-2902.04 331.5,-2902.04"/>
+<text text-anchor="start" x="336.5" y="-2911.84" font-family="Helvetica,sans-Serif" font-size="14.00">image</text>
+<text text-anchor="start" x="379.5" y="-2911.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [Null]</text>
+<polygon fill="none" stroke="black" points="331.5,-2877.04 331.5,-2902.04 529.5,-2902.04 529.5,-2877.04 331.5,-2877.04"/>
+<text text-anchor="start" x="336.5" y="-2886.84" font-family="Helvetica,sans-Serif" font-size="14.00">state</text>
+<text text-anchor="start" x="371.5" y="-2886.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR(11)]</text>
+<polygon fill="none" stroke="black" points="331.5,-2852.04 331.5,-2877.04 529.5,-2877.04 529.5,-2852.04 331.5,-2852.04"/>
+<text text-anchor="start" x="336.5" y="-2861.84" font-family="Helvetica,sans-Serif" font-size="14.00">submit</text>
+<text text-anchor="start" x="385.5" y="-2861.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="331.5,-2827.04 331.5,-2852.04 529.5,-2852.04 529.5,-2827.04 331.5,-2827.04"/>
+<text text-anchor="start" x="336.5" y="-2836.84" font-family="Helvetica,sans-Serif" font-size="14.00">start</text>
+<text text-anchor="start" x="369.5" y="-2836.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="331.5,-2802.04 331.5,-2827.04 529.5,-2827.04 529.5,-2802.04 331.5,-2802.04"/>
+<text text-anchor="start" x="336.5" y="-2811.84" font-family="Helvetica,sans-Serif" font-size="14.00">end</text>
+<text text-anchor="start" x="363.5" y="-2811.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
 </g>
 <!-- comp_pipeline&#45;&#45;comp_tasks -->
-<g id="edge21" class="edge">
+<g id="edge20" class="edge">
 <title>comp_pipeline&#45;&#45;comp_tasks</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M215.64,-2198C244.62,-2198 276.43,-2198 305.86,-2198"/>
-<text text-anchor="start" x="264.86" y="-2186.8" font-family="Times,serif" font-size="14.00">{0,1}</text>
-<text text-anchor="start" x="215.64" y="-2186.8" font-family="Times,serif" font-size="14.00">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M215.88,-3004.04C250.12,-3004.04 288.63,-3004.04 323.43,-3004.04"/>
+<text text-anchor="start" x="282.43" y="-2992.84" font-family="Times,serif" font-size="14.00">{0,1}</text>
+<text text-anchor="start" x="215.88" y="-2992.84" font-family="Times,serif" font-size="14.00">0..N</text>
 </g>
 <!-- products -->
 <g id="node20" class="node">
 <title>products</title>
-<polygon fill="none" stroke="black" points="329,-167 329,-195 498,-195 498,-167 329,-167"/>
-<text text-anchor="start" x="373" y="-178.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">products</text>
-<polygon fill="none" stroke="black" points="329,-142 329,-167 498,-167 498,-142 329,-142"/>
-<text text-anchor="start" x="334" y="-151.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">name</text>
-<text text-anchor="start" x="374" y="-151.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="329,-117 329,-142 498,-142 498,-117 329,-117"/>
-<text text-anchor="start" x="334" y="-126.8" font-family="Helvetica,sans-Serif" font-size="14.00">host_regex</text>
-<text text-anchor="start" x="410" y="-126.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="329,-92 329,-117 498,-117 498,-92 329,-92"/>
-<text text-anchor="start" x="334" y="-101.8" font-family="Helvetica,sans-Serif" font-size="14.00">created</text>
-<text text-anchor="start" x="386" y="-101.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
-<polygon fill="none" stroke="black" points="329,-67 329,-92 498,-92 498,-67 329,-67"/>
-<text text-anchor="start" x="334" y="-76.8" font-family="Helvetica,sans-Serif" font-size="14.00">modified</text>
-<text text-anchor="start" x="395" y="-76.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="346.5,-364.04 346.5,-392.04 515.5,-392.04 515.5,-364.04 346.5,-364.04"/>
+<text text-anchor="start" x="390.5" y="-375.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">products</text>
+<polygon fill="none" stroke="black" points="346.5,-339.04 346.5,-364.04 515.5,-364.04 515.5,-339.04 346.5,-339.04"/>
+<text text-anchor="start" x="351.5" y="-348.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">name</text>
+<text text-anchor="start" x="391.5" y="-348.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="346.5,-314.04 346.5,-339.04 515.5,-339.04 515.5,-314.04 346.5,-314.04"/>
+<text text-anchor="start" x="351.5" y="-323.84" font-family="Helvetica,sans-Serif" font-size="14.00">host_regex</text>
+<text text-anchor="start" x="427.5" y="-323.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="346.5,-289.04 346.5,-314.04 515.5,-314.04 515.5,-289.04 346.5,-289.04"/>
+<text text-anchor="start" x="351.5" y="-298.84" font-family="Helvetica,sans-Serif" font-size="14.00">created</text>
+<text text-anchor="start" x="403.5" y="-298.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="346.5,-264.04 346.5,-289.04 515.5,-289.04 515.5,-264.04 346.5,-264.04"/>
+<text text-anchor="start" x="351.5" y="-273.84" font-family="Helvetica,sans-Serif" font-size="14.00">modified</text>
+<text text-anchor="start" x="412.5" y="-273.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
 </g>
 <!-- products&#45;&#45;services_access_rights -->
-<g id="edge22" class="edge">
+<g id="edge21" class="edge">
 <title>products&#45;&#45;services_access_rights</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M505.54,-127.24C539.96,-125.83 579.52,-124.2 615.78,-122.71"/>
-<text text-anchor="start" x="574.78" y="-111.51" font-family="Times,serif" font-size="14.00">{0,1}</text>
-<text text-anchor="start" x="505.54" y="-116.04" font-family="Times,serif" font-size="14.00">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M523.21,-326.95C562.61,-326.47 609.07,-325.92 650.72,-325.42"/>
+<text text-anchor="start" x="609.72" y="-314.22" font-family="Times,serif" font-size="14.00">{0,1}</text>
+<text text-anchor="start" x="523.21" y="-315.75" font-family="Times,serif" font-size="14.00">0..N</text>
 </g>
 <!-- scicrunch_resources -->
 <g id="node21" class="node">
 <title>scicrunch_resources</title>
-<polygon fill="none" stroke="black" points="8,-2400 8,-2428 224,-2428 224,-2400 8,-2400"/>
-<text text-anchor="start" x="24" y="-2411.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">scicrunch_resources</text>
-<polygon fill="none" stroke="black" points="8,-2375 8,-2400 224,-2400 224,-2375 8,-2375"/>
-<text text-anchor="start" x="13" y="-2384.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">rrid</text>
-<text text-anchor="start" x="38" y="-2384.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="8,-2350 8,-2375 224,-2375 224,-2350 8,-2350"/>
-<text text-anchor="start" x="13" y="-2359.8" font-family="Helvetica,sans-Serif" font-size="14.00">name</text>
-<text text-anchor="start" x="53" y="-2359.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="8,-2325 8,-2350 224,-2350 224,-2325 8,-2325"/>
-<text text-anchor="start" x="13" y="-2334.8" font-family="Helvetica,sans-Serif" font-size="14.00">description</text>
-<text text-anchor="start" x="91" y="-2334.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="8,-2300 8,-2325 224,-2325 224,-2300 8,-2300"/>
-<text text-anchor="start" x="13" y="-2309.8" font-family="Helvetica,sans-Serif" font-size="14.00">creation_date</text>
-<text text-anchor="start" x="107" y="-2309.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
-<polygon fill="none" stroke="black" points="8,-2275 8,-2300 224,-2300 224,-2275 8,-2275"/>
-<text text-anchor="start" x="13" y="-2284.8" font-family="Helvetica,sans-Serif" font-size="14.00">last_change_date</text>
-<text text-anchor="start" x="134" y="-2284.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="8,-3206.04 8,-3234.04 224,-3234.04 224,-3206.04 8,-3206.04"/>
+<text text-anchor="start" x="24" y="-3217.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">scicrunch_resources</text>
+<polygon fill="none" stroke="black" points="8,-3181.04 8,-3206.04 224,-3206.04 224,-3181.04 8,-3181.04"/>
+<text text-anchor="start" x="13" y="-3190.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">rrid</text>
+<text text-anchor="start" x="38" y="-3190.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="8,-3156.04 8,-3181.04 224,-3181.04 224,-3156.04 8,-3156.04"/>
+<text text-anchor="start" x="13" y="-3165.84" font-family="Helvetica,sans-Serif" font-size="14.00">name</text>
+<text text-anchor="start" x="53" y="-3165.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="8,-3131.04 8,-3156.04 224,-3156.04 224,-3131.04 8,-3131.04"/>
+<text text-anchor="start" x="13" y="-3140.84" font-family="Helvetica,sans-Serif" font-size="14.00">description</text>
+<text text-anchor="start" x="91" y="-3140.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="8,-3106.04 8,-3131.04 224,-3131.04 224,-3106.04 8,-3106.04"/>
+<text text-anchor="start" x="13" y="-3115.84" font-family="Helvetica,sans-Serif" font-size="14.00">creation_date</text>
+<text text-anchor="start" x="107" y="-3115.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="8,-3081.04 8,-3106.04 224,-3106.04 224,-3081.04 8,-3081.04"/>
+<text text-anchor="start" x="13" y="-3090.84" font-family="Helvetica,sans-Serif" font-size="14.00">last_change_date</text>
+<text text-anchor="start" x="134" y="-3090.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+</g>
+<!-- projects_snapshots -->
+<g id="node23" class="node">
+<title>projects_snapshots</title>
+<polygon fill="none" stroke="black" points="24,-2692.04 24,-2720.04 209,-2720.04 209,-2692.04 24,-2692.04"/>
+<text text-anchor="start" x="29" y="-2703.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">projects_snapshots</text>
+<polygon fill="none" stroke="black" points="24,-2667.04 24,-2692.04 209,-2692.04 209,-2667.04 24,-2667.04"/>
+<text text-anchor="start" x="29" y="-2676.84" font-family="Helvetica,sans-Serif" font-size="14.00">uuid</text>
+<text text-anchor="start" x="60" y="-2676.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="24,-2642.04 24,-2667.04 209,-2667.04 209,-2642.04 24,-2642.04"/>
+<text text-anchor="start" x="29" y="-2651.84" font-family="Helvetica,sans-Serif" font-size="14.00">workbench</text>
+<text text-anchor="start" x="106" y="-2651.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [Null]</text>
+<polygon fill="none" stroke="black" points="24,-2617.04 24,-2642.04 209,-2642.04 209,-2617.04 24,-2617.04"/>
+<text text-anchor="start" x="29" y="-2626.84" font-family="Helvetica,sans-Serif" font-size="14.00">ui</text>
+<text text-anchor="start" x="42" y="-2626.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [JSONB]</text>
+</g>
+<!-- projects_vc_commits -->
+<g id="node24" class="node">
+<title>projects_vc_commits</title>
+<polygon fill="none" stroke="black" points="313.5,-2730.04 313.5,-2758.04 548.5,-2758.04 548.5,-2730.04 313.5,-2730.04"/>
+<text text-anchor="start" x="337.5" y="-2741.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">projects_vc_commits</text>
+<polygon fill="none" stroke="black" points="313.5,-2705.04 313.5,-2730.04 548.5,-2730.04 548.5,-2705.04 313.5,-2705.04"/>
+<text text-anchor="start" x="318.5" y="-2714.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">id</text>
+<text text-anchor="start" x="331.5" y="-2714.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="313.5,-2680.04 313.5,-2705.04 548.5,-2705.04 548.5,-2680.04 313.5,-2680.04"/>
+<text text-anchor="start" x="318.5" y="-2689.84" font-family="Helvetica,sans-Serif" font-size="14.00">repo_id</text>
+<text text-anchor="start" x="369.5" y="-2689.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="313.5,-2655.04 313.5,-2680.04 548.5,-2680.04 548.5,-2655.04 313.5,-2655.04"/>
+<text text-anchor="start" x="318.5" y="-2664.84" font-family="Helvetica,sans-Serif" font-size="14.00">parent_commit_id</text>
+<text text-anchor="start" x="442.5" y="-2664.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="313.5,-2630.04 313.5,-2655.04 548.5,-2655.04 548.5,-2630.04 313.5,-2630.04"/>
+<text text-anchor="start" x="318.5" y="-2639.84" font-family="Helvetica,sans-Serif" font-size="14.00">snapshot_checksum</text>
+<text text-anchor="start" x="460.5" y="-2639.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="313.5,-2605.04 313.5,-2630.04 548.5,-2630.04 548.5,-2605.04 313.5,-2605.04"/>
+<text text-anchor="start" x="318.5" y="-2614.84" font-family="Helvetica,sans-Serif" font-size="14.00">snapshot_uuid</text>
+<text text-anchor="start" x="420.5" y="-2614.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="313.5,-2580.04 313.5,-2605.04 548.5,-2605.04 548.5,-2580.04 313.5,-2580.04"/>
+<text text-anchor="start" x="318.5" y="-2589.84" font-family="Helvetica,sans-Serif" font-size="14.00">created</text>
+<text text-anchor="start" x="370.5" y="-2589.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+</g>
+<!-- projects_snapshots&#45;&#45;projects_vc_commits -->
+<g id="edge24" class="edge">
+<title>projects_snapshots&#45;&#45;projects_vc_commits</title>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M216.74,-2669.04C244.78,-2669.04 275.63,-2669.04 304.93,-2669.04"/>
+<text text-anchor="start" x="263.93" y="-2657.84" font-family="Times,serif" font-size="14.00">{0,1}</text>
+<text text-anchor="start" x="216.74" y="-2657.84" font-family="Times,serif" font-size="14.00">0..N</text>
+</g>
+<!-- projects_vc_commits&#45;&#45;projects_vc_commits -->
+<g id="edge25" class="edge">
+<title>projects_vc_commits&#45;&#45;projects_vc_commits</title>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M404.58,-2762.17C409.36,-2773 418,-2780.04 430.5,-2780.04 443,-2780.04 451.64,-2773 456.42,-2762.17"/>
+<text text-anchor="start" x="415.42" y="-2765.97" font-family="Times,serif" font-size="14.00">{0,1}</text>
+<text text-anchor="start" x="373.58" y="-2765.97" font-family="Times,serif" font-size="14.00">0..N</text>
+</g>
+<!-- projects_vc_tags -->
+<g id="node26" class="node">
+<title>projects_vc_tags</title>
+<polygon fill="none" stroke="black" points="686.5,-2822.04 686.5,-2850.04 846.5,-2850.04 846.5,-2822.04 686.5,-2822.04"/>
+<text text-anchor="start" x="691.5" y="-2833.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">projects_vc_tags</text>
+<polygon fill="none" stroke="black" points="686.5,-2797.04 686.5,-2822.04 846.5,-2822.04 846.5,-2797.04 686.5,-2797.04"/>
+<text text-anchor="start" x="691.5" y="-2806.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">id</text>
+<text text-anchor="start" x="704.5" y="-2806.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="686.5,-2772.04 686.5,-2797.04 846.5,-2797.04 846.5,-2772.04 686.5,-2772.04"/>
+<text text-anchor="start" x="691.5" y="-2781.84" font-family="Helvetica,sans-Serif" font-size="14.00">repo_id</text>
+<text text-anchor="start" x="742.5" y="-2781.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="686.5,-2747.04 686.5,-2772.04 846.5,-2772.04 846.5,-2747.04 686.5,-2747.04"/>
+<text text-anchor="start" x="691.5" y="-2756.84" font-family="Helvetica,sans-Serif" font-size="14.00">commit_id</text>
+<text text-anchor="start" x="763.5" y="-2756.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="686.5,-2722.04 686.5,-2747.04 846.5,-2747.04 846.5,-2722.04 686.5,-2722.04"/>
+<text text-anchor="start" x="691.5" y="-2731.84" font-family="Helvetica,sans-Serif" font-size="14.00">name</text>
+<text text-anchor="start" x="731.5" y="-2731.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="686.5,-2697.04 686.5,-2722.04 846.5,-2722.04 846.5,-2697.04 686.5,-2697.04"/>
+<text text-anchor="start" x="691.5" y="-2706.84" font-family="Helvetica,sans-Serif" font-size="14.00">message</text>
+<text text-anchor="start" x="754.5" y="-2706.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="686.5,-2672.04 686.5,-2697.04 846.5,-2697.04 846.5,-2672.04 686.5,-2672.04"/>
+<text text-anchor="start" x="691.5" y="-2681.84" font-family="Helvetica,sans-Serif" font-size="14.00">hidden</text>
+<text text-anchor="start" x="740.5" y="-2681.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BOOLEAN]</text>
+<polygon fill="none" stroke="black" points="686.5,-2647.04 686.5,-2672.04 846.5,-2672.04 846.5,-2647.04 686.5,-2647.04"/>
+<text text-anchor="start" x="691.5" y="-2656.84" font-family="Helvetica,sans-Serif" font-size="14.00">created</text>
+<text text-anchor="start" x="743.5" y="-2656.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="686.5,-2622.04 686.5,-2647.04 846.5,-2647.04 846.5,-2622.04 686.5,-2622.04"/>
+<text text-anchor="start" x="691.5" y="-2631.84" font-family="Helvetica,sans-Serif" font-size="14.00">modified</text>
+<text text-anchor="start" x="752.5" y="-2631.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+</g>
+<!-- projects_vc_commits&#45;&#45;projects_vc_tags -->
+<g id="edge26" class="edge">
+<title>projects_vc_commits&#45;&#45;projects_vc_tags</title>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M556.34,-2694.09C596.92,-2702.23 641.05,-2711.08 678.27,-2718.55"/>
+<text text-anchor="start" x="637.27" y="-2707.35" font-family="Times,serif" font-size="14.00">{0,1}</text>
+<text text-anchor="start" x="556.34" y="-2682.89" font-family="Times,serif" font-size="14.00">0..N</text>
+</g>
+<!-- projects_vc_branches -->
+<g id="node27" class="node">
+<title>projects_vc_branches</title>
+<polygon fill="none" stroke="black" points="665.5,-2568.04 665.5,-2596.04 868.5,-2596.04 868.5,-2568.04 665.5,-2568.04"/>
+<text text-anchor="start" x="670.5" y="-2579.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">projects_vc_branches</text>
+<polygon fill="none" stroke="black" points="665.5,-2543.04 665.5,-2568.04 868.5,-2568.04 868.5,-2543.04 665.5,-2543.04"/>
+<text text-anchor="start" x="670.5" y="-2552.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">id</text>
+<text text-anchor="start" x="683.5" y="-2552.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="665.5,-2518.04 665.5,-2543.04 868.5,-2543.04 868.5,-2518.04 665.5,-2518.04"/>
+<text text-anchor="start" x="670.5" y="-2527.84" font-family="Helvetica,sans-Serif" font-size="14.00">repo_id</text>
+<text text-anchor="start" x="721.5" y="-2527.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="665.5,-2493.04 665.5,-2518.04 868.5,-2518.04 868.5,-2493.04 665.5,-2493.04"/>
+<text text-anchor="start" x="670.5" y="-2502.84" font-family="Helvetica,sans-Serif" font-size="14.00">head_id</text>
+<text text-anchor="start" x="725.5" y="-2502.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [BIGINT]</text>
+<polygon fill="none" stroke="black" points="665.5,-2468.04 665.5,-2493.04 868.5,-2493.04 868.5,-2468.04 665.5,-2468.04"/>
+<text text-anchor="start" x="670.5" y="-2477.84" font-family="Helvetica,sans-Serif" font-size="14.00">name</text>
+<text text-anchor="start" x="710.5" y="-2477.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="665.5,-2443.04 665.5,-2468.04 868.5,-2468.04 868.5,-2443.04 665.5,-2443.04"/>
+<text text-anchor="start" x="670.5" y="-2452.84" font-family="Helvetica,sans-Serif" font-size="14.00">created</text>
+<text text-anchor="start" x="722.5" y="-2452.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+<polygon fill="none" stroke="black" points="665.5,-2418.04 665.5,-2443.04 868.5,-2443.04 868.5,-2418.04 665.5,-2418.04"/>
+<text text-anchor="start" x="670.5" y="-2427.84" font-family="Helvetica,sans-Serif" font-size="14.00">modified</text>
+<text text-anchor="start" x="731.5" y="-2427.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [DATETIME]</text>
+</g>
+<!-- projects_vc_commits&#45;&#45;projects_vc_branches -->
+<g id="edge27" class="edge">
+<title>projects_vc_commits&#45;&#45;projects_vc_branches</title>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M556.34,-2608.49C589.42,-2592.45 624.85,-2575.26 656.98,-2559.68"/>
+<text text-anchor="start" x="615.98" y="-2548.48" font-family="Times,serif" font-size="14.00">{0,1}</text>
+<text text-anchor="start" x="556.34" y="-2597.29" font-family="Times,serif" font-size="14.00">0..N</text>
 </g>
 <!-- dags -->
 <g id="node23" class="node">
 <title>dags</title>
-<polygon fill="none" stroke="black" points="31,-2629 31,-2657 202,-2657 202,-2629 31,-2629"/>
-<text text-anchor="start" x="95" y="-2640.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">dags</text>
-<polygon fill="none" stroke="black" points="31,-2604 31,-2629 202,-2629 202,-2604 31,-2604"/>
-<text text-anchor="start" x="36" y="-2613.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">id</text>
-<text text-anchor="start" x="49" y="-2613.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [INTEGER]</text>
-<polygon fill="none" stroke="black" points="31,-2579 31,-2604 202,-2604 202,-2579 31,-2579"/>
-<text text-anchor="start" x="36" y="-2588.8" font-family="Helvetica,sans-Serif" font-size="14.00">key</text>
-<text text-anchor="start" x="61" y="-2588.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="31,-2554 31,-2579 202,-2579 202,-2554 31,-2554"/>
-<text text-anchor="start" x="36" y="-2563.8" font-family="Helvetica,sans-Serif" font-size="14.00">version</text>
-<text text-anchor="start" x="88" y="-2563.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="31,-2529 31,-2554 202,-2554 202,-2529 31,-2529"/>
-<text text-anchor="start" x="36" y="-2538.8" font-family="Helvetica,sans-Serif" font-size="14.00">name</text>
-<text text-anchor="start" x="76" y="-2538.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="31,-2504 31,-2529 202,-2529 202,-2504 31,-2504"/>
-<text text-anchor="start" x="36" y="-2513.8" font-family="Helvetica,sans-Serif" font-size="14.00">description</text>
-<text text-anchor="start" x="114" y="-2513.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="31,-2479 31,-2504 202,-2504 202,-2479 31,-2479"/>
-<text text-anchor="start" x="36" y="-2488.8" font-family="Helvetica,sans-Serif" font-size="14.00">contact</text>
-<text text-anchor="start" x="88" y="-2488.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
-<polygon fill="none" stroke="black" points="31,-2454 31,-2479 202,-2479 202,-2454 31,-2454"/>
-<text text-anchor="start" x="36" y="-2463.8" font-family="Helvetica,sans-Serif" font-size="14.00">workbench</text>
-<text text-anchor="start" x="113" y="-2463.8" font-family="Helvetica,sans-Serif" font-size="14.00"> [Null]</text>
+<polygon fill="none" stroke="black" points="31,-3435.04 31,-3463.04 202,-3463.04 202,-3435.04 31,-3435.04"/>
+<text text-anchor="start" x="95" y="-3446.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00">dags</text>
+<polygon fill="none" stroke="black" points="31,-3410.04 31,-3435.04 202,-3435.04 202,-3410.04 31,-3410.04"/>
+<text text-anchor="start" x="36" y="-3419.84" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00">id</text>
+<text text-anchor="start" x="49" y="-3419.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [INTEGER]</text>
+<polygon fill="none" stroke="black" points="31,-3385.04 31,-3410.04 202,-3410.04 202,-3385.04 31,-3385.04"/>
+<text text-anchor="start" x="36" y="-3394.84" font-family="Helvetica,sans-Serif" font-size="14.00">key</text>
+<text text-anchor="start" x="61" y="-3394.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="31,-3360.04 31,-3385.04 202,-3385.04 202,-3360.04 31,-3360.04"/>
+<text text-anchor="start" x="36" y="-3369.84" font-family="Helvetica,sans-Serif" font-size="14.00">version</text>
+<text text-anchor="start" x="88" y="-3369.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="31,-3335.04 31,-3360.04 202,-3360.04 202,-3335.04 31,-3335.04"/>
+<text text-anchor="start" x="36" y="-3344.84" font-family="Helvetica,sans-Serif" font-size="14.00">name</text>
+<text text-anchor="start" x="76" y="-3344.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="31,-3310.04 31,-3335.04 202,-3335.04 202,-3310.04 31,-3310.04"/>
+<text text-anchor="start" x="36" y="-3319.84" font-family="Helvetica,sans-Serif" font-size="14.00">description</text>
+<text text-anchor="start" x="114" y="-3319.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="31,-3285.04 31,-3310.04 202,-3310.04 202,-3285.04 31,-3285.04"/>
+<text text-anchor="start" x="36" y="-3294.84" font-family="Helvetica,sans-Serif" font-size="14.00">contact</text>
+<text text-anchor="start" x="88" y="-3294.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [VARCHAR]</text>
+<polygon fill="none" stroke="black" points="31,-3260.04 31,-3285.04 202,-3285.04 202,-3260.04 31,-3260.04"/>
+<text text-anchor="start" x="36" y="-3269.84" font-family="Helvetica,sans-Serif" font-size="14.00">workbench</text>
+<text text-anchor="start" x="113" y="-3269.84" font-family="Helvetica,sans-Serif" font-size="14.00"> [Null]</text>
 </g>
 </g>
 </svg>
