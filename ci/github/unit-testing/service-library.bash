@@ -20,7 +20,8 @@ install_aiohttp() {
 test() {
     pytest --cov=servicelib --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-          -v -m "not travis" --ignore=tests/aiohttp packages/service-library/tests
+          -v -m "not travis" --ignore=packages/service-library/tests/aiohttp \
+          packages/service-library/tests
 }
 
 test_aiohttp() {
