@@ -359,7 +359,7 @@
 <text text-anchor="start" x="216.629" y="-598.4856" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
 <!-- users&#45;&#45;user_to_groups -->
-<g id="edge15" class="edge">
+<g id="edge13" class="edge">
 <title>users&#45;&#45;user_to_groups</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M444.5844,-1480.1145C475.3677,-1674.4858 536.6632,-2009.2848 607,-2110 618.5909,-2126.597 634.3162,-2140.9437 650.9621,-2153.0023"/>
 <text text-anchor="start" x="609.9621" y="-2156.8023" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
@@ -423,7 +423,7 @@
 <text text-anchor="start" x="685" y="-1474.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BOOLEAN]</text>
 </g>
 <!-- users&#45;&#45;projects -->
-<g id="edge16" class="edge">
+<g id="edge14" class="edge">
 <title>users&#45;&#45;projects</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M534.3489,-1460.1655C562.9158,-1491.9065 593.7916,-1526.2129 622.8091,-1558.4546"/>
 <text text-anchor="start" x="581.8091" y="-1547.2546" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
@@ -466,7 +466,7 @@
 <text text-anchor="start" x="1032.5" y="-752.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
 </g>
 <!-- users&#45;&#45;comp_runs -->
-<g id="edge21" class="edge">
+<g id="edge19" class="edge">
 <title>users&#45;&#45;comp_runs</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M465.4389,-1193.8398C501.7325,-1080.7281 556.2282,-936.2331 607,-901 664.0663,-861.3988 854.3816,-866.461 972.9644,-874.0292"/>
 <text text-anchor="start" x="931.9644" y="-877.8292" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
@@ -488,7 +488,7 @@
 <text text-anchor="start" x="1069.5" y="-1390.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
 </g>
 <!-- users&#45;&#45;user_to_projects -->
-<g id="edge22" class="edge">
+<g id="edge20" class="edge">
 <title>users&#45;&#45;user_to_projects</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M534.4811,-1390.9696C557.9308,-1400.2547 582.8882,-1408.6311 607,-1414 736.7908,-1442.9001 891.9052,-1442.4717 985.9944,-1438.4944"/>
 <text text-anchor="start" x="944.9944" y="-1427.2944" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
@@ -513,7 +513,7 @@
 <text text-anchor="start" x="732" y="-1282.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [Null]</text>
 </g>
 <!-- users&#45;&#45;tokens -->
-<g id="edge17" class="edge">
+<g id="edge15" class="edge">
 <title>users&#45;&#45;tokens</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M534.3489,-1337C568.2327,-1337 605.3648,-1337 638.7913,-1337"/>
 <text text-anchor="start" x="597.7913" y="-1325.8" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
@@ -541,7 +541,7 @@
 <text text-anchor="start" x="726" y="-1102.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
 </g>
 <!-- users&#45;&#45;api_keys -->
-<g id="edge18" class="edge">
+<g id="edge16" class="edge">
 <title>users&#45;&#45;api_keys</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M534.3489,-1279.0602C568.0525,-1261.4436 604.9699,-1242.1472 638.2576,-1224.748"/>
 <text text-anchor="start" x="597.2576" y="-1213.548" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
@@ -569,7 +569,7 @@
 <text text-anchor="start" x="738" y="-923.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
 </g>
 <!-- users&#45;&#45;confirmations -->
-<g id="edge19" class="edge">
+<g id="edge17" class="edge">
 <title>users&#45;&#45;confirmations</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M511.6603,-1193.7322C539.4571,-1154.4574 572.1013,-1113.51 607,-1080 619.2122,-1068.2738 633.1706,-1057.1553 647.3859,-1047.0038"/>
 <text text-anchor="start" x="606.3859" y="-1035.8038" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
@@ -597,7 +597,7 @@
 <text text-anchor="start" x="698" y="-1953.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
 </g>
 <!-- users&#45;&#45;tags -->
-<g id="edge20" class="edge">
+<g id="edge18" class="edge">
 <title>users&#45;&#45;tags</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M440.016,-1480.1432C460.8862,-1608.8129 507.0245,-1797.5348 607,-1931 618.3728,-1946.1825 633.1082,-1959.5826 648.6671,-1971.0934"/>
 <text text-anchor="start" x="607.6671" y="-1959.8934" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
@@ -692,14 +692,14 @@
 <text text-anchor="start" x="863.456" y="-1770.2711" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
 <!-- projects&#45;&#45;comp_runs -->
-<g id="edge13" class="edge">
+<g id="edge11" class="edge">
 <title>projects&#45;&#45;comp_runs</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M858.2575,-1461.1596C865.4633,-1445.2847 872.4447,-1429.458 879,-1414 933.9801,-1284.3508 987.7567,-1133.0538 1024.4325,-1025.0235"/>
 <text text-anchor="start" x="983.4325" y="-1028.8235" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
 <text text-anchor="start" x="827.2575" y="-1449.9596" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
 <!-- projects&#45;&#45;user_to_projects -->
-<g id="edge14" class="edge">
+<g id="edge12" class="edge">
 <title>projects&#45;&#45;user_to_projects</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M863.1992,-1570.9492C891.2235,-1545.465 921.7487,-1519.7424 952,-1498 962.5477,-1490.4191 974.079,-1483.0954 985.6845,-1476.2682"/>
 <text text-anchor="start" x="944.6845" y="-1465.0682" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
@@ -827,7 +827,7 @@
 <text text-anchor="start" x="1094.025" y="-1793.5162" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
 <!-- tags&#45;&#45;study_tags -->
-<g id="edge25" class="edge">
+<g id="edge23" class="edge">
 <title>tags&#45;&#45;study_tags</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M837.1349,-1996.6424C887.4716,-1983.6177 948.6242,-1967.7944 995.8399,-1955.5772"/>
 <text text-anchor="start" x="954.8399" y="-1944.3772" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
@@ -900,7 +900,7 @@
 <text text-anchor="start" x="356.5" y="-2165.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
 </g>
 <!-- comp_pipeline&#45;&#45;comp_tasks -->
-<g id="edge23" class="edge">
+<g id="edge21" class="edge">
 <title>comp_pipeline&#45;&#45;comp_tasks</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M222.3281,-2358C252.0994,-2358 284.7197,-2358 314.8646,-2358"/>
 <text text-anchor="start" x="273.8646" y="-2346.8" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
@@ -925,7 +925,7 @@
 <text text-anchor="start" x="406.5" y="-317.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
 </g>
 <!-- products&#45;&#45;services_access_rights -->
-<g id="edge24" class="edge">
+<g id="edge22" class="edge">
 <title>products&#45;&#45;services_access_rights</title>
 <path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M518.0637,-373.1839C553.0255,-373.6216 593.0152,-374.1223 629.4865,-374.5789"/>
 <text text-anchor="start" x="588.4865" y="-363.3789" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
