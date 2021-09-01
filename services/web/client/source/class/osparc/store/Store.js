@@ -102,10 +102,6 @@ qx.Class.define("osparc.store.Store", {
       check: "Object",
       init: {}
     },
-    clusterMembers: {
-      check: "Object",
-      init: {}
-    },
     services: {
       check: "Array",
       init: []

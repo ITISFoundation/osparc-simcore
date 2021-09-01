@@ -93,9 +93,8 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     tabView.add(clustersPage);
     clustersPage.exclude();
     osparc.data.Resources.get("clusters")
-      .then(resp => {
-        const orgs = resp["clusters"];
-        if (orgs.length || osparc.data.Permissions.getInstance().canDo("user.clusters.create")) {
+      .then(clusters => {
+        if (clusters.length || osparc.data.Permissions.getInstance().canDo("user.clusters.create")) {
           clustersPage.show();
         }
       });
