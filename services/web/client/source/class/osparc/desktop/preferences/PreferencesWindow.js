@@ -91,11 +91,11 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     const clustersBtn = clustersPage.getChildControl("button");
     osparc.utils.Utils.setIdToWidget(clustersBtn, "preferencesClustersTabBtn");
     tabView.add(clustersPage);
-    clustersPage.exclude();
+    clustersBtn.exclude();
     osparc.data.Resources.get("clusters")
       .then(clusters => {
         if (clusters.length || osparc.data.Permissions.getInstance().canDo("user.clusters.create")) {
-          clustersPage.show();
+          clustersBtn.show();
         }
       });
 
