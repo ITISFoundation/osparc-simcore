@@ -95,17 +95,13 @@ async def get_cluster_handler(request: web.Request) -> web.Response:
 @login_required
 @permission_required("clusters.write")
 async def update_cluster_handler(request: web.Request) -> web.Response:
-    path, _, body = await extract_and_validate(request)
+    path, _, _ = await extract_and_validate(request)
     user_id: UserID = request[RQT_USERID_KEY]
     primary_group, std_groups, all_group = await list_user_groups(request.app, user_id)
 
-    updated_cluster = ClusterPatch(
-        name=body.name if hasattr(body, "name") else None,
-        description=body.description if hasattr(body, "description") else None,
-        type=body.type if hasattr(body, "type") else None,
-        owner=body.owner if hasattr(body, "owner") else None,
-        access_rights=body.access_rights if hasattr(body, "access_rights") else None,
-    )
+    body = await request.json()
+
+    updated_cluster = ClusterPatch.parse_obj(body)
 
     clusters_repo = ClustersRepository(request)
     try:

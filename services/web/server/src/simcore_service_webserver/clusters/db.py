@@ -7,14 +7,14 @@ from pydantic.types import PositiveInt
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.engine.result import RowProxy
-from sqlalchemy.sql.elements import literal_column
 
 from ..db_base_repository import BaseRepository
 from .exceptions import ClusterAccessForbidden, ClusterNotFoundError
 from .models import (
     CLUSTER_ADMIN_RIGHTS,
+    CLUSTER_MANAGER_RIGHTS,
     CLUSTER_NO_RIGHTS,
+    CLUSTER_USER_RIGHTS,
     Cluster,
     ClusterAccessRights,
     ClusterCreate,
@@ -25,7 +25,7 @@ from .models import (
 # All group comes first, then standard groups, then primary group
 
 
-def compute_cluster_access_rights(
+def compute_this_user_cluster_access_rights(
     cluster: Cluster,
     primary_group: GroupID,
     standard_groups: List[GroupID],
@@ -58,9 +58,9 @@ class ClustersRepository(BaseRepository):
                 [
                     clusters,
                     cluster_to_groups.c.gid,
-                    cluster_to_groups.c.read_access,
-                    cluster_to_groups.c.write_access,
-                    cluster_to_groups.c.delete_access,
+                    cluster_to_groups.c.read,
+                    cluster_to_groups.c.write,
+                    cluster_to_groups.c.delete,
                 ]
             )
             .select_from(
@@ -76,9 +76,9 @@ class ClustersRepository(BaseRepository):
             cluster_access_rights = {
                 row[cluster_to_groups.c.gid]: ClusterAccessRights(
                     **{
-                        "read": row[cluster_to_groups.c.read_access],
-                        "write": row[cluster_to_groups.c.write_access],
-                        "delete": row[cluster_to_groups.c.delete_access],
+                        "read": row[cluster_to_groups.c.read],
+                        "write": row[cluster_to_groups.c.write],
+                        "delete": row[cluster_to_groups.c.delete],
                     }
                 )
             }
@@ -115,9 +115,9 @@ class ClustersRepository(BaseRepository):
                         [all_group, *standard_groups, primary_group]
                     )
                     & (
-                        cluster_to_groups.c.read_access
-                        | cluster_to_groups.c.write_access
-                        | cluster_to_groups.c.delete_access
+                        cluster_to_groups.c.read
+                        | cluster_to_groups.c.write
+                        | cluster_to_groups.c.delete
                     )
                 )
             )
@@ -172,9 +172,9 @@ class ClustersRepository(BaseRepository):
                     [
                         clusters,
                         cluster_to_groups.c.gid,
-                        cluster_to_groups.c.read_access,
-                        cluster_to_groups.c.write_access,
-                        cluster_to_groups.c.delete_access,
+                        cluster_to_groups.c.read,
+                        cluster_to_groups.c.write,
+                        cluster_to_groups.c.delete,
                     ]
                 )
                 .select_from(
@@ -198,9 +198,9 @@ class ClustersRepository(BaseRepository):
                 owner=row[clusters.c.owner],
                 access_rights={
                     row[clusters.c.owner]: {
-                        "read": row[cluster_to_groups.c.read_access],
-                        "write": row[cluster_to_groups.c.write_access],
-                        "delete": row[cluster_to_groups.c.delete_access],
+                        "read": row[cluster_to_groups.c.read],
+                        "write": row[cluster_to_groups.c.write],
+                        "delete": row[cluster_to_groups.c.delete],
                     }
                 },
             )
@@ -220,7 +220,7 @@ class ClustersRepository(BaseRepository):
             raise ClusterNotFoundError(cluster_id)
 
         the_cluster = clusters_list[0]
-        if not compute_cluster_access_rights(
+        if not compute_this_user_cluster_access_rights(
             the_cluster, primary_group, standard_groups, all_group
         ).read:
             raise ClusterAccessForbidden(cluster_id)
@@ -235,6 +235,7 @@ class ClustersRepository(BaseRepository):
         cluster_id: PositiveInt,
         updated_cluster: ClusterPatch,
     ) -> Cluster:
+        # pylint: disable=too-many-branches
         async with self.engine.acquire() as conn:
             clusters_list: List[Cluster] = await self._clusters_from_cluster_ids(
                 conn, {cluster_id}
@@ -243,7 +244,7 @@ class ClustersRepository(BaseRepository):
                 raise ClusterNotFoundError(cluster_id)
             the_cluster = clusters_list[0]
 
-            this_user_cluster_access_rights = compute_cluster_access_rights(
+            this_user_cluster_access_rights = compute_this_user_cluster_access_rights(
                 the_cluster, primary_group, standard_groups, all_group
             )
 
@@ -256,6 +257,7 @@ class ClustersRepository(BaseRepository):
                 if this_user_cluster_access_rights != CLUSTER_ADMIN_RIGHTS:
                     raise ClusterAccessForbidden(cluster_id)
 
+                # ensure the new owner has admin rights, too
                 if not updated_cluster.access_rights:
                     updated_cluster.access_rights = {
                         updated_cluster.owner: CLUSTER_ADMIN_RIGHTS
@@ -264,6 +266,31 @@ class ClustersRepository(BaseRepository):
                     updated_cluster.access_rights[
                         updated_cluster.owner
                     ] = CLUSTER_ADMIN_RIGHTS
+
+            if (
+                updated_cluster.access_rights
+                and updated_cluster.access_rights != the_cluster.access_rights
+            ):
+                # ensure the user is not trying to mess around owner admin rights
+                if (
+                    updated_cluster.access_rights.get(
+                        the_cluster.owner, CLUSTER_ADMIN_RIGHTS
+                    )
+                    != CLUSTER_ADMIN_RIGHTS
+                ):
+                    raise ClusterAccessForbidden(cluster_id)
+
+            # if the user is a manager it may add/remove users, but nothing else
+            if (
+                this_user_cluster_access_rights == CLUSTER_MANAGER_RIGHTS
+                and updated_cluster.access_rights
+            ):
+                for grp, rights in updated_cluster.access_rights.items():
+                    if grp != the_cluster.owner and rights not in [
+                        CLUSTER_USER_RIGHTS,
+                        CLUSTER_NO_RIGHTS,
+                    ]:
+                        raise ClusterAccessForbidden(cluster_id)
 
             # ok we can update now
             await conn.execute(
@@ -317,7 +344,7 @@ class ClustersRepository(BaseRepository):
                 raise ClusterNotFoundError(cluster_id)
 
             the_cluster = clusters_list[0]
-            this_user_cluster_access_rights = compute_cluster_access_rights(
+            this_user_cluster_access_rights = compute_this_user_cluster_access_rights(
                 the_cluster, primary_group, standard_groups, all_group
             )
             if not this_user_cluster_access_rights.delete:

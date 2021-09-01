@@ -23,12 +23,13 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
+from pydantic.types import NonNegativeInt
 
 from ...core.errors import InvalidPipelineError, PipelineNotFoundError, SchedulerError
 from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_runs import CompRunsAtDB
 from ...models.domains.comp_tasks import CompTaskAtDB, Image
-from ...models.schemas.constants import UserID
+from ...models.schemas.constants import ClusterID, UserID
 from ...utils.computations import get_pipeline_state_from_task_states
 from ...utils.scheduler import COMPLETED_STATES, Iteration, get_repository
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
@@ -40,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ScheduledPipelineParams:
+    cluster_id: ClusterID
     mark_for_cancellation: bool = False
 
 
@@ -51,7 +53,12 @@ class BaseCompScheduler(ABC):
     db_engine: Engine
     wake_up_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
 
-    async def run_new_pipeline(self, user_id: UserID, project_id: ProjectID) -> None:
+    async def run_new_pipeline(
+        self, user_id: UserID, project_id: ProjectID, cluster_id: NonNegativeInt
+    ) -> None:
+        """Sets a new pipeline to be scheduled on the computational resources.
+        Passing cluster_id=0 will use the default cluster. Passing an existing ID will instruct
+        the scheduler to run the tasks on the defined cluster"""
         # ensure the pipeline exists and is populated with something
         dag = await self._get_pipeline_dag(project_id)
         if not dag:
@@ -64,11 +71,11 @@ class BaseCompScheduler(ABC):
             self.db_engine, CompRunsRepository
         )  # type: ignore
         new_run: CompRunsAtDB = await runs_repo.create(
-            user_id=user_id, project_id=project_id
+            user_id=user_id, project_id=project_id, cluster_id=cluster_id
         )
         self.scheduled_pipelines[
             (user_id, project_id, new_run.iteration)
-        ] = ScheduledPipelineParams()
+        ] = ScheduledPipelineParams(cluster_id=cluster_id)
         # ensure the scheduler starts right away
         self._wake_up_scheduler_now()
 
@@ -103,6 +110,7 @@ class BaseCompScheduler(ABC):
                 self._schedule_pipeline(
                     user_id,
                     project_id,
+                    pipeline_params.cluster_id,
                     iteration,
                     pipeline_params.mark_for_cancellation,
                 )
@@ -181,6 +189,7 @@ class BaseCompScheduler(ABC):
         self,
         user_id: UserID,
         project_id: ProjectID,
+        cluster_id: ClusterID,
         scheduled_tasks: Dict[NodeID, Image],
         callback: Callable[[], None],
     ) -> None:
@@ -194,6 +203,7 @@ class BaseCompScheduler(ABC):
         self,
         user_id: UserID,
         project_id: ProjectID,
+        cluster_id: ClusterID,
         iteration: PositiveInt,
         marked_for_stopping: bool,
     ) -> None:
@@ -306,12 +316,15 @@ class BaseCompScheduler(ABC):
             return
 
         # let's schedule the tasks, mark them as PENDING so the sidecar will take them
-        await self._schedule_tasks(user_id, project_id, pipeline_tasks, next_tasks)
+        await self._schedule_tasks(
+            user_id, project_id, cluster_id, pipeline_tasks, next_tasks
+        )
 
     async def _schedule_tasks(
         self,
         user_id: UserID,
         project_id: ProjectID,
+        cluster_id: ClusterID,
         comp_tasks: Dict[str, CompTaskAtDB],
         tasks: List[NodeID],
     ):
@@ -330,7 +343,7 @@ class BaseCompScheduler(ABC):
 
         # now start the tasks
         await self._start_tasks(
-            user_id, project_id, tasks_to_reqs, self._wake_up_scheduler_now
+            user_id, project_id, cluster_id, tasks_to_reqs, self._wake_up_scheduler_now
         )
 
     def _wake_up_scheduler_now(self) -> None:

@@ -31,14 +31,7 @@ ClusterCreate:
       enum:
         - ON_PREMISE
         - AWS
-    owner:
-      description: the cluster owner group
-      type: integer
-      minimum: 1
-    accessRights:
-      type: array
-      items:
-        $ref: "#/ClusterAccessRights"
+
   required:
     - name
     - type
@@ -63,9 +56,13 @@ ClusterPatch:
       type: integer
       minimum: 1
     accessRights:
-      type: array
-      items:
-        $ref: "#/ClusterAccessRights"
+      type: object
+      description: >-
+        object containing the GroupID as key and read/write/execution permissions
+        as value
+      x-patternProperties:
+        ^\S+$:
+          $ref: "#/ClusterAccessRights"
 
 Cluster:
   type: object
@@ -91,9 +88,13 @@ Cluster:
       type: integer
       minimum: 1
     accessRights:
-      type: array
-      items:
-        $ref: "#/ClusterAccessRights"
+      type: object
+      description: >-
+        object containing the GroupID as key and read/write/execution permissions
+        as value
+      x-patternProperties:
+        ^\S+$:
+          $ref: "#/ClusterAccessRights"
   required:
     - id
     - name
