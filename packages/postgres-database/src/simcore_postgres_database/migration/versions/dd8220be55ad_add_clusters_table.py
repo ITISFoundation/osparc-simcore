@@ -54,6 +54,12 @@ def upgrade():
         ),
         sa.Column("owner", sa.BigInteger(), nullable=False),
         sa.Column(
+            "thumbnail",
+            sa.String,
+            nullable=True,
+            doc="Link to image as to cluster thumbnail",
+        ),
+        sa.Column(
             "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
         ),
         sa.Column(

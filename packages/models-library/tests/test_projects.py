@@ -4,16 +4,17 @@
 
 from copy import deepcopy
 from typing import Any, Dict
-from uuid import uuid4
 
 import pytest
+from faker import Faker
 from models_library.projects import Project
 
 
 @pytest.fixture()
-def minimal_project() -> Dict[str, Any]:
+def minimal_project(faker: Faker) -> Dict[str, Any]:
+    # API request body payload
     return {
-        "uuid": str(uuid4()),
+        "uuid": faker.uuid4(),
         "name": "The project name",
         "description": "The project's description",
         "prjOwner": "theowner@ownership.com",

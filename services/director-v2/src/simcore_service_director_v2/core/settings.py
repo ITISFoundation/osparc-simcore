@@ -249,6 +249,10 @@ class DaskSchedulerSettings(BaseCustomSettings):
     )
     DASK_SCHEDULER_PORT: PortInt = 8786
 
+    DASK_CLUSTER_ID_PREFIX: Optional[str] = Field(
+        "CLUSTER_", description="This defines the cluster name prefix"
+    )
+
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 

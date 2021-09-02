@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-value-for-parameter
 # pylint:disable=too-many-arguments
+# pylint:disable=too-many-statements
 
 
 import random
@@ -30,7 +31,6 @@ from simcore_service_webserver.clusters.models import (
     ClusterPatch,
     ClusterType,
 )
-from simcore_service_webserver.groups_api import list_user_groups
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine.result import ResultProxy
 from sqlalchemy.sql.elements import literal_column
@@ -154,9 +154,7 @@ async def test_list_clusters(
         GroupID(second_user["primary_gid"]),
         {
             GroupID(all_group["gid"]): CLUSTER_USER_RIGHTS,
-            GroupID(logged_user["primary_gid"]): ClusterAccessRights(
-                read=False, write=False, delete=False
-            ),
+            GroupID(logged_user["primary_gid"]): CLUSTER_NO_RIGHTS,
         },
     )
 
@@ -278,9 +276,7 @@ async def test_get_cluster(
         GroupID(second_user["primary_gid"]),
         {
             GroupID(all_group["gid"]): CLUSTER_USER_RIGHTS,
-            GroupID(logged_user["primary_gid"]): ClusterAccessRights(
-                read=False, write=False, delete=False
-            ),
+            GroupID(logged_user["primary_gid"]): CLUSTER_NO_RIGHTS,
         },
     )
 
@@ -335,6 +331,7 @@ async def test_update_cluster(
         ClusterPatch(name="My patched cluster name"),
         ClusterPatch(description="My patched cluster description"),
         ClusterPatch(type=ClusterType.ON_PREMISE),
+        ClusterPatch(thumbnail="https://placeimg.com/640/480/nature"),
     ]:
         rsp = await client.patch(
             f"{url}", json=cluster_patch.dict(by_alias=True, exclude_unset=True)
@@ -404,9 +401,7 @@ async def test_update_cluster(
         GroupID(second_user["primary_gid"]),
         {
             GroupID(all_group["gid"]): CLUSTER_ADMIN_RIGHTS,
-            GroupID(logged_user["primary_gid"]): ClusterAccessRights(
-                read=False, write=False, delete=False
-            ),
+            GroupID(logged_user["primary_gid"]): CLUSTER_NO_RIGHTS,
         },
     )
     # we can manage so we shall be ok here changing the name
@@ -432,27 +427,62 @@ async def test_update_cluster(
     )
     data, error = await assert_status(rsp, expected.forbidden)
 
+    # we can NOT change ourself to become an admin
+    url = client.app.router["update_cluster_handler"].url_for(
+        cluster_id=f"{a_cluster_that_may_be_managed.id}"
+    )
+    rsp = await client.patch(
+        f"{url}",
+        json=ClusterPatch(
+            accessRights={logged_user["primary_gid"]: CLUSTER_ADMIN_RIGHTS}
+        ).dict(by_alias=True, exclude_unset=True),
+    )
+    data, error = await assert_status(rsp, expected.forbidden)
+
     # but I can add a user
     url = client.app.router["update_cluster_handler"].url_for(
         cluster_id=f"{a_cluster_that_may_be_managed.id}"
     )
     rsp = await client.patch(
         f"{url}",
-        json=ClusterPatch(accessRights={all_group["gid"]: CLUSTER_USER_RIGHTS}).dict(
-            by_alias=True, exclude_unset=True
-        ),
+        json=ClusterPatch(
+            accessRights={
+                **a_cluster_that_may_be_managed.access_rights,
+                **{
+                    logged_user["primary_gid"]: CLUSTER_MANAGER_RIGHTS,
+                    all_group["gid"]: CLUSTER_USER_RIGHTS,
+                },
+            },
+        ).dict(by_alias=True, exclude_unset=True),
     )
     data, error = await assert_status(rsp, expected.ok)
 
-    # and I shall be able to remove a user
+    # and I shall be able to deny a user
     url = client.app.router["update_cluster_handler"].url_for(
         cluster_id=f"{a_cluster_that_may_be_managed.id}"
     )
     rsp = await client.patch(
         f"{url}",
-        json=ClusterPatch(accessRights={all_group["gid"]: CLUSTER_NO_RIGHTS}).dict(
-            by_alias=True, exclude_unset=True
-        ),
+        json=ClusterPatch(
+            accessRights={
+                logged_user["primary_gid"]: CLUSTER_MANAGER_RIGHTS,
+                all_group["gid"]: CLUSTER_NO_RIGHTS,
+            }
+        ).dict(by_alias=True, exclude_unset=True),
+    )
+    data, error = await assert_status(rsp, expected.ok)
+
+    # and I shall be able to remove a user (provided that is not the owner)
+    url = client.app.router["update_cluster_handler"].url_for(
+        cluster_id=f"{a_cluster_that_may_be_managed.id}"
+    )
+    rsp = await client.patch(
+        f"{url}",
+        json=ClusterPatch(
+            accessRights={
+                logged_user["primary_gid"]: CLUSTER_MANAGER_RIGHTS,
+            }
+        ).dict(by_alias=True, exclude_unset=True),
     )
     data, error = await assert_status(rsp, expected.ok)
 

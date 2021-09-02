@@ -25,6 +25,8 @@ dask_retry_policy = dict(
     reraise=True,
 )
 
+CLUSTER_RESOURCE_MOCK_USAGE: float = 1e-9
+
 
 def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
     @retry(**dask_retry_policy)
@@ -113,9 +115,12 @@ class DaskClient:
             dask_resources = _from_node_reqs_to_dask_resources(
                 node_image.node_requirements
             )
-            if cluster_id > 0:
-                # TODO: we will probably have to give the default cluster a resource as well
-                dask_resources.update({f"CLUSTER_{cluster_id}": 1.0})
+            # add the cluster ID here
+            dask_resources.update(
+                {
+                    f"{self.settings.DASK_CLUSTER_ID_PREFIX}{cluster_id}": CLUSTER_RESOURCE_MOCK_USAGE
+                }
+            )
             task_future = self.client.submit(
                 remote_fct,
                 job_id,
