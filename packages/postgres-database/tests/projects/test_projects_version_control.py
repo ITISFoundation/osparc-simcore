@@ -3,7 +3,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import List, Optional, Union
+import functools
+import operator
+from typing import Optional
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -18,29 +20,34 @@ class Orm:
     def __init__(
         self,
         table: sa.Table,
-        unique_id: int,
         connection: SAConnection,
+        **indentifiers,  # typically id=33
     ):
         self._table = table
-        self._id = unique_id  # assumes "id" column
         self._conn = connection
+        self._where_arg = functools.reduce(
+            operator.and_,
+            (
+                operator.eq(self._table.columns[name], value)
+                for name, value in indentifiers.items()
+            ),
+        )
 
     async def fetch(
         self,
-        columns: Union[str, List[str]] = None,
+        selection: Optional[str] = None,
     ) -> Optional[RowProxy]:
-        if columns is None:
+        """
+        selection: name of one or more columns to fetch. None defaults to all of them
+        """
+        if selection is None:
             query = self._table.select()
         else:
-            if isinstance(columns, str):
-                columns = [
-                    columns,
-                ]
-            query = sa.select([self._table.c[name] for name in columns])
+            query = sa.select([self._table.c[name] for name in selection.split()])
 
-        query = query.where(self._table.c["id"] == self._id)
+        query = query.where(self._where_arg)
 
-        print("query for {table.name}.{columns}", query)
+        print(f"query for {self._table.name}.{selection}:", query)
 
         result: ResultProxy = await self._conn.execute(query)
         row: Optional[RowProxy] = await result.first()
@@ -60,7 +67,7 @@ async def test_init_repo(project: RowProxy, conn: SAConnection):
     repo_id: Optional[int] = await conn.scalar(query)
     assert repo_id is not None
 
-    repo_orm = Orm(projects_vc_repos, repo_id, conn)
+    repo_orm = Orm(projects_vc_repos, conn, id=repo_id)
 
     repo = await repo_orm.fetch()
     assert repo
@@ -77,7 +84,7 @@ async def test_init_repo(project: RowProxy, conn: SAConnection):
     branch_id: Optional[int] = await conn.scalar(query)
     assert branch_id is not None
 
-    branch_orm = Orm(projects_vc_branches, branch_id, conn)
+    branch_orm = Orm(projects_vc_branches, conn, id=branch_id)
 
     main_branch: Optional[RowProxy] = await branch_orm.fetch()
     assert main_branch
@@ -88,6 +95,6 @@ async def test_init_repo(project: RowProxy, conn: SAConnection):
     # assign
     await conn.execute(projects_vc_repos.update().values(branch_id=branch_id))
 
-    repo = await repo_orm.fetch(["created", "modified"])
+    repo = await repo_orm.fetch("created modified")
     assert repo
     assert repo.created < repo.modified
