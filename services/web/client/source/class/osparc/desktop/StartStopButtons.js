@@ -149,6 +149,13 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       }
     },
 
+    getClusterId: function() {
+      if (this.__clustersSelectBox.isVisible()) {
+        return this.__clustersSelectBox.getSelection()[0].id;
+      }
+      return null;
+    },
+
     __createStartButton: function() {
       const startButton = this.__startButton = new osparc.ui.toolbar.FetchButton(this.tr("Run"), "@FontAwesome5Solid/play/14");
       osparc.utils.Utils.setIdToWidget(startButton, "runStudyBtn");
