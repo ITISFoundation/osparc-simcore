@@ -5,8 +5,9 @@
 import logging
 
 from aiohttp import web
-from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
-from servicelib.application_setup import ModuleCategory, app_module_setup
+
+from servicelib.aiohttp.application_keys import APP_OPENAPI_SPECS_KEY
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from . import storage_routes
 from .storage_config import assert_valid_config

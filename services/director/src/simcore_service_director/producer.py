@@ -14,7 +14,7 @@ import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
 from servicelib.async_utils import run_sequentially_in_context
-from servicelib.monitor_services import service_started, service_stopped
+from servicelib.aiohttp.monitor_services import service_started, service_stopped
 
 from . import config, docker_utils, exceptions, registry_proxy
 from .config import (

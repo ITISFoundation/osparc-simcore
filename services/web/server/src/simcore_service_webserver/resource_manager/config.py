@@ -9,7 +9,7 @@ import trafaret as T
 from aiohttp.web import Application
 from models_library.settings.redis import RedisConfig
 from pydantic import BaseSettings, Field, PositiveInt
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 
 CONFIG_SECTION_NAME = "resource_manager"
 APP_CLIENT_REDIS_CLIENT_KEY = __name__ + ".resource_manager.redis_client"

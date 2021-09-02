@@ -6,11 +6,11 @@ from aiohttp import ClientError, ClientTimeout, web
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.settings.services_common import ServicesCommonSettings
-from pydantic import NonNegativeInt, PositiveInt
-from servicelib.application_setup import ModuleCategory, app_module_setup
+from pydantic.types import NonNegativeInt, PositiveInt
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import log_decorator
-from servicelib.rest_responses import wrap_as_envelope
-from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
+from servicelib.aiohttp.rest_responses import wrap_as_envelope
+from servicelib.aiohttp.rest_routing import iter_path_operations, map_handlers_with_operations
 from servicelib.utils import logged_gather
 from yarl import URL
 

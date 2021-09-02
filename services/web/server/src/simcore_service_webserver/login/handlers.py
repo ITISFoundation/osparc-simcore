@@ -2,10 +2,11 @@ import logging
 from typing import Dict
 
 from aiohttp import web
-from servicelib import observer
-from servicelib.rest_utils import extract_and_validate
-from simcore_service_webserver.utils_rate_limiting import global_rate_limit_route
 from yarl import URL
+
+from servicelib import observer
+from servicelib.aiohttp.rest_utils import extract_and_validate
+from simcore_service_webserver.utils_rate_limiting import global_rate_limit_route
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..groups_api import auto_add_user_to_groups

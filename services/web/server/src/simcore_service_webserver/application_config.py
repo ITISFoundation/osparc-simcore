@@ -18,8 +18,8 @@ import trafaret as T
 from aiohttp.web import Application
 from models_library.basic_types import LogLevel, PortInt
 from pydantic import BaseSettings, Field
-from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.config_schema_utils import addon_section, minimal_addon_schema
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.config_schema_utils import addon_section, minimal_addon_schema
 from trafaret_config.simple import read_and_validate
 
 from . import (

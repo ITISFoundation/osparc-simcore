@@ -9,7 +9,7 @@ import trafaret as T
 from aiohttp.web import Application
 from models_library.basic_types import PortInt, VersionTag
 from pydantic import AnyHttpUrl, BaseSettings, Field, validator
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 
 APP_DIRECTOR_API_KEY = __name__ + ".director_api"
 

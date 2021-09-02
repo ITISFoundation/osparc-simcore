@@ -13,8 +13,8 @@ import aio_pika
 import pytest
 import sqlalchemy as sa
 from models_library.settings.rabbit import RabbitConfig
-from servicelib.application import create_safe_application
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application import create_safe_application
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.computation_config import CONFIG_SECTION_NAME
 from simcore_service_webserver.db import setup_db

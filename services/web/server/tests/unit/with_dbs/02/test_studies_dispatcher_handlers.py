@@ -380,7 +380,7 @@ async def test_dispatch_viewer_anonymously(
 
     # guest user only a copy of the template project
     async def _get_user_projects():
-        from servicelib.rest_responses import unwrap_envelope
+        from servicelib.aiohttp.rest_responses import unwrap_envelope
 
         url = client.app.router["list_projects"].url_for()
         resp = await client.get(url.with_query(type="user"))

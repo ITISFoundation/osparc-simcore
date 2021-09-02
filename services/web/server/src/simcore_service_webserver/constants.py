@@ -2,7 +2,7 @@
 # pylint:disable=unused-import
 #
 
-from servicelib.application_keys import (
+from servicelib.aiohttp.application_keys import (
     APP_CONFIG_KEY,
     APP_DB_ENGINE_KEY,
     APP_JSONSCHEMA_SPECS_KEY,

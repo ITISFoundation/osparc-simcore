@@ -22,7 +22,7 @@ from aioresponses import aioresponses
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject
-from servicelib.application import create_safe_application
+from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2

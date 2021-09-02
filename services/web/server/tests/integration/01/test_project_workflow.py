@@ -21,7 +21,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
-from servicelib.application import create_safe_application
+from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver import catalog
 from simcore_service_webserver.catalog import setup_catalog
 from simcore_service_webserver.db import setup_db

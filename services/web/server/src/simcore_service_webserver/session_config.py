@@ -5,7 +5,7 @@
 """
 import trafaret as T
 from pydantic import BaseSettings, constr
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from aiohttp.web import Application
 from typing import Dict
 

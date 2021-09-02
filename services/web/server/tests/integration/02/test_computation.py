@@ -16,7 +16,7 @@ from models_library.settings.redis import RedisConfig
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import NewProject
-from servicelib.application import create_safe_application
+from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.webserver_models import (
     NodeClass,
     StateType,

@@ -7,7 +7,7 @@ from aiohttp import web
 from aiopg.sa import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
-from servicelib.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert
 

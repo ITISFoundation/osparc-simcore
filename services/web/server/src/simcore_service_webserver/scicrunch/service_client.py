@@ -9,7 +9,7 @@ from typing import Any, List, MutableMapping, Optional
 
 from aiohttp import ClientSession, client_exceptions
 from pydantic import ValidationError
-from servicelib.client_session import get_client_session
+from servicelib.aiohttp.client_session import get_client_session
 from yarl import URL
 
 from ._config import SciCrunchSettings
