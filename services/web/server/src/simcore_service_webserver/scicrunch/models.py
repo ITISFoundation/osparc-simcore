@@ -39,8 +39,8 @@ def normalize_rrid_tags(rrid_tag: str, *, with_prefix: bool = True) -> str:
         if with_prefix:
             rrid = "RRID:" + rrid
         return rrid
-    except AttributeError:
-        raise ValueError(f"'{rrid_tag}' does not match a RRID pattern")
+    except AttributeError as err:
+        raise ValueError(f"'{rrid_tag}' does not match a RRID pattern") from err
 
 
 class ResourceHit(BaseModel):
