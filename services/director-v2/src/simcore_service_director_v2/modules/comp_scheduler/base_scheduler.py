@@ -23,7 +23,6 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
-from pydantic.types import NonNegativeInt
 
 from ...core.errors import InvalidPipelineError, PipelineNotFoundError, SchedulerError
 from ...models.domains.comp_pipelines import CompPipelineAtDB
@@ -54,7 +53,7 @@ class BaseCompScheduler(ABC):
     wake_up_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
 
     async def run_new_pipeline(
-        self, user_id: UserID, project_id: ProjectID, cluster_id: NonNegativeInt
+        self, user_id: UserID, project_id: ProjectID, cluster_id: ClusterID
     ) -> None:
         """Sets a new pipeline to be scheduled on the computational resources.
         Passing cluster_id=0 will use the default cluster. Passing an existing ID will instruct
