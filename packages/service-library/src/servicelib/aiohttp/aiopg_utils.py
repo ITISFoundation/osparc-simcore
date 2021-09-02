@@ -16,16 +16,14 @@ import functools
 import logging
 from typing import Any, Dict, Optional
 
-import attr
 import sqlalchemy as sa
 from aiohttp import web
-from aiopg.sa import Engine, create_engine
+from aiopg.sa import Engine
 from psycopg2 import DatabaseError
 from psycopg2 import Error as DBAPIError
 from tenacity import (
     RetryCallState,
     after_log,
-    before_sleep_log,
     retry,
     retry_if_exception_type,
     stop_after_attempt,
@@ -34,10 +32,7 @@ from tenacity import (
 
 from ..common_aiopg_utils import (
     DataSourceName,
-    create_pg_engine,
-    is_postgres_responsive,
-    PostgresRetryPolicyUponInitialization,
-    DSN,
+    PostgresRetryPolicyUponInitialization
 )
 
 log = logging.getLogger(__name__)
