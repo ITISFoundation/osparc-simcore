@@ -13,7 +13,7 @@ from urllib.parse import quote
 import pytest
 from aioresponses.core import CallbackResult, aioresponses
 from helpers import json_schema_validator
-from servicelib.aiohttp.rest_responses import unwrap_envelope
+from servicelib.rest_responses import unwrap_envelope
 from simcore_service_director import main, resources, rest
 
 
