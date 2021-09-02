@@ -11,6 +11,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from distributed.deploy.spec import SpecCluster
 from distributed.worker import TaskState
 from fastapi.applications import FastAPI
+from pydantic.types import NonNegativeInt
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import ConfigurationError
@@ -112,10 +113,13 @@ def test_local_dask_cluster_through_client(dask_client: DaskClient):
 )
 async def test_send_computation_task(
     dask_client: DaskClient,
+    cluster_id: NonNegativeInt,
     image: Image,
     exp_annotations: Dict[str, Any],
     mocker: MockerFixture,
 ):
+    exp_annotations["resources"].update({f"CLUSTER_{cluster_id}": 1e-7})
+
     @retry(
         stop=stop_after_delay(10),
         wait=wait_random(0, 1),
@@ -148,7 +152,7 @@ async def test_send_computation_task(
     dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
-        cluster_id=0,
+        cluster_id=cluster_id,
         tasks=fake_task,
         callback=mocked_done_callback_fct,
         remote_fct=fake_sidecar_fct,
@@ -170,7 +174,7 @@ async def test_send_computation_task(
     dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
-        cluster_id=0,
+        cluster_id=cluster_id,
         tasks=fake_task,
         callback=mocked_done_callback_fct,
         remote_fct=fake_sidecar_fct,
