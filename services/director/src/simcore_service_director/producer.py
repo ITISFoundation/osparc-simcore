@@ -746,7 +746,7 @@ async def _start_docker_service(
         }
         return container_meta_data
 
-    except exceptions.ServiceStartTimeoutError as err:
+    except exceptions.ServiceStartTimeoutError:
         log.exception("Service failed to start")
         await _silent_service_cleanup(app, node_uuid)
         raise
