@@ -24,7 +24,7 @@ def mock_aiodocker(mocker: MockerFixture) -> mock.MagicMock:
 @pytest.mark.parametrize(
     "docker_engine_labels, expected_id",
     [
-        ({}, None),
+        ({}, "CLUSTER_0"),
         ({"invalidlabel"}, "CLUSTER_0"),
         (["blahblah", "cluster_id=MyAwesomeClusterID"], "CLUSTER_MyAwesomeClusterID"),
     ],
