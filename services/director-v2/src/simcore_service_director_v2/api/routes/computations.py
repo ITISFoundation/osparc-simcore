@@ -134,7 +134,8 @@ async def create_computation(
             await scheduler.run_new_pipeline(
                 job.user_id,
                 job.project_id,
-                job.cluster_id or request.app.state.settings.DASK_DEFAULT_CLUSTER_ID,
+                job.cluster_id
+                or request.app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
             )
 
         return ComputationTaskOut(

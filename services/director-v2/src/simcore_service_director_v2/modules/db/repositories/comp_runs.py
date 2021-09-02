@@ -65,7 +65,7 @@ class CompRunsRepository(BaseRepository):
                 .values(
                     user_id=user_id,
                     project_uuid=f"{project_id}",
-                    cluster_id=None if cluster_id == 0 else cluster_id,
+                    cluster_id=cluster_id,
                     iteration=iteration,
                     result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
                     started=datetime.utcnow(),

@@ -35,7 +35,7 @@ def cluster_id() -> Optional[str]:
                     "The docker engine labels are not following the pattern `key=value`. Please check %s",
                     entry,
                 )
-        return f"{app_settings.DASK_CLUSTER_ID_PREFIX}{app_settings.DASK_DEFAULT_CLUSTER_ID}"
+        return f"{app_settings.DASK_CLUSTER_ID_PREFIX}{app_settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID}"
 
     return wrap_async_call(async_get_engine_cluster_id())
 

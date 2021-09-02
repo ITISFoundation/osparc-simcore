@@ -53,7 +53,7 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
                 (r.user_id, r.project_uuid, r.iteration): ScheduledPipelineParams(
                     cluster_id=r.cluster_id
                     if r.cluster_id is not None
-                    else app.state.settings.DASK_DEFAULT_CLUSTER_ID,
+                    else app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
                     mark_for_cancellation=False,
                 )
                 for r in runs
@@ -69,7 +69,7 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
             (r.user_id, r.project_uuid, r.iteration): ScheduledPipelineParams(
                 cluster_id=r.cluster_id
                 if r.cluster_id is not None
-                else app.state.settings.DASK_DEFAULT_CLUSTER_ID,
+                else app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
                 mark_for_cancellation=False,
             )
             for r in runs
