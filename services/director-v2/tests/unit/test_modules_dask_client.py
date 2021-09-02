@@ -15,12 +15,12 @@ from distributed.worker import TaskState
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic.types import NonNegativeInt, PositiveInt
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import ConfigurationError
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.comp_tasks import Image
+from simcore_service_director_v2.models.schemas.constants import ClusterID, UserID
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.modules.dask_client import (
     CLUSTER_RESOURCE_MOCK_USAGE,
@@ -140,10 +140,10 @@ def node_id() -> NodeID:
 )
 async def test_send_computation_task(
     dask_client: DaskClient,
-    user_id: PositiveInt,
+    user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    cluster_id: NonNegativeInt,
+    cluster_id: ClusterID,
     cluster_id_resource: str,
     image: Image,
     exp_annotations: Dict[str, Any],
