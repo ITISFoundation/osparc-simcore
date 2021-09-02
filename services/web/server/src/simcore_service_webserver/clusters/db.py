@@ -82,6 +82,7 @@ class ClustersRepository(BaseRepository):
                     }
                 )
             }
+
             cluster_id = row[clusters.c.id]
             if cluster_id not in cluster_id_to_cluster:
                 cluster_id_to_cluster[cluster_id] = Cluster.construct(
@@ -250,12 +251,18 @@ class ClustersRepository(BaseRepository):
 
             # check that minimal access right necessary to change anything
             if not this_user_cluster_access_rights.write:
-                raise ClusterAccessForbidden(cluster_id)
+                raise ClusterAccessForbidden(
+                    cluster_id,
+                    msg="Manager rights required.",
+                )
 
             if updated_cluster.owner and updated_cluster.owner != the_cluster.owner:
                 # the user wants to change the owner here, admin rights needed
                 if this_user_cluster_access_rights != CLUSTER_ADMIN_RIGHTS:
-                    raise ClusterAccessForbidden(cluster_id)
+                    raise ClusterAccessForbidden(
+                        cluster_id,
+                        msg="Administrator rights required.",
+                    )
 
                 # ensure the new owner has admin rights, too
                 if not updated_cluster.access_rights:
@@ -273,12 +280,14 @@ class ClustersRepository(BaseRepository):
             ):
                 # ensure the user is not trying to mess around owner admin rights
                 if (
-                    updated_cluster.access_rights.get(
+                    updated_cluster.access_rights.setdefault(
                         the_cluster.owner, CLUSTER_ADMIN_RIGHTS
                     )
                     != CLUSTER_ADMIN_RIGHTS
                 ):
-                    raise ClusterAccessForbidden(cluster_id)
+                    raise ClusterAccessForbidden(
+                        cluster_id, msg="Administrator rights required."
+                    )
 
             # if the user is a manager it may add/remove users, but nothing else
             if (
@@ -286,11 +295,17 @@ class ClustersRepository(BaseRepository):
                 and updated_cluster.access_rights
             ):
                 for grp, rights in updated_cluster.access_rights.items():
-                    if grp != the_cluster.owner and rights not in [
-                        CLUSTER_USER_RIGHTS,
-                        CLUSTER_NO_RIGHTS,
-                    ]:
-                        raise ClusterAccessForbidden(cluster_id)
+                    if (grp == primary_group and rights != CLUSTER_MANAGER_RIGHTS) or (
+                        grp not in [the_cluster.owner, primary_group]
+                        and rights
+                        not in [
+                            CLUSTER_USER_RIGHTS,
+                            CLUSTER_NO_RIGHTS,
+                        ]
+                    ):
+                        raise ClusterAccessForbidden(
+                            cluster_id, msg="Administrator rights required."
+                        )
 
             # ok we can update now
             await conn.execute(
@@ -307,6 +322,19 @@ class ClustersRepository(BaseRepository):
             )
             # upsert the rights
             if updated_cluster.access_rights:
+                # first check if some rights must be deleted
+                grps_to_remove = {
+                    grp
+                    for grp in the_cluster.access_rights
+                    if grp not in updated_cluster.access_rights
+                }
+                if grps_to_remove:
+                    await conn.execute(
+                        sa.delete(cluster_to_groups).where(
+                            cluster_to_groups.c.gid.in_(grps_to_remove)
+                        )
+                    )
+
                 for grp, rights in updated_cluster.access_rights.items():
                     insert_stmt = pg_insert(cluster_to_groups).values(
                         **rights.dict(by_alias=True), gid=grp, cluster_id=the_cluster.id
@@ -348,6 +376,8 @@ class ClustersRepository(BaseRepository):
                 the_cluster, primary_group, standard_groups, all_group
             )
             if not this_user_cluster_access_rights.delete:
-                raise ClusterAccessForbidden(cluster_id)
+                raise ClusterAccessForbidden(
+                    cluster_id, msg="Administrator rights required."
+                )
 
             await conn.execute(sa.delete(clusters).where(clusters.c.id == cluster_id))
