@@ -113,9 +113,8 @@ class DaskClient:
             dask_resources = _from_node_reqs_to_dask_resources(
                 node_image.node_requirements
             )
-            if cluster_id > 0:
-                # TODO: we will probably have to give the default cluster a resource as well
-                dask_resources.update({f"CLUSTER_{cluster_id}": 1.0})
+            # add the cluster ID here
+            dask_resources.update({f"CLUSTER_{cluster_id}": 0.0000001})
             task_future = self.client.submit(
                 remote_fct,
                 job_id,

@@ -1,10 +1,14 @@
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
+import random
+
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import LocalCluster, Scheduler, Worker
 from distributed.deploy.spec import SpecCluster
 from models_library.service_settings_labels import SimcoreServiceLabels
+
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+from pydantic.types import NonNegativeInt
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
 )
@@ -92,32 +96,40 @@ def dask_local_cluster(monkeypatch: MonkeyPatch) -> LocalCluster:
 
 
 @pytest.fixture
-def dask_spec_local_cluster(monkeypatch: MonkeyPatch) -> SpecCluster:
+def cluster_id() -> str:
+    return f"CLUSTER_{random.randint(0, 10)}"
+
+
+@pytest.fixture
+def dask_spec_local_cluster(monkeypatch: MonkeyPatch, cluster_id: str) -> SpecCluster:
     # in this mode we can precisely create a specific cluster
     workers = {
         "cpu-worker": {
             "cls": Worker,
-            "options": {"nthreads": 2, "resources": {"CPU": 2, "RAM": 48e9}},
+            "options": {
+                "nthreads": 2,
+                "resources": {"CPU": 2, "RAM": 48e9, cluster_id: 1},
+            },
         },
         "gpu-worker": {
             "cls": Worker,
             "options": {
                 "nthreads": 1,
-                "resources": {"CPU": 1, "GPU": 1, "RAM": 48e9},
+                "resources": {"CPU": 1, "GPU": 1, "RAM": 48e9, cluster_id: 1},
             },
         },
         "mpi-worker": {
             "cls": Worker,
             "options": {
                 "nthreads": 1,
-                "resources": {"CPU": 8, "MPI": 1, "RAM": 768e9},
+                "resources": {"CPU": 8, "MPI": 1, "RAM": 768e9, cluster_id: 1},
             },
         },
         "gpu-mpi-worker": {
             "cls": Worker,
             "options": {
                 "nthreads": 1,
-                "resources": {"GPU": 1, "MPI": 1, "RAM": 768e9},
+                "resources": {"GPU": 1, "MPI": 1, "RAM": 768e9, cluster_id: 1},
             },
         },
     }
