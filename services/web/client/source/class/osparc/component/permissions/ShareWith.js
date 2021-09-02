@@ -122,7 +122,7 @@ qx.Class.define("osparc.component.permissions.ShareWith", {
                 });
               });
             myOrgMembersHB.add(myOrgsSB);
-            const myOrgMembers = this.__myOrgMembers = new osparc.component.filter.OrganizationMembers("asdfasdf");
+            const myOrgMembers = this.__myOrgMembers = new osparc.component.filter.OrganizationMembers("shareWithOrganizationMembers");
             myOrgMembersHB.add(myOrgMembers, {
               flex: 1
             });
