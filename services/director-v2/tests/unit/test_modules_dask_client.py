@@ -93,10 +93,6 @@ async def test_dask_cluster():
     scheduler_address = URL(cluster.scheduler_address)
 
     client = await Client(cluster, asynchronous=True)
-    import pdb
-
-    pdb.set_trace()
-
     await cluster.close()
 
     cluster = LocalCluster(
@@ -114,23 +110,25 @@ async def test_dask_client_reconnects_when_scheduler_restarts(
     status = dask_client.client.status
     assert status == "running"
     scheduler_address = URL(dask_spec_local_cluster.scheduler_address)
-    dask_spec_local_cluster.close()
+    await dask_spec_local_cluster.close()
     status = dask_client.client.status
     assert status == "connecting"
-    new_cluster = LocalCluster(
-        host=scheduler_address.host, scheduler_port=scheduler_address.port
+    new_cluster = await LocalCluster(
+        host=scheduler_address.host,
+        scheduler_port=scheduler_address.port,
+        asynchronous=True,
     )
     status = dask_client.client.status
     assert status == "running"
 
 
-def test_local_dask_cluster_through_client(dask_client: DaskClient):
+async def test_local_dask_cluster_through_client(dask_client: DaskClient):
     def test_fct_add(x: int, y: int) -> int:
         return x + y
 
     future = dask_client.client.submit(test_fct_add, 2, 5)
     assert future
-    result = future.result(timeout=2)
+    result = await future.result(timeout=2)
     assert result == 7
 
 
