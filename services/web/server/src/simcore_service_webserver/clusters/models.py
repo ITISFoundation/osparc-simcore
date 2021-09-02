@@ -26,9 +26,7 @@ class ClusterBase(BaseModel):
     description: Optional[str] = None
     type: ClusterType
     owner: GroupID
-    access_rights: Optional[Dict[GroupID, ClusterAccessRights]] = Field(
-        default_factory=dict
-    )
+    access_rights: Dict[GroupID, ClusterAccessRights] = Field(default_factory=dict)
 
     class Config:
         extra = Extra.forbid
