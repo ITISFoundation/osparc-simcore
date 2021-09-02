@@ -44,7 +44,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     __currentCluster: null,
     __clustersModel: null,
     __selectOrgMemberLayout: null,
-    __orgsAndMembersFilter: null,
+    __organizationsAndMembers: null,
     __membersModel: null,
 
     __getCreateClusterSection: function() {
@@ -134,8 +134,8 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       }));
       vBox.add(hBox);
 
-      const orgsAndMembersFilter = this.__orgsAndMembersFilter = new osparc.component.filter.OrganizationsAndMembers("orgAndMembClusters");
-      hBox.add(orgsAndMembersFilter, {
+      const organizationsAndMembers = this.__organizationsAndMembers = new osparc.component.filter.OrganizationsAndMembers("orgAndMembClusters");
+      hBox.add(organizationsAndMembers, {
         flex: 1
       });
 
@@ -144,11 +144,11 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         enabled: false
       });
       addCollaboratorBtn.addListener("execute", () => {
-        this.__addMembers();
+        this.__addMembers(this.__organizationsAndMembers.getSelectedGIDs());
       }, this);
-      qx.event.message.Bus.getInstance().subscribe("orgAndMembClusters", () => {
+      qx.event.message.Bus.getInstance().subscribe("OrgAndMembClustersFilter", () => {
         const anySelected = Boolean(this.__organizationsAndMembers.getSelectedGIDs().length);
-        this.__addCollaboratorBtn.setEnabled(anySelected);
+        addCollaboratorBtn.setEnabled(anySelected);
       }, this);
 
       hBox.add(addCollaboratorBtn);
@@ -230,8 +230,9 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       const canWrite = clusterModel.getAccessRights().getWrite();
       if (canWrite) {
         this.__selectOrgMemberLayout.show();
-        const memberKeys = Object.keys(clusterModel.getMembersObj());
-        this.__orgsAndMembersFilter.reloadVisibleCollaborators(memberKeys);
+        const memberKeys = [];
+        clusterMembers.forEach(clusterMember => memberKeys.push(clusterMember["gid"]));
+        this.__organizationsAndMembers.reloadVisibleCollaborators(memberKeys);
       }
 
       const store = osparc.store.Store.getInstance();
@@ -248,11 +249,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
               memberObj["thumbnail"] = osparc.utils.Avatar.getUrl(member["login"], 32);
               memberObj["name"] = osparc.utils.Utils.firstsUp(member["first_name"], member["last_name"]);
               memberObj["showOptions"] = canWrite;
-              memberObj["accessRights"] = {
-                "read": clusterMember.getRead(),
-                "write": clusterMember.getWrite(),
-                "delete": clusterMember.getDelete()
-              };
+              memberObj["accessRights"] = JSON.parse(qx.util.Serializer.toJson(clusterMember));
               memberObj["login"] = member["login"];
               memberObj["id"] = member["gid"];
               membersModel.append(qx.data.marshal.Json.createModel(memberObj));
@@ -384,26 +381,36 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         });
     },
 
-    __addMembers: function(clusterMemberEmail) {
-    },
-
-    __addMember: function(clusterMemberEmail) {
+    __addMembers: function(gids) {
       if (this.__currentCluster === null) {
         return;
       }
+
+      const accessRights = JSON.parse(qx.util.Serializer.toJson(this.__currentCluster.getMembers()));
+      gids.forEach(gid => {
+        if (gid in accessRights) {
+          return;
+        }
+
+        accessRights[gid] = {
+          "read": true,
+          "write": false,
+          "delete": false
+        };
+      });
 
       const params = {
         url: {
           "cid": this.__currentCluster.getKey()
         },
         data: {
-          "email": clusterMemberEmail
+          "accessRights": accessRights
         }
       };
-      osparc.data.Resources.fetch("clusterMembers", "post", params)
+      osparc.data.Resources.fetch("clusters", "patch", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(clusterMemberEmail + this.tr(" added"));
-          osparc.store.Store.getInstance().reset("clusterMembers");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Member(s) added"));
+          osparc.store.Store.getInstance().reset("clusters");
           this.__reloadClusterMembers();
         })
         .catch(err => {
@@ -421,7 +428,12 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       if (!(clusterMember["key"] in accessRights)) {
         return;
       }
-      delete accessRights[clusterMember["key"]];
+
+      accessRights[clusterMember["key"]] = {
+        "read": true,
+        "write": true,
+        "delete": false
+      };
       const params = {
         url: {
           "cid": this.__currentCluster.getKey()
@@ -430,10 +442,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
           "accessRights": accessRights
         }
       };
-      osparc.data.Resources.fetch("clusterMembers", "patch", params)
+      osparc.data.Resources.fetch("clusters", "patch", params)
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(clusterMember["name"] + this.tr(" successfully promoted"));
-          osparc.store.Store.getInstance().reset("clusterMembers");
+          osparc.store.Store.getInstance().reset("clusters");
           this.__reloadClusterMembers();
         })
         .catch(err => {
@@ -452,11 +464,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         return;
       }
 
-      accessRights[clusterMember["key"]] = {
-        "read": false,
-        "write": false,
-        "delete": false
-      };
+      delete accessRights[clusterMember["key"]];
       const params = {
         url: {
           "cid": this.__currentCluster.getKey()
