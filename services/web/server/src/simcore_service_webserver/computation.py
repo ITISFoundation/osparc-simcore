@@ -28,6 +28,3 @@ def setup_computation(app: web.Application):
 
     # setup comp_task listener
     setup_comp_tasks_listener(app)
-
-
-__all__ = "setup_computation"
