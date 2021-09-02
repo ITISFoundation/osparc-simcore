@@ -5,7 +5,7 @@
 
 import functools
 import operator
-from typing import Generic, List, Optional, Set, TypeVar
+from typing import Dict, Generic, List, Optional, Set, TypeVar
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -45,6 +45,11 @@ class BaseOrm(Generic[RowUId]):
             query = sa.select([self._table.c[name] for name in selection.split()])
 
         return query
+
+    def _assert_readonly(self, values: Dict):
+        not_allowed: Set[str] = self._readonly.intersection(values.keys())
+        if not_allowed:
+            raise ValueError(f"Columns {not_allowed} are read-only")
 
     @property
     def columns(self) -> ImmutableColumnCollection:
@@ -86,7 +91,9 @@ class BaseOrm(Generic[RowUId]):
         if rowid:
             # overrides pinned row
             query = query.where(self._primary_key == rowid)
-        elif self._unique_match:
+        elif (
+            self._unique_match is not None
+        ):  # WARNING: self._unique_match can evaluate false. Keep explicit
             query = query.where(self._unique_match)
 
         result: ResultProxy = await self._conn.execute(query)
@@ -104,21 +111,17 @@ class BaseOrm(Generic[RowUId]):
         return rows
 
     async def update(self, **values) -> Optional[RowUId]:
-        not_allowed = self._readonly.intersection(values.keys())
-        if not_allowed:
-            raise ValueError(f"Columns {not_allowed} are read-only")
+        self._assert_readonly(values)
 
         query = self._table.update().values(**values)
-        if self._unique_match:
+        if self._unique_match is not None:
             query = query.where(self._unique_match)
         query = query.returning(self._primary_key)
 
         return await self._conn.scalar(query)
 
     async def insert(self, **values) -> Optional[RowUId]:
-        not_allowed = self._readonly.intersection(values.keys())
-        if not_allowed:
-            raise ValueError(f"Columns {not_allowed} are read-only")
+        self._assert_readonly(values)
 
         query = self._table.insert().values(**values).returning(self._primary_key)
 
