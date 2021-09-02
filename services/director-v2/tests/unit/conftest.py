@@ -1,3 +1,6 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+
 import random
 
 import pytest
@@ -5,9 +8,6 @@ from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import LocalCluster, Scheduler, Worker
 from distributed.deploy.spec import SpecCluster
 from models_library.service_settings_labels import SimcoreServiceLabels
-
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
 from pydantic.types import NonNegativeInt
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
