@@ -114,11 +114,12 @@ def test_local_dask_cluster_through_client(dask_client: DaskClient):
 async def test_send_computation_task(
     dask_client: DaskClient,
     cluster_id: NonNegativeInt,
+    cluster_id_resource: str,
     image: Image,
     exp_annotations: Dict[str, Any],
     mocker: MockerFixture,
 ):
-    exp_annotations["resources"].update({f"CLUSTER_{cluster_id}": 1e-7})
+    exp_annotations["resources"].update({cluster_id_resource: 1e-7})
 
     @retry(
         stop=stop_after_delay(10),

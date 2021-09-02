@@ -114,7 +114,9 @@ class DaskClient:
                 node_image.node_requirements
             )
             # add the cluster ID here
-            dask_resources.update({f"CLUSTER_{cluster_id}": 0.0000001})
+            dask_resources.update(
+                {f"{self.settings.DASK_CLUSTER_ID_PREFIX}{cluster_id}": 0.0000001}
+            )
             task_future = self.client.submit(
                 remote_fct,
                 job_id,
