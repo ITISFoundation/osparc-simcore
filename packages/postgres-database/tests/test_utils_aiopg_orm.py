@@ -5,7 +5,7 @@
 
 
 from datetime import datetime
-from typing import Iterator, List, Optional
+from typing import Iterator, List
 
 import pytest
 from aiopg.sa.connection import SAConnection

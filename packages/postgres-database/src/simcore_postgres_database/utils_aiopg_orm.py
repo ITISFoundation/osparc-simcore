@@ -17,10 +17,18 @@ RowUId = TypeVar("RowUId", int, str)  # typically id or uuid
 
 class BaseOrm(Generic[RowUId]):
     def __init__(
-        self, table: sa.Table, connection: SAConnection, readonly: Optional[Set] = None
+        self,
+        table: sa.Table,
+        connection: SAConnection,
+        *,
+        readonly: Optional[Set] = None,
+        writeonce: Optional[Set] = None,
     ):
         self._conn = connection
         self._readonly: Set = readonly or {"created", "modified", "id"}
+        self._writeonce: Set = (
+            writeonce or set()
+        )  # can be inserted once but not updated
 
         # row selection logic
         self._unique_match = None
@@ -46,8 +54,8 @@ class BaseOrm(Generic[RowUId]):
 
         return query
 
-    def _assert_readonly(self, values: Dict):
-        not_allowed: Set[str] = self._readonly.intersection(values.keys())
+    def _check_access_rights(self, access: Set, values: Dict):
+        not_allowed: Set[str] = access.intersection(values.keys())
         if not_allowed:
             raise ValueError(f"Columns {not_allowed} are read-only")
 
@@ -69,7 +77,7 @@ class BaseOrm(Generic[RowUId]):
                     for name, value in unique_id.items()
                 ),
             )
-        if self._unique_match is None:
+        if not self.is_pinned():
             raise ValueError(
                 "Either identifier or unique condition required. None provided"
             )
@@ -78,21 +86,25 @@ class BaseOrm(Generic[RowUId]):
     def unpin_row(self) -> None:
         self._unique_match = None
 
+    def is_pinned(self) -> bool:
+        # WARNING: self._unique_match can evaluate false. Keep explicit
+        return self._unique_match is not None
+
     async def fetch(
         self,
-        selection: Optional[str] = None,
+        returned_selection: Optional[str] = None,
         *,
         rowid: Optional[RowUId] = None,
     ) -> Optional[RowProxy]:
         """
         selection: name of one or more columns to fetch. None defaults to all of them
         """
-        query = self._compose_select_query(selection)
+        query = self._compose_select_query(returned_selection)
         if rowid:
             # overrides pinned row
             query = query.where(self._primary_key == rowid)
-        elif self._unique_match is not None:
-            # WARNING: self._unique_match can evaluate false. Keep explicit
+        elif self.is_pinned():
+            assert self._unique_match is not None  # nosec
             query = query.where(self._unique_match)
 
         result: ResultProxy = await self._conn.execute(query)
@@ -101,26 +113,28 @@ class BaseOrm(Generic[RowUId]):
 
     async def fetchall(
         self,
-        selection: Optional[str] = None,
+        returned_selection: Optional[str] = None,
     ) -> List[RowProxy]:
-        query = self._compose_select_query(selection)
+        query = self._compose_select_query(returned_selection)
 
         result: ResultProxy = await self._conn.execute(query)
         rows: List[RowProxy] = await result.fetchall()
         return rows
 
     async def update(self, **values) -> Optional[RowUId]:
-        self._assert_readonly(values)
+        self._check_access_rights(self._readonly, values)
+        self._check_access_rights(self._writeonce, values)
 
         query = self._table.update().values(**values)
-        if self._unique_match is not None:
+        if self.is_pinned():
+            assert self._unique_match is not None  # nosec
             query = query.where(self._unique_match)
         query = query.returning(self._primary_key)
 
         return await self._conn.scalar(query)
 
     async def insert(self, **values) -> Optional[RowUId]:
-        self._assert_readonly(values)
+        self._check_access_rights(self._readonly, values)
 
         query = self._table.insert().values(**values).returning(self._primary_key)
 
