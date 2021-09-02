@@ -16,6 +16,7 @@ def wrap_async_call(fct: Awaitable) -> ...:
 
 def cluster_id() -> Optional[str]:
     """Returns the cluster id this docker engine belongs to, if any"""
+    CLUSTER_PREFIX = "CLUSTER_"
 
     async def async_get_engine_cluster_id() -> Optional[str]:
         async with aiodocker.Docker() as docker:
@@ -26,12 +27,13 @@ def cluster_id() -> Optional[str]:
             try:
                 key, value = f"{entry}".split("=", maxsplit=1)
                 if key == "cluster_id" and value:
-                    return value
+                    return f"{CLUSTER_PREFIX}{value}"
             except ValueError:
                 logger.warning(
                     "The docker engine labels are not following the pattern `key=value`. Please check %s",
                     entry,
                 )
+        return f"{CLUSTER_PREFIX}0"
 
     return wrap_async_call(async_get_engine_cluster_id())
 
