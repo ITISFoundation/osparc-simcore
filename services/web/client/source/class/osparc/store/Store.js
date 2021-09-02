@@ -99,8 +99,9 @@ qx.Class.define("osparc.store.Store", {
       init: {}
     },
     clusters: {
-      check: "Object",
-      init: {}
+      check: "Array",
+      init: [],
+      event: "changeClusters"
     },
     services: {
       check: "Array",
