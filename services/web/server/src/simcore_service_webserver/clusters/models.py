@@ -2,6 +2,7 @@ from typing import Dict, Optional
 
 from models_library.users import GroupID
 from pydantic import BaseModel, Extra, Field, validator
+from pydantic.networks import HttpUrl
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.clusters import ClusterType
 
@@ -26,6 +27,11 @@ class ClusterBase(BaseModel):
     description: Optional[str] = None
     type: ClusterType
     owner: GroupID
+    thumbnail: Optional[HttpUrl] = Field(
+        None,
+        description="url to the image describing this cluster",
+        examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
+    )
     access_rights: Dict[GroupID, ClusterAccessRights] = Field(default_factory=dict)
 
     class Config:
@@ -82,6 +88,7 @@ class ClusterPatch(ClusterBase):
     description: Optional[str]
     type: Optional[ClusterType]
     owner: Optional[GroupID]
+    thumbnail: Optional[HttpUrl]
     access_rights: Optional[Dict[GroupID, ClusterAccessRights]] = Field(
         alias="accessRights"
     )

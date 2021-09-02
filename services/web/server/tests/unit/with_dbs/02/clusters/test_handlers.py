@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-value-for-parameter
 # pylint:disable=too-many-arguments
+# pylint:disable=too-many-statements
 
 
 import random
@@ -30,7 +31,6 @@ from simcore_service_webserver.clusters.models import (
     ClusterPatch,
     ClusterType,
 )
-from simcore_service_webserver.groups_api import list_user_groups
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine.result import ResultProxy
 from sqlalchemy.sql.elements import literal_column
@@ -331,6 +331,7 @@ async def test_update_cluster(
         ClusterPatch(name="My patched cluster name"),
         ClusterPatch(description="My patched cluster description"),
         ClusterPatch(type=ClusterType.ON_PREMISE),
+        ClusterPatch(thumbnail="https://placeimg.com/640/480/nature"),
     ]:
         rsp = await client.patch(
             f"{url}", json=cluster_patch.dict(by_alias=True, exclude_unset=True)
