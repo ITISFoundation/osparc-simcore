@@ -106,7 +106,7 @@ def node_id() -> NodeID:
 
 
 @pytest.mark.parametrize(
-    "image, exp_annotations",
+    "image, expected_annotations",
     [
         (
             Image(
@@ -146,11 +146,11 @@ async def test_send_computation_task(
     cluster_id: ClusterID,
     cluster_id_resource: str,
     image: Image,
-    exp_annotations: Dict[str, Any],
+    expected_annotations: Dict[str, Any],
     mocker: MockerFixture,
 ):
     # INIT
-    exp_annotations["resources"].update(
+    expected_annotations["resources"].update(
         {cluster_id_resource: CLUSTER_RESOURCE_MOCK_USAGE}
     )
     fake_task = {node_id: image}
@@ -163,7 +163,7 @@ async def test_send_computation_task(
         worker = get_worker()
         task: TaskState = worker.tasks.get(worker.get_current_task())
         assert task is not None
-        assert task.annotations == exp_annotations
+        assert task.annotations == expected_annotations
         assert u_id == user_id
         assert prj_id == project_id
         assert n_id == node_id
