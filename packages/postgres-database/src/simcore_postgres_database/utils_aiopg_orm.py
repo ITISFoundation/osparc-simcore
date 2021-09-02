@@ -12,7 +12,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from sqlalchemy.sql.base import ImmutableColumnCollection
 
-RowUId = TypeVar("RowUId", int, str)  # typically
+RowUId = TypeVar("RowUId", int, str)  # typically id or uuid
 
 
 class BaseOrm(Generic[RowUId]):
@@ -91,9 +91,8 @@ class BaseOrm(Generic[RowUId]):
         if rowid:
             # overrides pinned row
             query = query.where(self._primary_key == rowid)
-        elif (
-            self._unique_match is not None
-        ):  # WARNING: self._unique_match can evaluate false. Keep explicit
+        elif self._unique_match is not None:
+            # WARNING: self._unique_match can evaluate false. Keep explicit
             query = query.where(self._unique_match)
 
         result: ResultProxy = await self._conn.execute(query)
