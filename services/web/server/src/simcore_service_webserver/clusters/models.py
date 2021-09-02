@@ -89,7 +89,7 @@ class ClusterCreate(ClusterBase):
             cluster_type = values["type"]
             default_thumbnails = {
                 ClusterType.AWS.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/250px-Amazon_Web_Services_Logo.svg.png",
-                ClusterType.ON_PREMISE.value: "https://cdn.pixabay.com/photo/2012/04/02/16/35/server-24899_960_720.png",
+                ClusterType.ON_PREMISE.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Crystal_Clear_app_network_local.png/120px-Crystal_Clear_app_network_local.png",
             }
             return default_thumbnails[cluster_type]
         return v
