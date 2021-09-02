@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from servicelib.aiohttp.aiopg_utils import DataSourceName, is_postgres_responsive
+from servicelib.common_aiopg_utils import DataSourceName, is_postgres_responsive
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
