@@ -44,6 +44,12 @@ clusters = sa.Table(
         doc="Identifier of the group that owns this cluster",
     ),
     sa.Column(
+        "thumbnail",
+        sa.String,
+        nullable=True,
+        doc="Link to image as to cluster thumbnail",
+    ),
+    sa.Column(
         "created",
         sa.DateTime(),
         nullable=False,
