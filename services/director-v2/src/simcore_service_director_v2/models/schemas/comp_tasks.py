@@ -32,7 +32,7 @@ class ComputationTaskCreate(BaseModel):
         False, description="if True will force re-running all dependent nodes"
     )
     cluster_id: Optional[ClusterID] = Field(
-        0,
+        None,
         description="the computation shall use the cluster described by its id, 0 is the default cluster",
     )
 
