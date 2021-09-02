@@ -235,6 +235,14 @@ async def test_send_computation_task(
 
     with pytest.raises(asyncio.TimeoutError):
         future.result(timeout=2)
+    dask_client.abort_computation_tasks([job_id])
+    assert future.cancelled() == True
+    await _wait_for_call(mocked_done_callback_fct)
+    mocked_done_callback_fct.assert_called_once()
+    mocked_done_callback_fct.reset_mock()
+    assert (
+        len(dask_client._taskid_to_future_map) == 0
+    ), "the list of futures was not cleaned correctly"
 
 
 @pytest.mark.parametrize(
