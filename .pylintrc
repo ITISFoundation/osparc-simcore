@@ -135,7 +135,12 @@ disable=print-statement,
         C,
         fixme,
         import-error,
+        unspecified-encoding
 
+
+# DISABLED unspecified-encoding (W1514):
+#   explanation: Using the system default implicitly can create problems on other operating systems. See https://www.python.org/dev/peps/pep-0597/.
+#   disabled: because we use always the same OS in dev-machines or docker
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
