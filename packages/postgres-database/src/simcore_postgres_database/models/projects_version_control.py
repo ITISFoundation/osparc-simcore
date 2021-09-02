@@ -12,8 +12,7 @@ from .projects_snapshots import projects_snapshots
 # REPOSITORES
 #
 # Projects under version-control are assigned a repository
-#   - keeps HEAD ref to a
-#
+#   - keeps information of the current branch to recover HEAD ref
 #
 projects_vc_repos = sa.Table(
     "projects_vc_repos",
@@ -135,6 +134,7 @@ projects_vc_commits = sa.Table(
         doc="UUID of the snapshot associated to this commit."
         "Note that it links to the projects_snapshots table.",
     ),
+    sa.Column("message", sa.String, doc="Commit message"),
     sa.Column(
         "created",
         sa.DateTime(),
@@ -183,7 +183,7 @@ projects_vc_tags = sa.Table(
         doc="Points to the tagged commit",
     ),
     sa.Column("name", sa.String, doc="Tag display name"),
-    sa.Column("message", sa.String, doc="Commit message"),
+    sa.Column("message", sa.String, doc="Tag annotation"),
     sa.Column(
         "hidden",
         sa.Boolean,
@@ -235,11 +235,11 @@ projects_vc_branches = sa.Table(
         doc="Repository to which this branch belongs",
     ),
     sa.Column(
-        "head_id",
+        "head_commit_id",
         sa.BigInteger,
         sa.ForeignKey(
             "projects_vc_commits.id",
-            name="fk_projects_vc_branches_head_id",
+            name="fk_projects_vc_branches_head_commit_id",
             onupdate="CASCADE",
             ondelete="RESTRICT",
         ),
