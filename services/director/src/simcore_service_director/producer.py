@@ -70,7 +70,7 @@ def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
     mounts = []
     for s in settings:
         log.debug("Retrieved mount settings %s", s)
-        mount = dict()
+        mount = {}
         mount["ReadOnly"] = True
         if "ReadOnly" in s and s["ReadOnly"] in ["false", "False", False]:
             mount["ReadOnly"] = False
@@ -91,7 +91,7 @@ def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
 
 
 def _parse_env_settings(settings: List[str]) -> Dict:
-    envs = dict()
+    envs = {}
     for s in settings:
         log.debug("Retrieved env settings %s", s)
         if "=" in s:

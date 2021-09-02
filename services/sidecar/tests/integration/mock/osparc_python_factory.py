@@ -14,7 +14,7 @@ current_path = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve
 data_path = output_dir / "data.json"
 
 
-data = dict()
+data = {}
 data["timestamp"] = str(datetime.utcnow())
 data["input_dir_list"] = os.listdir(str(input_dir))
 data["output_dir_list"] = os.listdir(str(input_dir))

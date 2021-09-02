@@ -8,7 +8,6 @@ from typing import Dict, Optional
 import trafaret as T
 from aiohttp.web import Application
 from pydantic import BaseSettings
-
 from servicelib.application_keys import APP_CONFIG_KEY
 
 from ..email_config import CONFIG_SECTION_NAME as SMTP_SECTION
@@ -47,7 +46,7 @@ class LoginSettings(BaseSettings):
 
 def get_login_config(app: Application) -> Dict:
 
-    cfg = app[APP_CONFIG_KEY].get(CONFIG_SECTION_NAME, dict())
+    cfg = app[APP_CONFIG_KEY].get(CONFIG_SECTION_NAME, {})
     return cfg
 
 
