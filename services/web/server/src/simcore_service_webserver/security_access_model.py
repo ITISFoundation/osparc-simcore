@@ -41,7 +41,7 @@ class RolePermissions:
 
         allowed = set()
         check = dict()
-        for item in value.get("can", list()):
+        for item in value.get("can", []):
             if isinstance(item, dict):
                 check[item["name"]] = item["check"]
             elif isinstance(item, str):

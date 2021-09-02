@@ -67,7 +67,7 @@ def replace_environs_in_docker_compose_service(
     service_environ = {}
 
     # environment defined in env_file
-    env_files: List[str] = service_section.pop("env_file", list())
+    env_files: List[str] = service_section.pop("env_file", [])
     for env_file in env_files:
         if env_file.endswith(".env") and use_env_devel:
             env_file += "-devel"
@@ -78,7 +78,7 @@ def replace_environs_in_docker_compose_service(
             service_environ.update(file_environ)
 
     # explicit environment [overrides env_file]
-    environ_items = service_section.get("environment", list())
+    environ_items = service_section.get("environment", [])
     if environ_items and isinstance(environ_items, list):
         for item in environ_items:
             key, value = item.split("=")

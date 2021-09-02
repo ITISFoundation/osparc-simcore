@@ -135,7 +135,7 @@ async def get_dynamic_proxy_spec(
 
 
 def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
-    mounts = list()
+    mounts = []
     for s in settings:
         log.debug("Retrieved mount settings %s", s)
         mount = dict()
