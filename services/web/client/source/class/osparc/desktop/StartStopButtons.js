@@ -92,6 +92,9 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __initDefault: function() {
+      const clustersSelectBox = this.__createClustersSelectBox();
+      this._add(clustersSelectBox);
+
       const stopButton = this.__createStopButton();
       stopButton.setEnabled(false);
       this._add(stopButton);
@@ -103,6 +106,47 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
         visibility: "excluded"
       });
       this._add(startSplitButton);
+    },
+
+    __createClustersSelectBox: function() {
+      const selectBox = this.__clustersSelectBox = new qx.ui.form.SelectBox().set({
+        alignY: "middle",
+        maxHeight: 32
+      });
+
+      const store = osparc.store.Store.getInstance();
+      store.bind("clusters", selectBox, "visibility", {
+        converter: clusters => Object.keys(clusters).length ? "visible" : "excluded"
+      });
+      store.addListener("changeClusters", e => {
+        this.__populateClustersSelectBox();
+      });
+      this.__populateClustersSelectBox();
+      return selectBox;
+    },
+
+    __populateClustersSelectBox: function() {
+      this.__clustersSelectBox.removeAll();
+
+      const store = osparc.store.Store.getInstance();
+      const clusters = store.getClusters();
+      if (clusters) {
+        const itemDefault = new qx.ui.form.ListItem().set({
+          label: "default",
+          toolTipText: "default cluster"
+        });
+        itemDefault.id = 0;
+        this.__clustersSelectBox.add(itemDefault);
+        clusters.forEach(cluster => {
+          const item = new qx.ui.form.ListItem().set({
+            label: cluster["name"],
+            toolTipText: cluster["type"] + "\n" + cluster["description"],
+            allowGrowY: false
+          });
+          item.id = cluster["id"];
+          this.__clustersSelectBox.add(item);
+        });
+      }
     },
 
     __createStartButton: function() {
@@ -148,6 +192,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     __applyStudy: function(study) {
       study.getWorkbench().addListener("pipelineChanged", this.__checkButtonsVisible, this);
       study.addListener("changeState", this.__updateRunButtonsStatus, this);
+      osparc.data.Resources.get("clusters");
       this.__checkButtonsVisible();
     },
 
