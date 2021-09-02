@@ -39,7 +39,7 @@ qx.Class.define("osparc.dashboard.MemberListItem", {
   },
 
   events: {
-    "promoteMember": "qx.event.type.Data",
+    "promoteToManager": "qx.event.type.Data",
     "removeMember": "qx.event.type.Data"
   },
 
@@ -78,8 +78,10 @@ qx.Class.define("osparc.dashboard.MemberListItem", {
         subtitle.setValue(this.tr("Administrator"));
       } else if (value.getWrite()) {
         subtitle.setValue(this.tr("Manager"));
-      } else {
+      } else if (value.getRead()) {
         subtitle.setValue(this.tr("Member"));
+      } else {
+        this.exclude();
       }
     },
 
@@ -101,7 +103,7 @@ qx.Class.define("osparc.dashboard.MemberListItem", {
       if (accessRights && !accessRights.getDelete() && !accessRights.getWrite()) {
         const promoteButton = new qx.ui.menu.Button(this.tr("Promote to Manager"));
         promoteButton.addListener("execute", () => {
-          this.fireDataEvent("promoteMember", {
+          this.fireDataEvent("promoteToManager", {
             key: this.getKey(),
             name: this.getTitle()
           });

@@ -173,9 +173,9 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
             .setStyles({
               "border-radius": "16px"
             });
-          item.addListener("promoteMember", e => {
+          item.addListener("promoteToManager", e => {
             const clusterMember = e.getData();
-            this.__promoteMember(clusterMember);
+            this.__promoteToManager(clusterMember);
           });
           item.addListener("removeMember", e => {
             const clusterMember = e.getData();
@@ -397,22 +397,26 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         });
     },
 
-    __promoteMember: function(clusterMember) {
+    __promoteToManager: function(clusterMember) {
       if (this.__currentCluster === null) {
         return;
       }
 
+      const accessRights = JSON.parse(qx.util.Serializer.toJson(this.__currentCluster.getMembers()));
+      if (!(clusterMember["key"] in accessRights)) {
+        return;
+      }
+      accessRights[clusterMember["key"]] = {
+        "read": true,
+        "write": true,
+        "delete": false
+      };
       const params = {
         url: {
-          "cid": this.__currentCluster.getKey(),
-          "uid": clusterMember["key"]
+          "cid": this.__currentCluster.getKey()
         },
         data: {
-          "accessRights": {
-            "read": true,
-            "write": true,
-            "delete": false
-          }
+          "accessRights": accessRights
         }
       };
       osparc.data.Resources.fetch("clusterMembers", "patch", params)
@@ -437,7 +441,11 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         return;
       }
 
-      delete accessRights[clusterMember["key"]];
+      accessRights[clusterMember["key"]] = {
+        "read": false,
+        "write": false,
+        "delete": false
+      };
       const params = {
         url: {
           "cid": this.__currentCluster.getKey()

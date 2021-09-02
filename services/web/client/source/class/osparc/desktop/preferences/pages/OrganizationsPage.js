@@ -180,9 +180,9 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             .setStyles({
               "border-radius": "16px"
             });
-          item.addListener("promoteMember", e => {
+          item.addListener("promoteToManager", e => {
             const orgMember = e.getData();
-            this.__promoteMember(orgMember);
+            this.__promoteToManager(orgMember);
           });
           item.addListener("removeMember", e => {
             const orgMember = e.getData();
@@ -417,7 +417,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         });
     },
 
-    __promoteMember: function(orgMember) {
+    __promoteToManager: function(orgMember) {
       if (this.__currentOrg === null) {
         return;
       }
