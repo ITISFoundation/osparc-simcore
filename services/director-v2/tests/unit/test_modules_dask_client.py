@@ -219,7 +219,7 @@ async def test_send_computation_task(
         len(dask_client._taskid_to_future_map) == 0
     ), "the list of futures was not cleaned correctly"
 
-    # TEST RUNNING COMPUTATION IN NON-EXISTING CLUTER SHOULD TIMEOUT
+    # TEST RUNNING COMPUTATION IN NON-EXISTING CLUSTER SHOULD TIMEOUT
     dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
