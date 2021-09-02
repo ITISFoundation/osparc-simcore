@@ -25,7 +25,7 @@ def mock_aiodocker(mocker: MockerFixture) -> mock.MagicMock:
     "docker_engine_labels, expected_id",
     [
         ({}, None),
-        ({"invalidlabel"}, None),
+        ({"invalidlabel"}, "CLUSTER=0"),
         (["blahblah", "cluster_id=MyAwesomeClusterID"], "CLUSTER_MyAwesomeClusterID"),
     ],
 )
