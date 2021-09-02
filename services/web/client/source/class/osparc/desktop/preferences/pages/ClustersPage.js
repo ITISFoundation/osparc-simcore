@@ -43,6 +43,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
   members: {
     __currentCluster: null,
     __clustersModel: null,
+    __clustersList: null,
     __selectOrgMemberLayout: null,
     __organizationsAndMembers: null,
     __membersModel: null,
@@ -72,24 +73,25 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     },
 
     __getClustersList: function() {
-      const clustersUIList = new qx.ui.form.List().set({
+      const clustersList = this.__clustersList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
         height: 150,
         width: 150,
         backgroundColor: "material-button-background"
       });
-      clustersUIList.addListener("changeSelection", e => {
+      clustersList.addListener("changeSelection", e => {
         this.__clusterSelected(e.getData());
       }, this);
 
       const clustersModel = this.__clustersModel = new qx.data.Array();
-      const clustersCtrl = new qx.data.controller.List(clustersModel, clustersUIList, "name");
+      const clustersCtrl = new qx.data.controller.List(clustersModel, clustersList, "name");
       clustersCtrl.setDelegate({
         createItem: () => new osparc.dashboard.ClusterListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("id", "model", null, item, id);
           ctrl.bindProperty("id", "key", null, item, id);
+          ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
           ctrl.bindProperty("access_rights", "members", null, item, id);
@@ -107,7 +109,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         }
       });
 
-      return clustersUIList;
+      return clustersList;
     },
 
     __getOrgsAndMembersSection: function() {
@@ -206,13 +208,27 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       this.__reloadClusterMembers();
     },
 
-    __reloadClusters: function() {
+    __reloadClusters: function(reloadMembers = false) {
+      let reloadClusterKey = null;
+      if (reloadMembers) {
+        reloadClusterKey = this.__currentCluster.getKey();
+      }
+
       const clustersModel = this.__clustersModel;
       clustersModel.removeAll();
 
       osparc.data.Resources.get("clusters")
         .then(clusters => {
           clusters.forEach(cluster => clustersModel.append(qx.data.marshal.Json.createModel(cluster)));
+          if (reloadClusterKey) {
+            const selectables = this.__clustersList.getSelectables();
+            selectables.forEach(selectable => {
+              if (selectable.getKey() === reloadClusterKey) {
+                this.__currentCluster = selectable;
+                this.__reloadClusterMembers();
+              }
+            });
+          }
         });
     },
 
@@ -411,7 +427,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Member(s) added"));
           osparc.store.Store.getInstance().reset("clusters");
-          this.__reloadClusterMembers();
+          this.__reloadClusters(true);
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong with the invitation"), "ERROR");
@@ -446,7 +462,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(clusterMember["name"] + this.tr(" successfully promoted"));
           osparc.store.Store.getInstance().reset("clusters");
-          this.__reloadClusterMembers();
+          this.__reloadClusters(true);
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting ") + clusterMember["name"], "ERROR");
@@ -477,7 +493,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(clusterMember["name"] + this.tr(" successfully removed"));
           osparc.store.Store.getInstance().reset("clusters");
-          this.__reloadClusterMembers();
+          this.__reloadClusters(true);
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + clusterMember["name"], "ERROR");
