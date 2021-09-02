@@ -6,7 +6,7 @@ from typing import Optional
 import aiopg.sa
 import tenacity
 from aiopg.sa.result import RowProxy
-from servicelib.aiopg_utils import (
+from .utils import (
     DataSourceName,
     PostgresRetryPolicyUponInitialization,
     create_pg_engine,
