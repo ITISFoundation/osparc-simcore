@@ -20,7 +20,7 @@ import pytest
 import simcore_service_storage
 from aiohttp import web
 from aiopg.sa import create_engine
-from servicelib.application import create_safe_application
+from servicelib.aiohttp.application import create_safe_application
 from simcore_service_storage.constants import SIMCORE_S3_STR
 from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
 from simcore_service_storage.models import FileMetaData
