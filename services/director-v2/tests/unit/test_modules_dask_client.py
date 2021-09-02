@@ -18,7 +18,10 @@ from simcore_service_director_v2.core.errors import ConfigurationError
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.comp_tasks import Image
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
-from simcore_service_director_v2.modules.dask_client import DaskClient
+from simcore_service_director_v2.modules.dask_client import (
+    CLUSTER_RESOURCE_MOCK_USAGE,
+    DaskClient,
+)
 from starlette.testclient import TestClient
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
 
@@ -119,7 +122,9 @@ async def test_send_computation_task(
     exp_annotations: Dict[str, Any],
     mocker: MockerFixture,
 ):
-    exp_annotations["resources"].update({cluster_id_resource: 1e-7})
+    exp_annotations["resources"].update(
+        {cluster_id_resource: CLUSTER_RESOURCE_MOCK_USAGE}
+    )
 
     @retry(
         stop=stop_after_delay(10),
