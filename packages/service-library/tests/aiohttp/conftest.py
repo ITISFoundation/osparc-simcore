@@ -1,3 +1,6 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+
 from pathlib import Path
 from typing import Dict
 
