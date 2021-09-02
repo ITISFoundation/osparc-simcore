@@ -91,6 +91,7 @@ class ClustersRepository(BaseRepository):
                     description=row[clusters.c.description],
                     type=row[clusters.c.type],
                     owner=row[clusters.c.owner],
+                    thumbnail=row[clusters.c.thumbnail],
                     access_rights=cluster_access_rights,
                 )
             else:
