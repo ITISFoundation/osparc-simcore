@@ -251,6 +251,7 @@ redis==3.5.3
     #   -r requirements/_test.in
 requests==2.26.0
     # via
+    #   -r requirements/_test.in
     #   codecov
     #   coveralls
     #   docker

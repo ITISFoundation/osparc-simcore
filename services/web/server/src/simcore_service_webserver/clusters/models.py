@@ -82,6 +82,39 @@ class Cluster(ClusterBase):
 class ClusterCreate(ClusterBase):
     owner: Optional[GroupID]
 
+    @validator("thumbnail", always=True, pre=True)
+    @classmethod
+    def set_default_thumbnail_if_empty(cls, v, values):
+        if v is None:
+            cluster_type = values["type"]
+            default_thumbnails = {
+                ClusterType.AWS.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/250px-Amazon_Web_Services_Logo.svg.png",
+                ClusterType.ON_PREMISE.value: "https://cdn.pixabay.com/photo/2012/04/02/16/35/server-24899_960_720.png",
+            }
+            return default_thumbnails[cluster_type]
+        return v
+
+    class Config(ClusterBase.Config):
+        schema_extra = {
+            "examples": [
+                {
+                    "name": "My awesome cluster",
+                    "type": ClusterType.ON_PREMISE,
+                },
+                {
+                    "name": "My AWS cluster",
+                    "description": "a AWS cluster administered by me",
+                    "type": ClusterType.AWS,
+                    "owner": 154,
+                    "access_rights": {
+                        154: CLUSTER_ADMIN_RIGHTS,
+                        12: CLUSTER_MANAGER_RIGHTS,
+                        7899: CLUSTER_USER_RIGHTS,
+                    },
+                },
+            ]
+        }
+
 
 class ClusterPatch(ClusterBase):
     name: Optional[str]

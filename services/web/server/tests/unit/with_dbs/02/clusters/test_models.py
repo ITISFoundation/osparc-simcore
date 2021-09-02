@@ -3,18 +3,20 @@ from pprint import pformat
 from typing import Any, Dict, Type
 
 import pytest
+import requests
 from pydantic import BaseModel, ValidationError
 from simcore_service_webserver.clusters.models import (
     CLUSTER_ADMIN_RIGHTS,
     CLUSTER_MANAGER_RIGHTS,
     CLUSTER_USER_RIGHTS,
     Cluster,
+    ClusterCreate,
 )
 
 
 @pytest.mark.parametrize(
     "model_cls",
-    (Cluster,),
+    (Cluster, ClusterCreate),
 )
 def test_clusters_model_examples(
     model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
@@ -29,7 +31,7 @@ def test_clusters_model_examples(
     "model_cls",
     (Cluster,),
 )
-def test_cluster_access_rights_correctly_created_when_owner_is_not_present(
+def test_cluster_access_rights_correctly_created_when_owner_access_rights_not_present(
     model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
 ):
     for example in model_cls_examples.values():
@@ -62,3 +64,21 @@ def test_cluster_fails_when_owner_has_no_admin_rights(
         example["access_rights"][owner_gid] = CLUSTER_USER_RIGHTS
         with pytest.raises(ValidationError):
             model_cls(**example)
+
+
+@pytest.mark.parametrize(
+    "model_cls",
+    (ClusterCreate,),
+)
+def test_cluster_creation_brings_default_thumbail(
+    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
+):
+    for example in model_cls_examples.values():
+        if "thumbnail" in example:
+            example.pop("thumbnail")
+        instance = model_cls(**example)
+        assert instance
+        assert instance.thumbnail
+        # check thumbnail is a valid link
+        response = requests.head(instance.thumbnail)
+        assert 399 >= response.status_code >= 200
