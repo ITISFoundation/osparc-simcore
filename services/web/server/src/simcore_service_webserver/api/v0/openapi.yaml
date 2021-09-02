@@ -6000,7 +6000,7 @@ paths:
                   description: if true will force re-running all dependent nodes
                 cluster_id:
                   type: integer
-                  description: 'if set the computation shall use the cluster described by the id, 0 is the default cluster'
+                  description: 'the computation shall use the cluster described by its id, 0 is the default cluster'
                   default: 0
                   minimum: 0
                 subgraph:
@@ -15729,11 +15729,17 @@ paths:
                       required:
                         - id
                         - name
-                        - description
                         - accessRights
                       example:
-                        - name: AWS cluster
-                          description: My institution cluster
+                        - id: 1
+                          name: AWS cluster
+                          type: AWS
+                          owner: 2
+                          accessRights:
+                            '2':
+                              read: true
+                              write: true
+                              delete: true
                   error:
                     nullable: true
                     default: null
@@ -15905,11 +15911,17 @@ paths:
                     required:
                       - id
                       - name
-                      - description
                       - accessRights
                     example:
-                      - name: AWS cluster
-                        description: My institution cluster
+                      - id: 1
+                        name: AWS cluster
+                        type: AWS
+                        owner: 2
+                        accessRights:
+                          '2':
+                            read: true
+                            write: true
+                            delete: true
                   error:
                     nullable: true
                     default: null
@@ -16065,11 +16077,17 @@ paths:
                     required:
                       - id
                       - name
-                      - description
                       - accessRights
                     example:
-                      - name: AWS cluster
-                        description: My institution cluster
+                      - id: 1
+                        name: AWS cluster
+                        type: AWS
+                        owner: 2
+                        accessRights:
+                          '2':
+                            read: true
+                            write: true
+                            delete: true
                   error:
                     nullable: true
                     default: null
@@ -16263,11 +16281,17 @@ paths:
                     required:
                       - id
                       - name
-                      - description
                       - accessRights
                     example:
-                      - name: AWS cluster
-                        description: My institution cluster
+                      - id: 1
+                        name: AWS cluster
+                        type: AWS
+                        owner: 2
+                        accessRights:
+                          '2':
+                            read: true
+                            write: true
+                            delete: true
                   error:
                     nullable: true
                     default: null
