@@ -43,7 +43,8 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
   members: {
     __currentCluster: null,
     __clustersModel: null,
-    __memberInvitation: null,
+    __selectOrgMemberLayout: null,
+    __orgsAndMembersFilter: null,
     __membersModel: null,
 
     __getCreateClusterSection: function() {
@@ -111,7 +112,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
 
     __getOrgsAndMembersSection: function() {
       const box = this._createSectionBox(this.tr("Organization and Members"));
-      box.add(this.__getMemberInvitation());
+      box.add(this.__getOrgMembersFilter());
       box.add(this.__getMembersList(), {
         flex: 1
       });
@@ -119,32 +120,40 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       return box;
     },
 
-    __getMemberInvitation: function() {
-      const hBox = this.__memberInvitation = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+    __getOrgMembersFilter: function() {
+      const vBox = this.__selectOrgMemberLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      vBox.exclude();
+
+      const label = new qx.ui.basic.Label(this.tr("Select from the following list")).set({
+        paddingLeft: 5
+      });
+      vBox.add(label);
+
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignY: "middle"
       }));
-      hBox.exclude();
+      vBox.add(hBox);
 
-      const userEmail = new qx.ui.form.TextField().set({
-        required: true,
-        placeholder: this.tr("New Member's email")
-      });
-      hBox.add(userEmail, {
+      const orgsAndMembersFilter = this.__orgsAndMembersFilter = new osparc.component.filter.OrganizationsAndMembers("orgAndMembClusters");
+      hBox.add(orgsAndMembersFilter, {
         flex: 1
       });
 
-      const validator = new qx.ui.form.validation.Manager();
-      validator.add(userEmail, qx.util.Validate.email());
-
-      const inviteBtn = new qx.ui.form.Button(this.tr("Invite"));
-      inviteBtn.addListener("execute", function() {
-        if (validator.validate()) {
-          this.__addMember(userEmail.getValue());
-        }
+      const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Add")).set({
+        allowGrowY: false,
+        enabled: false
+      });
+      addCollaboratorBtn.addListener("execute", () => {
+        this.__addMembers();
       }, this);
-      hBox.add(inviteBtn);
+      qx.event.message.Bus.getInstance().subscribe("orgAndMembClusters", () => {
+        const anySelected = Boolean(this.__organizationsAndMembers.getSelectedGIDs().length);
+        this.__addCollaboratorBtn.setEnabled(anySelected);
+      }, this);
 
-      return hBox;
+      hBox.add(addCollaboratorBtn);
+
+      return vBox;
     },
 
     __getMembersList: function() {
@@ -188,7 +197,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     },
 
     __clusterSelected: function(data) {
-      this.__memberInvitation.exclude();
+      this.__selectOrgMemberLayout.exclude();
       if (data && data.length>0) {
         this.__currentCluster = data[0];
       } else {
@@ -216,12 +225,15 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         return;
       }
 
+      const clusterMembers = clusterModel.getMembersList();
+
       const canWrite = clusterModel.getAccessRights().getWrite();
       if (canWrite) {
-        this.__memberInvitation.show();
+        this.__selectOrgMemberLayout.show();
+        const memberKeys = Object.keys(clusterModel.getMembersObj());
+        this.__orgsAndMembersFilter.reloadVisibleCollaborators(memberKeys);
       }
 
-      const clusterMembers = clusterModel.getMembersList();
       const store = osparc.store.Store.getInstance();
       const promises = [];
       promises.push(store.getVisibleMembers());
@@ -241,7 +253,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
                 "write": clusterMember.getWrite(),
                 "delete": clusterMember.getDelete()
               };
-              memberObj["subtitle"] = member["login"];
+              memberObj["login"] = member["login"];
               memberObj["id"] = member["gid"];
               membersModel.append(qx.data.marshal.Json.createModel(memberObj));
             }
@@ -372,6 +384,9 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         });
     },
 
+    __addMembers: function(clusterMemberEmail) {
+    },
+
     __addMember: function(clusterMemberEmail) {
       if (this.__currentCluster === null) {
         return;
@@ -406,11 +421,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       if (!(clusterMember["key"] in accessRights)) {
         return;
       }
-      accessRights[clusterMember["key"]] = {
-        "read": true,
-        "write": true,
-        "delete": false
-      };
+      delete accessRights[clusterMember["key"]];
       const params = {
         url: {
           "cid": this.__currentCluster.getKey()
