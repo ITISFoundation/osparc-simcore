@@ -187,6 +187,7 @@ projects_vc_tags = sa.Table(
     sa.Column(
         "hidden",
         sa.Boolean,
+        default=False,
         doc="Skipped by default from tag listings."
         "Normally intended for internal use tags",
     ),
