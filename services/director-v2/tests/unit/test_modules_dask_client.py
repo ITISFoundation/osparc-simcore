@@ -5,7 +5,7 @@
 
 import asyncio
 import random
-from typing import Any, Dict
+from typing import Any, Dict, List, Tuple
 from uuid import uuid4
 
 import pytest
@@ -19,7 +19,10 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
-from simcore_service_director_v2.core.errors import ConfigurationError
+from simcore_service_director_v2.core.errors import (
+    ConfigurationError,
+    MissingComputationalResourcesError,
+)
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.comp_tasks import Image
 from simcore_service_director_v2.models.schemas.constants import ClusterID, UserID
@@ -135,9 +138,8 @@ def node_id() -> NodeID:
     return uuid4()
 
 
-@pytest.mark.parametrize(
-    "image, expected_annotations",
-    [
+def _image_to_req_params() -> List[Tuple[Image, Dict[str, Any]]]:
+    return [
         (
             Image(
                 name="simcore/services/comp/pytest",
@@ -166,8 +168,10 @@ def node_id() -> NodeID:
                 "resources": {"CPU": 2.0, "MPI": 1.0, "RAM": 128 * 1024 * 1024},
             },
         ),
-    ],
-)
+    ]
+
+
+@pytest.mark.parametrize("image, expected_annotations", _image_to_req_params())
 async def test_send_computation_task(
     dask_client: DaskClient,
     user_id: UserID,
@@ -214,7 +218,7 @@ async def test_send_computation_task(
 
     job_id, future = list(dask_client._taskid_to_future_map.items())[0]
     # this waits for the computation to run
-    task_result = future.result(timeout=2)
+    task_result = await future.result(timeout=2)
     assert task_result == 123
     assert future.key == job_id
     await _wait_for_call(mocked_done_callback_fct)
@@ -224,7 +228,39 @@ async def test_send_computation_task(
         len(dask_client._taskid_to_future_map) == 0
     ), "the list of futures was not cleaned correctly"
 
-    # TEST COMPUTATION ABORTION
+
+@pytest.mark.parametrize("image, expected_annotations", _image_to_req_params())
+async def test_abort_send_computation_task(
+    dask_client: DaskClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    cluster_id: ClusterID,
+    cluster_id_resource: str,
+    image: Image,
+    expected_annotations: Dict[str, Any],
+    mocker: MockerFixture,
+):
+    # INIT
+    expected_annotations["resources"].update(
+        {cluster_id_resource: CLUSTER_RESOURCE_MOCK_USAGE}
+    )
+    fake_task = {node_id: image}
+    mocked_done_callback_fct = mocker.Mock()
+
+    # NOTE: We pass another fct so it can run in our localy created dask cluster
+    def fake_sidecar_fct(job_id: str, u_id: str, prj_id: str, n_id: str) -> int:
+        from dask.distributed import get_worker
+
+        worker = get_worker()
+        task: TaskState = worker.tasks.get(worker.get_current_task())
+        assert task is not None
+        assert task.annotations == expected_annotations
+        assert u_id == user_id
+        assert prj_id == project_id
+        assert n_id == node_id
+        return 123
+
     await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
@@ -240,7 +276,7 @@ async def test_send_computation_task(
     job_id, future = list(dask_client._taskid_to_future_map.items())[0]
     # now let's abort the computation
     assert future.key == job_id
-    dask_client.abort_computation_tasks([job_id])
+    await dask_client.abort_computation_tasks([job_id])
     assert future.cancelled() == True
     await _wait_for_call(mocked_done_callback_fct)
     mocked_done_callback_fct.assert_called_once()
@@ -249,30 +285,51 @@ async def test_send_computation_task(
         len(dask_client._taskid_to_future_map) == 0
     ), "the list of futures was not cleaned correctly"
 
-    # TEST RUNNING COMPUTATION IN NON-EXISTING CLUSTER SHOULD TIMEOUT
-    await dask_client.send_computation_tasks(
-        user_id=user_id,
-        project_id=project_id,
-        cluster_id=random.randint(cluster_id + 1, 100),
-        tasks=fake_task,
-        callback=mocked_done_callback_fct,
-        remote_fct=fake_sidecar_fct,
+
+@pytest.mark.parametrize("image, expected_annotations", _image_to_req_params())
+async def test_invalid_cluster_send_computation_task(
+    dask_client: DaskClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    cluster_id: ClusterID,
+    cluster_id_resource: str,
+    image: Image,
+    expected_annotations: Dict[str, Any],
+    mocker: MockerFixture,
+):
+    # INIT
+    expected_annotations["resources"].update(
+        {cluster_id_resource: CLUSTER_RESOURCE_MOCK_USAGE}
     )
-    assert (
-        len(dask_client._taskid_to_future_map) == 1
-    ), "dask client did not store the future of the task sent"
-    job_id, future = list(dask_client._taskid_to_future_map.items())[0]
+    fake_task = {node_id: image}
+    mocked_done_callback_fct = mocker.Mock()
 
-    with pytest.raises(asyncio.TimeoutError):
-        future.result(timeout=2)
-    dask_client.abort_computation_tasks([job_id])
-    assert future.cancelled() == True
-    await _wait_for_call(mocked_done_callback_fct)
-    mocked_done_callback_fct.assert_called_once()
-    mocked_done_callback_fct.reset_mock()
+    # NOTE: We pass another fct so it can run in our localy created dask cluster
+    def fake_sidecar_fct(job_id: str, u_id: str, prj_id: str, n_id: str) -> int:
+        from dask.distributed import get_worker
+
+        worker = get_worker()
+        task: TaskState = worker.tasks.get(worker.get_current_task())
+        assert task is not None
+        assert task.annotations == expected_annotations
+        assert u_id == user_id
+        assert prj_id == project_id
+        assert n_id == node_id
+        return 123
+
+    with pytest.raises(MissingComputationalResourcesError):
+        await dask_client.send_computation_tasks(
+            user_id=user_id,
+            project_id=project_id,
+            cluster_id=random.randint(cluster_id + 1, 100),
+            tasks=fake_task,
+            callback=mocked_done_callback_fct,
+            remote_fct=fake_sidecar_fct,
+        )
     assert (
         len(dask_client._taskid_to_future_map) == 0
-    ), "the list of futures was not cleaned correctly"
+    ), "dask client should not store any future here"
 
 
 @pytest.mark.parametrize(

@@ -51,7 +51,7 @@ def _check_cluster_able_to_run_pipeline(
     ) -> bool:
         def gen_check(task_resources: Dict[str, Any], worker_resources: Dict[str, Any]):
             for r in task_resources:
-                yield worker_resources.get(r, 0) > task_resources[r]
+                yield worker_resources.get(r, 0) >= task_resources[r]
 
         return all(gen_check(task_resources, worker_resources))
 
@@ -247,10 +247,10 @@ class DaskClient:
             )  # this should ensure the task will run even if the future goes out of scope
             logger.debug("Dask task %s started", task_future.key)
 
-    def abort_computation_tasks(self, task_ids: List[str]) -> None:
+    async def abort_computation_tasks(self, task_ids: List[str]) -> None:
 
         for task_id in task_ids:
             task_future = self._taskid_to_future_map.get(task_id)
             if task_future:
-                task_future.cancel()
+                await task_future.cancel()
                 logger.debug("Dask task %s cancelled", task_future.key)
