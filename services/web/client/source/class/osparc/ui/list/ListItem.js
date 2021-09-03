@@ -28,20 +28,19 @@
  *
  * <pre class='javascript'>
  *   tree.setDelegate({
- *     createItem: () => new osparc.dashboard.ServiceBrowserListItem(),
+ *     createItem: () => new osparc.ui.list.ListItem(),
  *     bindItem: (c, item, id) => {
  *       c.bindProperty("key", "model", null, item, id);
+ *       c.bindProperty("thumbnail", "thumbnail", null, item, id);
  *       c.bindProperty("name", "title", null, item, id);
  *       c.bindProperty("description", "subtitle", null, item, id);
- *       c.bindProperty("type", "type", null, item, id);
- *       c.bindProperty("category", "category", null, item, id);
  *       c.bindProperty("contact", "contact", null, item, id);
  *     }
  *   });
  * </pre>
  */
 
-qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
+qx.Class.define("osparc.ui.list.ListItem", {
   extend: qx.ui.core.Widget,
   implement : [qx.ui.form.IModel, osparc.component.filter.IFilterable],
   include : [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],
@@ -74,15 +73,6 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
       apply : "_applyKey"
     },
 
-    version: {
-      check: "String"
-    },
-
-    dagId: {
-      check : "String",
-      nullable : true
-    },
-
     thumbnail: {
       check : "String",
       apply : "_applyThumbnail",
@@ -101,19 +91,9 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
       nullable : true
     },
 
-    type: {
-      check : "String",
-      nullable : true
-    },
-
     contact: {
       check : "String",
       apply : "_applyContact",
-      nullable : true
-    },
-
-    category: {
-      check : "String",
       nullable : true
     }
   },
@@ -176,6 +156,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
             noMargin: true,
             maxHeight: 16
           });
+          control.addListener("appear", () => control.setNoMargin(true));
           this._add(control, {
             row: 1,
             column: 1
@@ -261,20 +242,11 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
           return true;
         }
       }
-      if (data.tags && data.tags.length) {
-        const type = this.getType() || "";
-        if (!data.tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
-          return true;
-        }
-      }
       return false;
     },
 
     _shouldReactToFilter: function(data) {
       if (data.text && data.text.length > 1) {
-        return true;
-      }
-      if (data.tags && data.tags.length) {
         return true;
       }
       return false;

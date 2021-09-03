@@ -87,7 +87,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       const clustersModel = this.__clustersModel = new qx.data.Array();
       const clustersCtrl = new qx.data.controller.List(clustersModel, clustersList, "name");
       clustersCtrl.setDelegate({
-        createItem: () => new osparc.dashboard.ClusterListItem(),
+        createItem: () => new osparc.ui.list.ClusterListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("id", "model", null, item, id);
           ctrl.bindProperty("id", "key", null, item, id);
@@ -169,7 +169,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       const membersArrayModel = this.__membersArrayModel = new qx.data.Array();
       const membersCtrl = new qx.data.controller.List(membersArrayModel, memebersUIList, "name");
       membersCtrl.setDelegate({
-        createItem: () => new osparc.dashboard.MemberListItem(),
+        createItem: () => new osparc.ui.list.MemberListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("id", "model", null, item, id);
           ctrl.bindProperty("id", "key", null, item, id);

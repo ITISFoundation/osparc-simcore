@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2020 IT'IS Foundation, https://itis.swiss
+     2021 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -15,25 +15,32 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.OrganizationListItem", {
-  extend: osparc.dashboard.ServiceBrowserListItem,
+qx.Class.define("osparc.ui.list.ClusterListItem", {
+  extend: osparc.ui.list.ListItem,
 
   construct: function() {
     this.base(arguments);
   },
 
   properties: {
+    members: {
+      check: "Object",
+      nullable: false,
+      apply: "__applyMembers",
+      event: "changeMembers"
+    },
+
     accessRights: {
       check: "Object",
       nullable: false,
-      apply: "_applyAccessRights",
+      apply: "__applyAccessRights",
       event: "changeAcessRights"
     }
   },
 
   events: {
-    "openEditOrganization": "qx.event.type.Data",
-    "deleteOrganization": "qx.event.type.Data"
+    "openEditCluster": "qx.event.type.Data",
+    "deleteCluster": "qx.event.type.Data"
   },
 
   members: {
@@ -50,7 +57,6 @@ qx.Class.define("osparc.dashboard.OrganizationListItem", {
             icon: "@FontAwesome5Solid/ellipsis-v/"+(iconSize-11),
             focusable: false
           });
-          osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           this._add(control, {
             row: 0,
             column: 3,
@@ -63,11 +69,38 @@ qx.Class.define("osparc.dashboard.OrganizationListItem", {
       return control || this.base(arguments, id);
     },
 
-    _applyAccessRights: function(value) {
-      if (value === null) {
+    __applyMembers: function(members) {
+      if (members === null) {
         return;
       }
-      if (value.getDelete()) {
+
+      const nMembers = this.getMembersList().length + this.tr(" members");
+      this.setContact(nMembers);
+
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      if ("get"+myGid in members) {
+        this.setAccessRights(members.get(myGid));
+      }
+    },
+
+    getMembersList: function() {
+      const membersList = [];
+      const members = this.getMembers();
+      const memberGids = members.basename.split("|");
+      memberGids.forEach(memberGid => {
+        const member = members.get(memberGid);
+        member.gid = memberGid;
+        membersList.push(member);
+      });
+      return membersList;
+    },
+
+    __applyAccessRights: function(accessRights) {
+      if (accessRights === null) {
+        return;
+      }
+
+      if (accessRights.getDelete()) {
         const optionsMenu = this.getChildControl("options");
         const menu = this.__getOptionsMenu();
         optionsMenu.setMenu(menu);
@@ -79,17 +112,17 @@ qx.Class.define("osparc.dashboard.OrganizationListItem", {
         position: "bottom-right"
       });
 
-      const editOrgButton = new qx.ui.menu.Button(this.tr("Edit details"));
-      editOrgButton.addListener("execute", () => {
-        this.fireDataEvent("openEditOrganization", this.getKey());
+      const editClusterButton = new qx.ui.menu.Button(this.tr("Edit details"));
+      editClusterButton.addListener("execute", () => {
+        this.fireDataEvent("openEditCluster", this.getKey());
       });
-      menu.add(editOrgButton);
+      menu.add(editClusterButton);
 
-      const deleteOrgButton = new qx.ui.menu.Button(this.tr("Delete"));
-      deleteOrgButton.addListener("execute", () => {
-        this.fireDataEvent("deleteOrganization", this.getKey());
+      const deleteClusterButton = new qx.ui.menu.Button(this.tr("Delete"));
+      deleteClusterButton.addListener("execute", () => {
+        this.fireDataEvent("deleteCluster", this.getKey());
       });
-      menu.add(deleteOrgButton);
+      menu.add(deleteClusterButton);
 
       return menu;
     },
@@ -99,8 +132,6 @@ qx.Class.define("osparc.dashboard.OrganizationListItem", {
       const thumbnail = this.getChildControl("thumbnail");
       if (value) {
         thumbnail.setSource(value);
-      } else {
-        thumbnail.setSource("@FontAwesome5Solid/users/24");
       }
     }
   }

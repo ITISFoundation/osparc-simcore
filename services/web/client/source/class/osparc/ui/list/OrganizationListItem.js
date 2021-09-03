@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2021 IT'IS Foundation, https://itis.swiss
+     2020 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -15,32 +15,25 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.ClusterListItem", {
-  extend: osparc.dashboard.ServiceBrowserListItem,
+qx.Class.define("osparc.ui.list.OrganizationListItem", {
+  extend: osparc.ui.list.ListItem,
 
   construct: function() {
     this.base(arguments);
   },
 
   properties: {
-    members: {
-      check: "Object",
-      nullable: false,
-      apply: "__applyMembers",
-      event: "changeMembers"
-    },
-
     accessRights: {
       check: "Object",
       nullable: false,
-      apply: "__applyAccessRights",
+      apply: "_applyAccessRights",
       event: "changeAcessRights"
     }
   },
 
   events: {
-    "openEditCluster": "qx.event.type.Data",
-    "deleteCluster": "qx.event.type.Data"
+    "openEditOrganization": "qx.event.type.Data",
+    "deleteOrganization": "qx.event.type.Data"
   },
 
   members: {
@@ -57,6 +50,7 @@ qx.Class.define("osparc.dashboard.ClusterListItem", {
             icon: "@FontAwesome5Solid/ellipsis-v/"+(iconSize-11),
             focusable: false
           });
+          osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           this._add(control, {
             row: 0,
             column: 3,
@@ -69,38 +63,11 @@ qx.Class.define("osparc.dashboard.ClusterListItem", {
       return control || this.base(arguments, id);
     },
 
-    __applyMembers: function(members) {
-      if (members === null) {
+    _applyAccessRights: function(value) {
+      if (value === null) {
         return;
       }
-
-      const nMembers = this.getMembersList().length + this.tr(" members");
-      this.setContact(nMembers);
-
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      if ("get"+myGid in members) {
-        this.setAccessRights(members.get(myGid));
-      }
-    },
-
-    getMembersList: function() {
-      const membersList = [];
-      const members = this.getMembers();
-      const memberGids = members.basename.split("|");
-      memberGids.forEach(memberGid => {
-        const member = members.get(memberGid);
-        member.gid = memberGid;
-        membersList.push(member);
-      });
-      return membersList;
-    },
-
-    __applyAccessRights: function(accessRights) {
-      if (accessRights === null) {
-        return;
-      }
-
-      if (accessRights.getDelete()) {
+      if (value.getDelete()) {
         const optionsMenu = this.getChildControl("options");
         const menu = this.__getOptionsMenu();
         optionsMenu.setMenu(menu);
@@ -112,17 +79,17 @@ qx.Class.define("osparc.dashboard.ClusterListItem", {
         position: "bottom-right"
       });
 
-      const editClusterButton = new qx.ui.menu.Button(this.tr("Edit details"));
-      editClusterButton.addListener("execute", () => {
-        this.fireDataEvent("openEditCluster", this.getKey());
+      const editOrgButton = new qx.ui.menu.Button(this.tr("Edit details"));
+      editOrgButton.addListener("execute", () => {
+        this.fireDataEvent("openEditOrganization", this.getKey());
       });
-      menu.add(editClusterButton);
+      menu.add(editOrgButton);
 
-      const deleteClusterButton = new qx.ui.menu.Button(this.tr("Delete"));
-      deleteClusterButton.addListener("execute", () => {
-        this.fireDataEvent("deleteCluster", this.getKey());
+      const deleteOrgButton = new qx.ui.menu.Button(this.tr("Delete"));
+      deleteOrgButton.addListener("execute", () => {
+        this.fireDataEvent("deleteOrganization", this.getKey());
       });
-      menu.add(deleteClusterButton);
+      menu.add(deleteOrgButton);
 
       return menu;
     },
@@ -132,6 +99,8 @@ qx.Class.define("osparc.dashboard.ClusterListItem", {
       const thumbnail = this.getChildControl("thumbnail");
       if (value) {
         thumbnail.setSource(value);
+      } else {
+        thumbnail.setSource("@FontAwesome5Solid/users/24");
       }
     }
   }

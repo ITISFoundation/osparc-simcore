@@ -15,8 +15,8 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.MemberListItem", {
-  extend: osparc.dashboard.ServiceBrowserListItem,
+qx.Class.define("osparc.ui.list.MemberListItem", {
+  extend: osparc.ui.list.ListItem,
 
   construct: function() {
     this.base(arguments);

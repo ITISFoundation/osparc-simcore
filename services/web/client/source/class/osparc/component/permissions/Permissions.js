@@ -133,7 +133,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       const collaboratorsModel = this.__collaboratorsModel = new qx.data.Array();
       const collaboratorsCtrl = new qx.data.controller.List(collaboratorsModel, collaboratorsUIList, "name");
       collaboratorsCtrl.setDelegate({
-        createItem: () => new osparc.dashboard.CollaboratorListItem(),
+        createItem: () => new osparc.ui.list.CollaboratorListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("gid", "model", null, item, id);
           ctrl.bindProperty("gid", "key", null, item, id);
