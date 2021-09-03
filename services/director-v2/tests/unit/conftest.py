@@ -160,8 +160,9 @@ async def docker_swarm(loop) -> None:
 
     async def _in_docker_swarm(raise_error: bool = False) -> bool:
         try:
-            inspect_result = await docker.swarm.inspect()
-            assert type(inspect_result) == dict
+            async with aiodocker.Docker() as docker:
+                inspect_result = await docker.swarm.inspect()
+                assert type(inspect_result) == dict
         except aiodocker.exceptions.DockerError as error:
             assert error.status == 503
             assert error.message.startswith("This node is not a swarm manager")
@@ -172,7 +173,9 @@ async def docker_swarm(loop) -> None:
 
     async with aiodocker.Docker() as docker:
         async for attempt in tenacity.AsyncRetrying(
-            wait=tenacity.wait_exponential(), stop=tenacity.stop_after_delay(20)
+            wait=tenacity.wait_exponential(),
+            stop=tenacity.stop_after_delay(1),
+            retry_error_cls=_NotInSwarmException,
         ):
             with attempt:
                 if not await _in_docker_swarm():
