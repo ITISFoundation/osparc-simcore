@@ -23,7 +23,6 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
-from pydantic.types import NonNegativeInt
 
 from ...core.errors import InvalidPipelineError, PipelineNotFoundError, SchedulerError
 from ...models.domains.comp_pipelines import CompPipelineAtDB
