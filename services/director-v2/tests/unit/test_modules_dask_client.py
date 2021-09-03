@@ -397,7 +397,21 @@ async def test_disconnected_backend_send_computation_task(
     ), "dask client should not store any future here"
 
 
-@pytest.mark.parametrize("image, expected_annotations", _image_to_req_params())
+@pytest.mark.parametrize(
+    "image, expected_annotations",
+    [
+        (
+            Image(
+                name="simcore/services/comp/pytest",
+                tag="1.4.5",
+                node_requirements=NodeRequirements(
+                    CPU=10000000000000000, RAM="128 MiB"
+                ),
+            ),
+            {"resources": {"CPU": 1.0, "RAM": 128 * 1024 * 1024}},
+        )
+    ],
+)
 async def test_too_many_resource_send_computation_task(
     dask_client: DaskClient,
     user_id: UserID,
