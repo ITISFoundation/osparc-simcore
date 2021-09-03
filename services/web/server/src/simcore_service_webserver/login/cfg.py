@@ -124,8 +124,8 @@ class Cfg(dict):
             raise AttributeError
         try:
             return self[name]
-        except KeyError:
-            raise AttributeError
+        except KeyError as err:
+            raise AttributeError from err
 
     def configure(self, updates):
         self.clear()

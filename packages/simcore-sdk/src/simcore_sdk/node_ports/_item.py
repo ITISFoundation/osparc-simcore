@@ -51,11 +51,11 @@ def _check_type(item_type: str, value: DataItemValue):
 class Item:
     """An item contains data (DataItem) and an schema (SchemaItem)
 
-    :raises exceptions.InvalidProtocolError: [description]
-    :raises AttributeError: [description]
-    :raises exceptions.InvalidProtocolError: [description]
-    :raises exceptions.InvalidItemTypeError: [description]
-    :raises exceptions.NodeportsException: [description]
+    raises exceptions.InvalidProtocolError
+    raises AttributeError
+    raises exceptions.InvalidProtocolError
+    raises exceptions.InvalidItemTypeError
+    raises exceptions.NodeportsException
     """
 
     def __init__(
@@ -96,8 +96,8 @@ class Item:
     async def get(self) -> Optional[ItemConcreteValue]:
         """gets data converted to the underlying type
 
-        :raises exceptions.InvalidProtocolError: if the underlying type is unknown
-        :return: the converted value or None if no value is defined
+        raises exceptions.InvalidProtocolError: if the underlying type is unknown
+        return the converted value or None if no value is defined
         """
         log.debug("Getting item %s", self.key)
         if (
@@ -147,9 +147,9 @@ class Item:
         """sets the data to the underlying port
 
         :param value: must be convertible to a string, or an exception will be thrown.
-        :type value: [type]
-        :raises exceptions.InvalidItemTypeError: [description]
-        :raises exceptions.InvalidItemTypeError: [description]
+        :type value:
+        raises exceptions.InvalidItemTypeError
+        raises exceptions.InvalidItemTypeError
         """
 
         log.info("Setting data item with value %s", value)

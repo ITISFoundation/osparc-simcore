@@ -5,7 +5,6 @@
 import logging
 
 from aiohttp import web
-
 from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
@@ -27,7 +26,3 @@ def setup_storage(app: web.Application):
 
     routes = storage_routes.create(specs)
     app.router.add_routes(routes)
-
-
-
-__all__ = ("setup_storage")

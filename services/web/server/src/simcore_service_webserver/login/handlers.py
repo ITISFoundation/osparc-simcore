@@ -2,10 +2,10 @@ import logging
 from typing import Dict
 
 from aiohttp import web
-from yarl import URL
-
 from servicelib import observer
 from servicelib.rest_utils import extract_and_validate
+from simcore_service_webserver.utils_rate_limiting import global_rate_limit_route
+from yarl import URL
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..groups_api import auto_add_user_to_groups
@@ -26,7 +26,6 @@ from .utils import (
     render_and_send_mail,
     themed,
 )
-from simcore_service_webserver.utils_rate_limiting import global_rate_limit_route
 
 # FIXME: do not use cfg singleton. use instead cfg = request.app[APP_LOGIN_CONFIG]
 
@@ -108,11 +107,11 @@ async def register(request: web.Request):
                 "name": email.split("@")[0],
             },
         )
-    except Exception:  # pylint: disable=broad-except
+    except Exception as err:  # pylint: disable=broad-except
         log.exception("Can not send email")
         await db.delete_confirmation(confirmation_)
         await db.delete_user(user)
-        raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL)
+        raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err
 
     response = flash_response(
         "You are registered successfully! To activate your account, please, "
@@ -232,9 +231,9 @@ async def reset_password(request: web.Request):
                     "reason": err.reason,
                 },
             )
-        except Exception:  # pylint: disable=broad-except
+        except Exception as err:  # pylint: disable=broad-except
             log.exception("Cannot send email")
-            raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL)
+            raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err
     else:
         confirmation = await db.create_confirmation(user, action=RESET_PASSWORD)
         link = await make_confirmation_link(request, confirmation)
@@ -252,10 +251,10 @@ async def reset_password(request: web.Request):
                     "link": link,
                 },
             )
-        except Exception:  # pylint: disable=broad-except
+        except Exception as err:  # pylint: disable=broad-except
             log.exception("Can not send email")
             await db.delete_confirmation(confirmation)
-            raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL)
+            raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err
 
     response = flash_response(cfg.MSG_EMAIL_SENT.format(email=email), "INFO")
     return response
@@ -299,10 +298,10 @@ async def change_email(request: web.Request):
                 "link": link,
             },
         )
-    except Exception:  # pylint: disable=broad-except
+    except Exception as err:  # pylint: disable=broad-except
         log.error("Can not send email")
         await db.delete_confirmation(confirmation)
-        raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL)
+        raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err
 
     response = flash_response(cfg.MSG_CHANGE_EMAIL_REQUESTED)
     return response
