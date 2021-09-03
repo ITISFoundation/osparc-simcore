@@ -70,7 +70,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
 
     key: {
       check: "String",
-      apply : "_applyKey"
+      apply : "__applyKey"
     },
 
     thumbnail: {
@@ -81,19 +81,25 @@ qx.Class.define("osparc.ui.list.ListItem", {
 
     title: {
       check : "String",
-      apply : "_applyTitle",
+      apply : "__applyTitle",
       nullable : true
     },
 
     subtitle: {
       check : "String",
-      apply : "_applySubtitle",
+      apply : "__applySubtitle",
+      nullable : true
+    },
+
+    subtitleMD: {
+      check : "String",
+      apply : "__applySubtitleMD",
       nullable : true
     },
 
     contact: {
       check : "String",
-      apply : "_applyContact",
+      apply : "__applyContact",
       nullable : true
     }
   },
@@ -151,12 +157,21 @@ qx.Class.define("osparc.ui.list.ListItem", {
           });
           break;
         case "subtitle":
+          control = new qx.ui.basic.Label().set({
+            font: "text-13",
+            rich: true
+          });
+          this._add(control, {
+            row: 1,
+            column: 1
+          });
+          break;
+        case "subtitle-md":
           control = new osparc.ui.markdown.Markdown().set({
             font: "text-13",
             noMargin: true,
             maxHeight: 16
           });
-          control.addListener("appear", () => control.setNoMargin(true));
           this._add(control, {
             row: 1,
             column: 1
@@ -181,7 +196,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
       return control || this.base(arguments, id);
     },
 
-    _applyKey: function(value, old) {
+    __applyKey: function(value, old) {
       if (value === null) {
         return;
       }
@@ -198,7 +213,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
       thumbnail.setSource(value);
     },
 
-    _applyTitle: function(value) {
+    __applyTitle: function(value) {
       if (value === null) {
         return;
       }
@@ -206,7 +221,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
       label.setValue(value);
     },
 
-    _applySubtitle: function(value) {
+    __applySubtitle: function(value) {
       if (value === null) {
         return;
       }
@@ -214,7 +229,15 @@ qx.Class.define("osparc.ui.list.ListItem", {
       label.setValue(value);
     },
 
-    _applyContact: function(value) {
+    __applySubtitleMD: function(value) {
+      if (value === null) {
+        return;
+      }
+      const label = this.getChildControl("subtitle-md");
+      label.setValue(value);
+    },
+
+    __applyContact: function(value) {
       if (value === null) {
         return;
       }

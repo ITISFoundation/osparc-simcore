@@ -125,14 +125,6 @@ qx.Class.define("osparc.ui.list.ClusterListItem", {
       menu.add(deleteClusterButton);
 
       return menu;
-    },
-
-    // overriden
-    _applyThumbnail: function(value) {
-      const thumbnail = this.getChildControl("thumbnail");
-      if (value) {
-        thumbnail.setSource(value);
-      }
     }
   }
 });

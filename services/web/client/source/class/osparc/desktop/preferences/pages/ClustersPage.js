@@ -176,7 +176,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
-          ctrl.bindProperty("login", "subtitle", null, item, id);
+          ctrl.bindProperty("login", "subtitleMD", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
         configureItem: item => {
