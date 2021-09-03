@@ -1,8 +1,8 @@
-"""Remove projects_snapshots table
+"""remove project snapshots table
 
-Revision ID: 61824f0aacb6
-Revises: dd8220be55ad
-Create Date: 2021-09-02 17:46:22.852114+00:00
+Revision ID: d10c53a5bea6
+Revises: 389bf931b51a
+Create Date: 2021-09-03 09:54:57.910782+00:00
 
 """
 import sqlalchemy as sa
@@ -10,16 +10,16 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "61824f0aacb6"
-down_revision = "dd8220be55ad"
+revision = "d10c53a5bea6"
+down_revision = "389bf931b51a"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
     #
-    # NOTE: This table was never released
-    # No need to migrate any data
+    # NOTE: This table was never released to production therefore there is no need
+    # to migrate any data, just drop the table down
     #
     op.drop_table("projects_snapshots")
 
