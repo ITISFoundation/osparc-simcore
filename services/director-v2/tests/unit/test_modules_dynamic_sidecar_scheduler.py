@@ -183,8 +183,7 @@ async def docker_swarm(loop) -> None:
         if not await in_docker_swarm():
             await docker.swarm.init()
 
-        inspect_result = await docker.swarm.inspect()
-        assert type(inspect_result) == dict
+        assert await in_docker_swarm() is True
 
         yield
 
