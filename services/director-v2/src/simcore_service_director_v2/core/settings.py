@@ -21,7 +21,7 @@ from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
 
 from ..meta import api_vtag
-from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
+from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE, ClusterID
 
 MINS = 60
 API_ROOT: str = "api"
@@ -248,6 +248,14 @@ class DaskSchedulerSettings(BaseCustomSettings):
         description="Address of the scheduler to register (only if started as worker )",
     )
     DASK_SCHEDULER_PORT: PortInt = 8786
+
+    DASK_CLUSTER_ID_PREFIX: Optional[str] = Field(
+        "CLUSTER_", description="This defines the cluster name prefix"
+    )
+
+    DASK_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
+        0, description="This defines the default cluster id when none is defined"
+    )
 
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):

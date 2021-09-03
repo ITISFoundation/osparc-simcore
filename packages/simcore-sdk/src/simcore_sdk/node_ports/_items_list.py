@@ -8,7 +8,7 @@ from ._schema_items_list import SchemaItemsList
 
 log = logging.getLogger(__name__)
 
-
+# pylint: disable=too-many-instance-attributes
 class ItemsList(Sequence):
     def __init__(
         self,

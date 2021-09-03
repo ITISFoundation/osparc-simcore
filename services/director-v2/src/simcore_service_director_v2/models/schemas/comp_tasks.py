@@ -5,6 +5,7 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_pipeline import ComputationTask
 from pydantic import AnyHttpUrl, BaseModel, Field
 
+from ...models.schemas.constants import ClusterID
 from ..schemas.constants import UserID
 
 
@@ -29,6 +30,10 @@ class ComputationTaskCreate(BaseModel):
     )
     force_restart: Optional[bool] = Field(
         False, description="if True will force re-running all dependent nodes"
+    )
+    cluster_id: Optional[ClusterID] = Field(
+        None,
+        description="the computation shall use the cluster described by its id, 0 is the default cluster",
     )
 
 

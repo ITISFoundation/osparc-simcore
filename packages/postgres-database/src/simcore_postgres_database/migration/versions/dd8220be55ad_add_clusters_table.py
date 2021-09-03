@@ -54,6 +54,12 @@ def upgrade():
         ),
         sa.Column("owner", sa.BigInteger(), nullable=False),
         sa.Column(
+            "thumbnail",
+            sa.String,
+            nullable=True,
+            doc="Link to image as to cluster thumbnail",
+        ),
+        sa.Column(
             "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
         ),
         sa.Column(
@@ -62,7 +68,7 @@ def upgrade():
         sa.ForeignKeyConstraint(
             ["owner"],
             ["groups.gid"],
-            name="fk_services_meta_data_gid_groups",
+            name="fk_clusters_gid_groups",
             onupdate="CASCADE",
             ondelete="RESTRICT",
         ),

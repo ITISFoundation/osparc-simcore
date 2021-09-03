@@ -12,7 +12,7 @@ from tenacity import before_sleep_log, retry, stop_after_attempt, wait_random
 from ..core.errors import ConfigurationError
 from ..core.settings import DaskSchedulerSettings
 from ..models.domains.comp_tasks import Image
-from ..models.schemas.constants import UserID
+from ..models.schemas.constants import ClusterID, UserID
 from ..models.schemas.services import NodeRequirements
 
 logger = logging.getLogger(__name__)
@@ -24,6 +24,8 @@ dask_retry_policy = dict(
     before_sleep=before_sleep_log(logger, logging.WARNING),
     reraise=True,
 )
+
+CLUSTER_RESOURCE_MOCK_USAGE: float = 1e-9
 
 
 def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
@@ -69,6 +71,7 @@ class DaskClient:
         self,
         user_id: UserID,
         project_id: ProjectID,
+        cluster_id: ClusterID,
         tasks: Dict[NodeID, Image],
         callback: Callable[[], None],
         remote_fct: Callable = None,
@@ -109,6 +112,15 @@ class DaskClient:
             # Also, it must be unique
             # and it is shown in the Dask scheduler dashboard website
             job_id = f"{node_image.name}_{node_image.tag}__projectid_{project_id}__nodeid_{node_id}__{uuid4()}"
+            dask_resources = _from_node_reqs_to_dask_resources(
+                node_image.node_requirements
+            )
+            # add the cluster ID here
+            dask_resources.update(
+                {
+                    f"{self.settings.DASK_CLUSTER_ID_PREFIX}{cluster_id}": CLUSTER_RESOURCE_MOCK_USAGE
+                }
+            )
             task_future = self.client.submit(
                 remote_fct,
                 job_id,
@@ -116,9 +128,7 @@ class DaskClient:
                 project_id,
                 node_id,
                 key=job_id,
-                resources=_from_node_reqs_to_dask_resources(
-                    node_image.node_requirements
-                ),
+                resources=dask_resources,
                 retries=0,
             )
             task_future.add_done_callback(_done_dask_callback)
