@@ -36,6 +36,7 @@ def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
             client=await Client(
                 f"tcp://{settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
                 asynchronous=True,
+                name="director-v2-client",
             ),
             settings=settings,
         )
