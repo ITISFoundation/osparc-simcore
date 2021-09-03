@@ -69,23 +69,9 @@ qx.Class.define("osparc.component.filter.OrganizationsAndMembers", {
         this.__collaboratorsToBeRemoved = collaboratorsToBeRemoved.map(collaboratorToBeRemoved => parseInt(collaboratorToBeRemoved));
       }
 
-      const store = osparc.store.Store.getInstance();
-      const promises = [];
-      promises.push(store.getGroupsOrganizations());
-      promises.push(store.getVisibleMembers());
-      Promise.all(promises)
-        .then(values => {
-          const orgs = values[0]; // array
-          const orgMembers = values[1]; // object
-          orgs.forEach(org => {
-            org["collabType"] = 1;
-            this.__visibleCollaborators[org["gid"]] = org;
-          });
-          for (const gid of Object.keys(orgMembers)) {
-            const orgMember = orgMembers[gid];
-            orgMember["collabType"] = 2;
-            this.__visibleCollaborators[gid] = orgMember;
-          }
+      osparc.store.Store.getInstance().getPotentialCollaborators()
+        .then(potentialCollaborators => {
+          this.__visibleCollaborators = potentialCollaborators;
           this.__addOrgsAndMembers();
         });
     },

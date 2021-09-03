@@ -210,23 +210,9 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     },
 
     getCollaborators: function() {
-      const store = osparc.store.Store.getInstance();
-      const promises = [];
-      promises.push(store.getGroupsOrganizations());
-      promises.push(store.getVisibleMembers());
-      Promise.all(promises)
-        .then(values => {
-          const orgs = values[0]; // array
-          const orgMembers = values[1]; // object
-          orgs.forEach(org => {
-            org["collabType"] = 1;
-            this.__collaborators[org["gid"]] = org;
-          });
-          for (const gid of Object.keys(orgMembers)) {
-            const orgMember = orgMembers[gid];
-            orgMember["collabType"] = 2;
-            this.__collaborators[gid] = orgMember;
-          }
+      osparc.store.Store.getInstance().getPotentialCollaborators()
+        .then(potentialCollaborators => {
+          this.__collaborators = potentialCollaborators;
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
         });

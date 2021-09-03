@@ -251,38 +251,28 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         this.__organizationsAndMembers.reloadVisibleCollaborators(memberKeys);
       }
 
-      const store = osparc.store.Store.getInstance();
-      const promises = [];
-      promises.push(store.getGroupsOrganizations());
-      promises.push(store.getVisibleMembers());
-      Promise.all(promises)
-        .then(values => {
-          const orgs = values[0]; // array
-          const members = values[1]; // object
-
+      osparc.store.Store.getInstance().getPotentialCollaborators()
+        .then(potentialCollaborators => {
           clusterMembers.forEach(clusterMember => {
-            const org = orgs.find(o => parseInt(o.gid) === parseInt(clusterMember.gid));
-            if (org) {
-              const orgObj = {};
-              orgObj["thumbnail"] = org["thumbnail"] || "@FontAwesome5Solid/users/24";
-              orgObj["name"] = osparc.utils.Utils.firstsUp(org["label"]);
-              orgObj["showOptions"] = canWrite;
-              orgObj["accessRights"] = JSON.parse(qx.util.Serializer.toJson(clusterMember));
-              orgObj["login"] = org["description"];
-              orgObj["id"] = org["gid"];
-              membersArrayModel.append(qx.data.marshal.Json.createModel(orgObj));
-            }
-
-            if (clusterMember.gid in members) {
-              const memberObj = {};
-              const member = members[clusterMember.gid];
-              memberObj["thumbnail"] = osparc.utils.Avatar.getUrl(member["login"], 32);
-              memberObj["name"] = osparc.utils.Utils.firstsUp(member["first_name"], member["last_name"]);
-              memberObj["showOptions"] = canWrite;
-              memberObj["accessRights"] = JSON.parse(qx.util.Serializer.toJson(clusterMember));
-              memberObj["login"] = member["login"];
-              memberObj["id"] = member["gid"];
-              membersArrayModel.append(qx.data.marshal.Json.createModel(memberObj));
+            const gid = clusterMember.gid;
+            if (gid in potentialCollaborators) {
+              const collaborator = potentialCollaborators[gid];
+              const collabObj = {};
+              if (collaborator["collabType"] === 1) {
+                collabObj["thumbnail"] = collaborator["thumbnail"] || "@FontAwesome5Solid/users/24";
+                collabObj["name"] = osparc.utils.Utils.firstsUp(collaborator["label"]);
+                collabObj["login"] = collaborator["description"];
+              } else if (collaborator["collabType"] === 2) {
+                collabObj["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
+                collabObj["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
+                collabObj["login"] = collaborator["login"];
+              }
+              if (Object.keys(collabObj).length) {
+                collabObj["id"] = collaborator["gid"];
+                collabObj["accessRights"] = JSON.parse(qx.util.Serializer.toJson(clusterMember));
+                collabObj["showOptions"] = canWrite;
+                membersArrayModel.append(qx.data.marshal.Json.createModel(collabObj));
+              }
             }
           });
         });
