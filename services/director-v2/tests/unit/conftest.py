@@ -187,5 +187,13 @@ async def docker_swarm(loop) -> None:
 
         yield
 
-        await docker.swarm.leave(force=True)
-        assert await _in_docker_swarm() is False
+        async for attempt in tenacity.AsyncRetrying(
+            wait=tenacity.wait_exponential(),
+            stop=tenacity.stop_after_delay(1),
+            retry_error_cls=_NotInSwarmException,
+        ):
+            with attempt:
+                if await _in_docker_swarm():
+                    await docker.swarm.leave(force=True)
+                # if still in swarm raises an error to try and leave again
+                await _in_docker_swarm(raise_error=True)
