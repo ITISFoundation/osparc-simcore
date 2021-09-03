@@ -11,6 +11,7 @@ from importlib import reload
 from typing import AsyncGenerator, Callable, Iterator, List, Type, Union
 from unittest.mock import AsyncMock
 
+import aiodocker
 import httpx
 import pytest
 import respx
@@ -164,8 +165,36 @@ def dynamic_sidecar_settings(monkeypatch: MonkeyPatch) -> AppSettings:
 
 
 @pytest.fixture
+async def docker_swarm(loop) -> None:
+    async def in_docker_swarm() -> bool:
+        try:
+            inspect_result = await docker.swarm.inspect()
+            assert type(inspect_result) == dict
+        except aiodocker.exceptions.DockerError as error:
+            assert error.status == 503
+            assert (
+                error.message
+                == 'This node is not a swarm manager. Use "docker swarm init" or "docker swarm join" to connect this node to swarm and try again.'
+            )
+            return False
+        return True
+
+    async with aiodocker.Docker() as docker:
+        if not await in_docker_swarm():
+            await docker.swarm.init()
+
+        inspect_result = await docker.swarm.inspect()
+        assert type(inspect_result) == dict
+
+        yield
+
+        await docker.swarm.leave(force=True)
+        assert await in_docker_swarm() is False
+
+
+@pytest.fixture
 async def mocked_app(
-    loop: BaseEventLoop, dynamic_sidecar_settings: AppSettings
+    loop: BaseEventLoop, dynamic_sidecar_settings: AppSettings, docker_swarm: None
 ) -> Iterator[FastAPI]:
     app = FastAPI()
     app.state.settings = dynamic_sidecar_settings
@@ -224,6 +253,10 @@ def mock_max_status_api_duration(monkeypatch: MonkeyPatch) -> Iterator[None]:
 
 
 # TESTS
+
+
+async def test_docker_swarm_fixture(docker_swarm: None) -> None:
+    pass
 
 
 async def test_scheduler_add_remove(
@@ -449,7 +482,9 @@ async def test_get_stack_status_ok(
         )
 
 
-async def test_module_setup(dynamic_sidecar_settings: AppSettings) -> None:
+async def test_module_setup(
+    dynamic_sidecar_settings: AppSettings, docker_swarm: None
+) -> None:
     app = FastAPI()
     app.state.settings = dynamic_sidecar_settings
     module_setup.setup(app)
