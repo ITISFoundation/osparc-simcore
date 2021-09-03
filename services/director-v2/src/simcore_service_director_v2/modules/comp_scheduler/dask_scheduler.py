@@ -28,7 +28,7 @@ class DaskScheduler(BaseCompScheduler):
         callback: Callable[[], None],
     ):
         # now transfer the pipeline to the dask scheduler
-        self.dask_client.send_computation_tasks(
+        await self.dask_client.send_computation_tasks(
             user_id=user_id,
             project_id=project_id,
             cluster_id=cluster_id,

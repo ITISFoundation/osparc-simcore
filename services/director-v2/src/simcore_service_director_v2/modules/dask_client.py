@@ -108,19 +108,13 @@ def _from_node_reqs_to_dask_resources(
 def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
     @retry(**dask_retry_policy)
     async def on_startup() -> None:
-        DaskClient.create(
+        await DaskClient.create(
             app,
-            client=await Client(
-                f"tcp://{settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
-                asynchronous=True,
-                name="director-v2-client",
-            ),
             settings=settings,
         )
 
     async def on_shutdown() -> None:
-        await app.state.dask_client.client.close()
-        del app.state.dask_client  # type: ignore
+        await DaskClient.delete(app)
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
@@ -128,14 +122,25 @@ def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
 
 @dataclass
 class DaskClient:
+    app: FastAPI
     client: Client
     settings: DaskSchedulerSettings
 
     _taskid_to_future_map: Dict[str, Future] = field(default_factory=dict)
 
     @classmethod
-    def create(cls, app: FastAPI, *args, **kwargs) -> "DaskClient":
-        app.state.dask_client = cls(*args, **kwargs)
+    async def create(
+        cls, app: FastAPI, settings: DaskSchedulerSettings
+    ) -> "DaskClient":
+        app.state.dask_client = cls(
+            app=app,
+            client=await Client(
+                f"tcp://{settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
+                asynchronous=True,
+                name="director-v2-client",
+            ),  # type: ignore
+            settings=settings,
+        )
         return cls.instance(app)
 
     @classmethod
@@ -146,7 +151,24 @@ class DaskClient:
             )
         return app.state.dask_client
 
-    def send_computation_tasks(
+    @classmethod
+    async def delete(cls, app: FastAPI) -> None:
+        if not hasattr(app.state, "dask_client"):
+            raise ConfigurationError(
+                "Dask client is not available. Please check the configuration."
+            )
+        await app.state.dask_client.client.close()
+        del app.state.dask_client  # type: ignore
+
+    async def reconnect_client(self):
+        await self.client.close()
+        self.client = await Client(
+            f"tcp://{self.settings.DASK_SCHEDULER_HOST}:{self.settings.DASK_SCHEDULER_PORT}",
+            asynchronous=True,
+            name="director-v2-client",
+        )  # type: ignore
+
+    async def send_computation_tasks(
         self,
         user_id: UserID,
         project_id: ProjectID,
@@ -170,7 +192,9 @@ class DaskClient:
         ) -> None:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
-            from simcore_service_dask_sidecar.tasks import run_task_in_service
+            from simcore_service_dask_sidecar.tasks import (
+                run_task_in_service,  # type: ignore
+            )
 
             run_task_in_service(job_id, user_id, project_id, node_id)
 
@@ -194,15 +218,18 @@ class DaskClient:
             )
 
             scheduler_info = self.client.scheduler_info()
+            if not scheduler_info:
+                await self.reconnect_client()
 
             _check_cluster_able_to_run_pipeline(
                 node_id=node_id,
                 scheduler_info=scheduler_info,
                 task_resources=dask_resources,
                 node_image=node_image,
-                cluster_id_prefix=self.settings.DASK_CLUSTER_ID_PREFIX,
+                cluster_id_prefix=self.settings.DASK_CLUSTER_ID_PREFIX,  # type: ignore
                 cluster_id=cluster_id,
             )
+
             task_future = self.client.submit(
                 remote_fct,
                 job_id,

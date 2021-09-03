@@ -200,7 +200,7 @@ async def test_send_computation_task(
         return 123
 
     # TEST COMPUTATION RUNS THROUGH
-    dask_client.send_computation_tasks(
+    await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
         cluster_id=cluster_id,
@@ -225,7 +225,7 @@ async def test_send_computation_task(
     ), "the list of futures was not cleaned correctly"
 
     # TEST COMPUTATION ABORTION
-    dask_client.send_computation_tasks(
+    await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
         cluster_id=cluster_id,
@@ -250,7 +250,7 @@ async def test_send_computation_task(
     ), "the list of futures was not cleaned correctly"
 
     # TEST RUNNING COMPUTATION IN NON-EXISTING CLUSTER SHOULD TIMEOUT
-    dask_client.send_computation_tasks(
+    await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
         cluster_id=random.randint(cluster_id + 1, 100),
