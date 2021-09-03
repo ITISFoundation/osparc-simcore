@@ -43,6 +43,7 @@ def dynamic_sidecar_settings(
     monkeypatch: MonkeyPatch, docker_swarm: None
 ) -> DynamicSidecarSettings:
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
     return DynamicSidecarSettings.create_from_envs()
 
 
