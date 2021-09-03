@@ -13,7 +13,12 @@ from urllib.parse import quote
 import pytest
 from aioresponses.core import CallbackResult, aioresponses
 from helpers import json_schema_validator
-from servicelib.rest_responses import unwrap_envelope
+
+if servicelib.__version__ >= "1.0.0":
+    from servicelib.aiohttp.rest_responses import unwrap_envelope
+else:
+    from servicelib.rest_responses import unwrap_envelope
+
 from simcore_service_director import main, resources, rest
 
 

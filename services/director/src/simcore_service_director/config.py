@@ -6,7 +6,10 @@ import os
 from distutils.util import strtobool
 from typing import Dict, Optional
 
-from servicelib.client_session import APP_CLIENT_SESSION_KEY
+if servicelib.__version__ >= "1.0.0":
+    from servicelib.aiohttp.client_session import APP_CLIENT_SESSION_KEY
+else:
+    from servicelib.client_session import APP_CLIENT_SESSION_KEY
 
 LOGLEVEL_STR = os.environ.get("LOGLEVEL", "WARNING").upper()
 log_level = getattr(logging, LOGLEVEL_STR)

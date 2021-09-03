@@ -13,8 +13,13 @@ from typing import Dict, List, Optional, Tuple
 import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
-from servicelib.async_utils import run_sequentially_in_context
-from servicelib.monitor_services import service_started, service_stopped
+
+if servicelib.__version__ >= "1.0.0":
+    from servicelib.aiohttp.async_utils import run_sequentially_in_context
+    from servicelib.aiohttp.monitor_services import service_started, service_stopped
+else:
+    from servicelib.async_utils import run_sequentially_in_context
+    from servicelib.monitor_services import service_started, service_stopped
 
 from . import config, docker_utils, exceptions, registry_proxy
 from .config import (
