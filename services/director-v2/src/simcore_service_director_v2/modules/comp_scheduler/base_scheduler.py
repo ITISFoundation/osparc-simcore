@@ -24,7 +24,13 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
 
-from ...core.errors import InvalidPipelineError, PipelineNotFoundError, SchedulerError
+from ...core.errors import (
+    InsuficientComputationalResourcesError,
+    InvalidPipelineError,
+    MissingComputationalResourcesError,
+    PipelineNotFoundError,
+    SchedulerError,
+)
 from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_runs import CompRunsAtDB
 from ...models.domains.comp_tasks import CompTaskAtDB, Image
@@ -344,10 +350,31 @@ class BaseCompScheduler(ABC):
             project_id, tasks, RunningState.PENDING
         )
 
-        # now start the tasks
-        await self._start_tasks(
-            user_id, project_id, cluster_id, tasks_to_reqs, self._wake_up_scheduler_now
+        # we pass the tasks to the dask-client
+        results = await asyncio.gather(
+            *[
+                self._start_tasks(
+                    user_id,
+                    project_id,
+                    cluster_id,
+                    {t: r},
+                    self._wake_up_scheduler_now,
+                )
+                for t, r in tasks_to_reqs.items()
+            ],
+            return_exceptions=True,
         )
+        for r in results:
+            if isinstance(
+                r,
+                (
+                    MissingComputationalResourcesError,
+                    InsuficientComputationalResourcesError,
+                ),
+            ):
+                await comp_tasks_repo.set_project_tasks_state(
+                    project_id, [r.node_id], RunningState.FAILED
+                )
 
     def _wake_up_scheduler_now(self) -> None:
         self.wake_up_event.set()

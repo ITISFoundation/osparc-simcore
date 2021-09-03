@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List, Union
 from uuid import uuid4
 
 from dask.distributed import Client, Future, fire_and_forget
@@ -9,7 +9,11 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_random
 
-from ..core.errors import ConfigurationError
+from ..core.errors import (
+    ConfigurationError,
+    InsuficientComputationalResourcesError,
+    MissingComputationalResourcesError,
+)
 from ..core.settings import DaskSchedulerSettings
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.constants import ClusterID, UserID
@@ -26,6 +30,79 @@ dask_retry_policy = dict(
 )
 
 CLUSTER_RESOURCE_MOCK_USAGE: float = 1e-9
+
+
+def _check_cluster_able_to_run_pipeline(
+    node_id: NodeID,
+    scheduler_info: Dict[str, Any],
+    task_resources: Dict[str, Any],
+    node_image: Image,
+    cluster_id_prefix: str,
+    cluster_id: ClusterID,
+):
+    from pprint import pformat
+
+    logger.debug("Dask scheduler infos: %s", pformat(scheduler_info))
+    workers = scheduler_info.get("workers", {})
+    import collections
+
+    def can_task_run_on_worker(
+        task_resources: Dict[str, Any], worker_resources: Dict[str, Any]
+    ) -> bool:
+        def gen_check(task_resources: Dict[str, Any], worker_resources: Dict[str, Any]):
+            for r in task_resources:
+                yield worker_resources.get(r, 0) > task_resources[r]
+
+        return all(gen_check(task_resources, worker_resources))
+
+    def cluster_missing_resources(
+        task_resources: Dict[str, Any], cluster_resources: Dict[str, Any]
+    ) -> List[str]:
+        return [r for r in task_resources if r not in cluster_resources]
+
+    cluster_resources_counter = collections.Counter()
+    can_a_worker_run_task = False
+    for worker in workers:
+        worker_resources = workers[worker].get("resources", {})
+        if worker_resources.get(f"{cluster_id_prefix}{cluster_id}"):
+            cluster_resources_counter.update(worker_resources)
+            if can_task_run_on_worker(task_resources, worker_resources):
+                can_a_worker_run_task = True
+    all_available_resources_in_cluster = dict(cluster_resources_counter)
+
+    logger.debug(
+        "Dask scheduler total available resources in cluster %s: %s, task needed resources %s",
+        cluster_id,
+        pformat(all_available_resources_in_cluster),
+        pformat(task_resources),
+    )
+
+    if can_a_worker_run_task:
+        return
+
+    # check if we have missing resources
+    if missing_resources := cluster_missing_resources(
+        task_resources, all_available_resources_in_cluster
+    ):
+        raise MissingComputationalResourcesError(
+            node_id=node_id,
+            msg=f"Service {node_image.name}:{node_image.tag} cannot be scheduled on cluster {cluster_id}: missing resource {missing_resources}",
+        )
+
+    # well then our workers are not powerful enough
+    raise InsuficientComputationalResourcesError(
+        node_id=node_id,
+        msg=f"Service {node_image.name}:{node_image.tag} cannot be scheduled on cluster {cluster_id}: insuficient resources",
+    )
+
+
+def _from_node_reqs_to_dask_resources(
+    node_reqs: NodeRequirements,
+) -> Dict[str, Union[int, float]]:
+    """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
+    dask_resources = node_reqs.dict(exclude_unset=True, by_alias=True)
+    logger.debug("transformed to dask resources: %s", dask_resources)
+    return dask_resources
 
 
 def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
@@ -100,14 +177,6 @@ class DaskClient:
         if remote_fct is None:
             remote_fct = _comp_sidecar_fct
 
-        def _from_node_reqs_to_dask_resources(
-            node_reqs: NodeRequirements,
-        ) -> Dict[str, Union[int, float]]:
-            """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
-            dask_resources = node_reqs.dict(exclude_unset=True, by_alias=True)
-            logger.debug("transformed to dask resources: %s", dask_resources)
-            return dask_resources
-
         for node_id, node_image in tasks.items():
             # NOTE: the job id is used to create a folder in the sidecar,
             # so it must be a valid file name too
@@ -122,6 +191,17 @@ class DaskClient:
                 {
                     f"{self.settings.DASK_CLUSTER_ID_PREFIX}{cluster_id}": CLUSTER_RESOURCE_MOCK_USAGE
                 }
+            )
+
+            scheduler_info = self.client.scheduler_info()
+
+            _check_cluster_able_to_run_pipeline(
+                node_id=node_id,
+                scheduler_info=scheduler_info,
+                task_resources=dask_resources,
+                node_image=node_image,
+                cluster_id_prefix=self.settings.DASK_CLUSTER_ID_PREFIX,
+                cluster_id=cluster_id,
             )
             task_future = self.client.submit(
                 remote_fct,

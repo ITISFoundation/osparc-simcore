@@ -21,6 +21,7 @@ translate into something like
 from typing import Optional
 
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 
 
 class DirectorException(Exception):
@@ -34,7 +35,7 @@ class GenericDockerError(DirectorException):
     """Generic docker library error"""
 
     def __init__(self, msg: str, original_exception: Exception):
-        super().__init__(msg + f": {original_exception.message}")
+        super().__init__(msg + f": {original_exception}")
         self.original_exception = original_exception
 
 
@@ -99,6 +100,22 @@ class InvalidPipelineError(SchedulerError):
 
     def __init__(self, pipeline_id: str, msg: Optional[str] = None):
         super().__init__(msg or f"Invalid configuration of pipeline {pipeline_id}")
+
+
+class MissingComputationalResourcesError(SchedulerError):
+    """A task cannot be scheduled because the cluster does not have the required resources"""
+
+    def __init__(self, node_id: NodeID, msg: str):
+        super().__init__(msg=msg)
+        self.node_id = node_id
+
+
+class InsuficientComputationalResourcesError(SchedulerError):
+    """A task cannot be scheduled because the cluster does not have *enough* of the required resources"""
+
+    def __init__(self, node_id: NodeID, msg: str):
+        super().__init__(msg=msg)
+        self.node_id = node_id
 
 
 class ConfigurationError(DirectorException):
