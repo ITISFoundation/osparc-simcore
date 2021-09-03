@@ -3,7 +3,6 @@ from pprint import pformat
 from typing import Any, Dict, Type
 
 import pytest
-import requests
 from pydantic import BaseModel, ValidationError
 from simcore_service_webserver.clusters.models import (
     CLUSTER_ADMIN_RIGHTS,
@@ -79,6 +78,3 @@ def test_cluster_creation_brings_default_thumbail(
         instance = model_cls(**example)
         assert instance
         assert instance.thumbnail
-        # check thumbnail is a valid link
-        response = requests.head(instance.thumbnail)
-        assert 399 >= response.status_code >= 200

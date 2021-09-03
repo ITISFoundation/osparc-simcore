@@ -31,7 +31,6 @@ jsonschema
 openapi-spec-validator
 python-dotenv
 redis
-requests
 tenacity
 
 # tools
