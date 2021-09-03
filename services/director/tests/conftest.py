@@ -92,7 +92,7 @@ async def aiohttp_mock_app(loop, mocker):
 
     mock_app_storage = {
         config.APP_CLIENT_SESSION_KEY: session,
-        config.APP_REGISTRY_CACHE_DATA_KEY: dict(),
+        config.APP_REGISTRY_CACHE_DATA_KEY: {},
     }
 
     def _get_item(self, key):

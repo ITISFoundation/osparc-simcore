@@ -17,7 +17,7 @@ PYLINT_VERSION="$(grep pylint== $REQUIREMENTS | awk '{print $1}')"
 pip3 install "$PYLINT_VERSION"
 
 # Minimal packages to pass linter
-pip install -r $CURDIR/requirements.txt
+pip install -r "$CURDIR/requirements.txt"
 
 
 echo "INFO:" "$(pylint --version)" "@" "$(command -v pylint)"

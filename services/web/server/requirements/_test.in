@@ -38,4 +38,4 @@ tenacity
 codecov
 coveralls
 ptvsd
-pylint==2.5.0 # 2.5.3 fails to run in parallel. SEE https://github.com/PyCQA/pylint/releases for updates
+pylint

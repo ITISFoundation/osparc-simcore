@@ -45,6 +45,7 @@ class CompRunsRepository(BaseRepository):
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
+        default_cluster_id: ClusterID,
         iteration: Optional[PositiveInt] = None,
     ) -> CompRunsAtDB:
         async with self.db_engine.acquire() as conn:
@@ -65,7 +66,7 @@ class CompRunsRepository(BaseRepository):
                 .values(
                     user_id=user_id,
                     project_uuid=f"{project_id}",
-                    cluster_id=None if cluster_id == 0 else cluster_id,
+                    cluster_id=cluster_id if cluster_id != default_cluster_id else None,
                     iteration=iteration,
                     result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
                     started=datetime.utcnow(),

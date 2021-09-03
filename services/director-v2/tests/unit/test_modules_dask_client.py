@@ -15,12 +15,12 @@ from distributed.worker import TaskState
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic.types import NonNegativeInt, PositiveInt
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import ConfigurationError
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.comp_tasks import Image
+from simcore_service_director_v2.models.schemas.constants import ClusterID, UserID
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.modules.dask_client import (
     CLUSTER_RESOURCE_MOCK_USAGE,
@@ -106,7 +106,7 @@ def node_id() -> NodeID:
 
 
 @pytest.mark.parametrize(
-    "image, exp_annotations",
+    "image, expected_annotations",
     [
         (
             Image(
@@ -140,17 +140,17 @@ def node_id() -> NodeID:
 )
 async def test_send_computation_task(
     dask_client: DaskClient,
-    user_id: PositiveInt,
+    user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    cluster_id: NonNegativeInt,
+    cluster_id: ClusterID,
     cluster_id_resource: str,
     image: Image,
-    exp_annotations: Dict[str, Any],
+    expected_annotations: Dict[str, Any],
     mocker: MockerFixture,
 ):
     # INIT
-    exp_annotations["resources"].update(
+    expected_annotations["resources"].update(
         {cluster_id_resource: CLUSTER_RESOURCE_MOCK_USAGE}
     )
     fake_task = {node_id: image}
@@ -163,7 +163,7 @@ async def test_send_computation_task(
         worker = get_worker()
         task: TaskState = worker.tasks.get(worker.get_current_task())
         assert task is not None
-        assert task.annotations == exp_annotations
+        assert task.annotations == expected_annotations
         assert u_id == user_id
         assert prj_id == project_id
         assert n_id == node_id
@@ -219,7 +219,7 @@ async def test_send_computation_task(
         len(dask_client._taskid_to_future_map) == 0
     ), "the list of futures was not cleaned correctly"
 
-    # TEST RUNNING COMPUTATION IN NON-EXISTING CLUTER SHOULD TIMEOUT
+    # TEST RUNNING COMPUTATION IN NON-EXISTING CLUSTER SHOULD TIMEOUT
     dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,

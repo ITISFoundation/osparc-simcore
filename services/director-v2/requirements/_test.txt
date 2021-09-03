@@ -29,7 +29,7 @@ anyio==3.2.1
     #   httpcore
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
-astroid==2.6.6
+astroid==2.7.3
     # via pylint
 async-asgi-testclient==1.4.6
     # via -r requirements/_test.in
@@ -174,6 +174,8 @@ pamqp==2.3.0
     # via aiormq
 paramiko==2.7.2
     # via docker
+platformdirs==2.3.0
+    # via pylint
 pluggy==0.13.1
     # via pytest
 pprintpp==0.4.0
@@ -194,7 +196,7 @@ py==1.10.0
     #   pytest-forked
 pycparser==2.20
     # via cffi
-pylint==2.9.6
+pylint==2.10.2
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko

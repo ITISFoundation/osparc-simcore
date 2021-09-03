@@ -1,7 +1,6 @@
 from functools import wraps
 
 from aiohttp_security.api import check_authorized
-
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.requests_utils import get_request
 
@@ -24,4 +23,4 @@ def login_required(handler):
     return wrapped
 
 
-__all__ = "login_required"
+__all__ = ("login_required",)

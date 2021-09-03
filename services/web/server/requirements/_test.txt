@@ -18,7 +18,7 @@ amqp==5.0.6
     # via
     #   -c requirements/_base.txt
     #   kombu
-astroid==2.5
+astroid==2.7.3
     # via pylint
 async-timeout==3.0.1
     # via
@@ -165,6 +165,8 @@ packaging==21.0
     #   pytest-sugar
 paramiko==2.7.2
     # via docker
+platformdirs==2.3.0
+    # via pylint
 pluggy==0.13.1
     # via pytest
 pprintpp==0.4.0
@@ -185,7 +187,7 @@ pycparser==2.20
     # via
     #   -c requirements/_base.txt
     #   cffi
-pylint==2.5.0
+pylint==2.10.2
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko

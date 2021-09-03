@@ -3,7 +3,7 @@ from typing import Optional
 
 from models_library.settings.base import BaseCustomSettings
 from models_library.settings.celery import CeleryConfig
-from pydantic import Field
+from pydantic import Field, NonNegativeInt
 from simcore_service_sidecar import config
 
 
@@ -45,6 +45,10 @@ class Settings(BaseCustomSettings):
 
     DASK_CLUSTER_ID_PREFIX: Optional[str] = Field(
         "CLUSTER_", description="This defines the cluster name prefix"
+    )
+
+    DASK_DEFAULT_CLUSTER_ID: Optional[NonNegativeInt] = Field(
+        0, description="This defines the default cluster id when none is defined"
     )
 
     DASK_START_AS_SCHEDULER: Optional[bool] = Field(

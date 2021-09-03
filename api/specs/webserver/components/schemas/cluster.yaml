@@ -98,11 +98,17 @@ Cluster:
   required:
     - id
     - name
-    - description
     - accessRights
   example:
-    - name: AWS cluster
-      description: My institution cluster
+    - id: 1
+      name: AWS cluster
+      type: AWS
+      owner: 2
+      accessRights:
+        "2":
+          read: true
+          write: true
+          delete: true
 
 ClusterEnveloped:
   type: object

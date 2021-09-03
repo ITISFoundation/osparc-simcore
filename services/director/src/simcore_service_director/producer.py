@@ -67,10 +67,10 @@ def _check_setting_correctness(setting: Dict) -> None:
 
 
 def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
-    mounts = list()
+    mounts = []
     for s in settings:
         log.debug("Retrieved mount settings %s", s)
-        mount = dict()
+        mount = {}
         mount["ReadOnly"] = True
         if "ReadOnly" in s and s["ReadOnly"] in ["false", "False", False]:
             mount["ReadOnly"] = False
@@ -91,7 +91,7 @@ def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
 
 
 def _parse_env_settings(settings: List[str]) -> Dict:
-    envs = dict()
+    envs = {}
     for s in settings:
         log.debug("Retrieved env settings %s", s)
         if "=" in s:
@@ -380,8 +380,8 @@ async def _get_docker_image_port_mapping(
 ) -> Tuple[Optional[str], Optional[int]]:
     log.debug("getting port published by service: %s", service["Spec"]["Name"])
 
-    published_ports = list()
-    target_ports = list()
+    published_ports = []
+    target_ports = []
     if "Endpoint" in service:
         service_endpoints = service["Endpoint"]
         if "Ports" in service_endpoints:
@@ -746,7 +746,7 @@ async def _start_docker_service(
         }
         return container_meta_data
 
-    except exceptions.ServiceStartTimeoutError as err:
+    except exceptions.ServiceStartTimeoutError:
         log.exception("Service failed to start")
         await _silent_service_cleanup(app, node_uuid)
         raise
@@ -790,7 +790,7 @@ async def _create_node(
         )
         log.debug("Created docker network in swarm for service %s", service_name)
 
-    containers_meta_data = list()
+    containers_meta_data = []
     for service in list_of_services:
         service_meta_data = await _start_docker_service(
             app,

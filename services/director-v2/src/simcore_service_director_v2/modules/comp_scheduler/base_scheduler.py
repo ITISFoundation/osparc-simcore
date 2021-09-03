@@ -52,9 +52,10 @@ class BaseCompScheduler(ABC):
     ]
     db_engine: Engine
     wake_up_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
+    default_cluster_id: ClusterID
 
     async def run_new_pipeline(
-        self, user_id: UserID, project_id: ProjectID, cluster_id: NonNegativeInt
+        self, user_id: UserID, project_id: ProjectID, cluster_id: ClusterID
     ) -> None:
         """Sets a new pipeline to be scheduled on the computational resources.
         Passing cluster_id=0 will use the default cluster. Passing an existing ID will instruct
@@ -71,7 +72,10 @@ class BaseCompScheduler(ABC):
             self.db_engine, CompRunsRepository
         )  # type: ignore
         new_run: CompRunsAtDB = await runs_repo.create(
-            user_id=user_id, project_id=project_id, cluster_id=cluster_id
+            user_id=user_id,
+            project_id=project_id,
+            cluster_id=cluster_id,
+            default_cluster_id=self.default_cluster_id,
         )
         self.scheduled_pipelines[
             (user_id, project_id, new_run.iteration)

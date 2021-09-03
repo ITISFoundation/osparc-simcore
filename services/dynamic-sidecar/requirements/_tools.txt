@@ -6,7 +6,7 @@
 #
 appdirs==1.4.4
     # via black
-astroid==2.6.6
+astroid==2.7.3
     # via pylint
 backports.entry-points-selectable==1.1.0
     # via virtualenv
@@ -53,10 +53,12 @@ pep517==0.11.0
 pip-tools==6.2.0
     # via -r requirements/../../../requirements/devenv.txt
 platformdirs==2.2.0
-    # via virtualenv
+    # via
+    #   pylint
+    #   virtualenv
 pre-commit==2.14.0
     # via -r requirements/../../../requirements/devenv.txt
-pylint==2.9.6
+pylint==2.10.2
     # via -r requirements/_tools.in
 pyyaml==5.4.1
     # via

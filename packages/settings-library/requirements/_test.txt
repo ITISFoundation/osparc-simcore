@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-astroid==2.6.6
+astroid==2.7.3
     # via pylint
 attrs==21.2.0
     # via pytest
@@ -35,11 +35,13 @@ packaging==21.0
     # via
     #   pytest
     #   pytest-sugar
+platformdirs==2.3.0
+    # via pylint
 pluggy==0.13.1
     # via pytest
 py==1.10.0
     # via pytest
-pylint==2.9.6
+pylint==2.10.2
     # via -r requirements/_test.in
 pyparsing==2.4.7
     # via packaging

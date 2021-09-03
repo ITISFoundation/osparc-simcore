@@ -82,6 +82,7 @@ class ClustersRepository(BaseRepository):
                     }
                 )
             }
+
             cluster_id = row[clusters.c.id]
             if cluster_id not in cluster_id_to_cluster:
                 cluster_id_to_cluster[cluster_id] = Cluster.construct(

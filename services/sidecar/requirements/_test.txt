@@ -20,7 +20,7 @@ alembic==1.6.5
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   -r requirements/_test.in
-astroid==2.6.6
+astroid==2.7.3
     # via pylint
 async-timeout==3.0.1
     # via
@@ -107,6 +107,8 @@ packaging==20.4
     #   -c requirements/_packages.txt
     #   pytest
     #   pytest-sugar
+platformdirs==2.3.0
+    # via pylint
 pluggy==0.13.1
     # via pytest
 pprintpp==0.4.0
@@ -121,7 +123,7 @@ ptvsd==4.3.2
     # via -r requirements/_test.in
 py==1.10.0
     # via pytest
-pylint==2.9.6
+pylint==2.10.2
     # via -r requirements/_test.in
 pyparsing==2.4.7
     # via
