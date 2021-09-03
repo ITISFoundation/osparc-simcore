@@ -59,7 +59,8 @@ class BaseOrm(Generic[RowUId]):
 
         return query
 
-    def _check_access_rights(self, access: Set, values: Dict):
+    @staticmethod
+    def _check_access_rights(access: Set, values: Dict):
         not_allowed: Set[str] = access.intersection(values.keys())
         if not_allowed:
             raise ValueError(f"Columns {not_allowed} are read-only")
