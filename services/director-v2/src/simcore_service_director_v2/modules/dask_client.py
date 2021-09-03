@@ -53,7 +53,7 @@ def _check_cluster_able_to_run_pipeline(
     ) -> bool:
         def gen_check(task_resources: Dict[str, Any], worker_resources: Dict[str, Any]):
             for r in task_resources:
-                yield worker_resources.get(r, 0) > task_resources[r]
+                yield worker_resources.get(r, 0) >= task_resources[r]
 
         return all(gen_check(task_resources, worker_resources))
 
