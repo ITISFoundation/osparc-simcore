@@ -46,7 +46,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     __clustersList: null,
     __selectOrgMemberLayout: null,
     __organizationsAndMembers: null,
-    __membersModel: null,
+    __membersArrayModel: null,
 
     __getCreateClusterSection: function() {
       const createClusterBtn = new qx.ui.form.Button(this.tr("Create New Cluster")).set({
@@ -166,8 +166,8 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         backgroundColor: "material-button-background"
       });
 
-      const membersModel = this.__membersModel = new qx.data.Array();
-      const membersCtrl = new qx.data.controller.List(membersModel, memebersUIList, "name");
+      const membersArrayModel = this.__membersArrayModel = new qx.data.Array();
+      const membersCtrl = new qx.data.controller.List(membersArrayModel, memebersUIList, "name");
       membersCtrl.setDelegate({
         createItem: () => new osparc.dashboard.MemberListItem(),
         bindItem: (ctrl, item, id) => {
@@ -233,8 +233,8 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     },
 
     __reloadClusterMembers: function() {
-      const membersModel = this.__membersModel;
-      membersModel.removeAll();
+      const membersArrayModel = this.__membersArrayModel;
+      membersArrayModel.removeAll();
 
       const clusterModel = this.__currentCluster;
       if (clusterModel === null) {
@@ -253,12 +253,26 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
 
       const store = osparc.store.Store.getInstance();
       const promises = [];
+      promises.push(store.getGroupsOrganizations());
       promises.push(store.getVisibleMembers());
       Promise.all(promises)
         .then(values => {
-          const members = values[0]; // object
+          const orgs = values[0]; // array
+          const members = values[1]; // object
 
           clusterMembers.forEach(clusterMember => {
+            const org = orgs.find(o => parseInt(o.gid) === parseInt(clusterMember.gid));
+            if (org) {
+              const orgObj = {};
+              orgObj["thumbnail"] = org["thumbnail"] || "@FontAwesome5Solid/users/24";
+              orgObj["name"] = osparc.utils.Utils.firstsUp(org["label"]);
+              orgObj["showOptions"] = canWrite;
+              orgObj["accessRights"] = JSON.parse(qx.util.Serializer.toJson(clusterMember));
+              orgObj["login"] = org["description"];
+              orgObj["id"] = org["gid"];
+              membersArrayModel.append(qx.data.marshal.Json.createModel(orgObj));
+            }
+
             if (clusterMember.gid in members) {
               const memberObj = {};
               const member = members[clusterMember.gid];
@@ -268,7 +282,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
               memberObj["accessRights"] = JSON.parse(qx.util.Serializer.toJson(clusterMember));
               memberObj["login"] = member["login"];
               memberObj["id"] = member["gid"];
-              membersModel.append(qx.data.marshal.Json.createModel(memberObj));
+              membersArrayModel.append(qx.data.marshal.Json.createModel(memberObj));
             }
           });
         });
