@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
-import asyncio
 import random
 from typing import Any, Dict, List, Tuple
 from uuid import uuid4
