@@ -1,5 +1,10 @@
 """
-    A very basic aiopg-based ORM to simplify operations with postgres database
+    BaseOrm: A draft and basic, yet practical, aiopg-based ORM to simplify operations with postgres database
+
+    - Aims to hide the functionality of aiopg
+    - Probably in the direction of the other more sophisticated libraries like (that we might adopt)
+        - the new async sqlalchemy ORM https://docs.sqlalchemy.org/en/14/orm/
+        - https://piccolo-orm.readthedocs.io/en/latest/index.html
 """
 # pylint: disable=no-value-for-parameter
 
@@ -92,14 +97,14 @@ class BaseOrm(Generic[RowUId]):
 
     async def fetch(
         self,
-        returned_selection: Optional[str] = None,
+        returning: Optional[str] = None,
         *,
         rowid: Optional[RowUId] = None,
     ) -> Optional[RowProxy]:
         """
         selection: name of one or more columns to fetch. None defaults to all of them
         """
-        query = self._compose_select_query(returned_selection)
+        query = self._compose_select_query(returning)
         if rowid:
             # overrides pinned row
             query = query.where(self._primary_key == rowid)
@@ -122,6 +127,7 @@ class BaseOrm(Generic[RowUId]):
         return rows
 
     async def update(self, **values) -> Optional[RowUId]:
+        # TODO: add returning. default to id and add constant for all
         self._check_access_rights(self._readonly, values)
         self._check_access_rights(self._writeonce, values)
 
