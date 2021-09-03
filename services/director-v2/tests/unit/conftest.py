@@ -87,12 +87,13 @@ def scheduler_data_from_service_labels_stored_data(
 
 @pytest.fixture
 async def dask_local_cluster(monkeypatch: MonkeyPatch) -> LocalCluster:
-    cluster = await LocalCluster(n_workers=2, threads_per_worker=1, asynchronous=True)
-    scheduler_address = URL(cluster.scheduler_address)
-    monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
-    monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
-    yield cluster
-    await cluster.close()
+    async with LocalCluster(
+        n_workers=2, threads_per_worker=1, asynchronous=True
+    ) as cluster:
+        scheduler_address = URL(cluster.scheduler_address)
+        monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
+        monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
+        yield cluster
 
 
 @pytest.fixture
@@ -142,9 +143,10 @@ async def dask_spec_local_cluster(
     }
     scheduler = {"cls": Scheduler, "options": {"dashboard_address": ":8787"}}
 
-    cluster = await SpecCluster(workers=workers, scheduler=scheduler, asynchronous=True)
-    scheduler_address = URL(cluster.scheduler_address)
-    monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
-    monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
-    yield cluster
-    await cluster.close()
+    async with SpecCluster(
+        workers=workers, scheduler=scheduler, asynchronous=True
+    ) as cluster:
+        scheduler_address = URL(cluster.scheduler_address)
+        monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
+        monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
+        yield cluster

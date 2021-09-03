@@ -89,19 +89,12 @@ def test_dask_client_is_created(dask_client: DaskClient):
 
 
 async def test_dask_cluster():
-    cluster = await LocalCluster(n_workers=2, threads_per_worker=1, asynchronous=True)
-    scheduler_address = URL(cluster.scheduler_address)
-
-    client = await Client(cluster, asynchronous=True)
-    await cluster.close()
-
-    cluster = LocalCluster(
-        n_workers=2,
-        threads_per_worker=1,
-        host=scheduler_address.host,
-        scheduler_port=scheduler_address.port,
-    )
-    cluster.close()
+    async with LocalCluster(
+        n_workers=2, threads_per_worker=1, asynchronous=True
+    ) as cluster:
+        scheduler_address = URL(cluster.scheduler_address)
+        async with Client(cluster, asynchronous=True) as client:
+            assert client.status == "running"
 
 
 async def test_dask_client_reconnects_when_scheduler_restarts(
@@ -113,13 +106,13 @@ async def test_dask_client_reconnects_when_scheduler_restarts(
     await dask_spec_local_cluster.close()
     status = dask_client.client.status
     assert status == "connecting"
-    new_cluster = await LocalCluster(
+    async with LocalCluster(
         host=scheduler_address.host,
         scheduler_port=scheduler_address.port,
         asynchronous=True,
-    )
-    status = dask_client.client.status
-    assert status == "running"
+    ) as new_cluster:
+        status = dask_client.client.status
+        assert status == "running"
 
 
 async def test_local_dask_cluster_through_client(dask_client: DaskClient):
