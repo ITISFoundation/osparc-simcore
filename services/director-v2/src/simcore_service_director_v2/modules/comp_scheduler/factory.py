@@ -48,6 +48,7 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
         return CeleryScheduler(
             settings=app.state.settings.CELERY_SCHEDULER,
             db_engine=db_engine,
+            default_cluster_id=app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
             celery_client=CeleryClient.instance(app),
             scheduled_pipelines={
                 (r.user_id, r.project_uuid, r.iteration): ScheduledPipelineParams(
@@ -65,6 +66,7 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
         settings=app.state.settings.DASK_SCHEDULER,
         dask_client=DaskClient.instance(app),
         db_engine=db_engine,
+        default_cluster_id=app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
         scheduled_pipelines={
             (r.user_id, r.project_uuid, r.iteration): ScheduledPipelineParams(
                 cluster_id=r.cluster_id
