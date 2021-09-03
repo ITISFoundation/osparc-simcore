@@ -15,6 +15,7 @@ import aiodocker
 import httpx
 import pytest
 import respx
+import tenacity
 from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -166,29 +167,37 @@ def dynamic_sidecar_settings(monkeypatch: MonkeyPatch) -> AppSettings:
 
 @pytest.fixture
 async def docker_swarm(loop) -> None:
-    async def in_docker_swarm() -> bool:
+    class _NotInSwarmException(Exception):
+        pass
+
+    async def _in_docker_swarm(raise_error: bool = False) -> bool:
         try:
             inspect_result = await docker.swarm.inspect()
             assert type(inspect_result) == dict
         except aiodocker.exceptions.DockerError as error:
             assert error.status == 503
-            assert (
-                error.message
-                == 'This node is not a swarm manager. Use "docker swarm init" or "docker swarm join" to connect this node to swarm and try again.'
-            )
+            assert error.message.startswith("This node is not a swarm manager")
+            if raise_error:
+                raise _NotInSwarmException() from error
             return False
         return True
 
     async with aiodocker.Docker() as docker:
-        if not await in_docker_swarm():
-            await docker.swarm.init()
+        async for attempt in tenacity.AsyncRetrying(
+            wait=tenacity.wait_exponential(), stop=tenacity.stop_after_delay(20)
+        ):
+            with attempt:
+                if not await _in_docker_swarm():
+                    await docker.swarm.init()
+                # if still not in swarm raises an error to try and initialize again
+                await _in_docker_swarm(raise_error=True)
 
-        assert await in_docker_swarm() is True
+        assert await _in_docker_swarm() is True
 
         yield
 
         await docker.swarm.leave(force=True)
-        assert await in_docker_swarm() is False
+        assert await _in_docker_swarm() is False
 
 
 @pytest.fixture
