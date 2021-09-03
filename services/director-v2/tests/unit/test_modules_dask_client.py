@@ -397,6 +397,55 @@ async def test_disconnected_backend_send_computation_task(
     ), "dask client should not store any future here"
 
 
+@pytest.mark.parametrize("image, expected_annotations", _image_to_req_params())
+async def test_too_many_resource_send_computation_task(
+    dask_client: DaskClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    cluster_id: ClusterID,
+    cluster_id_resource: str,
+    image: Image,
+    expected_annotations: Dict[str, Any],
+    mocker: MockerFixture,
+):
+    # INIT
+    expected_annotations["resources"].update(
+        {cluster_id_resource: CLUSTER_RESOURCE_MOCK_USAGE}
+    )
+
+    fake_task = {node_id: image}
+    mocked_done_callback_fct = mocker.Mock()
+
+    # NOTE: We pass another fct so it can run in our localy created dask cluster
+    def fake_sidecar_fct(job_id: str, u_id: str, prj_id: str, n_id: str) -> int:
+        from dask.distributed import get_worker
+
+        worker = get_worker()
+        task: TaskState = worker.tasks.get(worker.get_current_task())
+        assert task is not None
+        assert task.annotations == expected_annotations
+        assert u_id == user_id
+        assert prj_id == project_id
+        assert n_id == node_id
+        return 123
+
+    # let's have a big number of CPUs
+    image.node_requirements.cpu = 100000
+    with pytest.raises(InsuficientComputationalResourcesError):
+        await dask_client.send_computation_tasks(
+            user_id=user_id,
+            project_id=project_id,
+            cluster_id=random.randint(cluster_id + 1, 100),
+            tasks=fake_task,
+            callback=mocked_done_callback_fct,
+            remote_fct=fake_sidecar_fct,
+        )
+    assert (
+        len(dask_client._taskid_to_future_map) == 0
+    ), "dask client should not store any future here"
+
+
 @pytest.mark.parametrize(
     "req_example", NodeRequirements.Config.schema_extra["examples"]
 )
