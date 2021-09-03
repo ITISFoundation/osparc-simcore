@@ -33,7 +33,7 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-async def docker_client() -> AsyncIterator[aiodocker.docker.Docker]:
+async def docker_client(docker_swarm: None) -> AsyncIterator[aiodocker.docker.Docker]:
     async with aiodocker.Docker() as client:
         yield client
 
