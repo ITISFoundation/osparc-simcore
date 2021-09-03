@@ -1,5 +1,7 @@
+import collections
 import logging
 from dataclasses import dataclass, field
+from pprint import pformat
 from typing import Any, Callable, Dict, List, Union
 from uuid import uuid4
 
@@ -40,11 +42,8 @@ def _check_cluster_able_to_run_pipeline(
     cluster_id_prefix: str,
     cluster_id: ClusterID,
 ):
-    from pprint import pformat
-
     logger.debug("Dask scheduler infos: %s", pformat(scheduler_info))
     workers = scheduler_info.get("workers", {})
-    import collections
 
     def can_task_run_on_worker(
         task_resources: Dict[str, Any], worker_resources: Dict[str, Any]
