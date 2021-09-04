@@ -5,7 +5,6 @@ from uuid import UUID
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
-from simcore_postgres_database.models.projects_snapshots import projects_snapshots
 from simcore_service_webserver.snapshots_models import Snapshot
 
 from .db_base_repository import BaseRepository
@@ -20,7 +19,23 @@ ProjectRow = RowProxy
 ProjectDict = Dict
 
 
-class SnapshotsRepository(BaseRepository):
+###################################################
+# FIXME: some temporary placeholders until next PR
+# from simcore_postgres_database.models.projects_snapshots import projects_snapshots
+
+projects_snapshots: sa.Table
+
+
+class TemporaryNoDatabaseSchemasAvailable(BaseRepository):
+    def __init__(self, request: web.Request):
+        super().__init__(request)
+        raise NotImplementedError()
+
+
+###################################################
+
+
+class SnapshotsRepository(TemporaryNoDatabaseSchemasAvailable):
     """
     Abstracts access to snapshots database table
 
@@ -99,7 +114,7 @@ class SnapshotsRepository(BaseRepository):
         return row
 
 
-class ProjectsRepository(BaseRepository):
+class ProjectsRepository(TemporaryNoDatabaseSchemasAvailable):
     def __init__(self, request: web.Request):
         super().__init__(request)
         self._dbapi = request.config_dict[APP_PROJECT_DBAPI]
