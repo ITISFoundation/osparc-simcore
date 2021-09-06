@@ -38,3 +38,6 @@ class DaskScheduler(BaseCompScheduler):
 
     async def _stop_tasks(self, tasks: List[CompTaskAtDB]) -> None:
         await self.dask_client.abort_computation_tasks([str(t.job_id) for t in tasks])
+
+    async def _reconnect_backend(self) -> None:
+        await self.dask_client.reconnect_client()

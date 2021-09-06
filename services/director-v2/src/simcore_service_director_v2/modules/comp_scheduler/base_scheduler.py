@@ -25,6 +25,7 @@ from models_library.projects_state import RunningState
 from pydantic import PositiveInt
 
 from ...core.errors import (
+    ComputationalBackendNotConnectedError,
     InsuficientComputationalResourcesError,
     InvalidPipelineError,
     MissingComputationalResourcesError,
@@ -131,6 +132,9 @@ class BaseCompScheduler(ABC):
             ]
         )
 
+    async def reconnect_backend(self) -> None:
+        await self._reconnect_backend()
+
     async def _get_pipeline_dag(self, project_id: ProjectID) -> nx.DiGraph:
         comp_pipeline_repo: CompPipelinesRepository = get_repository(
             self.db_engine, CompPipelinesRepository
@@ -206,6 +210,10 @@ class BaseCompScheduler(ABC):
 
     @abstractmethod
     async def _stop_tasks(self, tasks: List[CompTaskAtDB]) -> None:
+        ...
+
+    @abstractmethod
+    async def _reconnect_backend(self) -> None:
         ...
 
     async def _schedule_pipeline(
@@ -372,9 +380,27 @@ class BaseCompScheduler(ABC):
                     InsuficientComputationalResourcesError,
                 ),
             ):
+                logger.error(
+                    "The task %s could not be scheduled due to the following: %s",
+                    r.node_id,
+                    r.msg,
+                )
                 await comp_tasks_repo.set_project_tasks_state(
                     project_id, [r.node_id], RunningState.FAILED
                 )
+                # TODO: we should set some specific state so the user may know what to do
+            if isinstance(r, ComputationalBackendNotConnectedError):
+                logger.error(
+                    "The computational backend is disconnected. abort all tasks!"
+                )
+                # we should try re-connecting. in the meantime we cannot schedule tasks on the scheduler, let's abort everything
+                await asyncio.gather(
+                    comp_tasks_repo.set_project_tasks_state(
+                        project_id, tasks, RunningState.FAILED
+                    ),
+                    return_exceptions=True,
+                )
+                raise ComputationalBackendNotConnectedError(r.msg) from r
 
     def _wake_up_scheduler_now(self) -> None:
         self.wake_up_event.set()
