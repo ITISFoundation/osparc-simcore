@@ -126,7 +126,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         repo_id = await repo_orm.insert(project_uuid=project.uuid)
         assert repo_id is not None
 
-        repo_orm.pin(rowid=repo_id)
+        repo_orm.set_default(rowid=repo_id)
         repo = await repo_orm.fetch()
         assert repo
         assert repo.project_uuid == project.uuid
@@ -138,7 +138,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         branch_id = await branches_orm.insert(repo_id=repo.id)
         assert branch_id is not None
 
-        branches_orm.pin(rowid=branch_id)
+        branches_orm.set_default(rowid=branch_id)
         main_branch: Optional[RowProxy] = await branches_orm.fetch()
         assert main_branch
         assert main_branch.name == "main", "Expected 'main' as default branch"
@@ -149,7 +149,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         heads_orm = HeadsOrm(conn)
         await heads_orm.insert(repo_id=repo.id, head_branch_id=branch_id)
 
-        heads_orm.pin(rowid=repo.id)
+        heads_orm.set_default(rowid=repo.id)
         head = await heads_orm.fetch()
         assert head
 
@@ -160,12 +160,12 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
     repo = await repo_orm.fetch("id project_uuid project_checksum")
     assert repo
 
-    project_orm = ProjectsOrm(conn).pin(uuid=repo.project_uuid)
+    project_orm = ProjectsOrm(conn).set_default(uuid=repo.project_uuid)
     project_wc = await project_orm.fetch()
     assert project_wc
     assert project == project_wc
 
-    # eval checksum
+    # call external function to compute checksum
     checksum = eval_checksum(project_wc.workbench)
     assert repo.project_checksum != checksum
 
@@ -176,7 +176,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
 
         # get HEAD = repo.branch_id -> .head_commit_id
         assert head.repo_id == repo.id
-        branches_orm.pin(head.head_branch_id)
+        branches_orm.set_default(head.head_branch_id)
         branch = await branches_orm.fetch("head_commit_id name")
         assert branch
         assert branch.name == "main"
@@ -223,8 +223,8 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
     repo = await repo_orm.fetch()
     assert repo
 
-    project_orm.pin(uuid=repo.project_uuid)
-    assert project_orm.is_pinned()
+    project_orm.set_default(uuid=repo.project_uuid)
+    assert project_orm.is_default_set()
 
     await project_orm.update(
         workbench={

@@ -10,14 +10,28 @@
 
 import functools
 import operator
-from typing import Dict, Generic, List, Optional, Set, TypeVar
+from typing import Dict, Generic, List, Optional, Set, TypeVar, Union
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from sqlalchemy.sql.base import ImmutableColumnCollection
+from sqlalchemy.sql.elements import literal_column
 
 RowUId = TypeVar("RowUId", int, str)  # typically id or uuid
+
+
+def _normalize(names: Union[str, List[str], None]) -> List[str]:
+    if not names:
+        return []
+    if isinstance(names, str):
+        names = names.replace(",", " ").split()
+    return list(map(str, names))
+
+
+# Tokens for defaults
+ALL_COLUMNS = f"{__name__}.ALL_COLUMNS"
+PRIMARY_KEY = f"{__name__}.PRIMARY_KEY"
 
 
 class BaseOrm(Generic[RowUId]):
@@ -47,17 +61,41 @@ class BaseOrm(Generic[RowUId]):
 
     def _compose_select_query(
         self,
-        selection: Optional[str] = None,
+        columns: Union[str, List[str]],
     ):
-        """
-        selection: name/s of columns to select. None defaults to all of them
-        """
-        if selection is None:
+        column_names: List[str] = _normalize(columns)
+
+        if ALL_COLUMNS in column_names:
             query = self._table.select()
+        elif PRIMARY_KEY in column_names:
+            query = sa.select(
+                [
+                    self._primary_key,
+                ]
+            )
         else:
-            query = sa.select([self._table.c[name] for name in selection.split()])
+            query = sa.select([self._table.c[name] for name in column_names])
 
         return query
+
+    def _append_returning(self, columns: Union[str, List[str]], query):
+        column_names: List[str] = _normalize(columns)
+
+        is_scalar: bool = len(column_names) == 1
+
+        if PRIMARY_KEY in column_names:
+            # defaults to primery key
+            query = query.returning(self._primary_key)
+
+        elif ALL_COLUMNS in column_names:
+            query = query.returning(literal_column("*"))
+            is_scalar = False
+            # NOTE: returning = self._table would also work. less efficient?
+        else:
+            # selection
+            query = query.returning(*[self._table.c[name] for name in column_names])
+
+        return query, is_scalar
 
     @staticmethod
     def _check_access_rights(access: Set, values: Dict):
@@ -69,7 +107,10 @@ class BaseOrm(Generic[RowUId]):
     def columns(self) -> ImmutableColumnCollection:
         return self._table.columns
 
-    def pin(self, rowid: Optional[RowUId] = None, **unique_id) -> "BaseOrm":
+    def set_default(self, rowid: Optional[RowUId] = None, **unique_id) -> "BaseOrm":
+        """
+        Sets default for read operations either by passing a row identifier or a filter
+        """
         if unique_id and rowid:
             raise ValueError("Either identifier or unique condition but not both")
 
@@ -83,33 +124,30 @@ class BaseOrm(Generic[RowUId]):
                     for name, value in unique_id.items()
                 ),
             )
-        if not self.is_pinned():
+        if not self.is_default_set():
             raise ValueError(
                 "Either identifier or unique condition required. None provided"
             )
         return self
 
-    def unpin(self) -> None:
+    def clear_default(self) -> None:
         self._unique_match = None
 
-    def is_pinned(self) -> bool:
+    def is_default_set(self) -> bool:
         # WARNING: self._unique_match can evaluate false. Keep explicit
         return self._unique_match is not None
 
     async def fetch(
         self,
-        returning: Optional[str] = None,
+        returning_cols: Union[str, List[str]] = ALL_COLUMNS,
         *,
         rowid: Optional[RowUId] = None,
     ) -> Optional[RowProxy]:
-        """
-        selection: name of one or more columns to fetch. None defaults to all of them
-        """
-        query = self._compose_select_query(returning)
+        query = self._compose_select_query(returning_cols)
         if rowid:
             # overrides pinned row
             query = query.where(self._primary_key == rowid)
-        elif self.is_pinned():
+        elif self.is_default_set():
             assert self._unique_match is not None  # nosec
             query = query.where(self._unique_match)
 
@@ -119,30 +157,45 @@ class BaseOrm(Generic[RowUId]):
 
     async def fetchall(
         self,
-        returning: Optional[str] = None,
+        returning_cols: Union[str, List[str]] = ALL_COLUMNS,
     ) -> List[RowProxy]:
-        query = self._compose_select_query(returning)
+
+        query = self._compose_select_query(returning_cols)
 
         result: ResultProxy = await self._conn.execute(query)
         rows: List[RowProxy] = await result.fetchall()
         return rows
 
-    async def update(self, **values) -> Optional[RowUId]:
-        # TODO: add returning. default to id and add constant for all
+    async def update(
+        self, returning_cols: Union[str, List[str]] = PRIMARY_KEY, **values
+    ) -> Union[RowUId, RowProxy, None]:
         self._check_access_rights(self._readonly, values)
         self._check_access_rights(self._writeonce, values)
 
         query = self._table.update().values(**values)
-        if self.is_pinned():
+        if self.is_default_set():
             assert self._unique_match is not None  # nosec
             query = query.where(self._unique_match)
-        query = query.returning(self._primary_key)
 
-        return await self._conn.scalar(query)
+        query, is_scalar = self._append_returning(returning_cols, query)
+        if is_scalar:
+            return await self._conn.scalar(query)
 
-    async def insert(self, **values) -> Optional[RowUId]:
+        result: ResultProxy = await self._conn.execute(query)
+        row: Optional[RowProxy] = await result.first()
+        return row
+
+    async def insert(
+        self, returning_cols: Union[str, List[str]] = PRIMARY_KEY, **values
+    ) -> Union[RowUId, RowProxy, None]:
         self._check_access_rights(self._readonly, values)
 
-        query = self._table.insert().values(**values).returning(self._primary_key)
+        query = self._table.insert().values(**values)
 
-        return await self._conn.scalar(query)
+        query, is_scalar = self._append_returning(returning_cols, query)
+        if is_scalar:
+            return await self._conn.scalar(query)
+
+        result: ResultProxy = await self._conn.execute(query)
+        row: Optional[RowProxy] = await result.first()
+        return row
