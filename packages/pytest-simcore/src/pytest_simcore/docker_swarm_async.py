@@ -1,7 +1,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
-from asyncio import AbstractEventLoop
 from typing import Type
 
 import aiodocker
@@ -17,11 +16,10 @@ class _StillInSwarmException(Exception):
     pass
 
 
-async def _in_docker_swarm(
-    docker_client: aiodocker.docker.Docker, raise_error: bool = False
-) -> bool:
+async def _in_docker_swarm(raise_error: bool = False) -> bool:
     try:
-        inspect_result = await docker_client.swarm.inspect()
+        async with aiodocker.Docker() as docker:
+            inspect_result = await docker.swarm.inspect()
         assert type(inspect_result) == dict
     except aiodocker.exceptions.DockerError as error:
         assert error.status == 503
@@ -41,31 +39,26 @@ def _attempt_for(retry_error_cls: Type[Exception]) -> tenacity.AsyncRetrying:
 
 
 @pytest.fixture(scope="module")
-async def _docker_client(loop: AbstractEventLoop) -> aiodocker.docker.Docker:
-    # name avoids collision with already used name
-    async with aiodocker.Docker() as docker:
-        yield docker
-
-
-@pytest.fixture(scope="module")
-async def async_docker_swarm(_docker_client: aiodocker.docker.Docker) -> None:
+async def async_docker_swarm(loop) -> None:
     async for attempt in _attempt_for(retry_error_cls=_NotInSwarmException):
         with attempt:
-            if not await _in_docker_swarm(_docker_client):
-                await _docker_client.swarm.init()
+            if not await _in_docker_swarm():
+                async with aiodocker.Docker() as docker:
+                    await docker.swarm.init()
             # if still not in swarm raises an error to try and initialize again
-            await _in_docker_swarm(_docker_client, raise_error=True)
+            await _in_docker_swarm(raise_error=True)
 
-    assert await _in_docker_swarm(_docker_client) is True
+    assert await _in_docker_swarm() is True
 
     yield
 
     async for attempt in _attempt_for(retry_error_cls=_StillInSwarmException):
         with attempt:
-            if await _in_docker_swarm(_docker_client):
-                await _docker_client.swarm.leave(force=True)
+            if await _in_docker_swarm():
+                async with aiodocker.Docker() as docker:
+                    await docker.swarm.leave(force=True)
             # if still in swarm raises an error to try and leave again
-            if await _in_docker_swarm(_docker_client):
+            if await _in_docker_swarm():
                 raise _StillInSwarmException()
 
-    assert await _in_docker_swarm(_docker_client) is False
+    assert await _in_docker_swarm() is False
