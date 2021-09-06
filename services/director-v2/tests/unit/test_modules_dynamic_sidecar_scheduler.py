@@ -226,10 +226,6 @@ def mock_max_status_api_duration(monkeypatch: MonkeyPatch) -> Iterator[None]:
 # TESTS
 
 
-async def test_docker_swarm_fixture(async_docker_swarm: None) -> None:
-    pass
-
-
 async def test_scheduler_add_remove(
     ensure_scheduler_runs_once: Callable,
     scheduler: DynamicSidecarsScheduler,
