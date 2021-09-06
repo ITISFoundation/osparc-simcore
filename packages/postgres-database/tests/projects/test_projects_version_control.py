@@ -5,19 +5,19 @@
 
 import hashlib
 import json
-from typing import Optional
+from typing import Any, Dict, Optional
 from uuid import UUID, uuid3
 
 import pytest
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from simcore_postgres_database.models.projects import projects
-from simcore_postgres_database.models.projects_snapshots import projects_snapshots
 from simcore_postgres_database.models.projects_version_control import (
     projects_vc_branches,
     projects_vc_commits,
     projects_vc_heads,
     projects_vc_repos,
+    projects_vc_snapshots,
     projects_vc_tags,
 )
 from simcore_postgres_database.utils_aiopg_orm import BaseOrm
@@ -74,9 +74,9 @@ class ProjectsOrm(BaseOrm[str]):
 class SnapshotsOrm(BaseOrm[str]):
     def __init__(self, connection: SAConnection):
         super().__init__(
-            projects_snapshots,
+            projects_vc_snapshots,
             connection,
-            writeonce={"uuid"},  # TODO:  all? cannot delete snapshots?
+            writeonce={"checksum"},  # TODO:  all? cannot delete snapshots?
         )
 
 
@@ -92,63 +92,69 @@ class HeadsOrm(BaseOrm[int]):
 # -------------
 
 
+def eval_checksum(workbench: Dict[str, Any]):
+    # FIXME: prototype
+    block_string = json.dumps(workbench, sort_keys=True).encode("utf-8")
+    raw_hash = hashlib.sha256(block_string)
+    return raw_hash.hexdigest()
+
+
+def eval_snapshot_uuid(repo: RowProxy, commit: RowProxy) -> UUID:
+    assert repo.id == commit.repo_id  # nosec
+    return uuid3(UUID(repo.project_uuid), f"{repo.id}.{commit.snapshot_checksum}")
+
+
 async def add_snapshot(
     project_wc: RowProxy, checksum: str, repo: RowProxy, conn: SAConnection
 ) -> str:
     snapshot_orm = SnapshotsOrm(conn)
-
     snapshot_checksum = checksum
-    snapshot_uuid = str(
-        uuid3(UUID(repo.project_uuid), f"{repo.id}.{snapshot_checksum}")
-    )
-
     row_id = await snapshot_orm.insert(
-        uuid=snapshot_uuid, workbench=project_wc.workbench, ui=project_wc.ui
+        checksum=checksum,
+        content={"workbench": project_wc.workbench, "ui": project_wc.ui},
     )
-    assert row_id
-    assert snapshot_uuid == row_id
-    return row_id
+    assert row_id == checksum
+    return checksum
 
 
 async def test_basic_workflow(project: RowProxy, conn: SAConnection):
-    # create repo
-    repo_orm = ReposOrm(conn)
-    repo_id = await repo_orm.insert(project_uuid=project.uuid)
-    assert repo_id is not None
 
-    repo_orm.pin(rowid=repo_id)
-    repo = await repo_orm.fetch()
-    assert repo
-    assert repo.project_uuid == project.uuid
-    assert repo.project_checksum is None
-    assert repo.created == repo.modified
+    # git init
+    async with conn.begin():
+        # create repo
+        repo_orm = ReposOrm(conn)
+        repo_id = await repo_orm.insert(project_uuid=project.uuid)
+        assert repo_id is not None
 
-    # create main branch
-    branches_orm = BranchesOrm(conn)
-    branch_id = await branches_orm.insert(repo_id=repo.id)
-    assert branch_id is not None
+        repo_orm.pin(rowid=repo_id)
+        repo = await repo_orm.fetch()
+        assert repo
+        assert repo.project_uuid == project.uuid
+        assert repo.project_checksum is None
+        assert repo.created == repo.modified
 
-    branches_orm.pin(rowid=branch_id)
-    main_branch: Optional[RowProxy] = await branches_orm.fetch()
-    assert main_branch
-    assert main_branch.name == "main", "Expected 'main' as default branch"
-    assert main_branch.head_commit_id is None, "still not assigned"
-    assert main_branch.created == main_branch.modified
+        # create main branch
+        branches_orm = BranchesOrm(conn)
+        branch_id = await branches_orm.insert(repo_id=repo.id)
+        assert branch_id is not None
 
-    # assign head branch
-    heads_orm = HeadsOrm(conn)
-    await heads_orm.insert(repo_id=repo.id, head_branch_id=branch_id)
+        branches_orm.pin(rowid=branch_id)
+        main_branch: Optional[RowProxy] = await branches_orm.fetch()
+        assert main_branch
+        assert main_branch.name == "main", "Expected 'main' as default branch"
+        assert main_branch.head_commit_id is None, "still not assigned"
+        assert main_branch.created == main_branch.modified
 
-    heads_orm.pin(rowid=repo.id)
-    head = await heads_orm.fetch()
-    assert head
+        # assign head branch
+        heads_orm = HeadsOrm(conn)
+        await heads_orm.insert(repo_id=repo.id, head_branch_id=branch_id)
 
+        heads_orm.pin(rowid=repo.id)
+        head = await heads_orm.fetch()
+        assert head
+
+    #
     # create first commit -- TODO: separate tests
-    def eval_checksum(workbench):
-        # FIXME: prototype
-        block_string = json.dumps(workbench, sort_keys=True).encode("utf-8")
-        raw_hash = hashlib.sha256(block_string)
-        return raw_hash.hexdigest()
 
     # fetch a *full copy* of the project (WC)
     repo = await repo_orm.fetch("id project_uuid project_checksum")
@@ -163,18 +169,10 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
     checksum = eval_checksum(project_wc.workbench)
     assert repo.project_checksum != checksum
 
-    # take snapshot = add & commit
+    # take snapshot <=> git add & commit
     async with conn.begin():
-        snapshot_orm = SnapshotsOrm(conn)
 
-        snapshot_checksum = checksum
-        snapshot_uuid = str(
-            uuid3(UUID(repo.project_uuid), f"{repo.id}.{snapshot_checksum}")
-        )
-
-        await snapshot_orm.insert(
-            uuid=snapshot_uuid, workbench=project_wc.workbench, ui=project_wc.ui
-        )
+        snapshot_checksum = await add_snapshot(project_wc, checksum, repo, conn)
 
         # get HEAD = repo.branch_id -> .head_commit_id
         assert head.repo_id == repo.id
@@ -190,7 +188,6 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
             repo_id=repo.id,
             parent_commit_id=branch.head_commit_id,
             snapshot_checksum=snapshot_checksum,
-            snapshot_uuid=snapshot_uuid,
             message="first commit",
         )
         assert commit_id
@@ -265,7 +262,6 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
             repo_id=head_commit.repo_id,
             parent_commit_id=head_commit.id,
             snapshot_checksum=checksum,
-            snapshot_uuid=snapshot_uuid,
             message="second commit",
         )
         assert commit_id
