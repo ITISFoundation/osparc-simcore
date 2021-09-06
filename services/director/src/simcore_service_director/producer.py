@@ -14,7 +14,7 @@ import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
 from packaging import version
-
+import servicelib
 if version.parse(servicelib.__version__) >= version.parse("1.0.0"):
     from servicelib.aiohttp.async_utils import run_sequentially_in_context
     from servicelib.aiohttp.monitor_services import service_started, service_stopped

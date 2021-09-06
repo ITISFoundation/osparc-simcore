@@ -15,7 +15,7 @@ from aioresponses.core import CallbackResult, aioresponses
 from helpers import json_schema_validator
 
 from packaging import version
-
+import servicelib
 if version.parse(servicelib.__version__) >= version.parse("1.0.0"):
     from servicelib.aiohttp.rest_responses import unwrap_envelope
 else:

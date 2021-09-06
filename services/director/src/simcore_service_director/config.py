@@ -7,7 +7,7 @@ from distutils.util import strtobool
 from typing import Dict, Optional
 
 from packaging import version
-
+import servicelib
 if version.parse(servicelib.__version__) >= version.parse("1.0.0"):
     from servicelib.aiohttp.client_session import APP_CLIENT_SESSION_KEY
 else:

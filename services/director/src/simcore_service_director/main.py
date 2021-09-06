@@ -5,7 +5,7 @@ import os
 from aiohttp import web
 
 from packaging import version
-
+import servicelib
 if version.parse(servicelib.__version__) >= version.parse("1.0.0"):
     from servicelib.aiohttp.client_session import persistent_client_session
     from servicelib.aiohttp.tracing import setup_tracing

@@ -4,7 +4,7 @@ from prometheus_client import CONTENT_TYPE_LATEST
 from prometheus_client.registry import CollectorRegistry
 
 from packaging import version
-
+import servicelib
 if version.parse(servicelib.__version__) >= version.parse("1.0.0"):
     from servicelib.aiohttp.monitor_services import (
         add_instrumentation as add_services_instrumentation,
