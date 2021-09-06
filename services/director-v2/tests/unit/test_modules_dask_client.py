@@ -449,7 +449,7 @@ async def test_too_many_resource_send_computation_task(
         await dask_client.send_computation_tasks(
             user_id=user_id,
             project_id=project_id,
-            cluster_id=random.randint(cluster_id + 1, 100),
+            cluster_id=cluster_id,
             tasks=fake_task,
             callback=mocked_done_callback_fct,
             remote_fct=fake_sidecar_fct,
