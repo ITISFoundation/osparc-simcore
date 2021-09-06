@@ -118,6 +118,13 @@ class InsuficientComputationalResourcesError(SchedulerError):
         self.node_id = node_id
 
 
+class DaskClientNotConnectedError(SchedulerError):
+    """The dask client is not connected to the dask-scheduler"""
+
+    def __init__(self, msg: Optional[str]):
+        super().__init__(msg="No connection to Dask scheduler")
+
+
 class ConfigurationError(DirectorException):
     """An error in the director-v2 configuration"""
 
