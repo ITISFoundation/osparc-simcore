@@ -63,7 +63,7 @@ async def test_orm_fetch(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[s
     assert len(all_scicrunch_resources) == 2
 
     # pin-row
-    scicrunch_orm.pin_row(scicrunch_id1)
+    scicrunch_orm.pin(scicrunch_id1)
     scicrunch_resource = await scicrunch_orm.fetch()
     assert scicrunch_resource
     assert scicrunch_resource.rrid == scicrunch_id1
@@ -116,7 +116,7 @@ async def test_orm_update(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[
     assert all(row.name == "w/o pin" for row in rows)
 
     # let's use pin
-    scicrunch_orm.pin_row(scicrunch_id2)
+    scicrunch_orm.pin(scicrunch_id2)
     assert await scicrunch_orm.update(name="w/ pin") == scicrunch_id2
 
     assert (await scicrunch_orm.fetch(rowid=scicrunch_id1)).name == "w/o pin"

@@ -16,6 +16,7 @@ from simcore_postgres_database.models.projects_snapshots import projects_snapsho
 from simcore_postgres_database.models.projects_version_control import (
     projects_vc_branches,
     projects_vc_commits,
+    projects_vc_heads,
     projects_vc_repos,
     projects_vc_tags,
 )
@@ -79,6 +80,15 @@ class SnapshotsOrm(BaseOrm[str]):
         )
 
 
+class HeadsOrm(BaseOrm[int]):
+    def __init__(self, connection: SAConnection):
+        super().__init__(
+            projects_vc_heads,
+            connection,
+            writeonce={"repo_id"},
+        )
+
+
 # -------------
 
 
@@ -106,11 +116,11 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
     repo_id = await repo_orm.insert(project_uuid=project.uuid)
     assert repo_id is not None
 
-    repo_orm.pin_row(repo_id)
+    repo_orm.pin(rowid=repo_id)
     repo = await repo_orm.fetch()
     assert repo
     assert repo.project_uuid == project.uuid
-    assert repo.branch_id is None
+    assert repo.project_checksum is None
     assert repo.created == repo.modified
 
     # create main branch
@@ -118,18 +128,20 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
     branch_id = await branches_orm.insert(repo_id=repo.id)
     assert branch_id is not None
 
-    branches_orm.pin_row(branch_id)
+    branches_orm.pin(rowid=branch_id)
     main_branch: Optional[RowProxy] = await branches_orm.fetch()
     assert main_branch
-    assert main_branch.name == "main", "Expected default"
-    assert main_branch.head_commit_id is None
+    assert main_branch.name == "main", "Expected 'main' as default branch"
+    assert main_branch.head_commit_id is None, "still not assigned"
     assert main_branch.created == main_branch.modified
 
-    # assign
-    await repo_orm.update(branch_id=branch_id)
-    repo = await repo_orm.fetch("created modified")
-    assert repo
-    assert repo.created < repo.modified
+    # assign head branch
+    heads_orm = HeadsOrm(conn)
+    await heads_orm.insert(repo_id=repo.id, head_branch_id=branch_id)
+
+    heads_orm.pin(rowid=repo.id)
+    head = await heads_orm.fetch()
+    assert head
 
     # create first commit -- TODO: separate tests
     def eval_checksum(workbench):
@@ -139,10 +151,10 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         return raw_hash.hexdigest()
 
     # fetch a *full copy* of the project (WC)
-    repo = await repo_orm.fetch("id project_uuid project_checksum branch_id")
+    repo = await repo_orm.fetch("id project_uuid project_checksum")
     assert repo
 
-    project_orm = ProjectsOrm(conn).pin_row(uuid=repo.project_uuid)
+    project_orm = ProjectsOrm(conn).pin(uuid=repo.project_uuid)
     project_wc = await project_orm.fetch()
     assert project_wc
     assert project == project_wc
@@ -165,10 +177,12 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         )
 
         # get HEAD = repo.branch_id -> .head_commit_id
-        branches_orm.pin_row(repo.branch_id)
+        assert head.repo_id == repo.id
+        branches_orm.pin(head.head_branch_id)
         branch = await branches_orm.fetch("head_commit_id name")
         assert branch
         assert branch.name == "main"
+        assert branch.head_commit_id is None, "First commit"
 
         # create commit
         commits_orm = CommitsOrm(conn)
@@ -212,7 +226,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
     repo = await repo_orm.fetch()
     assert repo
 
-    project_orm.pin_row(uuid=repo.project_uuid)
+    project_orm.pin(uuid=repo.project_uuid)
     assert project_orm.is_pinned()
 
     await project_orm.update(
@@ -228,13 +242,15 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
     assert project.workbench != project_wc.workbench
 
     # get HEAD = repo.branch_id -> .head_commit_id
-    branch = await branches_orm.fetch("head_commit_id", rowid=repo.branch_id)
+    head = await heads_orm.fetch()
+    assert head
+    branch = await branches_orm.fetch("head_commit_id", rowid=head.head_branch_id)
     assert branch
     # TODO: get subquery ... and compose
     head_commit = await commits_orm.fetch(rowid=branch.head_commit_id)
     assert head_commit
 
-    # compare
+    # compare checksums between wc and HEAD
     checksum = eval_checksum(project_wc.workbench)
     assert head_commit.snapshot_checksum != checksum
 

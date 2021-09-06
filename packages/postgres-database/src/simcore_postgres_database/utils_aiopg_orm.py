@@ -69,7 +69,7 @@ class BaseOrm(Generic[RowUId]):
     def columns(self) -> ImmutableColumnCollection:
         return self._table.columns
 
-    def pin_row(self, rowid: Optional[RowUId] = None, **unique_id) -> "BaseOrm":
+    def pin(self, rowid: Optional[RowUId] = None, **unique_id) -> "BaseOrm":
         if unique_id and rowid:
             raise ValueError("Either identifier or unique condition but not both")
 
@@ -89,7 +89,7 @@ class BaseOrm(Generic[RowUId]):
             )
         return self
 
-    def unpin_row(self) -> None:
+    def unpin(self) -> None:
         self._unique_match = None
 
     def is_pinned(self) -> bool:
