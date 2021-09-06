@@ -119,9 +119,9 @@ class BaseOrm(Generic[RowUId]):
 
     async def fetchall(
         self,
-        returned_selection: Optional[str] = None,
+        returning: Optional[str] = None,
     ) -> List[RowProxy]:
-        query = self._compose_select_query(returned_selection)
+        query = self._compose_select_query(returning)
 
         result: ResultProxy = await self._conn.execute(query)
         rows: List[RowProxy] = await result.fetchall()
