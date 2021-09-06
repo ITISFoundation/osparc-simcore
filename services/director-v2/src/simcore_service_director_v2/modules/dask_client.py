@@ -14,6 +14,7 @@ from tenacity import before_sleep_log, retry, retry_if_exception_type, wait_rand
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
     ConfigurationError,
+    DaskClientNotConnectedError,
     InsuficientComputationalResourcesError,
     MissingComputationalResourcesError,
 )
