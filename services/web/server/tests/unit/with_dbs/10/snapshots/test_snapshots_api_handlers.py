@@ -10,7 +10,7 @@ from aiohttp import web
 from models_library.projects import Project
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver._meta import api_vtag as vtag
-from simcore_service_webserver.snapshots_models import SnapshotItem
+from simcore_service_webserver.repos_models import SnapshotItem
 
 ProjectDict = Dict[str, Any]
 

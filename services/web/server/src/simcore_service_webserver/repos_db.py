@@ -5,10 +5,10 @@ from uuid import UUID
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
-from simcore_service_webserver.snapshots_models import Snapshot
 
 from .db_base_repository import BaseRepository
 from .projects.projects_db import APP_PROJECT_DBAPI
+from .repos_models import Snapshot
 
 # alias for readability
 # SEE https://pydantic-docs.helpmanual.io/usage/models/#orm-mode-aka-arbitrary-class-instances

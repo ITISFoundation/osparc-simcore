@@ -14,7 +14,7 @@ from uuid import UUID
 from models_library.projects import Project
 
 from .projects import projects_utils
-from .snapshots_models import Snapshot
+from .repos_models import Snapshot
 
 ProjectDict = Dict[str, Any]
 

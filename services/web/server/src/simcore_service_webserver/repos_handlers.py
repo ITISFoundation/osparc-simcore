@@ -17,10 +17,10 @@ from .constants import RQT_USERID_KEY
 from .login.decorators import login_required
 from .projects import projects_api
 from .projects.projects_exceptions import ProjectNotFoundError
+from .repos_db import ProjectsRepository, SnapshotsRepository
+from .repos_models import Snapshot, SnapshotPatchBody, SnapshotResource
+from .repos_snapshots import ProjectDict, take_snapshot
 from .security_decorators import permission_required
-from .snapshots_core import ProjectDict, take_snapshot
-from .snapshots_db import ProjectsRepository, SnapshotsRepository
-from .snapshots_models import Snapshot, SnapshotPatchBody, SnapshotResource
 from .utils_aiohttp import rename_routes_as_handler_function, view_routes
 
 logger = logging.getLogger(__name__)
