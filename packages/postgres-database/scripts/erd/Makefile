@@ -1,16 +1,5 @@
-# Recipes to upgrade requirements in batch
 #
-# Examples of usage
-#
-# - Full upgrade of all packages
-#  	make touch packages
-#
-# - Upgrade one library in all packages
-#   make packages upgrade=name-of-package
-#
-#
-# WARNING: this batch MUST ONLY be used for non-services. Services are INDEPENDENT
-#          and to upgrade them, use services/{servicesname}/requirements/Makefile
+# ERD (Entity Relationship Diagram) is used to visualize these relationships
 #
 .DEFAULT_GOAL := help
 
@@ -26,7 +15,7 @@ PG_DIR := $(abspath $(PACKAGES_DIR)/postgres-database)
 MAKE_C := $(MAKE) --directory
 
 
-IMAGE_NAME:=local/postgres-database-scripts:${PYTHON_VERSION}
+IMAGE_NAME:=local/postgres-database-scripts-erd:${PYTHON_VERSION}
 
 # SEE https://medium.com/faun/set-current-host-user-for-docker-container-4e521cef9ffc
 .PHONY: build
@@ -60,7 +49,7 @@ run: build ## Runs upgrade in a container [WARNING! UNDER DEV. USE CAREFULY]
 		--user=$(shell id -u):$(shell id -g) \
 		--entrypoint=/bin/bash \
 		${IMAGE_NAME} \
-		-c "pip install -e .; python scripts/create_erd.py"
+		-c "pip install -e .; python scripts/erd/main.py"
 
 
 

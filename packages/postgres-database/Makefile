@@ -103,4 +103,4 @@ down-pg down-prod: $(docker-compose-configs) ## stops pg server
 
 .PHONY: auto-doc
 auto-doc: ## Creates entity relationship diagram (ERD) defined under ``simcore_postgres_database.models``
-	$(MAKE) --directory=scripts run
+	$(MAKE) --directory=scripts/erd run

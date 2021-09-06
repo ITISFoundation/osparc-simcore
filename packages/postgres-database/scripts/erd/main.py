@@ -1,12 +1,8 @@
 #
 # ERD (Entity Relationship Diagram) is used to visualize these relationships
 #
-# Requires
-#   - sudo apt install graphviz graphviz-dev
-#   - pip install eralchemy
-#
-# TODO: create image with requirements
-#
+
+
 # pylint: disable=wildcard-import
 # pylint: disable=unused-wildcard-import
 #
@@ -45,7 +41,7 @@ def create_with_eralchemy(svg_path: Path):
 
 if __name__ == "__main__":
 
-    output_dir = (CURRENT_DIR / "../doc/img").resolve()
+    output_dir = (CURRENT_DIR / "../../doc/img").resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # FIXME: sqlalchemy_schemadisplay failes with json columns
