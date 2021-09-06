@@ -1,18 +1,31 @@
 #
 # Assists on the creation of project's OAS
 #
+# - Follows https://cloud.google.com/apis/design
+# - check in https://editor.swagger.io/
+#
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import json
-from collections import defaultdict
+import sys
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-from uuid import UUID, uuid3, uuid4
+from math import ceil
+from pathlib import Path
+from types import FunctionType
+from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union
+from uuid import UUID, uuid3
 
+import simcore_service_webserver.projects.projects_handlers
+import simcore_service_webserver.projects.projects_node_handlers
+import simcore_service_webserver.snapshots_api_handlers
 from fastapi import Depends, FastAPI
 from fastapi import Path as PathParam
 from fastapi import Query, Request, status
 from fastapi.exceptions import HTTPException
-from models_library.services import PROPERTY_KEY_RE
+from fastapi.routing import APIRoute, APIRouter
+from models_library.services import PROPERTY_KEY_RE, Author
 from pydantic import (
     BaseModel,
     Field,
@@ -21,15 +34,19 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     constr,
+    validator,
 )
-from pydantic.networks import AnyUrl
+from pydantic.generics import GenericModel
+from pydantic.networks import HttpUrl
+from servicelib.rest_pagination_utils import PageLinks, PageMetaInfoLimitOffset
+from simcore_service_webserver.snapshots_models import SnapshotResource
+from starlette.datastructures import URL
 
-app = FastAPI()
-
-error_responses = {
-    status.HTTP_400_BAD_REQUEST: {},
-    status.HTTP_422_UNPROCESSABLE_ENTITY: {},
-}
+CURRENT_FILENAME_STEM = Path(sys.argv[0] if __name__ == "__main__" else __file__).stem
+# FIXME: modify openapi output
+#   - exclusiveMinimum should be boolean. SEE https://github.com/tiangolo/fastapi/issues/240
+#   - examples is NOT allowed
+#   - patternProperties NOT allowed
 
 
 InputID = OutputID = constr(regex=PROPERTY_KEY_RE)
@@ -39,9 +56,75 @@ BuiltinTypes = Union[StrictBool, StrictInt, StrictFloat, str]
 DataSchema = Union[
     BuiltinTypes,
 ]  # any json schema?
-DataLink = AnyUrl
+DataLink = HttpUrl
 
 DataSchema = Union[DataSchema, DataLink]
+
+DataT = TypeVar("DataT")
+
+
+class Error(BaseModel):
+    code: int
+    message: str
+
+
+class Envelope(GenericModel, Generic[DataT]):
+    data: Optional[DataT]
+    error: Optional[Error]
+
+    @validator("error", always=True)
+    @classmethod
+    def check_consistency(cls, v, values):
+        if v is not None and values["data"] is not None:
+            raise ValueError("must not provide both data and error")
+        if v is None and values.get("data") is None:
+            raise ValueError("must provide data or error")
+        return v
+
+
+ItemT = TypeVar("ItemT")
+
+# FIXME: replace PageResponseLimitOffset
+# FIXME: page envelope is inconstent since DataT != Page ??
+class Page(GenericModel, Generic[ItemT]):
+    meta: PageMetaInfoLimitOffset = Field(alias="_meta")
+    links: PageLinks = Field(alias="_links")
+    data: List[ItemT]
+
+    @classmethod
+    def create_obj(
+        cls,
+        data: List[Any],
+        request_url: URL,
+        total: int,
+        limit: int,
+        offset: int,
+    ) -> Dict[str, Any]:
+        last_page = ceil(total / limit) - 1
+        return dict(
+            _meta=PageMetaInfoLimitOffset(
+                total=total, count=len(data), limit=limit, offset=offset
+            ),
+            _links=PageLinks(
+                self=f"{request_url.replace_query_params(offset=offset, limit=limit)}",
+                first=f"{request_url.replace_query_params(offset= 0, limit= limit)}",
+                prev=f"{request_url.replace_query_params(offset= max(offset - limit, 0), limit= limit)}"
+                if offset > 0
+                else None,
+                next=f"{request_url.replace_query_params(offset= min(offset + limit, last_page * limit), limit= limit)}"
+                if offset < (last_page * limit)
+                else None,
+                last=f"{request_url.replace_query_params(offset= last_page * limit, limit= limit)}",
+            ),
+            data=data,
+        )
+
+
+# --------------
+
+
+class State(BaseModel):
+    ...
 
 
 class Node(BaseModel):
@@ -55,9 +138,38 @@ class Node(BaseModel):
     # var outputs?
 
 
+# --------------
 class Project(BaseModel):
+    """Domain model"""
+
     id: UUID
     pipeline: Dict[UUID, Node]
+
+
+# requests models
+class ProjectNew(BaseModel):
+    pipeline: Dict[UUID, Node]
+
+
+class ProjectUpdate(BaseModel):
+    # same as new but ALL optional??
+    # some validators?
+    pass
+
+
+# response models
+class ProjectItem(BaseModel):
+    # Lightweight and part of an array
+    id: UUID
+
+    url: HttpUrl
+
+
+class ProjectDetail(BaseModel):
+    id: UUID
+    pipeline: Dict[UUID, Node]
+
+    url: HttpUrl
 
     def update_ids(self, name: str):
         map_ids: Dict[UUID, UUID] = {}
@@ -65,6 +177,16 @@ class Project(BaseModel):
         map_ids.update({node_id: uuid3(node_id, name) for node_id in self.pipeline})
 
         # replace ALL references
+
+
+class WorkbenchView(BaseModel):
+    """A view (i.e. read-only and visual) of the project's workbench"""
+
+    workbench: Dict[UUID, Node] = {}
+    ui: Dict[UUID, Any] = {}
+
+
+# --------------
 
 
 class Parameter(BaseModel):
@@ -75,58 +197,13 @@ class Parameter(BaseModel):
     output_id: OutputID
 
 
-class Snapshot(BaseModel):
-    id: PositiveInt = Field(..., description="Unique snapshot identifier")
-    label: Optional[str] = Field(None, description="Unique human readable display name")
-    created_at: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="Timestamp of the time snapshot was taken from parent. Notice that parent might change with time",
-    )
-
-    parent_uuid: UUID = Field(..., description="Parent's project uuid")
-    project_uuid: UUID = Field(..., description="Current project's uuid")
+# reponse models
+class ParameterDetail(Parameter):
+    url: HttpUrl
+    # url_output: HttpUrl
 
 
-class ParameterApiModel(Parameter):
-    url: AnyUrl
-    # url_output: AnyUrl
-
-
-class SnapshotApiModel(Snapshot):
-    url: AnyUrl
-    url_parent: AnyUrl
-    url_project: AnyUrl
-    url_parameters: Optional[AnyUrl] = None
-
-    @classmethod
-    def from_snapshot(cls, snapshot: Snapshot, url_for: Callable) -> "SnapshotApiModel":
-        return cls(
-            url=url_for(
-                "get_snapshot",
-                project_id=snapshot.project_id,
-                snapshot_id=snapshot.id,
-            ),
-            url_parent=url_for("get_project", project_id=snapshot.parent_uuid),
-            url_project=url_for("get_project", project_id=snapshot.project_id),
-            url_parameters=url_for(
-                "get_snapshot_parameters",
-                project_id=snapshot.parent_uuid,
-                snapshot_id=snapshot.id,
-            ),
-            **snapshot.dict(),
-        )
-
-
-####################################################################
-
-
-_PROJECTS: Dict[UUID, Project] = {}
-_PROJECT2SNAPSHOT: Dict[UUID, UUID] = {}
-_SNAPSHOTS: Dict[UUID, List[Snapshot]] = defaultdict(list)
-_PARAMETERS: Dict[Tuple[UUID, int], List[Parameter]] = defaultdict(list)
-
-
-####################################################################
+########################### DEPENDENCIES #########################################
 
 
 def get_reverse_url_mapper(request: Request) -> Callable:
@@ -136,218 +213,618 @@ def get_reverse_url_mapper(request: Request) -> Callable:
     return reverse_url_mapper
 
 
-def get_valid_id(project_id: UUID = PathParam(...)) -> UUID:
-    if project_id not in _PROJECTS:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid id")
-    return project_id
+def init_pagination(item_cls: Type):
+    PageType = Page[item_cls]
+
+    def _get(
+        request: Request,
+        offset: PositiveInt = Query(
+            0, description="index to the first item to return (pagination)"
+        ),
+        limit: int = Query(
+            20,
+            description="maximum number of items to return (pagination)",
+            ge=1,
+            le=50,
+        ),
+    ) -> PageType:
+        empty_page: PageType = PageType.parse_obj(
+            Page.create_obj([], request.url, total=0, limit=limit, offset=offset)
+        )
+        return empty_page
+
+    return _get
+
+
+########################### HELPERS #########################################
+
+
+def redefine_operation_id_in_router(router: APIRouter, operation_id_prefix: str):
+    for route in router.routes:
+        if isinstance(route, APIRoute):
+            assert isinstance(route.endpoint, FunctionType)  # nosec
+            route.operation_id = f"{operation_id_prefix}.{route.endpoint.__name__}"
+
+
+def create_app(routers: List[APIRouter]) -> FastAPI:
+    app = FastAPI(docs_url="/dev/doc")
+
+    for r in routers:
+        app.include_router(r)
+
+    # print(yaml.safe_dump(app.openapi()))
+    # print("-"*100)
+
+    with open(f"{CURRENT_FILENAME_STEM}-openapi.ignore.json", "wt") as f:
+        json.dump(app.openapi(), f, indent=2)
+
+    return app
 
 
 ####################################################################
 
+# project resource --------
 
-@app.get("/projects/{project_id}", response_model=Project, tags=["project"])
-def get_project(pid: UUID = Depends(get_valid_id)):
-    return _PROJECTS[pid]
-
-
-@app.post("/projects/{project_id}", tags=["project"])
-def create_project(project: Project):
-    if project.id not in _PROJECTS:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Invalid id")
-    _PROJECTS[project.id] = project
+_PROJECTS: Dict[UUID, Project] = {}
 
 
-@app.put("/projects/{project_id}", tags=["project"])
-def replace_project(project: Project, pid: UUID = Depends(get_valid_id)):
-    _PROJECTS[pid] = project
+def get_valid_project(
+    project_uuid: UUID = PathParam(..., description="Project unique identifier")
+) -> UUID:
+    if project_uuid not in _PROJECTS:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Project does not exists"
+        )
+    return project_uuid
 
 
-@app.patch("/projects/{project_id}", tags=["project"])
-def update_project(project: Project, pid: UUID = Depends(get_valid_id)):
-    raise NotImplementedError()
+project_routes = APIRouter(prefix="/projects", tags=["project"])
 
 
-@app.delete("/projects/{project_id}", tags=["project"])
-def delete_project(pid: UUID = Depends(get_valid_id)):
-    del _PROJECTS[pid]
+@project_routes.get("", response_model=Page[ProjectItem])
+def list_projects(page=Depends(init_pagination(ProjectItem))):
+    ...
 
 
-@app.post("/projects/{project_id}:open", tags=["project"])
-def open_project(pid: UUID = Depends(get_valid_id)):
-    pass
-
-
-@app.post("/projects/{project_id}:start", tags=["project"])
-def start_project(use_cache: bool = True, pid: UUID = Depends(get_valid_id)):
-    pass
-
-
-@app.post("/projects/{project_id}:stop", tags=["project"])
-def stop_project(pid: UUID = Depends(get_valid_id)):
-    pass
-
-
-@app.post("/projects/{project_id}:close", tags=["project"])
-def close_project(pid: UUID = Depends(get_valid_id)):
-    pass
-
-
-@app.get(
-    "/projects/{project_id}/snapshots",
-    response_model=List[SnapshotApiModel],
-    tags=["project"],
+@project_routes.post(
+    "", response_model=Envelope[ProjectDetail], status_code=status.HTTP_201_CREATED
 )
-async def list_snapshots(
-    pid: UUID = Depends(get_valid_id),
-    offset: PositiveInt = Query(
-        0, description="index to the first item to return (pagination)"
-    ),
-    limit: int = Query(
-        20, description="maximum number of items to return (pagination)", ge=1, le=50
-    ),
+def create_project(project: ProjectNew):
+    ...
+
+
+@project_routes.get("/{project_uuid}", response_model=Envelope[ProjectDetail])
+def get_project(pid: UUID = Depends(get_valid_project)):
+    ...
+
+
+@project_routes.put("/{project_uuid}", response_model=Envelope[ProjectDetail])
+def replace_project(project: ProjectNew, pid: UUID = Depends(get_valid_project)):
+    ...
+
+
+@project_routes.patch("/{project_uuid}", response_model=Envelope[ProjectDetail])
+def update_project(project: ProjectUpdate, pid: UUID = Depends(get_valid_project)):
+    ...
+
+
+@project_routes.delete(
+    "/{project_uuid}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_project(pid: UUID = Depends(get_valid_project)):
+    ...
+
+
+@project_routes.post("/{project_uuid}:open")
+def open_project(pid: UUID = Depends(get_valid_project)):
+    ...
+
+
+@project_routes.post("/{project_uuid}:start")
+def start_project(use_cache: bool = True, pid: UUID = Depends(get_valid_project)):
+    ...
+
+
+@project_routes.post("/{project_uuid}:stop")
+def stop_project(pid: UUID = Depends(get_valid_project)):
+    ...
+
+
+@project_routes.post("/{project_uuid}:close")
+def close_project(pid: UUID = Depends(get_valid_project)):
+    ...
+
+
+redefine_operation_id_in_router(
+    project_routes,
+    operation_id_prefix=simcore_service_webserver.projects.projects_handlers.__name__,
+)
+
+# project states sub-resource --------
+
+pr_state_routes = APIRouter(prefix="/projects/{project_uuid}", tags=["project"])
+
+
+@pr_state_routes.get("/state", response_model=Envelope[State])
+def get_project_state(pid: UUID = Depends(get_valid_project)):
+    ...
+
+
+redefine_operation_id_in_router(
+    pr_state_routes,
+    operation_id_prefix=simcore_service_webserver.projects.projects_handlers.__name__,
+)
+
+# project nodes sub-resource --------
+
+project_nodes_routes = APIRouter(prefix="/projects/{project_uuid}", tags=["project"])
+
+
+@project_nodes_routes.get("/nodes", response_model=Envelope[Node])
+def get_project_node(pid: UUID = Depends(get_valid_project)):
+    ...
+
+
+redefine_operation_id_in_router(
+    pr_state_routes,
+    operation_id_prefix=simcore_service_webserver.projects.projects_node_handlers.__name__,
+)
+
+
+# project tags sub-resource --------
+# here we use a different approach just to check
+class Tags:
+    routes = APIRouter(prefix="/projects/{project_uuid}", tags=["project"])
+
+    @staticmethod
+    @routes.put("/tags/{tag_id}")
+    def replace(tag_id: int, pid: UUID = Depends(get_valid_project)):
+        """Assigns a tag to a project"""
+        ...
+
+    @staticmethod
+    @routes.delete(
+        "/tags/{tag_id}",
+        status_code=status.HTTP_204_NO_CONTENT,
+    )
+    def delete(tag_id: int, pid: UUID = Depends(get_valid_project)):
+        """Un-assigns tag to a project"""
+        ...
+
+
+# project snapshot subresource --------
+#  - analogous to a git-commit
+#  - takes a snapshot of the current state of the project
+#  - WILL NOT USE?
+
+snapshot_routes = APIRouter(
+    prefix="/projects/{project_uuid}/snapshots", tags=["project", "snapshot"]
+)
+
+
+@snapshot_routes.get(
+    "",
+    response_model=Page[SnapshotResource],
+)
+def list_snapshots(
+    page=Depends(init_pagination(SnapshotResource)),
+    pid: UUID = Depends(get_valid_project),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    psid = _PROJECT2SNAPSHOT.get(pid)
-    if not psid:
-        return []
-
-    project_snapshots: List[Snapshot] = _SNAPSHOTS.get(psid, [])
-
-    return [
-        SnapshotApiModel.from_snapshot(snapshot, url_for)
-        for snapshot in project_snapshots
-    ]
+    """Lists all snapshots taken from a given project"""
 
 
-@app.post(
-    "/projects/{project_id}/snapshots",
-    response_model=SnapshotApiModel,
-    tags=["project"],
+@snapshot_routes.post(
+    "",
+    response_model=Envelope[SnapshotResource],
+    status_code=status.HTTP_201_CREATED,
 )
-async def create_snapshot(
-    pid: UUID = Depends(get_valid_id),
+def create_snapshot(
+    pid: UUID = Depends(get_valid_project),
     snapshot_label: Optional[str] = None,
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    #
-    # copies project and creates project_id
-    # run will use "use_cache"
-
-    # snapshots already in place
-
-    project_snapshots: List[SnapshotApiModel] = await list_snapshots(pid, url_for)
-    index = project_snapshots[-1].id if len(project_snapshots) else 0
-
-    if snapshot_label:
-        if any(s.label == snapshot_label for s in project_snapshots):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"'{snapshot_label}' already exist",
-            )
-
-    else:
-        snapshot_label = f"snapshot {index}"
-        while any(s.label == snapshot_label for s in project_snapshots):
-            index += 1
-            snapshot_label = f"snapshot {index}"
-
-    # perform snapshot
-    parent_project = _PROJECTS[pid]
-
-    # create new project
-    project_id = uuid3(namespace=parent_project.id, name=snapshot_label)
-    project = parent_project.copy(update={"id": project_id})  # THIS IS WRONG
-
-    snapshot = Snapshot(id=index, parent_uuid=pid, project_id=project_id)
-
-    _PROJECTS[project_id] = project
-
-    psid = _PROJECT2SNAPSHOT.setdefault(pid, uuid3(pid, name="snapshots"))
-    _SNAPSHOTS[psid].append(snapshot)
-
-    # if param-project, then call workflow-compiler to produce parameters
-    # differenciate between snapshots created automatically from those explicit!
-
-    return SnapshotApiModel(
-        url=url_for(
-            "get_snapshot", project_id=snapshot.parent_uuid, snapshot_id=snapshot.id
-        ),
-        **snapshot.dict(),
-    )
+    """Takes a snapshot of the project at this time"""
+    # - hash parent_project as a mechanism to check changes
+    # -
 
 
-@app.get(
-    "/projects/{project_id}/snapshots/{snapshot_id}",
-    response_model=SnapshotApiModel,
-    tags=["project"],
+@snapshot_routes.get(
+    "/{snapshot_id}",
+    response_model=Envelope[SnapshotResource],
 )
-async def get_snapshot(
+def get_snapshot(
     snapshot_id: PositiveInt,
-    pid: UUID = Depends(get_valid_id),
+    pid: UUID = Depends(get_valid_project),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-
-    psid = _PROJECT2SNAPSHOT[pid]
-    snapshot = next(s for s in _SNAPSHOTS[psid] if s.id == snapshot_id)
-
-    return SnapshotApiModel(
-        url=url_for(
-            "get_snapshot", project_id=snapshot.parent_uuid, snapshot_id=snapshot.id
-        ),
-        **snapshot.dict(),
-    )
+    """Gets commit info for a given snapshot"""
 
 
-@app.get(
-    "/projects/{project_id}/snapshots/{snapshot_id}/parameters",
-    response_model=List[ParameterApiModel],
-    tags=["project"],
+@snapshot_routes.delete(
+    "/{snapshot_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
 )
-async def list_snapshot_parameters(
+def delete_snapshot(
+    snapshot_id: PositiveInt,
+    pid: UUID = Depends(get_valid_project),
+):
+    """Deletes both the commit and the project itself"""
+    # delete a snapshot -> project deleted?
+    # delete a project-snapshot -> delete snapshot
+
+
+@snapshot_routes.patch(
+    "/{snapshot_id}",
+)
+def update_snapshot_name(
+    snapshot_id: PositiveInt,
+    snapshot_name: str,
+    pid: UUID = Depends(get_valid_project),
+):
+    ...
+
+
+redefine_operation_id_in_router(
+    snapshot_routes,
+    operation_id_prefix="simcore_service_webserver.repos_snapshots_api_handlers",
+)
+
+
+# project parametrization subresource --------
+
+parameter_routes = APIRouter(
+    prefix="/projects/{project_uuid}/parameters", tags=["project"]
+)
+
+
+@parameter_routes.get(
+    "",
+    response_model=Page[ParameterDetail],
+)
+def list_project_parameters(
     snapshot_id: str,
-    pid: UUID = Depends(get_valid_id),
+    pid: UUID = Depends(get_valid_project),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
+    """Lists all parameters in a project"""
 
-    # get param snapshot
-    params = {"x": 4, "y": "yes"}
 
-    result = [
-        ParameterApiModel(
-            name=name,
-            value=value,
-            node_id=uuid4(),
-            output_id="output",
-            url=url_for(
-                "list_snapshot_parameters",
-                project_id=pid,
-                snapshot_id=snapshot_id,
-            ),
+# repositories
+#
+#  -  versions workbench subresource
+#  - Like a git system but with a "single file": the project's workbench
+#
+# cd new-project
+# git init
+# git add new-project/workbench
+#
+# git commit -m "Some changes"
+#
+# git add new-project.workbench
+#
+#
+# SEE
+
+#  - https://gandalf.readthedocs.io/en/latest/api.html
+#  - https://github.com/hulu/restfulgit#readme
+#  - https://git-scm.com/book/en/v2/Git-Internals-Git-Objects
+#       - https://www.talentica.com/blogs/explanation-git-design-principles-git-internals/
+#
+
+
+RepoRef = Union[UUID, str]  # :ref is the repository ref (commit, tag or branch)
+
+# response models
+class Repo(BaseModel):
+    project_uuid: UUID
+    url: HttpUrl
+
+
+# -
+_PROJECTS_WITH_REPO = {}
+
+
+def get_valid_repo(pid: UUID = Depends(get_valid_project)):
+    if pid in _PROJECTS_WITH_REPO:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project does not has a repository",
         )
-        for name, value in params.items()
+    return pid
+
+
+repo_routes = APIRouter(prefix="/repos/projects", tags=["repository"])
+repo_routes_hidden = APIRouter(prefix="/repos/projects", tags=["repository"])
+
+
+@repo_routes.get(
+    "",
+    response_model=Page[Repo],
+)
+def list_repos(page=Depends(init_pagination(Repo))):
+    """List info about versioned projects"""
+    ...
+
+
+# Should be automatic after first commit
+#
+@repo_routes_hidden.post(
+    "/{project_uuid}",
+    response_model=Envelope[Repo],
+    status_code=status.HTTP_201_CREATED,
+)
+def create_repo(
+    pid: UUID = Depends(get_valid_project),
+):
+    """Creates a repo to version a project
+
+    cd project_uuid
+    git init
+    git add new-project/workbench
+    """
+    ...
+
+
+class CommitRef(BaseModel):
+    sha: str  #
+    url: HttpUrl
+
+
+class Commit(CommitRef):
+    author: Author
+    created_at: datetime
+    message: str
+    parents: List[CommitRef]
+
+
+class CommitMessage(BaseModel):
+    message: str
+
+
+@repo_routes_hidden.post(
+    "/{project_uuid}/commits",
+    response_model=Envelope[Commit],
+    status_code=status.HTTP_201_CREATED,
+)
+def create_commit(
+    message: CommitMessage,
+    pid: UUID = Depends(get_valid_repo),
+):
+    """Commit current state of the workbench's project
+
+    git commit -m "Some changes"
+    """
+
+
+@repo_routes_hidden.get(
+    "/{project_uuid}/commits",
+    response_model=Page[Commit],
+)
+def get_logs(
+    ref: str,
+    page=Depends(init_pagination(Commit)),
+    pid: UUID = Depends(get_valid_repo),
+):
+    """Lists commits tree of the project"""
+
+
+@repo_routes_hidden.get(
+    "/{project_uuid}/commits/{ref_id}", response_model=Envelope[Commit]
+)
+def get_commit(
+    ref_id: RepoRef = PathParam(
+        ..., description="A repository ref (commit, tag or branch)"
+    ),
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
+
+
+@repo_routes_hidden.patch(
+    "/{project_uuid}/commits/{ref_id}", response_model=Envelope[Commit]
+)
+def update_commit_message(
+    message: CommitMessage,
+    ref_id: RepoRef = PathParam(
+        ..., description="A repository ref (commit, tag or branch)"
+    ),
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
+
+
+# do not expose!?
+def create_branch():
+    ...
+
+
+class Tag(BaseModel):
+    name: str = Field(..., description="Unique tag name")
+    commit_ref: CommitRef
+
+    url: HttpUrl
+
+
+@repo_routes_hidden.get("/{project_uuid}/tags", response_model=Page[Tag])
+def list_tags(
+    page=Depends(init_pagination(Tag)),
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
+
+
+class NewTag(BaseModel):
+    commit_ref: CommitRef = Field(..., description="Commit to tag")
+    name: str = Field(..., description="Unique tag name")
+    message: Optional[str] = None
+
+
+@repo_routes_hidden.post("/{project_uuid}/tags", response_model=Envelope[Tag])
+def create_tag(
+    tag: NewTag,
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
+
+
+@repo_routes_hidden.get("/{project_uuid}/tags/{ref_id}", response_model=Envelope[Tag])
+def get_tag(
+    ref_id: RepoRef = PathParam(..., description="A commit sha or a tag name"),
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
+
+
+class TagAnnotations(BaseModel):
+    name: Optional[str]
+    message: Optional[str]
+
+
+@repo_routes_hidden.patch("/{project_uuid}/tags/{ref_id}", response_model=Envelope[Tag])
+def update_tag_annotations(
+    annotations: TagAnnotations,
+    ref_id: RepoRef = PathParam(..., description="A commit sha or a tag name"),
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
+
+
+@repo_routes_hidden.delete(
+    "/{project_uuid}/tags/{tag_name}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_tag(
+    tag_name: str,
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
+
+
+#
+# a checkpoint is a combination of tags and commits in one
+# Used to simplify in the front-end
+#
+class Checkpoint(Commit):
+    # Two in one:
+    tags: List[Tag] = []
+
+    url: HttpUrl
+
+
+class CheckpointNew(BaseModel):
+    tag: str
+    message: str
+
+
+class CheckpointAnnotations(BaseModel):
+    tags: Optional[List[Tag]] = None
+    message: Optional[str]
+
+
+@repo_routes.get(
+    "/{project_uuid}/checkpoints",
+    response_model=Page[Checkpoint],
+)
+def list_checkpoints(
+    ref: str,
+    page=Depends(init_pagination(Checkpoint)),
+    pid: UUID = Depends(get_valid_repo),
+):
+    """Lists commits&tags tree of the project"""
+
+
+@repo_routes.post(
+    "/{project_uuid}/checkpoints",
+    response_model=Envelope[Checkpoint],
+    status_code=status.HTTP_201_CREATED,
+)
+def create_checkpoint(
+    new: CheckpointNew,
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
+
+
+@repo_routes.get(
+    "/{project_uuid}/checkpoint/{ref_id}", response_model=Envelope[Checkpoint]
+)
+def get_checkpoint(
+    ref_id: RepoRef = PathParam(
+        ..., description="A repository ref (commit, tag or branch)"
+    ),
+    pid: UUID = Depends(get_valid_repo),
+):
+    """Set ref_id=HEAD to return current commit"""
+    ...
+
+
+@repo_routes.patch(
+    "/{project_uuid}/checkpoint/{ref_id}", response_model=Envelope[Checkpoint]
+)
+def update_checkpoint_annotations(
+    annotations: CheckpointAnnotations,
+    ref_id: RepoRef = PathParam(
+        ..., description="A repository ref (commit, tag or branch)"
+    ),
+    pid: UUID = Depends(get_valid_repo),
+):
+    ...
+
+
+@repo_routes.post(
+    "/{project_uuid}/checkpoint/{ref_id}:checkout",
+    response_model=Envelope[Checkpoint],
+)
+def checkout(
+    ref_id: RepoRef = PathParam(
+        ..., description="A repository ref (commit, tag or branch)"
+    ),
+    pid: UUID = Depends(get_valid_repo),
+):
+    """
+    Affect current working copy of the project, i.e. get_project will now return
+    the check out
+    """
+    ...
+
+
+@repo_routes.get(
+    "/{project_uuid}/checkpoint/{ref_id}/workbench/view",
+    response_model=Envelope[WorkbenchView],
+)
+def view_project_workbench(
+    ref_id: RepoRef = PathParam(
+        ..., description="A repository ref (commit, tag or branch)"
+    ),
+    pid: UUID = Depends(get_valid_project),
+    url_for: Callable = Depends(get_reverse_url_mapper),
+):
+    """Returns a view of the workbench for a given project's version"""
+    ...
+
+
+#####################################################
+# uvicorn --reload projects_openapi_generator:the_app
+the_app = create_app(
+    routers=[
+        project_routes,
+        project_nodes_routes,
+        pr_state_routes,
+        # snapshot_routes,
+        # parameter_routes,
+        repo_routes,
+        # repo_routes_hidden,
     ]
+)
 
-    return result
+if __name__ == "__main__":
+    import uvicorn
 
-
-## workflow compiler #######################################
-
-
-def create_snapshots(project_id: UUID):
-    # get project
-
-    # if parametrized
-    # iterate
-    # otherwise
-    # copy workbench and replace uuids
-    pass
-
-
-# print(yaml.safe_dump(app.openapi()))
-# print("-"*100)
-
-
-with open("openapi-ignore.json", "wt") as f:
-    json.dump(app.openapi(), f, indent=2)
-
-# uvicorn --reload projects_openapi_generator:app
+    uvicorn.run(
+        "projects_openapi_generator:the_app",
+        host="0.0.0.0",
+        reload=True,
+        log_level="debug",
+    )
