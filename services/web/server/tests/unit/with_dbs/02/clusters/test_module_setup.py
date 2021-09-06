@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 from aiohttp.test_utils import TestClient
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 
 
 def test_module_setup_skipped_when_no_dev_features_enabled(client: TestClient):
