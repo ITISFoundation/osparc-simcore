@@ -184,16 +184,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __createUserStudiesLayout: function() {
       const userStudyLayout = this.__createCollapsibleView(this.tr("Recent studies"));
 
-      const studiesTitleContainer = userStudyLayout.getTitleBar();
+      const titleBarBtnsContainerLeft = userStudyLayout.getTitleBarBtnsContainerLeft();
 
       const importStudyButton = this.__createImportButton();
-      studiesTitleContainer.add(new qx.ui.core.Spacer(20, null));
-      studiesTitleContainer.add(importStudyButton);
+      titleBarBtnsContainerLeft.add(importStudyButton);
 
       // Delete Studies Button
       const studiesDeleteButton = this.__createDeleteButton(false);
-      studiesTitleContainer.add(new qx.ui.core.Spacer(20, null));
-      studiesTitleContainer.add(studiesDeleteButton);
+      titleBarBtnsContainerLeft.add(studiesDeleteButton);
 
       const userStudyContainer = this._studiesContainer = this.__createStudyListLayout();
       userStudyLayout.setContent(userStudyContainer);
@@ -215,6 +213,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
       }, this);
       userStudyContainer.bind("selection", this.__newStudyBtn, "enabled", {
+        converter: selection => !selection.length
+      });
+      userStudyContainer.bind("selection", importStudyButton, "enabled", {
         converter: selection => !selection.length
       });
       userStudyContainer.bind("selection", studiesDeleteButton, "visibility", {

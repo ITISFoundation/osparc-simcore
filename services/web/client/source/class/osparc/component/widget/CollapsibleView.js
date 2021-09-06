@@ -112,6 +112,23 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
           header.addAt(control, 2);
           break;
         }
+        case "title-btns-left": {
+          const header = this.getChildControl("header");
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+            paddingLeft: 20
+          });
+          header.addAt(control, 3);
+          break;
+        }
+        case "title-btns-right": {
+          const header = this.getChildControl("header");
+          header.addAt(new qx.ui.core.Spacer(), 4, {
+            flex: 1
+          });
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+          header.addAt(control, 5);
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -126,6 +143,14 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
 
     getTitleLabel: function() {
       return this.getChildControl("title");
+    },
+
+    getTitleBarBtnsContainerLeft: function() {
+      return this.getChildControl("title-btns-left");
+    },
+
+    getTitleBarBtnsRightContainer: function() {
+      return this.getChildControl("title-btns-right");
     },
 
     _applyCollapsed: function(collapsed) {

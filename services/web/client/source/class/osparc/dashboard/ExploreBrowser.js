@@ -211,8 +211,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       osparc.utils.Utils.setIdToWidget(servicesContainer, "servicesList");
       servicesLayout.setContent(servicesContainer);
 
-      const servicesTitleContainer = servicesLayout.getTitleBar();
-      this.__addNewServiceButtons(servicesTitleContainer);
+      const titleBarBtnsContainerLeft = servicesLayout.getTitleBarBtnsContainerLeft();
+      this.__addNewServiceButtons(titleBarBtnsContainerLeft);
 
       return servicesLayout;
     },
