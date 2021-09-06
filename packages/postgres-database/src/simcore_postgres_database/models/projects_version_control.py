@@ -14,6 +14,7 @@ from .projects_snapshots import projects_snapshots
 # Projects under version-control are assigned a repository
 #   - keeps information of the current branch to recover HEAD ref
 #
+
 projects_vc_repos = sa.Table(
     "projects_vc_repos",
     metadata,
@@ -46,19 +47,6 @@ projects_vc_repos = sa.Table(
         "or to detect changes in state due to race conditions",
     ),
     sa.Column(
-        "branch_id",
-        sa.BigInteger,
-        sa.ForeignKey(
-            "projects_vc_branches.id",
-            name="fk_projects_vc_repos_branch_id",
-            onupdate="CASCADE",
-        ),
-        nullable=True,
-        doc="Points to the branch whose head is the last commit, known as HEAD in the git jargon"
-        "Actually it points to the current branch that holds a head"
-        "Null is used for detached head",
-    ),
-    sa.Column(
         "created",
         sa.DateTime(),
         nullable=False,
@@ -81,6 +69,8 @@ projects_vc_repos = sa.Table(
 #
 #  - should NEVER be modified explicitly after creation
 #
+# SEE https://git-scm.com/book/en/v2/Git-Internals-Git-References
+
 projects_vc_commits = sa.Table(
     "projects_vc_commits",
     metadata,
@@ -148,6 +138,7 @@ projects_vc_commits = sa.Table(
 #
 # head/TAGS
 #
+# SEE https://git-scm.com/book/en/v2/Git-Internals-Git-References
 
 projects_vc_tags = sa.Table(
     "projects_vc_tags",
@@ -214,6 +205,8 @@ projects_vc_tags = sa.Table(
 #
 # head/BRANCHES
 #
+# SEE https://git-scm.com/book/en/v2/Git-Internals-Git-References
+
 projects_vc_branches = sa.Table(
     "projects_vc_branches",
     metadata,
@@ -239,7 +232,7 @@ projects_vc_branches = sa.Table(
         "head_commit_id",
         sa.BigInteger,
         sa.ForeignKey(
-            "projects_vc_commits.id",
+            projects_vc_commits.c.id,
             name="fk_projects_vc_branches_head_commit_id",
             onupdate="CASCADE",
             ondelete="RESTRICT",
@@ -265,4 +258,44 @@ projects_vc_branches = sa.Table(
     ),
     # CONSTRAINTS --------------
     sa.UniqueConstraint("name", "repo_id", name="repo_branch_uniqueness"),
+)
+
+
+#
+# HEADS
+#
+#  - the last commit in a given repo, also called the HEAD reference
+#  - added in an association table to avoid circular dependency between projects_vc_repos and  projects_vc_branches
+#
+# SEE https://git-scm.com/book/en/v2/Git-Internals-Git-References
+
+projects_vc_heads = sa.Table(
+    "projects_vc_heads",
+    metadata,
+    sa.Column(
+        "repo_id",
+        sa.BigInteger,
+        sa.ForeignKey(
+            projects_vc_repos.c.id,
+            name="projects_vc_branches_repo_id",
+            ondelete="CASCADE",
+        ),
+        unique=True,
+        nullable=False,
+        doc="Repository to which this branch belongs",
+    ),
+    sa.Column(
+        "branch_id",
+        sa.BigInteger,
+        sa.ForeignKey(
+            projects_vc_branches.c.id,
+            name="fk_projects_vc_heads_branch_id",
+            onupdate="CASCADE",
+        ),
+        nullable=True,
+        doc="Points to the branch whose head is the last commit, known as HEAD in the git jargon"
+        "Actually it points to the current branch that holds a head"
+        "Null is used for detached head",
+    ),
+    sa.UniqueConstraint("repo_id", "branch_id", name="repo_head_uniqueness"),
 )
