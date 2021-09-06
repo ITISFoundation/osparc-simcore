@@ -220,53 +220,13 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       }
 
       this._showLoadingPage(this.tr("Creating Study"));
-      const store = osparc.store.Store.getInstance();
-      store.getServicesDAGs()
-        .then(services => {
-          if (key in services) {
-            const service = version ? osparc.utils.Services.getFromObject(services, key, version) : osparc.utils.Services.getLatest(services, key);
-            const newUuid = osparc.utils.Utils.uuidv4();
-            const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
-            minStudyData["name"] = service["name"];
-            minStudyData["workbench"][newUuid] = {
-              "key": service["key"],
-              "version": service["version"],
-              "label": service["name"]
-            };
-            if (!("ui" in minStudyData)) {
-              minStudyData["ui"] = {};
-            }
-            if (!("workbench" in minStudyData["ui"])) {
-              minStudyData["ui"]["workbench"] = {};
-            }
-            minStudyData["ui"]["workbench"][newUuid] = {
-              "position": {
-                "x": 250,
-                "y": 100
-              }
-            };
-            store.getInaccessibleServices(minStudyData)
-              .then(inaccessibleServices => {
-                if (inaccessibleServices.length) {
-                  this._hideLoadingPage();
-                  const msg = osparc.utils.Study.getInaccessibleServicesMsg(inaccessibleServices);
-                  throw new Error(msg);
-                }
-                const params = {
-                  data: minStudyData
-                };
-                osparc.data.Resources.fetch("studies", "post", params)
-                  .then(studyData => {
-                    this._hideLoadingPage();
-                    this.__startStudy(studyData["uuid"]);
-                  })
-                  .catch(er => {
-                    console.error(er);
-                  });
-              });
-          }
+      osparc.utils.Study.createStudyFromService(key, version)
+        .then(studyId => {
+          this._hideLoadingPage();
+          this.__startStudy(studyId);
         })
         .catch(err => {
+          this._hideLoadingPage();
           osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           console.error(err);
         });

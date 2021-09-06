@@ -31,6 +31,61 @@ qx.Class.define("osparc.utils.Study", {
       return msg;
     },
 
+    createStudyFromService: function(key, version) {
+      return new Promise((resolve, reject) => {
+        const store = osparc.store.Store.getInstance();
+        store.getServicesDAGs()
+          .then(services => {
+            if (key in services) {
+              const service = version ? osparc.utils.Services.getFromObject(services, key, version) : osparc.utils.Services.getLatest(services, key);
+              const newUuid = osparc.utils.Utils.uuidv4();
+              const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
+              minStudyData["name"] = service["name"];
+              minStudyData["thumbnail"] = service["thumbnail"];
+              minStudyData["workbench"][newUuid] = {
+                "key": service["key"],
+                "version": service["version"],
+                "label": service["name"]
+              };
+              if (!("ui" in minStudyData)) {
+                minStudyData["ui"] = {};
+              }
+              if (!("workbench" in minStudyData["ui"])) {
+                minStudyData["ui"]["workbench"] = {};
+              }
+              minStudyData["ui"]["workbench"][newUuid] = {
+                "position": {
+                  "x": 250,
+                  "y": 100
+                }
+              };
+              store.getInaccessibleServices(minStudyData)
+                .then(inaccessibleServices => {
+                  if (inaccessibleServices.length) {
+                    const msg = this.getInaccessibleServicesMsg(inaccessibleServices);
+                    reject({
+                      message: msg
+                    });
+                    return;
+                  }
+                  const params = {
+                    data: minStudyData
+                  };
+                  osparc.data.Resources.fetch("studies", "post", params)
+                    .then(studyData => {
+                      resolve(studyData["uuid"]);
+                    })
+                    .catch(er => reject(er));
+                });
+            }
+          })
+          .catch(err => {
+            osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+            console.error(err);
+          });
+      });
+    },
+
     mustache: {
       mustacheRegEx: function() {
         return /{{([^{}]*)}}/g;
