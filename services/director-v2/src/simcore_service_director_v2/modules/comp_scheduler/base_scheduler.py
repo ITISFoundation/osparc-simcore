@@ -393,12 +393,13 @@ class BaseCompScheduler(ABC):
                 logger.error(
                     "The computational backend is disconnected. abort all tasks!"
                 )
-                # we should try re-connecting. in the meantime we cannot schedule tasks on the scheduler, let's abort everything
+                # we should try re-connecting.
+                # in the meantime we cannot schedule tasks on the scheduler,
+                # let's put these tasks back to PUBLISHED, so they might be re-submitted later
                 await asyncio.gather(
                     comp_tasks_repo.set_project_tasks_state(
-                        project_id, tasks, RunningState.FAILED
+                        project_id, tasks, RunningState.PUBLISHED
                     ),
-                    return_exceptions=True,
                 )
                 raise ComputationalBackendNotConnectedError(r.msg) from r
 
