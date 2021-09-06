@@ -72,16 +72,43 @@ qx.Class.define("osparc.utils.Study", {
                     data: minStudyData
                   };
                   osparc.data.Resources.fetch("studies", "post", params)
-                    .then(studyData => {
-                      resolve(studyData["uuid"]);
-                    })
-                    .catch(er => reject(er));
+                    .then(studyData => resolve(studyData["uuid"]))
+                    .catch(err => reject(err));
                 });
             }
           })
           .catch(err => {
             osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
             console.error(err);
+          });
+      });
+    },
+
+    createStudyFromTemplate: function(templateData) {
+      return new Promise((resolve, reject) => {
+        const store = osparc.store.Store.getInstance();
+        store.getInaccessibleServices(templateData)
+          .then(inaccessibleServices => {
+            if (inaccessibleServices.length) {
+              const msg = this.getInaccessibleServicesMsg(inaccessibleServices);
+              reject({
+                message: msg
+              });
+              return;
+            }
+            const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
+            minStudyData["name"] = templateData["name"];
+            minStudyData["description"] = templateData["description"];
+            minStudyData["thumbnail"] = templateData["thumbnail"];
+            const params = {
+              url: {
+                templateId: templateData["uuid"]
+              },
+              data: minStudyData
+            };
+            osparc.data.Resources.fetch("studies", "postFromTemplate", params)
+              .then(studyData => resolve(studyData["uuid"]))
+              .catch(err => reject(err));
           });
       });
     },

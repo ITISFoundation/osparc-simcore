@@ -238,36 +238,15 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       }
 
       this._showLoadingPage(this.tr("Creating ") + (templateData.name || this.tr("Study")));
-
-      const store = osparc.store.Store.getInstance();
-      store.getInaccessibleServices(templateData)
-        .then(inaccessibleServices => {
-          if (inaccessibleServices.length) {
-            const msg = osparc.utils.Study.getInaccessibleServicesMsg(inaccessibleServices);
-            throw new Error(msg);
-          }
-          const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
-          minStudyData["name"] = templateData.name;
-          minStudyData["description"] = templateData.description;
-          const params = {
-            url: {
-              templateId: templateData.uuid
-            },
-            data: minStudyData
-          };
-          osparc.data.Resources.fetch("studies", "postFromTemplate", params)
-            .then(studyData => {
-              this._hideLoadingPage();
-              this.__startStudy(studyData["uuid"]);
-            })
-            .catch(err => {
-              console.error(err);
-            });
+      osparc.utils.Study.createStudyFromTemplate(templateData)
+        .then(studyId => {
+          this._hideLoadingPage();
+          this.__startStudy(studyId);
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           this._hideLoadingPage();
-          return;
+          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          console.error(err);
         });
     },
 
