@@ -31,6 +31,40 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __servicesAll: null,
     __servicesLatestList: null,
 
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "scroll-container":
+          control = new qx.ui.container.Scroll();
+          this._add(control, {
+            flex: 1
+          });
+          control.getChildControl("pane").addListener("scrollY", () => {
+            this._moreStudiesRequired();
+          }, this);
+          break;
+        case "resources-container": {
+          const scroll = this.getChildControl("scroll-container");
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
+          scroll.add(control);
+          break;
+        }
+        case "templates-layout": {
+          control = this.__createTemplatesLayout();
+          const resourcesContainer = this.getChildControl("resources-container");
+          resourcesContainer.add(control);
+          break;
+        }
+        case "services-layout": {
+          control = this.__createServicesLayout();
+          const resourcesContainer = this.getChildControl("resources-container");
+          resourcesContainer.add(control);
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
+    },
+
     /**
      * Function that resets the selected item
      */
@@ -124,7 +158,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
       Promise.all(resourcePromises)
         .then(() => {
-          this.__createResourcesLayout();
+          this.getChildControl("templates-layout");
+          this.getChildControl("services-layout");
           this.__reloadResources();
           this._hideLoadingPage();
         });
@@ -140,26 +175,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this._getChildren().forEach(children => {
         children.setVisibility(show ? "visible" : "excluded");
       });
-    },
-
-    __createResourcesLayout: function() {
-      const exploreBrowserLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
-
-      const templatesLayout = this.__createTemplatesLayout();
-      exploreBrowserLayout.add(templatesLayout);
-
-      const servicesLayout = this.__createServicesLayout();
-      exploreBrowserLayout.add(servicesLayout);
-
-      const scrollStudies = new qx.ui.container.Scroll();
-      scrollStudies.add(exploreBrowserLayout);
-      this._add(scrollStudies, {
-        flex: 1
-      });
-
-      scrollStudies.getChildControl("pane").addListener("scrollY", () => {
-        this._moreStudiesRequired();
-      }, this);
     },
 
     __createButtonsLayout: function(title, content) {

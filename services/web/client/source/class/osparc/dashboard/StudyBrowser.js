@@ -43,6 +43,28 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __userStudies: null,
     __newStudyBtn: null,
 
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "scroll-container":
+          control = new qx.ui.container.Scroll();
+          this._add(control, {
+            flex: 1
+          });
+          control.getChildControl("pane").addListener("scrollY", () => {
+            this._moreStudiesRequired();
+          }, this);
+          break;
+        case "studies-layout": {
+          const scroll = this.getChildControl("scroll-container");
+          control = this.__createUserStudiesLayout();
+          scroll.add(control);
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
+    },
+
     /**
      * Function that resets the selected item
      */
@@ -99,7 +121,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       Promise.all(resourcePromises)
         .then(() => {
-          this.__createStudiesLayout();
+          this.getChildControl("studies-layout");
           this.__reloadResources();
           this.__attachEventHandlers();
           const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
@@ -142,19 +164,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __createStudiesLayout: function() {
-      const userStudyLayout = this.__createUserStudiesLayout();
-      const scrollStudies = new qx.ui.container.Scroll();
-      scrollStudies.add(userStudyLayout);
-      this._add(scrollStudies, {
-        flex: 1
-      });
-
-      scrollStudies.getChildControl("pane").addListener("scrollY", () => {
-        this._moreStudiesRequired();
-      }, this);
-    },
-
     __createNewStudyButton: function() {
       const newStudyBtn = new osparc.dashboard.StudyBrowserButtonNew();
       newStudyBtn.subscribeToFilterGroup("sideSearchFilter");
@@ -163,28 +172,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return newStudyBtn;
     },
 
-    __createButtonsLayout: function(title, content) {
+    __createCollapsibleView: function(title) {
       const userStudyLayout = new osparc.component.widget.CollapsibleView(title);
       userStudyLayout.getChildControl("title").set({
         font: "title-16"
       });
       userStudyLayout._getLayout().setSpacing(8); // eslint-disable-line no-underscore-dangle
-      userStudyLayout.setContent(content);
       return userStudyLayout;
     },
 
     __createUserStudiesLayout: function() {
-      const userStudyContainer = this._studiesContainer = this.__createStudyListLayout();
-
-      const newStudyButton = this.__newStudyBtn = this.__createNewStudyButton();
-      userStudyContainer.add(newStudyButton);
-
-      const loadingStudiesBtn = this._loadingStudiesBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
-      osparc.utils.Utils.setIdToWidget(loadingStudiesBtn, "studiesLoading");
-      userStudyContainer.add(loadingStudiesBtn);
-
-      osparc.utils.Utils.setIdToWidget(userStudyContainer, "userStudiesList");
-      const userStudyLayout = this.__createButtonsLayout(this.tr("Recent studies"), userStudyContainer);
+      const userStudyLayout = this.__createCollapsibleView(this.tr("Recent studies"));
 
       const studiesTitleContainer = userStudyLayout.getTitleBar();
 
@@ -196,6 +194,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studiesDeleteButton = this.__createDeleteButton(false);
       studiesTitleContainer.add(new qx.ui.core.Spacer(20, null));
       studiesTitleContainer.add(studiesDeleteButton);
+
+      const userStudyContainer = this._studiesContainer = this.__createStudyListLayout();
+      userStudyLayout.setContent(userStudyContainer);
+      osparc.utils.Utils.setIdToWidget(userStudyContainer, "userStudiesList");
+
+      const newStudyButton = this.__newStudyBtn = this.__createNewStudyButton();
+      userStudyContainer.add(newStudyButton);
+
+      const loadingStudiesBtn = this._loadingStudiesBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
+      osparc.utils.Utils.setIdToWidget(loadingStudiesBtn, "studiesLoading");
+      userStudyContainer.add(loadingStudiesBtn);
 
       userStudyContainer.addListener("changeSelection", e => {
         const nSelected = e.getData().length;
