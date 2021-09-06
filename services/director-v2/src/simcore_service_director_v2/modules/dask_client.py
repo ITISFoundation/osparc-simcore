@@ -13,6 +13,7 @@ from tenacity import before_sleep_log, retry, stop_after_attempt, wait_random
 
 from ..core.errors import (
     ConfigurationError,
+    DaskClientNotConnectedError,
     InsuficientComputationalResourcesError,
     MissingComputationalResourcesError,
 )
@@ -25,8 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 dask_retry_policy = dict(
-    wait=wait_random(5, 8),
-    stop=stop_after_attempt(20),
+    wait=wait_random(5, 10),
+    stop=stop_after_attempt(60),
     before_sleep=before_sleep_log(logger, logging.WARNING),
     reraise=True,
 )
@@ -216,9 +217,10 @@ class DaskClient:
                 }
             )
 
-            scheduler_info = self.client.scheduler_info()
-            if not scheduler_info:
-                await self.reconnect_client()
+            client_status = self.client.status
+            if client_status not in "running":
+                raise DaskClientNotConnectedError()
+                # await self.reconnect_client()
 
             _check_cluster_able_to_run_pipeline(
                 node_id=node_id,
