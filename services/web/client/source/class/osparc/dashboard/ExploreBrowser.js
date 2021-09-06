@@ -177,20 +177,21 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       });
     },
 
-    __createButtonsLayout: function(title, content) {
+    __createCollapsibleView: function(title) {
       const userStudyLayout = new osparc.component.widget.CollapsibleView(title);
       userStudyLayout.getChildControl("title").set({
         font: "title-16"
       });
       userStudyLayout._getLayout().setSpacing(8); // eslint-disable-line no-underscore-dangle
-      userStudyLayout.setContent(content);
       return userStudyLayout;
     },
 
     __createTemplatesLayout: function() {
+      const tempStudyLayout = this.__createCollapsibleView(this.tr("Templates"));
+
       const templateStudyContainer = this._studiesContainer = this.__createResourceListLayout();
       osparc.utils.Utils.setIdToWidget(templateStudyContainer, "templateStudiesList");
-      const tempStudyLayout = this.__createButtonsLayout(this.tr("Templates"), templateStudyContainer);
+      tempStudyLayout.setContent(templateStudyContainer);
 
       const loadingTemplatesBtn = this._loadingStudiesBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
       osparc.utils.Utils.setIdToWidget(loadingTemplatesBtn, "templatesLoading");
@@ -204,9 +205,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __createServicesLayout: function() {
+      const servicesLayout = this.__createCollapsibleView(this.tr("Services"));
+
       const servicesContainer = this.__servicesContainer = this.__createResourceListLayout();
       osparc.utils.Utils.setIdToWidget(servicesContainer, "servicesList");
-      const servicesLayout = this.__createButtonsLayout(this.tr("Services"), servicesContainer);
+      servicesLayout.setContent(servicesContainer);
 
       const servicesTitleContainer = servicesLayout.getTitleBar();
       this.__addNewServiceButtons(servicesTitleContainer);
