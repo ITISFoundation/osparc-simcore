@@ -445,7 +445,6 @@ async def test_too_many_resource_send_computation_task(
         return 123
 
     # let's have a big number of CPUs
-    image.node_requirements.cpu = 100000
     with pytest.raises(InsuficientComputationalResourcesError):
         await dask_client.send_computation_tasks(
             user_id=user_id,
