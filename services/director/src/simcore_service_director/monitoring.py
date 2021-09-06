@@ -4,7 +4,9 @@ from prometheus_client import CONTENT_TYPE_LATEST
 from prometheus_client.registry import CollectorRegistry
 
 
-from servicelib.monitor_services import add_instrumentation as add_services_instrumentation # pylint: disable=no-name-in-module
+from servicelib.monitor_services import (
+    add_instrumentation as add_services_instrumentation,
+)  # pylint: disable=no-name-in-module
 
 from . import config
 
