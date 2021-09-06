@@ -125,7 +125,9 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
           header.addAt(new qx.ui.core.Spacer(), 4, {
             flex: 1
           });
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(0)).set({
+            paddingRight: 8
+          });
           header.addAt(control, 5);
           break;
         }
@@ -149,7 +151,7 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
       return this.getChildControl("title-btns-left");
     },
 
-    getTitleBarBtnsRightContainer: function() {
+    getTitleBarBtnsContainerRight: function() {
       return this.getChildControl("title-btns-right");
     },
 

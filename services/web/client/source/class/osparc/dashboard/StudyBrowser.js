@@ -185,13 +185,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const userStudyLayout = this.__createCollapsibleView(this.tr("Recent studies"));
 
       const titleBarBtnsContainerLeft = userStudyLayout.getTitleBarBtnsContainerLeft();
-
       const importStudyButton = this.__createImportButton();
       titleBarBtnsContainerLeft.add(importStudyButton);
-
-      // Delete Studies Button
       const studiesDeleteButton = this.__createDeleteButton(false);
       titleBarBtnsContainerLeft.add(studiesDeleteButton);
+
+      const titleBarBtnsContainerRight = userStudyLayout.getTitleBarBtnsContainerRight();
+      const viewGridBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/apps/18");
+      titleBarBtnsContainerRight.add(viewGridBtn);
+      const viewListBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/reorder/18");
+      titleBarBtnsContainerRight.add(viewListBtn);
+      const group = new qx.ui.form.RadioGroup();
+      group.add(viewGridBtn);
+      group.add(viewListBtn);
 
       const userStudyContainer = this._studiesContainer = this.__createStudyListLayout();
       userStudyLayout.setContent(userStudyContainer);
@@ -203,6 +209,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const loadingStudiesBtn = this._loadingStudiesBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
       osparc.utils.Utils.setIdToWidget(loadingStudiesBtn, "studiesLoading");
       userStudyContainer.add(loadingStudiesBtn);
+
+      viewGridBtn.addListener("execute", () => {
+        userStudyContainer.setMode("icons");
+        // this.setMode("icons");
+      });
+      viewListBtn.addListener("execute", () => {
+        userStudyContainer.setMode("list");
+        // this.setMode("list");
+      });
 
       userStudyContainer.addListener("changeSelection", e => {
         const nSelected = e.getData().length;
