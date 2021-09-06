@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from pprint import pformat
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from dask.distributed import get_worker
 from distributed.worker import TaskState
@@ -37,6 +37,30 @@ def _is_aborted_cb() -> bool:
     return task is None
 
 
+def _get_task_boot_mode(task: Optional[TaskState]) -> BootMode:
+    if not task:
+        return BootMode.CPU
+    if task.resource_restrictions.get("MPI", 0) > 0:
+        return BootMode.MPI
+    if task.resource_restrictions.get("GPU", 0) > 0:
+        return BootMode.GPU
+    return BootMode.CPU
+
+
+def run_task_as_container(
+    key: str, version: str, inputs: Dict[str, Any]
+) -> Dict[str, Any]:
+    log.debug("run_task_as_container %s", f"{key=}, {version=}, {inputs=}")
+
+    task: Optional[TaskState] = _get_dask_task_state()
+
+    retry = 0
+    max_retries = 1
+    sidecar_bootmode = _get_task_boot_mode(task)
+
+    return {}
+
+
 def run_task_in_service(
     job_id: str, user_id: int, project_id: ProjectID, node_id: NodeID
 ):
@@ -49,17 +73,9 @@ def run_task_in_service(
 
     task: Optional[TaskState] = _get_dask_task_state()
 
-    sidecar_bootmode = BootMode.CPU
     retry = 0
     max_retries = 1
-    if task:
-        log.debug("dask task set as: %s", pformat(task.__dict__))
-        if task.resource_restrictions.get("MPI", 0) > 0:
-            sidecar_bootmode = BootMode.MPI
-        elif task.resource_restrictions.get("GPU", 0) > 0:
-            sidecar_bootmode = BootMode.GPU
-
-        max_retries = task.annotations.get("retries", 1)
+    sidecar_bootmode = _get_task_boot_mode(task)
 
     asyncio.get_event_loop().run_until_complete(
         run_sidecar(
