@@ -4,13 +4,12 @@
 
 import pytest
 from aiohttp import web
-from yarl import URL
-
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser, parse_link, parse_test_marks
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login.cfg import APP_LOGIN_CONFIG
 from simcore_service_webserver.login.utils import get_random_string
+from yarl import URL
 
 EMAIL, PASSWORD = "tester@test.com", "password"
 
@@ -23,7 +22,12 @@ def cfg(client):
 async def test_unknown_email(client, capsys, cfg):
     reset_url = client.app.router["auth_reset_password"].url_for()
 
-    rp = await client.post(reset_url, json={"email": EMAIL,})
+    rp = await client.post(
+        reset_url,
+        json={
+            "email": EMAIL,
+        },
+    )
     payload = await rp.text()
 
     assert rp.url_obj.path == reset_url.path
@@ -37,7 +41,12 @@ async def test_banned_user(client, capsys, cfg):
     reset_url = client.app.router["auth_reset_password"].url_for()
 
     async with NewUser({"status": UserStatus.BANNED.name}) as user:
-        rp = await client.post(reset_url, json={"email": user["email"],})
+        rp = await client.post(
+            reset_url,
+            json={
+                "email": user["email"],
+            },
+        )
 
     assert rp.url_obj.path == reset_url.path
     await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(**user))
@@ -50,7 +59,12 @@ async def test_inactive_user(client, capsys, cfg):
     reset_url = client.app.router["auth_reset_password"].url_for()
 
     async with NewUser({"status": UserStatus.CONFIRMATION_PENDING.name}) as user:
-        rp = await client.post(reset_url, json={"email": user["email"],})
+        rp = await client.post(
+            reset_url,
+            json={
+                "email": user["email"],
+            },
+        )
 
     assert rp.url_obj.path == reset_url.path
     await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(**user))
@@ -69,7 +83,12 @@ async def test_too_often(client, capsys, cfg):
         confirmation = await db.create_confirmation(
             user, ConfirmationAction.RESET_PASSWORD.name
         )
-        rp = await client.post(reset_url, json={"email": user["email"],})
+        rp = await client.post(
+            reset_url,
+            json={
+                "email": user["email"],
+            },
+        )
         await db.delete_confirmation(confirmation)
 
     assert rp.url_obj.path == reset_url.path
@@ -82,7 +101,12 @@ async def test_too_often(client, capsys, cfg):
 async def test_reset_and_confirm(client, capsys, cfg):
     async with NewUser() as user:
         reset_url = client.app.router["auth_reset_password"].url_for()
-        rp = await client.post(reset_url, json={"email": user["email"],})
+        rp = await client.post(
+            reset_url,
+            json={
+                "email": user["email"],
+            },
+        )
         assert rp.url_obj.path == reset_url.path
         await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(**user))
 
@@ -106,7 +130,11 @@ async def test_reset_and_confirm(client, capsys, cfg):
         )
         new_password = get_random_string(5, 10)
         rp = await client.post(
-            reset_allowed_url, json={"password": new_password, "confirm": new_password,}
+            reset_allowed_url,
+            json={
+                "password": new_password,
+                "confirm": new_password,
+            },
         )
         payload = await rp.json()
         assert rp.status == 200, payload
@@ -122,7 +150,11 @@ async def test_reset_and_confirm(client, capsys, cfg):
 
         login_url = client.app.router["auth_login"].url_for()
         rp = await client.post(
-            login_url, json={"email": user["email"], "password": new_password,}
+            login_url,
+            json={
+                "email": user["email"],
+                "password": new_password,
+            },
         )
         assert rp.url_obj.path == login_url.path
         await assert_status(rp, web.HTTPOk, cfg.MSG_LOGGED_IN)

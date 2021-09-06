@@ -5,7 +5,6 @@
 import pytest
 from aiohttp import web
 from aiohttp_session import get_session as get_aiohttp_session
-
 from pytest_simcore.helpers.utils_login import NewUser
 from simcore_service_webserver.application import create_application
 
