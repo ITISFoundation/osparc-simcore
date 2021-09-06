@@ -291,10 +291,10 @@ projects_vc_heads = sa.Table(
             name="fk_projects_vc_heads_branch_id",
             ondelete="CASCADE",
         ),
+        unique=True,
         nullable=True,
         doc="Points to the branch whose head is the last commit, known as HEAD in the git jargon"
         "Actually it points to the current branch that holds a head"
         "Null is used for detached head",
     ),
-    sa.UniqueConstraint("repo_id", "branch_id", name="repo_head_uniqueness"),
 )

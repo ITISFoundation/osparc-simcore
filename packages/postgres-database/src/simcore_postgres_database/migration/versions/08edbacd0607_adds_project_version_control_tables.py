@@ -155,7 +155,7 @@ def upgrade():
             ondelete="CASCADE",
         ),
         sa.UniqueConstraint("repo_id"),
-        sa.UniqueConstraint("repo_id", "branch_id", name="repo_head_uniqueness"),
+        sa.UniqueConstraint("branch_id"),
     )
     # ### end Alembic commands ###
 
