@@ -3,11 +3,11 @@
 #
 
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
 from .base import metadata
 from .projects import projects
-from .projects_snapshots import projects_snapshots
 
 # REPOSITORES
 #
@@ -65,6 +65,27 @@ projects_vc_repos = sa.Table(
 )
 
 
+projects_vc_snapshots = sa.Table(
+    "projects_vc_snapshots",
+    metadata,
+    sa.Column(
+        "checksum",
+        sa.String,
+        primary_key=True,
+        nullable=False,
+        doc="SHA-1 checksum of snapshot."
+        "Used as revision/commit identifier since it is unique per repo",
+    ),
+    sa.Column(
+        "content",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="snapshot content",
+    ),
+)
+
+
 #
 # COMMITS
 #
@@ -108,22 +129,14 @@ projects_vc_commits = sa.Table(
     sa.Column(
         "snapshot_checksum",
         sa.String,
-        nullable=False,
-        doc="SHA-1 checksum of snapshot."
-        "Used as revision/commit identifier since it is unique per repo",
-    ),
-    sa.Column(
-        "snapshot_uuid",
-        sa.String,
         sa.ForeignKey(
-            projects_snapshots.c.uuid,
-            name="fk_projects_vc_commits_snapshot_uuid",
+            projects_vc_snapshots.c.checksum,
+            name="fk_projects_vc_commits_snapshot_checksum",
             ondelete="RESTRICT",
         ),
         nullable=False,
-        unique=True,
-        doc="UUID of the snapshot associated to this commit."
-        "Note that it links to the projects_snapshots table.",
+        doc="SHA-1 checksum of snapshot."
+        "Used as revision/commit identifier since it is unique per repo",
     ),
     sa.Column("message", sa.String, doc="Commit message"),
     sa.Column(

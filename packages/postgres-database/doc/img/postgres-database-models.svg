@@ -632,7 +632,7 @@
 <text text-anchor="start" x="524.1533" y="-226.5244" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
 <!-- services_consume_filetypes -->
-<g id="node25" class="node">
+<g id="node23" class="node">
 <title>services_consume_filetypes</title>
 <polygon fill="none" stroke="#000000" points="615,-207 615,-235 871,-235 871,-207 615,-207"/>
 <text text-anchor="start" x="620" y="-218.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="#000000">services_consume_filetypes</text>
@@ -675,49 +675,49 @@
 <!-- study_tags -->
 <g id="node11" class="node">
 <title>study_tags</title>
-<polygon fill="none" stroke="#000000" points="1004.5,-1959 1004.5,-1987 1139.5,-1987 1139.5,-1959 1004.5,-1959"/>
-<text text-anchor="start" x="1023" y="-1970.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="#000000">study_tags</text>
-<polygon fill="none" stroke="#000000" points="1004.5,-1934 1004.5,-1959 1139.5,-1959 1139.5,-1934 1004.5,-1934"/>
-<text text-anchor="start" x="1009.5" y="-1943.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">study_id</text>
-<text text-anchor="start" x="1069.5" y="-1943.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
-<polygon fill="none" stroke="#000000" points="1004.5,-1909 1004.5,-1934 1139.5,-1934 1139.5,-1909 1004.5,-1909"/>
-<text text-anchor="start" x="1009.5" y="-1918.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">tag_id</text>
-<text text-anchor="start" x="1053.5" y="-1918.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
+<polygon fill="none" stroke="#000000" points="1004.5,-1947 1004.5,-1975 1139.5,-1975 1139.5,-1947 1004.5,-1947"/>
+<text text-anchor="start" x="1023" y="-1958.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="#000000">study_tags</text>
+<polygon fill="none" stroke="#000000" points="1004.5,-1922 1004.5,-1947 1139.5,-1947 1139.5,-1922 1004.5,-1922"/>
+<text text-anchor="start" x="1009.5" y="-1931.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">study_id</text>
+<text text-anchor="start" x="1069.5" y="-1931.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
+<polygon fill="none" stroke="#000000" points="1004.5,-1897 1004.5,-1922 1139.5,-1922 1139.5,-1897 1004.5,-1897"/>
+<text text-anchor="start" x="1009.5" y="-1906.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">tag_id</text>
+<text text-anchor="start" x="1053.5" y="-1906.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
 </g>
 <!-- projects&#45;&#45;study_tags -->
 <g id="edge8" class="edge">
 <title>projects&#45;&#45;study_tags</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M863.456,-1785.8713C915.8262,-1826.6834 974.6044,-1872.4893 1016.2908,-1904.9755"/>
-<text text-anchor="start" x="975.2908" y="-1893.7755" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
-<text text-anchor="start" x="863.456" y="-1774.6713" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M863.456,-1781.4711C914.5444,-1819.4181 971.731,-1861.8946 1013.1995,-1892.6961"/>
+<text text-anchor="start" x="972.1995" y="-1881.4961" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
+<text text-anchor="start" x="863.456" y="-1770.2711" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
 <!-- projects_vc_repos -->
 <g id="node12" class="node">
 <title>projects_vc_repos</title>
-<polygon fill="none" stroke="#000000" points="960.5,-1782 960.5,-1810 1183.5,-1810 1183.5,-1782 960.5,-1782"/>
-<text text-anchor="start" x="993.5" y="-1793.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="#000000">projects_vc_repos</text>
-<polygon fill="none" stroke="#000000" points="960.5,-1757 960.5,-1782 1183.5,-1782 1183.5,-1757 960.5,-1757"/>
-<text text-anchor="start" x="965.5" y="-1766.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00" fill="#000000">id</text>
-<text text-anchor="start" x="978.5" y="-1766.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
+<polygon fill="none" stroke="#000000" points="960.5,-1757 960.5,-1785 1183.5,-1785 1183.5,-1757 960.5,-1757"/>
+<text text-anchor="start" x="993.5" y="-1768.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="#000000">projects_vc_repos</text>
 <polygon fill="none" stroke="#000000" points="960.5,-1732 960.5,-1757 1183.5,-1757 1183.5,-1732 960.5,-1732"/>
-<text text-anchor="start" x="965.5" y="-1741.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">project_uuid</text>
-<text text-anchor="start" x="1053.5" y="-1741.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
+<text text-anchor="start" x="965.5" y="-1741.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00" fill="#000000">id</text>
+<text text-anchor="start" x="978.5" y="-1741.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
 <polygon fill="none" stroke="#000000" points="960.5,-1707 960.5,-1732 1183.5,-1732 1183.5,-1707 960.5,-1707"/>
-<text text-anchor="start" x="965.5" y="-1716.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">project_checksum</text>
-<text text-anchor="start" x="1095.5" y="-1716.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
+<text text-anchor="start" x="965.5" y="-1716.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">project_uuid</text>
+<text text-anchor="start" x="1053.5" y="-1716.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
 <polygon fill="none" stroke="#000000" points="960.5,-1682 960.5,-1707 1183.5,-1707 1183.5,-1682 960.5,-1682"/>
-<text text-anchor="start" x="965.5" y="-1691.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">created</text>
-<text text-anchor="start" x="1020.5" y="-1691.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
+<text text-anchor="start" x="965.5" y="-1691.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">project_checksum</text>
+<text text-anchor="start" x="1095.5" y="-1691.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
 <polygon fill="none" stroke="#000000" points="960.5,-1657 960.5,-1682 1183.5,-1682 1183.5,-1657 960.5,-1657"/>
-<text text-anchor="start" x="965.5" y="-1666.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">modified</text>
-<text text-anchor="start" x="1029.5" y="-1666.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
+<text text-anchor="start" x="965.5" y="-1666.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">created</text>
+<text text-anchor="start" x="1020.5" y="-1666.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
+<polygon fill="none" stroke="#000000" points="960.5,-1632 960.5,-1657 1183.5,-1657 1183.5,-1632 960.5,-1632"/>
+<text text-anchor="start" x="965.5" y="-1641.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">modified</text>
+<text text-anchor="start" x="1029.5" y="-1641.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
 </g>
 <!-- projects&#45;&#45;projects_vc_repos -->
 <g id="edge9" class="edge">
 <title>projects&#45;&#45;projects_vc_repos</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M863.456,-1707.4008C892.2962,-1711.0881 923.0798,-1715.0239 951.8821,-1718.7064"/>
-<text text-anchor="start" x="910.8821" y="-1707.5064" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
-<text text-anchor="start" x="863.456" y="-1696.2008" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M863.456,-1698.2336C892.2962,-1699.7261 923.0798,-1701.3192 951.8821,-1702.8097"/>
+<text text-anchor="start" x="910.8821" y="-1691.6097" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
+<text text-anchor="start" x="863.456" y="-1687.0336" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
 <!-- projects&#45;&#45;comp_runs -->
 <g id="edge10" class="edge">
@@ -729,140 +729,137 @@
 <!-- projects&#45;&#45;user_to_projects -->
 <g id="edge11" class="edge">
 <title>projects&#45;&#45;user_to_projects</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M863.0587,-1607.7771C881.8379,-1592.006 900.2229,-1574.8336 916,-1557 936.6059,-1533.7082 929.4809,-1518.4477 952,-1497 962.0547,-1487.4236 973.8222,-1478.862 985.9789,-1471.356"/>
-<text text-anchor="start" x="944.9789" y="-1460.156" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
-<text text-anchor="start" x="863.0587" y="-1596.5771" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M863.1992,-1570.9492C891.2235,-1545.465 921.7487,-1519.7424 952,-1498 962.5477,-1490.4191 974.079,-1483.0954 985.6845,-1476.2682"/>
+<text text-anchor="start" x="944.6845" y="-1465.0682" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
+<text text-anchor="start" x="863.1992" y="-1559.7492" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
 <!-- projects_vc_commits -->
 <g id="node24" class="node">
 <title>projects_vc_commits</title>
-<polygon fill="none" stroke="#000000" points="1272,-1807 1272,-1835 1510,-1835 1510,-1807 1272,-1807"/>
-<text text-anchor="start" x="1299.5" y="-1818.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="#000000">projects_vc_commits</text>
-<polygon fill="none" stroke="#000000" points="1272,-1782 1272,-1807 1510,-1807 1510,-1782 1272,-1782"/>
-<text text-anchor="start" x="1277" y="-1791.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00" fill="#000000">id</text>
-<text text-anchor="start" x="1290" y="-1791.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
-<polygon fill="none" stroke="#000000" points="1272,-1757 1272,-1782 1510,-1782 1510,-1757 1272,-1757"/>
-<text text-anchor="start" x="1277" y="-1766.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">repo_id</text>
-<text text-anchor="start" x="1331" y="-1766.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
-<polygon fill="none" stroke="#000000" points="1272,-1732 1272,-1757 1510,-1757 1510,-1732 1272,-1732"/>
-<text text-anchor="start" x="1277" y="-1741.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">parent_commit_id</text>
-<text text-anchor="start" x="1407" y="-1741.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
-<polygon fill="none" stroke="#000000" points="1272,-1707 1272,-1732 1510,-1732 1510,-1707 1272,-1707"/>
-<text text-anchor="start" x="1277" y="-1716.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">snapshot_checksum</text>
-<text text-anchor="start" x="1422" y="-1716.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
-<polygon fill="none" stroke="#000000" points="1272,-1682 1272,-1707 1510,-1707 1510,-1682 1272,-1682"/>
-<text text-anchor="start" x="1277" y="-1691.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">snapshot_uuid</text>
-<text text-anchor="start" x="1381" y="-1691.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
-<polygon fill="none" stroke="#000000" points="1272,-1657 1272,-1682 1510,-1682 1510,-1657 1272,-1657"/>
-<text text-anchor="start" x="1277" y="-1666.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">message</text>
-<text text-anchor="start" x="1343" y="-1666.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
-<polygon fill="none" stroke="#000000" points="1272,-1632 1272,-1657 1510,-1657 1510,-1632 1272,-1632"/>
-<text text-anchor="start" x="1277" y="-1641.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">created</text>
-<text text-anchor="start" x="1332" y="-1641.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
+<polygon fill="none" stroke="#000000" points="1272,-1770 1272,-1798 1510,-1798 1510,-1770 1272,-1770"/>
+<text text-anchor="start" x="1299.5" y="-1781.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="#000000">projects_vc_commits</text>
+<polygon fill="none" stroke="#000000" points="1272,-1745 1272,-1770 1510,-1770 1510,-1745 1272,-1745"/>
+<text text-anchor="start" x="1277" y="-1754.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00" fill="#000000">id</text>
+<text text-anchor="start" x="1290" y="-1754.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
+<polygon fill="none" stroke="#000000" points="1272,-1720 1272,-1745 1510,-1745 1510,-1720 1272,-1720"/>
+<text text-anchor="start" x="1277" y="-1729.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">repo_id</text>
+<text text-anchor="start" x="1331" y="-1729.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
+<polygon fill="none" stroke="#000000" points="1272,-1695 1272,-1720 1510,-1720 1510,-1695 1272,-1695"/>
+<text text-anchor="start" x="1277" y="-1704.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">parent_commit_id</text>
+<text text-anchor="start" x="1407" y="-1704.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
+<polygon fill="none" stroke="#000000" points="1272,-1670 1272,-1695 1510,-1695 1510,-1670 1272,-1670"/>
+<text text-anchor="start" x="1277" y="-1679.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">snapshot_checksum</text>
+<text text-anchor="start" x="1422" y="-1679.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
+<polygon fill="none" stroke="#000000" points="1272,-1645 1272,-1670 1510,-1670 1510,-1645 1272,-1645"/>
+<text text-anchor="start" x="1277" y="-1654.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">message</text>
+<text text-anchor="start" x="1343" y="-1654.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
+<polygon fill="none" stroke="#000000" points="1272,-1620 1272,-1645 1510,-1645 1510,-1620 1272,-1620"/>
+<text text-anchor="start" x="1277" y="-1629.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">created</text>
+<text text-anchor="start" x="1332" y="-1629.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
 </g>
 <!-- projects_vc_repos&#45;&#45;projects_vc_commits -->
-<g id="edge26" class="edge">
+<g id="edge25" class="edge">
 <title>projects_vc_repos&#45;&#45;projects_vc_commits</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1191.379,-1734C1215.0178,-1734 1239.9008,-1734 1263.7721,-1734"/>
-<text text-anchor="start" x="1222.7721" y="-1722.8" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
-<text text-anchor="start" x="1191.379" y="-1722.8" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1191.379,-1709C1215.0178,-1709 1239.9008,-1709 1263.7721,-1709"/>
+<text text-anchor="start" x="1222.7721" y="-1697.8" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
+<text text-anchor="start" x="1191.379" y="-1697.8" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
 <!-- projects_vc_tags -->
-<g id="node26" class="node">
+<g id="node25" class="node">
 <title>projects_vc_tags</title>
-<polygon fill="none" stroke="#000000" points="1617.5,-1915 1617.5,-1943 1779.5,-1943 1779.5,-1915 1617.5,-1915"/>
-<text text-anchor="start" x="1625" y="-1926.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="#000000">projects_vc_tags</text>
-<polygon fill="none" stroke="#000000" points="1617.5,-1890 1617.5,-1915 1779.5,-1915 1779.5,-1890 1617.5,-1890"/>
-<text text-anchor="start" x="1622.5" y="-1899.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00" fill="#000000">id</text>
-<text text-anchor="start" x="1635.5" y="-1899.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
-<polygon fill="none" stroke="#000000" points="1617.5,-1865 1617.5,-1890 1779.5,-1890 1779.5,-1865 1617.5,-1865"/>
-<text text-anchor="start" x="1622.5" y="-1874.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">repo_id</text>
-<text text-anchor="start" x="1676.5" y="-1874.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
-<polygon fill="none" stroke="#000000" points="1617.5,-1840 1617.5,-1865 1779.5,-1865 1779.5,-1840 1617.5,-1840"/>
-<text text-anchor="start" x="1622.5" y="-1849.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">commit_id</text>
-<text text-anchor="start" x="1697.5" y="-1849.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
-<polygon fill="none" stroke="#000000" points="1617.5,-1815 1617.5,-1840 1779.5,-1840 1779.5,-1815 1617.5,-1815"/>
-<text text-anchor="start" x="1622.5" y="-1824.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">name</text>
-<text text-anchor="start" x="1664.5" y="-1824.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
-<polygon fill="none" stroke="#000000" points="1617.5,-1790 1617.5,-1815 1779.5,-1815 1779.5,-1790 1617.5,-1790"/>
-<text text-anchor="start" x="1622.5" y="-1799.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">message</text>
-<text text-anchor="start" x="1688.5" y="-1799.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
-<polygon fill="none" stroke="#000000" points="1617.5,-1765 1617.5,-1790 1779.5,-1790 1779.5,-1765 1617.5,-1765"/>
-<text text-anchor="start" x="1622.5" y="-1774.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">hidden</text>
-<text text-anchor="start" x="1671.5" y="-1774.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BOOLEAN]</text>
-<polygon fill="none" stroke="#000000" points="1617.5,-1740 1617.5,-1765 1779.5,-1765 1779.5,-1740 1617.5,-1740"/>
-<text text-anchor="start" x="1622.5" y="-1749.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">created</text>
-<text text-anchor="start" x="1677.5" y="-1749.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
-<polygon fill="none" stroke="#000000" points="1617.5,-1715 1617.5,-1740 1779.5,-1740 1779.5,-1715 1617.5,-1715"/>
-<text text-anchor="start" x="1622.5" y="-1724.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">modified</text>
-<text text-anchor="start" x="1686.5" y="-1724.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
+<polygon fill="none" stroke="#000000" points="1617.5,-1903 1617.5,-1931 1779.5,-1931 1779.5,-1903 1617.5,-1903"/>
+<text text-anchor="start" x="1625" y="-1914.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="#000000">projects_vc_tags</text>
+<polygon fill="none" stroke="#000000" points="1617.5,-1878 1617.5,-1903 1779.5,-1903 1779.5,-1878 1617.5,-1878"/>
+<text text-anchor="start" x="1622.5" y="-1887.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00" fill="#000000">id</text>
+<text text-anchor="start" x="1635.5" y="-1887.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
+<polygon fill="none" stroke="#000000" points="1617.5,-1853 1617.5,-1878 1779.5,-1878 1779.5,-1853 1617.5,-1853"/>
+<text text-anchor="start" x="1622.5" y="-1862.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">repo_id</text>
+<text text-anchor="start" x="1676.5" y="-1862.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
+<polygon fill="none" stroke="#000000" points="1617.5,-1828 1617.5,-1853 1779.5,-1853 1779.5,-1828 1617.5,-1828"/>
+<text text-anchor="start" x="1622.5" y="-1837.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">commit_id</text>
+<text text-anchor="start" x="1697.5" y="-1837.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
+<polygon fill="none" stroke="#000000" points="1617.5,-1803 1617.5,-1828 1779.5,-1828 1779.5,-1803 1617.5,-1803"/>
+<text text-anchor="start" x="1622.5" y="-1812.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">name</text>
+<text text-anchor="start" x="1664.5" y="-1812.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
+<polygon fill="none" stroke="#000000" points="1617.5,-1778 1617.5,-1803 1779.5,-1803 1779.5,-1778 1617.5,-1778"/>
+<text text-anchor="start" x="1622.5" y="-1787.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">message</text>
+<text text-anchor="start" x="1688.5" y="-1787.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
+<polygon fill="none" stroke="#000000" points="1617.5,-1753 1617.5,-1778 1779.5,-1778 1779.5,-1753 1617.5,-1753"/>
+<text text-anchor="start" x="1622.5" y="-1762.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">hidden</text>
+<text text-anchor="start" x="1671.5" y="-1762.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BOOLEAN]</text>
+<polygon fill="none" stroke="#000000" points="1617.5,-1728 1617.5,-1753 1779.5,-1753 1779.5,-1728 1617.5,-1728"/>
+<text text-anchor="start" x="1622.5" y="-1737.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">created</text>
+<text text-anchor="start" x="1677.5" y="-1737.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
+<polygon fill="none" stroke="#000000" points="1617.5,-1703 1617.5,-1728 1779.5,-1728 1779.5,-1703 1617.5,-1703"/>
+<text text-anchor="start" x="1622.5" y="-1712.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">modified</text>
+<text text-anchor="start" x="1686.5" y="-1712.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
 </g>
 <!-- projects_vc_repos&#45;&#45;projects_vc_tags -->
-<g id="edge27" class="edge">
+<g id="edge26" class="edge">
 <title>projects_vc_repos&#45;&#45;projects_vc_tags</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1164.9167,-1814.5621C1194.651,-1835.4665 1228.9708,-1855.1436 1264,-1866 1379.5211,-1901.8028 1520.063,-1878.5141 1609.4141,-1855.941"/>
-<text text-anchor="start" x="1568.4141" y="-1844.741" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
-<text text-anchor="start" x="1133.9167" y="-1818.3621" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1177.6778,-1789.6489C1204.4953,-1805.8292 1234.1836,-1820.4676 1264,-1829 1379.7183,-1862.1144 1519.9082,-1849.3069 1609.1554,-1834.9459"/>
+<text text-anchor="start" x="1568.1554" y="-1823.7459" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
+<text text-anchor="start" x="1146.6778" y="-1793.4489" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
 <!-- projects_vc_branches -->
-<g id="node27" class="node">
+<g id="node26" class="node">
 <title>projects_vc_branches</title>
-<polygon fill="none" stroke="#000000" points="1599.5,-1661 1599.5,-1689 1798.5,-1689 1798.5,-1661 1599.5,-1661"/>
-<text text-anchor="start" x="1604.5" y="-1672.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="#000000">projects_vc_branches</text>
-<polygon fill="none" stroke="#000000" points="1599.5,-1636 1599.5,-1661 1798.5,-1661 1798.5,-1636 1599.5,-1636"/>
-<text text-anchor="start" x="1604.5" y="-1645.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00" fill="#000000">id</text>
-<text text-anchor="start" x="1617.5" y="-1645.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
-<polygon fill="none" stroke="#000000" points="1599.5,-1611 1599.5,-1636 1798.5,-1636 1798.5,-1611 1599.5,-1611"/>
-<text text-anchor="start" x="1604.5" y="-1620.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">repo_id</text>
-<text text-anchor="start" x="1658.5" y="-1620.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
-<polygon fill="none" stroke="#000000" points="1599.5,-1586 1599.5,-1611 1798.5,-1611 1798.5,-1586 1599.5,-1586"/>
-<text text-anchor="start" x="1604.5" y="-1595.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">head_commit_id</text>
-<text text-anchor="start" x="1722.5" y="-1595.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
-<polygon fill="none" stroke="#000000" points="1599.5,-1561 1599.5,-1586 1798.5,-1586 1798.5,-1561 1599.5,-1561"/>
-<text text-anchor="start" x="1604.5" y="-1570.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">name</text>
-<text text-anchor="start" x="1646.5" y="-1570.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
-<polygon fill="none" stroke="#000000" points="1599.5,-1536 1599.5,-1561 1798.5,-1561 1798.5,-1536 1599.5,-1536"/>
-<text text-anchor="start" x="1604.5" y="-1545.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">created</text>
-<text text-anchor="start" x="1659.5" y="-1545.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
-<polygon fill="none" stroke="#000000" points="1599.5,-1511 1599.5,-1536 1798.5,-1536 1798.5,-1511 1599.5,-1511"/>
-<text text-anchor="start" x="1604.5" y="-1520.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">modified</text>
-<text text-anchor="start" x="1668.5" y="-1520.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
+<polygon fill="none" stroke="#000000" points="1599.5,-1649 1599.5,-1677 1798.5,-1677 1798.5,-1649 1599.5,-1649"/>
+<text text-anchor="start" x="1604.5" y="-1660.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="#000000">projects_vc_branches</text>
+<polygon fill="none" stroke="#000000" points="1599.5,-1624 1599.5,-1649 1798.5,-1649 1798.5,-1624 1599.5,-1624"/>
+<text text-anchor="start" x="1604.5" y="-1633.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00" fill="#000000">id</text>
+<text text-anchor="start" x="1617.5" y="-1633.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
+<polygon fill="none" stroke="#000000" points="1599.5,-1599 1599.5,-1624 1798.5,-1624 1798.5,-1599 1599.5,-1599"/>
+<text text-anchor="start" x="1604.5" y="-1608.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">repo_id</text>
+<text text-anchor="start" x="1658.5" y="-1608.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
+<polygon fill="none" stroke="#000000" points="1599.5,-1574 1599.5,-1599 1798.5,-1599 1798.5,-1574 1599.5,-1574"/>
+<text text-anchor="start" x="1604.5" y="-1583.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">head_commit_id</text>
+<text text-anchor="start" x="1722.5" y="-1583.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
+<polygon fill="none" stroke="#000000" points="1599.5,-1549 1599.5,-1574 1798.5,-1574 1798.5,-1549 1599.5,-1549"/>
+<text text-anchor="start" x="1604.5" y="-1558.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">name</text>
+<text text-anchor="start" x="1646.5" y="-1558.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
+<polygon fill="none" stroke="#000000" points="1599.5,-1524 1599.5,-1549 1798.5,-1549 1798.5,-1524 1599.5,-1524"/>
+<text text-anchor="start" x="1604.5" y="-1533.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">created</text>
+<text text-anchor="start" x="1659.5" y="-1533.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
+<polygon fill="none" stroke="#000000" points="1599.5,-1499 1599.5,-1524 1798.5,-1524 1798.5,-1499 1599.5,-1499"/>
+<text text-anchor="start" x="1604.5" y="-1508.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">modified</text>
+<text text-anchor="start" x="1668.5" y="-1508.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
 </g>
 <!-- projects_vc_repos&#45;&#45;projects_vc_branches -->
-<g id="edge28" class="edge">
+<g id="edge27" class="edge">
 <title>projects_vc_repos&#45;&#45;projects_vc_branches</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1185.5312,-1653.4953C1210.3633,-1639.5734 1237.2431,-1627.0168 1264,-1619 1371.7708,-1586.7102 1501.281,-1585.5713 1590.7162,-1590.2602"/>
-<text text-anchor="start" x="1549.7162" y="-1579.0602" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
-<text text-anchor="start" x="1154.5312" y="-1642.2953" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1191.0989,-1635.302C1214.5228,-1623.8797 1239.4559,-1613.6735 1264,-1607 1372.3806,-1577.5317 1501.509,-1575.8939 1590.682,-1579.6938"/>
+<text text-anchor="start" x="1549.682" y="-1568.4938" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
+<text text-anchor="start" x="1191.0989" y="-1624.102" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
 <!-- projects_vc_heads -->
-<g id="node28" class="node">
+<g id="node27" class="node">
 <title>projects_vc_heads</title>
-<polygon fill="none" stroke="#000000" points="1887.5,-1811 1887.5,-1839 2076.5,-1839 2076.5,-1811 1887.5,-1811"/>
-<text text-anchor="start" x="1901.5" y="-1822.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="#000000">projects_vc_heads</text>
-<polygon fill="none" stroke="#000000" points="1887.5,-1786 1887.5,-1811 2076.5,-1811 2076.5,-1786 1887.5,-1786"/>
-<text text-anchor="start" x="1892.5" y="-1795.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00" fill="#000000">repo_id</text>
-<text text-anchor="start" x="1946.5" y="-1795.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
-<polygon fill="none" stroke="#000000" points="1887.5,-1761 1887.5,-1786 2076.5,-1786 2076.5,-1761 1887.5,-1761"/>
-<text text-anchor="start" x="1892.5" y="-1770.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">head_branch_id</text>
-<text text-anchor="start" x="2006.5" y="-1770.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
-<polygon fill="none" stroke="#000000" points="1887.5,-1736 1887.5,-1761 2076.5,-1761 2076.5,-1736 1887.5,-1736"/>
-<text text-anchor="start" x="1892.5" y="-1745.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">modified</text>
-<text text-anchor="start" x="1956.5" y="-1745.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
+<polygon fill="none" stroke="#000000" points="1887.5,-1799 1887.5,-1827 2076.5,-1827 2076.5,-1799 1887.5,-1799"/>
+<text text-anchor="start" x="1901.5" y="-1810.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="#000000">projects_vc_heads</text>
+<polygon fill="none" stroke="#000000" points="1887.5,-1774 1887.5,-1799 2076.5,-1799 2076.5,-1774 1887.5,-1774"/>
+<text text-anchor="start" x="1892.5" y="-1783.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00" fill="#000000">repo_id</text>
+<text text-anchor="start" x="1946.5" y="-1783.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
+<polygon fill="none" stroke="#000000" points="1887.5,-1749 1887.5,-1774 2076.5,-1774 2076.5,-1749 1887.5,-1749"/>
+<text text-anchor="start" x="1892.5" y="-1758.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">head_branch_id</text>
+<text text-anchor="start" x="2006.5" y="-1758.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
+<polygon fill="none" stroke="#000000" points="1887.5,-1724 1887.5,-1749 2076.5,-1749 2076.5,-1724 1887.5,-1724"/>
+<text text-anchor="start" x="1892.5" y="-1733.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">modified</text>
+<text text-anchor="start" x="1956.5" y="-1733.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
 </g>
 <!-- projects_vc_repos&#45;&#45;projects_vc_heads -->
-<g id="edge29" class="edge">
+<g id="edge28" class="edge">
 <title>projects_vc_repos&#45;&#45;projects_vc_heads</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1129.2235,-1814.5846C1186.767,-1884.645 1282.091,-1975 1391,-1975 1391,-1975 1391,-1975 1698.5,-1975 1747.0183,-1975 1762.7262,-1977.9409 1806,-1956 1858.6672,-1929.2964 1906.2168,-1881.5557 1938.4949,-1843.7736"/>
-<text text-anchor="start" x="1897.4949" y="-1847.5736" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
-<text text-anchor="start" x="1098.2235" y="-1818.3846" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1125.025,-1789.7162C1181.463,-1864.0911 1277.7988,-1963 1391,-1963 1391,-1963 1391,-1963 1698.5,-1963 1747.0183,-1963 1762.7262,-1965.9409 1806,-1944 1858.6672,-1917.2964 1906.2168,-1869.5557 1938.4949,-1831.7736"/>
+<text text-anchor="start" x="1897.4949" y="-1835.5736" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
+<text text-anchor="start" x="1094.025" y="-1793.5162" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
 <!-- tags&#45;&#45;study_tags -->
 <g id="edge22" class="edge">
 <title>tags&#45;&#45;study_tags</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M837.1349,-2000.0811C887.4716,-1988.8952 948.6242,-1975.3057 995.8399,-1964.8134"/>
-<text text-anchor="start" x="954.8399" y="-1953.6134" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
-<text text-anchor="start" x="837.1349" y="-1988.8811" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M837.1349,-1996.6424C887.4716,-1983.6177 948.6242,-1967.7944 995.8399,-1955.5772"/>
+<text text-anchor="start" x="954.8399" y="-1944.3772" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
+<text text-anchor="start" x="837.1349" y="-1985.4424" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
 <!-- comp_pipeline -->
 <g id="node19" class="node">
@@ -983,55 +980,52 @@
 <text text-anchor="start" x="13" y="-2444.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">last_change_date</text>
 <text text-anchor="start" x="139" y="-2444.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
 </g>
-<!-- projects_snapshots -->
-<g id="node23" class="node">
-<title>projects_snapshots</title>
-<polygon fill="none" stroke="#000000" points="980.5,-1585 980.5,-1613 1162.5,-1613 1162.5,-1585 980.5,-1585"/>
-<text text-anchor="start" x="985.5" y="-1596.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="#000000">projects_snapshots</text>
-<polygon fill="none" stroke="#000000" points="980.5,-1560 980.5,-1585 1162.5,-1585 1162.5,-1560 980.5,-1560"/>
-<text text-anchor="start" x="985.5" y="-1569.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00" fill="#000000">uuid</text>
-<text text-anchor="start" x="1016.5" y="-1569.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
-<polygon fill="none" stroke="#000000" points="980.5,-1535 980.5,-1560 1162.5,-1560 1162.5,-1535 980.5,-1535"/>
-<text text-anchor="start" x="985.5" y="-1544.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">workbench</text>
-<text text-anchor="start" x="1064.5" y="-1544.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [Null]</text>
-<polygon fill="none" stroke="#000000" points="980.5,-1510 980.5,-1535 1162.5,-1535 1162.5,-1510 980.5,-1510"/>
-<text text-anchor="start" x="985.5" y="-1519.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">ui</text>
-<text text-anchor="start" x="998.5" y="-1519.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [JSONB]</text>
-</g>
-<!-- projects_snapshots&#45;&#45;projects_vc_commits -->
-<g id="edge25" class="edge">
-<title>projects_snapshots&#45;&#45;projects_vc_commits</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1170.8404,-1615.479C1200.2414,-1631.3068 1232.8439,-1648.858 1263.7515,-1665.4969"/>
-<text text-anchor="start" x="1222.7515" y="-1654.2969" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
-<text text-anchor="start" x="1170.8404" y="-1604.279" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
-</g>
 <!-- projects_vc_commits&#45;&#45;projects_vc_commits -->
 <g id="edge30" class="edge">
 <title>projects_vc_commits&#45;&#45;projects_vc_commits</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1366.0311,-1839.8443C1370.97,-1850.6205 1379.293,-1857.5 1391,-1857.5 1402.707,-1857.5 1411.03,-1850.6205 1415.9689,-1839.8443"/>
-<text text-anchor="start" x="1374.9689" y="-1843.6443" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
-<text text-anchor="start" x="1335.0311" y="-1843.6443" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1365.0763,-1802.1209C1369.8607,-1812.953 1378.502,-1820 1391,-1820 1403.498,-1820 1412.1393,-1812.953 1416.9237,-1802.1209"/>
+<text text-anchor="start" x="1375.9237" y="-1805.9209" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
+<text text-anchor="start" x="1334.0763" y="-1805.9209" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
 <!-- projects_vc_commits&#45;&#45;projects_vc_tags -->
 <g id="edge31" class="edge">
 <title>projects_vc_commits&#45;&#45;projects_vc_tags</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1518.2917,-1773.3259C1548.8583,-1782.7692 1580.8634,-1792.657 1609.2768,-1801.4351"/>
-<text text-anchor="start" x="1568.2768" y="-1790.2351" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
-<text text-anchor="start" x="1518.2917" y="-1762.1259" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1518.2917,-1753.7073C1548.8583,-1764.4429 1580.8634,-1775.6837 1609.2768,-1785.6631"/>
+<text text-anchor="start" x="1568.2768" y="-1774.4631" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
+<text text-anchor="start" x="1518.2917" y="-1742.5073" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
 <!-- projects_vc_commits&#45;&#45;projects_vc_branches -->
 <g id="edge32" class="edge">
 <title>projects_vc_commits&#45;&#45;projects_vc_branches</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1518.2917,-1678.5298C1542.4146,-1668.0177 1567.4333,-1657.1152 1590.8755,-1646.8998"/>
-<text text-anchor="start" x="1549.8755" y="-1635.6998" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
-<text text-anchor="start" x="1518.2917" y="-1667.3298" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1518.2917,-1658.9112C1542.4146,-1649.419 1567.4333,-1639.5742 1590.8755,-1630.3498"/>
+<text text-anchor="start" x="1549.8755" y="-1619.1498" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
+<text text-anchor="start" x="1518.2917" y="-1647.7112" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
 <!-- projects_vc_branches&#45;&#45;projects_vc_heads -->
 <g id="edge33" class="edge">
 <title>projects_vc_branches&#45;&#45;projects_vc_heads</title>
-<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1806.2975,-1671.611C1836.6008,-1691.7418 1869.0937,-1713.3272 1897.7662,-1732.3747"/>
-<text text-anchor="start" x="1856.7662" y="-1721.1747" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
-<text text-anchor="start" x="1806.2975" y="-1660.411" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1806.2975,-1659.611C1836.6008,-1679.7418 1869.0937,-1701.3272 1897.7662,-1720.3747"/>
+<text text-anchor="start" x="1856.7662" y="-1709.1747" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
+<text text-anchor="start" x="1806.2975" y="-1648.411" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
+</g>
+<!-- projects_vc_snapshots -->
+<g id="node28" class="node">
+<title>projects_vc_snapshots</title>
+<polygon fill="none" stroke="#000000" points="967.5,-1561 967.5,-1589 1176.5,-1589 1176.5,-1561 967.5,-1561"/>
+<text text-anchor="start" x="972.5" y="-1572.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="#000000">projects_vc_snapshots</text>
+<polygon fill="none" stroke="#000000" points="967.5,-1536 967.5,-1561 1176.5,-1561 1176.5,-1536 967.5,-1536"/>
+<text text-anchor="start" x="972.5" y="-1545.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00" fill="#000000">checksum</text>
+<text text-anchor="start" x="1045.5" y="-1545.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
+<polygon fill="none" stroke="#000000" points="967.5,-1511 967.5,-1536 1176.5,-1536 1176.5,-1511 967.5,-1511"/>
+<text text-anchor="start" x="972.5" y="-1520.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">content</text>
+<text text-anchor="start" x="1027.5" y="-1520.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [JSONB]</text>
+</g>
+<!-- projects_vc_snapshots&#45;&#45;projects_vc_commits -->
+<g id="edge29" class="edge">
+<title>projects_vc_snapshots&#45;&#45;projects_vc_commits</title>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M1157.9613,-1593.0277C1190.5798,-1609.2604 1228.4028,-1628.0831 1263.9659,-1645.7811"/>
+<text text-anchor="start" x="1222.9659" y="-1634.5811" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
+<text text-anchor="start" x="1126.9613" y="-1596.8277" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
 <!-- dags -->
 <g id="node29" class="node">
