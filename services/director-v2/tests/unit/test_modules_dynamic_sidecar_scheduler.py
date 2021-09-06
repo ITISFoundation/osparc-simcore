@@ -165,7 +165,7 @@ def dynamic_sidecar_settings(monkeypatch: MonkeyPatch) -> AppSettings:
 
 @pytest.fixture
 async def mocked_app(
-    loop: BaseEventLoop, dynamic_sidecar_settings: AppSettings, docker_swarm: None
+    loop: BaseEventLoop, dynamic_sidecar_settings: AppSettings, async_docker_swarm: None
 ) -> Iterator[FastAPI]:
     app = FastAPI()
     app.state.settings = dynamic_sidecar_settings
@@ -226,7 +226,7 @@ def mock_max_status_api_duration(monkeypatch: MonkeyPatch) -> Iterator[None]:
 # TESTS
 
 
-async def test_docker_swarm_fixture(docker_swarm: None) -> None:
+async def test_docker_swarm_fixture(async_docker_swarm: None) -> None:
     pass
 
 
@@ -235,7 +235,7 @@ async def test_scheduler_add_remove(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mocked_client_api: MockRouter,
-    docker_swarm: None,
+    async_docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
 ) -> None:
     await ensure_scheduler_runs_once()
@@ -251,7 +251,7 @@ async def test_scheduler_removes_partially_started_services(
     ensure_scheduler_runs_once: Callable,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
-    docker_swarm: None,
+    async_docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
 ) -> None:
     await ensure_scheduler_runs_once()
@@ -265,7 +265,7 @@ async def test_scheduler_is_failing(
     ensure_scheduler_runs_once: Callable,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
-    docker_swarm: None,
+    async_docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
 ) -> None:
     await ensure_scheduler_runs_once()
@@ -280,7 +280,7 @@ async def test_scheduler_health_timing_out(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mock_max_status_api_duration: None,
-    docker_swarm: None,
+    async_docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
 ) -> None:
 
@@ -294,7 +294,7 @@ async def test_scheduler_health_timing_out(
 async def test_adding_service_two_times(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
-    docker_swarm: None,
+    async_docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
 ) -> None:
     await scheduler.add_service(scheduler_data)
@@ -304,7 +304,7 @@ async def test_adding_service_two_times(
 async def test_collition_at_global_level(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
-    docker_swarm: None,
+    async_docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
 ) -> None:
     # pylint: disable=protected-access
@@ -317,7 +317,7 @@ async def test_collition_at_global_level(
 async def test_no_service_name(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
-    docker_swarm: None,
+    async_docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
 ) -> None:
     scheduler_data.service_name = ""
@@ -329,7 +329,7 @@ async def test_no_service_name(
 async def test_remove_missing_no_error(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
-    docker_swarm: None,
+    async_docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
 ) -> None:
     with pytest.raises(DynamicSidecarNotFoundError) as execinfo:
@@ -341,7 +341,7 @@ async def test_get_stack_status(
     ensure_scheduler_runs_once: Callable,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
-    docker_swarm: None,
+    async_docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
 ) -> None:
     await ensure_scheduler_runs_once()
@@ -360,7 +360,7 @@ async def test_get_stack_status(
 async def test_get_stack_status_missing(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
-    docker_swarm: None,
+    async_docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
 ) -> None:
     with pytest.raises(DynamicSidecarNotFoundError) as execinfo:
@@ -371,7 +371,7 @@ async def test_get_stack_status_missing(
 async def test_get_stack_status_failing_sidecar(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
-    docker_swarm: None,
+    async_docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
 ) -> None:
     failing_message = "some_failing_message"
@@ -392,7 +392,7 @@ async def test_get_stack_status_report_missing_statuses(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mock_service_running: AsyncMock,
-    docker_swarm: None,
+    async_docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
 ) -> None:
     async with _assert_get_dynamic_services_mocked(
@@ -413,7 +413,7 @@ async def test_get_stack_status_containers_are_starting(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mock_service_running: AsyncMock,
-    docker_swarm: None,
+    async_docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
 ) -> None:
     async with _assert_get_dynamic_services_mocked(
@@ -434,7 +434,7 @@ async def test_get_stack_status_ok(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mock_service_running: AsyncMock,
-    docker_swarm: None,
+    async_docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
 ) -> None:
     async with _assert_get_dynamic_services_mocked(
@@ -454,7 +454,7 @@ async def test_get_stack_status_ok(
 
 
 async def test_module_setup(
-    dynamic_sidecar_settings: AppSettings, docker_swarm: None
+    dynamic_sidecar_settings: AppSettings, async_docker_swarm: None
 ) -> None:
     app = FastAPI()
     app.state.settings = dynamic_sidecar_settings

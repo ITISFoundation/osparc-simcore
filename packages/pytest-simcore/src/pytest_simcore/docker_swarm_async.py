@@ -5,7 +5,7 @@ import tenacity
 
 
 @pytest.fixture(scope="module")
-async def docker_swarm(loop) -> None:
+async def async_docker_swarm(loop) -> None:
     # NOTE: overwrites existing fixture
     class _NotInSwarmException(Exception):
         pass
