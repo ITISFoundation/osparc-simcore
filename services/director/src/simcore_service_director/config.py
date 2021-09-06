@@ -7,7 +7,7 @@ from distutils.util import strtobool
 from typing import Dict, Optional
 
 
-from servicelib.aiohttp.client_session import APP_CLIENT_SESSION_KEY    # pylint: disable=no-name-in-module
+from servicelib.client_session import APP_CLIENT_SESSION_KEY    # pylint: disable=no-name-in-module
 
 LOGLEVEL_STR = os.environ.get("LOGLEVEL", "WARNING").upper()
 log_level = getattr(logging, LOGLEVEL_STR)
