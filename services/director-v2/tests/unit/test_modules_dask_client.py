@@ -87,27 +87,6 @@ def dask_client(
     yield client
 
 
-async def test_dask_client_is_created(
-    dask_client: DaskClient, dask_spec_local_cluster: SpecCluster
-):
-    assert dask_client.client.status == "running"
-    old_client = dask_client.client
-    await dask_client.reconnect_client()
-    assert dask_client.client.status == "running"
-    assert old_client != dask_client.client
-    await dask_spec_local_cluster.close()
-    assert dask_client.client.status == "connecting"
-    # assert dask_client.client.scheduler_info() == {}
-    def test_fct_add(x: int, y: int) -> int:
-        return x + y
-
-    future = dask_client.client.submit(test_fct_add, 2, 5)
-    assert future
-    result = await future.result(timeout=2)
-
-    assert dask_client.client.status == "closed"
-
-
 async def test_dask_cluster():
     async with LocalCluster(
         n_workers=2, threads_per_worker=1, asynchronous=True
