@@ -19,6 +19,7 @@ from models_library.projects_nodes_io import NodeID
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
+    ComputationalBackendNotConnectedError,
     ConfigurationError,
     InsuficientComputationalResourcesError,
     MissingComputationalResourcesError,
@@ -283,19 +284,6 @@ async def test_invalid_cluster_send_computation_task(
     fake_task = {node_id: image}
     mocked_done_callback_fct = mocker.Mock()
 
-    # NOTE: We pass another fct so it can run in our localy created dask cluster
-    def fake_sidecar_fct(job_id: str, u_id: str, prj_id: str, n_id: str) -> int:
-        from dask.distributed import get_worker
-
-        worker = get_worker()
-        task: TaskState = worker.tasks.get(worker.get_current_task())
-        assert task is not None
-        assert task.annotations == expected_annotations
-        assert u_id == user_id
-        assert prj_id == project_id
-        assert n_id == node_id
-        return 123
-
     with pytest.raises(MissingComputationalResourcesError):
         await dask_client.send_computation_tasks(
             user_id=user_id,
@@ -303,7 +291,7 @@ async def test_invalid_cluster_send_computation_task(
             cluster_id=random.randint(cluster_id + 1, 100),
             tasks=fake_task,
             callback=mocked_done_callback_fct,
-            remote_fct=fake_sidecar_fct,
+            remote_fct=None,
         )
     assert (
         len(dask_client._taskid_to_future_map) == 0
@@ -344,19 +332,6 @@ async def test_too_many_resource_send_computation_task(
     fake_task = {node_id: image}
     mocked_done_callback_fct = mocker.Mock()
 
-    # NOTE: We pass another fct so it can run in our localy created dask cluster
-    def fake_sidecar_fct(job_id: str, u_id: str, prj_id: str, n_id: str) -> int:
-        from dask.distributed import get_worker
-
-        worker = get_worker()
-        task: TaskState = worker.tasks.get(worker.get_current_task())
-        assert task is not None
-        assert task.annotations == expected_annotations
-        assert u_id == user_id
-        assert prj_id == project_id
-        assert n_id == node_id
-        return 123
-
     # let's have a big number of CPUs
     with pytest.raises(InsuficientComputationalResourcesError):
         await dask_client.send_computation_tasks(
@@ -365,7 +340,57 @@ async def test_too_many_resource_send_computation_task(
             cluster_id=cluster_id,
             tasks=fake_task,
             callback=mocked_done_callback_fct,
-            remote_fct=fake_sidecar_fct,
+            remote_fct=None,
+        )
+    assert (
+        len(dask_client._taskid_to_future_map) == 0
+    ), "dask client should not store any future here"
+
+
+@pytest.mark.parametrize(
+    "image, expected_annotations",
+    [
+        (
+            Image(
+                name="simcore/services/comp/pytest",
+                tag="1.4.5",
+                node_requirements=NodeRequirements(CPU=1, RAM="128 MiB"),
+            ),
+            {"resources": {"CPU": 1.0, "RAM": 128 * 1024 * 1024}},
+        )
+    ],
+)
+async def test_disconnected_backend_send_computation_task(
+    dask_spec_local_cluster: SpecCluster,
+    dask_client: DaskClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    cluster_id: ClusterID,
+    cluster_id_resource: str,
+    image: Image,
+    expected_annotations: Dict[str, Any],
+    mocker: MockerFixture,
+):
+    # INIT
+    expected_annotations["resources"].update(
+        {cluster_id_resource: CLUSTER_RESOURCE_MOCK_USAGE}
+    )
+
+    fake_task = {node_id: image}
+    mocked_done_callback_fct = mocker.Mock()
+
+    # DISCONNECT THE CLUSTER
+    await dask_spec_local_cluster.close()
+    #
+    with pytest.raises(ComputationalBackendNotConnectedError):
+        await dask_client.send_computation_tasks(
+            user_id=user_id,
+            project_id=project_id,
+            cluster_id=cluster_id,
+            tasks=fake_task,
+            callback=mocked_done_callback_fct,
+            remote_fct=None,
         )
     assert (
         len(dask_client._taskid_to_future_map) == 0
