@@ -4,10 +4,10 @@
 import logging
 import os
 from distutils.util import strtobool
-from typing import Dict, Optional, TYPE_CHECKING
+from typing import Dict, Optional
 
 
-if TYPE_CHECKING:  # avoids failing [unit] python-linting
+if os.environ.get("IN_CI_UNIT_PYTHON_LINTING") is None:  # avoids failing [unit] python-linting
     from servicelib.aiohttp.client_session import APP_CLIENT_SESSION_KEY
 else:
     from servicelib.client_session import APP_CLIENT_SESSION_KEY

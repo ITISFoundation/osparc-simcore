@@ -4,9 +4,9 @@ from prometheus_client import CONTENT_TYPE_LATEST
 from prometheus_client.registry import CollectorRegistry
 
 
-from typing import TYPE_CHECKING
+import os
 
-if TYPE_CHECKING:  # avoids failing [unit] python-linting
+if os.environ.get("IN_CI_UNIT_PYTHON_LINTING") is None:  # avoids failing [unit] python-linting
     from servicelib.aiohttp.monitor_services import (
         add_instrumentation as add_services_instrumentation,
     )

@@ -7,14 +7,15 @@
 
 import json
 import uuid
-from typing import Optional, TYPE_CHECKING
+import os
+from typing import Optional
 from urllib.parse import quote
 
 import pytest
 from aioresponses.core import CallbackResult, aioresponses
 from helpers import json_schema_validator
 
-if TYPE_CHECKING:  # avoids failing [unit] python-linting
+if os.environ.get("IN_CI_UNIT_PYTHON_LINTING") is None:  # avoids failing [unit] python-linting
     from servicelib.aiohttp.rest_responses import unwrap_envelope
 else:
     from servicelib.rest_responses import unwrap_envelope

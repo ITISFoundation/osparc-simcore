@@ -4,17 +4,18 @@ import asyncio
 import json
 import logging
 import re
+import os
 from datetime import datetime, timedelta
 from distutils.version import StrictVersion
 from enum import Enum
 from pprint import pformat
-from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Dict, List, Optional, Tuple
 
 import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
 
-if TYPE_CHECKING:  # avoids failing [unit] python-linting
+if os.environ.get("IN_CI_UNIT_PYTHON_LINTING") is None:  # avoids failing [unit] python-linting
     from servicelib.aiohttp.async_utils import run_sequentially_in_context
     from servicelib.aiohttp.monitor_services import service_started, service_stopped
 else:
