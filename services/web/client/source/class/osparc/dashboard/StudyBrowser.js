@@ -208,14 +208,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       userStudyContainer.addListener("changeSelection", e => {
         const nSelected = e.getData().length;
-        this.__newStudyBtn.setEnabled(!nSelected);
         this._studiesContainer.getChildren().forEach(userStudyItem => {
           if (userStudyItem instanceof osparc.dashboard.StudyBrowserButtonItem) {
             userStudyItem.setMultiSelectionMode(Boolean(nSelected));
           }
         });
-        this.__updateDeleteStudiesButton(studiesDeleteButton);
       }, this);
+      userStudyContainer.bind("selection", this.__newStudyBtn, "enabled", {
+        converter: selection => !selection.length
+      });
+      userStudyContainer.bind("selection", studiesDeleteButton, "visibility", {
+        converter: selection => selection.length ? "visible" : "excluded"
+      });
+      userStudyContainer.bind("selection", studiesDeleteButton, "label", {
+        converter: selection => selection.length > 1 ? this.tr("Delete selected")+" ("+selection.length+")" : this.tr("Delete")
+      });
 
       userStudyContainer.addListener("changeVisibility", e => {
         this._moreStudiesRequired();
@@ -822,16 +829,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       req.open("POST", "/v0/projects:import", true);
       req.send(body);
-    },
-
-    __updateDeleteStudiesButton: function(studiesDeleteButton) {
-      const nSelected = this._studiesContainer.getSelection().length;
-      if (nSelected) {
-        studiesDeleteButton.setLabel(nSelected > 1 ? this.tr("Delete selected")+" ("+nSelected+")" : this.tr("Delete"));
-        studiesDeleteButton.setVisibility("visible");
-      } else {
-        studiesDeleteButton.setVisibility("excluded");
-      }
     },
 
     __deleteStudy: function(studyData) {
