@@ -1304,7 +1304,14 @@ jobs:
   integration-test-webserver-01:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 01"
-    needs: [build-test-images]
+    needs:
+      [
+        build-test-images,
+        unit-test-webserver-01,
+        unit-test-webserver-04,
+        unit-test-webserver-10,
+        unit-test-webserver-isolated,
+      ]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1377,7 +1384,14 @@ jobs:
   integration-test-webserver-02:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 02"
-    needs: [build-test-images]
+    needs:
+      [
+        build-test-images,
+        unit-test-webserver-01,
+        unit-test-webserver-04,
+        unit-test-webserver-10,
+        unit-test-webserver-isolated,
+      ]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1450,7 +1464,7 @@ jobs:
   integration-test-director-v2-01:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] director-v2 01"
-    needs: [build-test-images]
+    needs: [build-test-images, unit-test-director-v2]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1523,7 +1537,7 @@ jobs:
   integration-test-director-v2-02:
     timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[int] director-v2 02"
-    needs: [build-test-images]
+    needs: [build-test-images, unit-test-director-v2]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1597,7 +1611,7 @@ jobs:
   integration-test-sidecar:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] sidecar"
-    needs: [build-test-images]
+    needs: [build-test-images, unit-test-sidecar]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1670,7 +1684,7 @@ jobs:
   integration-test-simcore-sdk:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] simcore-sdk"
-    needs: [build-test-images]
+    needs: [build-test-images, unit-test-simcore-sdk]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
