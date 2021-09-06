@@ -16,11 +16,11 @@ import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
 
 if os.environ.get("IN_CI_UNIT_PYTHON_LINTING") is None:  # avoids failing [unit] python-linting
-    from servicelib.aiohttp.async_utils import run_sequentially_in_context
-    from servicelib.aiohttp.monitor_services import service_started, service_stopped
-else:
     from servicelib.async_utils import run_sequentially_in_context
     from servicelib.monitor_services import service_started, service_stopped
+else:
+    from servicelib.aiohttp.async_utils import run_sequentially_in_context
+    from servicelib.aiohttp.monitor_services import service_started, service_stopped
 
 from . import config, docker_utils, exceptions, registry_proxy
 from .config import (

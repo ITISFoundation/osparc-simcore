@@ -6,11 +6,11 @@ from aiohttp import web
 
 
 if os.environ.get("IN_CI_UNIT_PYTHON_LINTING") is None:  # avoids failing [unit] python-linting
-    from servicelib.aiohttp.client_session import persistent_client_session
-    from servicelib.aiohttp.tracing import setup_tracing
-else:
     from servicelib.client_session import persistent_client_session
     from servicelib.tracing import setup_tracing
+else:
+    from servicelib.aiohttp.client_session import persistent_client_session
+    from servicelib.aiohttp.tracing import setup_tracing
 
 from simcore_service_director import config, registry_cache_task, resources
 from simcore_service_director.rest import routing

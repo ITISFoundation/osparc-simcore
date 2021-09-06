@@ -7,11 +7,11 @@ from prometheus_client.registry import CollectorRegistry
 import os
 
 if os.environ.get("IN_CI_UNIT_PYTHON_LINTING") is None:  # avoids failing [unit] python-linting
-    from servicelib.aiohttp.monitor_services import (
+    from servicelib.monitor_services import (
         add_instrumentation as add_services_instrumentation,
     )
 else:
-    from servicelib.monitor_services import (
+    from servicelib.aiohttp.monitor_services import (
         add_instrumentation as add_services_instrumentation,
     )
 
