@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from pprint import pformat
 from typing import Any, Dict, Optional
 
 from dask.distributed import get_worker
@@ -10,6 +9,7 @@ from models_library.projects_nodes_io import NodeID
 from simcore_service_sidecar.boot_mode import BootMode
 from simcore_service_sidecar.cli import run_sidecar
 
+from .computational_sidecar.core import ComputationalSidecar
 from .meta import print_banner
 from .settings import Settings
 
@@ -47,10 +47,12 @@ def _get_task_boot_mode(task: Optional[TaskState]) -> BootMode:
     return BootMode.CPU
 
 
-def run_task_as_container(
-    key: str, version: str, inputs: Dict[str, Any]
+async def run_task_as_container(
+    service_key: str, service_version: str, input_data: Dict[str, Any]
 ) -> Dict[str, Any]:
-    log.debug("run_task_as_container %s", f"{key=}, {version=}, {inputs=}")
+    log.debug(
+        "run_task_as_container %s", f"{service_key=}, {service_version=}, {input_data=}"
+    )
 
     task: Optional[TaskState] = _get_dask_task_state()
 
@@ -58,7 +60,11 @@ def run_task_as_container(
     max_retries = 1
     sidecar_bootmode = _get_task_boot_mode(task)
 
-    return {}
+    async with ComputationalSidecar(
+        service_key, service_version, input_data
+    ) as sidecar:
+        output_data = await sidecar.run()
+    return output_data
 
 
 def run_task_in_service(
