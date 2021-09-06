@@ -13,6 +13,7 @@ from .projects_snapshots import projects_snapshots
 #
 # Projects under version-control are assigned a repository
 #   - keeps information of the current branch to recover HEAD ref
+#   - when repo is deleted, all project_vc_* get deleted
 #
 
 projects_vc_repos = sa.Table(
@@ -68,6 +69,7 @@ projects_vc_repos = sa.Table(
 # COMMITS
 #
 #  - should NEVER be modified explicitly after creation
+#  - commits are inter-related. WARNING with deletion
 #
 # SEE https://git-scm.com/book/en/v2/Git-Internals-Git-References
 
@@ -116,8 +118,7 @@ projects_vc_commits = sa.Table(
         sa.ForeignKey(
             projects_snapshots.c.uuid,
             name="fk_projects_vc_commits_snapshot_uuid",
-            ondelete="CASCADE",
-            onupdate="CASCADE",
+            ondelete="RESTRICT",
         ),
         nullable=False,
         unique=True,
@@ -167,8 +168,7 @@ projects_vc_tags = sa.Table(
         sa.ForeignKey(
             projects_vc_commits.c.id,
             name="fk_projects_vc_tags_commit_id",
-            onupdate="CASCADE",
-            ondelete="RESTRICT",
+            ondelete="CASCADE",
         ),
         nullable=False,
         doc="Points to the tagged commit",
@@ -234,7 +234,6 @@ projects_vc_branches = sa.Table(
         sa.ForeignKey(
             projects_vc_commits.c.id,
             name="fk_projects_vc_branches_head_commit_id",
-            onupdate="CASCADE",
             ondelete="RESTRICT",
         ),
         nullable=True,
@@ -290,7 +289,7 @@ projects_vc_heads = sa.Table(
         sa.ForeignKey(
             projects_vc_branches.c.id,
             name="fk_projects_vc_heads_branch_id",
-            onupdate="CASCADE",
+            ondelete="CASCADE",
         ),
         nullable=True,
         doc="Points to the branch whose head is the last commit, known as HEAD in the git jargon"
