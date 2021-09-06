@@ -87,8 +87,25 @@ def dask_client(
     yield client
 
 
-def test_dask_client_is_created(dask_client: DaskClient):
-    pass
+async def test_dask_client_is_created(
+    dask_client: DaskClient, dask_spec_local_cluster: SpecCluster
+):
+    assert dask_client.client.status == "running"
+    old_client = dask_client.client
+    await dask_client.reconnect_client()
+    assert dask_client.client.status == "running"
+    assert old_client != dask_client.client
+    await dask_spec_local_cluster.close()
+    assert dask_client.client.status == "connecting"
+    # assert dask_client.client.scheduler_info() == {}
+    def test_fct_add(x: int, y: int) -> int:
+        return x + y
+
+    future = dask_client.client.submit(test_fct_add, 2, 5)
+    assert future
+    result = await future.result(timeout=2)
+
+    assert dask_client.client.status == "closed"
 
 
 async def test_dask_cluster():
@@ -362,7 +379,6 @@ async def test_too_many_resource_send_computation_task(
         return 123
 
     # let's have a big number of CPUs
-    image.node_requirements.cpu = 100000
     with pytest.raises(InsuficientComputationalResourcesError):
         await dask_client.send_computation_tasks(
             user_id=user_id,
