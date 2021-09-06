@@ -4,7 +4,6 @@ import asyncio
 import json
 import logging
 import re
-import os
 from datetime import datetime, timedelta
 from distutils.version import StrictVersion
 from enum import Enum
@@ -15,12 +14,8 @@ import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
 
-if os.environ.get("IN_CI_UNIT_PYTHON_LINTING") is None:  # avoids failing [unit] python-linting
-    from servicelib.async_utils import run_sequentially_in_context
-    from servicelib.monitor_services import service_started, service_stopped
-else:
-    from servicelib.aiohttp.async_utils import run_sequentially_in_context
-    from servicelib.aiohttp.monitor_services import service_started, service_stopped
+from servicelib.aiohttp.async_utils import run_sequentially_in_context # pylint: disable=no-name-in-module
+from servicelib.aiohttp.monitor_services import service_started, service_stopped # pylint: disable=no-name-in-module
 
 from . import config, docker_utils, exceptions, registry_proxy
 from .config import (

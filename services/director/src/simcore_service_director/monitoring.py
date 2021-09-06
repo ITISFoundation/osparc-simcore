@@ -4,16 +4,9 @@ from prometheus_client import CONTENT_TYPE_LATEST
 from prometheus_client.registry import CollectorRegistry
 
 
-import os
-
-if os.environ.get("IN_CI_UNIT_PYTHON_LINTING") is None:  # avoids failing [unit] python-linting
-    from servicelib.monitor_services import (
-        add_instrumentation as add_services_instrumentation,
-    )
-else:
-    from servicelib.aiohttp.monitor_services import (
-        add_instrumentation as add_services_instrumentation,
-    )
+from servicelib.aiohttp.monitor_services import (
+    add_instrumentation as add_services_instrumentation
+) # pylint: disable=no-name-in-module
 
 from . import config
 

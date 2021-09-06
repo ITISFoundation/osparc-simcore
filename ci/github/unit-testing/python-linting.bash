@@ -12,7 +12,6 @@ install() {
 }
 
 test() {
-    export IN_CI_UNIT_PYTHON_LINTING=1
     make pylint
 }
 

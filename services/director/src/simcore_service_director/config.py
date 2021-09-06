@@ -7,10 +7,7 @@ from distutils.util import strtobool
 from typing import Dict, Optional
 
 
-if os.environ.get("IN_CI_UNIT_PYTHON_LINTING") is None:  # avoids failing [unit] python-linting
-    from servicelib.client_session import APP_CLIENT_SESSION_KEY
-else:
-    from servicelib.aiohttp.client_session import APP_CLIENT_SESSION_KEY
+from servicelib.aiohttp.client_session import APP_CLIENT_SESSION_KEY    # pylint: disable=no-name-in-module
 
 LOGLEVEL_STR = os.environ.get("LOGLEVEL", "WARNING").upper()
 log_level = getattr(logging, LOGLEVEL_STR)
