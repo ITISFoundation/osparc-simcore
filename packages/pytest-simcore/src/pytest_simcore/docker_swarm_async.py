@@ -1,8 +1,9 @@
+# pylint: disable=unused-argument
+# pylint: disable=redefined-outer-name
+
 from asyncio import AbstractEventLoop
 from typing import Type
 
-# pylint: disable=unused-argument
-# pylint: disable=redefined-outer-name
 import aiodocker
 import pytest
 import tenacity
