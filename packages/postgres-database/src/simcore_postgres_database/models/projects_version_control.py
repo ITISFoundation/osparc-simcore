@@ -279,22 +279,29 @@ projects_vc_heads = sa.Table(
             name="projects_vc_branches_repo_id",
             ondelete="CASCADE",
         ),
-        unique=True,
+        primary_key=True,
         nullable=False,
         doc="Repository to which this branch belongs",
     ),
     sa.Column(
-        "branch_id",
+        "head_branch_id",
         sa.BigInteger,
         sa.ForeignKey(
             projects_vc_branches.c.id,
-            name="fk_projects_vc_heads_branch_id",
+            name="fk_projects_vc_heads_head_branch_id",
             ondelete="CASCADE",
         ),
         unique=True,
         nullable=True,
-        doc="Points to the branch whose head is the last commit, known as HEAD in the git jargon"
-        "Actually it points to the current branch that holds a head"
+        doc="Points to the current branch that holds the HEAD"
         "Null is used for detached head",
+    ),
+    sa.Column(
+        "modified",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+        doc="Timestamp for last changes on head branch",
     ),
 )
