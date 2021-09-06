@@ -2,7 +2,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-value-for-parameter
-# pylint: disable=protected-access
+# pylint:disable=protected-access
+# pylint:disable=too-many-arguments
 
 
 import asyncio
