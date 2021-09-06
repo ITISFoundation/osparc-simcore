@@ -1,3 +1,12 @@
+""" Core module: snapshots (and parametrization)
+
+    Extend project's business logic by adding two new concepts, namely
+        - project snapshots and
+        - parametrizations
+
+"""
+
+
 from datetime import datetime
 from typing import Any, Dict, Optional, Tuple
 from uuid import UUID
