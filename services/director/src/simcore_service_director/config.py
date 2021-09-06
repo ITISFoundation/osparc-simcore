@@ -4,11 +4,10 @@
 import logging
 import os
 from distutils.util import strtobool
-from typing import Dict, Optional
+from typing import Dict, Optional, TYPE_CHECKING
 
-from packaging import version
-import servicelib
-if version.parse(servicelib.__version__) >= version.parse("1.0.0"):
+
+if TYPE_CHECKING:  # avoids failing [unit] python-linting
     from servicelib.aiohttp.client_session import APP_CLIENT_SESSION_KEY
 else:
     from servicelib.client_session import APP_CLIENT_SESSION_KEY

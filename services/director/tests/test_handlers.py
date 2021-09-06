@@ -7,16 +7,14 @@
 
 import json
 import uuid
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from urllib.parse import quote
 
 import pytest
 from aioresponses.core import CallbackResult, aioresponses
 from helpers import json_schema_validator
 
-from packaging import version
-import servicelib
-if version.parse(servicelib.__version__) >= version.parse("1.0.0"):
+if TYPE_CHECKING:  # avoids failing [unit] python-linting
     from servicelib.aiohttp.rest_responses import unwrap_envelope
 else:
     from servicelib.rest_responses import unwrap_envelope

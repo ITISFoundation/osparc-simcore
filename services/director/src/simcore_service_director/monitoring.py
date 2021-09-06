@@ -3,9 +3,10 @@ from aiohttp import web
 from prometheus_client import CONTENT_TYPE_LATEST
 from prometheus_client.registry import CollectorRegistry
 
-from packaging import version
-import servicelib
-if version.parse(servicelib.__version__) >= version.parse("1.0.0"):
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:  # avoids failing [unit] python-linting
     from servicelib.aiohttp.monitor_services import (
         add_instrumentation as add_services_instrumentation,
     )

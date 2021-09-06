@@ -8,14 +8,13 @@ from datetime import datetime, timedelta
 from distutils.version import StrictVersion
 from enum import Enum
 from pprint import pformat
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
 import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
-from packaging import version
-import servicelib
-if version.parse(servicelib.__version__) >= version.parse("1.0.0"):
+
+if TYPE_CHECKING:  # avoids failing [unit] python-linting
     from servicelib.aiohttp.async_utils import run_sequentially_in_context
     from servicelib.aiohttp.monitor_services import service_started, service_stopped
 else:
