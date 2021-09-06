@@ -12,6 +12,7 @@ from servicelib.rest_pagination_utils import monkey_patch_pydantic_url_regex
 from ._meta import WELCOME_MSG
 from .activity import setup_activity
 from .catalog import setup_catalog
+from .clusters import setup_clusters
 from .computation import setup_computation
 from .db import setup_db
 from .diagnostics import setup_diagnostics
@@ -87,6 +88,7 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_studies_access(app)
     setup_studies_dispatcher(app)
     setup_exporter(app)
+    setup_clusters(app)
 
     return app
 

@@ -10,7 +10,7 @@ alembic==1.6.5
     #   -r requirements/_test.in
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
-astroid==2.6.6
+astroid==2.7.3
     # via pylint
 attrs==20.3.0
     # via
@@ -129,6 +129,8 @@ paramiko==2.7.2
     # via docker
 passlib==1.7.4
     # via -r requirements/_test.in
+platformdirs==2.3.0
+    # via pylint
 pluggy==0.13.1
     # via pytest
 psycopg2-binary==2.9.1
@@ -141,7 +143,7 @@ pycparser==2.20
     # via
     #   -c requirements/_base.txt
     #   cffi
-pylint==2.9.6
+pylint==2.10.2
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko

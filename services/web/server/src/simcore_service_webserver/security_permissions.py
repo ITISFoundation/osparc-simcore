@@ -11,11 +11,10 @@ from .security_roles import ROLES_PERMISSIONS
 
 
 def named_permissions() -> List[str]:
-    """ Lists available named permissions
-    """
+    """Lists available named permissions"""
     permissions = []
     for role in ROLES_PERMISSIONS:
-        permissions += ROLES_PERMISSIONS[role].get("can", list())
+        permissions += ROLES_PERMISSIONS[role].get("can", [])
     return permissions
 
 
@@ -26,18 +25,18 @@ def split_permission_name(permission: str) -> Tuple[str, str]:
 
 
 def and_(lhs, rhs):
-    """ And operator to create boolean expressions with permissions
+    """And operator to create boolean expressions with permissions
 
-        Usage:
-            permission = or_(and_("project.read", "project.write"), "project.everything")
+    Usage:
+        permission = or_(and_("project.read", "project.write"), "project.everything")
     """
     return (operator.and_, lhs, rhs)
 
 
 def or_(lhs, rhs):
-    """ Or operator to create boolean expressions with permissions
+    """Or operator to create boolean expressions with permissions
 
-        Usage:
-            permission = or_(and_("project.read", "project.write"), "project.everything")
+    Usage:
+        permission = or_(and_("project.read", "project.write"), "project.everything")
     """
     return (operator.or_, lhs, rhs)

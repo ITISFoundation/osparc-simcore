@@ -5,6 +5,7 @@
 
 from typing import Any, Dict
 
+import pytest
 from aiohttp import web
 from models_library.projects import Project
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -12,6 +13,11 @@ from simcore_service_webserver._meta import api_vtag as vtag
 from simcore_service_webserver.snapshots_models import SnapshotItem
 
 ProjectDict = Dict[str, Any]
+
+
+pytestmark = pytest.mark.skip(
+    reason="Until PR https://github.com/ITISFoundation/osparc-simcore/pull/2519 is merged"
+)
 
 
 async def test_create_snapshot_workflow(client, user_project: ProjectDict):

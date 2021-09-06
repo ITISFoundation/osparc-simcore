@@ -26,7 +26,7 @@ def create(settings: Settings) -> web.Application:
         settings.json(indent=2, sort_keys=True),
     )
 
-    # TODO: tmp using dict() until webserver is also pydantic-compatible
+    # TODO: tmp using {} until webserver is also pydantic-compatible
     app = create_safe_application(None)
     app[APP_CONFIG_KEY] = settings
 

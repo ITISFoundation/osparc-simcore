@@ -2,13 +2,14 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-name-in-module
 
+import json
+
+import pytest
 from simcore_service_webserver.settings import (
-    setup_settings,
     APP_SETTINGS_KEY,
     ApplicationSettings,
+    setup_settings,
 )
-import pytest
-import json
 
 
 @pytest.fixture
@@ -17,7 +18,7 @@ def settings(monkeypatch) -> ApplicationSettings:
     monkeypatch.setenv("SWARM_STACK_NAME", "simcore_stack")
     monkeypatch.setenv("STACK_NAME", "invalid_env")
     monkeypatch.setenv("WEBSERVER_MANUAL_MAIN_URL", "http://some_doc.org")
-    app = dict()
+    app = {}
 
     # init and validation happens here
     setup_settings(app)

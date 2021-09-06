@@ -10,7 +10,7 @@ aiohttp==3.7.4.post0
     #   pytest-aiohttp
 alembic==1.6.5
     # via -r requirements/_test.in
-astroid==2.6.6
+astroid==2.7.3
     # via pylint
 async-timeout==3.0.1
     # via
@@ -121,6 +121,8 @@ packaging==20.9
     #   pytest
 paramiko==2.7.2
     # via docker
+platformdirs==2.3.0
+    # via pylint
 pluggy==0.13.1
     # via pytest
 psycopg2-binary==2.8.6
@@ -133,7 +135,7 @@ py==1.10.0
     # via pytest
 pycparser==2.20
     # via cffi
-pylint==2.9.6
+pylint==2.10.2
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko

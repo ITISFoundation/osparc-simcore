@@ -27,6 +27,7 @@ tags:
   - name: authentication
   - name: user
   - name: project
+  - name: cluster
   - name: catalog
   - name: storage
   - name: service
@@ -5997,6 +5998,11 @@ paths:
                   type: boolean
                   default: false
                   description: if true will force re-running all dependent nodes
+                cluster_id:
+                  type: integer
+                  description: 'the computation shall use the cluster described by its id, 0 is the default cluster'
+                  default: 0
+                  minimum: 0
                 subgraph:
                   description: The node uuids selected for running a partial pipeline
                   type: array
@@ -15658,6 +15664,811 @@ paths:
                 type: object
           description: Validation Error
       summary: Get Compatible Outputs Given Target Input
+  /clusters:
+    get:
+      summary: List my clusters
+      operationId: list_clusters_handler
+      tags:
+        - cluster
+      responses:
+        '200':
+          description: list of the clusters I have access to
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          description: the cluster id
+                          type: integer
+                          minimum: 1
+                        name:
+                          description: the cluster name
+                          type: string
+                        description:
+                          description: the cluster description
+                          type: string
+                        type:
+                          description: the cluster type
+                          type: string
+                          enum:
+                            - ON_PREMISE
+                            - AWS
+                        owner:
+                          description: the cluster owner group
+                          type: integer
+                          minimum: 1
+                        accessRights:
+                          type: object
+                          description: object containing the GroupID as key and read/write/execution permissions as value
+                          x-patternProperties:
+                            ^\S+$:
+                              description: defines acesss rights for the cluster
+                              type: object
+                              properties:
+                                read:
+                                  type: boolean
+                                  description: allows usage of the cluster
+                                write:
+                                  type: boolean
+                                  description: allows modification of the cluster
+                                delete:
+                                  type: boolean
+                                  description: allows deletion of the cluster
+                              required:
+                                - read
+                                - write
+                                - delete
+                      required:
+                        - id
+                        - name
+                        - accessRights
+                      example:
+                        - id: 1
+                          name: AWS cluster
+                          type: AWS
+                          owner: 2
+                          accessRights:
+                            '2':
+                              read: true
+                              write: true
+                              delete: true
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    post:
+      summary: Create a new cluster
+      operationId: create_cluster_handler
+      tags:
+        - cluster
+      requestBody:
+        required: true
+        description: the cluster to create
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  description: the cluster name
+                  type: string
+                description:
+                  description: the cluster description
+                  type: string
+                type:
+                  description: the cluster type
+                  type: string
+                  enum:
+                    - ON_PREMISE
+                    - AWS
+              required:
+                - name
+                - type
+      responses:
+        '201':
+          description: cluster created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        description: the cluster id
+                        type: integer
+                        minimum: 1
+                      name:
+                        description: the cluster name
+                        type: string
+                      description:
+                        description: the cluster description
+                        type: string
+                      type:
+                        description: the cluster type
+                        type: string
+                        enum:
+                          - ON_PREMISE
+                          - AWS
+                      owner:
+                        description: the cluster owner group
+                        type: integer
+                        minimum: 1
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
+                        x-patternProperties:
+                          ^\S+$:
+                            description: defines acesss rights for the cluster
+                            type: object
+                            properties:
+                              read:
+                                type: boolean
+                                description: allows usage of the cluster
+                              write:
+                                type: boolean
+                                description: allows modification of the cluster
+                              delete:
+                                type: boolean
+                                description: allows deletion of the cluster
+                            required:
+                              - read
+                              - write
+                              - delete
+                    required:
+                      - id
+                      - name
+                      - accessRights
+                    example:
+                      - id: 1
+                        name: AWS cluster
+                        type: AWS
+                        owner: 2
+                        accessRights:
+                          '2':
+                            read: true
+                            write: true
+                            delete: true
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+  '/clusters/{cluster_id}':
+    parameters:
+      - name: cluster_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - cluster
+      summary: Gets one cluster details
+      operationId: get_cluster_handler
+      responses:
+        '200':
+          description: got cluster
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        description: the cluster id
+                        type: integer
+                        minimum: 1
+                      name:
+                        description: the cluster name
+                        type: string
+                      description:
+                        description: the cluster description
+                        type: string
+                      type:
+                        description: the cluster type
+                        type: string
+                        enum:
+                          - ON_PREMISE
+                          - AWS
+                      owner:
+                        description: the cluster owner group
+                        type: integer
+                        minimum: 1
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
+                        x-patternProperties:
+                          ^\S+$:
+                            description: defines acesss rights for the cluster
+                            type: object
+                            properties:
+                              read:
+                                type: boolean
+                                description: allows usage of the cluster
+                              write:
+                                type: boolean
+                                description: allows modification of the cluster
+                              delete:
+                                type: boolean
+                                description: allows deletion of the cluster
+                            required:
+                              - read
+                              - write
+                              - delete
+                    required:
+                      - id
+                      - name
+                      - accessRights
+                    example:
+                      - id: 1
+                        name: AWS cluster
+                        type: AWS
+                        owner: 2
+                        accessRights:
+                          '2':
+                            read: true
+                            write: true
+                            delete: true
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    patch:
+      summary: Update one cluster
+      operationId: update_cluster_handler
+      tags:
+        - cluster
+      requestBody:
+        required: true
+        description: the cluster to update
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  description: the cluster name
+                  type: string
+                description:
+                  description: the cluster description
+                  type: string
+                type:
+                  description: the cluster type
+                  type: string
+                  enum:
+                    - ON_PREMISE
+                    - AWS
+                owner:
+                  description: the cluster owner group
+                  type: integer
+                  minimum: 1
+                accessRights:
+                  type: object
+                  description: object containing the GroupID as key and read/write/execution permissions as value
+                  x-patternProperties:
+                    ^\S+$:
+                      description: defines acesss rights for the cluster
+                      type: object
+                      properties:
+                        read:
+                          type: boolean
+                          description: allows usage of the cluster
+                        write:
+                          type: boolean
+                          description: allows modification of the cluster
+                        delete:
+                          type: boolean
+                          description: allows deletion of the cluster
+                      required:
+                        - read
+                        - write
+                        - delete
+      responses:
+        '200':
+          description: the modified cluster
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        description: the cluster id
+                        type: integer
+                        minimum: 1
+                      name:
+                        description: the cluster name
+                        type: string
+                      description:
+                        description: the cluster description
+                        type: string
+                      type:
+                        description: the cluster type
+                        type: string
+                        enum:
+                          - ON_PREMISE
+                          - AWS
+                      owner:
+                        description: the cluster owner group
+                        type: integer
+                        minimum: 1
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
+                        x-patternProperties:
+                          ^\S+$:
+                            description: defines acesss rights for the cluster
+                            type: object
+                            properties:
+                              read:
+                                type: boolean
+                                description: allows usage of the cluster
+                              write:
+                                type: boolean
+                                description: allows modification of the cluster
+                              delete:
+                                type: boolean
+                                description: allows deletion of the cluster
+                            required:
+                              - read
+                              - write
+                              - delete
+                    required:
+                      - id
+                      - name
+                      - accessRights
+                    example:
+                      - id: 1
+                        name: AWS cluster
+                        type: AWS
+                        owner: 2
+                        accessRights:
+                          '2':
+                            read: true
+                            write: true
+                            delete: true
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    delete:
+      tags:
+        - cluster
+      summary: Deletes one cluster
+      operationId: delete_cluster_handler
+      responses:
+        '204':
+          description: cluster has been successfully deleted
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
   /viewers:
     get:
       operationId: list_viewers

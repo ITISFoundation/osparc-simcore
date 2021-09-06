@@ -63,7 +63,7 @@ def create_environ(*, skip_host_environ: bool = False) -> Dict[str, str]:
     """
 
     # system's environment variables
-    environ = dict() if skip_host_environ else dict(os.environ)
+    environ = {} if skip_host_environ else dict(os.environ)
 
     # project-related environment variables
     rootdir = search_osparc_repo_dir()

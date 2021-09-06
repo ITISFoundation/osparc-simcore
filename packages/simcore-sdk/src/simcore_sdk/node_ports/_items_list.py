@@ -8,7 +8,7 @@ from ._schema_items_list import SchemaItemsList
 
 log = logging.getLogger(__name__)
 
-
+# pylint: disable=too-many-instance-attributes
 class ItemsList(Sequence):
     def __init__(
         self,
@@ -32,13 +32,13 @@ class ItemsList(Sequence):
 
     def __getitem__(self, key) -> Item:
         schema = self._schemas[key]
+        payload = None
         try:
             payload = self._payloads[schema.key]
-        except exceptions.InvalidKeyError:
+        except (exceptions.InvalidKeyError, exceptions.UnboundPortError):
             # there is no payload
             payload = None
-        except exceptions.UnboundPortError:
-            payload = None
+
         item = Item(self._user_id, self._project_id, self._node_uuid, schema, payload)
         item.new_data_cb = self._item_value_updated_cb
         item.get_node_from_uuid_cb = self.get_node_from_node_uuid_cb

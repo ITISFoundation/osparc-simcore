@@ -373,6 +373,7 @@ pylint: ## Runs python linter framework's wide
 	@/bin/bash -c "pylint --version"
 	# Running linter
 	@/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
+											-not -path "*ignore*" \
 											-not -path "*.venv*" \
 											-not -path "*/client/*" \
 											-not -path "*egg*" \

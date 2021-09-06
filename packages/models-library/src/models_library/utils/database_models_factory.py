@@ -3,13 +3,17 @@
 SEE: Copied and adapted from https://github.com/tiangolo/pydantic-sqlalchemy/blob/master/pydantic_sqlalchemy/main.py
 """
 
+import json
 import warnings
-from typing import Any, Container, Dict, Optional, Type
+from datetime import datetime
+from typing import Any, Callable, Container, Dict, List, Optional, Tuple, Type
 from uuid import UUID
 
 import sqlalchemy as sa
+import sqlalchemy.sql.functions
 from pydantic import BaseConfig, BaseModel, Field, create_model
 from pydantic.types import NonNegativeInt
+from sqlalchemy.sql.schema import Column
 
 warnings.warn(
     "This is still a concept under development. "
@@ -29,15 +33,83 @@ _RESERVED = {
 }
 
 
-def sa_table_to_pydantic_model(
+def _eval_defaults(
+    column: Column, pydantic_type: Type, *, include_server_defaults: bool = True
+):
+    """
+    Uses some heuristics to determine the default value/factory produced
+    parsing both the client and the server (if include_server_defaults==True) defaults
+    in the sa model.
+    """
+    default: Optional[Any] = None
+    default_factory: Optional[Callable] = None
+
+    if (
+        column.default is None
+        and (include_server_defaults and column.server_default is None)
+        and not column.nullable
+    ):
+        default = ...
+
+    if column.default and column.default.is_scalar:
+        assert not column.default.is_server_default  # nosec
+        default = column.default.arg
+
+    if include_server_defaults and column.server_default:
+        assert column.server_default.is_server_default  #  nosec
+        #
+        # FIXME: Map server's DefaultClauses to correct values
+        #   Heuristics based on test against all our tables
+        #
+        if pydantic_type:
+            if issubclass(pydantic_type, list):
+                assert column.server_default.arg == "{}"  # nosec
+                default_factory = list
+            elif issubclass(pydantic_type, dict):
+                assert column.server_default.arg.text.endswith("::jsonb")  # nosec
+                default = json.loads(
+                    column.server_default.arg.text.replace("::jsonb", "").replace(
+                        "'", ""
+                    )
+                )
+            elif issubclass(pydantic_type, datetime):
+                assert isinstance(  # nosec
+                    column.server_default.arg, sqlalchemy.sql.functions.now
+                )
+                default_factory = datetime.now
+    return default, default_factory
+
+
+PolicyCallable = Callable[[Column, Any, Type], Tuple[Any, Type]]
+
+
+def eval_name_policy(column: Column, default: Any, pydantic_type: Type):
+    """All string columns including 'uuid' in their name are set as UUIDs"""
+    new_default, new_pydantic_type = default, pydantic_type
+    if "uuid" in str(column.name).split("_") and pydantic_type == str:
+        new_pydantic_type = UUID
+        if isinstance(default, str):
+            new_default = UUID(default)
+    return new_default, new_pydantic_type
+
+
+DEFAULT_EXTRA_POLICIES = [
+    eval_name_policy,
+]
+
+
+def create_pydantic_model_from_sa_table(
     table: sa.Table,
     *,
     config: Type = OrmConfig,
     exclude: Optional[Container[str]] = None,
+    include_server_defaults: bool = False,
+    extra_policies: Optional[List[PolicyCallable]] = None,
 ) -> Type[BaseModel]:
 
     fields = {}
     exclude = exclude or []
+    extra_policies = extra_policies or DEFAULT_EXTRA_POLICIES
 
     for column in table.columns:
         name = str(column.name)
@@ -51,6 +123,7 @@ def sa_table_to_pydantic_model(
             field_args["alias"] = name
             name = f"{table.name.lower()}_{name}"
 
+        # type ---
         pydantic_type: Optional[type] = None
         if hasattr(column.type, "impl"):
             if hasattr(column.type.impl, "python_type"):
@@ -64,9 +137,10 @@ def sa_table_to_pydantic_model(
         if column.primary_key and issubclass(pydantic_type, int):
             pydantic_type = NonNegativeInt
 
-        default = None
-        if column.default is None and not column.nullable:
-            default = ...
+        # default ----
+        default, default_factory = _eval_defaults(
+            column, pydantic_type, include_server_defaults=include_server_defaults
+        )
 
         # Policies based on naming conventions
         #
@@ -74,12 +148,13 @@ def sa_table_to_pydantic_model(
         # Base policy class is abstract interface
         # and user can add as many in a given order in the arguments
         #
-        if "uuid" in name.split("_") and pydantic_type == str:
-            pydantic_type = UUID
-            if isinstance(default, str):
-                default = UUID(default)
+        for apply_policy in extra_policies:
+            default, pydantic_type = apply_policy(column, default, pydantic_type)
 
-        field_args["default"] = default
+        if default_factory:
+            field_args["default_factory"] = default_factory
+        else:
+            field_args["default"] = default
 
         if hasattr(column, "doc") and column.doc:
             field_args["description"] = column.doc
