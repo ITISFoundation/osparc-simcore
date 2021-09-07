@@ -24,7 +24,14 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
 
-from ...core.errors import InvalidPipelineError, PipelineNotFoundError, SchedulerError
+from ...core.errors import (
+    ComputationalBackendNotConnectedError,
+    InsuficientComputationalResourcesError,
+    InvalidPipelineError,
+    MissingComputationalResourcesError,
+    PipelineNotFoundError,
+    SchedulerError,
+)
 from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_runs import CompRunsAtDB
 from ...models.domains.comp_tasks import CompTaskAtDB, Image
@@ -125,6 +132,9 @@ class BaseCompScheduler(ABC):
             ]
         )
 
+    async def reconnect_backend(self) -> None:
+        await self._reconnect_backend()
+
     async def _get_pipeline_dag(self, project_id: ProjectID) -> nx.DiGraph:
         comp_pipeline_repo: CompPipelinesRepository = get_repository(
             self.db_engine, CompPipelinesRepository
@@ -200,6 +210,10 @@ class BaseCompScheduler(ABC):
 
     @abstractmethod
     async def _stop_tasks(self, tasks: List[CompTaskAtDB]) -> None:
+        ...
+
+    @abstractmethod
+    async def _reconnect_backend(self) -> None:
         ...
 
     async def _schedule_pipeline(
@@ -344,10 +358,50 @@ class BaseCompScheduler(ABC):
             project_id, tasks, RunningState.PENDING
         )
 
-        # now start the tasks
-        await self._start_tasks(
-            user_id, project_id, cluster_id, tasks_to_reqs, self._wake_up_scheduler_now
+        # we pass the tasks to the dask-client
+        results = await asyncio.gather(
+            *[
+                self._start_tasks(
+                    user_id,
+                    project_id,
+                    cluster_id,
+                    {t: r},
+                    self._wake_up_scheduler_now,
+                )
+                for t, r in tasks_to_reqs.items()
+            ],
+            return_exceptions=True,
         )
+        for r in results:
+            if isinstance(
+                r,
+                (
+                    MissingComputationalResourcesError,
+                    InsuficientComputationalResourcesError,
+                ),
+            ):
+                logger.error(
+                    "The task %s could not be scheduled due to the following: %s",
+                    r.node_id,
+                    f"{r}",
+                )
+                await comp_tasks_repo.set_project_tasks_state(
+                    project_id, [r.node_id], RunningState.FAILED
+                )
+                # TODO: we should set some specific state so the user may know what to do
+            elif isinstance(r, ComputationalBackendNotConnectedError):
+                logger.warning(
+                    "The computational backend is disconnected. Tasks are set back to PUBLISHED state until scheduler comes back!"
+                )
+                # we should try re-connecting.
+                # in the meantime we cannot schedule tasks on the scheduler,
+                # let's put these tasks back to PUBLISHED, so they might be re-submitted later
+                await asyncio.gather(
+                    comp_tasks_repo.set_project_tasks_state(
+                        project_id, tasks, RunningState.PUBLISHED
+                    ),
+                )
+                raise ComputationalBackendNotConnectedError(f"{r}") from r
 
     def _wake_up_scheduler_now(self) -> None:
         self.wake_up_event.set()

@@ -334,12 +334,18 @@ qx.Class.define("osparc.Application", {
     },
 
     __loadMainPage: function() {
+      // Invalidate the entire cache
+      osparc.store.Store.getInstance().invalidate();
+
       this.__connectWebSocket();
       const mainPage = this.__mainPage = new osparc.desktop.MainPage();
       this.__loadView(mainPage);
     },
 
     __loadNodeViewerPage: function(studyId, viewerNodeId) {
+      // Invalidate the entire cache
+      osparc.store.Store.getInstance().invalidate();
+
       this.__connectWebSocket();
       this.__loadView(new osparc.viewer.MainPage(studyId, viewerNodeId));
     },

@@ -74,14 +74,28 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
       tabView.add(tagsPage);
     }
 
+    const orgsPage = new osparc.desktop.preferences.pages.OrganizationsPage();
+    const orgsBtn = orgsPage.getChildControl("button");
+    osparc.utils.Utils.setIdToWidget(orgsBtn, "preferencesOrganizationsTabBtn");
+    tabView.add(orgsPage);
+    orgsBtn.exclude();
     osparc.data.Resources.get("organizations")
       .then(resp => {
         const orgs = resp["organizations"];
         if (orgs.length || osparc.data.Permissions.getInstance().canDo("user.organizations.create")) {
-          const orgsPage = new osparc.desktop.preferences.pages.OrganizationsPage();
-          const orgsBtn = orgsPage.getChildControl("button");
-          osparc.utils.Utils.setIdToWidget(orgsBtn, "preferencesOrganizationsTabBtn");
-          tabView.add(orgsPage);
+          orgsBtn.show();
+        }
+      });
+
+    const clustersPage = new osparc.desktop.preferences.pages.ClustersPage();
+    const clustersBtn = clustersPage.getChildControl("button");
+    osparc.utils.Utils.setIdToWidget(clustersBtn, "preferencesClustersTabBtn");
+    tabView.add(clustersPage);
+    clustersBtn.exclude();
+    osparc.data.Resources.get("clusters")
+      .then(clusters => {
+        if (clusters.length || osparc.data.Permissions.getInstance().canDo("user.clusters.create")) {
+          clustersBtn.show();
         }
       });
 

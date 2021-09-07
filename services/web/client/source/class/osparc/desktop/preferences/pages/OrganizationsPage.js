@@ -84,7 +84,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const orgsModel = this.__orgsModel = new qx.data.Array();
       const orgsCtrl = new qx.data.controller.List(orgsModel, orgsUIList, "label");
       orgsCtrl.setDelegate({
-        createItem: () => new osparc.dashboard.OrganizationListItem(),
+        createItem: () => new osparc.ui.list.OrganizationListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("gid", "model", null, item, id);
           ctrl.bindProperty("gid", "key", null, item, id);
@@ -165,14 +165,14 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const membersModel = this.__membersModel = new qx.data.Array();
       const membersCtrl = new qx.data.controller.List(membersModel, memebersUIList, "name");
       membersCtrl.setDelegate({
-        createItem: () => new osparc.dashboard.OrgMemberListItem(),
+        createItem: () => new osparc.ui.list.MemberListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("id", "model", null, item, id);
           ctrl.bindProperty("id", "key", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
-          ctrl.bindProperty("login", "subtitle", null, item, id);
+          ctrl.bindProperty("login", "subtitleMD", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
         configureItem: item => {
@@ -180,11 +180,11 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             .setStyles({
               "border-radius": "16px"
             });
-          item.addListener("promoteOrgMember", e => {
+          item.addListener("promoteToManager", e => {
             const orgMember = e.getData();
-            this.__promoteMember(orgMember);
+            this.__promoteToManager(orgMember);
           });
-          item.addListener("removeOrgMember", e => {
+          item.addListener("removeMember", e => {
             const orgMember = e.getData();
             this.__deleteMember(orgMember);
           });
@@ -417,7 +417,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         });
     },
 
-    __promoteMember: function(orgMember) {
+    __promoteToManager: function(orgMember) {
       if (this.__currentOrg === null) {
         return;
       }
