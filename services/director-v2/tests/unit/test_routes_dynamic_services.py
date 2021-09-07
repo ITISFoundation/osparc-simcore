@@ -139,7 +139,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
 async def test_create_dynamic_services(
     minimal_config: None,
     mocked_director_v0_service_api,
-    async_docker_swarm: None,
+    docker_swarm: None,
     mocked_director_v2_scheduler: None,
     client: TestClient,
     dynamic_sidecar_headers: Dict[str, str],
