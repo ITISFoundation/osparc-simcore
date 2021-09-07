@@ -41,5 +41,5 @@ BANNER_MESSAGE = r"""
 )
 
 
-def print_banner():
+def print_banner() -> None:
     print(BANNER_MESSAGE, flush=True)
