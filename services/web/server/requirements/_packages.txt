@@ -165,8 +165,6 @@ werkzeug==2.0.1
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 yarl==1.5.1
     # via
-    #   -c requirements/../../../../packages/service-library/requirements/././constraints.txt
-    #   -c requirements/../../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/../../../../packages/postgres-database/requirements/_base.in
     #   aiohttp

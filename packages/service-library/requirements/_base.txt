@@ -6,29 +6,11 @@
 #
 aiodebug==1.1.2
     # via -r requirements/_base.in
-aiohttp==3.7.4.post0
-    # via -c requirements/../../../requirements/constraints.txt
-async-timeout==3.0.1
-    # via aiohttp
-attrs==20.3.0
-    # via
-    #   -c requirements/./constraints.txt
-    #   aiohttp
-chardet==4.0.0
-    # via aiohttp
-idna==2.10
-    # via
-    #   -c requirements/./constraints.txt
-    #   yarl
-multidict==5.1.0
-    # via
-    #   aiohttp
-    #   yarl
 pydantic==1.8.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-pyinstrument==4.0.2
+pyinstrument==4.0.3
     # via -r requirements/_base.in
 pyyaml==5.4.1
     # via
@@ -36,11 +18,7 @@ pyyaml==5.4.1
     #   -r requirements/_base.in
 tenacity==8.0.1
     # via -r requirements/_base.in
-typing-extensions==3.10.0.0
-    # via
-    #   aiohttp
-    #   pydantic
-ujson==4.0.2
+typing-extensions==3.10.0.2
+    # via pydantic
+ujson==4.1.0
     # via -r requirements/_base.in
-yarl==1.6.3
-    # via aiohttp

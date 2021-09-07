@@ -70,3 +70,7 @@ semantic_version
 parfive==1.0.2 ## See note  in simcore_service_webserver/exporter/file_downloader.py
 openpyxl
 python-magic
+
+
+# SEE services/web/server/tests/unit/isolated/test_utils.py::test_yarl_url_compose_changed_with_latest_release
+yarl<1.6

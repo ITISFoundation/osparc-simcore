@@ -80,7 +80,7 @@ six==1.16.0
     #   openapi-core
     #   openapi-schema-validator
     #   openapi-spec-validator
-sqlalchemy==1.4.22
+sqlalchemy==1.4.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/./../../../requirements/constraints.txt
@@ -89,14 +89,12 @@ strict-rfc3339==0.7
     # via openapi-core
 trafaret==2.1.0
     # via -r requirements/_aiohttp.in
-typing-extensions==3.10.0.0
+typing-extensions==3.10.0.2
     # via aiohttp
 werkzeug==2.0.1
     # via -r requirements/_aiohttp.in
-yarl==1.5.1
-    # via
-    #   -c requirements/././constraints.txt
-    #   aiohttp
+yarl==1.6.3
+    # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
