@@ -128,13 +128,6 @@ class ComputationalBackendNotConnectedError(SchedulerError):
         super().__init__(msg=msg)
 
 
-class ComputationalBackendNotConnectedError(SchedulerError):
-    """The dask client is not connected to the dask-scheduler"""
-
-    def __init__(self, msg: Optional[str] = None):
-        super().__init__(msg=msg)
-
-
 class ConfigurationError(DirectorException):
     """An error in the director-v2 configuration"""
 
