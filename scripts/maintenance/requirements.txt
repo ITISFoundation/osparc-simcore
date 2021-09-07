@@ -1,6 +1,8 @@
+aiopg
 black
 httpx
 psycopg2-binary
 pydantic[email,dotenv]
 pylint
+tenacity
 typer[all]
