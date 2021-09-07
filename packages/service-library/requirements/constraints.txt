@@ -8,3 +8,7 @@ idna<3,>=2.5
  # attrs>=19.2.0 (from pytest==6.2.4->-r requirements/_test.in (line 13))
  # attrs<21,>=19 (from pytest-docker==0.10.1
  attrs<21,>=19.2.0
+
+
+# SEE services/web/server/tests/unit/isolated/test_utils.py::test_yarl_url_compose_changed_with_latest_release
+yarl<1.6

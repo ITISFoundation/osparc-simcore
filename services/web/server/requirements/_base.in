@@ -2,10 +2,17 @@
 # Specifies third-party dependencies for 'services/web/server/src'
 #
 --constraint ../../../../requirements/constraints.txt
-# NOTE: These input-requirements under packages are tested using latest updates
---requirement ../../../../packages/models-library/requirements/_base.in
---requirement ../../../../packages/postgres-database/requirements/_base.in
---requirement ../../../../packages/service-library/requirements/_base.in
+
+# intra-repo packages CONSTRAINTS
+#   - Input-requirements on intra-repo packages are tested using latest updates
+#   - Added as constraints instead of requirements in order to avoid polluting base.txt
+#   - Will be installed when prod.txt or dev.txt
+#
+--constraint ../../../../packages/models-library/requirements/_base.in
+--constraint ../../../../packages/postgres-database/requirements/_base.in
+--constraint ../../../../packages/service-library/requirements/_base.in
+--constraint ../../../../packages/service-library/requirements/_aiohttp.in
+
 
 # aiohttp + extensions
 aiohttp
@@ -14,8 +21,6 @@ aiohttp_session[secure]
 aiohttp_security
 aiohttp-swagger[performance]
 
-# SEE services/web/server/tests/unit/isolated/test_utils.py::test_yarl_url_compose_changed_with_latest_release
-yarl<1.6
 
 # web-sockets
 # From 5.0.0, https://github.com/miguelgrinberg/python-socketio/blob/main/CHANGES.md
