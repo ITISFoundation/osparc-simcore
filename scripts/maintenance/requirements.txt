@@ -1,5 +1,6 @@
 black
 httpx
+psycopg2-binary
 pydantic[email,dotenv]
 pylint
 typer[all]
