@@ -27,10 +27,6 @@ from models_library.projects_nodes_io import NodeID
 class DirectorException(Exception):
     """Basic exception"""
 
-    def __init__(self, msg: Optional[str] = "Unexpected error was triggered"):
-        super().__init__(msg)
-        self.msg = msg
-
 
 class GenericDockerError(DirectorException):
     """Generic docker library error"""
