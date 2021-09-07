@@ -125,27 +125,26 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     __populateClustersSelectBox: function() {
       this.__clustersSelectBox.removeAll();
 
-      osparc.data.Resources.get("clusters")
-        .then(clusters => {
-          if (clusters) {
-            const itemDefault = new qx.ui.form.ListItem().set({
-              label: "default",
-              toolTipText: "default cluster"
-            });
-            itemDefault.id = 0;
-            this.__clustersSelectBox.add(itemDefault);
-            clusters.forEach(cluster => {
-              const item = new qx.ui.form.ListItem().set({
-                label: cluster["name"],
-                toolTipText: cluster["type"] + "\n" + cluster["description"],
-                allowGrowY: false
-              });
-              item.id = cluster["id"];
-              this.__clustersSelectBox.add(item);
-            });
-          }
-          this.__clustersSelectBox.setVisibility(Object.keys(clusters).length ? "visible" : "excluded");
+      const store = osparc.store.Store.getInstance();
+      const clusters = store.getClusters();
+      if (clusters) {
+        const itemDefault = new qx.ui.form.ListItem().set({
+          label: "default",
+          toolTipText: "default cluster"
         });
+        itemDefault.id = 0;
+        this.__clustersSelectBox.add(itemDefault);
+        clusters.forEach(cluster => {
+          const item = new qx.ui.form.ListItem().set({
+            label: cluster["name"],
+            toolTipText: cluster["type"] + "\n" + cluster["description"],
+            allowGrowY: false
+          });
+          item.id = cluster["id"];
+          this.__clustersSelectBox.add(item);
+        });
+      }
+      this.__clustersSelectBox.setVisibility(Object.keys(clusters).length ? "visible" : "excluded");
     },
 
     getClusterId: function() {
