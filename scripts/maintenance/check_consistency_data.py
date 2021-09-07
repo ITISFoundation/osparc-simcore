@@ -17,7 +17,7 @@ import re
 import subprocess
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Any, Dict, List, Set
 
 import aiopg
 import typer
@@ -68,27 +68,32 @@ async def managed_docker_compose(
         )
 
 
-async def _get_projects_nodes(pool) -> Dict[str, List[str]]:
+async def _get_projects_nodes(pool) -> Dict[str, Any]:
     async with pool.acquire() as conn:
         async with conn.cursor() as cursor:
             await cursor.execute(
-                "SELECT uuid, workbench"
+                "SELECT uuid, workbench, prj_owner, users.name, users.email"
                 ' FROM "projects"'
                 " INNER JOIN users"
                 " ON projects.prj_owner = users.id"
                 " WHERE users.role != 'GUEST'"
             )
             typer.secho(
-                f"found {cursor.rowcount} projects, now getting project/node ids..."
+                f"found {cursor.rowcount} project rows, now getting project with valid node ids..."
             )
             project_db_rows = await cursor.fetchall()
         project_nodes = {
-            project_uuid: list(workbench.keys())
-            for project_uuid, workbench in project_db_rows
+            project_uuid: {
+                "nodes": list(workbench.keys()),
+                "owner": prj_owner,
+                "name": user_name,
+                "email": user_email,
+            }
+            for project_uuid, workbench, prj_owner, user_name, user_email in project_db_rows
             if len(workbench) > 0
         }
         typer.echo(
-            f"processed {cursor.rowcount} projects, now looking for files in the file_meta_data table..."
+            f"processed {cursor.rowcount} project rows, found {len(project_nodes)} valid projects."
         )
         return project_nodes
 
@@ -173,8 +178,8 @@ async def main_async(
             # Therefore, we will list here all the files that are registered in the file_meta_data table using the same projectid/nodeid
             all_sets_of_file_entries = await asyncio.gather(
                 *[
-                    _get_files_from_project_nodes(pool, project_uuid, node_ids)
-                    for project_uuid, node_ids in project_nodes.items()
+                    _get_files_from_project_nodes(pool, project_uuid, prj_data["nodes"])
+                    for project_uuid, prj_data in project_nodes.items()
                 ]
             )
     db_file_entries = set().union(*all_sets_of_file_entries)
@@ -206,10 +211,6 @@ async def main_async(
         f"processed {len(project_nodes)} projects, found {len(s3_file_entries)} file entries, saved in {s3_file_entries_path}"
     )
 
-    typer.echo(
-        f"Refining differences between DB:{len(db_file_entries)} files and S3:{len(s3_file_entries)} files..."
-    )
-
     common_files = db_file_entries.intersection(s3_file_entries)
     s3_missing_files = db_file_entries.difference(s3_file_entries)
     s3_missing_files_path = Path.cwd() / "s3_missing_files.txt"
@@ -221,12 +222,8 @@ async def main_async(
     typer.secho(
         f"{len(common_files)} files are the same in both system", fg=typer.colors.BLUE
     )
-    typer.secho(
-        f"{len(s3_missing_files)} files are the missing in S3", fg=typer.colors.RED
-    )
-    typer.secho(
-        f"{len(db_missing_files)} files are the missing in DB", fg=typer.colors.RED
-    )
+    typer.secho(f"{len(s3_missing_files)} files are missing in S3", fg=typer.colors.RED)
+    typer.secho(f"{len(db_missing_files)} files are missing in DB", fg=typer.colors.RED)
 
 
 def main(
