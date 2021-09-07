@@ -14,9 +14,9 @@ import pytest
 from aioresponses.core import CallbackResult, aioresponses
 from helpers import json_schema_validator
 
-from servicelib.rest_responses import (
+from servicelib.rest_responses import (  # pylint: disable=no-name-in-module
     unwrap_envelope,
-)  # pylint: disable=no-name-in-module
+)
 
 from simcore_service_director import main, resources, rest
 

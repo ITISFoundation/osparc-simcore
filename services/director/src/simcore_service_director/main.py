@@ -5,9 +5,9 @@ import os
 from aiohttp import web
 
 
-from servicelib.client_session import (
+from servicelib.client_session import (  # pylint: disable=no-name-in-module
     persistent_client_session,
-)  # pylint: disable=no-name-in-module
+)
 from servicelib.tracing import setup_tracing  # pylint: disable=no-name-in-module
 
 from simcore_service_director import config, registry_cache_task, resources
