@@ -33,7 +33,7 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-async def docker_client(
+async def async_docker_client(
     async_docker_swarm: None,
 ) -> AsyncIterator[aiodocker.docker.Docker]:
     async with aiodocker.Docker() as client:
@@ -62,7 +62,7 @@ def network_config(simcore_services_network_name: str) -> Dict[str, Any]:
 async def ensure_swarm_network(
     loop: BaseEventLoop,
     network_config: Dict[str, Any],
-    docker_client: aiodocker.docker.Docker,
+    async_docker_client: aiodocker.docker.Docker,
     async_docker_swarm: None,
 ) -> None:
     network_id = None
@@ -71,7 +71,7 @@ async def ensure_swarm_network(
         yield
     finally:
         if network_id is not None:
-            docker_network = await docker_client.networks.get(network_id)
+            docker_network = await async_docker_client.networks.get(network_id)
             assert await docker_network.delete() is True
 
 
@@ -79,11 +79,13 @@ async def ensure_swarm_network(
 async def cleanup_swarm_network(
     loop: BaseEventLoop,
     simcore_services_network_name: str,
-    docker_client: aiodocker.docker.Docker,
+    async_docker_client: aiodocker.docker.Docker,
     async_docker_swarm: None,
 ) -> None:
     yield
-    docker_network = await docker_client.networks.get(simcore_services_network_name)
+    docker_network = await async_docker_client.networks.get(
+        simcore_services_network_name
+    )
     assert await docker_network.delete() is True
 
 
@@ -111,12 +113,12 @@ def service_spec(test_service_name: str) -> Dict[str, Any]:
 async def cleanup_test_service_name(
     loop: BaseEventLoop,
     test_service_name: str,
-    docker_client: aiodocker.docker.Docker,
+    async_docker_client: aiodocker.docker.Docker,
     async_docker_swarm: None,
 ) -> None:
     yield
 
-    assert await docker_client.services.delete(test_service_name) is True
+    assert await async_docker_client.services.delete(test_service_name) is True
 
 
 @pytest.fixture
@@ -155,10 +157,12 @@ def dynamic_sidecar_service_spec(
 async def cleanup_test_dynamic_sidecar_service(
     loop: BaseEventLoop,
     dynamic_sidecar_service_name: str,
-    docker_client: aiodocker.docker.Docker,
+    async_docker_client: aiodocker.docker.Docker,
 ) -> None:
     yield
-    assert await docker_client.services.delete(dynamic_sidecar_service_name) is True
+    assert (
+        await async_docker_client.services.delete(dynamic_sidecar_service_name) is True
+    )
 
 
 @pytest.fixture
@@ -217,11 +221,14 @@ def dynamic_sidecar_stack_specs(
 async def cleanup_dynamic_sidecar_stack(
     loop: BaseEventLoop,
     dynamic_sidecar_stack_specs: List[Dict[str, Any]],
-    docker_client: aiodocker.docker.Docker,
+    async_docker_client: aiodocker.docker.Docker,
 ) -> None:
     yield
     for dynamic_sidecar_spec in dynamic_sidecar_stack_specs:
-        assert await docker_client.services.delete(dynamic_sidecar_spec["name"]) is True
+        assert (
+            await async_docker_client.services.delete(dynamic_sidecar_spec["name"])
+            is True
+        )
 
 
 # UTILS
@@ -241,9 +248,9 @@ def _assert_service(
 async def _count_services_in_stack(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
-    docker_client: aiodocker.docker.Docker,
+    async_docker_client: aiodocker.docker.Docker,
 ) -> int:
-    services = await docker_client.services.list(
+    services = await async_docker_client.services.list(
         filters={
             "label": [
                 f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
@@ -274,7 +281,7 @@ async def test_failed_docker_client_request(
     missing_network_name: str, async_docker_swarm: None
 ) -> None:
     with pytest.raises(GenericDockerError) as execinfo:
-        async with docker_api.docker_client() as client:
+        async with docker_api.async_docker_client() as client:
             await client.networks.get(missing_network_name)
     assert (
         str(execinfo.value)
@@ -432,11 +439,11 @@ async def test_remove_dynamic_sidecar_stack(
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_stack_specs: List[Dict[str, Any]],
     async_docker_swarm: None,
-    docker_client: aiodocker.docker.Docker,
+    async_docker_client: aiodocker.docker.Docker,
 ):
     assert (
         await _count_services_in_stack(
-            node_uuid, dynamic_sidecar_settings, docker_client
+            node_uuid, dynamic_sidecar_settings, async_docker_client
         )
         == 0
     )
@@ -448,7 +455,7 @@ async def test_remove_dynamic_sidecar_stack(
 
     assert (
         await _count_services_in_stack(
-            node_uuid, dynamic_sidecar_settings, docker_client
+            node_uuid, dynamic_sidecar_settings, async_docker_client
         )
         == 2
     )
@@ -457,7 +464,7 @@ async def test_remove_dynamic_sidecar_stack(
 
     assert (
         await _count_services_in_stack(
-            node_uuid, dynamic_sidecar_settings, docker_client
+            node_uuid, dynamic_sidecar_settings, async_docker_client
         )
         == 0
     )
