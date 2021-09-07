@@ -100,10 +100,13 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, catalog_subsystem_mock, monkey
 
 
 @pytest.fixture
+async def user_id(logged_user) -> int:
+    return logged_user["id"]
+
+
+@pytest.fixture
 async def user_project(
-    client, fake_project: ProjectDict, logged_user
+    client, fake_project: ProjectDict, user_id
 ) -> Iterator[ProjectDict]:
-    async with NewProject(
-        fake_project, client.app, user_id=logged_user["id"]
-    ) as project:
+    async with NewProject(fake_project, client.app, user_id=user_id) as project:
         yield project
