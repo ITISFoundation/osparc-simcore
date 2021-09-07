@@ -41,7 +41,6 @@ pytest_simcore_core_services_selection = [
     "dask-sidecar",
     "redis",
     "rabbit",
-    "sidecar",
     "storage",
     "postgres",
 ]
