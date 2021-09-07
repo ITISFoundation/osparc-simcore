@@ -1,7 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +29,8 @@ class ComputationalSidecar:
         await self._post_process()
         return {}
 
-    async def __aenter__(self, *args, **kwargs):
-        instance = ComputationalSidecar(*args, **kwargs)
-
-        return instance
+    async def __aenter__(self):
+        return self
 
     async def __aexit__(self, exc_type, exc, tb):
         pass
