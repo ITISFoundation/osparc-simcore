@@ -98,6 +98,11 @@ qx.Class.define("osparc.store.Store", {
       check: "Object",
       init: {}
     },
+    clusters: {
+      check: "Array",
+      init: [],
+      event: "changeClusters"
+    },
     services: {
       check: "Array",
       init: []
@@ -427,6 +432,34 @@ qx.Class.define("osparc.store.Store", {
                 });
                 resolve(reachableMembers);
               });
+          });
+      });
+    },
+
+    getPotentialCollaborators: function() {
+      return new Promise((resolve, reject) => {
+        const store = osparc.store.Store.getInstance();
+        const promises = [];
+        promises.push(store.getGroupsOrganizations());
+        promises.push(store.getVisibleMembers());
+        Promise.all(promises)
+          .then(values => {
+            const orgs = values[0]; // array
+            const members = values[1]; // object
+            const potentialCollaborators = {};
+            orgs.forEach(org => {
+              org["collabType"] = 1;
+              potentialCollaborators[org["gid"]] = org;
+            });
+            for (const gid of Object.keys(members)) {
+              members[gid]["collabType"] = 2;
+              potentialCollaborators[gid] = members[gid];
+            }
+            resolve(potentialCollaborators);
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
           });
       });
     },

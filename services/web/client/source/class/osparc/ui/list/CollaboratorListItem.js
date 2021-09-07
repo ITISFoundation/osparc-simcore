@@ -15,8 +15,8 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.CollaboratorListItem", {
-  extend: osparc.dashboard.ServiceBrowserListItem,
+qx.Class.define("osparc.ui.list.CollaboratorListItem", {
+  extend: osparc.ui.list.ListItem,
 
   construct: function() {
     this.base(arguments);

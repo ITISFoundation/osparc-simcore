@@ -15,8 +15,8 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.OrgMemberListItem", {
-  extend: osparc.dashboard.ServiceBrowserListItem,
+qx.Class.define("osparc.ui.list.OrganizationListItem", {
+  extend: osparc.ui.list.ListItem,
 
   construct: function() {
     this.base(arguments);
@@ -25,22 +25,15 @@ qx.Class.define("osparc.dashboard.OrgMemberListItem", {
   properties: {
     accessRights: {
       check: "Object",
+      nullable: false,
       apply: "_applyAccessRights",
-      event: "changeAccessRights",
-      nullable: true
-    },
-
-    showOptions: {
-      check: "Boolean",
-      apply: "_applyShowOptions",
-      event: "changeShowOptions",
-      nullable: true
+      event: "changeAcessRights"
     }
   },
 
   events: {
-    "promoteOrgMember": "qx.event.type.Data",
-    "removeOrgMember": "qx.event.type.Data"
+    "openEditOrganization": "qx.event.type.Data",
+    "deleteOrganization": "qx.event.type.Data"
   },
 
   members: {
@@ -74,20 +67,8 @@ qx.Class.define("osparc.dashboard.OrgMemberListItem", {
       if (value === null) {
         return;
       }
-      const subtitle = this.getChildControl("contact");
       if (value.getDelete()) {
-        subtitle.setValue(this.tr("Administrator"));
-      } else if (value.getWrite()) {
-        subtitle.setValue(this.tr("Manager"));
-      } else {
-        subtitle.setValue(this.tr("Member"));
-      }
-    },
-
-    _applyShowOptions: function(value) {
-      const optionsMenu = this.getChildControl("options");
-      optionsMenu.setVisibility(value ? "visible" : "excluded");
-      if (value) {
+        const optionsMenu = this.getChildControl("options");
         const menu = this.__getOptionsMenu();
         optionsMenu.setMenu(menu);
       }
@@ -98,28 +79,29 @@ qx.Class.define("osparc.dashboard.OrgMemberListItem", {
         position: "bottom-right"
       });
 
-      const accessRights = this.getAccessRights();
-      if (accessRights && !accessRights.getDelete() && !accessRights.getWrite()) {
-        const promoteButton = new qx.ui.menu.Button(this.tr("Promote to Manager"));
-        promoteButton.addListener("execute", () => {
-          this.fireDataEvent("promoteOrgMember", {
-            key: this.getKey(),
-            name: this.getTitle()
-          });
-        });
-        menu.add(promoteButton);
-      }
-
-      const removeButton = new qx.ui.menu.Button(this.tr("Remove Member"));
-      removeButton.addListener("execute", () => {
-        this.fireDataEvent("removeOrgMember", {
-          key: this.getKey(),
-          name: this.getTitle()
-        });
+      const editOrgButton = new qx.ui.menu.Button(this.tr("Edit details"));
+      editOrgButton.addListener("execute", () => {
+        this.fireDataEvent("openEditOrganization", this.getKey());
       });
-      menu.add(removeButton);
+      menu.add(editOrgButton);
+
+      const deleteOrgButton = new qx.ui.menu.Button(this.tr("Delete"));
+      deleteOrgButton.addListener("execute", () => {
+        this.fireDataEvent("deleteOrganization", this.getKey());
+      });
+      menu.add(deleteOrgButton);
 
       return menu;
+    },
+
+    // overriden
+    _applyThumbnail: function(value) {
+      const thumbnail = this.getChildControl("thumbnail");
+      if (value) {
+        thumbnail.setSource(value);
+      } else {
+        thumbnail.setSource("@FontAwesome5Solid/users/24");
+      }
     }
   }
 });

@@ -28,20 +28,19 @@
  *
  * <pre class='javascript'>
  *   tree.setDelegate({
- *     createItem: () => new osparc.dashboard.ServiceBrowserListItem(),
+ *     createItem: () => new osparc.ui.list.ListItem(),
  *     bindItem: (c, item, id) => {
  *       c.bindProperty("key", "model", null, item, id);
+ *       c.bindProperty("thumbnail", "thumbnail", null, item, id);
  *       c.bindProperty("name", "title", null, item, id);
  *       c.bindProperty("description", "subtitle", null, item, id);
- *       c.bindProperty("type", "type", null, item, id);
- *       c.bindProperty("category", "category", null, item, id);
  *       c.bindProperty("contact", "contact", null, item, id);
  *     }
  *   });
  * </pre>
  */
 
-qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
+qx.Class.define("osparc.ui.list.ListItem", {
   extend: qx.ui.core.Widget,
   implement : [qx.ui.form.IModel, osparc.component.filter.IFilterable],
   include : [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],
@@ -71,16 +70,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
 
     key: {
       check: "String",
-      apply : "_applyKey"
-    },
-
-    version: {
-      check: "String"
-    },
-
-    dagId: {
-      check : "String",
-      nullable : true
+      apply : "__applyKey"
     },
 
     thumbnail: {
@@ -91,29 +81,25 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
 
     title: {
       check : "String",
-      apply : "_applyTitle",
+      apply : "__applyTitle",
       nullable : true
     },
 
     subtitle: {
       check : "String",
-      apply : "_applySubtitle",
+      apply : "__applySubtitle",
       nullable : true
     },
 
-    type: {
+    subtitleMD: {
       check : "String",
+      apply : "__applySubtitleMD",
       nullable : true
     },
 
     contact: {
       check : "String",
-      apply : "_applyContact",
-      nullable : true
-    },
-
-    category: {
-      check : "String",
+      apply : "__applyContact",
       nullable : true
     }
   },
@@ -171,6 +157,16 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
           });
           break;
         case "subtitle":
+          control = new qx.ui.basic.Label().set({
+            font: "text-13",
+            rich: true
+          });
+          this._add(control, {
+            row: 1,
+            column: 1
+          });
+          break;
+        case "subtitle-md":
           control = new osparc.ui.markdown.Markdown().set({
             font: "text-13",
             noMargin: true,
@@ -200,7 +196,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
       return control || this.base(arguments, id);
     },
 
-    _applyKey: function(value, old) {
+    __applyKey: function(value, old) {
       if (value === null) {
         return;
       }
@@ -217,7 +213,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
       thumbnail.setSource(value);
     },
 
-    _applyTitle: function(value) {
+    __applyTitle: function(value) {
       if (value === null) {
         return;
       }
@@ -225,7 +221,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
       label.setValue(value);
     },
 
-    _applySubtitle: function(value) {
+    __applySubtitle: function(value) {
       if (value === null) {
         return;
       }
@@ -233,7 +229,15 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
       label.setValue(value);
     },
 
-    _applyContact: function(value) {
+    __applySubtitleMD: function(value) {
+      if (value === null) {
+        return;
+      }
+      const label = this.getChildControl("subtitle-md");
+      label.setValue(value);
+    },
+
+    __applyContact: function(value) {
       if (value === null) {
         return;
       }
@@ -261,20 +265,11 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
           return true;
         }
       }
-      if (data.tags && data.tags.length) {
-        const type = this.getType() || "";
-        if (!data.tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
-          return true;
-        }
-      }
       return false;
     },
 
     _shouldReactToFilter: function(data) {
       if (data.text && data.text.length > 1) {
-        return true;
-      }
-      if (data.tags && data.tags.length) {
         return true;
       }
       return false;
