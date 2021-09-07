@@ -28,8 +28,7 @@ default_mypy_config="$(git rev-parse --show-toplevel)/mypy.ini"
 mypy_config=$(realpath "${2:-${default_mypy_config}}")
 
 echo mypying "${target_path}" using config in "${mypy_config}"...
-
-echo "$default_mypy_config"
+echo using "$(docker run --rm "$image_name" --version)"
 docker run --rm \
   -v "${mypy_config}":/config/mypy.ini \
   -v "${target_path}":/src \

@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 from dask.distributed import get_worker
 from distributed.worker import TaskState
@@ -19,7 +19,7 @@ print_banner()
 
 
 def get_settings() -> str:
-    return Settings.create_from_envs().json()
+    return cast(str, Settings.create_from_envs().json())
 
 
 def _get_dask_task_state() -> Optional[TaskState]:
