@@ -1,0 +1,195 @@
+import logging
+from datetime import datetime
+from typing import List, Optional
+from uuid import UUID
+
+from aiohttp import web
+from pydantic.decorator import validate_arguments
+
+from ._meta import api_version_prefix as vtag
+from .constants import RQT_USERID_KEY
+from .login.decorators import login_required
+from .meta_api_handlers_base import (
+    create_url_for_function,
+    enveloped_response,
+    handle_request_errors,
+)
+from .meta_core_snapshots import ProjectDict, take_snapshot
+from .meta_db import ProjectsRepository, SnapshotsRepository
+from .meta_models import Snapshot, SnapshotPatchBody, SnapshotResource
+from .projects import projects_api
+from .security_decorators import permission_required
+from .utils_aiohttp import rename_routes_as_handler_function, view_routes
+
+logger = logging.getLogger(__name__)
+
+
+# FIXME: access rights using same approach as in access_layer.py in storage.
+# A user can only check snapshots (subresource) of its project (parent resource)
+
+
+# API ROUTES HANDLERS ---------------------------------------------------------
+routes = web.RouteTableDef()
+
+
+@routes.post(f"/{vtag}/repos/projects/{{project_uuid}}/checkpoints")
+@login_required
+@permission_required("project.create")
+@handle_request_errors
+async def create_checkpoint(request: web.Request):
+    snapshots_repo = SnapshotsRepository(request)
+    projects_repo = ProjectsRepository(request)
+    user_id = request[RQT_USERID_KEY]
+    url_for = create_url_for_function(request)
+
+    @validate_arguments
+    async def _create_snapshot(
+        project_id: UUID,
+        snapshot_label: Optional[str] = None,
+    ) -> Snapshot:
+
+        # fetch parent's project
+        parent: ProjectDict = await projects_api.get_project_for_user(
+            request.app,
+            str(project_id),
+            user_id,
+            include_templates=False,
+            include_state=False,
+        )
+
+        # fetch snapshot if any
+        parent_uuid: UUID = UUID(parent["uuid"])
+        snapshot_timestamp: datetime = parent["lastChangeDate"]
+
+        snapshot_orm = await snapshots_repo.get(
+            parent_uuid=parent_uuid, created_at=snapshot_timestamp
+        )
+
+        # FIXME: if exists but different name?
+
+        if not snapshot_orm:
+            # take a snapshot of the parent project and commit to db
+            project: ProjectDict
+            snapshot: Snapshot
+            project, snapshot = await take_snapshot(
+                parent,
+                snapshot_label=snapshot_label,
+            )
+
+            # FIXME: Atomic?? project and snapshot shall be created in the same transaction!!
+            # FIXME: project returned might already exist, then return same snaphot
+            await projects_repo.create(project)
+            snapshot_orm = await snapshots_repo.create(snapshot)
+
+        return Snapshot.from_orm(snapshot_orm)
+
+    snapshot = await _create_snapshot(
+        project_id=request.match_info["project_id"],  # type: ignore
+        snapshot_label=request.query.get("snapshot_label"),
+    )
+
+    data = SnapshotResource.from_snapshot(snapshot, url_for)
+
+    return enveloped_response(data, status_cls=web.HTTPCreated)
+
+
+@routes.get(f"/{vtag}/repos/projects/{{project_uuid}}/checkpoints")
+@login_required
+@permission_required("project.read")
+@handle_request_errors
+async def list_checkpoints(request: web.Request):
+
+    snapshots_repo = SnapshotsRepository(request)
+    url_for = create_url_for_function(request)
+
+    @validate_arguments
+    async def _list_snapshots(project_id: UUID) -> List[Snapshot]:
+        # project_id is param-project?
+        # TODO: add pagination
+        # TODO: optimizaiton will grow snapshots of a project with time!
+        #
+        snapshots_orm = await snapshots_repo.list_all(project_id)
+        # snapshots:
+        #   - ordered (iterations!)
+        #   - have a parent project with all the parametrization
+
+        return [Snapshot.from_orm(obj) for obj in snapshots_orm]
+
+    snapshots: List[Snapshot] = await _list_snapshots(
+        project_id=request.match_info["project_id"],  # type: ignore
+    )
+    # TODO: async for snapshot in await list_snapshot is the same?
+
+    data = [SnapshotResource.from_snapshot(snp, url_for) for snp in snapshots]
+    return enveloped_response(data)
+
+
+@routes.get(
+    f"/{vtag}/repos/projects/{{project_uuid}}/checkpoints/{{ref_id}}",
+)
+@login_required
+@permission_required("project.read")
+@handle_request_errors
+async def get_checkpoint(request: web.Request):
+    snapshots_repo = SnapshotsRepository(request)
+    url_for = create_url_for_function(request)
+
+    @validate_arguments
+    async def _get_snapshot(project_id: UUID, snapshot_id: str) -> Snapshot:
+        snapshot_orm = await snapshots_repo.get_by_id(project_id, int(snapshot_id))
+
+        if not snapshot_orm:
+            raise web.HTTPNotFound(
+                reason=f"snapshot {snapshot_id} for project {project_id} not found"
+            )
+
+        return Snapshot.from_orm(snapshot_orm)
+
+    snapshot = await _get_snapshot(
+        project_id=request.match_info["project_id"],  # type: ignore
+        snapshot_id=request.match_info["snapshot_id"],
+    )
+
+    data = SnapshotResource.from_snapshot(snapshot, url_for)
+    return enveloped_response(data)
+
+
+@routes.patch(
+    f"/{vtag}/repos/projects/{{project_uuid}}/checkpoints/{{ref_id}}",
+)
+@login_required
+@permission_required("project.update")
+@handle_request_errors
+async def update_checkpoint(request: web.Request):
+    snapshots_repo = SnapshotsRepository(request)
+    url_for = create_url_for_function(request)
+
+    @validate_arguments
+    async def _update_snapshot(
+        project_id: UUID, snapshot_id: int, update: SnapshotPatchBody
+    ):
+        if not update.label:
+            raise web.HTTPBadRequest(reason="Empty update")
+
+        snapshot_orm = await snapshots_repo.update_name(
+            project_id, snapshot_id, name=update.label
+        )
+        if not snapshot_orm:
+            raise web.HTTPNotFound(
+                reason=f"snapshot {snapshot_id} for project {project_id} not found"
+            )
+        return Snapshot.from_orm(snapshot_orm)
+
+    snapshot = await _update_snapshot(
+        project_id=request.match_info["project_id"],  # type: ignore
+        snapshot_id=request.match_info["snapshot_id"],  # type: ignore
+        update=SnapshotPatchBody.parse_obj(await request.json()),
+        # TODO: skip_return_updated
+    )
+
+    data = SnapshotResource.from_snapshot(snapshot, url_for)
+    return enveloped_response(data)
+
+
+rename_routes_as_handler_function(routes, prefix=__name__)
+logger.debug("Routes collected in  %s:\n %s", __name__, view_routes(routes))

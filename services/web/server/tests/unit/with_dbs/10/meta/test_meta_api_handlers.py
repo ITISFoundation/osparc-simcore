@@ -10,7 +10,7 @@ from aiohttp import web
 from models_library.projects import Project
 from openapi_core.schema.specs.models import Spec
 from pytest_simcore.helpers.utils_assert import assert_status
-from simcore_service_webserver import meta_api_handlers
+from simcore_service_webserver import meta_api_handlers_repos
 from simcore_service_webserver._meta import api_vtag as vtag
 from simcore_service_webserver.meta_models import SnapshotPatchBody, SnapshotResource
 
@@ -24,7 +24,7 @@ pytestmark = pytest.mark.skip(
 
 @pytest.mark.parametrize(
     "route",
-    meta_api_handlers.routes,
+    meta_api_handlers_repos.routes,
     ids=lambda r: f"{r.method.upper()} {r.path}",
 )
 def test_route_against_openapi_specs(route, openapi_specs: Spec):
