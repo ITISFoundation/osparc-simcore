@@ -59,7 +59,8 @@ class BaseOrm(Generic[RowUId]):
         self._unique_match = None
         try:
             self._primary_key: Column = next(c for c in table.columns if c.primary_key)
-            assert self._primary_key.type.impl.python_type == RowUId  # nosec
+            # FIXME: how can I compare a concrete with a generic type??
+            # assert self._primary_key.type.python_type == RowUId  # nosec
         except StopIteration as e:
             raise ValueError(f"Table {table.name} MUST define a primary key") from e
 
