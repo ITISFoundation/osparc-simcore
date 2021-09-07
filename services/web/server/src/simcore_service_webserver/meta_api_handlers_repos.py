@@ -1,10 +1,9 @@
 import logging
-from datetime import datetime
-from typing import List, Optional
-from uuid import UUID
+from typing import List
 
 from aiohttp import web
-from pydantic.decorator import validate_arguments
+from servicelib.rest_pagination_utils import PageResponseLimitOffset
+from simcore_service_webserver.rest_utils import RESPONSE_MODEL_POLICY
 
 from ._meta import api_version_prefix as vtag
 from .constants import RQT_USERID_KEY
@@ -14,10 +13,20 @@ from .meta_api_handlers_base import (
     enveloped_response,
     handle_request_errors,
 )
-from .meta_core_snapshots import ProjectDict, take_snapshot
-from .meta_db import ProjectsRepository, SnapshotsRepository
-from .meta_models import Snapshot, SnapshotPatchBody, SnapshotResource
-from .projects import projects_api
+from .meta_core_repos import (
+    checkout_checkpoint_safe,
+    create_checkpoint_safe,
+    get_checkpoint_safe,
+    get_workbench,
+    list_checkpoints_safe,
+    update_checkpoint_safe,
+)
+from .meta_models_repos import (
+    Checkpoint,
+    CheckpointAnnotations,
+    CheckpointNew,
+    WorkbenchView,
+)
 from .security_decorators import permission_required
 from .utils_aiohttp import rename_routes_as_handler_function, view_routes
 
@@ -32,64 +41,46 @@ logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
+@routes.get(f"/{vtag}/repos/projects")
+@login_required
+@permission_required("project.read")
+@handle_request_errors
+async def _list_repos_handler(request: web.Request):
+    user_id = request[RQT_USERID_KEY]
+    url_for = create_url_for_function(request)
+    project_uuid = request.match_info["project_uuid"]
+    limit = int(request.query.get("limit", 20))
+    offset = int(request.query.get("offset", 0))
+
+    raise NotImplementedError()
+
+
 @routes.post(f"/{vtag}/repos/projects/{{project_uuid}}/checkpoints")
 @login_required
 @permission_required("project.create")
 @handle_request_errors
-async def create_checkpoint(request: web.Request):
-    snapshots_repo = SnapshotsRepository(request)
-    projects_repo = ProjectsRepository(request)
+async def _create_checkpoint_handler(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
+    project_uuid = request.match_info["project_uuid"]
 
-    @validate_arguments
-    async def _create_snapshot(
-        project_id: UUID,
-        snapshot_label: Optional[str] = None,
-    ) -> Snapshot:
+    body = CheckpointNew.parse_obj(await request.json())
 
-        # fetch parent's project
-        parent: ProjectDict = await projects_api.get_project_for_user(
-            request.app,
-            str(project_id),
-            user_id,
-            include_templates=False,
-            include_state=False,
-        )
-
-        # fetch snapshot if any
-        parent_uuid: UUID = UUID(parent["uuid"])
-        snapshot_timestamp: datetime = parent["lastChangeDate"]
-
-        snapshot_orm = await snapshots_repo.get(
-            parent_uuid=parent_uuid, created_at=snapshot_timestamp
-        )
-
-        # FIXME: if exists but different name?
-
-        if not snapshot_orm:
-            # take a snapshot of the parent project and commit to db
-            project: ProjectDict
-            snapshot: Snapshot
-            project, snapshot = await take_snapshot(
-                parent,
-                snapshot_label=snapshot_label,
-            )
-
-            # FIXME: Atomic?? project and snapshot shall be created in the same transaction!!
-            # FIXME: project returned might already exist, then return same snaphot
-            await projects_repo.create(project)
-            snapshot_orm = await snapshots_repo.create(snapshot)
-
-        return Snapshot.from_orm(snapshot_orm)
-
-    snapshot = await _create_snapshot(
-        project_id=request.match_info["project_id"],  # type: ignore
-        snapshot_label=request.query.get("snapshot_label"),
+    checkpoint: Checkpoint = await create_checkpoint_safe(
+        request.app,
+        user_id=user_id,
+        project_uuid=project_uuid,  # type: ignore
+        **body.dict(include={"tag", "message", "new_branch"}),
     )
 
-    data = SnapshotResource.from_snapshot(snapshot, url_for)
-
+    data = {
+        "url": url_for(
+            f"{__name__}.get_checkpoint",
+            project_uuid=project_uuid,
+            ref_id=checkpoint.id,
+        )
+        ** checkpoint.dict(),
+    }
     return enveloped_response(data, status_cls=web.HTTPCreated)
 
 
@@ -97,31 +88,42 @@ async def create_checkpoint(request: web.Request):
 @login_required
 @permission_required("project.read")
 @handle_request_errors
-async def list_checkpoints(request: web.Request):
-
-    snapshots_repo = SnapshotsRepository(request)
+async def _list_checkpoints_handler(request: web.Request):
+    user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
+    project_uuid = request.match_info["project_uuid"]
+    limit = int(request.query.get("limit", 20))
+    offset = int(request.query.get("offset", 0))
 
-    @validate_arguments
-    async def _list_snapshots(project_id: UUID) -> List[Snapshot]:
-        # project_id is param-project?
-        # TODO: add pagination
-        # TODO: optimizaiton will grow snapshots of a project with time!
-        #
-        snapshots_orm = await snapshots_repo.list_all(project_id)
-        # snapshots:
-        #   - ordered (iterations!)
-        #   - have a parent project with all the parametrization
+    checkpoints: List[Checkpoint]
 
-        return [Snapshot.from_orm(obj) for obj in snapshots_orm]
-
-    snapshots: List[Snapshot] = await _list_snapshots(
-        project_id=request.match_info["project_id"],  # type: ignore
+    checkpoints, total = await list_checkpoints_safe(
+        app=request.app,
+        project_uuid=project_uuid,  # type: ignore
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
     )
-    # TODO: async for snapshot in await list_snapshot is the same?
 
-    data = [SnapshotResource.from_snapshot(snp, url_for) for snp in snapshots]
-    return enveloped_response(data)
+    data = [
+        {
+            "url": url_for(
+                f"{__name__}._get_checkpoint_handler",
+                project_uuid=project_uuid,
+                ref_id=checkpoint.id,
+            ),
+            **checkpoint.dict(),
+        }
+        for checkpoint in checkpoints
+    ]
+
+    return PageResponseLimitOffset.paginate_data(
+        data=data,
+        request_url=request.url,
+        total=total,
+        limit=limit or total,
+        offset=offset,
+    ).dict(**RESPONSE_MODEL_POLICY)
 
 
 @routes.get(
@@ -130,27 +132,26 @@ async def list_checkpoints(request: web.Request):
 @login_required
 @permission_required("project.read")
 @handle_request_errors
-async def get_checkpoint(request: web.Request):
-    snapshots_repo = SnapshotsRepository(request)
+async def _get_checkpoint_handler(request: web.Request):
+    user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
+    project_uuid = request.match_info["project_uuid"]
 
-    @validate_arguments
-    async def _get_snapshot(project_id: UUID, snapshot_id: str) -> Snapshot:
-        snapshot_orm = await snapshots_repo.get_by_id(project_id, int(snapshot_id))
-
-        if not snapshot_orm:
-            raise web.HTTPNotFound(
-                reason=f"snapshot {snapshot_id} for project {project_id} not found"
-            )
-
-        return Snapshot.from_orm(snapshot_orm)
-
-    snapshot = await _get_snapshot(
-        project_id=request.match_info["project_id"],  # type: ignore
-        snapshot_id=request.match_info["snapshot_id"],
+    checkpoint: Checkpoint = await get_checkpoint_safe(
+        app=request.app,
+        user_id=user_id,
+        project_uuid=project_uuid,  # type: ignore
+        ref_id=request.match_info["ref_id"],
     )
 
-    data = SnapshotResource.from_snapshot(snapshot, url_for)
+    data = {
+        "url": url_for(
+            f"{__name__}._get_checkpoint_handler",
+            project_uuid=project_uuid,
+            ref_id=checkpoint.id,
+        ),
+        **checkpoint.dict(),
+    }
     return enveloped_response(data)
 
 
@@ -160,34 +161,93 @@ async def get_checkpoint(request: web.Request):
 @login_required
 @permission_required("project.update")
 @handle_request_errors
-async def update_checkpoint(request: web.Request):
-    snapshots_repo = SnapshotsRepository(request)
+async def _update_checkpoint_handler(request: web.Request):
+    user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
+    project_uuid = request.match_info["project_uuid"]
 
-    @validate_arguments
-    async def _update_snapshot(
-        project_id: UUID, snapshot_id: int, update: SnapshotPatchBody
-    ):
-        if not update.label:
-            raise web.HTTPBadRequest(reason="Empty update")
+    body = CheckpointAnnotations.parse_obj(await request.json())
 
-        snapshot_orm = await snapshots_repo.update_name(
-            project_id, snapshot_id, name=update.label
-        )
-        if not snapshot_orm:
-            raise web.HTTPNotFound(
-                reason=f"snapshot {snapshot_id} for project {project_id} not found"
-            )
-        return Snapshot.from_orm(snapshot_orm)
-
-    snapshot = await _update_snapshot(
-        project_id=request.match_info["project_id"],  # type: ignore
-        snapshot_id=request.match_info["snapshot_id"],  # type: ignore
-        update=SnapshotPatchBody.parse_obj(await request.json()),
-        # TODO: skip_return_updated
+    checkpoint: Checkpoint = await update_checkpoint_safe(
+        app=request.app,
+        user_id=user_id,
+        project_uuid=project_uuid,  # type: ignore
+        ref_id=request.match_info["ref_id"],
+        **body.dict(include={"tag", "message"}),
     )
 
-    data = SnapshotResource.from_snapshot(snapshot, url_for)
+    data = {
+        "url": url_for(
+            f"{__name__}._get_checkpoint_handler",
+            project_uuid=project_uuid,
+            ref_id=checkpoint.id,
+        ),
+        **checkpoint.dict(),
+    }
+    return enveloped_response(data)
+
+
+@routes.post(f"/{vtag}/repos/projects/{{project_uuid}}/checkpoints/{{ref_id}}:checkout")
+@login_required
+@permission_required("project.create")
+@handle_request_errors
+async def _checkout_checkpoint_handler(request: web.Request):
+    user_id = request[RQT_USERID_KEY]
+    url_for = create_url_for_function(request)
+    project_uuid = request.match_info["project_uuid"]
+
+    checkpoint: Checkpoint = await checkout_checkpoint_safe(
+        app=request.app,
+        user_id=user_id,
+        project_uuid=project_uuid,  # type: ignore
+        ref_id=request.match_info["ref_id"],
+    )
+
+    data = {
+        "url": url_for(
+            f"{__name__}._get_checkpoint_handler",
+            project_uuid=project_uuid,
+            ref_id=checkpoint.id,
+        ),
+        **checkpoint.dict(),
+    }
+    return enveloped_response(data)
+
+
+@routes.get(
+    f"/{vtag}/repos/projects/{{project_uuid}}/checkpoints/{{ref_id}}/workbench/view"
+)
+@login_required
+@permission_required("project.read")
+@handle_request_errors
+async def _get_checkpoint_workbench_handler(request: web.Request):
+    user_id = request[RQT_USERID_KEY]
+    url_for = create_url_for_function(request)
+    project_uuid = request.match_info["project_uuid"]
+
+    checkpoint: Checkpoint = await get_checkpoint_safe(
+        app=request.app,
+        user_id=user_id,
+        project_uuid=project_uuid,  # type: ignore
+        ref_id=request.match_info["ref_id"],
+    )
+
+    view: WorkbenchView = await get_workbench(
+        app=request.app,
+        user_id=user_id,
+        project_uuid=project_uuid,  # type: ignore
+        ref_id=checkpoint.id,
+    )
+
+    data = {
+        "url": url_for(
+            f"{__name__}._get_checkpoint_workbench_handler",
+            project_uuid=project_uuid,
+            ref_id=checkpoint.id,
+        ),
+        **view.dict(),
+    }
+
     return enveloped_response(data)
 
 

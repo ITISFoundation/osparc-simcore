@@ -17,7 +17,7 @@ from types import FunctionType
 from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union
 from uuid import UUID, uuid3
 
-import simcore_service_webserver.meta_api_handlers
+import simcore_service_webserver.meta_api_handlers_repos
 import simcore_service_webserver.projects.projects_handlers
 import simcore_service_webserver.projects.projects_node_handlers
 from fastapi import Depends, FastAPI
@@ -243,7 +243,9 @@ def redefine_operation_id_in_router(router: APIRouter, operation_id_prefix: str)
     for route in router.routes:
         if isinstance(route, APIRoute):
             assert isinstance(route.endpoint, FunctionType)  # nosec
-            route.operation_id = f"{operation_id_prefix}.{route.endpoint.__name__}"
+            route.operation_id = (
+                f"{operation_id_prefix}._{route.endpoint.__name__}_handler"
+            )
 
 
 def create_app(routers: List[APIRouter]) -> FastAPI:
@@ -255,8 +257,29 @@ def create_app(routers: List[APIRouter]) -> FastAPI:
     # print(yaml.safe_dump(app.openapi()))
     # print("-"*100)
 
+    openapi = app.openapi()
+
+    def _fix(node):
+        if isinstance(node, Dict):
+            for key in list(node.keys()):
+                # FIX openapi generation
+                if key == "exclusiveMinimum":
+                    node[key] = bool(node[key])
+
+                if key in ("examples", "patternProperties"):
+                    node.pop(key)
+                    continue
+
+                _fix(node[key])
+
+        elif isinstance(node, list):
+            for value in node:
+                _fix(value)
+
+    _fix(openapi)
+
     with open(f"{CURRENT_FILENAME_STEM}-openapi.ignore.json", "wt") as f:
-        json.dump(app.openapi(), f, indent=2)
+        json.dump(openapi, f, indent=2)
 
     return app
 
@@ -706,21 +729,27 @@ def delete_tag(
 # a checkpoint is a combination of tags and commits in one
 # Used to simplify in the front-end
 #
-class Checkpoint(Commit):
-    # Two in one:
-    tags: List[Tag] = []
+class Checkpoint(BaseModel):
+    id: PositiveInt
+    checksum: str
+
+    tag: str
+    message: str
+
+    parent: PositiveInt
+    created_at: datetime
 
     url: HttpUrl
 
 
 class CheckpointNew(BaseModel):
     tag: str
-    message: str
+    message: Optional[str] = None
 
 
 class CheckpointAnnotations(BaseModel):
-    tags: Optional[List[Tag]] = None
-    message: Optional[str]
+    tag: Optional[str] = None
+    message: Optional[str] = None
 
 
 @repo_routes.get(
@@ -748,7 +777,7 @@ def create_checkpoint(
 
 
 @repo_routes.get(
-    "/{project_uuid}/checkpoint/{ref_id}", response_model=Envelope[Checkpoint]
+    "/{project_uuid}/checkpoints/{ref_id}", response_model=Envelope[Checkpoint]
 )
 def get_checkpoint(
     ref_id: RepoRef = PathParam(
@@ -761,7 +790,7 @@ def get_checkpoint(
 
 
 @repo_routes.patch(
-    "/{project_uuid}/checkpoint/{ref_id}", response_model=Envelope[Checkpoint]
+    "/{project_uuid}/checkpoints/{ref_id}", response_model=Envelope[Checkpoint]
 )
 def update_checkpoint_annotations(
     annotations: CheckpointAnnotations,
@@ -774,7 +803,7 @@ def update_checkpoint_annotations(
 
 
 @repo_routes.post(
-    "/{project_uuid}/checkpoint/{ref_id}:checkout",
+    "/{project_uuid}/checkpoints/{ref_id}:checkout",
     response_model=Envelope[Checkpoint],
 )
 def checkout(
@@ -791,7 +820,7 @@ def checkout(
 
 
 @repo_routes.get(
-    "/{project_uuid}/checkpoint/{ref_id}/workbench/view",
+    "/{project_uuid}/checkpoints/{ref_id}/workbench/view",
     response_model=Envelope[WorkbenchView],
 )
 def view_project_workbench(
@@ -805,13 +834,19 @@ def view_project_workbench(
     ...
 
 
+redefine_operation_id_in_router(
+    repo_routes,
+    operation_id_prefix=simcore_service_webserver.meta_api_handlers_repos.__name__,
+)
+
+
 #####################################################
 # uvicorn --reload projects_openapi_generator:the_app
 the_app = create_app(
     routers=[
-        project_routes,
-        project_nodes_routes,
-        pr_state_routes,
+        # project_routes,
+        # project_nodes_routes,
+        # pr_state_routes,
         # snapshot_routes,
         # parameter_routes,
         repo_routes,
