@@ -15,6 +15,7 @@ import logging
 import os
 import re
 import subprocess
+from collections import defaultdict
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Dict, List, Set
@@ -214,10 +215,29 @@ async def main_async(
     common_files = db_file_entries.intersection(s3_file_entries)
     s3_missing_files = db_file_entries.difference(s3_file_entries)
     s3_missing_files_path = Path.cwd() / "s3_missing_files.txt"
-    s3_missing_files_path.write_text("\n".join(s3_missing_files))
+
+    def order_by_owner(list_of_files):
+        files_by_owner = defaultdict(list)
+        for file in list_of_files:
+            # project_id/node_id/file
+            prj_uuid = file.split("/")[0]
+            prj_data = project_nodes[prj_uuid]
+            files_by_owner[
+                (prj_data["owner"], prj_data["name"], prj_data["email"])
+            ].append(file)
+        return files_by_owner
+
+    def write_to_file(path, files_by_owner):
+        with path.open("wt") as fp:
+            for (owner, name, email), files in files_by_owner.items():
+                for file in files:
+                    fp.write(f"{owner},{name},{email},{file}\n")
+
+    write_to_file(s3_missing_files_path, order_by_owner(s3_missing_files))
+
     db_missing_files = s3_file_entries.difference(db_file_entries)
     db_missing_files_path = Path.cwd() / "db_missing_files.txt"
-    db_missing_files_path.write_text("\n".join(db_missing_files))
+    write_to_file(db_missing_files_path, order_by_owner(db_missing_files))
 
     typer.secho(
         f"{len(common_files)} files are the same in both system", fg=typer.colors.BLUE
