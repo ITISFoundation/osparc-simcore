@@ -1,12 +1,17 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-
 from typing import Any, Dict
+from unittest import mock
 from uuid import UUID, uuid4
 
 import pytest
-from simcore_service_dask_sidecar.tasks import _is_aborted_cb, run_task_in_service
+from pytest_mock.plugin import MockerFixture
+from simcore_service_dask_sidecar.tasks import (
+    _is_aborted_cb,
+    run_computational_sidecar,
+    run_task_in_service,
+)
 from simcore_service_sidecar.boot_mode import BootMode
 
 
@@ -29,6 +34,40 @@ def project_id() -> UUID:
 @pytest.fixture
 def node_id() -> UUID:
     return uuid4()
+
+
+@pytest.fixture()
+def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, mock.Mock]:
+    dask_distributed_worker_mock = mocker.patch(
+        "simcore_service_dask_sidecar.tasks.get_worker", autospec=True
+    )
+    dask_task_mock = mocker.patch(
+        "simcore_service_dask_sidecar.tasks.TaskState", autospec=True
+    )
+    dask_task_mock.resource_restrictions = {}
+
+    dask_distributed_worker_mock.return_value.tasks.get.return_value = dask_task_mock
+
+    return {
+        "dask_task": dask_task_mock,
+        "dask_distributed_worker": dask_distributed_worker_mock,
+    }
+
+
+@pytest.mark.parametrize(
+    "service_key, service_version, input_data", [("ubuntu", "latest", {})]
+)
+async def test_run_computational_sidecar(
+    dask_subsystem_mock: Dict[str, mock.Mock],
+    service_key: str,
+    service_version: str,
+    input_data: Dict[str, Any],
+):
+    output_data = await run_computational_sidecar(
+        service_key=service_key, service_version=service_version, input_data=input_data
+    )
+    assert output_data
+    assert isinstance(output_data, dict)
 
 
 @pytest.mark.parametrize(
@@ -55,20 +94,15 @@ def test_run_task_in_service(
     mocker,
     resource_restrictions: Dict[str, Any],
     exp_bootmode: BootMode,
+    dask_subsystem_mock: Dict[str, mock.Mock],
 ):
     run_sidecar_mock = mocker.patch(
         "simcore_service_dask_sidecar.tasks.run_sidecar", return_value=None
     )
-    dask_distributed_worker_mock = mocker.patch(
-        "simcore_service_dask_sidecar.tasks.get_worker", autospec=True
-    )
-    dask_task_mock = mocker.patch(
-        "simcore_service_dask_sidecar.tasks.TaskState", autospec=True
-    )
-    dask_task_mock.resource_restrictions = resource_restrictions
-    dask_task_mock.retries = 1
-    dask_task_mock.annotations = {"retries": 1}
-    dask_distributed_worker_mock.return_value.tasks.get.return_value = dask_task_mock
+
+    dask_subsystem_mock["dask_task"].resource_restrictions = resource_restrictions
+    dask_subsystem_mock["dask_task"].retries = 1
+    dask_subsystem_mock["dask_task"].annotations = {"retries": 1}
 
     run_task_in_service(job_id, user_id, project_id, node_id)
 
