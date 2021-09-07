@@ -383,13 +383,13 @@ class BaseCompScheduler(ABC):
                 logger.error(
                     "The task %s could not be scheduled due to the following: %s",
                     r.node_id,
-                    r.msg,
+                    f"{r}",
                 )
                 await comp_tasks_repo.set_project_tasks_state(
                     project_id, [r.node_id], RunningState.FAILED
                 )
                 # TODO: we should set some specific state so the user may know what to do
-            if isinstance(r, ComputationalBackendNotConnectedError):
+            elif isinstance(r, ComputationalBackendNotConnectedError):
                 logger.warning(
                     "The computational backend is disconnected. Tasks are set back to PUBLISHED state until scheduler comes back!"
                 )
@@ -401,7 +401,7 @@ class BaseCompScheduler(ABC):
                         project_id, tasks, RunningState.PUBLISHED
                     ),
                 )
-                raise ComputationalBackendNotConnectedError(r.msg) from r
+                raise ComputationalBackendNotConnectedError(f"{r}") from r
 
     def _wake_up_scheduler_now(self) -> None:
         self.wake_up_event.set()
