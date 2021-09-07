@@ -47,11 +47,12 @@ def _get_task_boot_mode(task: Optional[TaskState]) -> BootMode:
     return BootMode.CPU
 
 
-async def run_task_as_container(
+async def run_computational_sidecar(
     service_key: str, service_version: str, input_data: Dict[str, Any]
 ) -> Dict[str, Any]:
     log.debug(
-        "run_task_as_container %s", f"{service_key=}, {service_version=}, {input_data=}"
+        "run_computational_sidecar %s",
+        f"{service_key=}, {service_version=}, {input_data=}",
     )
 
     task: Optional[TaskState] = _get_dask_task_state()
