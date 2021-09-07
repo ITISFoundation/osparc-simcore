@@ -4,7 +4,18 @@ from uuid import UUID
 
 import sqlalchemy as sa
 from aiohttp import web
+from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
+from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.projects_version_control import (
+    projects_vc_branches,
+    projects_vc_commits,
+    projects_vc_heads,
+    projects_vc_repos,
+    projects_vc_snapshots,
+    projects_vc_tags,
+)
+from simcore_postgres_database.utils_aiopg_orm import BaseOrm
 
 from .db_base_repository import BaseRepository
 from .meta_models import Snapshot
@@ -121,3 +132,70 @@ class ProjectsRepository(TemporaryNoDatabaseSchemasAvailable):
 
     async def create(self, project: ProjectDict):
         await self._dbapi.add_project(project, self.user_id, force_project_uuid=True)
+
+
+## ORMs -------------------------------------------------------------
+class ReposOrm(BaseOrm[int]):
+    def __init__(self, connection: SAConnection):
+        super().__init__(
+            projects_vc_repos,
+            connection,
+            readonly={"id", "created", "modified"},
+        )
+
+
+class BranchesOrm(BaseOrm[int]):
+    def __init__(self, connection: SAConnection):
+        super().__init__(
+            projects_vc_branches,
+            connection,
+            readonly={"id", "created", "modified"},
+        )
+
+
+class CommitsOrm(BaseOrm[int]):
+    def __init__(self, connection: SAConnection):
+        super().__init__(
+            projects_vc_commits,
+            connection,
+            readonly={"id", "created", "modified"},
+            # pylint: disable=no-member
+            writeonce=set(c for c in projects_vc_commits.columns.keys()),
+        )
+
+
+class TagsOrm(BaseOrm[int]):
+    def __init__(self, connection: SAConnection):
+        super().__init__(
+            projects_vc_tags,
+            connection,
+            readonly={"id", "created", "modified"},
+        )
+
+
+class ProjectsOrm(BaseOrm[str]):
+    def __init__(self, connection: SAConnection):
+        super().__init__(
+            projects,
+            connection,
+            readonly={"id", "creation_date", "last_change_date"},
+            writeonce={"uuid"},
+        )
+
+
+class SnapshotsOrm(BaseOrm[str]):
+    def __init__(self, connection: SAConnection):
+        super().__init__(
+            projects_vc_snapshots,
+            connection,
+            writeonce={"checksum"},  # TODO:  all? cannot delete snapshots?
+        )
+
+
+class HeadsOrm(BaseOrm[int]):
+    def __init__(self, connection: SAConnection):
+        super().__init__(
+            projects_vc_heads,
+            connection,
+            writeonce={"repo_id"},
+        )
