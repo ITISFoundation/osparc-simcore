@@ -115,9 +115,6 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       });
 
       const store = osparc.store.Store.getInstance();
-      store.bind("clusters", selectBox, "visibility", {
-        converter: clusters => Object.keys(clusters).length ? "visible" : "excluded"
-      });
       store.addListener("changeClusters", e => {
         this.__populateClustersSelectBox();
       });
@@ -128,25 +125,27 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     __populateClustersSelectBox: function() {
       this.__clustersSelectBox.removeAll();
 
-      const store = osparc.store.Store.getInstance();
-      const clusters = store.getClusters();
-      if (clusters) {
-        const itemDefault = new qx.ui.form.ListItem().set({
-          label: "default",
-          toolTipText: "default cluster"
+      osparc.data.Resources.get("clusters")
+        .then(clusters => {
+          if (clusters) {
+            const itemDefault = new qx.ui.form.ListItem().set({
+              label: "default",
+              toolTipText: "default cluster"
+            });
+            itemDefault.id = 0;
+            this.__clustersSelectBox.add(itemDefault);
+            clusters.forEach(cluster => {
+              const item = new qx.ui.form.ListItem().set({
+                label: cluster["name"],
+                toolTipText: cluster["type"] + "\n" + cluster["description"],
+                allowGrowY: false
+              });
+              item.id = cluster["id"];
+              this.__clustersSelectBox.add(item);
+            });
+          }
+          this.__clustersSelectBox.setVisibility(Object.keys(clusters).length ? "visible" : "excluded");
         });
-        itemDefault.id = 0;
-        this.__clustersSelectBox.add(itemDefault);
-        clusters.forEach(cluster => {
-          const item = new qx.ui.form.ListItem().set({
-            label: cluster["name"],
-            toolTipText: cluster["type"] + "\n" + cluster["description"],
-            allowGrowY: false
-          });
-          item.id = cluster["id"];
-          this.__clustersSelectBox.add(item);
-        });
-      }
     },
 
     getClusterId: function() {
@@ -196,10 +195,10 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       return stopButton;
     },
 
-    __applyStudy: function(study) {
+    __applyStudy: async function(study) {
       study.getWorkbench().addListener("pipelineChanged", this.__checkButtonsVisible, this);
       study.addListener("changeState", this.__updateRunButtonsStatus, this);
-      osparc.data.Resources.get("clusters");
+      this.__populateClustersSelectBox();
       this.__checkButtonsVisible();
     },
 
