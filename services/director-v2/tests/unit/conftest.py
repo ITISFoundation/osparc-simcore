@@ -86,13 +86,14 @@ def scheduler_data_from_service_labels_stored_data(
 
 
 @pytest.fixture
-def dask_local_cluster(monkeypatch: MonkeyPatch) -> LocalCluster:
-    cluster = LocalCluster(n_workers=2, threads_per_worker=1)
-    scheduler_address = URL(cluster.scheduler_address)
-    monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
-    monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
-    yield cluster
-    cluster.close()
+async def dask_local_cluster(monkeypatch: MonkeyPatch) -> LocalCluster:
+    async with LocalCluster(
+        n_workers=2, threads_per_worker=1, asynchronous=True
+    ) as cluster:
+        scheduler_address = URL(cluster.scheduler_address)
+        monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
+        monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
+        yield cluster
 
 
 @pytest.fixture
@@ -106,7 +107,7 @@ def cluster_id_resource(cluster_id: NonNegativeInt) -> str:
 
 
 @pytest.fixture
-def dask_spec_local_cluster(
+async def dask_spec_local_cluster(
     monkeypatch: MonkeyPatch, cluster_id_resource: str
 ) -> SpecCluster:
     # in this mode we can precisely create a specific cluster
@@ -142,9 +143,10 @@ def dask_spec_local_cluster(
     }
     scheduler = {"cls": Scheduler, "options": {"dashboard_address": ":8787"}}
 
-    cluster = SpecCluster(workers=workers, scheduler=scheduler)
-    scheduler_address = URL(cluster.scheduler_address)
-    monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
-    monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
-    yield cluster
-    cluster.close()
+    async with SpecCluster(
+        workers=workers, scheduler=scheduler, asynchronous=True
+    ) as cluster:
+        scheduler_address = URL(cluster.scheduler_address)
+        monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
+        monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
+        yield cluster
