@@ -2,7 +2,7 @@ import collections
 import logging
 from dataclasses import dataclass, field
 from pprint import pformat
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, Iterable, List, Union
 from uuid import uuid4
 
 from dask.distributed import Client, Future, fire_and_forget
@@ -217,7 +217,9 @@ def _check_cluster_able_to_run_pipeline(
     def can_task_run_on_worker(
         task_resources: Dict[str, Any], worker_resources: Dict[str, Any]
     ) -> bool:
-        def gen_check(task_resources: Dict[str, Any], worker_resources: Dict[str, Any]):
+        def gen_check(
+            task_resources: Dict[str, Any], worker_resources: Dict[str, Any]
+        ) -> Iterable[bool]:
             for r in task_resources:
                 yield worker_resources.get(r, 0) >= task_resources[r]
 
