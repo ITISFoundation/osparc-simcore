@@ -193,7 +193,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       osparc.utils.Utils.setIdToWidget(templateStudyContainer, "templateStudiesList");
       tempStudyLayout.setContent(templateStudyContainer);
 
-      const loadingTemplatesBtn = this._loadingStudiesBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
+      // const loadingTemplatesBtn = this._loadingStudiesBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
+      const loadingTemplatesBtn = this._loadingStudiesBtn = new osparc.dashboard.DashboardListButton();
       osparc.utils.Utils.setIdToWidget(loadingTemplatesBtn, "templatesLoading");
       templateStudyContainer.add(loadingTemplatesBtn);
 
@@ -361,7 +362,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __createStudyItem: function(studyData) {
       const tags = studyData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => studyData.tags.includes(tag.id)) : [];
 
-      const item = new osparc.dashboard.StudyBrowserButtonItem().set({
+      const item = osparc.utils.Resources.isTemplate(studyData) ? new osparc.dashboard.DashboardListButton() : new osparc.dashboard.StudyBrowserButtonItem();
+      item.set({
         resourceData: studyData,
         tags
       });
