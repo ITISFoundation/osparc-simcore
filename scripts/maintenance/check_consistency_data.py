@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 async def managed_docker_compose(
     postgres_volume_name: str, postgres_username: str, postgres_password: str
 ):
-    typer.echo(f"starting up database in localhost")
+    typer.echo("starting up database in localhost")
     compose_file = Path.cwd() / "consistency" / "docker-compose.yml"
     try:
         subprocess.run(
@@ -85,7 +85,7 @@ async def _get_projects_nodes(pool) -> Dict[str, List[str]]:
         project_nodes = {
             project_uuid: list(workbench.keys())
             for project_uuid, workbench in project_db_rows
-            if workbench
+            if len(workbench) > 0
         }
         typer.echo(
             f"processed {cursor.rowcount} projects, now looking for files in the file_meta_data table..."
@@ -120,20 +120,25 @@ async def _get_files_from_s3_backend(
 ) -> Set[str]:
     s3_file_entries = set()
     try:
-        completed_process = subprocess.run(
+        command = (
             f"docker run "
             f"--env MC_HOST_mys3='https://{s3_access}:{s3_secret}@{s3_endpoint}' "
             "minio/mc "
-            f"ls --recursive mys3/{s3_bucket}/{project_uuid}/",
-            shell=True,
-            check=True,
-            capture_output=True,
+            f"ls --recursive mys3/{s3_bucket}/{project_uuid}/"
         )
-        if completed_process.stdout != b"":
+        process = await asyncio.create_subprocess_shell(
+            command,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+        )
+        stdout, _ = await process.communicate()
+        decoded_stdout = stdout.decode()
+        if decoded_stdout != b"":
             # formatted as:
             # [2021-09-07 04:35:49 UTC] 1.5GiB 05e821d1-2b4b-455f-86b6-9e197545c1ad/work.tgz
             # DATE_creation? size node_id/file_path.ext
-            list_of_files = completed_process.stdout.decode("UTF-8").split("\n")
+            list_of_files = decoded_stdout.split("\n")
             for file in list_of_files:
                 match = re.findall(r".* (.+)", file)
                 if match:
