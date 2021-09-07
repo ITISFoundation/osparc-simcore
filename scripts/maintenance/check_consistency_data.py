@@ -122,11 +122,16 @@ def main(
                     # DATE_creation? size node_id/file_path.ext
                     list_of_files = completed_process.stdout.decode("UTF-8").split("\n")
                     for file in list_of_files:
-                        s3_file_entries.add(re.findall(r".* (.+)", file))
+                        partial_file_path = re.findall(r".* (.+)", file)
+                        s3_file_entries.add(f"{project_uuid}/{partial_file_path}")
 
             except subprocess.CalledProcessError:
                 pass
-
+    s3_file_entries_path = Path.cwd() / "s3_file_entries.txt"
+    s3_file_entries_path.write_text("\n".join(s3_file_entries))
+    typer.echo(
+        f"processed {len(project_nodes)} projects, found {len(s3_file_entries)} file entries, saved in {s3_file_entries_path}"
+    )
     import pdb
 
     pdb.set_trace()
