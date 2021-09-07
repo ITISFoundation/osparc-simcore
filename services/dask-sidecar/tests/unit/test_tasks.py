@@ -66,8 +66,7 @@ async def test_run_computational_sidecar(
     output_data = await run_computational_sidecar(
         service_key=service_key, service_version=service_version, input_data=input_data
     )
-    assert output_data
-    assert isinstance(output_data, dict)
+    assert output_data == {}
 
 
 @pytest.mark.parametrize(
