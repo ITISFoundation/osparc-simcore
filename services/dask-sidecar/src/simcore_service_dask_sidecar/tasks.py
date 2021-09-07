@@ -18,11 +18,7 @@ log = logging.getLogger(__name__)
 print_banner()
 
 
-def test(x):
-    return x + 1
-
-
-def get_settings():
+def get_settings() -> str:
     return Settings.create_from_envs().json()
 
 
@@ -57,9 +53,9 @@ async def run_computational_sidecar(
 
     task: Optional[TaskState] = _get_dask_task_state()
 
-    retry = 0
-    max_retries = 1
-    sidecar_bootmode = _get_task_boot_mode(task)
+    _retry = 0
+    _max_retries = 1
+    _sidecar_bootmode = _get_task_boot_mode(task)
 
     async with ComputationalSidecar(
         service_key, service_version, input_data
@@ -70,7 +66,7 @@ async def run_computational_sidecar(
 
 def run_task_in_service(
     job_id: str, user_id: int, project_id: ProjectID, node_id: NodeID
-):
+) -> None:
     """
     To run a task, it spawns a service corresponding to `project.node_id` under `user_id` session and
     """

@@ -18,7 +18,7 @@ def requirements_folder(project_slug_dir: Path) -> Path:
 
 
 def test_dask_requirements_in_sync(requirements_folder: Path):
-    """ If this test fails, do update requirements to re-sync all listings """
+    """If this test fails, do update requirements to re-sync all listings"""
 
     REQS_ENTRY_REGEX = re.compile(r"(\w+)==([\.\w]+)")
     NameVersionTuple = Tuple[str, str]
