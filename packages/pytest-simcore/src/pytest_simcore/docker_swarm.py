@@ -66,8 +66,6 @@ def keep_docker_up(request) -> bool:
 def docker_swarm(
     docker_client: docker.client.DockerClient, keep_docker_up: Iterator[bool]
 ) -> Iterator[None]:
-    _in_docker_swarm(docker_client)
-
     for attempt in _attempt_for(retry_error_cls=_NotInSwarmException):
         with attempt:
             if not _in_docker_swarm(docker_client):
