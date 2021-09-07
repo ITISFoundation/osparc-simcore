@@ -14,7 +14,7 @@
 ../../../packages/models-library/
 ../../../packages/postgres-database/
 ../../../packages/simcore-sdk/
-"../../../packages/service-library[aiohttp]"
+../../../packages/service-library[aiohttp]
 
 # installs current package
 .
