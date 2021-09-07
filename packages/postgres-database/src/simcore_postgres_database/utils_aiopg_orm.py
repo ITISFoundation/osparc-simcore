@@ -10,13 +10,16 @@
 
 import functools
 import operator
-from typing import Dict, Generic, List, Optional, Set, TypeVar, Union
+from typing import Dict, Generic, List, Optional, Set, Tuple, TypeVar, Union
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from sqlalchemy.sql.base import ImmutableColumnCollection
+from sqlalchemy.sql.dml import Insert, Update, UpdateBase
 from sqlalchemy.sql.elements import literal_column
+from sqlalchemy.sql.schema import Column
+from sqlalchemy.sql.selectable import Select
 
 RowUId = TypeVar("RowUId", int, str)  # typically id or uuid
 
@@ -43,17 +46,20 @@ class BaseOrm(Generic[RowUId]):
         readonly: Optional[Set] = None,
         writeonce: Optional[Set] = None,
     ):
+        """
+        :param readonly: read-only columns typically created in the server side, defaults to None
+        :param writeonce: columns inserted once but that cannot be updated, defaults to None
+        :raises ValueError: an error in any of the arguments
+        """
         self._conn = connection
         self._readonly: Set = readonly or {"created", "modified", "id"}
-        self._writeonce: Set = (
-            writeonce or set()
-        )  # can be inserted once but not updated
+        self._writeonce: Set = writeonce or set()
 
         # row selection logic
         self._unique_match = None
         try:
-            self._primary_key = next(c for c in table.columns if c.primary_key)
-            # TODO: assert this column's type is in RowUId?
+            self._primary_key: Column = next(c for c in table.columns if c.primary_key)
+            assert self._primary_key.type.impl.python_type == RowUId  # nosec
         except StopIteration as e:
             raise ValueError(f"Table {table.name} MUST define a primary key") from e
 
@@ -62,7 +68,7 @@ class BaseOrm(Generic[RowUId]):
     def _compose_select_query(
         self,
         columns: Union[str, List[str]],
-    ):
+    ) -> Select:
         column_names: List[str] = _normalize(columns)
 
         if ALL_COLUMNS in column_names:
@@ -78,7 +84,9 @@ class BaseOrm(Generic[RowUId]):
 
         return query
 
-    def _append_returning(self, columns: Union[str, List[str]], query):
+    def _append_returning(
+        self, columns: Union[str, List[str]], query: UpdateBase
+    ) -> Tuple[UpdateBase, bool]:
         column_names: List[str] = _normalize(columns)
 
         is_scalar: bool = len(column_names) == 1
@@ -98,7 +106,7 @@ class BaseOrm(Generic[RowUId]):
         return query, is_scalar
 
     @staticmethod
-    def _check_access_rights(access: Set, values: Dict):
+    def _check_access_rights(access: Set, values: Dict) -> None:
         not_allowed: Set[str] = access.intersection(values.keys())
         if not_allowed:
             raise ValueError(f"Columns {not_allowed} are read-only")
@@ -172,7 +180,7 @@ class BaseOrm(Generic[RowUId]):
         self._check_access_rights(self._readonly, values)
         self._check_access_rights(self._writeonce, values)
 
-        query = self._table.update().values(**values)
+        query: Update = self._table.update().values(**values)
         if self.is_default_set():
             assert self._unique_match is not None  # nosec
             query = query.where(self._unique_match)
@@ -190,7 +198,7 @@ class BaseOrm(Generic[RowUId]):
     ) -> Union[RowUId, RowProxy, None]:
         self._check_access_rights(self._readonly, values)
 
-        query = self._table.insert().values(**values)
+        query: Insert = self._table.insert().values(**values)
 
         query, is_scalar = self._append_returning(returning_cols, query)
         if is_scalar:
