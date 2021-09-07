@@ -120,6 +120,7 @@ async def _get_files_from_s3_backend(
 ) -> Set[str]:
     s3_file_entries = set()
     try:
+        # TODO: this could probably run faster if we maintain the client, and run successive commands in there
         command = (
             f"docker run "
             f"--env MC_HOST_mys3='https://{s3_access}:{s3_secret}@{s3_endpoint}' "
@@ -211,7 +212,11 @@ async def main_async(
 
     common_files = db_file_entries.intersection(s3_file_entries)
     s3_missing_files = db_file_entries.difference(s3_file_entries)
+    s3_missing_files_path = Path.cwd() / "s3_missing_files.txt"
+    s3_missing_files_path.write_text("\n".join(s3_missing_files))
     db_missing_files = s3_file_entries.difference(db_file_entries)
+    db_missing_files_path = Path.cwd() / "db_missing_files.txt"
+    db_missing_files_path.write_text("\n".join(db_missing_files))
 
     typer.secho(
         f"{len(common_files)} files are the same in both system", fg=typer.colors.BLUE
