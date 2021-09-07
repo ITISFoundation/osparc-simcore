@@ -9,7 +9,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from pprint import pprint
-from typing import Dict, Iterator
+from typing import Dict, Iterator, Type
 
 import docker
 import pytest
@@ -19,6 +19,36 @@ import yaml
 from .helpers.utils_docker import get_ip
 
 log = logging.getLogger(__name__)
+
+
+class _NotInSwarmException(Exception):
+    pass
+
+
+class _StillInSwarmException(Exception):
+    pass
+
+
+def _in_docker_swarm(
+    docker_client: docker.client.DockerClient, raise_error: bool = False
+) -> bool:
+    try:
+        docker_client.swarm.reload()
+        inspect_result = docker_client.swarm.attrs
+        assert type(inspect_result) == dict
+    except docker.errors.APIError as error:
+        if raise_error:
+            raise _NotInSwarmException() from error
+        return False
+    return True
+
+
+def _attempt_for(retry_error_cls: Type[Exception]) -> tenacity.Retrying:
+    return tenacity.Retrying(
+        wait=tenacity.wait_exponential(),
+        stop=tenacity.stop_after_delay(15),
+        retry_error_cls=retry_error_cls,
+    )
 
 
 @pytest.fixture(scope="session")
@@ -36,16 +66,32 @@ def keep_docker_up(request) -> bool:
 def docker_swarm(
     docker_client: docker.client.DockerClient, keep_docker_up: Iterator[bool]
 ) -> Iterator[None]:
-    try:
-        docker_client.swarm.reload()
-        print("CAUTION: Already part of a swarm")
-        yield
+    _in_docker_swarm(docker_client)
 
-    except docker.errors.APIError:
-        docker_client.swarm.init(advertise_addr=get_ip())
-        yield
-        if not keep_docker_up:
-            assert docker_client.swarm.leave(force=True)
+    for attempt in _attempt_for(retry_error_cls=_NotInSwarmException):
+        with attempt:
+            if not _in_docker_swarm(docker_client):
+                docker_client.swarm.init(advertise_addr=get_ip())
+            # if still not in swarm, raise an error to try and initialize again
+            _in_docker_swarm(docker_client, raise_error=True)
+
+    assert _in_docker_swarm(docker_client) is True
+
+    yield
+
+    for attempt in _attempt_for(retry_error_cls=_StillInSwarmException):
+        with attempt:
+            if _in_docker_swarm(docker_client):
+                if not keep_docker_up:
+                    assert docker_client.swarm.leave(force=True)
+
+            if _in_docker_swarm(docker_client) and not keep_docker_up:
+                # if still in swarm, raise an error to try and leave again
+                raise _StillInSwarmException()
+            if keep_docker_up:
+                assert _in_docker_swarm(docker_client) is True
+
+    assert _in_docker_swarm(docker_client) is keep_docker_up
 
 
 def to_datetime(datetime_str: str) -> datetime:
