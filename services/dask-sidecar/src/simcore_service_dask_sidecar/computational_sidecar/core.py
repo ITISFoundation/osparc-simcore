@@ -1,7 +1,10 @@
 import logging
 from dataclasses import dataclass
+from pprint import pformat
 from types import TracebackType
 from typing import Any, Awaitable, Dict, Optional, Type
+
+from aiodocker import Docker
 
 logger = logging.getLogger(__name__)
 
@@ -12,21 +15,21 @@ class ComputationalSidecar:
     service_version: str
     input_data: Dict[str, Any]
 
-    async def _pre_process(self) -> None:
-        # docker pull image
-        # download input data
-        # prepare volume with data
-        pass
-
-    async def _post_process(self) -> None:
-        # get data out of volume
-        # format output data
-        # upload data if needed
-        pass
-
     async def run(self) -> Dict[str, Any]:
-        await self._pre_process()
-        await self._post_process()
+        async with Docker() as docker_client:
+            # pull the image
+            async for pull_progress in docker_client.images.pull(
+                f"{self.service_key}:{self.service_version}", stream=True
+            ):
+                logger.info(
+                    "pulling %s:%s: %s",
+                    self.service_key,
+                    self.service_version,
+                    pformat(pull_progress),
+                )
+
+            # run the image
+
         return {}
 
     async def __aenter__(self) -> "ComputationalSidecar":
