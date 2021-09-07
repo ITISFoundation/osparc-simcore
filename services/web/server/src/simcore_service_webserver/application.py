@@ -22,6 +22,7 @@ from .email import setup_email
 from .exporter import setup_exporter
 from .groups import setup_groups
 from .login import setup_login
+from .meta import setup_meta
 from .products import setup_products
 from .projects import setup_projects
 from .publications import setup_publications
@@ -30,7 +31,6 @@ from .rest import setup_rest
 from .security import setup_security
 from .session import setup_session
 from .settings import setup_settings
-from .snapshots import setup_repos
 from .socketio import setup_socketio
 from .statics import setup_statics
 from .storage import setup_storage
@@ -78,7 +78,7 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_users(app)
     setup_groups(app)
     setup_projects(app)
-    setup_repos(app)
+    setup_meta(app)
     setup_activity(app)
     setup_resource_manager(app)
     setup_tags(app)

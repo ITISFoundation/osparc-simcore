@@ -1,8 +1,9 @@
-""" checkpoints (and parametrization) app module setup
+""" Meta-models app module setup
 
     Extend project's business logic by adding two new concepts, namely
-        - project snapshots and
+        - checkpoints
         - parametrizations
+
 
 """
 import logging
@@ -14,7 +15,7 @@ from servicelib.aiohttp.application_setup import (
     app_module_setup,
 )
 
-from . import repos_handlers
+from . import meta_api_handlers
 from .constants import APP_SETTINGS_KEY
 from .settings import ApplicationSettings
 
@@ -27,11 +28,11 @@ log = logging.getLogger(__name__)
     depends=["simcore_service_webserver.projects"],
     logger=log,
 )
-def setup_repos(app: web.Application):
+def setup_meta(app: web.Application):
 
     settings: ApplicationSettings = app[APP_SETTINGS_KEY]
     if not settings.WEBSERVER_DEV_FEATURES_ENABLED:
         raise SkipModuleSetup(reason="Development feature")
 
     # TODO: validate routes against OAS
-    app.add_routes(repos_handlers.routes)
+    app.add_routes(meta_api_handlers.routes)

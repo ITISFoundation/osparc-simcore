@@ -15,11 +15,11 @@ from yarl import URL
 from ._meta import api_version_prefix as vtag
 from .constants import RQT_USERID_KEY
 from .login.decorators import login_required
+from .meta_core_snapshots import ProjectDict, take_snapshot
+from .meta_db import ProjectsRepository, SnapshotsRepository
+from .meta_models import Snapshot, SnapshotPatchBody, SnapshotResource
 from .projects import projects_api
 from .projects.projects_exceptions import ProjectNotFoundError
-from .repos_db import ProjectsRepository, SnapshotsRepository
-from .repos_models import Snapshot, SnapshotPatchBody, SnapshotResource
-from .repos_snapshots import ProjectDict, take_snapshot
 from .security_decorators import permission_required
 from .utils_aiohttp import rename_routes_as_handler_function, view_routes
 

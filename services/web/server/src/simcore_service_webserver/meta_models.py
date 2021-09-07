@@ -90,7 +90,7 @@ class SnapshotResource(Snapshot):
         # how to guarantee routes names
         return cls(
             url=url_for(
-                "simcore_service_webserver.repos_handlers.get_snapshot",
+                "simcore_service_webserver.meta_api_handlers.get_snapshot",
                 project_id=snapshot.parent_uuid,
                 snapshot_id=snapshot.id,
             ),
