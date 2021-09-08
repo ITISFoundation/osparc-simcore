@@ -32,10 +32,8 @@ isort==5.9.3
     #   -r requirements/../../../requirements/devenv.txt
     #   -r requirements/_tools.in
     #   pylint
-lazy-object-proxy==1.4.3
-    # via
-    #   -c requirements/_base.txt
-    #   astroid
+lazy-object-proxy==1.6.0
+    # via astroid
 mccabe==0.6.1
     # via pylint
 mypy==0.910
@@ -57,7 +55,7 @@ platformdirs==2.3.0
     #   black
     #   pylint
     #   virtualenv
-pre-commit==2.14.1
+pre-commit==2.15.0
     # via -r requirements/../../../requirements/devenv.txt
 pylint==2.10.2
     # via -r requirements/_tools.in
@@ -83,7 +81,7 @@ tomli==1.2.1
     # via
     #   black
     #   pep517
-typing-extensions==3.10.0.1
+typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt
     #   black

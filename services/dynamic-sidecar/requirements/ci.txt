@@ -17,6 +17,7 @@
 ../../packages/pytest-simcore/
 ../../packages/simcore-sdk
 ../../packages/service-library
+../../services/storage/client-sdk/python/
 
 # installs current package
 .

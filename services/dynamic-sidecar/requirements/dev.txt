@@ -18,6 +18,7 @@
 --editable ../../packages/pytest-simcore/
 --editable ../../packages/simcore-sdk
 --editable ../../packages/service-library
+--editable ../../services/storage/client-sdk/python/
 
 # installs current package
 --editable .
