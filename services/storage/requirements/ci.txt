@@ -14,7 +14,7 @@
 ../../packages/models-library/
 ../../packages/postgres-database/
 ../../packages/pytest-simcore/
-../../packages/service-library/
+../../packages/service-library[aiohttp]
 ../../packages/settings-library/
 
 # installs current package

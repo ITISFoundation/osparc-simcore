@@ -11,8 +11,8 @@ import logging
 from typing import Dict
 
 from aiohttp import ClientSession, web
-from servicelib.application_setup import ModuleCategory, app_module_setup
-from servicelib.client_session import get_client_session
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.client_session import get_client_session
 from yarl import URL
 
 from .constants import (

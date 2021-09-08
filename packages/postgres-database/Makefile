@@ -102,8 +102,5 @@ down-pg down-prod: $(docker-compose-configs) ## stops pg server
 
 
 .PHONY: auto-doc
-auto-doc: install-dev ## Creates entity relationship diagram (ERD) defined under ``simcore_postgres_database.models``
-	# installing doc dependencies (install-doc)
-	pip install eralchemy
-	# running script
-	python scripts/create_erd.py
+auto-doc: ## Creates entity relationship diagram (ERD) defined under ``simcore_postgres_database.models``
+	$(MAKE) --directory=scripts/erd run

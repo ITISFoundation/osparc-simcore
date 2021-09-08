@@ -32,8 +32,8 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pydantic import BaseSettings
 from pytest_simcore.helpers.utils_login import NewUser
-from servicelib.aiopg_utils import DSN
-from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
+from servicelib.common_aiopg_utils import DSN
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from simcore_service_webserver import rest
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_config import app_schema as app_schema
@@ -343,7 +343,7 @@ def postgres_service(docker_services, postgres_dsn):
     return url
 
 
-@pytest.fixture()
+@pytest.fixture(scope="function")
 def postgres_db(
     postgres_dsn: Dict, postgres_service: str
 ) -> Iterator[sa.engine.Engine]:

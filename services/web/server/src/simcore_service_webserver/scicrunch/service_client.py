@@ -9,7 +9,7 @@ from typing import Any, List, MutableMapping, Optional
 
 from aiohttp import ClientSession, client_exceptions
 from pydantic import ValidationError
-from servicelib.client_session import get_client_session
+from servicelib.aiohttp.client_session import get_client_session
 from yarl import URL
 
 from ._config import SciCrunchSettings
@@ -95,8 +95,8 @@ class SciCrunch:
     def validate_identifier(cls, rrid: str, *, for_api: bool = False) -> str:
         try:
             rrid = normalize_rrid_tags(rrid, with_prefix=False)
-        except ValueError:
-            raise InvalidRRID(rrid)
+        except ValueError as err:
+            raise InvalidRRID(rrid) from err
 
         if for_api and not rrid.startswith("SCR_"):
             # "SCR" for the SciCrunch registry of tools

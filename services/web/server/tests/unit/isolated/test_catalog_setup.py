@@ -4,8 +4,8 @@
 
 
 import pytest
-from servicelib.application import create_safe_application
-from servicelib.client_session import APP_CLIENT_SESSION_KEY
+from servicelib.aiohttp.application import create_safe_application
+from servicelib.aiohttp.client_session import APP_CLIENT_SESSION_KEY
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.application_config import load_default_config
 from simcore_service_webserver.catalog import (

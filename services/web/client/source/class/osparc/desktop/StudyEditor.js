@@ -277,10 +277,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         startStopButtonsSS.setRunning(false);
       }, this);
 
-      req.setRequestData({
+      const requestData = {
         "subgraph": partialPipeline,
         "force_restart": forceRestart
-      });
+      };
+      if (startStopButtonsWB.getClusterId() !== null) {
+        requestData["cluster_id"] = startStopButtonsWB.getClusterId();
+      }
+      req.setRequestData(requestData);
       req.send();
       if (partialPipeline.length) {
         this.__getStudyLogger().info(null, "Starting partial pipeline");

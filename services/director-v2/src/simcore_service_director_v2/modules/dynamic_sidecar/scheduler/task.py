@@ -109,9 +109,9 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         self._app: FastAPI = app
         self._lock: Lock = Lock()
 
-        self._to_observe: Dict[str, LockWithSchedulerData] = dict()
+        self._to_observe: Dict[str, LockWithSchedulerData] = {}
         self._keep_running: bool = False
-        self._inverse_search_mapping: Dict[UUID, str] = dict()
+        self._inverse_search_mapping: Dict[UUID, str] = {}
         self._scheduler_task: Optional[Task] = None
         self._trigger_observation_queue_task: Optional[Task] = None
         self._trigger_observation_queue: Queue = Queue()
@@ -361,8 +361,8 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
     async def shutdown(self):
         logging.info("Shutting down dynamic-sidecar scheduler")
         self._keep_running = False
-        self._inverse_search_mapping = dict()
-        self._to_observe = dict()
+        self._inverse_search_mapping = {}
+        self._to_observe = {}
 
         if self._scheduler_task is not None:
             await self._scheduler_task

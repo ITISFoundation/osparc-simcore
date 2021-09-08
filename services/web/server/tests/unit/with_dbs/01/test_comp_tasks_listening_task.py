@@ -12,7 +12,7 @@ import aiopg.sa
 import pytest
 import tenacity
 from aiopg.sa.result import RowProxy
-from servicelib.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_service_webserver.computation_comp_tasks_listening_task import (

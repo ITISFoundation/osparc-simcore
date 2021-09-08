@@ -42,14 +42,17 @@ pep517==0.11.0
     # via pip-tools
 pip-tools==6.2.0
     # via -r requirements/../../../../requirements/devenv.txt
-platformdirs==2.2.0
-    # via virtualenv
+platformdirs==2.3.0
+    # via
+    #   -c requirements/_test.txt
+    #   virtualenv
 pre-commit==2.14.0
     # via -r requirements/../../../../requirements/devenv.txt
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
@@ -58,6 +61,7 @@ regex==2021.8.3
 six==1.16.0
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   -c requirements/_test.txt
     #   virtualenv
 toml==0.10.2

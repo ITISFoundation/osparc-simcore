@@ -4,8 +4,8 @@ from math import ceil
 from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
 
 import aiohttp
-from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.client_session import ClientSession, get_client_session
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.client_session import ClientSession, get_client_session
 from yarl import URL
 
 from ..constants import DATCORE_ID, DATCORE_STR

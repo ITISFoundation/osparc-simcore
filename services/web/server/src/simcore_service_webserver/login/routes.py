@@ -9,8 +9,8 @@ from typing import List
 
 from aiohttp import web
 
-from servicelib import openapi
-from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
+from servicelib.aiohttp import openapi
+from servicelib.aiohttp.rest_routing import iter_path_operations, map_handlers_with_operations
 
 from . import api_keys_handlers
 from . import handlers as login_handlers
@@ -18,8 +18,8 @@ from . import handlers as login_handlers
 log = logging.getLogger(__name__)
 
 
-def create(specs: openapi.Spec) -> List[web.RouteDef]:
-    """ Creates routes mapping operators_id with handler functions
+def create_routes(specs: openapi.Spec) -> List[web.RouteDef]:
+    """Creates routes mapping operators_id with handler functions
 
     :param specs: validated oas
     :type specs: openapi.Spec
@@ -55,9 +55,3 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     log.debug("Mapped auth routes: %s", "\n".join([pformat(r) for r in routes]))
 
     return routes
-
-
-# alias
-create_routes = create
-
-__all__ = "create_routes"

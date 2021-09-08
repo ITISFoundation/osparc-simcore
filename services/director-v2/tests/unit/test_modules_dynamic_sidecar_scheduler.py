@@ -208,6 +208,7 @@ async def mocked_app(
     loop: BaseEventLoop,
     dynamic_sidecar_settings: AppSettings,
     mocked_director_v0: MockRouter,
+    docker_swarm: None,
 ) -> Iterator[FastAPI]:
     app = FastAPI()
     app.state.settings = dynamic_sidecar_settings
@@ -499,7 +500,9 @@ async def test_get_stack_status_ok(
         )
 
 
-async def test_module_setup(dynamic_sidecar_settings: AppSettings) -> None:
+async def test_module_setup(
+    dynamic_sidecar_settings: AppSettings, docker_swarm: None
+) -> None:
     app = FastAPI()
     app.state.settings = dynamic_sidecar_settings
     module_setup.setup(app)

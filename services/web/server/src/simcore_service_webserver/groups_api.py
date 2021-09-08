@@ -1,13 +1,13 @@
 import logging
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
-from servicelib.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert
 
@@ -34,7 +34,7 @@ DEFAULT_GROUP_OWNER_ACCESS_RIGHTS = {"read": True, "write": True, "delete": True
 
 async def list_user_groups(
     app: web.Application, user_id: int
-) -> Tuple[Dict[str, str], List[Dict[str, str]], Dict[str, str]]:
+) -> Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]:
     """returns the user groups
     Returns:
         Tuple[List[Dict[str, str]]] -- [returns the user primary group, standard groups and the all group]

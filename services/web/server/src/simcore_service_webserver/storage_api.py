@@ -7,7 +7,7 @@ from typing import Any, Dict, Tuple
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
 from pydantic.types import PositiveInt
-from servicelib.rest_responses import unwrap_envelope
+from servicelib.aiohttp.rest_responses import unwrap_envelope
 from yarl import URL
 
 from .storage_config import get_client_session, get_storage_config

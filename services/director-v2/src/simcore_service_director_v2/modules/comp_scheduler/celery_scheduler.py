@@ -10,7 +10,7 @@ from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
 )
 
 from ...models.domains.comp_tasks import CompTaskAtDB, Image
-from ...models.schemas.constants import UserID
+from ...models.schemas.constants import ClusterID, UserID
 from ...modules.celery import CeleryClient
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,7 @@ class CeleryScheduler(BaseCompScheduler):
         self,
         user_id: UserID,
         project_id: ProjectID,
+        _cluster_id: ClusterID,
         scheduled_tasks: Dict[NodeID, Image],
         callback: Callable[[], None],
     ):
@@ -38,3 +39,6 @@ class CeleryScheduler(BaseCompScheduler):
 
     async def _stop_tasks(self, tasks: List[CompTaskAtDB]) -> None:
         self.celery_client.abort_computation_tasks([str(t.job_id) for t in tasks])
+
+    async def _reconnect_backend(self) -> None:
+        raise NotImplementedError

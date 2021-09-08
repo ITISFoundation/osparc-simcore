@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_tools.txt --strip-extras requirements/_tools.in
 #
-astroid==2.7.2
+astroid==2.7.3
     # via pylint
 backports.entry-points-selectable==1.1.0
     # via virtualenv
@@ -52,7 +52,7 @@ pep517==0.11.0
     # via pip-tools
 pip-tools==6.2.0
     # via -r requirements/../../../requirements/devenv.txt
-platformdirs==2.2.0
+platformdirs==2.3.0
     # via
     #   black
     #   pylint

@@ -21,7 +21,7 @@ import pytest
 from models_library.settings.redis import RedisConfig
 from pytest_simcore.docker_registry import _pull_push_service
 from pytest_simcore.helpers.utils_login import log_client_in
-from servicelib.application import create_safe_application
+from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,

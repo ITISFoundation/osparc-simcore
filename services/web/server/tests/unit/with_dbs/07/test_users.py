@@ -20,7 +20,7 @@ from pytest_simcore.helpers.utils_tokens import (
     delete_all_tokens_from_db,
     get_token_from_db,
 )
-from servicelib.application import create_safe_application
+from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
 from simcore_service_webserver.groups import setup_groups
 from simcore_service_webserver.login import setup_login

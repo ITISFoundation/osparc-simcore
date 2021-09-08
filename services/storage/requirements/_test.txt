@@ -9,7 +9,7 @@ aiohttp==3.7.4.post0
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   pytest-aiohttp
-astroid==2.6.6
+astroid==2.7.3
     # via pylint
 async-timeout==3.0.1
     # via
@@ -49,13 +49,13 @@ coverage==5.5
     #   pytest-cov
 coveralls==3.2.0
     # via -r requirements/_test.in
-cryptography==3.4.7
+cryptography==3.4.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   paramiko
 distro==1.6.0
     # via docker-compose
-docker==5.0.0
+docker==5.0.2
     # via docker-compose
 docker-compose==1.29.1
     # via
@@ -67,7 +67,7 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==8.11.0
+faker==8.12.1
     # via -r requirements/_test.in
 idna==2.10
     # via
@@ -93,17 +93,19 @@ multidict==5.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-numpy==1.21.1
+numpy==1.21.2
     # via pandas
 packaging==21.0
     # via
     #   pytest
     #   pytest-sugar
-pandas==1.3.1
+pandas==1.3.2
     # via -r requirements/_test.in
 paramiko==2.7.2
     # via docker
-pluggy==0.13.1
+platformdirs==2.3.0
+    # via pylint
+pluggy==1.0.0
     # via pytest
 ptvsd==4.3.2
     # via -r requirements/_test.in
@@ -111,7 +113,7 @@ py==1.10.0
     # via pytest
 pycparser==2.20
     # via cffi
-pylint==2.9.6
+pylint==2.10.2
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
@@ -121,7 +123,7 @@ pyrsistent==0.18.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==6.2.4
+pytest==6.2.5
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -144,7 +146,7 @@ pytest-runner==5.3.1
     # via -r requirements/_test.in
 pytest-sugar==0.9.4
     # via -r requirements/_test.in
-python-dateutil==2.8.1
+python-dateutil==2.8.2
     # via
     #   -c requirements/_base.txt
     #   faker
@@ -203,7 +205,7 @@ wrapt==1.12.1
     # via
     #   -c requirements/_base.txt
     #   astroid
-yarl==1.6.3
+yarl==1.5.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp

@@ -6,7 +6,9 @@ import os
 from distutils.util import strtobool
 from typing import Dict, Optional
 
-from servicelib.client_session import APP_CLIENT_SESSION_KEY
+from servicelib.client_session import (  # pylint: disable=no-name-in-module
+    APP_CLIENT_SESSION_KEY,
+)
 
 LOGLEVEL_STR = os.environ.get("LOGLEVEL", "WARNING").upper()
 log_level = getattr(logging, LOGLEVEL_STR)

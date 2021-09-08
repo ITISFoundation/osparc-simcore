@@ -36,12 +36,18 @@ clusters = sa.Table(
         sa.BigInteger,
         sa.ForeignKey(
             "groups.gid",
-            name="fk_services_meta_data_gid_groups",
+            name="fk_clusters_gid_groups",
             onupdate="CASCADE",
             ondelete="RESTRICT",
         ),
         nullable=False,
         doc="Identifier of the group that owns this cluster",
+    ),
+    sa.Column(
+        "thumbnail",
+        sa.String,
+        nullable=True,
+        doc="Link to image as to cluster thumbnail",
     ),
     sa.Column(
         "created",
@@ -80,7 +86,7 @@ DECLARE
     group_id BIGINT;
 BEGIN
     IF TG_OP = 'INSERT' THEN
-        INSERT INTO "cluster_to_groups" ("gid", "cluster_id", "read_access", "write_access", "delete_access") VALUES (NEW.owner, NEW.id, TRUE, TRUE, TRUE);
+        INSERT INTO "cluster_to_groups" ("gid", "cluster_id", "read", "write", "delete") VALUES (NEW.owner, NEW.id, TRUE, TRUE, TRUE);
     END IF;
     RETURN NULL;
 END; $$ LANGUAGE 'plpgsql';

@@ -8,7 +8,7 @@ import logging
 from aiohttp.web import Request, RouteTableDef
 from models_library.api_schemas_storage import HealthCheck
 from models_library.app_diagnostics import AppStatusCheck
-from servicelib.rest_utils import extract_and_validate
+from servicelib.aiohttp.rest_utils import extract_and_validate
 
 from .db import get_engine_state
 from .db import is_service_responsive as is_pg_responsive

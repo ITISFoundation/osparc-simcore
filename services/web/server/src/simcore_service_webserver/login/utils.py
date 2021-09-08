@@ -16,7 +16,7 @@ from aiohttp import web
 from aiohttp_jinja2 import render_string
 from passlib import pwd
 
-from servicelib.rest_models import LogMessageType
+from servicelib.aiohttp.rest_models import LogMessageType
 
 from ..resources import resources
 from .cfg import cfg  # TODO: remove this singleton!!!

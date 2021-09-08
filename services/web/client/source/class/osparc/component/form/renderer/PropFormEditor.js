@@ -23,7 +23,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
   extend: osparc.component.form.renderer.PropFormBase,
 
   /**
-   * @param form {osparc.component.form.Auto} form widget to embedd
+   * @param form {osparc.component.form.Auto} form widget to embed
    * @param node {osparc.data.model.Node} Node owning the widget
    */
   construct: function(form, node) {

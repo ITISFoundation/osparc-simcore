@@ -2,11 +2,13 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-value-for-parameter
-# pylint: disable=protected-access
+# pylint:disable=protected-access
+# pylint:disable=too-many-arguments
 
 
 import asyncio
 from typing import Any, Callable, Dict, Iterator, List
+from unittest.mock import call
 
 import aiopg
 import pytest
@@ -21,6 +23,7 @@ from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
+    ComputationalBackendNotConnectedError,
     ConfigurationError,
     PipelineNotFoundError,
 )
@@ -102,6 +105,7 @@ def scheduler(
 
 async def test_empty_pipeline_is_not_scheduled(
     scheduler: BaseCompScheduler,
+    minimal_app: FastAPI,
     user_id: PositiveInt,
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
@@ -111,12 +115,20 @@ async def test_empty_pipeline_is_not_scheduled(
 
     # the project is not in the comp_pipeline, therefore scheduling it should fail
     with pytest.raises(PipelineNotFoundError):
-        await scheduler.run_new_pipeline(user_id=user_id, project_id=empty_project.uuid)
+        await scheduler.run_new_pipeline(
+            user_id=user_id,
+            project_id=empty_project.uuid,
+            cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
+        )
     # create the empty pipeline now
     _empty_pipeline = pipeline(project_id=f"{empty_project.uuid}")
 
     # creating a run with an empty pipeline is useless, check the scheduler is not kicking in
-    await scheduler.run_new_pipeline(user_id=user_id, project_id=empty_project.uuid)
+    await scheduler.run_new_pipeline(
+        user_id=user_id,
+        project_id=empty_project.uuid,
+        cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
+    )
     assert len(scheduler.scheduled_pipelines) == 0
     assert (
         scheduler.wake_up_event.is_set() == False
@@ -134,6 +146,7 @@ async def test_empty_pipeline_is_not_scheduled(
 
 async def test_misconfigured_pipeline_is_not_scheduled(
     scheduler: BaseCompScheduler,
+    minimal_app: FastAPI,
     user_id: PositiveInt,
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
@@ -149,7 +162,11 @@ async def test_misconfigured_pipeline_is_not_scheduled(
         dag_adjacency_list=fake_workbench_adjacency,
     )
     # check the pipeline is correctly added to the scheduled pipelines
-    await scheduler.run_new_pipeline(user_id=user_id, project_id=sleepers_project.uuid)
+    await scheduler.run_new_pipeline(
+        user_id=user_id,
+        project_id=sleepers_project.uuid,
+        cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
+    )
     assert len(scheduler.scheduled_pipelines) == 1
     assert (
         scheduler.wake_up_event.is_set() == True
@@ -222,6 +239,7 @@ async def _set_task_state(
 
 async def test_proper_pipeline_is_scheduled(
     scheduler: BaseCompScheduler,
+    minimal_app: FastAPI,
     user_id: PositiveInt,
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
@@ -243,7 +261,11 @@ async def test_proper_pipeline_is_scheduled(
     )
     sleeper_tasks = tasks(project=sleepers_project, state=RunningState.PUBLISHED)
     # check the pipeline is correctly added to the scheduled pipelines
-    await scheduler.run_new_pipeline(user_id=user_id, project_id=sleepers_project.uuid)
+    await scheduler.run_new_pipeline(
+        user_id=user_id,
+        project_id=sleepers_project.uuid,
+        cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
+    )
     assert len(scheduler.scheduled_pipelines) == 1
     assert (
         scheduler.wake_up_event.is_set() == True
@@ -261,14 +283,21 @@ async def test_proper_pipeline_is_scheduled(
         aiopg_engine, user_id, sleepers_project.uuid, RunningState.PUBLISHED
     )
     # check the dask client was properly called
-    mocked_dask_client.assert_called_once_with(
-        user_id=user_id,
-        project_id=sleepers_project.uuid,
-        tasks={
-            f"{sleeper_tasks[1].node_id}": sleeper_tasks[1].image,
-            f"{sleeper_tasks[3].node_id}": sleeper_tasks[3].image,
-        },
-        callback=scheduler._wake_up_scheduler_now,
+    mocked_dask_client.assert_has_calls(
+        calls=[
+            call(
+                user_id=user_id,
+                project_id=sleepers_project.uuid,
+                cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
+                tasks={k: v},
+                callback=scheduler._wake_up_scheduler_now,
+            )
+            for k, v in {
+                f"{sleeper_tasks[1].node_id}": sleeper_tasks[1].image,
+                f"{sleeper_tasks[3].node_id}": sleeper_tasks[3].image,
+            }.items()
+        ],
+        any_order=True,
     )
     mocked_dask_client.reset_mock()
     # trigger the scheduler
@@ -311,6 +340,7 @@ async def test_proper_pipeline_is_scheduled(
     mocked_dask_client.assert_called_once_with(
         user_id=user_id,
         project_id=sleepers_project.uuid,
+        cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
         tasks={
             f"{sleeper_tasks[2].node_id}": sleeper_tasks[2].image,
         },
@@ -363,3 +393,49 @@ async def test_proper_pipeline_is_scheduled(
     mocked_dask_client.assert_not_called()
     # the scheduled pipeline shall be removed
     assert scheduler.scheduled_pipelines == {}
+
+
+async def test_handling_of_disconnected_dask_scheduler(
+    dask_spec_local_cluster: SpecCluster,
+    scheduler: BaseCompScheduler,
+    minimal_app: FastAPI,
+    user_id: PositiveInt,
+    project: Callable[..., ProjectAtDB],
+    pipeline: Callable[..., CompPipelineAtDB],
+    tasks: Callable[..., List[CompTaskAtDB]],
+    fake_workbench_without_outputs: Dict[str, Any],
+    fake_workbench_adjacency: Dict[str, Any],
+    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    mocker,
+):
+    # this will crate a non connected backend issue that will trigger re-connection
+    mocked_dask_client = mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.DaskClient.send_computation_tasks",
+        side_effect=ComputationalBackendNotConnectedError(
+            msg="faked disconnected backend"
+        ),
+    )
+    mocked_reconnect_client = mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.DaskClient.reconnect_client"
+    )
+
+    sleepers_project = project(workbench=fake_workbench_without_outputs)
+    sleepers_pipeline = pipeline(
+        project_id=f"{sleepers_project.uuid}",
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
+    sleeper_tasks = tasks(project=sleepers_project, state=RunningState.PUBLISHED)
+    # check the pipeline is correctly added to the scheduled pipelines
+    await scheduler.run_new_pipeline(
+        user_id=user_id,
+        project_id=sleepers_project.uuid,
+        cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
+    )
+    await _trigger_scheduler(scheduler)
+    # since there is no cluster, there is no dask-scheduler,
+    # the tasks shall all still be in PUBLISHED state now
+    await _assert_comp_run_state(
+        aiopg_engine, user_id, sleepers_project.uuid, RunningState.PUBLISHED
+    )
+    # the exception risen should trigger calls to reconnect the client
+    mocked_reconnect_client.assert_called()

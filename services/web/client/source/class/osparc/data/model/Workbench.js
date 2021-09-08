@@ -55,6 +55,15 @@ qx.Class.define("osparc.data.model.Workbench", {
     "showInLogger": "qx.event.type.Data"
   },
 
+  properties: {
+    study: {
+      check: "osparc.data.model.Study",
+      init: null,
+      nullable: false,
+      event: "changeStudy"
+    }
+  },
+
   members: {
     __workbenchInitData: null,
     __workbenchUIInitData: null,
@@ -148,7 +157,10 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     getPathIds: function(nodeId) {
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const study = this.getStudy();
+      if (study === null) {
+        return [];
+      }
       const studyId = study.getUuid();
       if (nodeId === studyId || nodeId === undefined) {
         return [studyId];
@@ -247,13 +259,13 @@ qx.Class.define("osparc.data.model.Workbench", {
         return null;
       }
 
-      const node = new osparc.data.model.Node(key, version, uuid);
+      const node = new osparc.data.model.Node(this.getStudy(), key, version, uuid);
       this.addNode(node, parent);
 
       this.__initNodeSignals(node);
 
       node.populateNodeData();
-      node.giveUniqueName();
+      this.__giveUniqueNameToNode(node, node.getLabel());
       node.startInBackend();
 
       const metaData = node.getMetaData();
@@ -433,9 +445,8 @@ qx.Class.define("osparc.data.model.Workbench", {
       node.setParentNodeId(parentNode ? parentNode.getNodeId() : null);
       this.fireEvent("pipelineChanged");
       if (node.isParameter()) {
-        const study = osparc.store.Store.getInstance().getCurrentStudy();
-        if (study) {
-          study.fireEvent("changeParameters");
+        if (this.getStudy()) {
+          this.getStudy().fireEvent("changeParameters");
         }
       }
     },
@@ -476,8 +487,10 @@ qx.Class.define("osparc.data.model.Workbench", {
         }
 
         // remove it from slideshow
-        const study = osparc.store.Store.getInstance().getCurrentStudy();
-        study.getUi().getSlideshow().removeNode(nodeId);
+        if (this.getStudy()) {
+          this.getStudy().getUi().getSlideshow()
+            .removeNode(nodeId);
+        }
 
         this.fireEvent("pipelineChanged");
         return true;
@@ -543,7 +556,7 @@ qx.Class.define("osparc.data.model.Workbench", {
             continue;
           }
         }
-        const node = new osparc.data.model.Node(nodeData.key, nodeData.version, nodeId);
+        const node = new osparc.data.model.Node(this.getStudy(), nodeData.key, nodeData.version, nodeId);
         this.__initNodeSignals(node);
         let parentNode = null;
         if (nodeData.parent) {
@@ -556,8 +569,22 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.__populateNodesData(workbenchData, workbenchUIData);
 
       nodeIds.forEach(nodeId => {
-        this.getNode(nodeId).giveUniqueName();
+        const node = this.getNode(nodeId);
+        this.__giveUniqueNameToNode(node, node.getLabel());
       });
+    },
+
+    __giveUniqueNameToNode: function(node, label, suffix = 2) {
+      const newLabel = label + "_" + suffix;
+      const allModels = this.getNodes(true);
+      const nodes = Object.values(allModels);
+      for (const node2 of nodes) {
+        if (node2.getNodeId() !== node.getNodeId() &&
+            node2.getLabel().localeCompare(node.getLabel()) === 0) {
+          node.setLabel(newLabel);
+          this.__giveUniqueNameToNode(node, label, suffix+1);
+        }
+      }
     },
 
     __populateNodesData: function(workbenchData, workbenchUIData) {

@@ -11,8 +11,8 @@ from typing import Dict, List
 
 import pytest
 from pytest_simcore.helpers.utils_environs import eval_service_environ
-from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.application_setup import is_setup_function
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_setup import is_setup_function
 from simcore_service_webserver.application_config import create_schema
 from simcore_service_webserver.cli import parse, setup_parser
 from simcore_service_webserver.db_config import CONFIG_SECTION_NAME as DB_SECTION

@@ -4,15 +4,12 @@
 
 """
 import enum
-import logging
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.sql import func
 
 from .base import metadata
-
-log = logging.getLogger(__name__)
 
 
 class ProjectType(enum.Enum):

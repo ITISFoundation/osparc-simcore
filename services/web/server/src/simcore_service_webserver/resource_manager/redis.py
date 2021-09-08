@@ -6,7 +6,7 @@ from aiohttp import web
 from aioredlock import Aioredlock
 from tenacity import AsyncRetrying, before_log, stop_after_attempt, wait_fixed
 
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 
 from .config import (
     APP_CLIENT_REDIS_CLIENT_KEY,

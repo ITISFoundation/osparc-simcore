@@ -26,7 +26,7 @@ from models_library.projects_state import (
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib import async_utils
-from servicelib.application import create_safe_application
+from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver import catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole

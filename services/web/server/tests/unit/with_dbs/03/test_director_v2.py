@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 
-import sys
 from typing import Dict
 from uuid import UUID, uuid4
 

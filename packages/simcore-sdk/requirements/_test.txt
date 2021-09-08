@@ -16,7 +16,7 @@ alembic==1.6.5
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-astroid==2.6.6
+astroid==2.7.3
     # via pylint
 async-timeout==3.0.1
     # via
@@ -69,9 +69,7 @@ iniconfig==1.1.1
 isort==5.9.3
     # via pylint
 lazy-object-proxy==1.4.3
-    # via
-    #   -c requirements/_base.txt
-    #   astroid
+    # via astroid
 mako==1.1.4
     # via
     #   -c requirements/_base.txt
@@ -96,6 +94,8 @@ packaging==21.0
     #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
+platformdirs==2.3.0
+    # via pylint
 pluggy==0.13.1
     # via pytest
 pprintpp==0.4.0
@@ -108,7 +108,7 @@ py==1.10.0
     # via
     #   pytest
     #   pytest-forked
-pylint==2.9.6
+pylint==2.10.2
     # via -r requirements/_test.in
 pyparsing==2.4.7
     # via

@@ -7,17 +7,17 @@
 aiohttp==3.7.4.post0
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
+    #   -c requirements/_aiohttp.txt
     #   pytest-aiohttp
-astroid==2.6.6
+astroid==2.7.3
     # via pylint
 async-timeout==3.0.1
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/_aiohttp.txt
     #   aiohttp
 attrs==20.3.0
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/_aiohttp.txt
     #   aiohttp
     #   jsonschema
     #   pytest
@@ -33,7 +33,7 @@ cffi==1.14.6
     #   pynacl
 chardet==4.0.0
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/_aiohttp.txt
     #   aiohttp
 charset-normalizer==2.0.4
     # via requests
@@ -44,13 +44,13 @@ coverage==5.5
     #   pytest-cov
 coveralls==3.2.0
     # via -r requirements/_test.in
-cryptography==3.4.7
+cryptography==3.4.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   paramiko
 distro==1.6.0
     # via docker-compose
-docker==5.0.0
+docker==5.0.2
     # via docker-compose
 docker-compose==1.29.1
     # via
@@ -64,7 +64,7 @@ docopt==0.6.2
     #   docker-compose
 idna==2.10
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/_aiohttp.txt
     #   requests
     #   yarl
 iniconfig==1.1.1
@@ -73,17 +73,17 @@ isort==5.9.3
     # via pylint
 jsonschema==3.2.0
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/_aiohttp.txt
     #   docker-compose
 lazy-object-proxy==1.4.3
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/_aiohttp.txt
     #   astroid
 mccabe==0.6.1
     # via pylint
 multidict==5.1.0
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/_aiohttp.txt
     #   aiohttp
     #   yarl
 packaging==21.0
@@ -92,13 +92,15 @@ packaging==21.0
     #   pytest-sugar
 paramiko==2.7.2
     # via docker
-pluggy==0.13.1
+platformdirs==2.3.0
+    # via pylint
+pluggy==1.0.0
     # via pytest
 py==1.10.0
     # via pytest
 pycparser==2.20
     # via cffi
-pylint==2.9.6
+pylint==2.10.2
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
@@ -106,9 +108,9 @@ pyparsing==2.4.7
     # via packaging
 pyrsistent==0.18.0
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/_aiohttp.txt
     #   jsonschema
-pytest==6.2.4
+pytest==6.2.5
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -136,6 +138,7 @@ python-dotenv==0.19.0
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   docker-compose
 requests==2.26.0
@@ -145,7 +148,7 @@ requests==2.26.0
     #   docker-compose
 six==1.16.0
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/_aiohttp.txt
     #   bcrypt
     #   dockerpty
     #   jsonschema
@@ -160,8 +163,9 @@ toml==0.10.2
     #   pylint
     #   pytest
     #   pytest-cov
-typing-extensions==3.10.0.0
+typing-extensions==3.10.0.2
     # via
+    #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   aiohttp
 urllib3==1.26.6
@@ -176,7 +180,7 @@ wrapt==1.12.1
     # via astroid
 yarl==1.6.3
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/_aiohttp.txt
     #   aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:

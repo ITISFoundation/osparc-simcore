@@ -5,8 +5,8 @@ import logging
 
 from aiohttp import web
 
-from servicelib.application_setup import ModuleCategory, app_module_setup
-from servicelib.rest_routing import (
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.rest_routing import (
     get_handlers_from_namespace,
     iter_path_operations,
     map_handlers_with_operations,
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
     depends=["simcore_service_webserver.rest"],
     logger=logger,
 )
-def setup(app: web.Application):
+def setup_users(app: web.Application):
 
     # routes related with users
     specs = app[APP_OPENAPI_SPECS_KEY]
@@ -34,9 +34,3 @@ def setup(app: web.Application):
         strict=True,
     )
     app.router.add_routes(routes)
-
-
-# alias
-setup_users = setup
-
-__all__ = "setup_users"

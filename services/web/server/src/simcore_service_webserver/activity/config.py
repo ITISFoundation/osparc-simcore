@@ -8,7 +8,7 @@ import trafaret as T
 from aiohttp.web import Application
 from models_library.basic_types import PortInt, VersionTag
 from pydantic import BaseSettings
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 
 CONFIG_SECTION_NAME = "activity"
 

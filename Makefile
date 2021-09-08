@@ -373,6 +373,7 @@ pylint: ## Runs python linter framework's wide
 	@/bin/bash -c "pylint --version"
 	# Running linter
 	@/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
+											-not -path "*ignore*" \
 											-not -path "*.venv*" \
 											-not -path "*/client/*" \
 											-not -path "*egg*" \
@@ -381,6 +382,7 @@ pylint: ## Runs python linter framework's wide
 											-not -path "*sandbox*" \
 											-not -path "*-sdk/python*" \
 											-not -path "*generated_code*" \
+											-not -path "*build*" \
 											-not -path "*datcore.py" \
 											-not -path "*web/server*"))"
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
