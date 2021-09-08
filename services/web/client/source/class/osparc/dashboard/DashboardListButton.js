@@ -70,6 +70,11 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
   },
 
   properties: {
+    appearance: {
+      refine : true,
+      init : "pb-listitem"
+    },
+
     resourceData: {
       check: "Object",
       nullable: false,
