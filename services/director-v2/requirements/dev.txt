@@ -16,6 +16,7 @@
 --editable ../../packages/settings-library/
 --editable ../../packages/postgres-database/
 --editable ../../packages/pytest-simcore/
+--editable ../../packages/service-library
 
 # installs current package
 --editable .

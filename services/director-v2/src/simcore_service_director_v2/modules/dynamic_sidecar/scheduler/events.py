@@ -5,6 +5,7 @@ from typing import Any, Deque, Dict, List, Optional, Type
 
 import httpx
 from fastapi import FastAPI
+from servicelib.utils import logged_gather
 
 from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.dynamic_services import (
@@ -13,7 +14,6 @@ from ....models.schemas.dynamic_services import (
     SchedulerData,
 )
 from ....modules.director_v0 import DirectorV0Client
-from ....utils.async_utils import logged_gather
 from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
     are_services_missing,

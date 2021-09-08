@@ -13,6 +13,7 @@
 ../../packages/models-library
 ../../packages/settings-library/
 ../../packages/postgres-database/
+../../packages/service-library
 
 # installs current package
 .

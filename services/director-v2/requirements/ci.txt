@@ -16,6 +16,7 @@
 ../../packages/settings-library/
 ../../packages/postgres-database
 ../../packages/pytest-simcore/
+../../packages/service-library
 
 # installs current package
 .
