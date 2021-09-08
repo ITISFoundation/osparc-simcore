@@ -119,7 +119,7 @@ async def upload_outputs(port_keys: List[str]) -> None:
     logger.info("Uploaded %s bytes in %s seconds", total_bytes, elapsed_time)
 
 
-async def dispatch_update_for_directory(directory_path: Path):
+async def dispatch_update_for_directory(directory_path: Path) -> None:
     logger.info("Uploading data for directory %s", directory_path)
 
     settings: NonFastAPIDynamicSidecarSettings = get_non_fastpi_settings()

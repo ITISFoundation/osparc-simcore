@@ -12,7 +12,7 @@ from servicelib.utils import logged_gather
 from simcore_service_dynamic_sidecar.modules.nodeports import (
     dispatch_update_for_directory,
 )
-from watchdog.events import FileSystemEventHandler
+from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
 DETECTION_INTERVAL: float = 1.0
@@ -100,7 +100,7 @@ class UnifyingEventHandler(FileSystemEventHandler):
         self.loop: AbstractEventLoop = loop
         self.directory_path: Path = directory_path
 
-    def on_any_event(self, event) -> None:
+    def on_any_event(self, event: FileSystemEvent) -> None:
         super().on_any_event(event)
         trigger_async_invoke_push_mapped_data(self.loop, self.directory_path)
 
