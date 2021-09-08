@@ -489,10 +489,13 @@ async def merge_settings_before_use(
     return SimcoreServiceSettingsLabel.parse_obj(settings)
 
 
-def _get_paths_env_vars(paths_mapping: PathMappingsLabel) -> Dict[str, str]:
+def _get_dy_sidecar_env_vars(scheduler_data: SchedulerData) -> Dict[str, str]:
     return {
-        "DY_SIDECAR_PATH_INPUTS": str(paths_mapping.inputs_path),
-        "DY_SIDECAR_PATH_OUTPUTS": str(paths_mapping.outputs_path),
+        "DY_SIDECAR_PATH_INPUTS": str(scheduler_data.paths_mapping.inputs_path),
+        "DY_SIDECAR_PATH_OUTPUTS": str(scheduler_data.paths_mapping.outputs_path),
+        "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
+        "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
+        "DY_SIDECAR_NODE_ID": f"{scheduler_data.node_uuid}",
     }
 
 
@@ -593,7 +596,7 @@ async def get_dynamic_sidecar_spec(
                     "SIMCORE_HOST_NAME": scheduler_data.service_name,
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
                     **get_dynamic_sidecar_env_vars(dynamic_sidecar_settings.REGISTRY),
-                    **_get_paths_env_vars(scheduler_data.paths_mapping),
+                    **_get_dy_sidecar_env_vars(scheduler_data),
                 },
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
