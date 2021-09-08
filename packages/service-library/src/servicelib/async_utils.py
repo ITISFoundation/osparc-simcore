@@ -33,7 +33,7 @@ _sequential_jobs_contexts: Dict[str, Context] = {}
 
 def run_sequentially_in_context(
     target_args: List[str] = None,
-) -> Callable[[Any], Optional[Any]]:
+) -> Callable[[Any], Any]:
     """All request to function with same calling context will be run sequentially.
 
     Example:
