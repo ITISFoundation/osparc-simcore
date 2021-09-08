@@ -3,7 +3,6 @@ from typing import List
 
 from aiohttp import web
 from servicelib.rest_pagination_utils import PageResponseLimitOffset
-from simcore_service_webserver.rest_utils import RESPONSE_MODEL_POLICY
 
 from ._meta import api_version_prefix as vtag
 from .constants import RQT_USERID_KEY
@@ -19,16 +18,20 @@ from .meta_core_repos import (
     get_checkpoint_safe,
     get_workbench,
     list_checkpoints_safe,
+    list_repos,
     update_checkpoint_safe,
 )
 from .meta_db import VersionControlRepository
 from .meta_models_repos import (
     Checkpoint,
     CheckpointAnnotations,
+    CheckpointApiModel,
     CheckpointNew,
-    Repo,
+    RepoApiModel,
     WorkbenchView,
+    WorkbenchViewApiModel,
 )
+from .rest_utils import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
 from .utils_aiohttp import rename_routes_as_handler_function, view_routes
 
@@ -50,15 +53,20 @@ routes = web.RouteTableDef()
 async def _list_repos_handler(request: web.Request):
     # FIXME: check access to non owned projects user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
-    limit = int(request.query.get("limit", 20))
-    offset = int(request.query.get("offset", 0))
-
     vc_repo = VersionControlRepository(request)
-    repos_rows, total_number_of_repos = await vc_repo.list_repos(offset, limit)
+
+    _limit = int(request.query.get("limit", 20))
+    _offset = int(request.query.get("offset", 0))
+
+    repos_rows, total_number_of_repos = await list_repos(
+        vc_repo, offset=_offset, limit=_limit
+    )
+
+    assert len(repos_rows) <= _limit  # nosec
 
     # parse and validate
-    data = [
-        Repo.parse_obj(
+    repos_list = [
+        RepoApiModel.parse_obj(
             {
                 "url": url_for(
                     f"{__name__}._list_checkpoints_handler",
@@ -71,11 +79,11 @@ async def _list_repos_handler(request: web.Request):
     ]
 
     return PageResponseLimitOffset.paginate_data(
-        data=data,
+        data=repos_list,
         request_url=request.url,
         total=total_number_of_repos,
-        limit=limit,
-        offset=offset,
+        limit=_limit,
+        offset=_offset,
     ).dict(**RESPONSE_MODEL_POLICY)
 
 
@@ -86,25 +94,26 @@ async def _list_repos_handler(request: web.Request):
 async def _create_checkpoint_handler(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
-    project_uuid = request.match_info["project_uuid"]
-
-    body = CheckpointNew.parse_obj(await request.json())
+    _project_uuid = request.match_info["project_uuid"]
+    _body = CheckpointNew.parse_obj(await request.json())
 
     checkpoint: Checkpoint = await create_checkpoint_safe(
         request.app,
         user_id=user_id,
-        project_uuid=project_uuid,  # type: ignore
-        **body.dict(include={"tag", "message", "new_branch"}),
+        project_uuid=_project_uuid,  # type: ignore
+        **_body.dict(include={"tag", "message", "new_branch"}),
     )
 
-    data = {
-        "url": url_for(
-            f"{__name__}._get_checkpoint_handler",
-            project_uuid=project_uuid,
-            ref_id=checkpoint.id,
-        ),
-        **checkpoint.dict(),
-    }
+    data = CheckpointApiModel.parse_obj(
+        {
+            "url": url_for(
+                f"{__name__}._get_checkpoint_handler",
+                project_uuid=_project_uuid,
+                ref_id=checkpoint.id,
+            ),
+            **checkpoint.dict(),
+        }
+    )
     return enveloped_response(data, status_cls=web.HTTPCreated)
 
 
@@ -115,38 +124,41 @@ async def _create_checkpoint_handler(request: web.Request):
 async def _list_checkpoints_handler(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
-    project_uuid = request.match_info["project_uuid"]
-    limit = int(request.query.get("limit", 20))
-    offset = int(request.query.get("offset", 0))
+    _project_uuid = request.match_info["project_uuid"]
+    _limit = int(request.query.get("limit", 20))
+    _offset = int(request.query.get("offset", 0))
 
     checkpoints: List[Checkpoint]
 
     checkpoints, total = await list_checkpoints_safe(
         app=request.app,
-        project_uuid=project_uuid,  # type: ignore
+        project_uuid=_project_uuid,  # type: ignore
         user_id=user_id,
-        limit=limit,
-        offset=offset,
+        limit=_limit,
+        offset=_offset,
     )
 
-    data = [
-        {
-            "url": url_for(
-                f"{__name__}._get_checkpoint_handler",
-                project_uuid=project_uuid,
-                ref_id=checkpoint.id,
-            ),
-            **checkpoint.dict(),
-        }
+    # parse and validate
+    checkpoints_list = [
+        CheckpointApiModel.parse_obj(
+            {
+                "url": url_for(
+                    f"{__name__}._get_checkpoint_handler",
+                    project_uuid=_project_uuid,
+                    ref_id=checkpoint.id,
+                ),
+                **checkpoint.dict(),
+            }
+        )
         for checkpoint in checkpoints
     ]
 
     return PageResponseLimitOffset.paginate_data(
-        data=data,
+        data=checkpoints_list,
         request_url=request.url,
         total=total,
-        limit=limit or total,
-        offset=offset,
+        limit=_limit or total,
+        offset=_offset,
     ).dict(**RESPONSE_MODEL_POLICY)
 
 
@@ -159,23 +171,26 @@ async def _list_checkpoints_handler(request: web.Request):
 async def _get_checkpoint_handler(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
-    project_uuid = request.match_info["project_uuid"]
+    _project_uuid = request.match_info["project_uuid"]
+    _ref_id = request.match_info["ref_id"]
 
     checkpoint: Checkpoint = await get_checkpoint_safe(
         app=request.app,
         user_id=user_id,
-        project_uuid=project_uuid,  # type: ignore
-        ref_id=request.match_info["ref_id"],
+        project_uuid=_project_uuid,  # type: ignore
+        ref_id=_ref_id,
     )
 
-    data = {
-        "url": url_for(
-            f"{__name__}._get_checkpoint_handler",
-            project_uuid=project_uuid,
-            ref_id=checkpoint.id,
-        ),
-        **checkpoint.dict(),
-    }
+    data = CheckpointApiModel.parse_obj(
+        {
+            "url": url_for(
+                f"{__name__}._get_checkpoint_handler",
+                project_uuid=_project_uuid,
+                ref_id=checkpoint.id,
+            ),
+            **checkpoint.dict(),
+        }
+    )
     return enveloped_response(data)
 
 
@@ -188,26 +203,29 @@ async def _get_checkpoint_handler(request: web.Request):
 async def _update_checkpoint_annotations_handler(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
-    project_uuid = request.match_info["project_uuid"]
+    _project_uuid = request.match_info["project_uuid"]
+    _ref_id = request.match_info["ref_id"]
 
-    body = CheckpointAnnotations.parse_obj(await request.json())
+    _body = CheckpointAnnotations.parse_obj(await request.json())
 
     checkpoint: Checkpoint = await update_checkpoint_safe(
         app=request.app,
         user_id=user_id,
-        project_uuid=project_uuid,  # type: ignore
-        ref_id=request.match_info["ref_id"],
-        **body.dict(include={"tag", "message"}),
+        project_uuid=_project_uuid,  # type: ignore
+        ref_id=_ref_id,
+        **_body.dict(include={"tag", "message"}),
     )
 
-    data = {
-        "url": url_for(
-            f"{__name__}._get_checkpoint_handler",
-            project_uuid=project_uuid,
-            ref_id=checkpoint.id,
-        ),
-        **checkpoint.dict(),
-    }
+    data = CheckpointApiModel.parse_obj(
+        {
+            "url": url_for(
+                f"{__name__}._get_checkpoint_handler",
+                project_uuid=_project_uuid,
+                ref_id=checkpoint.id,
+            ),
+            **checkpoint.dict(),
+        }
+    )
     return enveloped_response(data)
 
 
@@ -218,23 +236,26 @@ async def _update_checkpoint_annotations_handler(request: web.Request):
 async def _checkout_handler(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
-    project_uuid = request.match_info["project_uuid"]
+    _project_uuid = request.match_info["project_uuid"]
+    _ref_id = request.match_info["ref_id"]
 
     checkpoint: Checkpoint = await checkout_checkpoint_safe(
         app=request.app,
         user_id=user_id,
-        project_uuid=project_uuid,  # type: ignore
-        ref_id=request.match_info["ref_id"],
+        project_uuid=_project_uuid,  # type: ignore
+        ref_id=_ref_id,
     )
 
-    data = {
-        "url": url_for(
-            f"{__name__}._get_checkpoint_handler",
-            project_uuid=project_uuid,
-            ref_id=checkpoint.id,
-        ),
-        **checkpoint.dict(),
-    }
+    data = CheckpointApiModel.parse_obj(
+        {
+            "url": url_for(
+                f"{__name__}._get_checkpoint_handler",
+                project_uuid=_project_uuid,
+                ref_id=checkpoint.id,
+            ),
+            **checkpoint.dict(),
+        }
+    )
     return enveloped_response(data)
 
 
@@ -247,30 +268,33 @@ async def _checkout_handler(request: web.Request):
 async def _view_project_workbench_handler(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
-    project_uuid = request.match_info["project_uuid"]
+    _project_uuid = request.match_info["project_uuid"]
+    _ref_id = request.match_info["ref_id"]
 
     checkpoint: Checkpoint = await get_checkpoint_safe(
         app=request.app,
         user_id=user_id,
-        project_uuid=project_uuid,  # type: ignore
-        ref_id=request.match_info["ref_id"],
+        project_uuid=_project_uuid,  # type: ignore
+        ref_id=_ref_id,
     )
 
     view: WorkbenchView = await get_workbench(
         app=request.app,
         user_id=user_id,
-        project_uuid=project_uuid,  # type: ignore
+        project_uuid=_project_uuid,  # type: ignore
         ref_id=checkpoint.id,
     )
 
-    data = {
-        "url": url_for(
-            f"{__name__}._get_checkpoint_workbench_handler",
-            project_uuid=project_uuid,
-            ref_id=checkpoint.id,
-        ),
-        **view.dict(),
-    }
+    data = WorkbenchViewApiModel.parse_obj(
+        {
+            "url": url_for(
+                f"{__name__}._get_checkpoint_workbench_handler",
+                project_uuid=_project_uuid,
+                ref_id=checkpoint.id,
+            ),
+            **view.dict(),
+        }
+    )
 
     return enveloped_response(data)
 

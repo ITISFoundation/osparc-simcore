@@ -10,13 +10,14 @@ from pydantic.main import BaseModel
 from yarl import URL
 
 from .projects.projects_exceptions import ProjectNotFoundError
+from .rest_utils import RESPONSE_MODEL_POLICY
 
 logger = logging.getLogger(__name__)
 
 
 def _default(obj):
     if isinstance(obj, BaseModel):
-        return obj.dict()
+        return obj.dict(**RESPONSE_MODEL_POLICY)
     raise TypeError
 
 

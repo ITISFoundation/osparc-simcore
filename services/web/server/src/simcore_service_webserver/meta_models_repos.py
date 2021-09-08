@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 from uuid import UUID
 
 from models_library.basic_types import SHA1Str
@@ -21,16 +21,23 @@ class Checkpoint(BaseModel):
     created_at: datetime
 
 
+class WorkbenchView(BaseModel):
+    """A view (i.e. read-only and visual) of the project's workbench"""
+
+    workbench: Dict[UUID, Node] = {}
+    ui: Dict[UUID, Any] = {}
+
+
 # API models ---------------
 
 
-class Repo(BaseModel):
+class RepoApiModel(BaseModel):
     project_uuid: UUID
     url: HttpUrl
 
 
-class RepoList(BaseModel):
-    __root__: List[Repo] = []
+class CheckpointApiModel(Checkpoint):
+    url: HttpUrl
 
 
 class CheckpointNew(BaseModel):
@@ -44,8 +51,5 @@ class CheckpointAnnotations(BaseModel):
     message: Optional[str] = None
 
 
-class WorkbenchView(BaseModel):
-    """A view (i.e. read-only and visual) of the project's workbench"""
-
-    workbench: Dict[UUID, Node] = {}
-    ui: Dict[UUID, Any] = {}
+class WorkbenchViewApiModel(WorkbenchView):
+    url: HttpUrl

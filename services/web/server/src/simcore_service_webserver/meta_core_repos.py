@@ -12,7 +12,10 @@ from typing import List, Optional, Tuple, Union
 from uuid import UUID
 
 from aiohttp import web
+from aiopg.sa.result import RowProxy
 from pydantic import NonNegativeInt, PositiveInt, validate_arguments
+from simcore_service_sidecar.executor import Version
+from simcore_service_webserver.meta_db import VersionControlRepository
 
 from .meta_models_repos import Checkpoint, WorkbenchView
 
@@ -23,13 +26,26 @@ RefID = Union[str, int]
 cfg = {"arbitrary_types_allowed": True}
 
 
+async def list_repos(
+    vc_repo: VersionControlRepository,
+    *,
+    offset: NonNegativeInt = 0,
+    limit: Optional[PositiveInt] = None,
+) -> Tuple[List[RowProxy], PositiveInt]:
+
+    repos_rows, total_number_of_repos = await vc_repo.list_repos(offset, limit)
+
+    assert len(repos_rows) <= total_number_of_repos  # nosec
+    return repos_rows, total_number_of_repos
+
+
 async def list_checkpoints(
     app: web.Application,
     user_id: PositiveInt,
     project_uuid: UUID,
     *,
-    limit: Optional[PositiveInt] = None,
     offset: NonNegativeInt = 0,
+    limit: Optional[PositiveInt] = None,
 ) -> Tuple[List[Checkpoint], PositiveInt]:
     # list, total
     ...
