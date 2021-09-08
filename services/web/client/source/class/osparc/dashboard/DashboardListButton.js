@@ -29,7 +29,16 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
 
   construct: function() {
     this.base(arguments);
+    this.set({
+      width: 800,
+      height: 40,
+      alignY: "middle",
+      allowGrowX: true
+    });
 
+    this._setLayout(new qx.ui.layout.HBox(5));
+
+    /*
     const layout = new qx.ui.layout.Grid();
     layout.setColumnFlex(this.self().POS.TITLE, 1);
     layout.setColumnMinWidth(this.self().POS.THUMBNAIL, 50);
@@ -41,11 +50,7 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
     layout.setColumnMinWidth(this.self().POS.TAGS, 30);
     layout.setColumnMinWidth(this.self().POS.OPTIONS, 30);
     this._setLayout(layout);
-
-    this.set({
-      height: this.self().ITEM_HEIGHT,
-      alignY: "middle"
-    });
+    */
 
     [
       "pointerover",
@@ -60,6 +65,13 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
 
   statics: {
     ITEM_HEIGHT: 50,
+    SHARED_USER: "@FontAwesome5Solid/user/16",
+    SHARED_ORGS: "@FontAwesome5Solid/users/16",
+    SHARED_ALL: "@FontAwesome5Solid/globe/16",
+    STUDY_ICON: "@FontAwesome5Solid/file-alt/24",
+    TEMPLATE_ICON: "@FontAwesome5Solid/copy/24",
+    SERVICE_ICON: "@FontAwesome5Solid/paw/24",
+    PERM_READ: "@FontAwesome5Solid/eye/16",
     POS: {
       THUMBNAIL: 0,
       TITLE: 1,
@@ -78,10 +90,12 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
   },
 
   properties: {
+    /*
     appearance: {
       refine : true,
       init : "selectable"
     },
+    */
 
     resourceData: {
       check: "Object",
@@ -192,92 +206,92 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
       let control;
       switch (id) {
         case "icon": {
-          control = new osparc.ui.basic.Thumbnail(null, 50, 40);
+          control = new osparc.ui.basic.Thumbnail(null, 40, 35).set({
+            minWidth: 40,
+            alignY: "middle",
+            alignX: "center"
+          });
           control.getChildControl("image").set({
             anonymous: true
           });
-          this._addAt(control, {
-            row: 0,
-            column: this.self().POS.THUMBNAIL
-          });
+          this._addAt(control, this.self().POS.THUMBNAIL);
           break;
         }
         case "title":
           control = new qx.ui.basic.Label().set({
             font: "title-14"
           });
-          this._addAt(control, {
-            row: 0,
-            column: this.self().POS.TITLE
+          this._addAt(control, this.self().POS.TITLE, {
+            flex: 1
           });
           break;
         case "shared-icon": {
-          control = new qx.ui.basic.Image();
-          this._addAt(control, {
-            row: 0,
-            column: this.self().POS.SHARED
+          control = new qx.ui.basic.Image().set({
+            minWidth: 50,
+            alignY: "middle",
+            alignX: "center"
           });
+          this._addAt(control, this.self().POS.SHARED);
           break;
         }
         case "owner": {
           control = new qx.ui.basic.Label().set({
             anonymous: true,
             font: "text-13",
-            allowGrowY: false
+            allowGrowY: false,
+            minWidth: 50,
+            alignY: "middle",
+            alignX: "center"
           });
-          this._addAt(control, {
-            row: 0,
-            column: this.self().POS.OWNER
-          });
+          this._addAt(control, this.self().POS.OWNER);
           break;
         }
         case "last-change": {
           control = new qx.ui.basic.Label().set({
             anonymous: true,
             font: "text-13",
-            allowGrowY: false
+            allowGrowY: false,
+            minWidth: 50,
+            alignY: "middle",
+            alignX: "center"
           });
-          this._addAt(control, {
-            row: 0,
-            column: this.self().POS.LAST_CHANGE
-          });
+          this._addAt(control, this.self().POS.LAST_CHANGE);
           break;
         }
         case "tsr-rating": {
           const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
-            toolTipText: this.tr("Ten Simple Rules")
+            toolTipText: this.tr("Ten Simple Rules"),
+            minWidth: 50,
+            alignY: "middle",
+            alignX: "center"
           });
           const tsrLabel = new qx.ui.basic.Label(this.tr("TSR:"));
           tsrLayout.add(tsrLabel);
           control = new osparc.ui.basic.StarsRating();
           tsrLayout.add(control);
-          this._addAt(tsrLayout, {
-            row: 0,
-            column: this.self().POS.TSR
-          });
+          this._addAt(tsrLayout, this.self().POS.TSR);
           break;
         }
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
-            anonymous: true
+            anonymous: true,
+            minWidth: 50,
+            alignY: "middle",
+            alignX: "center"
           });
-          this._addAt(control, {
-            row: 0,
-            column: this.self().POS.TAGS
-          });
+          this._addAt(control, this.self().POS.TAGS);
           break;
         case "menu-button": {
           control = new qx.ui.form.MenuButton().set({
+            alignY: "middle",
+            alignX: "center",
             width: 25,
             height: 25,
             icon: "@FontAwesome5Solid/ellipsis-v/14",
             focusable: false
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
-          this._addAt(control, {
-            row: 0,
-            column: this.self().POS.OPTIONS
-          });
+          this._addAt(control, this.self().POS.OPTIONS);
           break;
         }
       }
@@ -502,6 +516,7 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
     },
 
     __applyFetching: function(value) {
+      /*
       const title = this.getChildControl("title");
       if (value) {
         title.setValue(this.tr("Loading studies..."));
@@ -515,6 +530,7 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
           .removeClass("rotate");
       }
       this.setEnabled(!value);
+      */
     },
 
     _applyIcon: function(value, old) {
