@@ -1,10 +1,11 @@
 from datetime import datetime
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 from models_library.basic_types import SHA1Str
 from models_library.projects_nodes import Node
 from pydantic import BaseModel, PositiveInt, StrictBool, StrictFloat, StrictInt
+from pydantic.networks import HttpUrl
 
 BuiltinTypes = Union[StrictBool, StrictInt, StrictFloat, str]
 
@@ -21,6 +22,15 @@ class Checkpoint(BaseModel):
 
 
 # API models ---------------
+
+
+class Repo(BaseModel):
+    project_uuid: UUID
+    url: HttpUrl
+
+
+class RepoList(BaseModel):
+    __root__: List[Repo] = []
 
 
 class CheckpointNew(BaseModel):

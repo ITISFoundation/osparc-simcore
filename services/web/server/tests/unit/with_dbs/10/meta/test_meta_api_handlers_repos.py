@@ -4,6 +4,7 @@
 
 
 from typing import Any, Dict
+from uuid import UUID
 
 import pytest
 from aiohttp import web
@@ -48,7 +49,7 @@ async def test_workflow(client: TestClient, user_project: ProjectDict):
 
     assert data
     project = Project.parse_obj(data)
-    assert project.uuid == project_uuid
+    assert project.uuid == UUID(project_uuid)
 
     # list repos i.e. versioned projects
     resp = await client.get(f"/{vtag}/repos/projects")
@@ -58,7 +59,7 @@ async def test_workflow(client: TestClient, user_project: ProjectDict):
 
     # create a checkpoint
     resp = await client.post(
-        f"/{vtag}/projects/{project_uuid}/checkpoints",
+        f"/{vtag}/repos/projects/{project_uuid}/checkpoints",
         json={"tag": "v1", "message": "init"},
     )
     data, _ = await assert_status(resp, web.HTTPCreated)

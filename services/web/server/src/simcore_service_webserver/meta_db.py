@@ -5,6 +5,7 @@ from uuid import UUID
 from aiohttp import web
 from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
+from pydantic.types import NonNegativeInt, PositiveInt
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_version_control import (
     projects_vc_branches,
@@ -90,8 +91,19 @@ class VersionControlRepository(BaseRepository):
 
     # ------------
 
-    async def list_repos(self):
+    async def list_repos(
+        self,
+        offset: NonNegativeInt = 0,
+        limit: Optional[PositiveInt] = None,
+    ) -> Tuple[List[RowProxy], NonNegativeInt]:
+
         async with self.engine.acquire() as conn:
             repo_orm = self.ReposOrm(conn)
 
-            rows = await repo_orm.fetchall()
+            # TODO: ORM pagination support
+            rows: List[RowProxy]
+            rows, total_count = await repo_orm.fetch_page(
+                "project_uuid", offset=offset, limit=limit
+            )
+
+            return rows, total_count

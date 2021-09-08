@@ -21,10 +21,12 @@ from .meta_core_repos import (
     list_checkpoints_safe,
     update_checkpoint_safe,
 )
+from .meta_db import VersionControlRepository
 from .meta_models_repos import (
     Checkpoint,
     CheckpointAnnotations,
     CheckpointNew,
+    Repo,
     WorkbenchView,
 )
 from .security_decorators import permission_required
@@ -46,13 +48,35 @@ routes = web.RouteTableDef()
 @permission_required("project.read")
 @handle_request_errors
 async def _list_repos_handler(request: web.Request):
-    user_id = request[RQT_USERID_KEY]
+    # FIXME: check access to non owned projects user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
-    project_uuid = request.match_info["project_uuid"]
     limit = int(request.query.get("limit", 20))
     offset = int(request.query.get("offset", 0))
 
-    raise NotImplementedError()
+    vc_repo = VersionControlRepository(request)
+    repos_rows, total_number_of_repos = await vc_repo.list_repos(offset, limit)
+
+    # parse and validate
+    data = [
+        Repo.parse_obj(
+            {
+                "url": url_for(
+                    f"{__name__}._list_checkpoints_handler",
+                    project_uuid=row.project_uuid,
+                ),
+                **row.dict(),
+            }
+        )
+        for row in repos_rows
+    ]
+
+    return PageResponseLimitOffset.paginate_data(
+        data=data,
+        request_url=request.url,
+        total=total_number_of_repos,
+        limit=limit,
+        offset=offset,
+    ).dict(**RESPONSE_MODEL_POLICY)
 
 
 @routes.post(f"/{vtag}/repos/projects/{{project_uuid}}/checkpoints")
@@ -75,11 +99,11 @@ async def _create_checkpoint_handler(request: web.Request):
 
     data = {
         "url": url_for(
-            f"{__name__}.get_checkpoint",
+            f"{__name__}._get_checkpoint_handler",
             project_uuid=project_uuid,
             ref_id=checkpoint.id,
-        )
-        ** checkpoint.dict(),
+        ),
+        **checkpoint.dict(),
     }
     return enveloped_response(data, status_cls=web.HTTPCreated)
 
