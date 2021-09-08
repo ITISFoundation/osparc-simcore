@@ -1,22 +1,39 @@
 import asyncio
 from collections import deque
 from functools import wraps
-from typing import Dict, List
+from typing import TYPE_CHECKING, Any, Callable, Deque, Dict, List, Optional
 
-import attr
+from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    Queue = asyncio.Queue
+else:
+
+    class FakeGenericMeta(type):
+        def __getitem__(self, item):
+            return self
+
+    class Queue(
+        asyncio.Queue, metaclass=FakeGenericMeta
+    ):  # pylint: disable=function-redefined
+        pass
 
 
-@attr.s(auto_attribs=True)
-class Context:
-    in_queue: asyncio.Queue
-    out_queue: asyncio.Queue
+class Context(BaseModel):
+    in_queue: Queue
+    out_queue: Queue
     initialized: bool
 
+    class Config:
+        arbitrary_types_allowed: bool = True
 
-sequential_jobs_contexts = {}
+
+_sequential_jobs_contexts: Dict[str, Context] = {}
 
 
-def run_sequentially_in_context(target_args: List[str] = None):
+def run_sequentially_in_context(
+    target_args: List[str] = None,
+) -> Callable[[Any], Optional[Any]]:
     """All request to function with same calling context will be run sequentially.
 
     Example:
@@ -35,10 +52,12 @@ def run_sequentially_in_context(target_args: List[str] = None):
 
         functions = [
             func(1, "something", 3),
-            func(1, "else", 3),
+            func(1, "argument.attribute", 3),
             func(1, "here", 3),
         ]
         await asyncio.gather(*functions)
+
+    note the special "argument.attribute", which will use the attribute of argument to create the context.
 
     The following calls will run in parallel, because they have different contexts:
 
@@ -52,43 +71,55 @@ def run_sequentially_in_context(target_args: List[str] = None):
     """
     target_args = [] if target_args is None else target_args
 
-    def internal(decorated_function):
-        def get_context(args, kwargs: Dict) -> Context:
+    def internal(
+        decorated_function: Callable[[Any], Optional[Any]]
+    ) -> Callable[[Any], Optional[Any]]:
+        def get_context(args: Any, kwargs: Dict[Any, Any]) -> Context:
             arg_names = decorated_function.__code__.co_varnames[
                 : decorated_function.__code__.co_argcount
             ]
             search_args = dict(zip(arg_names, args))
             search_args.update(kwargs)
 
-            key_parts = deque()
+            key_parts: Deque[str] = deque()
             for arg in target_args:
-                if arg not in search_args:
+                sub_args = arg.split(".")
+                main_arg = sub_args[0]
+                if main_arg not in search_args:
                     message = (
-                        f"Expected '{arg}' in '{decorated_function.__name__}'"
+                        f"Expected '{main_arg}' in '{decorated_function.__name__}'"
                         f" arguments. Got '{search_args}'"
                     )
                     raise ValueError(message)
-                key_parts.append(search_args[arg])
+                context_key = search_args[main_arg]
+                for attribute in sub_args[1:]:
+                    potential_key = getattr(context_key, attribute)
+                    if not potential_key:
+                        message = f"Expected '{attribute}' attribute in '{context_key.__name__}' arguments."
+                        raise ValueError(message)
+                    context_key = potential_key
+
+                key_parts.append(f"{decorated_function.__name__}_{context_key}")
 
             key = ":".join(map(str, key_parts))
 
-            if key not in sequential_jobs_contexts:
-                sequential_jobs_contexts[key] = Context(
-                    in_queue=asyncio.Queue(),
-                    out_queue=asyncio.Queue(),
+            if key not in _sequential_jobs_contexts:
+                _sequential_jobs_contexts[key] = Context(
+                    in_queue=Queue(),
+                    out_queue=Queue(),
                     initialized=False,
                 )
 
-            return sequential_jobs_contexts[key]
+            return _sequential_jobs_contexts[key]
 
         @wraps(decorated_function)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             context: Context = get_context(args, kwargs)
 
             if not context.initialized:
                 context.initialized = True
 
-                async def worker(in_q: asyncio.Queue, out_q: asyncio.Queue):
+                async def worker(in_q: Queue, out_q: Queue) -> None:
                     while True:
                         awaitable = await in_q.get()
                         in_q.task_done()
@@ -98,11 +129,9 @@ def run_sequentially_in_context(target_args: List[str] = None):
                             result = e
                         await out_q.put(result)
 
-                asyncio.get_event_loop().create_task(
-                    worker(context.in_queue, context.out_queue)
-                )
+                asyncio.create_task(worker(context.in_queue, context.out_queue))
 
-            await context.in_queue.put(decorated_function(*args, **kwargs))
+            await context.in_queue.put(decorated_function(*args, **kwargs))  # type: ignore
 
             wrapped_result = await context.out_queue.get()
             if isinstance(wrapped_result, Exception):
