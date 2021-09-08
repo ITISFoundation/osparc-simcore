@@ -60,11 +60,12 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
     POS: {
       THUMBNAIL: 0,
       TITLE: 1,
-      SHARED: 2,
-      LAST_CHANGE: 3,
-      TSR: 4,
-      TAGS: 5,
-      OPTIONS: 6
+      DESCRIPTION: 2,
+      SHARED: 3,
+      LAST_CHANGE: 4,
+      TSR: 5,
+      TAGS: 6,
+      OPTIONS: 7
     }
   },
 
@@ -99,6 +100,7 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
 
     description: {
       check: "String",
+      apply: "_applyDescription",
       nullable: true
     },
 
@@ -193,12 +195,19 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
         }
         case "title":
           control = new qx.ui.basic.Label().set({
-            minWidth: 200,
             font: "title-14",
+            alignY: "middle"
+          });
+          this._addAt(control, this.self().POS.TITLE);
+          break;
+        case "description":
+          control = new qx.ui.basic.Label().set({
+            minWidth: 100,
+            font: "text-14",
             alignY: "middle",
             allowGrowX: true
           });
-          this._addAt(control, this.self().POS.TITLE, {
+          this._addAt(control, this.self().POS.DESCRIPTION, {
             flex: 1
           });
           break;
@@ -302,16 +311,15 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
       });
     },
 
-    _applyMenu: function(value, old) {
-      const menuButton = this.getChildControl("menu-button");
-      if (value) {
-        menuButton.setMenu(value);
-      }
-      menuButton.setVisibility(value ? "visible" : "excluded");
-    },
-
     _applyUuid: function(value, old) {
       osparc.utils.Utils.setIdToWidget(this, "studyBrowserListItem_"+value);
+    },
+
+    _applyIcon: function(value, old) {
+      const image = this.getChildControl("icon").getChildControl("image");
+      image.set({
+        source: value
+      });
     },
 
     _applyTitle: function(value, old) {
@@ -325,6 +333,11 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
           }
         }, this, 50);
       });
+    },
+
+    _applyDescription: function(value, old) {
+      const label = this.getChildControl("description");
+      label.setValue(value);
     },
 
     _applyLastChangeDate: function(value, old) {
@@ -485,11 +498,12 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
       */
     },
 
-    _applyIcon: function(value, old) {
-      const image = this.getChildControl("icon").getChildControl("image");
-      image.set({
-        source: value
-      });
+    _applyMenu: function(value, old) {
+      const menuButton = this.getChildControl("menu-button");
+      if (value) {
+        menuButton.setMenu(value);
+      }
+      menuButton.setVisibility(value ? "visible" : "excluded");
     },
 
     /**
