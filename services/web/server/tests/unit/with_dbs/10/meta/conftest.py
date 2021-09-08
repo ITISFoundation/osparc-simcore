@@ -78,7 +78,7 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, catalog_subsystem_mock, monkey
         "login",
         "products",
         "projects",
-        "snapshots",
+        "meta",
         "rest",
         "users",
     }

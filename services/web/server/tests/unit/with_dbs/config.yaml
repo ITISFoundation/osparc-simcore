@@ -50,7 +50,7 @@ rest:
   version: v0
 projects:
   enabled: False
-snapshots:
+meta:
   enabled: False
 session:
   # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key())"
