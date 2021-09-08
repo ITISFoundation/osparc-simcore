@@ -74,7 +74,9 @@ projects_vc_snapshots = sa.Table(
         primary_key=True,
         nullable=False,
         doc="SHA-1 checksum of snapshot."
-        "Used as revision/commit identifier since it is unique per repo",
+        "The columns projects_vc_repos.project_checksum and projects_vc_repos.snapshot_checksum "
+        "are both checksums of the same entity (i.e. a project) in two different states, "
+        "namely the project's WC and some snapshot respectively.",
     ),
     sa.Column(
         "content",
