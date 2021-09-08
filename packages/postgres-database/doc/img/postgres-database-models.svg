@@ -691,6 +691,34 @@
 <text text-anchor="start" x="972.1995" y="-1881.4961" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
 <text text-anchor="start" x="863.456" y="-1770.2711" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
 </g>
+<!-- projects_vc_repos -->
+<g id="node12" class="node">
+<title>projects_vc_repos</title>
+<polygon fill="none" stroke="#000000" points="960.5,-1757 960.5,-1785 1183.5,-1785 1183.5,-1757 960.5,-1757"/>
+<text text-anchor="start" x="993.5" y="-1768.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="16.00" fill="#000000">projects_vc_repos</text>
+<polygon fill="none" stroke="#000000" points="960.5,-1732 960.5,-1757 1183.5,-1757 1183.5,-1732 960.5,-1732"/>
+<text text-anchor="start" x="965.5" y="-1741.8" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="14.00" fill="#000000">id</text>
+<text text-anchor="start" x="978.5" y="-1741.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [BIGINT]</text>
+<polygon fill="none" stroke="#000000" points="960.5,-1707 960.5,-1732 1183.5,-1732 1183.5,-1707 960.5,-1707"/>
+<text text-anchor="start" x="965.5" y="-1716.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">project_uuid</text>
+<text text-anchor="start" x="1053.5" y="-1716.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
+<polygon fill="none" stroke="#000000" points="960.5,-1682 960.5,-1707 1183.5,-1707 1183.5,-1682 960.5,-1682"/>
+<text text-anchor="start" x="965.5" y="-1691.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">project_checksum</text>
+<text text-anchor="start" x="1095.5" y="-1691.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [VARCHAR]</text>
+<polygon fill="none" stroke="#000000" points="960.5,-1657 960.5,-1682 1183.5,-1682 1183.5,-1657 960.5,-1657"/>
+<text text-anchor="start" x="965.5" y="-1666.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">created</text>
+<text text-anchor="start" x="1020.5" y="-1666.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
+<polygon fill="none" stroke="#000000" points="960.5,-1632 960.5,-1657 1183.5,-1657 1183.5,-1632 960.5,-1632"/>
+<text text-anchor="start" x="965.5" y="-1641.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000">modified</text>
+<text text-anchor="start" x="1029.5" y="-1641.8" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#000000"> [DATETIME]</text>
+</g>
+<!-- projects&#45;&#45;projects_vc_repos -->
+<g id="edge9" class="edge">
+<title>projects&#45;&#45;projects_vc_repos</title>
+<path fill="none" stroke="#7f7f7f" stroke-dasharray="5,2" d="M863.456,-1698.2336C892.2962,-1699.7261 923.0798,-1701.3192 951.8821,-1702.8097"/>
+<text text-anchor="start" x="910.8821" y="-1691.6097" font-family="Times,serif" font-size="14.00" fill="#000000">{0,1}</text>
+<text text-anchor="start" x="863.456" y="-1687.0336" font-family="Times,serif" font-size="14.00" fill="#000000">0..N</text>
+</g>
 <!-- projects&#45;&#45;comp_runs -->
 <g id="edge10" class="edge">
 <title>projects&#45;&#45;comp_runs</title>
