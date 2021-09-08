@@ -13,7 +13,7 @@ from uuid import UUID
 
 from models_library.projects import Project
 
-from .meta_models import Snapshot
+from .meta_models_snapshots import Snapshot
 from .projects import projects_utils
 
 ProjectDict = Dict[str, Any]

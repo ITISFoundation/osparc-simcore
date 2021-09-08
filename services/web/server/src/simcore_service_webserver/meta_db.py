@@ -18,7 +18,7 @@ from simcore_postgres_database.models.projects_version_control import (
 from simcore_postgres_database.utils_aiopg_orm import BaseOrm
 
 from .db_base_repository import BaseRepository
-from .meta_models import Snapshot
+from .meta_models_snapshots import Snapshot
 from .projects.projects_db import APP_PROJECT_DBAPI
 
 # alias for readability

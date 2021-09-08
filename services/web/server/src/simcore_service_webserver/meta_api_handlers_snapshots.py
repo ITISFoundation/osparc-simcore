@@ -16,7 +16,7 @@ from .meta_api_handlers_base import (
 )
 from .meta_core_snapshots import ProjectDict, take_snapshot
 from .meta_db import ProjectsRepository, SnapshotsRepository
-from .meta_models import Snapshot, SnapshotPatchBody, SnapshotResource
+from .meta_models_snapshots import Snapshot, SnapshotPatchBody, SnapshotResource
 from .projects import projects_api
 from .security_decorators import permission_required
 from .utils_aiohttp import rename_routes_as_handler_function, view_routes

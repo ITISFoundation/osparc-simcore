@@ -39,7 +39,7 @@ from pydantic import (
 from pydantic.generics import GenericModel
 from pydantic.networks import HttpUrl
 from servicelib.rest_pagination_utils import PageLinks, PageMetaInfoLimitOffset
-from simcore_service_webserver.meta_models import SnapshotResource
+from simcore_service_webserver.meta_models_snapshots import SnapshotResource
 from starlette.datastructures import URL
 
 CURRENT_FILENAME_STEM = Path(sys.argv[0] if __name__ == "__main__" else __file__).stem
