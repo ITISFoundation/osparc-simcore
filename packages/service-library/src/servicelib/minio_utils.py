@@ -1,3 +1,5 @@
+# FIXME: move to settings-library or refactor
+
 import logging
 from typing import Optional
 
@@ -7,8 +9,7 @@ log = logging.getLogger(__name__)
 
 
 class MinioRetryPolicyUponInitialization:
-    """ Retry policy upon service initialization
-    """
+    """Retry policy upon service initialization"""
 
     WAIT_SECS = 2
     ATTEMPTS_COUNT = 40

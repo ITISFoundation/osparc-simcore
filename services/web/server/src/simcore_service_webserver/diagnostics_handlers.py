@@ -7,7 +7,7 @@ from contextlib import suppress
 
 from aiohttp import ClientError, ClientSession, web
 from models_library.app_diagnostics import AppStatusCheck
-from servicelib.client_session import get_client_session
+from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import logged_gather
 
 from . import catalog_client, db, director_v2, storage_api

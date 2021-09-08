@@ -6,9 +6,9 @@ from typing import List, Optional
 
 from aiohttp import web
 from aiohttp.web_routedef import RouteDef
-from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
-from servicelib.application_setup import ModuleCategory, app_module_setup
-from servicelib.rest_routing import iter_path_operations
+from servicelib.aiohttp.application_keys import APP_OPENAPI_SPECS_KEY
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.rest_routing import iter_path_operations
 from yarl import URL
 
 from . import catalog_api_handlers, catalog_client

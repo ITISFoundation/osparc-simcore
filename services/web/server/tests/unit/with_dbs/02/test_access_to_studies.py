@@ -21,7 +21,7 @@ from models_library.projects_state import ProjectLocked, ProjectStatus
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserRole
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
-from servicelib.rest_responses import unwrap_envelope
+from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.projects_api import delete_project_from_db

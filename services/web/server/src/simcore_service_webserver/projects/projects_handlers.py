@@ -152,7 +152,7 @@ async def create_projects(request: web.Request):
 async def list_projects(request: web.Request):
     # TODO: implement all query parameters as
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
-    from servicelib.rest_utils import extract_and_validate
+    from servicelib.aiohttp.rest_utils import extract_and_validate
 
     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
     _, query, _ = await extract_and_validate(request)
@@ -471,7 +471,7 @@ async def close_project(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.read")
 async def state_project(request: web.Request) -> web.Response:
-    from servicelib.rest_utils import extract_and_validate
+    from servicelib.aiohttp.rest_utils import extract_and_validate
 
     user_id: int = request[RQT_USERID_KEY]
 

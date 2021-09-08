@@ -12,7 +12,7 @@ from _helpers import standard_role_response
 from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
-from servicelib.application import create_safe_application
+from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.groups import setup_groups
 from simcore_service_webserver.groups_api import (

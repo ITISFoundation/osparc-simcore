@@ -1,8 +1,8 @@
 import logging
 
 from aiohttp import web
-from servicelib.application_setup import ModuleCategory, app_module_setup
-from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.rest_routing import iter_path_operations, map_handlers_with_operations
 
 from ..constants import APP_CONFIG_KEY
 from ..login.decorators import login_required

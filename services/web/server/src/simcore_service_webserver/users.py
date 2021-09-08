@@ -4,8 +4,9 @@
 import logging
 
 from aiohttp import web
-from servicelib.application_setup import ModuleCategory, app_module_setup
-from servicelib.rest_routing import (
+
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.rest_routing import (
     get_handlers_from_namespace,
     iter_path_operations,
     map_handlers_with_operations,

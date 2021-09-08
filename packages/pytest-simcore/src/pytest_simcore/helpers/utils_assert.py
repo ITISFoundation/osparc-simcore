@@ -6,7 +6,7 @@ from typing import Dict, Optional, Tuple, Type
 
 from aiohttp import ClientResponse
 from aiohttp.web import HTTPError, HTTPException, HTTPInternalServerError, HTTPNoContent
-from servicelib.rest_responses import unwrap_envelope
+from servicelib.aiohttp.rest_responses import unwrap_envelope
 
 
 async def assert_status(

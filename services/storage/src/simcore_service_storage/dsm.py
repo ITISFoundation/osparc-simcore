@@ -21,8 +21,8 @@ from aiobotocore.session import AioSession, ClientCreatorContext
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.result import RowProxy
-from servicelib.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
-from servicelib.client_session import get_client_session
+from servicelib.aiohttp.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
+from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
 from sqlalchemy.sql.expression import literal_column
 from tenacity import retry

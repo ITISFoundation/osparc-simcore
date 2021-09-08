@@ -1,6 +1,6 @@
 from aiohttp.web import Application
 from pydantic import BaseSettings, Field, PositiveInt
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 
 CONFIG_SECTION_NAME = "exporter"
 # NOTE: we are saving it in a separate item to config

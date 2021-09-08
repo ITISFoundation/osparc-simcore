@@ -18,8 +18,8 @@ from uuid import UUID, uuid5
 from aiohttp import web
 from aiohttp_session import get_session
 from aioredlock import Aioredlock
-from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .constants import INDEX_RESOURCE_NAME
 from .login.decorators import login_required

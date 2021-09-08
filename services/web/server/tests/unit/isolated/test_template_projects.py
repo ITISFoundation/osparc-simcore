@@ -8,7 +8,7 @@ from typing import Any, Dict, Iterator
 
 import pytest
 from jsonschema import SchemaError
-from servicelib.jsonschema_specs import create_jsonschema_specs
+from servicelib.aiohttp.jsonschema_specs import create_jsonschema_specs
 from simcore_service_webserver.projects.projects_utils import (
     substitute_parameterized_inputs,
     variable_pattern,

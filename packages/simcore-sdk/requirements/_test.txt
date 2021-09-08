@@ -69,9 +69,7 @@ iniconfig==1.1.1
 isort==5.9.3
     # via pylint
 lazy-object-proxy==1.4.3
-    # via
-    #   -c requirements/_base.txt
-    #   astroid
+    # via astroid
 mako==1.1.4
     # via
     #   -c requirements/_base.txt

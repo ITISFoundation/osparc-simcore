@@ -4,7 +4,7 @@ from typing import Tuple
 import sqlalchemy as sa
 from aiohttp import web
 from psycopg2 import Error as DbApiError
-from servicelib.aiopg_utils import PostgresRetryPolicyUponOperation
+from servicelib.aiohttp.aiopg_utils import PostgresRetryPolicyUponOperation
 from tenacity import retry
 
 from .constants import APP_CONFIG_KEY, APP_DB_ENGINE_KEY

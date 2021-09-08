@@ -9,7 +9,7 @@ import prometheus_client
 from aiohttp import web
 from prometheus_client import CONTENT_TYPE_LATEST, Counter
 from prometheus_client.registry import CollectorRegistry
-from servicelib.monitor_services import add_instrumentation
+from servicelib.aiohttp.monitor_services import add_instrumentation
 
 from .diagnostics_core import DelayWindowProbe, is_sensing_enabled, kLATENCY_PROBE
 

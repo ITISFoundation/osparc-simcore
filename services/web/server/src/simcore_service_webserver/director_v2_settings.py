@@ -6,7 +6,7 @@ from typing import Optional
 from aiohttp import ClientSession, web
 from models_library.basic_types import PortInt, VersionTag
 from pydantic import AnyHttpUrl, BaseSettings, Field, validator
-from servicelib.application_keys import APP_CLIENT_SESSION_KEY
+from servicelib.aiohttp.application_keys import APP_CLIENT_SESSION_KEY
 
 SERVICE_NAME = "director-v2"
 CONFIG_SECTION_NAME = SERVICE_NAME

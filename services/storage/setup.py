@@ -22,7 +22,7 @@ def read_reqs(reqs_path: Path):
 install_requirements = read_reqs(here / "requirements" / "_base.txt") + [
     "simcore-models-library",
     "simcore-postgres-database",
-    "simcore-service-library",
+    "simcore-service-library[aiohttp]",
     "simcore-settings-library",
 ]
 

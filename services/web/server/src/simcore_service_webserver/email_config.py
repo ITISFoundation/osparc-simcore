@@ -8,7 +8,7 @@ from typing import Optional
 import trafaret as T
 from models_library.basic_types import PortInt
 from pydantic import BaseSettings
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 
 from typing import Dict
 

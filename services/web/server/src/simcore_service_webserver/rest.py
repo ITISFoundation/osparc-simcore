@@ -15,9 +15,9 @@ import yaml
 from aiohttp import web
 from aiohttp_swagger import setup_swagger
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
-from servicelib import openapi
-from servicelib.application_setup import ModuleCategory, app_module_setup
-from servicelib.rest_middlewares import (
+from servicelib.aiohttp import openapi
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.rest_middlewares import (
     envelope_middleware_factory,
     error_middleware_factory,
 )

@@ -7,8 +7,8 @@ from aiohttp import web
 from aiopg.sa.result import ResultProxy, RowProxy
 
 import simcore_postgres_database.webserver_models as orm
-from servicelib.aiopg_utils import DatabaseError
-from servicelib.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.aiopg_utils import DatabaseError
+from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 
 from ..security_api import check_permission
 from .decorators import RQT_USERID_KEY, login_required

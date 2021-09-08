@@ -1,3 +1,5 @@
+# FIXME: move to settings-library or refactor
+
 import logging
 from typing import Optional
 
@@ -7,8 +9,7 @@ log = logging.getLogger(__name__)
 
 
 class SimcoreRetryPolicyUponInitialization:
-    """ Retry policy upon service initialization
-    """
+    """Retry policy upon service initialization"""
 
     WAIT_SECS = 5
     ATTEMPTS_COUNT = 12

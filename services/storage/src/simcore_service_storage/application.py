@@ -6,9 +6,9 @@ import logging
 from typing import Optional
 
 from aiohttp import web
-from servicelib.application import APP_CONFIG_KEY, create_safe_application
-from servicelib.monitoring import setup_monitoring
-from servicelib.tracing import setup_tracing
+from servicelib.aiohttp.application import APP_CONFIG_KEY, create_safe_application
+from servicelib.aiohttp.monitoring import setup_monitoring
+from servicelib.aiohttp.tracing import setup_tracing
 
 from .db import setup_db
 from .dsm import setup_dsm
