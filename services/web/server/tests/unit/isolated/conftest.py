@@ -1,8 +1,8 @@
-from pathlib import Path
-import string
-import secrets
-import random
 import os
+import random
+import secrets
+import string
+from pathlib import Path
 from typing import Iterator
 
 import pytest
@@ -41,7 +41,7 @@ def dir_with_random_content(tmpdir) -> Path:
             )
 
     def get_dirs_and_subdris_in_path(path_to_scan: Path) -> Iterator[Path]:
-        return [path for path in path_to_scan.rglob("*") if path.is_dir()]
+        return (path for path in path_to_scan.rglob("*") if path.is_dir())
 
     temp_dir_path = Path(tmpdir)
     data_container = ensure_dir(temp_dir_path / "study_data")
