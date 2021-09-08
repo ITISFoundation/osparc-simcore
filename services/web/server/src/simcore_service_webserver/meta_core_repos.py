@@ -14,7 +14,6 @@ from uuid import UUID
 from aiohttp import web
 from aiopg.sa.result import RowProxy
 from pydantic import NonNegativeInt, PositiveInt, validate_arguments
-from simcore_service_sidecar.executor import Version
 from simcore_service_webserver.meta_db import VersionControlRepository
 
 from .meta_models_repos import Checkpoint, WorkbenchView
