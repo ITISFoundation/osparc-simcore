@@ -58,13 +58,13 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       apply: "_applyUuid"
     },
 
-    studyTitle: {
+    title: {
       check: "String",
-      apply: "_applyStudyTitle",
+      apply: "_applyTitle",
       nullable: true
     },
 
-    studyDescription: {
+    description: {
       check: "String",
       nullable: true
     },
@@ -264,8 +264,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       this.set({
         resourceType: studyData.resourceType,
         uuid,
-        studyTitle: studyData.name,
-        studyDescription: studyData.description,
+        title: studyData.name,
+        description: studyData.description,
         owner,
         accessRights,
         lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : null,
@@ -315,7 +315,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       osparc.utils.Utils.setIdToWidget(this, "studyBrowserListItem_"+value);
     },
 
-    _applyStudyTitle: function(value, old) {
+    _applyTitle: function(value, old) {
       const label = this.getChildControl("title");
       label.setValue(value);
       label.addListener("appear", () => {
@@ -585,7 +585,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     __filterText: function(text) {
       if (text) {
         const checks = [
-          this.getStudyTitle(),
+          this.getTitle(),
           this.getOwner()
         ];
         if (checks.filter(label => label.toLowerCase().trim().includes(text)).length == 0) {

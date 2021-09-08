@@ -61,11 +61,10 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
       THUMBNAIL: 0,
       TITLE: 1,
       SHARED: 2,
-      OWNER: 3,
-      LAST_CHANGE: 4,
-      TSR: 5,
-      TAGS: 6,
-      OPTIONS: 7
+      LAST_CHANGE: 3,
+      TSR: 4,
+      TAGS: 5,
+      OPTIONS: 6
     }
   },
 
@@ -87,32 +86,24 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
       event: "changeResourceType"
     },
 
-    menu: {
-      check: "qx.ui.menu.Menu",
-      nullable: true,
-      apply: "_applyMenu",
-      event: "changeMenu"
-    },
-
     uuid: {
       check: "String",
       apply: "_applyUuid"
     },
 
-    studyTitle: {
+    title: {
       check: "String",
-      apply: "_applyStudyTitle",
+      apply: "_applyTitle",
       nullable: true
     },
 
-    studyDescription: {
+    description: {
       check: "String",
       nullable: true
     },
 
     owner: {
       check: "String",
-      apply: "_applyOwner",
       nullable: true
     },
 
@@ -154,6 +145,13 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
       init: false,
       nullable: false,
       apply: "_applyLocked"
+    },
+
+    menu: {
+      check: "qx.ui.menu.Menu",
+      nullable: true,
+      apply: "_applyMenu",
+      event: "changeMenu"
     },
 
     multiSelectionMode: {
@@ -210,17 +208,6 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
             alignY: "middle"
           });
           this._addAt(control, this.self().POS.SHARED);
-          break;
-        }
-        case "owner": {
-          control = new qx.ui.basic.Label().set({
-            anonymous: true,
-            font: "text-13",
-            allowGrowY: false,
-            minWidth: 50,
-            alignY: "middle"
-          });
-          this._addAt(control, this.self().POS.OWNER);
           break;
         }
         case "last-change": {
@@ -303,8 +290,8 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
       this.set({
         resourceType: studyData.resourceType,
         uuid,
-        studyTitle: studyData.name,
-        studyDescription: studyData.description,
+        title: studyData.name,
+        description: studyData.description,
         owner,
         accessRights,
         lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : null,
@@ -327,7 +314,7 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
       osparc.utils.Utils.setIdToWidget(this, "studyBrowserListItem_"+value);
     },
 
-    _applyStudyTitle: function(value, old) {
+    _applyTitle: function(value, old) {
       const label = this.getChildControl("title");
       label.setValue(value);
       label.addListener("appear", () => {
@@ -344,13 +331,6 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
       if (value) {
         const label = this.getChildControl("last-change");
         label.setValue(osparc.utils.Utils.formatDateAndTime(value));
-      }
-    },
-
-    _applyOwner: function(value, old) {
-      if (this.isResourceType("service") || this.isResourceType("template")) {
-        const label = this.getChildControl("owner");
-        label.setValue(value);
       }
     },
 
