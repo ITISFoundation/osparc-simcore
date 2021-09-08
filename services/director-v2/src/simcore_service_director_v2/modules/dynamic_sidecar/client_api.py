@@ -1,5 +1,6 @@
 import logging
 import traceback
+from pathlib import Path
 from typing import Any, Dict
 
 import httpx
@@ -50,6 +51,10 @@ class DynamicSidecarClient:
         self._heatlth_request_timeout: httpx.Timeout = httpx.Timeout(1.0, connect=1.0)
         self._base_timeout = httpx.Timeout(
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
+            connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+        )
+        self._save_restore_timeout = httpx.Timeout(
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
             connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
 
@@ -149,6 +154,42 @@ class DynamicSidecarClient:
             logger.info("Compose down result %s", response.text)
         except httpx.HTTPError as e:
             log_httpx_http_error(url, "POST", traceback.format_exc())
+            raise e
+
+    async def service_state_save(
+        self, dynamic_sidecar_endpoint: str, path: Path
+    ) -> None:
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers:save-state")
+        try:
+            async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
+                response = await client.put(url, data=dict(path=path))
+            if response.status_code != 204:
+                message = (
+                    f"ERROR while saving service state: "
+                    f"status={response.status_code}, body={response.text}"
+                )
+                logging.warning(message)
+                raise DynamicSchedulerException(message)
+        except httpx.HTTPError as e:
+            log_httpx_http_error(url, "PUT", traceback.format_exc())
+            raise e
+
+    async def service_state_restore(
+        self, dynamic_sidecar_endpoint: str, path: Path
+    ) -> None:
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers:restore-state")
+        try:
+            async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
+                response = await client.put(url, data=dict(path=path))
+            if response.status_code != 204:
+                message = (
+                    f"ERROR while restoring service state: "
+                    f"status={response.status_code}, body={response.text}"
+                )
+                logging.warning(message)
+                raise DynamicSchedulerException(message)
+        except httpx.HTTPError as e:
+            log_httpx_http_error(url, "PUT", traceback.format_exc())
             raise e
 
 

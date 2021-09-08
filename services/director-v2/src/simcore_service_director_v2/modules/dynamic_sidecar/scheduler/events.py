@@ -13,6 +13,7 @@ from ....models.schemas.dynamic_services import (
     SchedulerData,
 )
 from ....modules.director_v0 import DirectorV0Client
+from ....utils.async_utils import logged_gather
 from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
     are_services_missing,
@@ -217,8 +218,25 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
-        # TODO: implemnet nodeports data pulling
-        logging.info("implemnet nodeports data pulling")
+        dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+        dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
+        tasks = deque()
+
+        logger.info("Calling into dynamic-sidecar to restore state")
+
+        tasks.append(
+            dynamic_sidecar_client.service_state_restore(
+                dynamic_sidecar_endpoint, scheduler_data.paths_mapping.inputs_path
+            )
+        )
+        for state_path in scheduler_data.paths_mapping.state_paths:
+            tasks.append(
+                dynamic_sidecar_client.service_state_restore(
+                    dynamic_sidecar_endpoint, state_path
+                )
+            )
+        await logged_gather(*tasks, reraise=False)
+        logger.info("State restored by dynamic-sidecar")
 
         scheduler_data.dynamic_sidecar.service_environment_prepared = True
 
@@ -296,11 +314,26 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
 
-        _ = scheduler_data.dynamic_sidecar.service_removal_data.save_state
-        # TODO: save state and others go here
-        logger.info("implement save nodeports data")
-        # is this the correct place to do it? needs discussion
-        # TODO: ask SAN/MaG
+        if scheduler_data.dynamic_sidecar.service_removal_data.save_state:
+            dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+            dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
+            tasks = deque()
+
+            logger.info("Calling into dynamic-sidecar to save state")
+
+            tasks.append(
+                dynamic_sidecar_client.service_state_save(
+                    dynamic_sidecar_endpoint, scheduler_data.paths_mapping.outputs_path
+                )
+            )
+            for state_path in scheduler_data.paths_mapping.state_paths:
+                tasks.append(
+                    dynamic_sidecar_client.service_state_save(
+                        dynamic_sidecar_endpoint, state_path
+                    )
+                )
+            await logged_gather(*tasks, reraise=False)
+            logger.info("State saved by dynamic-sidecar")
 
         # remove the 2 services
         await remove_dynamic_sidecar_stack(

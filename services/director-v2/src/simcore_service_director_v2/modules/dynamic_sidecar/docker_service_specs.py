@@ -5,6 +5,7 @@ from typing import Any, Deque, Dict, List, cast
 
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
+    PathMappingsLabel,
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
@@ -488,6 +489,13 @@ async def merge_settings_before_use(
     return SimcoreServiceSettingsLabel.parse_obj(settings)
 
 
+def _get_paths_env_vars(paths_mapping: PathMappingsLabel) -> Dict[str, str]:
+    return {
+        "DY_SIDECAR_PATH_INPUTS": str(paths_mapping.inputs_path),
+        "DY_SIDECAR_PATH_OUTPUTS": str(paths_mapping.outputs_path),
+    }
+
+
 async def get_dynamic_sidecar_spec(
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
@@ -585,6 +593,7 @@ async def get_dynamic_sidecar_spec(
                     "SIMCORE_HOST_NAME": scheduler_data.service_name,
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
                     **get_dynamic_sidecar_env_vars(dynamic_sidecar_settings.REGISTRY),
+                    **_get_paths_env_vars(scheduler_data.paths_mapping),
                 },
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,

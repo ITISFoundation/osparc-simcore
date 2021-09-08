@@ -173,6 +173,14 @@ class DynamicSidecarSettings(BaseCustomSettings):
             "twards the dynamic-sidecar, as is the case with the above timeout field."
         ),
     )
+    DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: PositiveFloat = Field(
+        60 * MINS,
+        description=(
+            "When saving and restoring the state of a dynamic service, depending on the payload "
+            "some services contain take longer or shorter to save and restore. Accross the "
+            "platform this value is set to 1 hour."
+        ),
+    )
 
     TRAEFIK_SIMCORE_ZONE: str = Field(
         ...,
