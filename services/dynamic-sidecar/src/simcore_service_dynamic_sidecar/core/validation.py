@@ -25,14 +25,14 @@ def _assemble_container_name(
     index: int,
 ) -> str:
     strings_to_use = [
-        settings.compose_namespace,
+        settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE,
         str(index),
         user_given_container_name,
         service_key,
     ]
 
     container_name = "-".join([x for x in strings_to_use if len(x) > 0])[
-        : settings.max_combined_container_name_length
+        : settings.DYNAMIC_SIDECAR_MAX_COMBINED_CONTAINER_NAME_LENGTH
     ].replace("_", "-")
 
     return container_name

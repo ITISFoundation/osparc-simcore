@@ -4,8 +4,10 @@
 import os
 import random
 import sys
+import tempfile
+import uuid
 from pathlib import Path
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, Iterator
 from unittest import mock
 
 import aiodocker
@@ -21,8 +23,16 @@ from simcore_service_dynamic_sidecar.core.shared_handlers import (
 from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
 
 
+@pytest.fixture(scope="module")
+def io_temp_dir() -> Iterator[Path]:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        yield Path(temp_dir)
+
+
 @pytest.fixture(scope="module", autouse=True)
-def app() -> FastAPI:
+def app(io_temp_dir: Path) -> FastAPI:
+    inputs_dir = io_temp_dir / "inputs"
+    outputs_dir = io_temp_dir / "outputs"
     with mock.patch.dict(
         os.environ,
         {
@@ -32,6 +42,11 @@ def app() -> FastAPI:
             "REGISTRY_user": "test",
             "REGISTRY_PW": "test",
             "REGISTRY_SSL": "false",
+            "DY_SIDECAR_PATH_INPUTS": str(inputs_dir),
+            "DY_SIDECAR_PATH_OUTPUTS": str(outputs_dir),
+            "DY_SIDECAR_USER_ID": "1",
+            "DY_SIDECAR_PROJECT_ID": f"{uuid.uuid4()}",
+            "DY_SIDECAR_NODE_ID": f"{uuid.uuid4()}",
         },
     ):
         return assemble_application()

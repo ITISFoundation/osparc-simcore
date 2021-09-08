@@ -68,7 +68,9 @@ async def assert_compose_spec_pulled(
 
     docker_ps_names = await _docker_ps_a_container_names()
     started_containers = [
-        x for x in docker_ps_names if x.startswith(settings.compose_namespace)
+        x
+        for x in docker_ps_names
+        if x.startswith(settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE)
     ]
     assert len(started_containers) == expected_services_count
 
@@ -107,10 +109,10 @@ async def test_start_same_space_twice(
     test_client: TestClient, compose_spec: str
 ) -> None:
     settings: DynamicSidecarSettings = test_client.application.state.settings
-    settings.compose_namespace = "test_name_space_1"
+    settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_1"
     await assert_compose_spec_pulled(compose_spec, settings)
 
-    settings.compose_namespace = "test_name_space_2"
+    settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_2"
     await assert_compose_spec_pulled(compose_spec, settings)
 
 

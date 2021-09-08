@@ -46,7 +46,7 @@ def assemble_application() -> FastAPI:
     logger.debug(dynamic_sidecar_settings.json(indent=2))
 
     application = FastAPI(
-        debug=dynamic_sidecar_settings.debug,
+        debug=dynamic_sidecar_settings.DEBUG,
         openapi_url=f"/api/{api_vtag}/openapi.json",
         docs_url="/dev/doc",
     )
@@ -69,7 +69,7 @@ def assemble_application() -> FastAPI:
         app: FastAPI,
     ) -> Callable[[], Coroutine[Any, Any, None]]:
         async def on_startup() -> None:
-            await login_registry(app.state.settings.registry)
+            await login_registry(app.state.settings.REGISTRY_SETTINGS)
             print(WELCOME_MSG, flush=True)
 
         return on_startup
