@@ -219,13 +219,13 @@ paths:
   "/repos/projects/{project_uuid}/checkpoints":
     $ref: "./openapi-repos.yaml#/paths/~1repos~1projects~1{project_uuid}~1checkpoints"
 
-  "/repos/projects/{project_uuid}/checkpoint/{ref_id}":
+  "/repos/projects/{project_uuid}/checkpoints/{ref_id}":
     $ref: "./openapi-repos.yaml#/paths/~1repos~1projects~1{project_uuid}~1checkpoints~1{ref_id}"
 
-  "/repos/projects/{project_uuid}/checkpoint/{ref_id}:checkout":
+  "/repos/projects/{project_uuid}/checkpoints/{ref_id}:checkout":
     $ref: "./openapi-repos.yaml#/paths/~1repos~1projects~1{project_uuid}~1checkpoints~1{ref_id}:checkout"
 
-  "/repos/projects/{project_uuid}/checkpoint/{ref_id}/workbench/view":
+  "/repos/projects/{project_uuid}/checkpoints/{ref_id}/workbench/view":
     $ref: "./openapi-repos.yaml#/paths/~1repos~1projects~1{project_uuid}~1checkpoints~1{ref_id}~1workbench~1view"
 
   # ACTIVITY -------------------------------------------------------------------------

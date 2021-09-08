@@ -13724,7 +13724,7 @@ paths:
                         type:
                           title: Error Type
                           type: string
-  '/repos/projects/{project_uuid}/checkpoint/{ref_id}':
+  '/repos/projects/{project_uuid}/checkpoints/{ref_id}':
     get:
       tags:
         - repository
@@ -13974,7 +13974,7 @@ paths:
                         type:
                           title: Error Type
                           type: string
-  '/repos/projects/{project_uuid}/checkpoint/{ref_id}:checkout':
+  '/repos/projects/{project_uuid}/checkpoints/{ref_id}:checkout':
     post:
       tags:
         - repository
@@ -14095,7 +14095,7 @@ paths:
                         type:
                           title: Error Type
                           type: string
-  '/repos/projects/{project_uuid}/checkpoint/{ref_id}/workbench/view':
+  '/repos/projects/{project_uuid}/checkpoints/{ref_id}/workbench/view':
     get:
       tags:
         - repository

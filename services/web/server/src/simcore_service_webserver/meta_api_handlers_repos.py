@@ -161,7 +161,7 @@ async def _get_checkpoint_handler(request: web.Request):
 @login_required
 @permission_required("project.update")
 @handle_request_errors
-async def _update_checkpoint_handler(request: web.Request):
+async def _update_checkpoint_annotations_handler(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
     project_uuid = request.match_info["project_uuid"]
@@ -191,7 +191,7 @@ async def _update_checkpoint_handler(request: web.Request):
 @login_required
 @permission_required("project.create")
 @handle_request_errors
-async def _checkout_checkpoint_handler(request: web.Request):
+async def _checkout_handler(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
     project_uuid = request.match_info["project_uuid"]
@@ -220,7 +220,7 @@ async def _checkout_checkpoint_handler(request: web.Request):
 @login_required
 @permission_required("project.read")
 @handle_request_errors
-async def _get_checkpoint_workbench_handler(request: web.Request):
+async def _view_project_workbench_handler(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
     project_uuid = request.match_info["project_uuid"]
@@ -251,5 +251,7 @@ async def _get_checkpoint_workbench_handler(request: web.Request):
     return enveloped_response(data)
 
 
+# WARNING: changes in handlers naming will have an effect
+# since they are in sync with operation_id  (checked in tests)
 rename_routes_as_handler_function(routes, prefix=__name__)
 logger.debug("Routes collected in  %s:\n %s", __name__, view_routes(routes))
