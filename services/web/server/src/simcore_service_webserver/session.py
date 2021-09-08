@@ -24,7 +24,7 @@ from aiohttp import web
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from cryptography import fernet
 
-from servicelib.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .session_config import assert_valid_config
 

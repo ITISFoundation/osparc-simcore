@@ -6,8 +6,8 @@ import asyncio
 import time
 
 import pytest
-from servicelib import monitor_slow_callbacks
-from servicelib.aiopg_utils import (
+from servicelib.aiohttp import monitor_slow_callbacks
+from servicelib.aiohttp.aiopg_utils import (
     DatabaseError,
     postgres_service_retry_policy_kwargs,
     retry,

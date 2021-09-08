@@ -8,8 +8,8 @@ import yaml
 from aiohttp import web
 from aiohttp.web import RouteDef, RouteTableDef
 from aiohttp_swagger import setup_swagger
-from servicelib.openapi import get_base_path
-from servicelib.rest_middlewares import append_rest_middlewares
+from servicelib.aiohttp.openapi import get_base_path
+from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 
 from . import app_handlers, handlers
 from .constants import APP_OPENAPI_SPECS_KEY

@@ -100,8 +100,7 @@ class AiohttpOpenAPIRequest(BaseOpenAPIRequest):
 
     @property
     def mimetype(self) -> str:
-        """ Read-only property with content part of Content-Type header
-        """
+        """Read-only property with content part of Content-Type header"""
         return self._request.content_type
 
 

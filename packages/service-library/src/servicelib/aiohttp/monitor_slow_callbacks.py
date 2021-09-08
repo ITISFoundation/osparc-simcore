@@ -1,6 +1,6 @@
 import asyncio.events
-import time
 import sys
+import time
 from typing import List
 
 from pyinstrument import Profiler

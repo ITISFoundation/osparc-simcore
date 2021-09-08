@@ -6,8 +6,8 @@ from typing import Dict
 from unittest.mock import Mock
 
 import pytest
-from servicelib.application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
-from servicelib.application_setup import APP_SETUP_KEY
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
+from servicelib.aiohttp.application_setup import APP_SETUP_KEY
 from simcore_service_webserver import diagnostics_handlers
 from simcore_service_webserver.diagnostics import setup_diagnostics
 from simcore_service_webserver.rest import (

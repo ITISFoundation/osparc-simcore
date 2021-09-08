@@ -8,7 +8,7 @@
 import logging
 
 from aiohttp import web
-from servicelib.application_setup import (
+from servicelib.aiohttp.application_setup import (
     ModuleCategory,
     SkipModuleSetup,
     app_module_setup,

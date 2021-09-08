@@ -6,7 +6,7 @@ from aiohttp import web
 
 from pytest_simcore.helpers.utils_assert import assert_error, assert_status
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
-from servicelib.rest_responses import unwrap_envelope
+from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login.cfg import cfg, get_storage
 from simcore_service_webserver.login.registration import get_confirmation_info
@@ -136,7 +136,7 @@ async def test_registration_with_confirmation(client, capsys, monkeypatch):
 async def test_registration_with_invitation(
     client, is_invitation_required, has_valid_invitation, expected_response
 ):
-    from servicelib.application_keys import APP_CONFIG_KEY
+    from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
     from simcore_service_webserver.login.config import CONFIG_SECTION_NAME
 
     client.app[APP_CONFIG_KEY][CONFIG_SECTION_NAME] = {

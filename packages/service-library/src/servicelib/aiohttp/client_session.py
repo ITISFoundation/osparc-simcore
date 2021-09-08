@@ -9,7 +9,7 @@ from typing import Any, MutableMapping
 from aiohttp import ClientSession, ClientTimeout, web
 
 from .application_keys import APP_CLIENT_SESSION_KEY
-from .utils import (
+from ..utils import (
     get_http_client_request_aiohttp_connect_timeout,
     get_http_client_request_aiohttp_sock_connect_timeout,
     get_http_client_request_total_timeout,

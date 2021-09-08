@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from aiohttp import web
 from servicelib.request_keys import RQT_USERID_KEY
-from servicelib.rest_responses import unwrap_envelope
-from servicelib.rest_utils import extract_and_validate
+from servicelib.aiohttp.rest_responses import unwrap_envelope
+from servicelib.aiohttp.rest_utils import extract_and_validate
 from yarl import URL
 
 from .login.decorators import login_required

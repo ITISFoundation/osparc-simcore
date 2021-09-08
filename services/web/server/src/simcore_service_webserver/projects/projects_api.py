@@ -27,8 +27,8 @@ from models_library.projects_state import (
     RunningState,
 )
 from pydantic.types import PositiveInt
-from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
-from servicelib.jsonschema_validation import validate_instance
+from servicelib.aiohttp.application_keys import APP_JSONSCHEMA_SPECS_KEY
+from servicelib.aiohttp.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 

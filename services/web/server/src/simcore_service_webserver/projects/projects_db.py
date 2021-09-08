@@ -25,7 +25,7 @@ from change_case import ChangeCase
 from models_library.projects import ProjectAtDB
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
-from servicelib.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy import desc, literal_column
 from sqlalchemy.sql import and_, select

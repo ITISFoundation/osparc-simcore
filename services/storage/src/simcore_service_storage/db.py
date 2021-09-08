@@ -3,10 +3,10 @@ from typing import Any, Dict, Optional
 
 from aiohttp import web
 from aiopg.sa import Engine
-from servicelib.aiopg_utils import (
+from servicelib.common_aiopg_utils import create_pg_engine
+from servicelib.aiohttp.aiopg_utils import (
     DataSourceName,
     PostgresRetryPolicyUponInitialization,
-    create_pg_engine,
     get_pg_engine_stateinfo,
     init_pg_tables,
     is_pg_responsive,

@@ -8,7 +8,6 @@ from typing import Dict
 
 import pytest
 import servicelib
-from servicelib.openapi import create_openapi_specs
 
 pytest_plugins = [
     "pytest_simcore.repository_paths",
@@ -35,16 +34,3 @@ def osparc_simcore_root_dir(here) -> Path:
         "%s not look like rootdir" % root_dir
     )
     return root_dir
-
-
-@pytest.fixture
-def petstore_spec_file(here) -> Path:
-    filepath = here / "data/oas3/petstore.yaml"
-    assert filepath.exists()
-    return filepath
-
-
-@pytest.fixture
-async def petstore_specs(loop, petstore_spec_file) -> Dict:
-    specs = await create_openapi_specs(petstore_spec_file)
-    return specs

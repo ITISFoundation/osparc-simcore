@@ -26,7 +26,7 @@ OpenApiSpec = Spec
 
 
 def get_base_path(specs: OpenApiSpec) -> str:
-    """ Expected API basepath
+    """Expected API basepath
 
     By convention, the API basepath indicates the major
     version of the openapi specs
@@ -55,7 +55,7 @@ async def _load_from_url(session: ClientSession, url: URL) -> Tuple[Dict, str]:
 
 
 async def create_openapi_specs(location, session: ClientSession = None) -> OpenApiSpec:
-    """ Loads specs from a given location (url or path),
+    """Loads specs from a given location (url or path),
         validates them and returns a working instance
 
     If location is an url, the specs are loaded asyncronously

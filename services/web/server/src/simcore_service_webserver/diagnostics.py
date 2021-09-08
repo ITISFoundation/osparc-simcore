@@ -5,8 +5,8 @@ from operator import attrgetter
 from typing import Optional
 
 from aiohttp import web
-from servicelib import monitor_slow_callbacks
-from servicelib.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp import monitor_slow_callbacks
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from . import diagnostics_handlers
 from .diagnostics_config import DiagnosticsSettings

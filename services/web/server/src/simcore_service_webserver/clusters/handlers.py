@@ -3,7 +3,7 @@ from typing import List
 
 from aiohttp import web
 from models_library.users import GroupID, UserID
-from servicelib.rest_utils import extract_and_validate
+from servicelib.aiohttp.rest_utils import extract_and_validate
 
 from .._meta import api_version_prefix
 from ..groups_api import list_user_groups

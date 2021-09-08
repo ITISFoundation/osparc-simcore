@@ -12,7 +12,8 @@ import logging
 import aiohttp_security
 from aiohttp import web
 from aiohttp_security.session_identity import SessionIdentityPolicy
-from servicelib.application_setup import ModuleCategory, app_module_setup
+
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .security_access_model import RoleBasedAccessModel
 from .security_authorization import AuthorizationPolicy

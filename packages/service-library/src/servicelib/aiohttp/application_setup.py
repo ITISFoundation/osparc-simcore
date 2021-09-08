@@ -73,7 +73,7 @@ def app_module_setup(
     :rtype: bool
 
     :Example:
-        from servicelib.application_setup import app_module_setup
+        from servicelib.aiohttp.application_setup import app_module_setup
 
         @app_module_setup('mysubsystem', ModuleCategory.SYSTEM, logger=log)
         def setup(app: web.Application):

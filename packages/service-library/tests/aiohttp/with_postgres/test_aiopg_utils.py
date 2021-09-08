@@ -14,11 +14,10 @@ import pytest
 import sqlalchemy as sa
 import sqlalchemy.exc as sa_exceptions
 from aiohttp import web
-from servicelib.aiopg_utils import (
+from servicelib.common_aiopg_utils import DataSourceName, create_pg_engine
+from servicelib.aiohttp.aiopg_utils import (
     DatabaseError,
-    DataSourceName,
     PostgresRetryPolicyUponOperation,
-    create_pg_engine,
     init_pg_tables,
     is_pg_responsive,
     retry_pg_api,

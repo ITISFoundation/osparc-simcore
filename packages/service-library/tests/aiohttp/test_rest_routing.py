@@ -3,8 +3,8 @@
 # pylint:disable=redefined-outer-name
 
 import pytest
-from servicelib import openapi
-from servicelib.rest_routing import (
+from servicelib.aiohttp import openapi
+from servicelib.aiohttp.rest_routing import (
     create_routes_from_namespace,
     get_handlers_from_namespace,
     iter_path_operations,

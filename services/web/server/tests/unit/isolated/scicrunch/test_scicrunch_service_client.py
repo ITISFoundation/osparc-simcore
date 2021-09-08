@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 from aioresponses.core import aioresponses
-from servicelib.client_session import get_client_session
+from servicelib.aiohttp.client_session import get_client_session
 from simcore_service_webserver.scicrunch.service_client import (
     ResearchResource,
     SciCrunch,

@@ -1,12 +1,13 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint: disable=too-many-arguments
+
 import sys
 from pathlib import Path
 
 import pytest
 import yaml
-from servicelib.aiopg_utils import DataSourceName, is_postgres_responsive
+from servicelib.common_aiopg_utils import DataSourceName, is_postgres_responsive
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -18,7 +19,7 @@ def docker_compose_file() -> Path:
 
 
 @pytest.fixture(scope="session")
-def postgres_service(docker_services, docker_ip, docker_compose_file) -> DataSourceName:
+def postgres_service(docker_services, docker_ip, docker_compose_file):
 
     # container environment
     with open(docker_compose_file) as fh:

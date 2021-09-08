@@ -25,7 +25,7 @@ async def _load_from_url(session: ClientSession, url: URL) -> Dict:
 async def create_jsonschema_specs(
     location: Path, session: ClientSession = None
 ) -> Dict:
-    """ Loads specs from a given location (url or path),
+    """Loads specs from a given location (url or path),
         validates them and returns a working instance
 
     If location is an url, the specs are loaded asyncronously

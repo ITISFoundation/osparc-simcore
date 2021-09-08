@@ -4,7 +4,7 @@ from typing import Dict
 
 from aiohttp.web import Application
 from pydantic import BaseSettings, Field, NonNegativeFloat, PositiveFloat, validator
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 
 
 class DiagnosticsSettings(BaseSettings):

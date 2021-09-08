@@ -3,7 +3,8 @@ from aiohttp import web
 from prometheus_client import CONTENT_TYPE_LATEST
 from prometheus_client.registry import CollectorRegistry
 
-from servicelib.monitor_services import (
+
+from servicelib.monitor_services import (  # pylint: disable=no-name-in-module
     add_instrumentation as add_services_instrumentation,
 )
 
