@@ -380,7 +380,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __createStudyItem: function(studyData) {
       const tags = studyData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => studyData.tags.includes(tag.id)) : [];
 
-      const item = osparc.utils.Resources.isTemplate(studyData) ? new osparc.dashboard.DashboardListButton() : new osparc.dashboard.StudyBrowserButtonItem();
+      // const item = osparc.utils.Resources.isTemplate(studyData) ? new osparc.dashboard.DashboardListButton() : new osparc.dashboard.StudyBrowserButtonItem();
+      const item = new osparc.dashboard.DashboardListButton();
       item.set({
         resourceData: studyData,
         tags

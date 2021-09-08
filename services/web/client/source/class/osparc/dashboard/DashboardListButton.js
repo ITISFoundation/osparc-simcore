@@ -56,6 +56,8 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
     STUDY_ICON: "@FontAwesome5Solid/file-alt/24",
     TEMPLATE_ICON: "@FontAwesome5Solid/copy/24",
     SERVICE_ICON: "@FontAwesome5Solid/paw/24",
+    COMP_SERVICE_ICON: "@FontAwesome5Solid/cogs/24",
+    DYNAMIC_SERVICE_ICON: "@FontAwesome5Solid/mouse-pointer/24",
     PERM_READ: "@FontAwesome5Solid/eye/16",
     POS: {
       THUMBNAIL: 0,
@@ -293,6 +295,12 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
           owner = studyData.owner ? studyData.owner : owner;
           accessRights = studyData.access_rights ? studyData.access_rights : accessRights;
           defaultThumbnail = this.self().SERVICE_ICON;
+          if (osparc.data.model.Node.isComputational(studyData)) {
+            defaultThumbnail = this.self().COMP_SERVICE_ICON;
+          }
+          if (osparc.data.model.Node.isDynamic(studyData)) {
+            defaultThumbnail = this.self().DYNAMIC_SERVICE_ICON;
+          }
           break;
       }
 
