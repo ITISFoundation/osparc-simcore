@@ -189,7 +189,16 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __createTemplatesLayout: function() {
       const tempStudyLayout = this.__createCollapsibleView(this.tr("Templates"));
 
-      const templateStudyContainer = this._studiesContainer = this.__createResourceListLayout();
+      const titleBarBtnsContainerRight = tempStudyLayout.getTitleBarBtnsContainerRight();
+      const viewGridBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/apps/18");
+      titleBarBtnsContainerRight.add(viewGridBtn);
+      const viewListBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/reorder/18");
+      titleBarBtnsContainerRight.add(viewListBtn);
+      const group = new qx.ui.form.RadioGroup();
+      group.add(viewGridBtn);
+      group.add(viewListBtn);
+
+      const templateStudyContainer = this._studiesContainer = this.__createResourceListLayout(5);
       osparc.utils.Utils.setIdToWidget(templateStudyContainer, "templateStudiesList");
       tempStudyLayout.setContent(templateStudyContainer);
 
@@ -197,6 +206,15 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const loadingTemplatesBtn = this._loadingStudiesBtn = new osparc.dashboard.DashboardListButton();
       osparc.utils.Utils.setIdToWidget(loadingTemplatesBtn, "templatesLoading");
       templateStudyContainer.add(loadingTemplatesBtn);
+
+      viewGridBtn.addListener("execute", () => {
+        templateStudyContainer.setMode("icons");
+        // this.setMode("icons");
+      });
+      viewListBtn.addListener("execute", () => {
+        templateStudyContainer.setMode("list");
+        // this.setMode("list");
+      });
 
       templateStudyContainer.addListener("changeVisibility", e => {
         this._moreStudiesRequired();
@@ -354,8 +372,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       }
     },
 
-    __createResourceListLayout: function() {
-      const spacing = osparc.dashboard.StudyBrowserButtonBase.SPACING;
+    __createResourceListLayout: function(spa) {
+      const spacing = spa || osparc.dashboard.StudyBrowserButtonBase.SPACING;
       return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
     },
 
