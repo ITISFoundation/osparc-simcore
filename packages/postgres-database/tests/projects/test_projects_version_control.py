@@ -200,7 +200,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         await repo_orm.update(project_checksum=snapshot_checksum)
 
     # log history
-    commits = await commits_orm.fetchall()
+    commits = await commits_orm.fetch_all()
     assert len(commits) == 1
     assert commits[0].id == commit_id
 
@@ -271,7 +271,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         await branches_orm.update(head_commit_id=commit_id)
 
     # log history
-    commits = await commits_orm.fetchall()
+    commits = await commits_orm.fetch_all()
     assert len(commits) == 2
     assert commits[1].id == commit_id
 

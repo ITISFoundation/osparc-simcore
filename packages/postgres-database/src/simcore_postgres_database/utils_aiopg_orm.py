@@ -15,6 +15,7 @@ from typing import Dict, Generic, List, Optional, Set, Tuple, TypeVar, Union
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
+from pydantic.types import NonNegativeInt, PositiveInt
 from sqlalchemy.sql.base import ImmutableColumnCollection
 from sqlalchemy.sql.dml import Insert, Update, UpdateBase
 from sqlalchemy.sql.elements import literal_column
@@ -164,7 +165,7 @@ class BaseOrm(Generic[RowUId]):
         row: Optional[RowProxy] = await result.first()
         return row
 
-    async def fetchall(
+    async def fetch_all(
         self,
         returning_cols: Union[str, List[str]] = ALL_COLUMNS,
     ) -> List[RowProxy]:
@@ -174,6 +175,41 @@ class BaseOrm(Generic[RowUId]):
         result: ResultProxy = await self._conn.execute(query)
         rows: List[RowProxy] = await result.fetchall()
         return rows
+
+    async def fetch_page(
+        self,
+        returning_cols: Union[str, List[str]] = ALL_COLUMNS,
+        *,
+        offset: NonNegativeInt,
+        limit: Optional[PositiveInt] = None,
+    ) -> Tuple[List[RowProxy], NonNegativeInt]:
+        """Support for paginated fetchall
+
+        IMPORTANT: pages are sorted by primary-key
+
+        Returns limited list and total count
+        """
+        query = self._compose_select_query(returning_cols).order_by(self._primary_key)
+
+        total_count = None
+        if offset > 0 or limit:
+            # eval total count if pagination options enabled
+            total_count = await self._conn.scalar(query.alias().count())
+
+        if offset:
+            query = query.offset(offset)
+
+        if limit and limit > 0:
+            query = query.limit(limit)
+
+        result: ResultProxy = await self._conn.execute(query)
+
+        if not total_count:
+            total_count = result.rowcount
+        assert total_count is not None
+
+        rows: List[RowProxy] = await result.fetchall()
+        return rows, total_count
 
     async def update(
         self, returning_cols: Union[str, List[str]] = PRIMARY_KEY, **values

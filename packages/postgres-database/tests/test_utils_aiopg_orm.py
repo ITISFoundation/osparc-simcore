@@ -61,7 +61,7 @@ async def test_orm_fetch(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[s
     assert scicrunch_id2 == "RRID:bar"
 
     # fetch
-    all_scicrunch_resources = await scicrunch_orm.fetchall()
+    all_scicrunch_resources = await scicrunch_orm.fetch_all()
     assert len(all_scicrunch_resources) == 2
 
     scicrunch_resource = await scicrunch_orm.fetch(rowid=scicrunch_id1)
@@ -89,7 +89,7 @@ async def test_orm_fetch(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[s
     )
     assert scicrunch_resource == scicrunch_resource1
 
-    all_scicrunch_resources = await scicrunch_orm.fetchall(
+    all_scicrunch_resources = await scicrunch_orm.fetch_all(
         returning_cols=["name", "description"],
     )
     assert len(all_scicrunch_resources) == 2
@@ -128,6 +128,44 @@ async def test_orm_fetch_defaults(
     assert scicrunch_resource.name == "foo"
     assert scicrunch_resource.description == "fooing"
     assert not hasattr(scicrunch_resource, "rrid")
+
+
+async def test_orm_fetchall_page(
+    scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[str]
+):
+
+    # insert 1 and 2
+    scicrunch_id1, scicrunch_id2 = fake_scicrunch_ids
+    assert scicrunch_id1 is not None
+    assert scicrunch_id1 == "RRID:foo"
+    assert scicrunch_id2 is not None
+    assert scicrunch_id2 == "RRID:bar"
+
+    # fetch
+    all_scicrunch_resources = await scicrunch_orm.fetch_all("rrid")
+    assert len(all_scicrunch_resources) == 2
+
+    # fetch page
+    page1, total_rows = await scicrunch_orm.fetch_page("rrid", offset=0, limit=1)
+    assert total_rows == 2
+    assert len(page1) == 1
+    assert page1[0].rrid == "RRID:bar"
+
+    page2, total_rows = await scicrunch_orm.fetch_page("rrid", offset=1)
+    assert total_rows == 2
+    assert len(page2) == 1
+    assert page2[0].rrid == "RRID:foo"
+
+    # same as fetchall if offset=0 and limit is None
+    page, total_rows = await scicrunch_orm.fetch_page("rrid", offset=0)
+    assert len(page) == total_rows
+    assert (
+        sorted(
+            all_scicrunch_resources,
+            key=lambda x: x[0],
+        )
+        == page
+    )
 
 
 async def test_orm_insert(scicrunch_orm: BaseOrm[str]):
@@ -178,7 +216,7 @@ async def test_orm_update(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[
     first_udpated_row_id = await scicrunch_orm.update(name="w/o pin")
     assert first_udpated_row_id
 
-    rows = await scicrunch_orm.fetchall("name rrid")
+    rows = await scicrunch_orm.fetch_all("name rrid")
     assert all(row.name == "w/o pin" for row in rows)
 
     # let's use default to pin the rwo to update
@@ -230,3 +268,30 @@ async def test_orm_fail_to_update(
     # write once
     with pytest.raises(ValueError):
         await scicrunch_orm.update(rrid="RRID:NEW")
+
+
+@pytest.mark.skip(reason="DEV")
+async def test_rowproxy(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[str]):
+    # insert 1 and 2
+    scicrunch_id1, scicrunch_id2 = fake_scicrunch_ids
+    assert scicrunch_id1 is not None
+    assert scicrunch_id1 == "RRID:foo"
+    assert scicrunch_id2 is not None
+    assert scicrunch_id2 == "RRID:bar"
+
+    # fetch
+    rows: List[RowProxy] = await scicrunch_orm.fetch_all()
+    assert len(rows) == 2
+
+    # Exercise conversions ----
+
+    # as dict
+    row = rows[0]
+    row_as_dict = dict(row.items())
+
+    # as tuple
+    row_as_tuple = row.as_tuple()
+    assert set(row_as_tuple) == set(row_as_dict.values())
+
+    # to list[dict]: warning ... sometimes rows are None when in first() or fetchone()...
+    list_of_dicts = [dict(row.items()) for row in rows if row]
