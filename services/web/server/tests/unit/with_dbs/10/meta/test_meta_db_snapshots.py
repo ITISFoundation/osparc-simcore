@@ -14,7 +14,7 @@ from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 from simcore_service_webserver.constants import APP_DB_ENGINE_KEY
-from simcore_service_webserver.meta_db import SnapshotsRepository
+from simcore_service_webserver.meta_db_snapshots import SnapshotsRepository
 from simcore_service_webserver.meta_models_snapshots import Snapshot
 
 USERNAME = "me"
