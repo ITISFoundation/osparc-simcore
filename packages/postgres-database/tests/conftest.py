@@ -70,7 +70,11 @@ def db_metadata():
 async def pg_engine(loop, make_engine, db_metadata) -> Engine:
     async_engine = await make_engine(is_async=True)
 
-    # TODO: upgrade/downgrade
+    # NOTE: Using migration to upgrade/downgrade is not
+    # such a great idea since these tests are used while developing
+    # the tables, i.e. when no migration mechanism are in place
+    # Best is therefore to start from scratch and delete all at
+    # the end
     sync_engine = make_engine(is_async=False)
 
     # NOTE: ALL is deleted before
