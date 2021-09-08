@@ -267,6 +267,78 @@
         }
       }
     },
+    "/v1/containers:save-state": {
+      "put": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Stores the state of the dynamic service",
+        "operationId": "save_state_v1_containers_save_state_put",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Path",
+              "type": "string",
+              "format": "path"
+            },
+            "name": "path",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers:restore-state": {
+      "put": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Restores the state of the dynamic service",
+        "operationId": "restore_state_v1_containers_restore_state_put",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Path",
+              "type": "string",
+              "format": "path"
+            },
+            "name": "path",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/push": {
       "post": {
         "tags": [

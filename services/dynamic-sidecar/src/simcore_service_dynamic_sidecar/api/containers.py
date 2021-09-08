@@ -1,5 +1,6 @@
 import logging
 import traceback
+from pathlib import Path
 
 # pylint: disable=redefined-builtin
 from typing import Any, Dict, List, Union
@@ -228,6 +229,26 @@ async def inspect_container(
         container_instance = await docker.containers.get(id)
         inspect_result: Dict[str, Any] = await container_instance.show()
         return inspect_result
+
+
+@containers_router.put(
+    "/containers:save-state",
+    summary="Stores the state of the dynamic service",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def save_state(path: Path) -> None:
+    print(path)
+
+
+@containers_router.put(
+    "/containers:restore-state",
+    summary="Restores the state of the dynamic service",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def restore_state(path: Path) -> None:
+    print(path)
 
 
 __all__ = ["containers_router"]
