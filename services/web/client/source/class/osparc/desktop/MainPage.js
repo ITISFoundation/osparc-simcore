@@ -162,7 +162,7 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __createDashboardStack: function() {
       const nStudyItemsPerRow = 5;
-      const studyButtons = osparc.dashboard.StudyBrowserButtonBase;
+      const studyButtons = osparc.dashboard.GridButtonBase;
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard().set({
         width: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) + 8 // padding + scrollbar
       });

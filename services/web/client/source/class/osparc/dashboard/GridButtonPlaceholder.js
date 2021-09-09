@@ -15,8 +15,8 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.StudyBrowserButtonPlaceholder", {
-  extend: osparc.dashboard.StudyBrowserButtonBase,
+qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
+  extend: osparc.dashboard.GridButtonBase,
 
   construct: function() {
     this.base(arguments);
@@ -28,8 +28,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonPlaceholder", {
 
   statics: {
     POS: {
-      STATE: osparc.dashboard.StudyBrowserButtonBase.THUMBNAIL + 1,
-      PROGRESS: osparc.dashboard.StudyBrowserButtonBase.THUMBNAIL + 2
+      STATE: osparc.dashboard.GridButtonBase.THUMBNAIL + 1,
+      PROGRESS: osparc.dashboard.GridButtonBase.THUMBNAIL + 2
     }
   },
 

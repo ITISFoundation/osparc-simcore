@@ -202,8 +202,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       osparc.utils.Utils.setIdToWidget(templateStudyContainer, "templateStudiesList");
       tempStudyLayout.setContent(templateStudyContainer);
 
-      // const loadingTemplatesBtn = this._loadingStudiesBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
-      const loadingTemplatesBtn = this._loadingStudiesBtn = new osparc.dashboard.DashboardListButton();
+      // const loadingTemplatesBtn = this._loadingStudiesBtn = new osparc.dashboard.GridButtonLoadMore();
+      const loadingTemplatesBtn = this._loadingStudiesBtn = new osparc.dashboard.ListButtonItem();
       osparc.utils.Utils.setIdToWidget(loadingTemplatesBtn, "templatesLoading");
       templateStudyContainer.add(loadingTemplatesBtn);
 
@@ -226,7 +226,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __createServicesLayout: function() {
       const servicesLayout = this.__createCollapsibleView(this.tr("Services"));
 
-      const servicesContainer = this.__servicesContainer = this.__createResourceListLayout();
+      const servicesContainer = this.__servicesContainer = this.__createResourceListLayout(5);
       osparc.utils.Utils.setIdToWidget(servicesContainer, "servicesList");
       servicesLayout.setContent(servicesContainer);
 
@@ -320,15 +320,15 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         }
 
         template["resourceType"] = "template";
-        const idx = templatesList.findIndex(card => card instanceof osparc.dashboard.StudyBrowserButtonItem && card.getUuid() === template["uuid"]);
+        const idx = templatesList.findIndex(card => card instanceof osparc.dashboard.GridButtonItem && card.getUuid() === template["uuid"]);
         if (idx !== -1) {
           return;
         }
         const templateItem = this.__createStudyItem(template);
         this._studiesContainer.add(templateItem);
       });
-      osparc.dashboard.ResourceBrowserBase.sortStudyList(templatesList.filter(card => card instanceof osparc.dashboard.StudyBrowserButtonItem));
-      const idx = templatesList.findIndex(card => card instanceof osparc.dashboard.StudyBrowserButtonLoadMore);
+      osparc.dashboard.ResourceBrowserBase.sortStudyList(templatesList.filter(card => card instanceof osparc.dashboard.GridButtonItem));
+      const idx = templatesList.findIndex(card => card instanceof osparc.dashboard.GridButtonLoadMore);
       if (idx !== -1) {
         templatesList.push(templatesList.splice(idx, 1)[0]);
       }
@@ -373,15 +373,15 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __createResourceListLayout: function(spa) {
-      const spacing = spa || osparc.dashboard.StudyBrowserButtonBase.SPACING;
+      const spacing = spa || osparc.dashboard.GridButtonBase.SPACING;
       return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
     },
 
     __createStudyItem: function(studyData) {
       const tags = studyData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => studyData.tags.includes(tag.id)) : [];
 
-      // const item = osparc.utils.Resources.isTemplate(studyData) ? new osparc.dashboard.DashboardListButton() : new osparc.dashboard.StudyBrowserButtonItem();
-      const item = new osparc.dashboard.DashboardListButton();
+      // const item = osparc.utils.Resources.isTemplate(studyData) ? new osparc.dashboard.ListButtonItem() : new osparc.dashboard.GridButtonItem();
+      const item = new osparc.dashboard.ListButtonItem();
       item.set({
         resourceData: studyData,
         tags

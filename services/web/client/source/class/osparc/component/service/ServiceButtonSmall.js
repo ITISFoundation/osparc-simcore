@@ -20,7 +20,7 @@
  * It also adds filtering capabilities.
  */
 qx.Class.define("osparc.component.service.ServiceButtonSmall", {
-  extend: osparc.dashboard.StudyBrowserButtonBase,
+  extend: osparc.dashboard.GridButtonBase,
 
   construct: function(serviceModel) {
     this.base(arguments);

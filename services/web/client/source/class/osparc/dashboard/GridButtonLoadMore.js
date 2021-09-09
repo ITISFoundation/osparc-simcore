@@ -19,8 +19,8 @@
  * Study card to show that more studies are being fetched
  */
 
-qx.Class.define("osparc.dashboard.StudyBrowserButtonLoadMore", {
-  extend: osparc.dashboard.StudyBrowserButtonBase,
+qx.Class.define("osparc.dashboard.GridButtonLoadMore", {
+  extend: osparc.dashboard.GridButtonBase,
 
   construct: function() {
     this.base(arguments);

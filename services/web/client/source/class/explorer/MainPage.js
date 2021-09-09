@@ -44,7 +44,7 @@ qx.Class.define("explorer.MainPage", {
 
     __createMainView: function() {
       const nStudyItemsPerRow = 5;
-      const studyButtons = osparc.dashboard.StudyBrowserButtonBase;
+      const studyButtons = osparc.dashboard.GridButtonBase;
       const exploreBrowser = new osparc.dashboard.ExploreBrowser().set({
         alignX: "center",
         maxWidth: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) // padding + scrollbar

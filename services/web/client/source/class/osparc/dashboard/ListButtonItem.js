@@ -5,18 +5,15 @@
    https://osparc.io
 
    Copyright:
-     2018 IT'IS Foundation, https://itis.swiss
+     2021 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
 
    Authors:
      * Odei Maiz (odeimaiz)
-     * Tobias Oetiker (oetiker)
 
 ************************************************************************ */
-
-/* eslint "qx-rules/no-refs-in-members": "warn" */
 
 /**
  * Widget used mainly by StudyBrowser for displaying Studies
@@ -24,16 +21,61 @@
  * It consists of a thumbnail and creator and last change as caption
  */
 
-qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
-  extend: osparc.dashboard.StudyBrowserButtonBase,
+qx.Class.define("osparc.dashboard.ListButtonItem", {
+  extend: qx.ui.form.ToggleButton,
+  implement : [qx.ui.form.IModel, osparc.component.filter.IFilterable],
+  include : [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],
 
   construct: function() {
     this.base(arguments);
+    this.set({
+      width: 1000,
+      height: 40,
+      allowGrowX: true
+    });
 
-    this.addListener("changeValue", this.__itemSelected, this);
+    this._setLayout(new qx.ui.layout.HBox(10));
+
+    [
+      "pointerover",
+      "focus"
+    ].forEach(e => this.addListener(e, this._onPointerOver, this));
+
+    [
+      "pointerout",
+      "focusout"
+    ].forEach(e => this.addListener(e, this._onPointerOut, this));
+  },
+
+  statics: {
+    ITEM_HEIGHT: 50,
+    SHARED_USER: "@FontAwesome5Solid/user/16",
+    SHARED_ORGS: "@FontAwesome5Solid/users/16",
+    SHARED_ALL: "@FontAwesome5Solid/globe/16",
+    STUDY_ICON: "@FontAwesome5Solid/file-alt/24",
+    TEMPLATE_ICON: "@FontAwesome5Solid/copy/24",
+    SERVICE_ICON: "@FontAwesome5Solid/paw/24",
+    COMP_SERVICE_ICON: "@FontAwesome5Solid/cogs/24",
+    DYNAMIC_SERVICE_ICON: "@FontAwesome5Solid/mouse-pointer/24",
+    PERM_READ: "@FontAwesome5Solid/eye/16",
+    POS: {
+      THUMBNAIL: 0,
+      TITLE: 1,
+      DESCRIPTION: 2,
+      SHARED: 3,
+      LAST_CHANGE: 4,
+      TSR: 5,
+      TAGS: 6,
+      OPTIONS: 7
+    }
   },
 
   properties: {
+    appearance: {
+      refine : true,
+      init : "pb-listitem"
+    },
+
     resourceData: {
       check: "Object",
       nullable: false,
@@ -44,13 +86,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       check: ["study", "template", "service"],
       nullable: false,
       event: "changeResourceType"
-    },
-
-    menu: {
-      check: "qx.ui.menu.Menu",
-      nullable: true,
-      apply: "_applyMenu",
-      event: "changeMenu"
     },
 
     uuid: {
@@ -66,12 +101,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     description: {
       check: "String",
+      apply: "_applyDescription",
       nullable: true
     },
 
     owner: {
       check: "String",
-      apply: "_applyOwner",
       nullable: true
     },
 
@@ -115,124 +150,125 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       apply: "_applyLocked"
     },
 
+    menu: {
+      check: "qx.ui.menu.Menu",
+      nullable: true,
+      apply: "_applyMenu",
+      event: "changeMenu"
+    },
+
     multiSelectionMode: {
       check: "Boolean",
       init: false,
       nullable: false,
       apply: "_applyMultiSelectionMode"
+    },
+
+    fetching: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      apply: "__applyFetching"
     }
   },
 
-  events: {
-    "updateQualityStudy": "qx.event.type.Data",
-    "updateQualityTemplate": "qx.event.type.Data",
-    "updateQualityService": "qx.event.type.Data"
-  },
-
-  statics: {
-    MENU_BTN_WIDTH: 25,
-    SHARED_USER: "@FontAwesome5Solid/user/14",
-    SHARED_ORGS: "@FontAwesome5Solid/users/14",
-    SHARED_ALL: "@FontAwesome5Solid/globe/14",
-    STUDY_ICON: "@FontAwesome5Solid/file-alt/50",
-    TEMPLATE_ICON: "@FontAwesome5Solid/copy/50",
-    SERVICE_ICON: "@FontAwesome5Solid/paw/50",
-    PERM_READ: "@FontAwesome5Solid/eye/16",
-    PERM_WRITE: "@FontAwesome5Solid/edit/16",
-    PERM_EXECUTE: "@FontAwesome5Solid/crown/16"
-  },
-
-  members: {
+  members: { // eslint-disable-line qx-rules/no-refs-in-members
     // overridden
+    _forwardStates: {
+      focused : true,
+      hovered : true,
+      selected : true,
+      dragover : true
+    },
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "menu-button": {
-          this.getChildControl("title").set({
-            maxWidth: osparc.dashboard.StudyBrowserButtonBase.ITEM_WIDTH - 2*osparc.dashboard.StudyBrowserButtonBase.PADDING - this.self().MENU_BTN_WIDTH
+        case "icon": {
+          control = new osparc.ui.basic.Thumbnail(null, 40, 35).set({
+            minWidth: 40
           });
+          control.getChildControl("image").set({
+            anonymous: true
+          });
+          this._addAt(control, this.self().POS.THUMBNAIL);
+          break;
+        }
+        case "title":
+          control = new qx.ui.basic.Label().set({
+            font: "title-14",
+            alignY: "middle"
+          });
+          this._addAt(control, this.self().POS.TITLE);
+          break;
+        case "description":
+          control = new qx.ui.basic.Label().set({
+            minWidth: 100,
+            font: "text-14",
+            alignY: "middle",
+            allowGrowX: true
+          });
+          this._addAt(control, this.self().POS.DESCRIPTION, {
+            flex: 1
+          });
+          break;
+        case "shared-icon": {
+          control = new qx.ui.basic.Image().set({
+            minWidth: 50,
+            alignY: "middle"
+          });
+          this._addAt(control, this.self().POS.SHARED);
+          break;
+        }
+        case "last-change": {
+          control = new qx.ui.basic.Label().set({
+            anonymous: true,
+            font: "text-13",
+            allowGrowY: false,
+            minWidth: 120,
+            alignY: "middle"
+          });
+          this._addAt(control, this.self().POS.LAST_CHANGE);
+          break;
+        }
+        case "tsr-rating": {
+          const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
+            alignY: "middle"
+          })).set({
+            toolTipText: this.tr("Ten Simple Rules"),
+            minWidth: 50
+          });
+          const tsrLabel = new qx.ui.basic.Label(this.tr("TSR:"));
+          tsrLayout.add(tsrLabel);
+          control = new osparc.ui.basic.StarsRating();
+          tsrLayout.add(control);
+          this._addAt(tsrLayout, this.self().POS.TSR);
+          break;
+        }
+        case "tags":
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
+            anonymous: true,
+            minWidth: 50
+          });
+          this._addAt(control, this.self().POS.TAGS);
+          break;
+        case "menu-button": {
           control = new qx.ui.form.MenuButton().set({
-            width: this.self().MENU_BTN_WIDTH,
-            height: this.self().MENU_BTN_WIDTH,
+            width: 25,
+            height: 25,
             icon: "@FontAwesome5Solid/ellipsis-v/14",
             focusable: false
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
-          this._add(control, {
-            top: -2,
-            right: -2
-          });
-          break;
-        }
-        case "tick-unselected":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16");
-          this._add(control, {
-            top: 4,
-            right: 4
-          });
-          break;
-        case "tick-selected":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/check-circle/16");
-          this._add(control, {
-            top: 4,
-            right: 4
-          });
-          break;
-        case "lock-status":
-          control = new osparc.ui.basic.Thumbnail();
-          this._add(control, {
-            top: 0,
-            right: 0,
-            bottom: 0,
-            left: 0
-          });
-          break;
-        case "exporting": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
-            alignX: "center",
-            alignY: "middle"
-          }));
-          // const icon = new osparc.ui.basic.Thumbnail("@FontAwesome5Solid/file-export/60");
-          const icon = new osparc.ui.basic.Thumbnail("@FontAwesome5Solid/cloud-download-alt/60");
-          control.add(icon, {
-            flex: 1
-          });
-          const label = new qx.ui.basic.Label(this.tr("Exporting..."));
-          control.add(label);
-          this._add(control, {
-            top: 0,
-            right: 0,
-            bottom: 0,
-            left: 0
-          });
-          break;
-        }
-        case "permission-icon": {
-          control = new qx.ui.basic.Image();
-          control.exclude();
-          this._add(control, {
-            bottom: 2,
-            right: 2
-          });
+          this._addAt(control, this.self().POS.OPTIONS);
           break;
         }
       }
-
       return control || this.base(arguments, id);
     },
 
     isResourceType: function(resourceType) {
       return this.getResourceType() === resourceType;
-    },
-
-    _applyMultiSelectionMode: function(value) {
-      if (value) {
-        const menuButton = this.getChildControl("menu-button");
-        menuButton.setVisibility("excluded");
-        this.__itemSelected();
-      } else {
-        this.__showMenuOnly();
-      }
     },
 
     __applyResourceData: function(studyData) {
@@ -258,6 +294,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           owner = studyData.owner ? studyData.owner : owner;
           accessRights = studyData.access_rights ? studyData.access_rights : accessRights;
           defaultThumbnail = this.self().SERVICE_ICON;
+          if (osparc.data.model.Node.isComputational(studyData)) {
+            defaultThumbnail = this.self().COMP_SERVICE_ICON;
+          }
+          if (osparc.data.model.Node.isDynamic(studyData)) {
+            defaultThumbnail = this.self().DYNAMIC_SERVICE_ICON;
+          }
           break;
       }
 
@@ -276,43 +318,15 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       });
     },
 
-    __itemSelected: function() {
-      if (this.isResourceType("study")) {
-        const selected = this.getValue();
-
-        if (this.isLocked() && selected) {
-          this.setValue(false);
-        }
-
-        const tick = this.getChildControl("tick-selected");
-        tick.setVisibility(selected ? "visible" : "excluded");
-
-        const untick = this.getChildControl("tick-unselected");
-        untick.setVisibility(selected ? "excluded" : "visible");
-      } else {
-        this.__showMenuOnly();
-      }
-    },
-
-    __showMenuOnly: function() {
-      const menuButton = this.getChildControl("menu-button");
-      menuButton.setVisibility("visible");
-      const tick = this.getChildControl("tick-selected");
-      tick.setVisibility("excluded");
-      const untick = this.getChildControl("tick-unselected");
-      untick.setVisibility("excluded");
-    },
-
-    _applyMenu: function(value, old) {
-      const menuButton = this.getChildControl("menu-button");
-      if (value) {
-        menuButton.setMenu(value);
-      }
-      menuButton.setVisibility(value ? "visible" : "excluded");
-    },
-
     _applyUuid: function(value, old) {
       osparc.utils.Utils.setIdToWidget(this, "studyBrowserListItem_"+value);
+    },
+
+    _applyIcon: function(value, old) {
+      const image = this.getChildControl("icon").getChildControl("image");
+      image.set({
+        source: value
+      });
     },
 
     _applyTitle: function(value, old) {
@@ -328,23 +342,21 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       });
     },
 
-    _applyLastChangeDate: function(value, old) {
-      if (value && this.isResourceType("study")) {
-        const label = this.getChildControl("subtitle-text");
-        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
-      }
+    _applyDescription: function(value, old) {
+      const label = this.getChildControl("description");
+      label.setValue(value);
     },
 
-    _applyOwner: function(value, old) {
-      if (this.isResourceType("service") || this.isResourceType("template")) {
-        const label = this.getChildControl("subtitle-text");
-        label.setValue(value);
+    _applyLastChangeDate: function(value, old) {
+      if (value) {
+        const label = this.getChildControl("last-change");
+        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
       }
     },
 
     _applyAccessRights: function(value, old) {
       if (value && Object.keys(value).length) {
-        const sharedIcon = this.getChildControl("subtitle-icon");
+        const sharedIcon = this.getChildControl("shared-icon");
 
         const store = osparc.store.Store.getInstance();
         Promise.all([
@@ -473,119 +485,64 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyState: function(state) {
-      const locked = ("locked" in state) ? state["locked"]["value"] : false;
-      this.setLocked(locked);
-      if (locked) {
-        this.__setLockedStatus(state["locked"]);
+    },
+
+    __applyFetching: function(value) {
+      /*
+      const title = this.getChildControl("title");
+      if (value) {
+        title.setValue(this.tr("Loading studies..."));
+        this.setIcon("@FontAwesome5Solid/circle-notch/60");
+        this.getChildControl("icon").getChildControl("image").getContentElement()
+          .addClass("rotate");
+      } else {
+        title.setValue(this.tr("Load More"));
+        this.setIcon("@FontAwesome5Solid/paw/60");
+        this.getChildControl("icon").getChildControl("image").getContentElement()
+          .removeClass("rotate");
       }
+      this.setEnabled(!value);
+      */
     },
 
-    __setLockedStatus: function(lockedStatus) {
-      const status = lockedStatus["status"];
-      const owner = lockedStatus["owner"];
-      const lock = this.getChildControl("lock-status");
-      const lockImage = this.getChildControl("lock-status").getChildControl("image");
-      let toolTipText = osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]);
-      let source = null;
-      switch (status) {
-        case "CLOSING":
-          source = "@FontAwesome5Solid/key/70";
-          toolTipText += this.tr(" is closing it...");
-          break;
-        case "CLONING":
-          source = "@FontAwesome5Solid/clone/70";
-          toolTipText += this.tr(" is cloning it...");
-          break;
-        case "EXPORTING":
-          source = osparc.component.task.Export.EXPORT_ICON+"/70";
-          toolTipText += this.tr(" is exporting it...");
-          break;
-        case "OPENING":
-          source = "@FontAwesome5Solid/key/70";
-          toolTipText += this.tr(" is opening it...");
-          break;
-        case "OPENED":
-          source = "@FontAwesome5Solid/lock/70";
-          toolTipText += this.tr(" is using it.");
-          break;
-        default:
-          source = "@FontAwesome5Solid/lock/70";
-          break;
+    _applyMenu: function(value, old) {
+      const menuButton = this.getChildControl("menu-button");
+      if (value) {
+        menuButton.setMenu(value);
       }
-      lock.set({
-        toolTipText: toolTipText
-      });
-      lockImage.setSource(source);
+      menuButton.setVisibility(value ? "visible" : "excluded");
     },
 
-    _applyLocked: function(locked) {
-      this.__enableCard(!locked);
-      this.getChildControl("lock-status").set({
-        opacity: 1.0,
-        visibility: locked ? "visible" : "excluded"
-      });
+    /**
+     * Event handler for the pointer over event.
+     */
+    _onPointerOver: function() {
+      this.addState("hovered");
     },
 
-    __enableCard: function(enabled) {
-      this.set({
-        cursor: enabled ? "pointer" : "not-allowed"
-      });
-
-      this._getChildren().forEach(item => {
-        item.setOpacity(enabled ? 1.0 : 0.4);
-      });
-
-      [
-        "tick-selected",
-        "tick-unselected",
-        "menu-button"
-      ].forEach(childName => {
-        const child = this.getChildControl(childName);
-        child.set({
-          enabled
-        });
-      });
+    /**
+     * Event handler for the pointer out event.
+     */
+    _onPointerOut : function() {
+      this.removeState("hovered");
     },
 
-    setExporting: function(exporting) {
-      this.__enableCard(!exporting);
-
-      const icon = this.getChildControl("exporting");
-      icon.set({
-        opacity: 1.0,
-        visibility: exporting ? "visible" : "excluded"
-      });
+    /**
+     * Event handler for filtering events.
+     */
+    _filter: function() {
+      this.exclude();
     },
 
-    setImporting: function(importing) {
-      this.__enableCard(!importing);
-
-      const icon = this.getChildControl("importing");
-      icon.set({
-        opacity: 1.0,
-        visibility: importing ? "visible" : "excluded"
-      });
-    },
-
-    __openQualityEditor: function() {
-      const resourceData = this.getResourceData();
-      const qualityEditor = osparc.studycard.Utils.openQuality(resourceData);
-      qualityEditor.addListener("updateQuality", e => {
-        const updatedResourceData = e.getData();
-        if (osparc.utils.Resources.isStudy(resourceData)) {
-          this.fireDataEvent("updateQualityStudy", updatedResourceData);
-        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-          this.fireDataEvent("updateQualityTemplate", updatedResourceData);
-        } else if (osparc.utils.Resources.isService(resourceData)) {
-          this.fireDataEvent("updateQualityService", updatedResourceData);
-        }
-      });
+    _unfilter: function() {
+      this.show();
     },
 
     __filterText: function(text) {
       if (text) {
         const checks = [
           this.getTitle(),
+          this.getDescription(),
           this.getOwner()
         ];
         if (checks.filter(label => label.toLowerCase().trim().includes(text)).length == 0) {
@@ -627,6 +584,24 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         return true;
       }
       return false;
+    },
+
+    _shouldReactToFilter: function(data) {
+      if (data.text && data.text.length > 1) {
+        return true;
+      }
+      if (data.tags && data.tags.length) {
+        return true;
+      }
+      if (data.classifiers && data.classifiers.length) {
+        return true;
+      }
+      return false;
     }
+  },
+
+  destruct : function() {
+    this.removeListener("pointerover", this._onPointerOver, this);
+    this.removeListener("pointerout", this._onPointerOut, this);
   }
 });

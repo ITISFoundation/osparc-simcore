@@ -5,37 +5,24 @@
    https://osparc.io
 
    Copyright:
-     2018 IT'IS Foundation, https://itis.swiss
+     2021 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
 
    Authors:
      * Odei Maiz (odeimaiz)
-     * Tobias Oetiker (oetiker)
 
 ************************************************************************ */
 
-/**
- * Widget used mainly by StudyBrowser for displaying Studies
- *
- * It consists of a thumbnail and creator and last change as caption
- */
-
-qx.Class.define("osparc.dashboard.DashboardListButton", {
+qx.Class.define("osparc.dashboard.CardBase", {
   extend: qx.ui.form.ToggleButton,
-  implement : [qx.ui.form.IModel, osparc.component.filter.IFilterable],
-  include : [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],
+  implement: [qx.ui.form.IModel, osparc.component.filter.IFilterable],
+  include: [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],
+  type: "abstract",
 
   construct: function() {
     this.base(arguments);
-    this.set({
-      width: 1000,
-      height: 40,
-      allowGrowX: true
-    });
-
-    this._setLayout(new qx.ui.layout.HBox(10));
 
     [
       "pointerover",
@@ -49,7 +36,6 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
   },
 
   statics: {
-    ITEM_HEIGHT: 50,
     SHARED_USER: "@FontAwesome5Solid/user/16",
     SHARED_ORGS: "@FontAwesome5Solid/users/16",
     SHARED_ALL: "@FontAwesome5Solid/globe/16",
@@ -58,17 +44,7 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
     SERVICE_ICON: "@FontAwesome5Solid/paw/24",
     COMP_SERVICE_ICON: "@FontAwesome5Solid/cogs/24",
     DYNAMIC_SERVICE_ICON: "@FontAwesome5Solid/mouse-pointer/24",
-    PERM_READ: "@FontAwesome5Solid/eye/16",
-    POS: {
-      THUMBNAIL: 0,
-      TITLE: 1,
-      DESCRIPTION: 2,
-      SHARED: 3,
-      LAST_CHANGE: 4,
-      TSR: 5,
-      TAGS: 6,
-      OPTIONS: 7
-    }
+    PERM_READ: "@FontAwesome5Solid/eye/16"
   },
 
   properties: {
@@ -80,7 +56,7 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
     resourceData: {
       check: "Object",
       nullable: false,
-      apply: "__applyResourceData"
+      apply: "_applyResourceData"
     },
 
     resourceType: {
@@ -272,7 +248,7 @@ qx.Class.define("osparc.dashboard.DashboardListButton", {
       return this.getResourceType() === resourceType;
     },
 
-    __applyResourceData: function(studyData) {
+    _applyResourceData: function(studyData) {
       let defaultThumbnail = "";
       let uuid = null;
       let owner = "";

@@ -17,12 +17,10 @@
 ************************************************************************ */
 
 /**
- * Widget used mainly by StudyBrowser for displaying Studies
- *
- * It consists of a thumbnail and creator and last change as caption
+ * Widget used by StudyBrowser and Explore Browser for displaying Studies, Templates and Services
  */
 
-qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
+qx.Class.define("osparc.dashboard.GridButtonBase", {
   extend: qx.ui.form.ToggleButton,
   implement : [qx.ui.form.IModel, osparc.component.filter.IFilterable],
   include : [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],
