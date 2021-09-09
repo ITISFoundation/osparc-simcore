@@ -22,41 +22,7 @@
  */
 
 qx.Class.define("osparc.dashboard.ListButtonItem", {
-  extend: osparc.dashboard.CardBase,
-
-  construct: function() {
-    this.base(arguments);
-    this.set({
-      width: 1000,
-      height: 40,
-      allowGrowX: true
-    });
-
-    this._setLayout(new qx.ui.layout.HBox(10));
-  },
-
-  statics: {
-    ITEM_HEIGHT: 50,
-    SHARED_USER: "@FontAwesome5Solid/user/16",
-    SHARED_ORGS: "@FontAwesome5Solid/users/16",
-    SHARED_ALL: "@FontAwesome5Solid/globe/16",
-    STUDY_ICON: "@FontAwesome5Solid/file-alt/24",
-    TEMPLATE_ICON: "@FontAwesome5Solid/copy/24",
-    SERVICE_ICON: "@FontAwesome5Solid/paw/24",
-    COMP_SERVICE_ICON: "@FontAwesome5Solid/cogs/24",
-    DYNAMIC_SERVICE_ICON: "@FontAwesome5Solid/mouse-pointer/24",
-    PERM_READ: "@FontAwesome5Solid/eye/16",
-    POS: {
-      THUMBNAIL: 0,
-      TITLE: 1,
-      DESCRIPTION: 2,
-      SHARED: 3,
-      LAST_CHANGE: 4,
-      TSR: 5,
-      TAGS: 6,
-      OPTIONS: 7
-    }
-  },
+  extend: osparc.dashboard.ListButtonBase,
 
   members: {
     _createChildControlImpl: function(id) {
@@ -69,7 +35,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           control.getChildControl("image").set({
             anonymous: true
           });
-          this._addAt(control, this.self().POS.THUMBNAIL);
+          this._addAt(control, osparc.dashboard.ListButtonItem.POS.THUMBNAIL);
           break;
         }
         case "title":
@@ -77,7 +43,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             font: "title-14",
             alignY: "middle"
           });
-          this._addAt(control, this.self().POS.TITLE);
+          this._addAt(control, osparc.dashboard.ListButtonItem.POS.TITLE);
           break;
         case "description":
           control = new qx.ui.basic.Label().set({
@@ -86,7 +52,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             alignY: "middle",
             allowGrowX: true
           });
-          this._addAt(control, this.self().POS.DESCRIPTION, {
+          this._addAt(control, osparc.dashboard.ListButtonItem.POS.DESCRIPTION, {
             flex: 1
           });
           break;
@@ -95,7 +61,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             minWidth: 50,
             alignY: "middle"
           });
-          this._addAt(control, this.self().POS.SHARED);
+          this._addAt(control, osparc.dashboard.ListButtonItem.POS.SHARED);
           break;
         }
         case "last-change": {
@@ -106,7 +72,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             minWidth: 120,
             alignY: "middle"
           });
-          this._addAt(control, this.self().POS.LAST_CHANGE);
+          this._addAt(control, osparc.dashboard.ListButtonItem.POS.LAST_CHANGE);
           break;
         }
         case "tsr-rating": {
@@ -120,7 +86,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           tsrLayout.add(tsrLabel);
           control = new osparc.ui.basic.StarsRating();
           tsrLayout.add(control);
-          this._addAt(tsrLayout, this.self().POS.TSR);
+          this._addAt(tsrLayout, osparc.dashboard.ListButtonItem.POS.TSR);
           break;
         }
         case "tags":
@@ -128,7 +94,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             anonymous: true,
             minWidth: 50
           });
-          this._addAt(control, this.self().POS.TAGS);
+          this._addAt(control, osparc.dashboard.ListButtonItem.POS.TAGS);
           break;
         case "menu-button": {
           control = new qx.ui.form.MenuButton().set({
@@ -138,7 +104,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             focusable: false
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
-          this._addAt(control, this.self().POS.OPTIONS);
+          this._addAt(control, osparc.dashboard.ListButtonItem.POS.OPTIONS);
           break;
         }
       }
@@ -152,19 +118,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       const image = this.getChildControl("icon").getChildControl("image");
       image.set({
         source: value
-      });
-    },
-
-    _applyTitle: function(value, old) {
-      const label = this.getChildControl("title");
-      label.setValue(value);
-      label.addListener("appear", () => {
-        qx.event.Timer.once(() => {
-          const labelDom = label.getContentElement().getDomElement();
-          if (label.getMaxWidth() === parseInt(labelDom.style.width)) {
-            label.setToolTipText(value);
-          }
-        }, this, 50);
       });
     },
 
@@ -208,7 +161,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           });
 
         if (this.isResourceType("study")) {
-          this.__setStudyPermissions(value);
+          this._setStudyPermissions(value);
         }
       }
     },
@@ -236,13 +189,13 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
         }
         switch (i) {
           case 0:
-            image.setSource(this.self().SHARED_USER);
+            image.setSource(osparc.dashboard.CardBase.SHARED_USER);
             break;
           case 1:
-            image.setSource(this.self().SHARED_ORGS);
+            image.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
             break;
           case 2:
-            image.setSource(this.self().SHARED_ALL);
+            image.setSource(osparc.dashboard.CardBase.SHARED_ALL);
             break;
         }
       }
@@ -297,22 +250,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
         }, this);
         tsrRating.addListener("pointerdown", e => e.stopPropagation());
       }
-    },
-
-    __setStudyPermissions: function(accessRights) {
-      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
-      orgIDs.push(myGroupId);
-
-      const image = this.getChildControl("permission-icon");
-      if (osparc.component.permissions.Study.canGroupsWrite(accessRights, orgIDs)) {
-        image.exclude();
-      } else {
-        image.setSource(this.self().PERM_READ);
-      }
-
-      this.addListener("mouseover", () => image.show(), this);
-      this.addListener("mouseout", () => image.exclude(), this);
     },
 
     _applyState: function(state) {

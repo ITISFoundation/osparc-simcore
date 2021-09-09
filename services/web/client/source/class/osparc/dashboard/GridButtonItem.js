@@ -39,19 +39,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     "updateQualityService": "qx.event.type.Data"
   },
 
-  statics: {
-    MENU_BTN_WIDTH: 25,
-    SHARED_USER: "@FontAwesome5Solid/user/14",
-    SHARED_ORGS: "@FontAwesome5Solid/users/14",
-    SHARED_ALL: "@FontAwesome5Solid/globe/14",
-    STUDY_ICON: "@FontAwesome5Solid/file-alt/50",
-    TEMPLATE_ICON: "@FontAwesome5Solid/copy/50",
-    SERVICE_ICON: "@FontAwesome5Solid/paw/50",
-    PERM_READ: "@FontAwesome5Solid/eye/16",
-    PERM_WRITE: "@FontAwesome5Solid/edit/16",
-    PERM_EXECUTE: "@FontAwesome5Solid/crown/16"
-  },
-
   members: {
     // overridden
     _createChildControlImpl: function(id) {
@@ -170,20 +157,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     },
 
     // overridden
-    _applyTitle: function(value, old) {
-      const label = this.getChildControl("title");
-      label.setValue(value);
-      label.addListener("appear", () => {
-        qx.event.Timer.once(() => {
-          const labelDom = label.getContentElement().getDomElement();
-          if (label.getMaxWidth() === parseInt(labelDom.style.width)) {
-            label.setToolTipText(value);
-          }
-        }, this, 50);
-      });
-    },
-
-    // overridden
     _applyLastChangeDate: function(value, old) {
       if (value && this.isResourceType("study")) {
         const label = this.getChildControl("subtitle-text");
@@ -222,7 +195,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
 
         if (this.isResourceType("study")) {
-          this.__setStudyPermissions(value);
+          this._setStudyPermissions(value);
         }
       }
     },
@@ -250,13 +223,13 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         }
         switch (i) {
           case 0:
-            image.setSource(this.self().SHARED_USER);
+            image.setSource(osparc.dashboard.CardBase.SHARED_USER);
             break;
           case 1:
-            image.setSource(this.self().SHARED_ORGS);
+            image.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
             break;
           case 2:
-            image.setSource(this.self().SHARED_ALL);
+            image.setSource(osparc.dashboard.CardBase.SHARED_ALL);
             break;
         }
       }
@@ -311,22 +284,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         }, this);
         tsrRating.addListener("pointerdown", e => e.stopPropagation());
       }
-    },
-
-    __setStudyPermissions: function(accessRights) {
-      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
-      orgIDs.push(myGroupId);
-
-      const image = this.getChildControl("permission-icon");
-      if (osparc.component.permissions.Study.canGroupsWrite(accessRights, orgIDs)) {
-        image.exclude();
-      } else {
-        image.setSource(this.self().PERM_READ);
-      }
-
-      this.addListener("mouseover", () => image.show(), this);
-      this.addListener("mouseout", () => image.exclude(), this);
     },
 
     _applyState: function(state) {

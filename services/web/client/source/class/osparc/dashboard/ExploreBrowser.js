@@ -202,8 +202,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       osparc.utils.Utils.setIdToWidget(templateStudyContainer, "templateStudiesList");
       tempStudyLayout.setContent(templateStudyContainer);
 
-      // const loadingTemplatesBtn = this._loadingStudiesBtn = new osparc.dashboard.GridButtonLoadMore();
-      const loadingTemplatesBtn = this._loadingStudiesBtn = new osparc.dashboard.ListButtonItem();
+      const loadingTemplatesBtn = this._loadingStudiesBtn = new osparc.dashboard.ListButtonLoadMore();
       osparc.utils.Utils.setIdToWidget(loadingTemplatesBtn, "templatesLoading");
       templateStudyContainer.add(loadingTemplatesBtn);
 

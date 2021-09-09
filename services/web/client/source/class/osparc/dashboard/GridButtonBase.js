@@ -164,6 +164,20 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     },
 
     // overridden
+    _applyTitle: function(value, old) {
+      const label = this.getChildControl("title");
+      label.setValue(value);
+      label.addListener("appear", () => {
+        qx.event.Timer.once(() => {
+          const labelDom = label.getContentElement().getDomElement();
+          if (label.getMaxWidth() === parseInt(labelDom.style.width)) {
+            label.setToolTipText(value);
+          }
+        }, this, 50);
+      });
+    },
+
+    // overridden
     _applyDescription: function() {
       return;
     },

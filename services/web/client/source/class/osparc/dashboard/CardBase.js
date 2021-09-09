@@ -260,6 +260,22 @@ qx.Class.define("osparc.dashboard.CardBase", {
       throw new Error("Abstract method called!");
     },
 
+    _setStudyPermissions: function(accessRights) {
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      orgIDs.push(myGroupId);
+
+      const image = this.getChildControl("permission-icon");
+      if (osparc.component.permissions.Study.canGroupsWrite(accessRights, orgIDs)) {
+        image.exclude();
+      } else {
+        image.setSource(osparc.dashboard.CardBase.PERM_READ);
+      }
+
+      this.addListener("mouseover", () => image.show(), this);
+      this.addListener("mouseout", () => image.exclude(), this);
+    },
+
     /**
      * Event handler for the pointer over event.
      */

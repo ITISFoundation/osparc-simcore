@@ -16,11 +16,13 @@
 ************************************************************************ */
 
 /**
- * Study card to show that more studies are being fetched
+ * Widget used mainly by StudyBrowser for displaying Studies
+ *
+ * It consists of a thumbnail and creator and last change as caption
  */
 
-qx.Class.define("osparc.dashboard.GridButtonLoadMore", {
-  extend: osparc.dashboard.GridButtonBase,
+qx.Class.define("osparc.dashboard.ListButtonLoadMore", {
+  extend: osparc.dashboard.ListButtonBase,
 
   construct: function() {
     this.base(arguments);
@@ -54,7 +56,7 @@ qx.Class.define("osparc.dashboard.GridButtonLoadMore", {
 
     _applyFetching: function(value) {
       const title = this.getChildControl("title");
-      const desc = this.getChildControl("subtitle-text");
+      const desc = this.getChildControl("description");
       if (value) {
         title.setValue(this.tr("Loading..."));
         desc.setValue("");
