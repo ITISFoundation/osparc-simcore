@@ -234,7 +234,7 @@ async def main_async(
     db_file_entries: Set[Tuple[str, int, datetime]] = set().union(
         *all_sets_of_file_entries
     )
-    db_file_entries_path = Path.cwd() / "db_file_entries.csv"
+    db_file_entries_path = Path.cwd() / f"{s3_endpoint}_db_file_entries.csv"
     write_file(
         db_file_entries_path, db_file_entries, ["file_uuid", "size", "last modified"]
     )
@@ -262,7 +262,7 @@ async def main_async(
             max_concurrency=20,
         )
     s3_file_entries = set().union(*all_sets_in_s3)
-    s3_file_entries_path = Path.cwd() / "s3_file_entries.csv"
+    s3_file_entries_path = Path.cwd() / f"{s3_endpoint}_s3_file_entries.csv"
     write_file(
         s3_file_entries_path,
         s3_file_entries,
