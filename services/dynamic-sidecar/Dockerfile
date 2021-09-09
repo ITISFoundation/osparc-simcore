@@ -82,6 +82,7 @@ ENV SC_BUILD_TARGET prod-only-deps
 
 COPY --chown=scu:scu packages /build/packages
 COPY --chown=scu:scu services/dynamic-sidecar /build/services/dynamic-sidecar
+COPY --chown=scu:scu services/storage/client-sdk/python/ /build/services/storage/client-sdk/python/
 
 WORKDIR /build/services/dynamic-sidecar
 
