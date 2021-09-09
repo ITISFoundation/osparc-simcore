@@ -39,11 +39,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
     SHARED_USER: "@FontAwesome5Solid/user/16",
     SHARED_ORGS: "@FontAwesome5Solid/users/16",
     SHARED_ALL: "@FontAwesome5Solid/globe/16",
-    STUDY_ICON: "@FontAwesome5Solid/file-alt/24",
-    TEMPLATE_ICON: "@FontAwesome5Solid/copy/24",
-    SERVICE_ICON: "@FontAwesome5Solid/paw/24",
-    COMP_SERVICE_ICON: "@FontAwesome5Solid/cogs/24",
-    DYNAMIC_SERVICE_ICON: "@FontAwesome5Solid/mouse-pointer/24",
+    NEW_ICON: "@FontAwesome5Solid/plus/",
+    LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
+    STUDY_ICON: "@FontAwesome5Solid/file-alt/",
+    TEMPLATE_ICON: "@FontAwesome5Solid/copy/",
+    SERVICE_ICON: "@FontAwesome5Solid/paw/",
+    COMP_SERVICE_ICON: "@FontAwesome5Solid/cogs/",
+    DYNAMIC_SERVICE_ICON: "@FontAwesome5Solid/mouse-pointer/",
     PERM_READ: "@FontAwesome5Solid/eye/16"
   },
 
@@ -84,6 +86,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     owner: {
       check: "String",
+      apply: "_applyOwner",
       nullable: true
     },
 
@@ -145,7 +148,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       check: "Boolean",
       init: false,
       nullable: false,
-      apply: "__applyFetching"
+      apply: "_applyFetching"
     }
   },
 
@@ -225,15 +228,15 @@ qx.Class.define("osparc.dashboard.CardBase", {
       throw new Error("Abstract method called!");
     },
 
+    _applyOwner: function(value, old) {
+      throw new Error("Abstract method called!");
+    },
+
     _applyLastChangeDate: function(value, old) {
       throw new Error("Abstract method called!");
     },
 
     _applyAccessRights: function(value, old) {
-      throw new Error("Abstract method called!");
-    },
-
-    __setSharedIcon: function(image, value, groups) {
       throw new Error("Abstract method called!");
     },
 
@@ -249,7 +252,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       throw new Error("Abstract method called!");
     },
 
-    __applyFetching: function(value) {
+    _applyFetching: function(value) {
       throw new Error("Abstract method called!");
     },
 

@@ -22,9 +22,7 @@
  */
 
 qx.Class.define("osparc.dashboard.ListButtonItem", {
-  extend: qx.ui.form.ToggleButton,
-  implement : [qx.ui.form.IModel, osparc.component.filter.IFilterable],
-  include : [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],
+  extend: osparc.dashboard.CardBase,
 
   construct: function() {
     this.base(arguments);
@@ -35,16 +33,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     });
 
     this._setLayout(new qx.ui.layout.HBox(10));
-
-    [
-      "pointerover",
-      "focus"
-    ].forEach(e => this.addListener(e, this._onPointerOver, this));
-
-    [
-      "pointerout",
-      "focusout"
-    ].forEach(e => this.addListener(e, this._onPointerOut, this));
   },
 
   statics: {
@@ -70,15 +58,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     }
   },
 
-  members: { // eslint-disable-line qx-rules/no-refs-in-members
-    // overridden
-    _forwardStates: {
-      focused : true,
-      hovered : true,
-      selected : true,
-      dragover : true
-    },
-
+  members: {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -166,6 +146,9 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     },
 
     _applyIcon: function(value, old) {
+      if (value.includes("@FontAwesome5Solid/")) {
+        value += "24";
+      }
       const image = this.getChildControl("icon").getChildControl("image");
       image.set({
         source: value
@@ -195,6 +178,11 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
         const label = this.getChildControl("last-change");
         label.setValue(osparc.utils.Utils.formatDateAndTime(value));
       }
+    },
+
+    // overridden
+    _applyOwner: function(value, old) {
+      return;
     },
 
     _applyAccessRights: function(value, old) {
@@ -330,7 +318,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     _applyState: function(state) {
     },
 
-    __applyFetching: function(value) {
+    _applyFetching: function(value) {
       /*
       const title = this.getChildControl("title");
       if (value) {
@@ -354,92 +342,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
         menuButton.setMenu(value);
       }
       menuButton.setVisibility(value ? "visible" : "excluded");
-    },
-
-    /**
-     * Event handler for the pointer over event.
-     */
-    _onPointerOver: function() {
-      this.addState("hovered");
-    },
-
-    /**
-     * Event handler for the pointer out event.
-     */
-    _onPointerOut : function() {
-      this.removeState("hovered");
-    },
-
-    /**
-     * Event handler for filtering events.
-     */
-    _filter: function() {
-      this.exclude();
-    },
-
-    _unfilter: function() {
-      this.show();
-    },
-
-    __filterText: function(text) {
-      if (text) {
-        const checks = [
-          this.getTitle(),
-          this.getDescription(),
-          this.getOwner()
-        ];
-        if (checks.filter(label => label.toLowerCase().trim().includes(text)).length == 0) {
-          return true;
-        }
-      }
-      return false;
-    },
-
-    __filterTags: function(tags) {
-      if (tags && tags.length) {
-        const tagNames = this.getTags().map(tag => tag.name);
-        if (tags.filter(tag => tagNames.includes(tag)).length == 0) {
-          return true;
-        }
-      }
-      return false;
-    },
-
-    __filterClassifiers: function(classifiers) {
-      if (classifiers && classifiers.length) {
-        const classes = osparc.utils.Classifiers.getLeafClassifiers(classifiers);
-        const myClassifiers = this.getClassifiers();
-        if (classes.filter(clas => myClassifiers.includes(clas.data.classifier)).length == 0) {
-          return true;
-        }
-      }
-      return false;
-    },
-
-    _shouldApplyFilter: function(data) {
-      if (this.__filterText(data.text)) {
-        return true;
-      }
-      if (this.__filterTags(data.tags)) {
-        return true;
-      }
-      if (this.__filterClassifiers(data.classifiers)) {
-        return true;
-      }
-      return false;
-    },
-
-    _shouldReactToFilter: function(data) {
-      if (data.text && data.text.length > 1) {
-        return true;
-      }
-      if (data.tags && data.tags.length) {
-        return true;
-      }
-      if (data.classifiers && data.classifiers.length) {
-        return true;
-      }
-      return false;
     }
   },
 

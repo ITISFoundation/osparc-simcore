@@ -145,6 +145,9 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
 
     // overridden
     _applyIcon: function(value, old) {
+      if (value.includes("@FontAwesome5Solid/")) {
+        value += "50";
+      }
       const image = this.getChildControl("icon").getChildControl("image");
       image.set({
         source: value
@@ -158,6 +161,11 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           this.__fitIconHeight();
         }, this);
       });
+    },
+
+    // overridden
+    _applyDescription: function() {
+      return;
     },
 
     __fitIconHeight: function() {

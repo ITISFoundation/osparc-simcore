@@ -446,53 +446,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           this.fireDataEvent("updateQualityService", updatedResourceData);
         }
       });
-    },
-
-    __filterText: function(text) {
-      if (text) {
-        const checks = [
-          this.getTitle(),
-          this.getOwner()
-        ];
-        if (checks.filter(label => label.toLowerCase().trim().includes(text)).length == 0) {
-          return true;
-        }
-      }
-      return false;
-    },
-
-    __filterTags: function(tags) {
-      if (tags && tags.length) {
-        const tagNames = this.getTags().map(tag => tag.name);
-        if (tags.filter(tag => tagNames.includes(tag)).length == 0) {
-          return true;
-        }
-      }
-      return false;
-    },
-
-    __filterClassifiers: function(classifiers) {
-      if (classifiers && classifiers.length) {
-        const classes = osparc.utils.Classifiers.getLeafClassifiers(classifiers);
-        const myClassifiers = this.getClassifiers();
-        if (classes.filter(clas => myClassifiers.includes(clas.data.classifier)).length == 0) {
-          return true;
-        }
-      }
-      return false;
-    },
-
-    _shouldApplyFilter: function(data) {
-      if (this.__filterText(data.text)) {
-        return true;
-      }
-      if (this.__filterTags(data.tags)) {
-        return true;
-      }
-      if (this.__filterClassifiers(data.classifiers)) {
-        return true;
-      }
-      return false;
     }
   }
 });
