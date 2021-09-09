@@ -15,11 +15,6 @@ from simcore_service_webserver.snapshots_models import SnapshotItem, SnapshotPat
 ProjectDict = Dict[str, Any]
 
 
-pytestmark = pytest.mark.skip(
-    reason="Until PR https://github.com/ITISFoundation/osparc-simcore/pull/2519 is merged"
-)
-
-
 async def test_create_snapshot_workflow(client, user_project: ProjectDict):
 
     project_uuid = user_project["uuid"]

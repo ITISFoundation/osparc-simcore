@@ -23,11 +23,6 @@ PROJECT_UUID = "322d8808-cca7-4cc4-9a17-ac79a080e721"
 ANOTHER_UUID = "d337b9a1-9e2b-4d6d-805e-351554d26d1f"
 
 
-pytestmark = pytest.mark.skip(
-    reason="Until PR https://github.com/ITISFoundation/osparc-simcore/pull/2519 is merged"
-)
-
-
 @pytest.fixture
 async def engine(loop, postgres_db: sa.engine.Engine):
     # pylint: disable=no-value-for-parameter
