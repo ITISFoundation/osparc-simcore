@@ -275,11 +275,12 @@ async def main_async(
     # ---------------------- COMPARISON ---------------------------------------------------------------------
     db_file_uuids = {db_file_uuid for db_file_uuid, _, _ in db_file_entries}
     s3_file_uuids = {s3_file_uuid for s3_file_uuid, _, _ in s3_file_entries}
-    common_files = db_file_uuids.intersection(s3_file_uuids)
+    common_files_uuids = db_file_uuids.intersection(s3_file_uuids)
     s3_missing_files_uuids = db_file_uuids.difference(s3_file_entries)
     db_missing_files_uuids = s3_file_uuids.difference(db_file_uuids)
     typer.secho(
-        f"{len(common_files)} files are the same in both system", fg=typer.colors.BLUE
+        f"{len(common_files_uuids)} files are the same in both system",
+        fg=typer.colors.BLUE,
     )
     typer.secho(
         f"{len(s3_missing_files_uuids)} files are missing in S3", fg=typer.colors.RED
@@ -289,6 +290,7 @@ async def main_async(
     )
 
     # ------------------ WRITING REPORT --------------------------------------------
+    consistent_files_path = Path.cwd() / "consistent_files.csv"
     s3_missing_files_path = Path.cwd() / "s3_missing_files.csv"
     db_missing_files_path = Path.cwd() / "db_missing_files.csv"
     db_file_map: Dict[str, Tuple[int, datetime]] = {
@@ -314,12 +316,13 @@ async def main_async(
 
     def write_to_file(path: Path, files_by_owner):
         with path.open("wt") as fp:
-            fp.write(f"owner,name,email,file,size,last_modified\n")
+            fp.write("owner,name,email,file,size,last_modified\n")
             for (owner, name, email), files in files_by_owner.items():
                 for file in files:
                     size, modified = db_file_map.get(file, ("?", "?"))
                     fp.write(f"{owner},{name},{email},{file}, {size}, {modified}\n")
 
+    write_to_file(consistent_files_path, order_by_owner(common_files_uuids))
     write_to_file(s3_missing_files_path, order_by_owner(s3_missing_files_uuids))
     write_to_file(db_missing_files_path, order_by_owner(db_missing_files_uuids))
 
