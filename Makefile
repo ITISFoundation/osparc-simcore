@@ -538,7 +538,7 @@ endif
 
 .PHONY: clean clean-images clean-venv clean-all clean-more
 
-_git_clean_args := -dxf -e .vscode -e TODO.md -e .venv -e .python-version
+_git_clean_args := -dxf -e .vscode -e TODO.md -e .venv -e .python-version -e *keep*
 _running_containers = $(shell docker ps -aq)
 
 .check-clean:
