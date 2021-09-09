@@ -87,7 +87,7 @@ async def test_create_snapshot(client, user_project: ProjectDict):
     assert data
     snapshot = SnapshotItem.parse_obj(data)
 
-    assert snapshot.parent_uuid == project_uuid
+    assert str(snapshot.parent_uuid) == project_uuid
 
     # snapshot project can be now retrieved
     resp = await client.get(f"/{vtag}/projects/{snapshot.project_uuid}")
