@@ -5,10 +5,11 @@ from uuid import UUID
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
-from simcore_service_webserver.snapshots_models import Snapshot
+from simcore_postgres_database.models.projects_snapshots import projects_snapshots
 
 from .db_base_repository import BaseRepository
 from .projects.projects_db import APP_PROJECT_DBAPI
+from .snapshots_models import Snapshot
 
 # alias for readability
 # SEE https://pydantic-docs.helpmanual.io/usage/models/#orm-mode-aka-arbitrary-class-instances
@@ -19,23 +20,7 @@ ProjectRow = RowProxy
 ProjectDict = Dict
 
 
-###################################################
-# FIXME: some temporary placeholders until next PR
-# from simcore_postgres_database.models.projects_snapshots import projects_snapshots
-
-projects_snapshots: sa.Table
-
-
-class TemporaryNoDatabaseSchemasAvailable(BaseRepository):
-    def __init__(self, request: web.Request):
-        super().__init__(request)
-        raise NotImplementedError()
-
-
-###################################################
-
-
-class SnapshotsRepository(TemporaryNoDatabaseSchemasAvailable):
+class SnapshotsRepository(BaseRepository):
     """
     Abstracts access to snapshots database table
 
