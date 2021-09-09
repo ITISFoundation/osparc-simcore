@@ -275,7 +275,7 @@ async def main_async(
     # ---------------------- COMPARISON ---------------------------------------------------------------------
     db_file_uuids = {db_file_uuid for db_file_uuid, _, _ in db_file_entries}
     s3_file_uuids = {s3_file_uuid for s3_file_uuid, _, _ in s3_file_entries}
-    common_files = db_file_uuids.intersection(s3_file_entries)
+    common_files = db_file_uuids.intersection(s3_file_uuids)
     s3_missing_files_uuids = db_file_uuids.difference(s3_file_entries)
     db_missing_files_uuids = s3_file_uuids.difference(db_file_uuids)
     typer.secho(
