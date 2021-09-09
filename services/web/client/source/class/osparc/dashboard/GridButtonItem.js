@@ -33,96 +33,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     this.addListener("changeValue", this.__itemSelected, this);
   },
 
-  properties: {
-    resourceData: {
-      check: "Object",
-      nullable: false,
-      apply: "__applyResourceData"
-    },
-
-    resourceType: {
-      check: ["study", "template", "service"],
-      nullable: false,
-      event: "changeResourceType"
-    },
-
-    menu: {
-      check: "qx.ui.menu.Menu",
-      nullable: true,
-      apply: "_applyMenu",
-      event: "changeMenu"
-    },
-
-    uuid: {
-      check: "String",
-      apply: "_applyUuid"
-    },
-
-    title: {
-      check: "String",
-      apply: "_applyTitle",
-      nullable: true
-    },
-
-    description: {
-      check: "String",
-      nullable: true
-    },
-
-    owner: {
-      check: "String",
-      apply: "_applyOwner",
-      nullable: true
-    },
-
-    accessRights: {
-      check: "Object",
-      apply: "_applyAccessRights",
-      nullable: true
-    },
-
-    lastChangeDate: {
-      check: "Date",
-      apply: "_applyLastChangeDate",
-      nullable: true
-    },
-
-    classifiers: {
-      check: "Array"
-    },
-
-    tags: {
-      check: "Array",
-      apply: "_applyTags"
-    },
-
-    quality: {
-      check: "Object",
-      nullable: true,
-      apply: "_applyQuality"
-    },
-
-    state: {
-      check: "Object",
-      nullable: false,
-      apply: "_applyState"
-    },
-
-    locked: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      apply: "_applyLocked"
-    },
-
-    multiSelectionMode: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      apply: "_applyMultiSelectionMode"
-    }
-  },
-
   events: {
     "updateQualityStudy": "qx.event.type.Data",
     "updateQualityTemplate": "qx.event.type.Data",
@@ -221,10 +131,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       return control || this.base(arguments, id);
     },
 
-    isResourceType: function(resourceType) {
-      return this.getResourceType() === resourceType;
-    },
-
+    // overridden
     _applyMultiSelectionMode: function(value) {
       if (value) {
         const menuButton = this.getChildControl("menu-button");
@@ -233,47 +140,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       } else {
         this.__showMenuOnly();
       }
-    },
-
-    __applyResourceData: function(studyData) {
-      let defaultThumbnail = "";
-      let uuid = null;
-      let owner = "";
-      let accessRights = {};
-      switch (studyData["resourceType"]) {
-        case "study":
-          uuid = studyData.uuid ? studyData.uuid : uuid;
-          owner = studyData.prjOwner ? studyData.prjOwner : owner;
-          accessRights = studyData.accessRights ? studyData.accessRights : accessRights;
-          defaultThumbnail = this.self().STUDY_ICON;
-          break;
-        case "template":
-          uuid = studyData.uuid ? studyData.uuid : uuid;
-          owner = studyData.prjOwner ? studyData.prjOwner : owner;
-          accessRights = studyData.accessRights ? studyData.accessRights : accessRights;
-          defaultThumbnail = this.self().TEMPLATE_ICON;
-          break;
-        case "service":
-          uuid = studyData.key ? studyData.key : uuid;
-          owner = studyData.owner ? studyData.owner : owner;
-          accessRights = studyData.access_rights ? studyData.access_rights : accessRights;
-          defaultThumbnail = this.self().SERVICE_ICON;
-          break;
-      }
-
-      this.set({
-        resourceType: studyData.resourceType,
-        uuid,
-        title: studyData.name,
-        description: studyData.description,
-        owner,
-        accessRights,
-        lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : null,
-        icon: studyData.thumbnail || defaultThumbnail,
-        state: studyData.state ? studyData.state : {},
-        classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
-        quality: studyData.quality ? studyData.quality : null
-      });
     },
 
     __itemSelected: function() {
@@ -303,18 +169,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       untick.setVisibility("excluded");
     },
 
-    _applyMenu: function(value, old) {
-      const menuButton = this.getChildControl("menu-button");
-      if (value) {
-        menuButton.setMenu(value);
-      }
-      menuButton.setVisibility(value ? "visible" : "excluded");
-    },
-
-    _applyUuid: function(value, old) {
-      osparc.utils.Utils.setIdToWidget(this, "studyBrowserListItem_"+value);
-    },
-
+    // overridden
     _applyTitle: function(value, old) {
       const label = this.getChildControl("title");
       label.setValue(value);
@@ -328,6 +183,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       });
     },
 
+    // overridden
     _applyLastChangeDate: function(value, old) {
       if (value && this.isResourceType("study")) {
         const label = this.getChildControl("subtitle-text");
@@ -335,6 +191,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       }
     },
 
+    // overridden
     _applyOwner: function(value, old) {
       if (this.isResourceType("service") || this.isResourceType("template")) {
         const label = this.getChildControl("subtitle-text");
@@ -545,6 +402,15 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           enabled
         });
       });
+    },
+
+    // overridden
+    _applyMenu: function(value, old) {
+      const menuButton = this.getChildControl("menu-button");
+      if (value) {
+        menuButton.setMenu(value);
+      }
+      menuButton.setVisibility(value ? "visible" : "excluded");
     },
 
     setExporting: function(exporting) {

@@ -21,13 +21,12 @@
  */
 
 qx.Class.define("osparc.dashboard.GridButtonBase", {
-  extend: qx.ui.form.ToggleButton,
-  implement : [qx.ui.form.IModel, osparc.component.filter.IFilterable],
-  include : [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],
+  extend: osparc.dashboard.CardBase,
   type: "abstract",
 
   construct: function() {
     this.base(arguments);
+
     this.set({
       width: this.self().ITEM_WIDTH,
       height: this.self().ITEM_HEIGHT,
@@ -47,16 +46,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       bottom: 0,
       left: 0
     });
-
-    [
-      "pointerover",
-      "focus"
-    ].forEach(e => this.addListener(e, this._onPointerOver, this));
-
-    [
-      "pointerout",
-      "focusout"
-    ].forEach(e => this.addListener(e, this._onPointerOut, this));
   },
 
   statics: {
@@ -79,23 +68,10 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     "action": "qx.event.type.Event"
   },
 
-  properties: {
-    appearance: {
-      refine : true,
-      init : "pb-listitem"
-    }
-  },
-
-  members: { // eslint-disable-line qx-rules/no-refs-in-members
-    _forwardStates: {
-      focused : true,
-      hovered : true,
-      selected : true,
-      dragover : true
-    },
-
+  members: {
     _mainLayout: null,
 
+    // overridden
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -167,6 +143,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       return control || this.base(arguments, id);
     },
 
+    // overridden
     _applyIcon: function(value, old) {
       const image = this.getChildControl("icon").getChildControl("image");
       image.set({
