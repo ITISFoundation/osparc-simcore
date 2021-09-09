@@ -5,7 +5,6 @@ from typing import Any, Deque, Dict, List, cast
 
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
-    PathMappingsLabel,
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
