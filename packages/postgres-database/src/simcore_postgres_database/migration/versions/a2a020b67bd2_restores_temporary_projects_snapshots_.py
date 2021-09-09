@@ -1,15 +1,15 @@
 """restores temporary projects_snapshots table
 
-Revision ID: 6c9016456ff1
+Revision ID: a2a020b67bd2
 Revises: 0208f6b32f32
-Create Date: 2021-09-09 16:11:27.608922+00:00
+Create Date: 2021-09-09 16:49:57.696337+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "6c9016456ff1"
+revision = "a2a020b67bd2"
 down_revision = "0208f6b32f32"
 branch_labels = None
 depends_on = None
@@ -24,6 +24,7 @@ def upgrade():
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("parent_uuid", sa.String(), nullable=False),
         sa.Column("project_uuid", sa.String(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), nullable=True),
         sa.ForeignKeyConstraint(
             ["parent_uuid"],
             ["projects.uuid"],

@@ -45,6 +45,7 @@ projects_snapshots = sa.Table(
         unique=True,
         doc="UUID of the project associated to this snapshot",
     ),
+    sa.Column("deleted", sa.Boolean(), default=False),
     sa.UniqueConstraint(
         "parent_uuid", "created_at", name="snapshot_from_project_uniqueness"
     ),
