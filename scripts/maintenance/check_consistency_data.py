@@ -231,7 +231,9 @@ async def main_async(
                     for project_uuid, prj_data in project_nodes.items()
                 ]
             )
-    db_file_entries = set().union(*all_sets_of_file_entries)
+    db_file_entries: Set[Tuple[str, int, datetime]] = set().union(
+        *all_sets_of_file_entries
+    )
     db_file_entries_path = Path.cwd() / "db_file_entries.csv"
     write_file(
         db_file_entries_path, db_file_entries, ["file_uuid", "size", "last modified"]
@@ -294,10 +296,10 @@ async def main_async(
     }
 
     def order_by_owner(
-        list_of_files: Set[Tuple[str, int, datetime]],
+        list_of_files_uuids: Set[str],
     ) -> Dict[Tuple[str, str, str], List[Tuple[str, int, datetime]]]:
         files_by_owner = defaultdict(list)
-        for file_uuid, file_size, file_last_mod in list_of_files:
+        for file_uuid in list_of_files_uuids:
             # project_id/node_id/file
             prj_uuid = file_uuid.split("/")[0]
             prj_data = project_nodes[prj_uuid]
@@ -307,7 +309,7 @@ async def main_async(
                     prj_data["name"],
                     prj_data["email"],
                 )
-            ].append((file_uuid, file_size, file_last_mod))
+            ].append(file_uuid)
         return files_by_owner
 
     def write_to_file(path: Path, files_by_owner):
