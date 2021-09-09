@@ -39,6 +39,10 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     "updateQualityService": "qx.event.type.Data"
   },
 
+  statics: {
+    MENU_BTN_WIDTH: 25
+  },
+
   members: {
     // overridden
     _createChildControlImpl: function(id) {

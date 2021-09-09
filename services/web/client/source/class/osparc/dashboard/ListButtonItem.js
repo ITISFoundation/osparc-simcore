@@ -28,40 +28,12 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "icon": {
-          control = new osparc.ui.basic.Thumbnail(null, 40, 35).set({
-            minWidth: 40
-          });
-          control.getChildControl("image").set({
-            anonymous: true
-          });
-          this._addAt(control, osparc.dashboard.ListButtonItem.POS.THUMBNAIL);
-          break;
-        }
-        case "title":
-          control = new qx.ui.basic.Label().set({
-            font: "title-14",
-            alignY: "middle"
-          });
-          this._addAt(control, osparc.dashboard.ListButtonItem.POS.TITLE);
-          break;
-        case "description":
-          control = new qx.ui.basic.Label().set({
-            minWidth: 100,
-            font: "text-14",
-            alignY: "middle",
-            allowGrowX: true
-          });
-          this._addAt(control, osparc.dashboard.ListButtonItem.POS.DESCRIPTION, {
-            flex: 1
-          });
-          break;
         case "shared-icon": {
           control = new qx.ui.basic.Image().set({
             minWidth: 50,
             alignY: "middle"
           });
-          this._addAt(control, osparc.dashboard.ListButtonItem.POS.SHARED);
+          this._addAt(control, osparc.dashboard.ListButtonBase.POS.SHARED);
           break;
         }
         case "last-change": {
@@ -72,7 +44,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             minWidth: 120,
             alignY: "middle"
           });
-          this._addAt(control, osparc.dashboard.ListButtonItem.POS.LAST_CHANGE);
+          this._addAt(control, osparc.dashboard.ListButtonBase.POS.LAST_CHANGE);
           break;
         }
         case "tsr-rating": {
@@ -86,7 +58,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           tsrLayout.add(tsrLabel);
           control = new osparc.ui.basic.StarsRating();
           tsrLayout.add(control);
-          this._addAt(tsrLayout, osparc.dashboard.ListButtonItem.POS.TSR);
+          this._addAt(tsrLayout, osparc.dashboard.ListButtonBase.POS.TSR);
           break;
         }
         case "tags":
@@ -94,7 +66,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             anonymous: true,
             minWidth: 50
           });
-          this._addAt(control, osparc.dashboard.ListButtonItem.POS.TAGS);
+          this._addAt(control, osparc.dashboard.ListButtonBase.POS.TAGS);
           break;
         case "menu-button": {
           control = new qx.ui.form.MenuButton().set({
@@ -104,26 +76,11 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             focusable: false
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
-          this._addAt(control, osparc.dashboard.ListButtonItem.POS.OPTIONS);
+          this._addAt(control, osparc.dashboard.ListButtonBase.POS.OPTIONS);
           break;
         }
       }
       return control || this.base(arguments, id);
-    },
-
-    _applyIcon: function(value, old) {
-      if (value.includes("@FontAwesome5Solid/")) {
-        value += "24";
-      }
-      const image = this.getChildControl("icon").getChildControl("image");
-      image.set({
-        source: value
-      });
-    },
-
-    _applyDescription: function(value, old) {
-      const label = this.getChildControl("description");
-      label.setValue(value);
     },
 
     _applyLastChangeDate: function(value, old) {
