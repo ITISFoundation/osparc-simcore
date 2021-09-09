@@ -276,7 +276,7 @@ async def main_async(
     db_file_uuids = {db_file_uuid for db_file_uuid, _, _ in db_file_entries}
     s3_file_uuids = {s3_file_uuid for s3_file_uuid, _, _ in s3_file_entries}
     common_files_uuids = db_file_uuids.intersection(s3_file_uuids)
-    s3_missing_files_uuids = db_file_uuids.difference(s3_file_entries)
+    s3_missing_files_uuids = db_file_uuids.difference(s3_file_uuids)
     db_missing_files_uuids = s3_file_uuids.difference(db_file_uuids)
     typer.secho(
         f"{len(common_files_uuids)} files are the same in both system",
@@ -290,9 +290,9 @@ async def main_async(
     )
 
     # ------------------ WRITING REPORT --------------------------------------------
-    consistent_files_path = Path.cwd() / "consistent_files.csv"
-    s3_missing_files_path = Path.cwd() / "s3_missing_files.csv"
-    db_missing_files_path = Path.cwd() / "db_missing_files.csv"
+    consistent_files_path = Path.cwd() / f"{s3_endpoint}_consistent_files.csv"
+    s3_missing_files_path = Path.cwd() / f"{s3_endpoint}_s3_missing_files.csv"
+    db_missing_files_path = Path.cwd() / f"{s3_endpoint}_db_missing_files.csv"
     db_file_map: Dict[str, Tuple[int, datetime]] = {
         e[0]: e[1:] for e in db_file_entries
     }
