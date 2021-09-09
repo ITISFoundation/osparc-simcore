@@ -11,17 +11,20 @@
     5. generate a report with: project uuid, owner, files missing in S3
 """
 import asyncio
+import csv
 import logging
 import os
 import re
 import subprocess
 from collections import defaultdict
 from contextlib import asynccontextmanager
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Set, Tuple
 
 import aiopg
 import typer
+from dateutil import parser
 from tenacity import after_log, retry, stop_after_attempt, wait_random
 
 log = logging.getLogger(__name__)
@@ -101,19 +104,48 @@ async def _get_projects_nodes(pool) -> Dict[str, Any]:
 
 async def _get_files_from_project_nodes(
     pool, project_uuid: str, node_ids: List[str]
-) -> Set[str]:
+) -> Set[Tuple[str, int, datetime]]:
     async with pool.acquire() as conn:
         async with conn.cursor() as cursor:
             array = str([f"{project_uuid}/{n}%" for n in node_ids])
             await cursor.execute(
-                "SELECT file_uuid"
+                "SELECT file_uuid, file_size, last_modified"
                 ' FROM "file_meta_data"'
                 f" WHERE file_meta_data.file_uuid LIKE any (array{array}) AND location_id = '0'"
             )
 
             # here we got all the files for that project uuid/node_ids combination
             file_rows = await cursor.fetchall()
-            return {file[0] for file in file_rows}
+            return {
+                (file_uuid, file_size, parser.parse(last_modified or "2000-01-01"))
+                for file_uuid, file_size, last_modified in file_rows
+            }
+
+
+POWER_LABELS = {0: "B", 1: "KiB", 2: "MiB", 3: "GiB"}
+LABELS_POWER = {v: k for k, v in POWER_LABELS.items()}
+
+
+def convert_s3_label_to_bytes(s3_size: str) -> int:
+    """convert 12MiB to 12 * 1024**2"""
+    match = re.match(r"([0-9.]+)(\w+)", s3_size)
+    if match:
+        return int(float(match.groups()[0]) * 1024 ** LABELS_POWER[match.groups()[1]])
+    return -1
+
+
+async def limited_gather(*tasks, max_concurrency: int):
+    wrapped_tasks = tasks
+    if max_concurrency > 0:
+        semaphore = asyncio.Semaphore(max_concurrency)
+
+        async def sem_task(task):
+            async with semaphore:
+                return await task
+
+        wrapped_tasks = [sem_task(t) for t in tasks]
+
+    return await asyncio.gather(*wrapped_tasks, return_exceptions=True)
 
 
 async def _get_files_from_s3_backend(
@@ -123,12 +155,12 @@ async def _get_files_from_s3_backend(
     s3_bucket: str,
     project_uuid: str,
     progress,
-) -> Set[str]:
+) -> Set[Tuple[str, int, datetime]]:
     s3_file_entries = set()
     try:
         # TODO: this could probably run faster if we maintain the client, and run successive commands in there
         command = (
-            f"docker run "
+            f"docker run --rm "
             f"--env MC_HOST_mys3='https://{s3_access}:{s3_secret}@{s3_endpoint}' "
             "minio/mc "
             f"ls --recursive mys3/{s3_bucket}/{project_uuid}/"
@@ -147,14 +179,29 @@ async def _get_files_from_s3_backend(
             # DATE_creation? size node_id/file_path.ext
             list_of_files = decoded_stdout.split("\n")
             for file in list_of_files:
-                match = re.findall(r".* (.+)", file)
+                match = re.findall(r"\[(.+)\] (\S+) (.+)", file)
                 if match:
-                    s3_file_entries.add(f"{project_uuid}/{match[0]}")
+                    last_modified, size, node_id_file = match[0]
+                    s3_file_entries.add(
+                        (
+                            f"{project_uuid}/{node_id_file}",
+                            convert_s3_label_to_bytes(size),
+                            parser.parse(last_modified),
+                        )
+                    )
 
     except subprocess.CalledProcessError:
         pass
+
     progress.update(1)
     return s3_file_entries
+
+
+def write_file(file_path: Path, data, fieldnames):
+    with file_path.open("w", newline="") as csvfile:
+        csv_writer = csv.writer(csvfile)
+        csv_writer.writerow(fieldnames)
+        csv_writer.writerows(data)
 
 
 async def main_async(
@@ -167,6 +214,7 @@ async def main_async(
     s3_bucket: str,
 ):
 
+    # ---------------------- GET FILE ENTRIES FROM DB ---------------------------------------------------------------------
     async with managed_docker_compose(
         postgres_volume_name, postgres_username, postgres_password
     ):
@@ -184,66 +232,94 @@ async def main_async(
                 ]
             )
     db_file_entries = set().union(*all_sets_of_file_entries)
-    db_file_entries_path = Path.cwd() / "project_file_entries.txt"
-    db_file_entries_path.write_text("\n".join(db_file_entries))
+    db_file_entries_path = Path.cwd() / "db_file_entries.csv"
+    write_file(
+        db_file_entries_path, db_file_entries, ["file_uuid", "size", "last modified"]
+    )
     typer.secho(
         f"processed {len(project_nodes)} projects, found {len(db_file_entries)} file entries, saved in {db_file_entries_path}",
         fg=typer.colors.YELLOW,
     )
 
+    # ---------------------- GET FILE ENTRIES FROM S3 ---------------------------------------------------------------------
     # let's proceed with S3 backend: files are saved in BUCKET_NAME/projectID/nodeID/fileA.ext
     # Rationale: Similarly we list here all the files in each of the projects. And it goes faster to list them recursively.
     typer.echo(
         f"now connecting with S3 backend and getting files for {len(project_nodes)} projects..."
     )
+    # pull first: prevents _get_files_from_s3_backend from pulling it and poluting outputs
+    subprocess.run("docker pull minio/mc", shell=True, check=True)
     with typer.progressbar(length=len(project_nodes)) as progress:
-        all_sets_in_s3 = await asyncio.gather(
+        all_sets_in_s3 = await limited_gather(
             *[
                 _get_files_from_s3_backend(
                     s3_endpoint, s3_access, s3_secret, s3_bucket, project_uuid, progress
                 )
                 for project_uuid in project_nodes
-            ]
+            ],
+            max_concurrency=20,
         )
     s3_file_entries = set().union(*all_sets_in_s3)
-    s3_file_entries_path = Path.cwd() / "s3_file_entries.txt"
-    s3_file_entries_path.write_text("\n".join(s3_file_entries))
+    s3_file_entries_path = Path.cwd() / "s3_file_entries.csv"
+    write_file(
+        s3_file_entries_path,
+        s3_file_entries,
+        fieldnames=["file_uuid", "size", "last_modified"],
+    )
     typer.echo(
         f"processed {len(project_nodes)} projects, found {len(s3_file_entries)} file entries, saved in {s3_file_entries_path}"
     )
 
-    common_files = db_file_entries.intersection(s3_file_entries)
-    s3_missing_files = db_file_entries.difference(s3_file_entries)
-    s3_missing_files_path = Path.cwd() / "s3_missing_files.txt"
-
-    def order_by_owner(list_of_files):
-        files_by_owner = defaultdict(list)
-        for file in list_of_files:
-            # project_id/node_id/file
-            prj_uuid = file.split("/")[0]
-            prj_data = project_nodes[prj_uuid]
-            files_by_owner[
-                (prj_data["owner"], prj_data["name"], prj_data["email"])
-            ].append(file)
-        return files_by_owner
-
-    def write_to_file(path, files_by_owner):
-        with path.open("wt") as fp:
-            for (owner, name, email), files in files_by_owner.items():
-                for file in files:
-                    fp.write(f"{owner},{name},{email},{file}\n")
-
-    write_to_file(s3_missing_files_path, order_by_owner(s3_missing_files))
-
-    db_missing_files = s3_file_entries.difference(db_file_entries)
-    db_missing_files_path = Path.cwd() / "db_missing_files.txt"
-    write_to_file(db_missing_files_path, order_by_owner(db_missing_files))
-
+    # ---------------------- COMPARISON ---------------------------------------------------------------------
+    db_file_uuids = {db_file_uuid for db_file_uuid, _, _ in db_file_entries}
+    s3_file_uuids = {s3_file_uuid for s3_file_uuid, _, _ in s3_file_entries}
+    common_files = db_file_uuids.intersection(s3_file_entries)
+    s3_missing_files_uuids = db_file_uuids.difference(s3_file_entries)
+    db_missing_files_uuids = s3_file_uuids.difference(db_file_uuids)
     typer.secho(
         f"{len(common_files)} files are the same in both system", fg=typer.colors.BLUE
     )
-    typer.secho(f"{len(s3_missing_files)} files are missing in S3", fg=typer.colors.RED)
-    typer.secho(f"{len(db_missing_files)} files are missing in DB", fg=typer.colors.RED)
+    typer.secho(
+        f"{len(s3_missing_files_uuids)} files are missing in S3", fg=typer.colors.RED
+    )
+    typer.secho(
+        f"{len(db_missing_files_uuids)} files are missing in DB", fg=typer.colors.RED
+    )
+
+    # ------------------ WRITING REPORT --------------------------------------------
+    s3_missing_files_path = Path.cwd() / "s3_missing_files.csv"
+    db_missing_files_path = Path.cwd() / "db_missing_files.csv"
+    db_file_map: Dict[str, Tuple[int, datetime]] = {
+        e[0]: e[1:] for e in db_file_entries
+    }
+
+    def order_by_owner(
+        list_of_files: Set[Tuple[str, int, datetime]],
+    ) -> Dict[Tuple[str, str, str], List[Tuple[str, int, datetime]]]:
+        files_by_owner = defaultdict(list)
+        for file_uuid, file_size, file_last_mod in list_of_files:
+            # project_id/node_id/file
+            prj_uuid = file_uuid.split("/")[0]
+            prj_data = project_nodes[prj_uuid]
+            files_by_owner[
+                (
+                    prj_data["owner"],
+                    prj_data["name"],
+                    prj_data["email"],
+                )
+            ].append((file_uuid, file_size, file_last_mod))
+        return files_by_owner
+
+    def write_to_file(path: Path, files_by_owner):
+        with path.open("wt") as fp:
+            fp.write(f"owner,name,email,file,size,last_modified\n")
+            for (owner, name, email), files in files_by_owner.items():
+                for file in files:
+                    size, modified = db_file_map.get(file, ("?", "?"))
+                    fp.write(f"{owner},{name},{email},{file}, {size}, {modified}\n")
+
+    write_to_file(s3_missing_files_path, order_by_owner(s3_missing_files_uuids))
+    write_to_file(db_missing_files_path, order_by_owner(db_missing_files_uuids))
 
 
 def main(
