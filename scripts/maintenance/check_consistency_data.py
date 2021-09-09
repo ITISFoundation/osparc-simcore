@@ -179,7 +179,7 @@ async def _get_files_from_s3_backend(
             # DATE_creation? size node_id/file_path.ext
             list_of_files = decoded_stdout.split("\n")
             for file in list_of_files:
-                match = re.findall(r"\[(.+)\] (\S+) (.+)", file)
+                match = re.findall(r"\[(.+)\]\s+(\S+)\s+(.+)", file)
                 if match:
                     last_modified, size, node_id_file = match[0]
                     s3_file_entries.add(
