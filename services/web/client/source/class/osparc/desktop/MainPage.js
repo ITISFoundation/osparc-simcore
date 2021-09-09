@@ -162,9 +162,8 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __createDashboardStack: function() {
       const nStudyItemsPerRow = 5;
-      const studyButtons = osparc.dashboard.GridButtonBase;
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard().set({
-        width: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) + 8 // padding + scrollbar
+        width: nStudyItemsPerRow * (osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING) + 8 // padding + scrollbar
       });
       const sideSearch = new osparc.dashboard.SideSearch();
       dashboard.bind("selection", sideSearch, "visibility", {

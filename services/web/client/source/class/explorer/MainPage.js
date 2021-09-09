@@ -44,10 +44,9 @@ qx.Class.define("explorer.MainPage", {
 
     __createMainView: function() {
       const nStudyItemsPerRow = 5;
-      const studyButtons = osparc.dashboard.GridButtonBase;
       const exploreBrowser = new osparc.dashboard.ExploreBrowser().set({
         alignX: "center",
-        maxWidth: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) // padding + scrollbar
+        maxWidth: nStudyItemsPerRow * (osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING) + 8 // padding + scrollbar
       });
       return exploreBrowser;
     }
