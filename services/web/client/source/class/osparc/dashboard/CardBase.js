@@ -36,9 +36,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
   },
 
   statics: {
-    SHARED_USER: "@FontAwesome5Solid/user/16",
-    SHARED_ORGS: "@FontAwesome5Solid/users/16",
-    SHARED_ALL: "@FontAwesome5Solid/globe/16",
+    SHARED_USER: "@FontAwesome5Solid/user/14",
+    SHARED_ORGS: "@FontAwesome5Solid/users/14",
+    SHARED_ALL: "@FontAwesome5Solid/globe/14",
     NEW_ICON: "@FontAwesome5Solid/plus/",
     LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
     STUDY_ICON: "@FontAwesome5Solid/file-alt/",
@@ -46,7 +46,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     SERVICE_ICON: "@FontAwesome5Solid/paw/",
     COMP_SERVICE_ICON: "@FontAwesome5Solid/cogs/",
     DYNAMIC_SERVICE_ICON: "@FontAwesome5Solid/mouse-pointer/",
-    PERM_READ: "@FontAwesome5Solid/eye/16"
+    PERM_READ: "@FontAwesome5Solid/eye/14"
   },
 
   properties: {
@@ -265,15 +265,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(myGroupId);
 
-      const image = this.getChildControl("permission-icon");
+      const permissionIcon = this.getChildControl("permission-icon");
       if (osparc.component.permissions.Study.canGroupsWrite(accessRights, orgIDs)) {
-        image.exclude();
+        permissionIcon.exclude();
       } else {
-        image.setSource(osparc.dashboard.CardBase.PERM_READ);
+        permissionIcon.setSource(osparc.dashboard.CardBase.PERM_READ);
+        this.addListener("mouseover", () => permissionIcon.show(), this);
+        this.addListener("mouseout", () => permissionIcon.exclude(), this);
       }
-
-      this.addListener("mouseover", () => image.show(), this);
-      this.addListener("mouseout", () => image.exclude(), this);
     },
 
     /**

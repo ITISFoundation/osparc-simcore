@@ -457,9 +457,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
     },
 
-    __createStudyItem: function(studyData) {
+    __createStudyItem: function(studyData, gridButton = false) {
       const tags = studyData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => studyData.tags.includes(tag.id)) : [];
-      const item = new osparc.dashboard.GridButtonItem().set({
+
+      const item = gridButton ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
+      item.set({
         resourceData: studyData,
         tags
       });

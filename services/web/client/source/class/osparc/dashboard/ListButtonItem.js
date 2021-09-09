@@ -28,6 +28,14 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "permission-icon": {
+          control = new qx.ui.basic.Image().set({
+            minWidth: 50
+          });
+          control.exclude();
+          this._addAt(control, osparc.dashboard.ListButtonBase.POS.PERMISSION);
+          break;
+        }
         case "shared-icon": {
           control = new qx.ui.basic.Image().set({
             minWidth: 50,
