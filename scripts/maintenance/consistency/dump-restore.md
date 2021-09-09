@@ -19,13 +19,13 @@ This allows connecting to the local postgres instance
 psql -h 127.0.0.1 -p 5432 -U test
 ```
 
-
+This creates the database and a user (must be the same as on original DB)
 ```sql
-CREATE DATABASE simcoredb;
-CREATE USER postgres_osparc WITH PASSWORD 'test';
-GRANT ALL PRIVILEGES ON DATABASE simcoredb to postgres_osparc;
+CREATE DATABASE POSTGRESDB;
+CREATE USER %ORIGINAL_DB_USER% WITH PASSWORD 'test';
+GRANT ALL PRIVILEGES ON DATABASE POSTGRESDB to %ORIGINAL_DB_USER%;
 ```
 
 ```bash
-pg_restore --host 127.0.0.1 --port 5432 --username postgres_osparc -d simcoredb dump.sql
+pg_restore --host 127.0.0.1 --port 5432 --username %ORIGINAL_DB_USER% -d POSTGRESDB dump.sql
 ```
