@@ -4,5 +4,6 @@ httpx
 psycopg2-binary
 pydantic[email,dotenv]
 pylint
+python-dateutil
 tenacity
 typer[all]
