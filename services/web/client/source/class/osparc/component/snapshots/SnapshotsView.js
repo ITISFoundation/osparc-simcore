@@ -146,8 +146,8 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
           } = e.getData();
           const params = {
             url: {
-              "SnapshotId": this.__selectedSnapshot["SnapshotId"],
-              "StudyId": this.__selectedSnapshot["StudyId"]
+              "studyId": this.__selectedSnapshot["ParentId"],
+              "snapshotId": this.__selectedSnapshot["SnapshotId"]
             },
             data: {
               "name": newLabel
