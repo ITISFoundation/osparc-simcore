@@ -34,6 +34,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
   },
 
   events: {
+    "updateSnapshot": "qx.event.type.Data",
     "openSnapshot": "qx.event.type.Data"
   },
 
@@ -42,6 +43,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
     __snapshotsTable: null,
     __snapshotPreview: null,
     __selectedSnapshot: null,
+    __updateSnapshotBtn: null,
     __openSnapshotBtn: null,
 
     __buildLayout: function() {
@@ -51,6 +53,11 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
       });
       this.__rebuildSnapshotsTable();
       this.__buildSnapshotPreview();
+
+      const editSnapshotBtn = this.__updateSnapshotBtn = this.__createEditSnapshotBtn();
+      editSnapshotBtn.setEnabled(false);
+      editSnapshotBtn.addListener("execute", () => this.__editSnapshot());
+      this._add(editSnapshotBtn);
 
       const openSnapshotBtn = this.__openSnapshotBtn = this.__createOpenSnapshotBtn();
       openSnapshotBtn.setEnabled(false);
@@ -112,6 +119,13 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
         });
     },
 
+    __createEditSnapshotBtn: function() {
+      const editSnapshotBtn = new qx.ui.form.Button(this.tr("Edit Snapshot")).set({
+        allowGrowX: false
+      });
+      return editSnapshotBtn;
+    },
+
     __createOpenSnapshotBtn: function() {
       const openSnapshotBtn = new qx.ui.form.Button(this.tr("Open Snapshot")).set({
         allowGrowX: false
@@ -119,11 +133,21 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
       return openSnapshotBtn;
     },
 
+    __editSnapshot: function() {
+      if (this.__selectedSnapshot) {
+        console.log("edit", this.__selectedSnapshot);
+      }
+    },
+
     __snapshotsSelected: function(e) {
       const selectedRow = e.getRow();
       this.__selectedSnapshot = this.__snapshotsTable.getRowData(selectedRow);
 
       this.__loadSnapshotsPreview(this.__selectedSnapshot);
+
+      if (this.__editSnapshotBtn) {
+        this.__editSnapshotBtn.setEnabled(true);
+      }
 
       if (this.__openSnapshotBtn) {
         this.__openSnapshotBtn.setEnabled(true);
