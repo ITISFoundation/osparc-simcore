@@ -327,14 +327,14 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         }
 
         template["resourceType"] = "template";
-        const idx = templatesList.findIndex(card => card instanceof osparc.dashboard.GridButtonItem && card.getUuid() === template["uuid"]);
+        const idx = templatesList.findIndex(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === template["uuid"]);
         if (idx !== -1) {
           return;
         }
         const templateItem = this.__createStudyItem(template);
         this._studiesContainer.add(templateItem);
       });
-      osparc.dashboard.ResourceBrowserBase.sortStudyList(templatesList.filter(card => card instanceof osparc.dashboard.GridButtonItem));
+      osparc.dashboard.ResourceBrowserBase.sortStudyList(templatesList.filter(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)));
       const idx = templatesList.findIndex(card => card instanceof osparc.dashboard.GridButtonLoadMore);
       if (idx !== -1) {
         templatesList.push(templatesList.splice(idx, 1)[0]);
@@ -388,7 +388,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __setTemplatesContainerMode: function(mode = "grid") {
-      const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING
+      const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
       this._studiesContainer.getLayout().set({
         spacingX: spacing,
         spacingY: spacing
@@ -397,8 +397,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __setServicesContainerMode: function(mode = "grid") {
-      const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING
-      this._studiesContainer.getLayout().set({
+      const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
+      this.__servicesContainer.getLayout().set({
         spacingX: spacing,
         spacingY: spacing
       });
