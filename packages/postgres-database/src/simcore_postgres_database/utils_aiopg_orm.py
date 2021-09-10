@@ -182,6 +182,7 @@ class BaseOrm(Generic[RowUId]):
         *,
         offset: NonNegativeInt,
         limit: Optional[PositiveInt] = None,
+        order=None,
     ) -> Tuple[List[RowProxy], NonNegativeInt]:
         """Support for paginated fetchall
 
@@ -189,7 +190,10 @@ class BaseOrm(Generic[RowUId]):
 
         Returns limited list and total count
         """
-        query = self._compose_select_query(returning_cols).order_by(self._primary_key)
+
+        query = self._compose_select_query(returning_cols).order_by(
+            order if order else self._primary_key
+        )
 
         total_count = None
         if offset > 0 or limit:

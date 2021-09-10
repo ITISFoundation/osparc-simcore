@@ -8,13 +8,14 @@
     (*) This is a concept introduced for the front-end to avoid using
     more fine grained concepts as tags and commits directly
 """
+from contextlib import suppress
 from typing import List, Optional, Tuple, Union
 from uuid import UUID
 
 from aiohttp import web
 from aiopg.sa.result import RowProxy
 from pydantic import NonNegativeInt, PositiveInt, validate_arguments
-from simcore_service_webserver.meta_db import VersionControlRepository
+from simcore_service_webserver.meta_db import CommitLog, VersionControlRepository
 
 from .meta_models_repos import Checkpoint, WorkbenchView
 
@@ -40,21 +41,33 @@ async def list_repos(
 
 
 async def list_checkpoints(
-    app: web.Application,
-    user_id: PositiveInt,
+    vc_repo: VersionControlRepository,
     project_uuid: UUID,
     *,
     offset: NonNegativeInt = 0,
     limit: Optional[PositiveInt] = None,
 ) -> Tuple[List[Checkpoint], PositiveInt]:
-    # list, total
-    ...
+
+    repo_id = await vc_repo.get_repo_id(project_uuid)
+    if not repo_id:
+        return [], 0
+
+    logs: List[CommitLog]
+    logs, total_number_of_commits = await vc_repo.log(
+        repo_id, offset=offset, limit=limit
+    )
+
+    checkpoints = [Checkpoint.from_commit_log(commit, tags) for commit, tags in logs]
+    assert len(checkpoints) <= limit if limit else True  # nosec
+    assert (  # nosec
+        limit <= total_number_of_commits if limit else total_number_of_commits > 0
+    )  # nosec
+
+    return checkpoints, total_number_of_commits
 
 
 async def create_checkpoint(
-    app: web.Application,
     vc_repo: VersionControlRepository,
-    user_id: PositiveInt,
     project_uuid: UUID,
     *,
     tag: str,
@@ -78,9 +91,7 @@ async def create_checkpoint(
 
 
 async def get_checkpoint(
-    app: web.Application,
     vc_repo: VersionControlRepository,
-    user_id: PositiveInt,
     project_uuid: UUID,
     ref_id: RefID,
 ) -> Checkpoint:
@@ -102,42 +113,32 @@ async def get_checkpoint(
             # head branch or tag
             raise NotImplementedError("WIP: Tag or head branches as ref_id")
 
-        if commit_id:
+        with suppress(ValueError):
             commit, tags = await vc_repo.get_commit_info(commit_id)
-            if commit:
-                return Checkpoint(
-                    id=commit.id,
-                    checksum=commit.snapshot_checksum,
-                    tag=tags[0].name if tags else "",
-                    message=tags[0].message if tags else commit.message,
-                )
+            return Checkpoint.from_commit_log(commit, tags)
 
     raise web.HTTPNotFound(reason="Entrypoint not found")
 
 
 async def update_checkpoint(
-    app: web.Application,
-    user_id: PositiveInt,
+    vc_repo: VersionControlRepository,
     project_uuid: UUID,
     ref_id: RefID,
     *,
-    tag: Optional[str] = None,
     message: Optional[str] = None,
 ) -> Checkpoint:
     ...
 
 
 async def get_working_copy(
-    app: web.Application,
+    vc_repo: VersionControlRepository,
     project_uuid: UUID,
-    user_id: PositiveInt,
 ):
     ...
 
 
 async def checkout_checkpoint(
-    app: web.Application,
-    user_id: PositiveInt,
+    vc_repo: VersionControlRepository,
     project_uuid: UUID,
     ref_id: RefID,
 ) -> Checkpoint:
@@ -145,8 +146,7 @@ async def checkout_checkpoint(
 
 
 async def get_workbench(
-    app: web.Application,
-    user_id: PositiveInt,
+    vc_repo: VersionControlRepository,
     project_uuid: UUID,
     ref_id: RefID,
 ) -> WorkbenchView:

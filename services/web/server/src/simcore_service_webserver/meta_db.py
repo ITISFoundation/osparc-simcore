@@ -1,11 +1,9 @@
 import hashlib
 import json
-from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
 import sqlalchemy as sa
-from aiohttp import web
 from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
 from pydantic.types import NonNegativeInt, PositiveInt
@@ -21,11 +19,7 @@ from simcore_postgres_database.models.projects_version_control import (
 from simcore_postgres_database.utils_aiopg_orm import BaseOrm
 
 from .db_base_repository import BaseRepository
-
-# alias for readability
-# SEE https://pydantic-docs.helpmanual.io/usage/models/#orm-mode-aka-arbitrary-class-instances
-ProjectRow = RowProxy
-ProjectDict = Dict
+from .meta_models_repos import CommitLog, CommitProxy, TagProxy
 
 
 def eval_checksum(workbench: Dict[str, Any]):
@@ -170,26 +164,10 @@ class VersionControlRepository(BaseRepository):
         async with self.engine.acquire() as conn:
             return await self._get_HEAD(repo_id, conn)
 
-    async def get_commit_info(
-        self, commit_id: int
-    ) -> Tuple[Optional[RowProxy], List[RowProxy]]:
-        async with self.engine.acquire() as conn:
-            commit = self.CommitsOrm(conn).fetch(rowid=commit_id)
-            if commit:
-                assert isinstance(commit, RowProxy)  # nosec
-                tags: List[RowProxy] = (
-                    await self.TagsOrm(conn)
-                    .set_default(commit_id=commit.id, hidden=False)
-                    .fetch_all("name message")
-                )
-
-                return commit, tags
-            return None, []
-
     async def commit(
         self, repo_id: int, tag: Optional[str] = None, message: Optional[str] = None
     ) -> int:
-        """commits and tags (if tag is not None)
+        """add changes, commits and tags (if tag is not None)
 
         Message is added to tag if set otherwise to commit
         """
@@ -215,7 +193,7 @@ class VersionControlRepository(BaseRepository):
                 commit_id = head_commit.id
 
                 # take a snapshot if needed
-                if snapshot_checksum := await self._take_snapshot(
+                if snapshot_checksum := await self._add_changes(
                     repo_id, head_commit.snapshot_checksum, conn
                 ):
                     # commit new snapshot in history
@@ -243,7 +221,7 @@ class VersionControlRepository(BaseRepository):
             assert isinstance(commit_id, int)
             return commit_id
 
-    async def _take_snapshot(
+    async def _add_changes(
         self, repo_id: int, previous_checksum, conn
     ) -> Optional[str]:
         """
@@ -268,6 +246,7 @@ class VersionControlRepository(BaseRepository):
         if checksum != previous_checksum:
             # has changes wrt previous commit
             snapshot_orm = self.SnapshotsOrm(conn).set_default(rowid=checksum)
+            # if exists, ui might change
             await snapshot_orm.upsert(
                 checksum=checksum,
                 content={"workbench": project.workbench, "ui": project.ui},
@@ -276,3 +255,44 @@ class VersionControlRepository(BaseRepository):
 
         # no changes
         return None
+
+    async def get_commit_info(self, commit_id: int) -> CommitLog:
+        async with self.engine.acquire() as conn:
+            commit = await self.CommitsOrm(conn).fetch(rowid=commit_id)
+            if commit:
+                assert isinstance(commit, RowProxy)  # nosec
+
+                tags: List[TagProxy] = (
+                    await self.TagsOrm(conn)
+                    .set_default(commit_id=commit.id, hidden=False)
+                    .fetch_all("name message")
+                )
+                return commit, tags
+            raise ValueError(f"Invalid commit {commit_id}")
+
+    async def log(
+        self,
+        repo_id: int,
+        offset: NonNegativeInt = 0,
+        limit: Optional[PositiveInt] = None,
+    ) -> Tuple[List[CommitLog], NonNegativeInt]:
+
+        async with self.engine.acquire() as conn:
+            commits_orm = self.CommitsOrm(conn).set_default(repo_id=repo_id)
+            tags_orm = self.TagsOrm(conn)
+
+            commits: List[CommitProxy]
+            commits, total_count = await commits_orm.fetch_page(
+                "project_uuid",
+                offset=offset,
+                limit=limit,
+                order=sa.desc(commits_orm.columns["created"]),
+            )
+
+            infos = []
+            for commit in commits:
+                tags: List[TagProxy]
+                tags = await tags_orm.set_default(commit_id=commit.id).fetch_all()
+                infos.append((commit, tags))
+
+            return infos, total_count

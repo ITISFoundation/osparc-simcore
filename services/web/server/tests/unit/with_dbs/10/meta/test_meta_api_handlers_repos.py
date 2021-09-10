@@ -67,6 +67,7 @@ def test_route_against_openapi_specs(route, openapi_specs: Spec):
     ), "route's name differs from OAS operation_id"
 
 
+@pytest.mark.acceptance_test
 async def test_workflow(client: TestClient, user_project: ProjectDict):
 
     project_uuid = user_project["uuid"]

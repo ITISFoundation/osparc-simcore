@@ -1,7 +1,8 @@
 from datetime import datetime
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
+from aiopg.sa.result import RowProxy
 from models_library.basic_types import SHA1Str
 from models_library.projects_nodes import Node
 from pydantic import BaseModel, PositiveInt, StrictBool, StrictFloat, StrictInt
@@ -9,16 +10,35 @@ from pydantic.networks import HttpUrl
 
 BuiltinTypes = Union[StrictBool, StrictInt, StrictFloat, str]
 
+# alias for readability
+# SEE https://pydantic-docs.helpmanual.io/usage/models/#orm-mode-aka-arbitrary-class-instances
+
+CommitProxy = RowProxy
+TagProxy = RowProxy
+CommitLog = Tuple[CommitProxy, List[TagProxy]]
+
+ProjectProxy = RowProxy
+ProjectDict = Dict
+
 
 class Checkpoint(BaseModel):
     id: PositiveInt
     checksum: SHA1Str
-
-    tag: str
-    message: str
-
-    parent: PositiveInt
     created_at: datetime
+    parents_ids: Tuple[PositiveInt]
+    tags: Tuple[str]
+    message: Optional[str] = None
+
+    @classmethod
+    def from_commit_log(cls, commit: RowProxy, tags: List[RowProxy]) -> "Checkpoint":
+        return cls(
+            id=commit.id,
+            checksum=commit.snapshot_checksum,
+            tags=tuple(tag.name for tag in tags),
+            message=tags[0].message if tags else commit.message,
+            parents_ids=(commit.parent_commit_id,),
+            created_at=commit.created,
+        )
 
 
 class WorkbenchView(BaseModel):
