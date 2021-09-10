@@ -85,7 +85,7 @@ class SnapshotItem(Snapshot):
                 snapshot_id=snapshot.id,
             ),
             url_parent=url_for("get_project", project_id=snapshot.parent_uuid),
-            url_project=url_for("get_project", project_id=snapshot.parent_uuid),
+            url_project=url_for("get_project", project_id=snapshot.project_uuid),
             url_parameters=url_for(
                 "get_snapshot_parameters_handler",
                 project_id=snapshot.parent_uuid,
