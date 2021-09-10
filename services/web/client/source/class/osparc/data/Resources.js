@@ -178,6 +178,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/{studyId}/snapshots/{snapshotId}/parameters"
           },
+          updateSnapshot: {
+            method: "PATCH",
+            url: statics.API + "/projects/{studyId}/snapshots/{snapshotId}"
+          },
           takeSnapshot: {
             method: "POST",
             url: statics.API + "/projects/{studyId}/snapshots?snapshot_label={snapshot_label}"

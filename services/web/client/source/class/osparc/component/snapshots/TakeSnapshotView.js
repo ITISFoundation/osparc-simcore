@@ -93,7 +93,10 @@ qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
 
       const label = this.getChildControl("label");
       form.add(label, "Label", null, "label");
-      label.setValue(study.getName());
+      study.getSnapshots()
+        .then(snapshots => {
+          label.setValue("V"+snapshots.length);
+        });
 
       // buttons
       const cancelButton = this.getChildControl("cancel-button");
