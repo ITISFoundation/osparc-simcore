@@ -39,10 +39,7 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
     # TODO: here we need to persist the pipeline stopping part
 
     # check which scheduler to start
-    if (
-        app.state.settings.CELERY_SCHEDULER.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED
-        and not app.state.settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
-    ):
+    if app.state.settings.CELERY_SCHEDULER.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED:
         logger.info("Creating Celery-based scheduler...")
 
         return CeleryScheduler(
