@@ -138,7 +138,6 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
 
     __editSnapshot: function() {
       if (this.__selectedSnapshot) {
-        console.log("edit", this.__selectedSnapshot);
         const snapshotRenamer = new osparc.component.widget.Renamer(this.__selectedSnapshot["Snapshot Name"]);
         snapshotRenamer.addListener("labelChanged", e => {
           const {
