@@ -49,7 +49,9 @@ async def _wait_for_call(mocked_fct):
 
 @pytest.fixture
 def minimal_dask_config(
-    project_env_devel_environment: Dict[str, Any], monkeypatch: MonkeyPatch
+    mock_env: None,
+    project_env_devel_environment: Dict[str, Any],
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """set a minimal configuration for testing the dask connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "0")
@@ -63,10 +65,11 @@ def minimal_dask_config(
     monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "0")
+    monkeypatch.setenv("SC_BOOT_MODE", "production")
 
 
 def test_dask_client_missing_raises_configuration_error(
-    mock_env: None, minimal_dask_config: None, monkeypatch: MonkeyPatch
+    minimal_dask_config: None, monkeypatch: MonkeyPatch
 ):
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "0")
     settings = AppSettings.create_from_envs()
