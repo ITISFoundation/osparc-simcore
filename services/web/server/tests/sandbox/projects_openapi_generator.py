@@ -317,17 +317,21 @@ def create_project(project: ProjectNew):
 
 
 @project_routes.get("/{project_uuid}", response_model=Envelope[ProjectDetail])
-def get_project(pid: UUID = Depends(get_valid_project)):
+def get_project(project_uuid: UUID = Depends(get_valid_project)):
     ...
 
 
 @project_routes.put("/{project_uuid}", response_model=Envelope[ProjectDetail])
-def replace_project(project: ProjectNew, pid: UUID = Depends(get_valid_project)):
+def replace_project(
+    project: ProjectNew, project_uuid: UUID = Depends(get_valid_project)
+):
     ...
 
 
 @project_routes.patch("/{project_uuid}", response_model=Envelope[ProjectDetail])
-def update_project(project: ProjectUpdate, pid: UUID = Depends(get_valid_project)):
+def update_project(
+    project: ProjectUpdate, project_uuid: UUID = Depends(get_valid_project)
+):
     ...
 
 
@@ -335,27 +339,29 @@ def update_project(project: ProjectUpdate, pid: UUID = Depends(get_valid_project
     "/{project_uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_project(pid: UUID = Depends(get_valid_project)):
+def delete_project(project_uuid: UUID = Depends(get_valid_project)):
     ...
 
 
 @project_routes.post("/{project_uuid}:open")
-def open_project(pid: UUID = Depends(get_valid_project)):
+def open_project(project_uuid: UUID = Depends(get_valid_project)):
     ...
 
 
 @project_routes.post("/{project_uuid}:start")
-def start_project(use_cache: bool = True, pid: UUID = Depends(get_valid_project)):
+def start_project(
+    use_cache: bool = True, project_uuid: UUID = Depends(get_valid_project)
+):
     ...
 
 
 @project_routes.post("/{project_uuid}:stop")
-def stop_project(pid: UUID = Depends(get_valid_project)):
+def stop_project(project_uuid: UUID = Depends(get_valid_project)):
     ...
 
 
 @project_routes.post("/{project_uuid}:close")
-def close_project(pid: UUID = Depends(get_valid_project)):
+def close_project(project_uuid: UUID = Depends(get_valid_project)):
     ...
 
 
@@ -370,7 +376,7 @@ pr_state_routes = APIRouter(prefix="/projects/{project_uuid}", tags=["project"])
 
 
 @pr_state_routes.get("/state", response_model=Envelope[State])
-def get_project_state(pid: UUID = Depends(get_valid_project)):
+def get_project_state(project_uuid: UUID = Depends(get_valid_project)):
     ...
 
 
@@ -385,7 +391,7 @@ project_nodes_routes = APIRouter(prefix="/projects/{project_uuid}", tags=["proje
 
 
 @project_nodes_routes.get("/nodes", response_model=Envelope[Node])
-def get_project_node(pid: UUID = Depends(get_valid_project)):
+def get_project_node(project_uuid: UUID = Depends(get_valid_project)):
     ...
 
 
@@ -402,7 +408,7 @@ class Tags:
 
     @staticmethod
     @routes.put("/tags/{tag_id}")
-    def replace(tag_id: int, pid: UUID = Depends(get_valid_project)):
+    def replace(tag_id: int, project_uuid: UUID = Depends(get_valid_project)):
         """Assigns a tag to a project"""
         ...
 
@@ -411,7 +417,7 @@ class Tags:
         "/tags/{tag_id}",
         status_code=status.HTTP_204_NO_CONTENT,
     )
-    def delete(tag_id: int, pid: UUID = Depends(get_valid_project)):
+    def delete(tag_id: int, project_uuid: UUID = Depends(get_valid_project)):
         """Un-assigns tag to a project"""
         ...
 
@@ -432,7 +438,7 @@ snapshot_routes = APIRouter(
 )
 def list_snapshots(
     page=Depends(init_pagination(SnapshotResource)),
-    pid: UUID = Depends(get_valid_project),
+    project_uuid: UUID = Depends(get_valid_project),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """Lists all snapshots taken from a given project"""
@@ -444,7 +450,7 @@ def list_snapshots(
     status_code=status.HTTP_201_CREATED,
 )
 def create_snapshot(
-    pid: UUID = Depends(get_valid_project),
+    project_uuid: UUID = Depends(get_valid_project),
     snapshot_label: Optional[str] = None,
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
@@ -459,7 +465,7 @@ def create_snapshot(
 )
 def get_snapshot(
     snapshot_id: PositiveInt,
-    pid: UUID = Depends(get_valid_project),
+    project_uuid: UUID = Depends(get_valid_project),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """Gets commit info for a given snapshot"""
@@ -471,7 +477,7 @@ def get_snapshot(
 )
 def delete_snapshot(
     snapshot_id: PositiveInt,
-    pid: UUID = Depends(get_valid_project),
+    project_uuid: UUID = Depends(get_valid_project),
 ):
     """Deletes both the commit and the project itself"""
     # delete a snapshot -> project deleted?
@@ -484,7 +490,7 @@ def delete_snapshot(
 def update_snapshot_name(
     snapshot_id: PositiveInt,
     snapshot_name: str,
-    pid: UUID = Depends(get_valid_project),
+    project_uuid: UUID = Depends(get_valid_project),
 ):
     ...
 
@@ -508,7 +514,7 @@ parameter_routes = APIRouter(
 )
 def list_project_parameters(
     snapshot_id: str,
-    pid: UUID = Depends(get_valid_project),
+    project_uuid: UUID = Depends(get_valid_project),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """Lists all parameters in a project"""
@@ -549,7 +555,7 @@ class Repo(BaseModel):
 _PROJECTS_WITH_REPO = {}
 
 
-def get_valid_repo(pid: UUID = Depends(get_valid_project)):
+def get_valid_repo(project_uuid: UUID = Depends(get_valid_project)):
     if pid in _PROJECTS_WITH_REPO:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -579,7 +585,7 @@ def list_repos(page=Depends(init_pagination(Repo))):
     status_code=status.HTTP_201_CREATED,
 )
 def create_repo(
-    pid: UUID = Depends(get_valid_project),
+    project_uuid: UUID = Depends(get_valid_project),
 ):
     """Creates a repo to version a project
 
@@ -613,7 +619,7 @@ class CommitMessage(BaseModel):
 )
 def create_commit(
     message: CommitMessage,
-    pid: UUID = Depends(get_valid_repo),
+    project_uuid: UUID = Depends(get_valid_repo),
 ):
     """Commit current state of the workbench's project
 
@@ -628,7 +634,7 @@ def create_commit(
 def get_logs(
     ref: str,
     page=Depends(init_pagination(Commit)),
-    pid: UUID = Depends(get_valid_repo),
+    project_uuid: UUID = Depends(get_valid_repo),
 ):
     """Lists commits tree of the project"""
 
@@ -640,7 +646,7 @@ def get_commit(
     ref_id: RepoRef = PathParam(
         ..., description="A repository ref (commit, tag or branch)"
     ),
-    pid: UUID = Depends(get_valid_repo),
+    project_uuid: UUID = Depends(get_valid_repo),
 ):
     ...
 
@@ -653,7 +659,7 @@ def update_commit_message(
     ref_id: RepoRef = PathParam(
         ..., description="A repository ref (commit, tag or branch)"
     ),
-    pid: UUID = Depends(get_valid_repo),
+    project_uuid: UUID = Depends(get_valid_repo),
 ):
     ...
 
@@ -673,7 +679,7 @@ class Tag(BaseModel):
 @repo_routes_hidden.get("/{project_uuid}/tags", response_model=Page[Tag])
 def list_tags(
     page=Depends(init_pagination(Tag)),
-    pid: UUID = Depends(get_valid_repo),
+    project_uuid: UUID = Depends(get_valid_repo),
 ):
     ...
 
@@ -687,7 +693,7 @@ class NewTag(BaseModel):
 @repo_routes_hidden.post("/{project_uuid}/tags", response_model=Envelope[Tag])
 def create_tag(
     tag: NewTag,
-    pid: UUID = Depends(get_valid_repo),
+    project_uuid: UUID = Depends(get_valid_repo),
 ):
     ...
 
@@ -695,7 +701,7 @@ def create_tag(
 @repo_routes_hidden.get("/{project_uuid}/tags/{ref_id}", response_model=Envelope[Tag])
 def get_tag(
     ref_id: RepoRef = PathParam(..., description="A commit sha or a tag name"),
-    pid: UUID = Depends(get_valid_repo),
+    project_uuid: UUID = Depends(get_valid_repo),
 ):
     ...
 
@@ -709,7 +715,7 @@ class TagAnnotations(BaseModel):
 def update_tag_annotations(
     annotations: TagAnnotations,
     ref_id: RepoRef = PathParam(..., description="A commit sha or a tag name"),
-    pid: UUID = Depends(get_valid_repo),
+    project_uuid: UUID = Depends(get_valid_repo),
 ):
     ...
 
@@ -720,7 +726,7 @@ def update_tag_annotations(
 )
 def delete_tag(
     tag_name: str,
-    pid: UUID = Depends(get_valid_repo),
+    project_uuid: UUID = Depends(get_valid_repo),
 ):
     ...
 
@@ -757,9 +763,8 @@ class CheckpointAnnotations(BaseModel):
     response_model=Page[Checkpoint],
 )
 def list_checkpoints(
-    ref: str,
     page=Depends(init_pagination(Checkpoint)),
-    pid: UUID = Depends(get_valid_repo),
+    project_uuid: UUID = Depends(get_valid_repo),
 ):
     """Lists commits&tags tree of the project"""
 
@@ -771,7 +776,7 @@ def list_checkpoints(
 )
 def create_checkpoint(
     new: CheckpointNew,
-    pid: UUID = Depends(get_valid_repo),
+    project_uuid: UUID = Depends(get_valid_repo),
 ):
     ...
 
@@ -783,7 +788,7 @@ def get_checkpoint(
     ref_id: RepoRef = PathParam(
         ..., description="A repository ref (commit, tag or branch)"
     ),
-    pid: UUID = Depends(get_valid_repo),
+    project_uuid: UUID = Depends(get_valid_repo),
 ):
     """Set ref_id=HEAD to return current commit"""
     ...
@@ -797,7 +802,7 @@ def update_checkpoint_annotations(
     ref_id: RepoRef = PathParam(
         ..., description="A repository ref (commit, tag or branch)"
     ),
-    pid: UUID = Depends(get_valid_repo),
+    project_uuid: UUID = Depends(get_valid_repo),
 ):
     ...
 
@@ -810,7 +815,7 @@ def checkout(
     ref_id: RepoRef = PathParam(
         ..., description="A repository ref (commit, tag or branch)"
     ),
-    pid: UUID = Depends(get_valid_repo),
+    project_uuid: UUID = Depends(get_valid_repo),
 ):
     """
     Affect current working copy of the project, i.e. get_project will now return
@@ -827,7 +832,7 @@ def view_project_workbench(
     ref_id: RepoRef = PathParam(
         ..., description="A repository ref (commit, tag or branch)"
     ),
-    pid: UUID = Depends(get_valid_project),
+    project_uuid: UUID = Depends(get_valid_project),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """Returns a view of the workbench for a given project's version"""

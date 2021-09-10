@@ -13425,12 +13425,6 @@ paths:
             format: uuid
           name: project_uuid
           in: path
-        - required: true
-          schema:
-            title: Ref
-            type: string
-          name: ref
-          in: query
         - description: index to the first item to return (pagination)
           required: false
           schema:

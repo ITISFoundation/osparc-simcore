@@ -45,7 +45,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
-  "/repos/projects/{project_uuid}/checkpoints":
+  /repos/projects/{project_uuid}/checkpoints:
     get:
       tags:
         - repository
@@ -62,12 +62,6 @@ paths:
             format: uuid
           name: project_uuid
           in: path
-        - required: true
-          schema:
-            title: Ref
-            type: string
-          name: ref
-          in: query
         - description: index to the first item to return (pagination)
           required: false
           schema:
@@ -136,7 +130,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
-  "/repos/projects/{project_uuid}/checkpoints/{ref_id}":
+  /repos/projects/{project_uuid}/checkpoints/{ref_id}:
     get:
       tags:
         - repository
@@ -222,15 +216,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
-  "/repos/projects/{project_uuid}/checkpoints/{ref_id}:checkout":
+  /repos/projects/{project_uuid}/checkpoints/{ref_id}:checkout:
     post:
       tags:
         - repository
       summary: Checkout
-      description: >-
-        Affect current working copy of the project, i.e. get_project will now
-        return
-
+      description: |-
+        Affect current working copy of the project, i.e. get_project will now return
         the check out
       operationId: simcore_service_webserver.meta_api_handlers_repos._checkout_handler
       parameters:
@@ -267,7 +259,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
-  "/repos/projects/{project_uuid}/checkpoints/{ref_id}/workbench/view":
+  /repos/projects/{project_uuid}/checkpoints/{ref_id}/workbench/view:
     get:
       tags:
         - repository
