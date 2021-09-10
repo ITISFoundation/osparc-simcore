@@ -59,6 +59,7 @@ pytest_simcore_core_services_selection = [
     "redis",
     "rabbit",
     "catalog",
+    "dask-scheduler",
     "director",
     "director-v2",
     "postgres",
