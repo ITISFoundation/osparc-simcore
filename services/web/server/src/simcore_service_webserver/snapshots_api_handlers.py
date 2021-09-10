@@ -89,7 +89,14 @@ def create_url_for_function(request: web.Request) -> Callable:
             rel_url: URL = app.router[router_name].url_for(
                 **{k: str(v) for k, v in params.items()}
             )
-            url = request.url.origin().with_path(str(rel_url))
+
+            url = (
+                request.url.origin()
+                .with_scheme(
+                    request.headers.get("X-Forwarded-Proto", request.url.scheme)
+                )
+                .with_path(str(rel_url))
+            )
             return str(url)
         except KeyError:
             return None
