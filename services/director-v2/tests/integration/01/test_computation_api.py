@@ -41,7 +41,6 @@ pytest_simcore_core_services_selection = [
     "dask-sidecar",
     "redis",
     "rabbit",
-    "sidecar",
     "storage",
     "postgres",
 ]
@@ -138,7 +137,7 @@ def _assert_computation_task_out_obj(
 # FIXTURES ---------------------------------------
 
 
-@pytest.fixture(scope="function", params=["dask", "celery"])
+@pytest.fixture(scope="function", params=["dask"])
 def mock_env(monkeypatch: MonkeyPatch, request) -> None:
     # used by the client fixture
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "itisfoundation/dynamic-sidecar:MOCKED")
