@@ -43,7 +43,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
     __snapshotsTable: null,
     __snapshotPreview: null,
     __selectedSnapshot: null,
-    __updateSnapshotBtn: null,
+    __editSnapshotBtn: null,
     __openSnapshotBtn: null,
 
     __buildLayout: function() {
@@ -54,10 +54,13 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
       this.__rebuildSnapshotsTable();
       this.__buildSnapshotPreview();
 
-      const editSnapshotBtn = this.__updateSnapshotBtn = this.__createEditSnapshotBtn();
+      const buttonsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      this._add(buttonsSection);
+
+      const editSnapshotBtn = this.__editSnapshotBtn = this.__createEditSnapshotBtn();
       editSnapshotBtn.setEnabled(false);
       editSnapshotBtn.addListener("execute", () => this.__editSnapshot());
-      this._add(editSnapshotBtn);
+      buttonsSection.add(editSnapshotBtn);
 
       const openSnapshotBtn = this.__openSnapshotBtn = this.__createOpenSnapshotBtn();
       openSnapshotBtn.setEnabled(false);
@@ -66,7 +69,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
           this.fireDataEvent("openSnapshot", this.__selectedSnapshot);
         }
       });
-      this._add(openSnapshotBtn);
+      buttonsSection.add(openSnapshotBtn);
     },
 
     __rebuildSnapshotsTable: function() {
@@ -136,6 +139,31 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
     __editSnapshot: function() {
       if (this.__selectedSnapshot) {
         console.log("edit", this.__selectedSnapshot);
+        const snapshotRenamer = new osparc.component.widget.Renamer(this.__selectedSnapshot["Snapshot Name"]);
+        snapshotRenamer.addListener("labelChanged", e => {
+          const {
+            newLabel
+          } = e.getData();
+          const params = {
+            url: {
+              "SnapshotId": this.__selectedSnapshot["SnapshotId"],
+              "StudyId": this.__selectedSnapshot["StudyId"]
+            },
+            data: {
+              "name": newLabel
+            }
+          };
+          osparc.data.Resources.fetch("snapshots", "updateSnapshot", params)
+            .then(() => {
+              this.__rebuildSnapshotsTable();
+            })
+            .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"))
+            .finally(() => {
+              snapshotRenamer.close();
+            });
+        }, this);
+        snapshotRenamer.center();
+        snapshotRenamer.open();
       }
     },
 
