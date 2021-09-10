@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import yaml
 from fastapi.applications import FastAPI
@@ -57,6 +57,18 @@ def _inject_traefik_configuration(
     target_container_spec["labels"] = labels
 
 
+def _inject_paths_mappings(
+    service_spec: Dict[str, Any], path_mappings: PathMappingsLabel
+) -> None:
+    for service_name in service_spec["services"]:
+        service_content = service_spec["services"][service_name]
+
+        environment_vars: List[str] = service_content.get("environment", [])
+        environment_vars.append(f"DY_SIDECAR_PATH_INPUTS={path_mappings.inputs_path}")
+        environment_vars.append(f"DY_SIDECAR_PATH_OUTPUTS={path_mappings.outputs_path}")
+        service_content["environment"] = environment_vars
+
+
 def _assemble_from_service_key_and_tag(
     resolved_registry_url: str,
     service_key: str,
@@ -87,7 +99,7 @@ async def assemble_spec(
     app: FastAPI,
     service_key: str,
     service_tag: str,
-    paths_mapping: PathMappingsLabel,  # pylint: disable=unused-argument
+    paths_mapping: PathMappingsLabel,
     compose_spec: ComposeSpecLabel,
     container_http_entry: Optional[str],
     dynamic_sidecar_network_name: str,
@@ -113,11 +125,6 @@ async def assemble_spec(
             service_tag=service_tag,
         )
         container_name = CONTAINER_NAME
-    else:
-        # TODO: need to be sorted out:
-        # - inject paths mapping
-        # - remove above # pylint: disable=unused-argument
-        pass
 
     assert container_name is not None  # nosec
 
@@ -128,6 +135,8 @@ async def assemble_spec(
         simcore_traefik_zone=simcore_traefik_zone,
         service_port=service_port,
     )
+
+    _inject_paths_mappings(service_spec, paths_mapping)
 
     stringified_service_spec = yaml.safe_dump(service_spec)
     stringified_service_spec = _replace_env_vars_in_compose_spec(
