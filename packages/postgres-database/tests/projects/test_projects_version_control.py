@@ -125,6 +125,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         repo_orm = ReposOrm(conn)
         repo_id = await repo_orm.insert(project_uuid=project.uuid)
         assert repo_id is not None
+        assert isinstance(repo_id, int)
 
         repo_orm.set_default(rowid=repo_id)
         repo = await repo_orm.fetch()
@@ -137,6 +138,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         branches_orm = BranchesOrm(conn)
         branch_id = await branches_orm.insert(repo_id=repo.id)
         assert branch_id is not None
+        assert isinstance(branch_id, int)
 
         branches_orm.set_default(rowid=branch_id)
         main_branch: Optional[RowProxy] = await branches_orm.fetch()
@@ -206,12 +208,13 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
 
     # tag
     tag_orm = TagsOrm(conn)
-    tag_id: Optional[int] = await tag_orm.insert(
+    tag_id = await tag_orm.insert(
         repo_id=repo.id,
         commit_id=commit_id,
         name="v1",
     )
     assert tag_id is not None
+    assert isinstance(tag_id, int)
 
     tag = await tag_orm.fetch(rowid=tag_id)
     assert tag
