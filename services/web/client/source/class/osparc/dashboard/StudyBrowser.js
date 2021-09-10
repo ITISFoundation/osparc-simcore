@@ -751,10 +751,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const text = this.tr("Duplicate process started and added to the background tasks");
       osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
 
-      const duplicatingStudyCard = new osparc.dashboard.GridButtonPlaceholder();
+      const isGrid = this._studiesContainer.getMode() === "grid";
+      const duplicatingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
       duplicatingStudyCard.buildLayout(
         this.tr("Duplicating ") + studyData["name"],
-        "@FontAwesome5Solid/copy/60"
+        "@FontAwesome5Solid/copy/" + isGrid ? "60" : "24"
       );
       duplicatingStudyCard.subscribeToFilterGroup("sideSearchFilter");
       this._studiesContainer.addAt(duplicatingStudyCard, 1);
@@ -808,10 +809,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
 
       const uploadingLabel = this.tr("Uploading file");
-      const importingStudyCard = new osparc.dashboard.GridButtonPlaceholder();
+      const isGrid = this._studiesContainer.getMode() === "grid";
+      const importingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
       importingStudyCard.buildLayout(
         this.tr("Importing Study..."),
-        "@FontAwesome5Solid/cloud-upload-alt/60",
+        "@FontAwesome5Solid/cloud-upload-alt/" + isGrid ? "60" : "24",
         uploadingLabel,
         true
       );
