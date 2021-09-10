@@ -39,6 +39,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
   statics: {
     ITEM_WIDTH: 1000,
     ITEM_HEIGHT: 40,
+    SPACING: 5,
     POS: {
       THUMBNAIL: 0,
       TITLE: 1,
