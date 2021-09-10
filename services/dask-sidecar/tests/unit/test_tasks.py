@@ -1,7 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-from typing import Any, Dict
+from typing import Any, Dict, List
 from unittest import mock
 from uuid import UUID, uuid4
 
@@ -56,13 +56,13 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, mock.Mock]:
 
 @pytest.mark.parametrize(
     "service_key, service_version, command, input_data",
-    [("busybox", "latest", "echo hello from pytest", {})],
+    [("ubuntu", "latest", ["/bin/bash", "-c", "sleep 5 && echo hello"], {})],
 )
 async def test_run_computational_sidecar(
     dask_subsystem_mock: Dict[str, mock.Mock],
     service_key: str,
     service_version: str,
-    command: str,
+    command: List[str],
     input_data: Dict[str, Any],
 ):
     output_data = await run_computational_sidecar(
