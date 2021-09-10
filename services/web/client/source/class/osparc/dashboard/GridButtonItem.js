@@ -88,26 +88,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             left: 0
           });
           break;
-        case "exporting": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
-            alignX: "center",
-            alignY: "middle"
-          }));
-          // const icon = new osparc.ui.basic.Thumbnail("@FontAwesome5Solid/file-export/60");
-          const icon = new osparc.ui.basic.Thumbnail("@FontAwesome5Solid/cloud-download-alt/60");
-          control.add(icon, {
-            flex: 1
-          });
-          const label = new qx.ui.basic.Label(this.tr("Exporting..."));
-          control.add(label);
-          this._add(control, {
-            top: 0,
-            right: 0,
-            bottom: 0,
-            left: 0
-          });
-          break;
-        }
         case "permission-icon": {
           control = new qx.ui.basic.Image();
           control.exclude();
@@ -372,26 +352,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         menuButton.setMenu(value);
       }
       menuButton.setVisibility(value ? "visible" : "excluded");
-    },
-
-    setExporting: function(exporting) {
-      this.__enableCard(!exporting);
-
-      const icon = this.getChildControl("exporting");
-      icon.set({
-        opacity: 1.0,
-        visibility: exporting ? "visible" : "excluded"
-      });
-    },
-
-    setImporting: function(importing) {
-      this.__enableCard(!importing);
-
-      const icon = this.getChildControl("importing");
-      icon.set({
-        opacity: 1.0,
-        visibility: importing ? "visible" : "excluded"
-      });
     },
 
     __openQualityEditor: function() {

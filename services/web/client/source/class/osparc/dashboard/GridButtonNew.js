@@ -39,7 +39,7 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
       title.setValue(this.tr("Empty Study"));
 
       const desc = this.getChildControl("subtitle-text");
-      desc.setValue(this.tr("Start with a empty study").toString());
+      desc.setValue(this.tr("Start with an empty study").toString());
 
       this.setIcon(osparc.dashboard.CardBase.NEW_ICON);
     },
