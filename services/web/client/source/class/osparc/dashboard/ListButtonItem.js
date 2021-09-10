@@ -24,10 +24,28 @@
 qx.Class.define("osparc.dashboard.ListButtonItem", {
   extend: osparc.dashboard.ListButtonBase,
 
+  construct: function() {
+    this.base(arguments);
+
+    this.addListener("changeValue", this.__itemSelected, this);
+  },
+
+  events: {
+    "updateQualityStudy": "qx.event.type.Data",
+    "updateQualityTemplate": "qx.event.type.Data",
+    "updateQualityService": "qx.event.type.Data"
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "lock-status":
+          control = new osparc.ui.basic.Thumbnail().set({
+            minWidth: 40
+          });
+          this._addAt(control, osparc.dashboard.ListButtonBase.POS.LOCK_STATUS);
+          break;
         case "permission-icon": {
           control = new qx.ui.basic.Image().set({
             minWidth: 50
@@ -75,6 +93,14 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             minWidth: 50
           });
           this._addAt(control, osparc.dashboard.ListButtonBase.POS.TAGS);
+          break;
+        case "tick-unselected":
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16");
+          this._addAt(control, osparc.dashboard.ListButtonBase.POS.UNSELECTED);
+          break;
+        case "tick-selected":
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/check-circle/16");
+          this._addAt(control, osparc.dashboard.ListButtonBase.POS.SELECTED);
           break;
         case "menu-button": {
           control = new qx.ui.form.MenuButton().set({
@@ -217,25 +243,47 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       }
     },
 
-    _applyState: function(state) {
+    // overridden
+    _applyMultiSelectionMode: function(value) {
+      if (value) {
+        const menuButton = this.getChildControl("menu-button");
+        menuButton.setVisibility("excluded");
+        this.__itemSelected();
+      } else {
+        this.__showMenuOnly();
+      }
     },
 
-    _applyFetching: function(value) {
-      /*
-      const title = this.getChildControl("title");
-      if (value) {
-        title.setValue(this.tr("Loading studies..."));
-        this.setIcon("@FontAwesome5Solid/circle-notch/60");
-        this.getChildControl("icon").getChildControl("image").getContentElement()
-          .addClass("rotate");
+    __itemSelected: function() {
+      if (this.isResourceType("study")) {
+        const selected = this.getValue();
+
+        if (this.isLocked() && selected) {
+          this.setValue(false);
+        }
+
+        const menuButton = this.getChildControl("menu-button");
+        menuButton.setVisibility("excluded");
+
+        const tick = this.getChildControl("tick-selected");
+        tick.setVisibility(selected ? "visible" : "excluded");
+
+        const untick = this.getChildControl("tick-unselected");
+        untick.setVisibility(selected ? "excluded" : "visible");
       } else {
-        title.setValue(this.tr("Load More"));
-        this.setIcon("@FontAwesome5Solid/paw/60");
-        this.getChildControl("icon").getChildControl("image").getContentElement()
-          .removeClass("rotate");
+        this.__showMenuOnly();
       }
-      this.setEnabled(!value);
-      */
+    },
+
+    __showMenuOnly: function() {
+      const menuButton = this.getChildControl("menu-button");
+      menuButton.setVisibility("visible");
+
+      const tick = this.getChildControl("tick-selected");
+      tick.setVisibility("excluded");
+
+      const untick = this.getChildControl("tick-unselected");
+      untick.setVisibility("excluded");
     },
 
     _applyMenu: function(value, old) {
@@ -244,6 +292,88 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
         menuButton.setMenu(value);
       }
       menuButton.setVisibility(value ? "visible" : "excluded");
+    },
+
+    _applyState: function(state) {
+      const locked = ("locked" in state) ? state["locked"]["value"] : false;
+      this.setLocked(locked);
+      if (locked) {
+        this.__setLockedStatus(state["locked"]);
+      }
+    },
+
+    __setLockedStatus: function(lockedStatus) {
+      const status = lockedStatus["status"];
+      const owner = lockedStatus["owner"];
+      const lock = this.getChildControl("lock-status");
+      const lockImage = this.getChildControl("lock-status").getChildControl("image");
+      let toolTipText = osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]);
+      let source = null;
+      switch (status) {
+        case "CLOSING":
+          source = "@FontAwesome5Solid/key/24";
+          toolTipText += this.tr(" is closing it...");
+          break;
+        case "CLONING":
+          source = "@FontAwesome5Solid/clone/24";
+          toolTipText += this.tr(" is cloning it...");
+          break;
+        case "EXPORTING":
+          source = osparc.component.task.Export.EXPORT_ICON+"/24";
+          toolTipText += this.tr(" is exporting it...");
+          break;
+        case "OPENING":
+          source = "@FontAwesome5Solid/key/24";
+          toolTipText += this.tr(" is opening it...");
+          break;
+        case "OPENED":
+          source = "@FontAwesome5Solid/lock/24";
+          toolTipText += this.tr(" is using it.");
+          break;
+        default:
+          source = "@FontAwesome5Solid/lock/24";
+          break;
+      }
+      lock.set({
+        toolTipText: toolTipText
+      });
+      lockImage.setSource(source);
+    },
+
+    _applyLocked: function(locked) {
+      this.__enableCard(!locked);
+      this.getChildControl("icon").set({
+        visibility: locked ? "excluded" : "visible"
+      });
+      this.getChildControl("lock-status").set({
+        opacity: 1.0,
+        visibility: locked ? "visible" : "excluded"
+      });
+    },
+
+    __enableCard: function(enabled) {
+      this.set({
+        cursor: enabled ? "pointer" : "not-allowed"
+      });
+
+      this._getChildren().forEach(item => {
+        item.setOpacity(enabled ? 1.0 : 0.4);
+      });
+    },
+
+    __openQualityEditor: function() {
+      const resourceData = this.getResourceData();
+      const qualityEditor = osparc.studycard.Utils.openQuality(resourceData);
+      qualityEditor.addListener("updateQuality", e => {
+        const updatedResourceData = e.getData();
+        if (osparc.utils.Resources.isStudy(resourceData)) {
+          this.fireDataEvent("updateQualityStudy", updatedResourceData);
+        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+          this.fireDataEvent("updateQualityTemplate", updatedResourceData);
+        } else if (osparc.utils.Resources.isService(resourceData)) {
+          this.fireDataEvent("updateQualityService", updatedResourceData);
+        }
+      });
     }
   },
 

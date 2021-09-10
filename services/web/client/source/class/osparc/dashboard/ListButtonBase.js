@@ -42,14 +42,17 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
     SPACING: 5,
     POS: {
       THUMBNAIL: 0,
-      TITLE: 1,
-      DESCRIPTION: 2,
-      PERMISSION: 3,
-      SHARED: 4,
-      LAST_CHANGE: 5,
-      TSR: 6,
-      TAGS: 7,
-      OPTIONS: 8
+      LOCK_STATUS: 1,
+      TITLE: 2,
+      DESCRIPTION: 3,
+      PERMISSION: 4,
+      SHARED: 5,
+      LAST_CHANGE: 6,
+      TSR: 7,
+      TAGS: 8,
+      SELECTED: 9,
+      UNSELECTED: 10,
+      OPTIONS: 11
     }
   },
 
