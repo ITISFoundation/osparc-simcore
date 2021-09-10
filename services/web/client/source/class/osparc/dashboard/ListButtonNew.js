@@ -35,7 +35,7 @@ qx.Class.define("osparc.dashboard.ListButtonNew", {
       const title = this.getChildControl("title");
       title.setValue(this.tr("Empty Study"));
 
-      const desc = this.getChildControl("subtitle-text");
+      const desc = this.getChildControl("description");
       desc.setValue(this.tr("Start with a empty study").toString());
 
       this.setIcon(osparc.dashboard.CardBase.NEW_ICON);
