@@ -219,23 +219,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
 
     _unfilter: function() {
       this.show();
-    },
-
-    _shouldApplyFilter: function(data) {
-      throw new Error("Abstract method called!");
-    },
-
-    _shouldReactToFilter: function(data) {
-      if (data.text && data.text.length > 1) {
-        return true;
-      }
-      if (data.tags && data.tags.length) {
-        return true;
-      }
-      if (data.classifiers && data.classifiers.length) {
-        return true;
-      }
-      return false;
     }
   },
 
