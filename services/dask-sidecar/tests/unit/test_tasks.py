@@ -55,12 +55,14 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, mock.Mock]:
 
 
 @pytest.mark.parametrize(
-    "service_key, service_version, input_data", [("ubuntu", "latest", {})]
+    "service_key, service_version, command, input_data",
+    [("busybox", "latest", "echo hello from pytest", {})],
 )
 async def test_run_computational_sidecar(
     dask_subsystem_mock: Dict[str, mock.Mock],
     service_key: str,
     service_version: str,
+    command: str,
     input_data: Dict[str, Any],
 ):
     output_data = await run_computational_sidecar(
