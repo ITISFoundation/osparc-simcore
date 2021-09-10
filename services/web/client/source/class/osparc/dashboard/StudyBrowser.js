@@ -464,7 +464,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __setStudiesContainerMode: function(mode = "grid") {
       const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING
-      // this._studiesContainer.getLayout().setSpacing(spacing);
+      this._studiesContainer.getLayout().set({
+        spacingX: spacing,
+        spacingY: spacing
+      });
       this._studiesContainer.mode = mode;
 
       this._resetStudiesList();
