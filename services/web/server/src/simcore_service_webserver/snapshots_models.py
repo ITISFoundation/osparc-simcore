@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 from uuid import UUID, uuid3
 
 from pydantic import (
@@ -11,6 +11,7 @@ from pydantic import (
     StrictFloat,
     StrictInt,
 )
+from pydantic.main import BaseConfig
 from yarl import URL
 
 BuiltinTypes = Union[StrictBool, StrictInt, StrictFloat, str]
@@ -19,7 +20,18 @@ BuiltinTypes = Union[StrictBool, StrictInt, StrictFloat, str]
 ## Domain models --------
 
 
-class Snapshot(BaseModel):
+class BaseSnapshot(BaseModel):
+    class Config(BaseConfig):
+        orm_mode = True
+        # parses with alias and/or field name -> can parse from API or db data models
+        allow_population_by_field_name = True
+
+    @classmethod
+    def as_field(cls, name) -> Any:
+        return cls.__fields__[name].field_info
+
+
+class Snapshot(BaseSnapshot):
     id: PositiveInt = Field(None, description="Unique snapshot identifier")
     label: Optional[str] = Field(
         None, description="Unique human readable display name", alias="name"
@@ -33,10 +45,8 @@ class Snapshot(BaseModel):
     parent_uuid: UUID = Field(..., description="Parent's project uuid")
     project_uuid: UUID = Field(..., description="Current project's uuid")
 
-    class Config:
-        orm_mode = True
-
-    # TODO: can project_uuid be frozen property??
+    # TODO: can project_uuid be cached_property??
+    # SEE BaseCustomSettings.Config and do not forget keep_untouched option!
 
     @staticmethod
     def compose_project_uuid(
@@ -48,6 +58,10 @@ class Snapshot(BaseModel):
 
 
 ## API models ----------
+
+
+class SnapshotPatch(BaseSnapshot):
+    label: Optional[str] = Snapshot.as_field("label")
 
 
 class SnapshotItem(Snapshot):
@@ -67,11 +81,11 @@ class SnapshotItem(Snapshot):
         return cls(
             url=url_for(
                 "get_project_snapshot_handler",
-                project_id=snapshot.project_uuid,
+                project_id=snapshot.parent_uuid,
                 snapshot_id=snapshot.id,
             ),
             url_parent=url_for("get_project", project_id=snapshot.parent_uuid),
-            url_project=url_for("get_project", project_id=snapshot.project_uuid),
+            url_project=url_for("get_project", project_id=snapshot.parent_uuid),
             url_parameters=url_for(
                 "get_snapshot_parameters_handler",
                 project_id=snapshot.parent_uuid,
