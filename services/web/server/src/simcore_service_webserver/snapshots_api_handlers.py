@@ -1,11 +1,12 @@
 import logging
 from datetime import datetime
 from functools import wraps
-from typing import Any, Awaitable, Callable, List, Optional
+from typing import Any, Awaitable, Callable, List, Optional, Type
 from uuid import UUID
 
 import orjson
 from aiohttp import web
+from aiohttp.web_exceptions import HTTPException
 from pydantic.decorator import validate_arguments
 from pydantic.error_wrappers import ValidationError
 from pydantic.main import BaseModel
@@ -19,7 +20,7 @@ from .projects.projects_exceptions import ProjectNotFoundError
 from .security_decorators import permission_required
 from .snapshots_core import ProjectDict, take_snapshot
 from .snapshots_db import ProjectsRepository, SnapshotsRepository
-from .snapshots_models import Snapshot, SnapshotItem
+from .snapshots_models import Snapshot, SnapshotItem, SnapshotPatch
 
 logger = logging.getLogger(__name__)
 
@@ -35,12 +36,19 @@ def json_dumps(v) -> str:
     return orjson.dumps(v, default=_default).decode()
 
 
-def enveloped_response(data: Any, **extra) -> web.Response:
+def enveloped_response(
+    data: Any, status_cls: Type[HTTPException] = web.HTTPOk, **extra
+) -> web.Response:
     enveloped: str = json_dumps({"data": data, **extra})
-    return web.Response(text=enveloped, content_type="application/json")
+    return web.Response(
+        text=enveloped, content_type="application/json", status=status_cls.status_code
+    )
 
 
-def handle_request_errors(handler: Callable[[web.Request], Awaitable[web.Response]]):
+HandlerCoroutine = Callable[[web.Request], Awaitable[web.Response]]
+
+
+def handle_request_errors(handler: HandlerCoroutine) -> HandlerCoroutine:
     """
     - required and type validation of path and query parameters
     """
@@ -95,6 +103,69 @@ def create_url_for_function(request: web.Request) -> Callable:
 
 # API ROUTES HANDLERS ---------------------------------------------------------
 routes = web.RouteTableDef()
+
+
+@routes.post(
+    f"/{vtag}/projects/{{project_id}}/snapshots", name="create_project_snapshot_handler"
+)
+@login_required
+@permission_required("project.create")
+@handle_request_errors
+async def create_project_snapshot_handler(request: web.Request):
+    snapshots_repo = SnapshotsRepository(request)
+    projects_repo = ProjectsRepository(request)
+    user_id = request[RQT_USERID_KEY]
+    url_for = create_url_for_function(request)
+
+    @validate_arguments
+    async def _create_snapshot(
+        project_id: UUID,
+        snapshot_label: Optional[str] = None,
+    ) -> Snapshot:
+
+        # fetch parent's project
+        parent: ProjectDict = await projects_api.get_project_for_user(
+            request.app,
+            str(project_id),
+            user_id,
+            include_templates=False,
+            include_state=False,
+        )
+
+        # fetch snapshot if any
+        parent_uuid: UUID = UUID(parent["uuid"])
+        snapshot_timestamp: datetime = parent["lastChangeDate"]
+
+        snapshot_orm = await snapshots_repo.get(
+            parent_uuid=parent_uuid, created_at=snapshot_timestamp
+        )
+
+        # FIXME: if exists but different name?
+
+        if not snapshot_orm:
+            # take a snapshot of the parent project and commit to db
+            project: ProjectDict
+            snapshot: Snapshot
+            project, snapshot = await take_snapshot(
+                parent,
+                snapshot_label=snapshot_label,
+            )
+
+            # FIXME: Atomic?? project and snapshot shall be created in the same transaction!!
+            # FIXME: project returned might already exist, then return same snaphot
+            await projects_repo.create(project)
+            snapshot_orm = await snapshots_repo.create(snapshot)
+
+        return Snapshot.from_orm(snapshot_orm)
+
+    snapshot = await _create_snapshot(
+        project_id=request.match_info["project_id"],  # type: ignore
+        snapshot_label=request.query.get("snapshot_label"),
+    )
+
+    data = SnapshotItem.from_snapshot(snapshot, url_for)
+
+    return enveloped_response(data, status_cls=web.HTTPCreated)
 
 
 @routes.get(
@@ -164,66 +235,81 @@ async def get_project_snapshot_handler(request: web.Request):
     return enveloped_response(data)
 
 
-@routes.post(
-    f"/{vtag}/projects/{{project_id}}/snapshots", name="create_project_snapshot_handler"
+@routes.delete(
+    f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}",
+    name="delete_project_snapshot_handler",
 )
 @login_required
-@permission_required("project.create")
+@permission_required("project.delete")
 @handle_request_errors
-async def create_project_snapshot_handler(request: web.Request):
+async def delete_project_snapshot_handler(request: web.Request):
     snapshots_repo = SnapshotsRepository(request)
-    projects_repo = ProjectsRepository(request)
-    user_id = request[RQT_USERID_KEY]
+
+    @validate_arguments
+    async def _delete_snapshot(project_id: UUID, snapshot_id: int):
+
+        # - Deletes first the associated project (both data and document)
+        #   when the latter deletes the project from the database, postgres will
+        #   finally delete
+        # - Since projects_api.delete_project is a fire&forget and might take time,
+
+        snapshot_uuid = await snapshots_repo.mark_as_deleted(
+            project_id, int(snapshot_id)
+        )
+        if not snapshot_uuid:
+            raise web.HTTPNotFound(
+                reason=f"snapshot {snapshot_id} for project {project_id} not found"
+            )
+
+        assert snapshots_repo.user_id is not None
+        await projects_api.delete_project(
+            request.app, str(snapshot_uuid), snapshots_repo.user_id
+        )
+
+    await _delete_snapshot(
+        project_id=request.match_info["project_id"],  # type: ignore
+        snapshot_id=request.match_info["snapshot_id"],  # type: ignore
+    )
+
+    raise web.HTTPNoContent()
+
+
+@routes.patch(
+    f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}",
+    name="patch_project_snapshot_handler",
+)
+@login_required
+@permission_required("project.update")
+@handle_request_errors
+async def patch_project_snapshot_handler(request: web.Request):
+    snapshots_repo = SnapshotsRepository(request)
     url_for = create_url_for_function(request)
 
     @validate_arguments
-    async def _create_snapshot(
-        project_id: UUID,
-        snapshot_label: Optional[str] = None,
-    ) -> Snapshot:
-
-        # fetch parent's project
-        parent: ProjectDict = await projects_api.get_project_for_user(
-            request.app,
-            str(project_id),
-            user_id,
-            include_templates=False,
-            include_state=False,
+    async def _update_snapshot(
+        project_id: UUID, snapshot_id: int, update: SnapshotPatch
+    ):
+        snapshot_orm = await snapshots_repo.update_name(
+            project_id, snapshot_id, name=update.label
         )
-
-        # fetch snapshot if any
-        parent_uuid: UUID = UUID(parent["uuid"])
-        snapshot_timestamp: datetime = parent["lastChangeDate"]
-
-        snapshot_orm = await snapshots_repo.get(
-            parent_uuid=parent_uuid, created_at=snapshot_timestamp
-        )
-
-        # FIXME: if exists but different name?
-
         if not snapshot_orm:
-            # take a snapshot of the parent project and commit to db
-            project: ProjectDict
-            snapshot: Snapshot
-            project, snapshot = await take_snapshot(
-                parent,
-                snapshot_label=snapshot_label,
+            raise web.HTTPNotFound(
+                reason=f"snapshot {snapshot_id} for project {project_id} not found"
             )
-
-            # FIXME: Atomic?? project and snapshot shall be created in the same transaction!!
-            # FIXME: project returned might already exist, then return same snaphot
-            await projects_repo.create(project)
-            snapshot_orm = await snapshots_repo.create(snapshot)
-
         return Snapshot.from_orm(snapshot_orm)
 
-    snapshot = await _create_snapshot(
+    snapshot = await _update_snapshot(
         project_id=request.match_info["project_id"],  # type: ignore
-        snapshot_label=request.query.get("snapshot_label"),
+        snapshot_id=request.match_info["snapshot_id"],  # type: ignore
+        update=SnapshotPatch.parse_obj(await request.json()),
+        # TODO: skip_return_updated
     )
 
     data = SnapshotItem.from_snapshot(snapshot, url_for)
     return enveloped_response(data)
+
+
+## projects/*/snapshots/*/parameters  -----------------------------
 
 
 @routes.get(
