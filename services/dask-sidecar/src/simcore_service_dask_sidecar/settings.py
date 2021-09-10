@@ -1,9 +1,8 @@
 from pathlib import Path
 from typing import Optional
 
-from models_library.settings.base import BaseCustomSettings
-from models_library.settings.celery import CeleryConfig
 from pydantic import Field, NonNegativeInt
+from settings_library.base import BaseCustomSettings
 from simcore_service_sidecar import config
 
 
@@ -33,13 +32,6 @@ class Settings(BaseCustomSettings):
         config.TARGET_MPI_NODE_CPU_COUNT,
         description="If a node has this amount of CPUs it will be a candidate an MPI candidate",
     )
-
-    REDLOCK_REFRESH_INTERVAL_SECONDS: float = Field(
-        config.REDLOCK_REFRESH_INTERVAL_SECONDS,
-        description="Used by the mpi lock to ensure the lock is acquired and released in time. Enforce at least 1 sec",
-    )
-
-    CELERY: Optional[CeleryConfig] = config.CELERY_CONFIG
 
     # dask config ----
 
