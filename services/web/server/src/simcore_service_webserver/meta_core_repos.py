@@ -79,15 +79,10 @@ async def create_checkpoint(
         repo_id = await vc_repo.init_repo(project_uuid)
 
     commit_id = await vc_repo.commit(repo_id, tag=tag, message=message)
-    commit, tags = await vc_repo.get_commit_info(commit_id)
+    commit, tags = await vc_repo.get_commit_log(commit_id)
     assert commit  # nosec
 
-    return Checkpoint(
-        id=commit.id,
-        checksum=commit.snapshot_checksum,
-        tag=tags[0].name if tags else "",
-        message=tags[0].message if tags else commit.message,
-    )
+    return Checkpoint.from_commit_log(commit, tags)
 
 
 async def get_checkpoint(
@@ -114,7 +109,7 @@ async def get_checkpoint(
             raise NotImplementedError("WIP: Tag or head branches as ref_id")
 
         with suppress(ValueError):
-            commit, tags = await vc_repo.get_commit_info(commit_id)
+            commit, tags = await vc_repo.get_commit_log(commit_id)
             return Checkpoint.from_commit_log(commit, tags)
 
     raise web.HTTPNotFound(reason="Entrypoint not found")

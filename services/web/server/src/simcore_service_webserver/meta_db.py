@@ -17,15 +17,16 @@ from simcore_postgres_database.models.projects_version_control import (
     projects_vc_tags,
 )
 from simcore_postgres_database.utils_aiopg_orm import BaseOrm
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .db_base_repository import BaseRepository
-from .meta_models_repos import CommitLog, CommitProxy, TagProxy
+from .meta_models_repos import CommitLog, CommitProxy, SHA1Str, TagProxy
 
 
-def eval_checksum(workbench: Dict[str, Any]):
-    # FIXME: prototype
+def eval_checksum(workbench: Dict[str, Any]) -> SHA1Str:
+    # FIXME: dump workbench correctly (i.e. spaces, quotes ... -indepenent)
     block_string = json.dumps(workbench, sort_keys=True).encode("utf-8")
-    raw_hash = hashlib.sha256(block_string)
+    raw_hash = hashlib.sha1(block_string)
     return raw_hash.hexdigest()
 
 
@@ -113,13 +114,9 @@ class VersionControlRepository(BaseRepository):
 
     async def get_repo_id(self, project_uuid: UUID) -> Optional[int]:
         async with self.engine.acquire() as conn:
-            stmt = (
-                sa.select([projects_vc_repos.c.id])
-                .select()
-                .where(projects_vc_repos.c.project_uuid == str(project_uuid))
-            )
-            repo_id: Optional[int] = await conn.scalar(stmt)
-            return repo_id
+            repo_orm = self.ReposOrm(conn).set_default(project_uuid=str(project_uuid))
+            repo = await repo_orm.fetch("id")
+            return repo.id if repo else None
 
     async def init_repo(self, project_uuid: UUID) -> int:
         async with self.engine.acquire() as conn:
@@ -156,7 +153,7 @@ class VersionControlRepository(BaseRepository):
         """Returns None if detached head"""
         h = await self.HeadsOrm(conn).fetch("head_branch_id", rowid=repo_id)
         if h and h.head_branch_id:
-            branches_orm = self.BranchesOrm(conn).set_default(row_id=h.head_branch_id)
+            branches_orm = self.BranchesOrm(conn).set_default(rowid=h.head_branch_id)
             branch = await branches_orm.fetch("id name head_commit_id")
             return branch
 
@@ -180,43 +177,50 @@ class VersionControlRepository(BaseRepository):
             if not branch:
                 raise NotImplementedError("Detached heads still not implemented")
 
-            branches_orm = self.BranchesOrm(conn).set_default(row_id=branch.id)
+            branches_orm = self.BranchesOrm(conn).set_default(rowid=branch.id)
 
             async with conn.begin():
                 commits_orm = self.CommitsOrm(conn)
                 head_commit = await commits_orm.fetch(
                     "id snapshot_checksum", rowid=branch.head_commit_id
                 )
-                assert head_commit  # nosec
 
-                # assume no changes => same commit
-                commit_id = head_commit.id
+                previous_checksum = ""
+                commit_id = None
+                if head_commit:
+                    previous_checksum = (head_commit.snapshot_checksum,)
+                    commit_id = head_commit.id
 
                 # take a snapshot if needed
                 if snapshot_checksum := await self._add_changes(
-                    repo_id, head_commit.snapshot_checksum, conn
+                    repo_id, previous_checksum, conn
                 ):
                     # commit new snapshot in history
                     commit_id = await commits_orm.insert(
                         repo_id=repo_id,
-                        parent_commit_id=head_commit.id,
+                        parent_commit_id=commit_id,
                         message=None if tag else message,
                         snapshot_checksum=snapshot_checksum,
                     )
-                    assert commit_id
+                    assert commit_id  # nosec
 
                     # updates head/branch
                     await branches_orm.update(head_commit_id=commit_id)
 
                 # tag it (again)
                 if tag:
-                    await self.TagsOrm(conn).upsert(
+                    insert_stmt = pg_insert(projects_vc_tags).values(
                         repo_id=repo_id,
                         commit_id=commit_id,
                         name=tag,
                         message=message,
                         hidden=False,
                     )
+                    upsert_tag = insert_stmt.on_conflict_do_update(
+                        constraint="repo_tag_uniqueness",
+                        set_=dict(message=insert_stmt.excluded.message),
+                    )
+                    await conn.execute(upsert_tag)
 
             assert isinstance(commit_id, int)
             return commit_id
@@ -245,18 +249,22 @@ class VersionControlRepository(BaseRepository):
 
         if checksum != previous_checksum:
             # has changes wrt previous commit
-            snapshot_orm = self.SnapshotsOrm(conn).set_default(rowid=checksum)
             # if exists, ui might change
-            await snapshot_orm.upsert(
+            insert_stmt = pg_insert(projects_vc_snapshots).values(
                 checksum=checksum,
                 content={"workbench": project.workbench, "ui": project.ui},
             )
+            upsert_snapshot = insert_stmt.on_conflict_do_update(
+                constraint=projects_vc_snapshots.primary_key,
+                set_=dict(content=insert_stmt.excluded.content),
+            )
+            await conn.execute(upsert_snapshot)
             return checksum
 
         # no changes
         return None
 
-    async def get_commit_info(self, commit_id: int) -> CommitLog:
+    async def get_commit_log(self, commit_id: int) -> CommitLog:
         async with self.engine.acquire() as conn:
             commit = await self.CommitsOrm(conn).fetch(rowid=commit_id)
             if commit:

@@ -25,9 +25,10 @@ class Checkpoint(BaseModel):
     id: PositiveInt
     checksum: SHA1Str
     created_at: datetime
-    parents_ids: Tuple[PositiveInt]
-    tags: Tuple[str]
+    tags: Tuple[str, ...]
+
     message: Optional[str] = None
+    parents_ids: Tuple[PositiveInt, ...] = None  # type: ignore
 
     @classmethod
     def from_commit_log(cls, commit: RowProxy, tags: List[RowProxy]) -> "Checkpoint":
@@ -36,7 +37,7 @@ class Checkpoint(BaseModel):
             checksum=commit.snapshot_checksum,
             tags=tuple(tag.name for tag in tags),
             message=tags[0].message if tags else commit.message,
-            parents_ids=(commit.parent_commit_id,),
+            parents_ids=(commit.parent_commit_id,) if commit.parent_commit_id else None,
             created_at=commit.created,
         )
 

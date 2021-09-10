@@ -7,7 +7,7 @@ from uuid import UUID
 
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import make_mocked_request
+from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
 from simcore_service_webserver.constants import RQT_USERID_KEY
 from simcore_service_webserver.meta_core_repos import (
@@ -38,14 +38,14 @@ def project_uuid(user_project: ProjectDict) -> UUID:
     return UUID(user_project["uuid"])
 
 
-# TESTS
-
-
 @pytest.fixture
-def request(app: web.Application, user_id: int) -> web.Request:
-    req = make_mocked_request("GET", "/", app=app)
+def aiohttp_mocked_request(client: TestClient, user_id: int) -> web.Request:
+    req = make_mocked_request("GET", "/", app=client.app)
     req[RQT_USERID_KEY] = user_id
     return req
+
+
+# TESTS
 
 
 @pytest.mark.acceptance_test
@@ -54,9 +54,9 @@ async def test_workflow(
     faker: Faker,
     user_id: int,
     user_project: ProjectDict,
-    request: web.Request,
+    aiohttp_mocked_request: web.Request,
 ):
-    vc_repo = VersionControlRepository(request)
+    vc_repo = VersionControlRepository(aiohttp_mocked_request)
 
     # -------------------------------------
     checkpoint1 = await create_checkpoint(
@@ -71,8 +71,9 @@ async def test_workflow(
 
     # -------------------------------------
     await user_modifies_project(project_uuid, faker)
+
     project = await projects_api.get_project_for_user(
-        request.app, str(project_uuid), user_id
+        aiohttp_mocked_request.app, str(project_uuid), user_id
     )
     assert project != user_project
 
@@ -103,7 +104,7 @@ async def test_workflow(
     assert checkpoint1 == checkpoint_co
 
     project = await projects_api.get_project_for_user(
-        request.app, str(project_uuid), user_id
+        aiohttp_mocked_request.app, str(project_uuid), user_id
     )
     assert project == user_project
 
