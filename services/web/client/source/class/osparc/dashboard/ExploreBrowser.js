@@ -206,19 +206,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       osparc.utils.Utils.setIdToWidget(loadingTemplatesBtn, "templatesLoading");
       templateStudyContainer.add(loadingTemplatesBtn);
 
-      viewGridBtn.addListener("execute", () => {
-        this.__setTemplatesContainerMode("grid");
-      });
-      viewListBtn.addListener("execute", () => {
-        this.__setTemplatesContainerMode("list");
-      });
+      viewGridBtn.addListener("execute", () => this.__setTemplatesContainerMode("grid"));
+      viewListBtn.addListener("execute", () => this.__setTemplatesContainerMode("list"));
 
-      templateStudyContainer.addListener("changeVisibility", e => {
-        this._moreStudiesRequired();
-      }, this);
-      templateStudyContainer.addListener("changeMode", () => {
-        this._resetTemplatesList();
-      }, this);
+      templateStudyContainer.addListener("changeVisibility", () => this._moreStudiesRequired());
+      templateStudyContainer.addListener("changeMode", () => this._resetTemplatesList());
 
       return tempStudyLayout;
     },
@@ -226,16 +218,26 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __createServicesLayout: function() {
       const servicesLayout = this.__createCollapsibleView(this.tr("Services"));
 
+      const titleBarBtnsContainerLeft = servicesLayout.getTitleBarBtnsContainerLeft();
+      this.__addNewServiceButtons(titleBarBtnsContainerLeft);
+
+      const titleBarBtnsContainerRight = servicesLayout.getTitleBarBtnsContainerRight();
+      const viewGridBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/apps/18");
+      titleBarBtnsContainerRight.add(viewGridBtn);
+      const viewListBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/reorder/18");
+      titleBarBtnsContainerRight.add(viewListBtn);
+      const group = new qx.ui.form.RadioGroup();
+      group.add(viewGridBtn);
+      group.add(viewListBtn);
+
       const servicesContainer = this.__servicesContainer = this.__createResourceListLayout(5);
       osparc.utils.Utils.setIdToWidget(servicesContainer, "servicesList");
       servicesLayout.setContent(servicesContainer);
 
-      servicesContainer.addListener("changeMode", () => {
-        this.__resetServicesList();
-      }, this);
+      viewGridBtn.addListener("execute", () => this.__setServicesContainerMode("grid"));
+      viewListBtn.addListener("execute", () => this.__setServicesContainerMode("list"));
 
-      const titleBarBtnsContainerLeft = servicesLayout.getTitleBarBtnsContainerLeft();
-      this.__addNewServiceButtons(titleBarBtnsContainerLeft);
+      servicesContainer.addListener("changeMode", () => this.__resetServicesList());
 
       return servicesLayout;
     },
@@ -722,9 +724,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __addNewServiceButtons: function(layout) {
-      layout.add(new qx.ui.core.Spacer(20, null));
-
-
       osparc.utils.LibVersions.getPlatformName()
         .then(platformName => {
           if (platformName === "dev") {
