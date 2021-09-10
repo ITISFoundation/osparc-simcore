@@ -405,10 +405,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this.__servicesContainer.setMode(mode);
     },
 
-    __isCardButtonItem: function(card) {
-      return (card instanceof osparc.dashboard.GridButtonItem || card instanceof osparc.dashboard.ListButtonItem);
-    },
-
     __createStudyItem: function(studyData, gridButton = false) {
       const tags = studyData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => studyData.tags.includes(tag.id)) : [];
 
