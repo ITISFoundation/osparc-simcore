@@ -32,6 +32,7 @@ async def list_repos(
     limit: Optional[PositiveInt] = None,
 ) -> Tuple[List[RowProxy], PositiveInt]:
 
+    # NOTE: this layer does NOT add much .. why not use vc_repo directly?
     repos_rows, total_number_of_repos = await vc_repo.list_repos(offset, limit)
 
     assert len(repos_rows) <= total_number_of_repos  # nosec
@@ -52,26 +53,66 @@ async def list_checkpoints(
 
 async def create_checkpoint(
     app: web.Application,
+    vc_repo: VersionControlRepository,
     user_id: PositiveInt,
     project_uuid: UUID,
     *,
     tag: str,
     message: Optional[str] = None,
-    new_branch: Optional[str] = None,
 ) -> Checkpoint:
 
-    # new_branch is used to name the new branch in case
-    # the checkpoint is forced to branch
-    ...
+    repo_id = await vc_repo.get_repo_id(project_uuid)
+    if repo_id is None:
+        repo_id = await vc_repo.init_repo(project_uuid)
+
+    commit_id = await vc_repo.commit(repo_id, tag=tag, message=message)
+    commit, tags = await vc_repo.get_commit_info(commit_id)
+    assert commit  # nosec
+
+    return Checkpoint(
+        id=commit.id,
+        checksum=commit.snapshot_checksum,
+        tag=tags[0].name if tags else "",
+        message=tags[0].message if tags else commit.message,
+    )
 
 
 async def get_checkpoint(
     app: web.Application,
+    vc_repo: VersionControlRepository,
     user_id: PositiveInt,
     project_uuid: UUID,
     ref_id: RefID,
 ) -> Checkpoint:
-    ...
+
+    repo_id = await vc_repo.get_repo_id(project_uuid)
+    if repo_id:
+        commit_id = None
+
+        if ref_id == HEAD:
+            commit = await vc_repo.get_head_commit(repo_id)
+            if commit:
+                commit_id = commit.id
+
+        elif isinstance(ref_id, int):
+            commit_id = ref_id
+
+        else:
+            assert isinstance(ref_id, str)
+            # head branch or tag
+            raise NotImplementedError("WIP: Tag or head branches as ref_id")
+
+        if commit_id:
+            commit, tags = await vc_repo.get_commit_info(commit_id)
+            if commit:
+                return Checkpoint(
+                    id=commit.id,
+                    checksum=commit.snapshot_checksum,
+                    tag=tags[0].name if tags else "",
+                    message=tags[0].message if tags else commit.message,
+                )
+
+    raise web.HTTPNotFound(reason="Entrypoint not found")
 
 
 async def update_checkpoint(

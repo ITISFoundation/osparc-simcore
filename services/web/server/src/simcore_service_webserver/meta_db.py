@@ -1,7 +1,10 @@
+import hashlib
+import json
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
+import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
@@ -23,6 +26,13 @@ from .db_base_repository import BaseRepository
 # SEE https://pydantic-docs.helpmanual.io/usage/models/#orm-mode-aka-arbitrary-class-instances
 ProjectRow = RowProxy
 ProjectDict = Dict
+
+
+def eval_checksum(workbench: Dict[str, Any]):
+    # FIXME: prototype
+    block_string = json.dumps(workbench, sort_keys=True).encode("utf-8")
+    raw_hash = hashlib.sha256(block_string)
+    return raw_hash.hexdigest()
 
 
 class VersionControlRepository(BaseRepository):
@@ -100,10 +110,169 @@ class VersionControlRepository(BaseRepository):
         async with self.engine.acquire() as conn:
             repo_orm = self.ReposOrm(conn)
 
-            # TODO: ORM pagination support
             rows: List[RowProxy]
             rows, total_count = await repo_orm.fetch_page(
                 "project_uuid", offset=offset, limit=limit
             )
 
             return rows, total_count
+
+    async def get_repo_id(self, project_uuid: UUID) -> Optional[int]:
+        async with self.engine.acquire() as conn:
+            stmt = (
+                sa.select([projects_vc_repos.c.id])
+                .select()
+                .where(projects_vc_repos.c.project_uuid == str(project_uuid))
+            )
+            repo_id: Optional[int] = await conn.scalar(stmt)
+            return repo_id
+
+    async def init_repo(self, project_uuid: UUID) -> int:
+        async with self.engine.acquire() as conn:
+
+            async with conn.begin():
+                # create repo
+                repo_orm = self.ReposOrm(conn)
+                repo_id = await repo_orm.insert(project_uuid=str(project_uuid))
+                assert repo_id is not None  # nosec
+                assert isinstance(repo_id, int)  # nosec
+
+                repo = await repo_orm.fetch(rowid=repo_id)
+                assert repo  # nosec
+
+                # create main branch
+                branches_orm = self.BranchesOrm(conn)
+                branch_id = await branches_orm.insert(repo_id=repo.id)
+                assert branch_id is not None
+                assert isinstance(branch_id, int)  # nosec
+
+                main_branch: Optional[RowProxy] = await branches_orm.fetch(
+                    rowid=branch_id
+                )
+                assert main_branch  #  nosec
+                assert main_branch.name == "main"  # nosec
+
+                # assign head branch
+                heads_orm = self.HeadsOrm(conn)
+                await heads_orm.insert(repo_id=repo.id, head_branch_id=branch_id)
+
+                return repo_id
+
+    async def _get_HEAD(self, repo_id: int, conn: SAConnection) -> Optional[RowProxy]:
+        """Returns None if detached head"""
+        h = await self.HeadsOrm(conn).fetch("head_branch_id", rowid=repo_id)
+        if h and h.head_branch_id:
+            branches_orm = self.BranchesOrm(conn).set_default(row_id=h.head_branch_id)
+            branch = await branches_orm.fetch("id name head_commit_id")
+            return branch
+
+    async def get_head_commit(self, repo_id: int) -> Optional[RowProxy]:
+        async with self.engine.acquire() as conn:
+            return await self._get_HEAD(repo_id, conn)
+
+    async def get_commit_info(
+        self, commit_id: int
+    ) -> Tuple[Optional[RowProxy], List[RowProxy]]:
+        async with self.engine.acquire() as conn:
+            commit = self.CommitsOrm(conn).fetch(rowid=commit_id)
+            if commit:
+                assert isinstance(commit, RowProxy)  # nosec
+                tags: List[RowProxy] = (
+                    await self.TagsOrm(conn)
+                    .set_default(commit_id=commit.id, hidden=False)
+                    .fetch_all("name message")
+                )
+
+                return commit, tags
+            return None, []
+
+    async def commit(
+        self, repo_id: int, tag: Optional[str] = None, message: Optional[str] = None
+    ) -> int:
+        """commits and tags (if tag is not None)
+
+        Message is added to tag if set otherwise to commit
+        """
+
+        async with self.engine.acquire() as conn:
+            # FIXME: get head commit in one execution
+
+            # get head commit
+            branch = await self._get_HEAD(repo_id, conn)
+            if not branch:
+                raise NotImplementedError("Detached heads still not implemented")
+
+            branches_orm = self.BranchesOrm(conn).set_default(row_id=branch.id)
+
+            async with conn.begin():
+                commits_orm = self.CommitsOrm(conn)
+                head_commit = await commits_orm.fetch(
+                    "id snapshot_checksum", rowid=branch.head_commit_id
+                )
+                assert head_commit  # nosec
+
+                # assume no changes => same commit
+                commit_id = head_commit.id
+
+                # take a snapshot if needed
+                if snapshot_checksum := await self._take_snapshot(
+                    repo_id, head_commit.snapshot_checksum, conn
+                ):
+                    # commit new snapshot in history
+                    commit_id = await commits_orm.insert(
+                        repo_id=repo_id,
+                        parent_commit_id=head_commit.id,
+                        message=None if tag else message,
+                        snapshot_checksum=snapshot_checksum,
+                    )
+                    assert commit_id
+
+                    # updates head/branch
+                    await branches_orm.update(head_commit_id=commit_id)
+
+                # tag it (again)
+                if tag:
+                    await self.TagsOrm(conn).upsert(
+                        repo_id=repo_id,
+                        commit_id=commit_id,
+                        name=tag,
+                        message=message,
+                        hidden=False,
+                    )
+
+            assert isinstance(commit_id, int)
+            return commit_id
+
+    async def _take_snapshot(
+        self, repo_id: int, previous_checksum, conn
+    ) -> Optional[str]:
+        """
+        Snapshots current working copy and evals checksum
+        Returns checksum if a snapshot is taken because it has changes wrt previous commit
+        """
+        # current repo
+        repo_orm = self.ReposOrm(conn).set_default(id=repo_id)
+        repo = await repo_orm.fetch("id project_uuid project_checksum modified")
+        assert repo  #  nosec
+
+        # fetch project
+        project_orm = self.ProjectsOrm(conn).set_default(uuid=repo.project_uuid)
+        project = await project_orm.fetch("workbench ui last_change_date")
+        assert project  # nosec
+
+        checksum = repo.project_checksum
+        if not checksum or (checksum and repo.modified < project.last_change_date):
+            checksum = eval_checksum(project.workbench)
+            await repo_orm.update(project_checksum=checksum)
+
+        if checksum != previous_checksum:
+            # has changes wrt previous commit
+            snapshot_orm = self.SnapshotsOrm(conn).set_default(rowid=checksum)
+            await snapshot_orm.upsert(
+                checksum=checksum,
+                content={"workbench": project.workbench, "ui": project.ui},
+            )
+            return checksum
+
+        # no changes
+        return None

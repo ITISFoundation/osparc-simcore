@@ -244,3 +244,8 @@ class BaseOrm(Generic[RowUId]):
         result: ResultProxy = await self._conn.execute(query)
         row: Optional[RowProxy] = await result.first()
         return row
+
+    async def upsert(
+        self, returning_cols: Union[str, List[str]] = PRIMARY_KEY, **values
+    ) -> Union[RowUId, RowProxy, None]:
+        raise NotImplementedError

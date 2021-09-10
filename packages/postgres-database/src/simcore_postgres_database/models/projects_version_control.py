@@ -175,6 +175,7 @@ projects_vc_tags = sa.Table(
             ondelete="CASCADE",
         ),
         nullable=False,
+        unique=True,
         doc="Repository to which this commit belongs",
     ),
     sa.Column(
@@ -186,6 +187,7 @@ projects_vc_tags = sa.Table(
             ondelete="CASCADE",
         ),
         nullable=False,
+        unique=True,
         doc="Points to the tagged commit",
     ),
     sa.Column("name", sa.String, doc="Tag display name"),
