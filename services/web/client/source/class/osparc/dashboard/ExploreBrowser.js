@@ -207,16 +207,17 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       templateStudyContainer.add(loadingTemplatesBtn);
 
       viewGridBtn.addListener("execute", () => {
-        templateStudyContainer.setMode("icons");
-        // this.setMode("icons");
+        this.__setTemplatesContainerMode("grid");
       });
       viewListBtn.addListener("execute", () => {
-        templateStudyContainer.setMode("list");
-        // this.setMode("list");
+        this.__setTemplatesContainerMode("list");
       });
 
       templateStudyContainer.addListener("changeVisibility", e => {
         this._moreStudiesRequired();
+      }, this);
+      templateStudyContainer.addListener("changeMode", () => {
+        this._resetTemplatesList();
       }, this);
 
       return tempStudyLayout;
@@ -228,6 +229,10 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const servicesContainer = this.__servicesContainer = this.__createResourceListLayout(5);
       osparc.utils.Utils.setIdToWidget(servicesContainer, "servicesList");
       servicesLayout.setContent(servicesContainer);
+
+      servicesContainer.addListener("changeMode", () => {
+        this.__resetServicesList();
+      }, this);
 
       const titleBarBtnsContainerLeft = servicesLayout.getTitleBarBtnsContainerLeft();
       this.__addNewServiceButtons(titleBarBtnsContainerLeft);
@@ -294,6 +299,9 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     _resetTemplatesList: function(tempStudyList) {
+      if (tempStudyList === undefined) {
+        tempStudyList = this.__templates;
+      }
       this.__templates = tempStudyList;
       this._studiesContainer.removeAll();
       osparc.dashboard.ResourceBrowserBase.sortStudyList(tempStudyList);
@@ -344,6 +352,9 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __resetServicesList: function(servicesList) {
+      if (servicesList === undefined) {
+        servicesList = this.__servicesLatestList;
+      }
       this.__servicesLatestList = servicesList;
       this.__servicesContainer.removeAll();
       servicesList.forEach(service => {
@@ -376,10 +387,32 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
     },
 
+    __setTemplatesContainerMode: function(mode = "grid") {
+      const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING
+      this._studiesContainer.getLayout().set({
+        spacingX: spacing,
+        spacingY: spacing
+      });
+      this._studiesContainer.setMode(mode);
+    },
+
+    __setServicesContainerMode: function(mode = "grid") {
+      const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING
+      this._studiesContainer.getLayout().set({
+        spacingX: spacing,
+        spacingY: spacing
+      });
+      this.__servicesContainer.setMode(mode);
+    },
+
+    __isCardButtonItem: function(card) {
+      return (card instanceof osparc.dashboard.GridButtonItem || card instanceof osparc.dashboard.ListButtonItem);
+    },
+
     __createStudyItem: function(studyData, gridButton = false) {
       const tags = studyData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => studyData.tags.includes(tag.id)) : [];
 
-      const item = gridButton ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
+      const item = this._studiesContainer.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
       item.set({
         resourceData: studyData,
         tags

@@ -242,6 +242,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this._moreStudiesRequired();
       }, this);
 
+      userStudyContainer.addListener("changeMode", e => {
+        this._resetStudiesList();
+      }, this);
+
       return userStudyLayout;
     },
 
@@ -407,7 +411,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const userStudyItems = this._studiesContainer.getChildren();
       for (let i=userStudyItems.length-1; i>=0; i--) {
         const userStudyItem = userStudyItems[i];
-        if (userStudyItem instanceof osparc.dashboard.GridButtonItem || userStudyItem instanceof osparc.dashboard.ListButtonItem) {
+        if (this.__isCardButtonItem(userStudyItem)) {
           this._studiesContainer.remove(userStudyItem);
         }
       }
@@ -468,16 +472,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         spacingX: spacing,
         spacingY: spacing
       });
-      this._studiesContainer.mode = mode;
-
-      this._resetStudiesList();
+      this._studiesContainer.setMode(mode);
     },
 
     __createStudyItem: function(studyData) {
       const tags = studyData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => studyData.tags.includes(tag.id)) : [];
 
-      const mode = ("mode" in this._studiesContainer) ? this._studiesContainer["mode"] : "grid";
-      const item = mode === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
+      const item = this._studiesContainer.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
       item.set({
         resourceData: studyData,
         tags

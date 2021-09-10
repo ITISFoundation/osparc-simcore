@@ -15,6 +15,15 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
     this.base(arguments, layout);
   },
 
+  properties: {
+    mode: {
+      check: ["grid", "list"],
+      init: "grid",
+      nullable: false,
+      event: "changeMode"
+    }
+  },
+
   events: {
     "changeSelection": "qx.event.type.Data",
     "changeVisibility": "qx.event.type.Data"
