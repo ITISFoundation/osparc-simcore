@@ -242,6 +242,7 @@ async def test_get_service_extras(
 
 
 async def test_get_service_labels(
+    minimal_director_config: None,
     minimal_app: FastAPI,
     mocked_director_service_fcts,
     fake_service_labels: Dict[str, Any],
@@ -257,6 +258,7 @@ async def test_get_service_labels(
 
 
 async def test_get_running_service_details(
+    minimal_director_config: None,
     minimal_app: FastAPI,
     mocked_director_service_fcts,
     fake_running_service_details: RunningDynamicServiceDetails,
