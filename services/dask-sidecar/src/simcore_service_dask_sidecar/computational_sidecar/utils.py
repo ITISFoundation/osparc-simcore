@@ -1,13 +1,15 @@
+from typing import List
+
 from .models import ContainerHostConfig, DockerContainerConfig
 
 
 async def create_container_config(
-    service_key: str, service_version: str, command: str
+    service_key: str, service_version: str, command: List[str]
 ) -> DockerContainerConfig:
 
     return DockerContainerConfig(
         Env=[],
-        Cmd=[command],
+        Cmd=command,
         Image=f"{service_key}:{service_version}",
         Labels={},
         HostConfig=ContainerHostConfig(Binds=[], Memory=1024 ** 3, NanoCPUs=1e9),
