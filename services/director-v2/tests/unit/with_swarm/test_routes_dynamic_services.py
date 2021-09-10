@@ -46,6 +46,7 @@ def minimal_config(project_env_devel_environment, monkeypatch) -> None:
     monkeypatch.setenv("REGISTRY_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "0")
 
 
 @pytest.fixture(scope="session")
