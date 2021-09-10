@@ -44,7 +44,7 @@ def _get_task_boot_mode(task: Optional[TaskState]) -> BootMode:
 
 
 async def run_computational_sidecar(
-    service_key: str, service_version: str, input_data: Dict[str, Any]
+    service_key: str, service_version: str, input_data: Dict[str, Any], command: str
 ) -> Dict[str, Any]:
     log.debug(
         "run_computational_sidecar %s",
@@ -60,7 +60,7 @@ async def run_computational_sidecar(
     async with ComputationalSidecar(
         service_key, service_version, input_data
     ) as sidecar:
-        output_data = await sidecar.run()
+        output_data = await sidecar.run(command=command)
     return output_data
 
 

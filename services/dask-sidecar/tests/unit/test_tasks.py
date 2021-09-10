@@ -66,7 +66,10 @@ async def test_run_computational_sidecar(
     input_data: Dict[str, Any],
 ):
     output_data = await run_computational_sidecar(
-        service_key=service_key, service_version=service_version, input_data=input_data
+        service_key=service_key,
+        service_version=service_version,
+        input_data=input_data,
+        command=command,
     )
     assert output_data == {}
 
