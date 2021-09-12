@@ -122,23 +122,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           });
           break;
         }
-        case "tsr-rating": {
-          const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
-            toolTipText: this.tr("Ten Simple Rules")
-          });
-          const tsrLabel = new qx.ui.basic.Label(this.tr("TSR:"));
-          tsrLayout.add(tsrLabel);
-          control = new osparc.ui.basic.StarsRating();
-          tsrLayout.add(control);
-          this._mainLayout.addAt(tsrLayout, this.self().POS.TSR);
-          break;
-        }
-        case "tags":
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
-            anonymous: true
-          });
-          this._mainLayout.addAt(control, this.self().POS.TAGS);
-          break;
       }
       return control || this.base(arguments, id);
     },

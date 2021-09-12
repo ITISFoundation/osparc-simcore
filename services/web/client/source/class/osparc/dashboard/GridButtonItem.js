@@ -48,6 +48,23 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "tsr-rating": {
+          const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
+            toolTipText: this.tr("Ten Simple Rules")
+          });
+          const tsrLabel = new qx.ui.basic.Label(this.tr("TSR:"));
+          tsrLayout.add(tsrLabel);
+          control = new osparc.ui.basic.StarsRating();
+          tsrLayout.add(control);
+          this._mainLayout.addAt(tsrLayout, osparc.dashboard.GridButtonBase.POS.TSR);
+          break;
+        }
+        case "tags":
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
+            anonymous: true
+          });
+          this._mainLayout.addAt(control, osparc.dashboard.GridButtonBase.POS.TAGS);
+          break;
         case "menu-button": {
           this.getChildControl("title").set({
             maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - 2*osparc.dashboard.GridButtonBase.PADDING - this.self().MENU_BTN_WIDTH
