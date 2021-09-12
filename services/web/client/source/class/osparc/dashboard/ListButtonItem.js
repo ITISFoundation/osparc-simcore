@@ -36,6 +36,10 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     "updateQualityService": "qx.event.type.Data"
   },
 
+  statics: {
+    MENU_BTN_WIDTH: 25
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -94,23 +98,36 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           });
           this._addAt(control, osparc.dashboard.ListButtonBase.POS.TAGS);
           break;
-        case "tick-unselected":
+        case "menu-selection-stack":
+          control = new qx.ui.container.Stack().set({
+            minWidth: this.self().MENU_BTN_WIDTH,
+            minHeight: this.self().MENU_BTN_WIDTH,
+            alignY: "middle"
+          });
+          this._addAt(control, osparc.dashboard.ListButtonBase.POS.OPTIONS);
+          break;
+        case "tick-unselected": {
+          const menuSelectionStack = this.getChildControl("menu-selection-stack");
           control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16");
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.UNSELECTED);
+          menuSelectionStack.addAt(control, 1);
           break;
-        case "tick-selected":
+        }
+        case "tick-selected": {
+          const menuSelectionStack = this.getChildControl("menu-selection-stack");
           control = new qx.ui.basic.Image("@FontAwesome5Solid/check-circle/16");
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.SELECTED);
+          menuSelectionStack.addAt(control, 2);
           break;
+        }
         case "menu-button": {
+          const menuSelectionStack = this.getChildControl("menu-selection-stack");
           control = new qx.ui.form.MenuButton().set({
-            width: 25,
-            height: 25,
+            width: this.self().MENU_BTN_WIDTH,
+            height: this.self().MENU_BTN_WIDTH,
             icon: "@FontAwesome5Solid/ellipsis-v/14",
             focusable: false
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.OPTIONS);
+          menuSelectionStack.addAt(control, 0);
           break;
         }
       }
@@ -262,28 +279,17 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           this.setValue(false);
         }
 
-        const menuButton = this.getChildControl("menu-button");
-        menuButton.setVisibility("excluded");
-
         const tick = this.getChildControl("tick-selected");
-        tick.setVisibility(selected ? "visible" : "excluded");
-
         const untick = this.getChildControl("tick-unselected");
-        untick.setVisibility(selected ? "excluded" : "visible");
+        this.getChildControl("menu-selection-stack").setSelection([selected ? tick : untick]);
       } else {
         this.__showMenuOnly();
       }
     },
 
     __showMenuOnly: function() {
-      const menuButton = this.getChildControl("menu-button");
-      menuButton.setVisibility("visible");
-
-      const tick = this.getChildControl("tick-selected");
-      tick.setVisibility("excluded");
-
-      const untick = this.getChildControl("tick-unselected");
-      untick.setVisibility("excluded");
+      const menu = this.getChildControl("menu-button");
+      this.getChildControl("menu-selection-stack").setSelection([menu]);
     },
 
     _applyMenu: function(value, old) {
