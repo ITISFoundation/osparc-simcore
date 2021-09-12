@@ -42,6 +42,10 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
         child.addListener("changeVisibility", e => {
           this.fireDataEvent("changeVisibility", this.getVisibles());
         }, this);
+        if (this.getMode() === "list") {
+          const width = this.getBounds().width - 15;
+          child.setWidth(width);
+        }
       } else {
         console.error("ToggleButtonContainer only allows ToggleButton as its children.");
       }

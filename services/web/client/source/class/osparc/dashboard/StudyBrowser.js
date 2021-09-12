@@ -255,6 +255,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               this._studiesContainer.remove(userStudyItem);
               const newBtn = this.__createNewStudyButton(this._studiesContainer.getMode());
               this._studiesContainer.addAt(newBtn, i);
+              if (this._studiesContainer.getMode() === "list") {
+                const width = this._studiesContainer.getBounds().width - 15;
+                newBtn.setWidth(width);
+              }
             }
 
             if (userStudyItem === this._loadingStudiesBtn) {
