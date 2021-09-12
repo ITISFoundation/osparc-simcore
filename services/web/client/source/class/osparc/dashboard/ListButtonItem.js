@@ -272,7 +272,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     },
 
     __itemSelected: function() {
-      if (this.isResourceType("study")) {
+      if (this.isResourceType("study") && this.isMultiSelectionMode()) {
         const selected = this.getValue();
 
         if (this.isLocked() && selected) {
