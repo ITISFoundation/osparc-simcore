@@ -45,11 +45,11 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       LOCK_STATUS: 1,
       TITLE: 2,
       DESCRIPTION: 3,
-      PERMISSION: 4,
-      SHARED: 5,
-      LAST_CHANGE: 6,
-      TSR: 7,
-      TAGS: 8,
+      TAGS: 4,
+      PERMISSION: 5,
+      SHARED: 6,
+      LAST_CHANGE: 7,
+      TSR: 8,
       OPTIONS: 9
     }
   },
