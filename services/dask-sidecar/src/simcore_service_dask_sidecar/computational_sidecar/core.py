@@ -46,13 +46,40 @@ async def managed_container(
 async def monitor_container_logs(
     container: DockerContainer, service_key: str, service_version: str
 ):
-    async for log_line in container.log(stdout=True, stderr=True, follow=True):
+    try:
+        container_info = await container.show()
+        container_name = container_info.get("Name", "undefined")
         logger.info(
-            "[%s:%s - %s]: %s",
+            "Starting to parse information of task [%s:%s - %s%s]",
             service_key,
             service_version,
             container.id,
-            log_line,
+            container_name,
+        )
+        async for log_line in container.log(stdout=True, stderr=True, follow=True):
+            logger.info(
+                "[%s:%s - %s%s]: %s",
+                service_key,
+                service_version,
+                container.id,
+                container_name,
+                log_line,
+            )
+        logger.info(
+            "Finished parsing information of task [%s:%s - %s%s]",
+            service_key,
+            service_version,
+            container.id,
+            container_name,
+        )
+    except DockerError as exc:
+        logger.exception(
+            "log monitoring of [%s:%s - %s%s] stopped with unexpected error:\n%s",
+            service_key,
+            service_version,
+            container.id,
+            container_name,
+            exc,
         )
 
 
