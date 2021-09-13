@@ -63,9 +63,13 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, mock.Mock]:
         (
             "ubuntu",
             "latest",
-            ["/bin/bash", "-c", "echo hello"],
+            [
+                "/bin/bash",
+                "-c",
+                'echo hello && echo {\\"pytest_output_1\\":\\"is quite an amazing feat\\"} > ${OUTPUT_FOLDER}/outputs.json',
+            ],
             {},
-            {},
+            {"pytest_output_1": "is quite an amazing feat"},
             ["hello"],
         ),
         (
@@ -108,6 +112,13 @@ async def test_run_computational_sidecar(
             assert v.match(f"{output_data[k]}")
         else:
             assert output_data[k] == v
+
+    for k, v in output_data.items():
+        assert k in expected_output_data
+        if isinstance(expected_output_data[k], re.Pattern):
+            assert expected_output_data[k].match(f"{v}")
+        else:
+            assert v == expected_output_data[k]
 
 
 @pytest.mark.parametrize(

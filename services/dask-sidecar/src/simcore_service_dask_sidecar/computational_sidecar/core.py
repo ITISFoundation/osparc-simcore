@@ -103,6 +103,7 @@ class ComputationalSidecar:
                     logger.exception(
                         "Could not load data in %s: %s", output_data_file, exc
                     )
+                    raise
 
         return {}
 
