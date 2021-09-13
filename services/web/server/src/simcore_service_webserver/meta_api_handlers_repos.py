@@ -95,14 +95,14 @@ async def _list_repos_handler(request: web.Request):
 @permission_required("project.create")
 @handle_request_errors
 async def _create_checkpoint_handler(request: web.Request):
-    user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
+    vc_repo = VersionControlRepository(request)
+
     _project_uuid = request.match_info["project_uuid"]
     _body = CheckpointNew.parse_obj(await request.json())
 
     checkpoint: Checkpoint = await create_checkpoint_safe(
-        request.app,
-        user_id=user_id,
+        vc_repo,
         project_uuid=_project_uuid,  # type: ignore
         **_body.dict(include={"tag", "message", "new_branch"}),
     )
@@ -125,8 +125,9 @@ async def _create_checkpoint_handler(request: web.Request):
 @permission_required("project.read")
 @handle_request_errors
 async def _list_checkpoints_handler(request: web.Request):
-    user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
+    vc_repo = VersionControlRepository(request)
+
     _project_uuid = request.match_info["project_uuid"]
     _limit = int(request.query.get("limit", 20))
     _offset = int(request.query.get("offset", 0))
@@ -134,9 +135,9 @@ async def _list_checkpoints_handler(request: web.Request):
     checkpoints: List[Checkpoint]
 
     checkpoints, total = await list_checkpoints_safe(
-        app=request.app,
+        vc_repo,
+        url_for,
         project_uuid=_project_uuid,  # type: ignore
-        user_id=user_id,
         limit=_limit,
         offset=_offset,
     )
@@ -175,14 +176,14 @@ async def _list_checkpoints_handler(request: web.Request):
 @permission_required("project.read")
 @handle_request_errors
 async def _get_checkpoint_handler(request: web.Request):
-    user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
+    vc_repo = VersionControlRepository(request)
+
     _project_uuid = request.match_info["project_uuid"]
     _ref_id = request.match_info["ref_id"]
 
     checkpoint: Checkpoint = await get_checkpoint_safe(
-        app=request.app,
-        user_id=user_id,
+        vc_repo,
         project_uuid=_project_uuid,  # type: ignore
         ref_id=_ref_id,
     )
@@ -207,16 +208,16 @@ async def _get_checkpoint_handler(request: web.Request):
 @permission_required("project.update")
 @handle_request_errors
 async def _update_checkpoint_annotations_handler(request: web.Request):
-    user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
+    vc_repo = VersionControlRepository(request)
+
     _project_uuid = request.match_info["project_uuid"]
     _ref_id = request.match_info["ref_id"]
 
     _body = CheckpointAnnotations.parse_obj(await request.json())
 
     checkpoint: Checkpoint = await update_checkpoint_safe(
-        app=request.app,
-        user_id=user_id,
+        vc_repo,
         project_uuid=_project_uuid,  # type: ignore
         ref_id=_ref_id,
         **_body.dict(include={"tag", "message"}),
@@ -240,14 +241,14 @@ async def _update_checkpoint_annotations_handler(request: web.Request):
 @permission_required("project.create")
 @handle_request_errors
 async def _checkout_handler(request: web.Request):
-    user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
+    vc_repo = VersionControlRepository(request)
+
     _project_uuid = request.match_info["project_uuid"]
     _ref_id = request.match_info["ref_id"]
 
     checkpoint: Checkpoint = await checkout_checkpoint_safe(
-        app=request.app,
-        user_id=user_id,
+        vc_repo,
         project_uuid=_project_uuid,  # type: ignore
         ref_id=_ref_id,
     )
@@ -272,21 +273,20 @@ async def _checkout_handler(request: web.Request):
 @permission_required("project.read")
 @handle_request_errors
 async def _view_project_workbench_handler(request: web.Request):
-    user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
+    vc_repo = VersionControlRepository(request)
+
     _project_uuid = request.match_info["project_uuid"]
     _ref_id = request.match_info["ref_id"]
 
     checkpoint: Checkpoint = await get_checkpoint_safe(
-        app=request.app,
-        user_id=user_id,
+        vc_repo,
         project_uuid=_project_uuid,  # type: ignore
         ref_id=_ref_id,
     )
 
     view: WorkbenchView = await get_workbench(
-        app=request.app,
-        user_id=user_id,
+        vc_repo,
         project_uuid=_project_uuid,  # type: ignore
         ref_id=checkpoint.id,
     )
