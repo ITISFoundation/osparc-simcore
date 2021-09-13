@@ -83,6 +83,25 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
           allowGrowY: true
         });
       }
+    },
+
+    _filterText: function(text) {
+      const checks = [
+        this.getServiceModel().getName(),
+        this.getServiceModel().getDescription(),
+        this.getServiceModel().getAuthor()
+      ];
+      return osparc.dashboard.CardBase.filterText(checks, text);
+    },
+
+    _filterTags: function(tags) {
+      const checks = this.getServiceModel().getTags().map(tag => tag.name);
+      return osparc.dashboard.CardBase.filterText(checks, tags);
+    },
+
+    _filterClassifiers: function(classifiers) {
+      const checks = this.getServiceModel().getClassifiers();
+      return osparc.dashboard.CardBase.filterText(checks, classifiers);
     }
   }
 });
