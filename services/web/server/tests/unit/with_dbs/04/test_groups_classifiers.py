@@ -6,7 +6,7 @@ from typing import Dict
 
 import pytest
 import sqlalchemy as sa
-from servicelib.aiopg_utils import DataSourceName, create_pg_engine
+from servicelib.common_aiopg_utils import DataSourceName, create_pg_engine
 from simcore_service_webserver.constants import APP_DB_ENGINE_KEY
 from simcore_service_webserver.groups_classifiers import GroupClassifierRepository
 from sqlalchemy.sql import text

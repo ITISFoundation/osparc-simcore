@@ -1,16 +1,12 @@
-from enum import Enum
 from typing import List, Optional
 
 from models_library.basic_types import PortInt
 from models_library.projects_nodes_io import UUID_REGEX
 from models_library.services import KEY_RE, VERSION_RE, ServiceDockerData
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, Field
+from pydantic.types import ByteSize, NonNegativeInt
 
-
-class NodeRequirement(str, Enum):
-    CPU = "CPU"
-    GPU = "GPU"
-    MPI = "MPI"
+from .dynamic_services import ServiceState
 
 
 class ServiceBuildDetails(BaseModel):
@@ -19,27 +15,77 @@ class ServiceBuildDetails(BaseModel):
     vcs_url: str
 
 
+class NodeRequirements(BaseModel):
+    cpu: float = Field(
+        ...,
+        description="defines the required (maximum) CPU shares for running the services",
+        alias="CPU",
+        gt=0.0,
+    )
+    gpu: Optional[NonNegativeInt] = Field(
+        None,
+        description="defines the required (maximum) GPU for running the services",
+        alias="GPU",
+    )
+    ram: ByteSize = Field(
+        ...,
+        description="defines the required (maximum) amount of RAM for running the services in bytes",
+        alias="RAM",
+    )
+    mpi: Optional[int] = Field(
+        None,
+        deprecated=True,
+        description="defines whether a MPI node is required for running the services",
+        alias="MPI",
+        le=1,
+        ge=0,
+    )
+
+    class Config:
+        schema_extra = {
+            "examples": [
+                {"CPU": 1.0, "RAM": 4194304},
+                {"CPU": 1.0, "GPU": 1, "RAM": 4194304},
+                {
+                    "CPU": 1.0,
+                    "RAM": 4194304,
+                    "MPI": 1,
+                },
+            ]
+        }
+
+
 class ServiceExtras(BaseModel):
-    node_requirements: List[NodeRequirement]
+    node_requirements: NodeRequirements
     service_build_details: Optional[ServiceBuildDetails]
+
+    class Config:
+        schema_extra = {
+            "examples": [
+                {"node_requirements": node_example}
+                for node_example in NodeRequirements.Config.schema_extra["examples"]
+            ]
+            + [
+                {
+                    "node_requirements": node_example,
+                    "service_build_details": {
+                        "build_date": "2021-08-13T12:56:28Z",
+                        "vcs_ref": "8251ade",
+                        "vcs_url": "git@github.com:ITISFoundation/osparc-simcore.git",
+                    },
+                }
+                for node_example in NodeRequirements.Config.schema_extra["examples"]
+            ]
+        }
 
 
 class ServiceExtrasEnveloped(BaseModel):
     data: ServiceExtras
 
 
-class ServiceState(str, Enum):
-    PENDING = "pending"
-    PULLING = "pulling"
-    STARTING = "starting"
-    RUNNING = "running"
-    COMPLETE = "complete"
-    FAILED = "failed"
-
-
 class RunningServiceDetails(BaseModel):
     published_port: Optional[PortInt] = Field(
-        ...,
+        None,
         description="The ports where the service provides its interface on the docker swarm",
         deprecated=True,
     )
@@ -50,16 +96,18 @@ class RunningServiceDetails(BaseModel):
     service_uuid: str = Field(
         ..., regex=UUID_REGEX, description="The node UUID attached to the service"
     )
-    service_key: constr(regex=KEY_RE) = Field(
+    service_key: str = Field(
         ...,
+        regex=KEY_RE,
         description="distinctive name for the node based on the docker registry path",
         example=[
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
         ],
     )
-    service_version: constr(regex=VERSION_RE) = Field(
+    service_version: str = Field(
         ...,
+        regex=VERSION_RE,
         description="service version number",
         example=["1.0.0", "0.0.1"],
     )
@@ -92,10 +140,6 @@ class RunningServicesDetailsArray(BaseModel):
 
 class RunningServicesDetailsArrayEnveloped(BaseModel):
     data: RunningServicesDetailsArray
-
-
-class RunningServiceDetailsEnveloped(BaseModel):
-    data: RunningServiceDetails
 
 
 class ServicesArrayEnveloped(BaseModel):

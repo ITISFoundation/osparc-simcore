@@ -14,11 +14,12 @@ install() {
 test() {
     pytest --numprocesses=auto --cov=simcore_service_director_v2 --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-          -v -m "not travis" services/director-v2/tests/unit --ignore=services/director-v2/tests/unit/with_dbs;
+          -v -m "not travis" services/director-v2/tests/unit --ignore=services/director-v2/tests/unit/with_dbs \
+          --ignore=services/director-v2/tests/unit/with_swarm;
     # these tests cannot be run in parallel
     pytest --cov=simcore_service_director_v2 --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-          -v -m "not travis" services/director-v2/tests/unit/with_dbs;
+          -v -m "not travis" services/director-v2/tests/unit/with_dbs services/director-v2/tests/unit/with_swarm;
 }
 
 # Check if the function exists (bash specific)

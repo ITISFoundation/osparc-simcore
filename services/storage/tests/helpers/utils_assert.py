@@ -2,7 +2,7 @@ from pprint import pformat
 
 from aiohttp import web
 
-from servicelib.rest_responses import unwrap_envelope
+from servicelib.aiohttp.rest_responses import unwrap_envelope
 
 
 async def assert_status(

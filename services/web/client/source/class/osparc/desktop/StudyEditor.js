@@ -26,8 +26,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     const viewsStack = this.__viewsStack = new qx.ui.container.Stack();
 
     const workbenchView = this.__workbenchView = new osparc.desktop.WorkbenchView();
-    workbenchView.addListener("startStudy", e => {
-      this.fireDataEvent("startStudy", e.getData());
+    workbenchView.addListener("startSnapshot", e => {
+      this.getStudy().removeIFrames();
+      this.fireDataEvent("startSnapshot", e.getData());
     });
     viewsStack.add(workbenchView);
 
@@ -60,7 +61,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
   events: {
     "forceBackToDashboard": "qx.event.type.Event",
-    "startStudy": "qx.event.type.Data"
+    "startSnapshot": "qx.event.type.Data"
   },
 
   properties: {
@@ -71,7 +72,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     pageContext: {
-      check: ["workbench", "slideshow"],
+      check: ["workbench", "slideshow", "fullSlideshow"],
       nullable: false,
       apply: "_applyPageContext"
     }
@@ -99,7 +100,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         // Before starting a study, make sure the latest version is fetched
         const params = {
           url: {
-            "projectId": studyData.uuid
+            "studyId": studyData.uuid
           }
         };
         const promises = [
@@ -142,9 +143,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               }
             });
 
-          switch (this.getPageContext()) {
+          const pageContext = this.getPageContext();
+          switch (pageContext) {
             case "slideshow":
-              this.__slideshowView.startSlides();
+            case "fullSlideshow":
+              this.__slideshowView.startSlides(pageContext);
               break;
             default:
               this.__workbenchView.openFirstNode();
@@ -201,6 +204,25 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.fireEvent("forceBackToDashboard");
     },
 
+    editSlides: function() {
+      if (this.getPageContext() !== "workbench") {
+        return;
+      }
+
+      const study = this.getStudy();
+      const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(study);
+      const title = this.tr("Edit Slides");
+      const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 600, 500).set({
+        modal: false,
+        clickAwayClose: false
+      });
+      nodesSlidesTree.addListener("finished", () => {
+        const slideshow = study.getUi().getSlideshow();
+        slideshow.fireEvent("changeSlideshow");
+        win.close();
+      });
+    },
+
 
     // ------------------ START/STOP PIPELINE ------------------
     __startPipeline: function(partialPipeline = []) {
@@ -214,24 +236,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       startStopButtonsSS.setRunning(true);
       this.updateStudyDocument(true)
         .then(() => {
-          this.__doStartPipeline(partialPipeline);
+          this.__requestStartPipeline(this.getStudy().getUuid(), partialPipeline);
         })
         .catch(() => {
           this.__getStudyLogger().error(null, "Run failed");
           startStopButtonsWB.setRunning(false);
           startStopButtonsSS.setRunning(false);
         });
-    },
-
-    __doStartPipeline: function(partialPipeline) {
-      if (this.getStudy().getSweeper().hasSecondaryStudies()) {
-        const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
-        secondaryStudyIds.forEach(secondaryStudyId => {
-          this.__requestStartPipeline(secondaryStudyId);
-        });
-      } else {
-        this.__requestStartPipeline(this.getStudy().getUuid(), partialPipeline);
-      }
     },
 
     __requestStartPipeline: function(studyId, partialPipeline = [], forceRestart = false) {
@@ -266,10 +277,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         startStopButtonsSS.setRunning(false);
       }, this);
 
-      req.setRequestData({
+      const requestData = {
         "subgraph": partialPipeline,
         "force_restart": forceRestart
-      });
+      };
+      if (startStopButtonsWB.getClusterId() !== null) {
+        requestData["cluster_id"] = startStopButtonsWB.getClusterId();
+      }
+      req.setRequestData(requestData);
       req.send();
       if (partialPipeline.length) {
         this.__getStudyLogger().info(null, "Starting partial pipeline");
@@ -309,18 +324,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         return;
       }
 
-      this.__doStopPipeline();
-    },
-
-    __doStopPipeline: function() {
-      if (this.getStudy().getSweeper().hasSecondaryStudies()) {
-        const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
-        secondaryStudyIds.forEach(secondaryStudyId => {
-          this.__requestStopPipeline(secondaryStudyId);
-        });
-      } else {
-        this.__requestStopPipeline(this.getStudy().getUuid());
-      }
+      this.__requestStopPipeline(this.getStudy().getUuid());
     },
 
     __requestStopPipeline: function(studyId) {
@@ -382,8 +386,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__workbenchView.nodeSelected(this.getStudy().getUi().getCurrentNodeId());
           break;
         case "slideshow":
+        case "fullSlideshow":
           this.__viewsStack.setSelection([this.__slideshowView]);
-          this.__slideshowView.startSlides();
+          this.__slideshowView.startSlides(newCtxt);
           break;
       }
     },

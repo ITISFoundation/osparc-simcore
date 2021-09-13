@@ -3,7 +3,7 @@ from functools import cached_property
 # pylint: disable=no-self-argument
 # pylint: disable=no-self-use
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional, Set
 
 from models_library.basic_types import (
     BootModeEnum,
@@ -21,7 +21,7 @@ from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
 
 from ..meta import api_vtag
-from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
+from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE, ClusterID
 
 MINS = 60
 API_ROOT: str = "api"
@@ -30,11 +30,13 @@ SERVICE_RUNTIME_SETTINGS: str = "simcore.service.settings"
 SERVICE_REVERSE_PROXY_SETTINGS: str = "simcore.service.reverse-proxy-settings"
 SERVICE_RUNTIME_BOOTSETTINGS: str = "simcore.service.bootsettings"
 
-ORG_LABELS_TO_SCHEMA_LABELS = {
+ORG_LABELS_TO_SCHEMA_LABELS: Dict[str, str] = {
     "org.label-schema.build-date": "build_date",
     "org.label-schema.vcs-ref": "vcs_ref",
     "org.label-schema.vcs-url": "vcs_url",
 }
+
+SUPPORTED_TRAEFIK_LOG_LEVELS: Set[str] = {"info", "debug", "warn", "error"}
 
 
 class ClientRequestSettings(BaseCustomSettings):
@@ -89,6 +91,34 @@ class CelerySettings(BaseCelerySettings):
         True, description="Enables/Disables connection with service"
     )
     CELERY_PUBLICATION_TIMEOUT: int = 60
+
+
+class DynamicSidecarTraefikSettings(BaseCustomSettings):
+    DYNAMIC_SIDECAR_TRAEFIK_VERSION: str = Field(
+        "v2.4.13",
+        description="current version of the Traefik image to be pulled and used from dockerhub",
+    )
+    DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL: str = Field(
+        "warn", description="set Treafik's loglevel to be used"
+    )
+
+    DYNAMIC_SIDECAR_TRAEFIK_ACCESS_LOG: bool = Field(
+        False, description="enables or disables access log"
+    )
+
+    @validator("DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL", pre=True)
+    @classmethod
+    def validate_log_level(cls, v) -> str:
+        if v not in SUPPORTED_TRAEFIK_LOG_LEVELS:
+            message = (
+                "Got log level '{v}', expected one of '{SUPPORTED_TRAEFIK_LOG_LEVELS}'"
+            )
+            raise ValueError(message)
+        return v
+
+    @cached_property
+    def access_log_as_string(self) -> str:
+        return str(self.DYNAMIC_SIDECAR_TRAEFIK_ACCESS_LOG).lower()
 
 
 class DynamicSidecarSettings(BaseCustomSettings):
@@ -149,15 +179,12 @@ class DynamicSidecarSettings(BaseCustomSettings):
         description="Names the traefik zone for services that must be accessible from platform http entrypoint",
     )
 
-    DYNAMIC_SIDECAR_TRAEFIK_VERSION: str = Field(
-        "v2.2.1",
-        description="current version of the Traefik image to be pulled and used from dockerhub",
-    )
-
     SWARM_STACK_NAME: str = Field(
         ...,
         description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
     )
+
+    DYNAMIC_SIDECAR_TRAEFIK_SETTINGS: DynamicSidecarTraefikSettings
 
     REGISTRY: RegistrySettings
 
@@ -190,28 +217,44 @@ class DynamicServicesSettings(BaseCustomSettings):
         True, description="Enables/Disables the dynamic_sidecar submodule"
     )
 
-    # FIXME: PC -> ANE: this module was disabled since no default settings were provided and failed at startup
-    DYNAMIC_SIDECAR: Optional[DynamicSidecarSettings] = None
+    DYNAMIC_SIDECAR: DynamicSidecarSettings
 
-    # FIXME: PC -> ANE: this module was disabled since no default settings were provided and failed at startup
-    DYNAMIC_SCHEDULER: Optional[DynamicServicesSchedulerSettings] = None
+    DYNAMIC_SCHEDULER: DynamicServicesSchedulerSettings
 
 
 class PGSettings(PostgresSettings):
     DIRECTOR_V2_POSTGRES_ENABLED: bool = Field(
-        True, description="Enables/Disables connection with service"
+        True,
+        description="Enables/Disables connection with service",
     )
 
 
 class CelerySchedulerSettings(BaseCustomSettings):
     DIRECTOR_V2_CELERY_SCHEDULER_ENABLED: bool = Field(
-        True,
-        description="Enables/Disables the scheduler",
+        False, description="Enables/Disables the scheduler", deprecated=True
     )
 
 
 class DaskSchedulerSettings(BaseCustomSettings):
-    DIRECTOR_V2_DASK_SCHEDULER_ENABLED: bool = True
+    DIRECTOR_V2_DASK_SCHEDULER_ENABLED: bool = Field(
+        True,
+    )
+    DIRECTOR_V2_DASK_CLIENT_ENABLED: bool = Field(
+        True,
+    )
+    DASK_SCHEDULER_HOST: str = Field(
+        "dask-scheduler",
+        description="Address of the scheduler to register (only if started as worker )",
+    )
+    DASK_SCHEDULER_PORT: PortInt = 8786
+
+    DASK_CLUSTER_ID_PREFIX: Optional[str] = Field(
+        "CLUSTER_", description="This defines the cluster name prefix"
+    )
+
+    DASK_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
+        0, description="This defines the default cluster id when none is defined"
+    )
 
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
@@ -224,6 +267,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         LogLevel.INFO.value,
         env=["DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
+    DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
 
     # for passing self-signed certificate to spawned services
     # TODO: fix these variables once the timeout-minutes: 30 is able to start dynamic services
@@ -283,3 +327,15 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     @classmethod
     def _validate_loglevel(cls, value) -> str:
         return cls.validate_log_level(value)
+
+    @validator("DASK_SCHEDULER")
+    @classmethod
+    def _check_only_one_comp_scheduler_enabled(cls, v, values) -> DaskSchedulerSettings:
+        celery_settings: CelerySchedulerSettings = values["CELERY_SCHEDULER"]
+        dask_settings: DaskSchedulerSettings = v
+        if (
+            celery_settings.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED
+            and dask_settings.DIRECTOR_V2_DASK_SCHEDULER_ENABLED
+        ):
+            celery_settings.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED = False
+        return v

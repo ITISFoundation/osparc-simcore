@@ -10,8 +10,8 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from expiringdict import ExpiringDict
 from tenacity import retry
 
-from servicelib.aiopg_utils import PostgresRetryPolicyUponOperation
-from servicelib.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.aiopg_utils import PostgresRetryPolicyUponOperation
+from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 
 from .db_models import UserStatus, users
 from .security_access_model import RoleBasedAccessModel, check_access

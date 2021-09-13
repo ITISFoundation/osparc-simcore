@@ -5,7 +5,7 @@ import os
 from aiohttp import MultipartReader, hdrs, web
 from json2html import json2html
 
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .login.cfg import get_storage

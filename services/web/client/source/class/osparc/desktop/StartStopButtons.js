@@ -66,9 +66,14 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       this.__stopButton.setEnabled(running);
     },
 
-    nodeSelectionChanged: function(selectedNodes) {
+    nodeSelectionChanged: function(selectedNodeIds) {
       if (!this.__startButton.isFetching()) {
-        if (selectedNodes.length) {
+        const runnableNodes = [];
+        selectedNodeIds.forEach(selectedNodeId => {
+          runnableNodes.push(this.getStudy().getWorkbench().getNode(selectedNodeId));
+        });
+        const isSelectionRunnable = runnableNodes.length && runnableNodes.some(node => node.isComputational());
+        if (isSelectionRunnable) {
           this.__startButton.exclude();
           this.__startSelectionButton.show();
         } else {
@@ -87,6 +92,9 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __initDefault: function() {
+      const clustersSelectBox = this.__createClustersSelectBox();
+      this._add(clustersSelectBox);
+
       const stopButton = this.__createStopButton();
       stopButton.setEnabled(false);
       this._add(stopButton);
@@ -100,6 +108,52 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       this._add(startSplitButton);
     },
 
+    __createClustersSelectBox: function() {
+      const selectBox = this.__clustersSelectBox = new qx.ui.form.SelectBox().set({
+        alignY: "middle",
+        maxHeight: 32
+      });
+
+      const store = osparc.store.Store.getInstance();
+      store.addListener("changeClusters", e => {
+        this.__populateClustersSelectBox();
+      });
+      this.__populateClustersSelectBox();
+      return selectBox;
+    },
+
+    __populateClustersSelectBox: function() {
+      this.__clustersSelectBox.removeAll();
+
+      const store = osparc.store.Store.getInstance();
+      const clusters = store.getClusters();
+      if (clusters) {
+        const itemDefault = new qx.ui.form.ListItem().set({
+          label: "default",
+          toolTipText: "default cluster"
+        });
+        itemDefault.id = 0;
+        this.__clustersSelectBox.add(itemDefault);
+        clusters.forEach(cluster => {
+          const item = new qx.ui.form.ListItem().set({
+            label: cluster["name"],
+            toolTipText: cluster["type"] + "\n" + cluster["description"],
+            allowGrowY: false
+          });
+          item.id = cluster["id"];
+          this.__clustersSelectBox.add(item);
+        });
+      }
+      this.__clustersSelectBox.setVisibility(Object.keys(clusters).length ? "visible" : "excluded");
+    },
+
+    getClusterId: function() {
+      if (this.__clustersSelectBox.isVisible()) {
+        return this.__clustersSelectBox.getSelection()[0].id;
+      }
+      return null;
+    },
+
     __createStartButton: function() {
       const startButton = this.__startButton = new osparc.ui.toolbar.FetchButton(this.tr("Run"), "@FontAwesome5Solid/play/14");
       osparc.utils.Utils.setIdToWidget(startButton, "runStudyBtn");
@@ -110,7 +164,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __createStartSplitButton: function() {
-      const startSelectionButton = this.__startSelectionButton = new osparc.ui.toolbar.FetchSplitButton(this.tr("Run Node"), "@FontAwesome5Solid/play/14");
+      const startSelectionButton = this.__startSelectionButton = new osparc.ui.toolbar.FetchSplitButton(this.tr("Run Selection"), "@FontAwesome5Solid/play/14");
       startSelectionButton.addListener("execute", () => {
         this.fireEvent("startPartialPipeline");
       }, this);
@@ -140,9 +194,10 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       return stopButton;
     },
 
-    __applyStudy: function(study) {
-      study.getWorkbench().addListener("nNodesChanged", this.__checkButtonsVisible, this);
+    __applyStudy: async function(study) {
+      study.getWorkbench().addListener("pipelineChanged", this.__checkButtonsVisible, this);
       study.addListener("changeState", this.__updateRunButtonsStatus, this);
+      this.__populateClustersSelectBox();
       this.__checkButtonsVisible();
     },
 

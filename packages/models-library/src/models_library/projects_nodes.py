@@ -77,17 +77,17 @@ class NodeState(BaseModel):
                 {
                     "modified": True,
                     "dependencies": [],
-                    "current_status": "NOT_STARTED",
+                    "currentStatus": "NOT_STARTED",
                 },
                 {
                     "modified": True,
                     "dependencies": ["42838344-03de-4ce2-8d93-589a5dcdfd05"],
-                    "current_status": "ABORTED",
+                    "currentStatus": "ABORTED",
                 },
                 {
                     "modified": False,
                     "dependencies": [],
-                    "current_status": "SUCCESS",
+                    "currentStatus": "SUCCESS",
                 },
             ]
         }

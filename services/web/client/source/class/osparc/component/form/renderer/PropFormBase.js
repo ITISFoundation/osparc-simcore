@@ -26,7 +26,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
   type: "abstract",
 
   /**
-   * @param form {osparc.component.form.Auto} form widget to embedd
+   * @param form {osparc.component.form.Auto} form widget to embed
    * @param node {osparc.data.model.Node} Node owning the widget
    */
   construct: function(form, node) {
@@ -186,13 +186,6 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       * @abstract
       */
     setAccessLevel: function() {
-      throw new Error("Abstract method called!");
-    },
-
-    /**
-      * @abstract
-      */
-    addParameter: function() {
       throw new Error("Abstract method called!");
     },
 

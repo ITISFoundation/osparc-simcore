@@ -2,7 +2,7 @@ import logging
 from collections.abc import Mapping
 from typing import Dict
 
-from . import exceptions
+from ..node_ports_common import exceptions
 from ._schema_item import SchemaItem
 
 log = logging.getLogger(__name__)

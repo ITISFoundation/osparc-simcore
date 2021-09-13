@@ -65,7 +65,7 @@ describe('tags testing', () => {
     await page.evaluate(async function(studyId, tagId) {
       await osparc.data.Resources.fetch('studies', 'delete', {
         url: {
-          projectId: studyId
+          "studyId": studyId
         }
       }, studyId);
       await osparc.data.Resources.fetch('tags', 'delete', {
@@ -106,19 +106,19 @@ describe('tags testing', () => {
 
   test('assign tag and reflect changes', async () => {
     await page.waitForSelector(
-      '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] > [qxclass="osparc.ui.basic.Thumbnail"]',
+      '[qxclass="osparc.dashboard.GridButtonItem"] > [qxclass="osparc.ui.basic.Thumbnail"]',
       {
         hidden: true
       }
     );
     // Assign to study
-    await waitAndClick(page, '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] [osparc-test-id="studyItemMenuButton"]');
+    await waitAndClick(page, '[qxclass="osparc.dashboard.GridButtonItem"] [osparc-test-id="studyItemMenuButton"]');
     await waitAndClick(page, '[osparc-test-id="moreInfoBtn"]');
     await waitAndClick(page, '[osparc-test-id="editStudyEditTagsBtn"]');
     await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagToggleButton"]');
     await waitAndClick(page, '[osparc-test-id="saveTagsBtn"]');
     // UI displays the change
-    let displayedTag = await page.waitForSelector('[qxclass="osparc.dashboard.StudyBrowserButtonItem"] [qxclass="osparc.ui.basic.Tag"]')
+    let displayedTag = await page.waitForSelector('[qxclass="osparc.dashboard.GridButtonItem"] [qxclass="osparc.ui.basic.Tag"]')
     await waitAndClick(page, '.qx-service-window[qxclass="osparc.ui.window.Window"] > .qx-workbench-small-cap-captionbar [qxclass="qx.ui.form.Button"]');
     expect(await displayedTag.evaluate(el => el.innerText)).toContain(TAG_NAME);
   }, ourTimeout);
@@ -146,7 +146,7 @@ describe('tags testing', () => {
     expect(await tagFilterMenu.evaluate(el => el.innerText)).toContain(TAG_NAME_2);
     await page.waitForFunction(tagName => {
       const el = document.querySelector(
-        '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] [qxclass="osparc.ui.basic.Tag"]'
+        '[qxclass="osparc.dashboard.GridButtonItem"] [qxclass="osparc.ui.basic.Tag"]'
       );
       return el && el.innerText === tagName;
     }, {}, TAG_NAME_2);

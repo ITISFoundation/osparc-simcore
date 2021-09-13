@@ -26,18 +26,13 @@ from models_library.projects_state import (
     ProjectStatus,
     RunningState,
 )
-from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
-from servicelib.jsonschema_validation import validate_instance
+from pydantic.types import PositiveInt
+from servicelib.aiohttp.application_keys import APP_JSONSCHEMA_SPECS_KEY
+from servicelib.aiohttp.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
-from simcore_service_webserver.director import director_exceptions
 
-from ..director import director_api
-from ..director_v2 import (
-    delete_pipeline,
-    get_computation_task,
-    request_retrieve_dyn_service,
-)
+from .. import director_v2
 from ..resource_manager.websocket_manager import (
     PROJECT_ID_KEY,
     UserSessionID,
@@ -57,6 +52,7 @@ from ..users_api import get_user_name, is_user_guest
 from .config import CONFIG_SECTION_NAME
 from .project_lock import ProjectLockError, get_project_locked_state, lock_project
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
+from .projects_utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)
 
@@ -133,7 +129,7 @@ async def get_project_for_user(
 
 
 async def start_project_interactive_services(
-    request: web.Request, project: Dict, user_id: str
+    request: web.Request, project: Dict, user_id: PositiveInt
 ) -> None:
     # first get the services if they already exist
     log.debug(
@@ -141,7 +137,7 @@ async def start_project_interactive_services(
         project["uuid"],
         user_id,
     )
-    running_services = await director_api.get_running_interactive_services(
+    running_services = await director_v2.get_services(
         request.app, user_id, project["uuid"]
     )
     log.debug("Running services %s", running_services)
@@ -157,13 +153,15 @@ async def start_project_interactive_services(
     log.debug("Services to start %s", project_needed_services)
 
     start_service_tasks = [
-        director_api.start_service(
+        director_v2.start_service(
             request.app,
             user_id=user_id,
             project_id=project["uuid"],
             service_key=service["key"],
             service_version=service["version"],
             service_uuid=service_uuid,
+            request_dns=extract_dns_without_default_port(request.url),
+            request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
         )
         for service_uuid, service in project_needed_services.items()
     ]
@@ -275,9 +273,9 @@ async def remove_project_interactive_services(
                 )
 
             # save the state if the user is not a guest. if we do not know we save in any case.
-            with suppress(director_exceptions.DirectorException):
+            with suppress(director_v2.DirectorServiceError):
                 # here director exceptions are suppressed. in case the service is not found to preserve old behavior
-                await director_api.stop_services(
+                await director_v2.stop_services(
                     app=app,
                     user_id=user_id,
                     project_id=project_uuid,
@@ -316,7 +314,7 @@ async def delete_project_from_db(
     app: web.Application, project_uuid: str, user_id: int
 ) -> None:
     db = app[APP_PROJECT_DBAPI]
-    await delete_pipeline(app, user_id, project_uuid)
+    await director_v2.delete_pipeline(app, user_id, project_uuid)
     await db.delete_user_project(user_id, project_uuid)
     # requests storage to delete all project's stored data
     await delete_data_folders_of_project(app, project_uuid, user_id)
@@ -342,8 +340,15 @@ async def add_project_node(
     )
     node_uuid = service_id if service_id else str(uuid4())
     if _is_node_dynamic(service_key):
-        await director_api.start_service(
-            request.app, user_id, project_uuid, service_key, service_version, node_uuid
+        await director_v2.start_service(
+            request.app,
+            project_id=project_uuid,
+            user_id=user_id,
+            service_key=service_key,
+            service_version=service_version,
+            service_uuid=node_uuid,
+            request_dns=extract_dns_without_default_port(request.url),
+            request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
         )
     return node_uuid
 
@@ -355,7 +360,7 @@ async def get_project_node(
         "getting node %s in project %s for user %s", node_id, project_uuid, user_id
     )
 
-    list_of_interactive_services = await director_api.get_running_interactive_services(
+    list_of_interactive_services = await director_v2.get_services(
         request.app, project_id=project_uuid, user_id=user_id
     )
     # get the project if it is running
@@ -374,14 +379,19 @@ async def delete_project_node(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
     )
 
-    list_of_services = await director_api.get_running_interactive_services(
+    list_of_services = await director_v2.get_services(
         request.app, project_id=project_uuid, user_id=user_id
     )
     # stop the service if it is running
     for service in list_of_services:
         if service["service_uuid"] == node_uuid:
+            log.error("deleting service=%s", service)
             # no need to save the state of the node when deleting it
-            await director_api.stop_service(request.app, node_uuid, save_state=False)
+            await director_v2.stop_service(
+                request.app,
+                node_uuid,
+                save_state=False,
+            )
             break
     # remove its data if any
     await delete_data_folders_of_project_node(
@@ -585,7 +595,7 @@ async def trigger_connected_service_retrieve(
 
     # call /retrieve on the nodes
     update_tasks = [
-        request_retrieve_dyn_service(app, node, keys)
+        director_v2.request_retrieve_dyn_service(app, node, keys)
         for node, keys in nodes_keys_to_update.items()
     ]
     await logged_gather(*update_tasks)
@@ -781,7 +791,7 @@ async def get_project_states_for_user(
     running_state = RunningState.UNKNOWN
     lock_state, computation_task = await logged_gather(
         _get_project_lock_state(user_id, project_uuid, app),
-        get_computation_task(app, user_id, UUID(project_uuid)),
+        director_v2.get_computation_task(app, user_id, UUID(project_uuid)),
     )
     if computation_task:
         # get the running state
@@ -805,7 +815,7 @@ async def add_project_states_for_user(
     if not is_template:
         lock_state, computation_task = await logged_gather(
             _get_project_lock_state(user_id, project["uuid"], app),
-            get_computation_task(app, user_id, project["uuid"]),
+            director_v2.get_computation_task(app, user_id, project["uuid"]),
         )
 
         if computation_task:

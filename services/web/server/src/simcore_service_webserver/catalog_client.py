@@ -12,8 +12,8 @@ from aiohttp.client_exceptions import (
     ClientResponseError,
     InvalidURL,
 )
-from servicelib.client_session import get_client_session
-from servicelib.rest_responses import wrap_as_envelope
+from servicelib.aiohttp.client_session import get_client_session
+from servicelib.aiohttp.rest_responses import wrap_as_envelope
 from yarl import URL
 
 from ._meta import api_version_prefix

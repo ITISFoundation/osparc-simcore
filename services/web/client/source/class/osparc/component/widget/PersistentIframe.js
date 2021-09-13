@@ -44,7 +44,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
      * Show a Maximize Button
      */
     showMaximize: {
-      check: "boolean",
+      check: "Boolean",
       init: false,
       apply: "_applyShowMaximize"
     },

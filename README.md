@@ -52,16 +52,17 @@ This is the common workflow to build and deploy locally:
   make info-swarm
 
   # open front-end in the browser
-  #  localhost:9081 - simcore front-end site
+  #  127.0.0.1.nip.io:9081 - simcore front-end site
   #
-  xdg-open http://localhost:9081/
+  xdg-open http://127.0.0.1.nip.io:9081/
 
   # stops
   make down
 ```
 
-Services are deployed in two stacks:``simcore-stack`` comprises all core-services in the framework
-and ``ops-stack`` is a subset of services from [ITISFoundation/osparc-ops](https://github.com/ITISFoundation/osparc-ops) used
+Some routes can only be reached via DNS such as `UUID.services.DNS`. Since `UUID.services.127.0.0.1` is **not a valid DNS**, the solution is to use [nip.io](https://nip.io/). A service that maps ``<anything>[.-]<IP Address>.nip.io`` in "dot", "dash" or "hexadecimal" notation to the corresponding ``<IP Address>``.
+
+Services are deployed in two stacks:``simcore-stack`` comprises all core-services in the framework and ``ops-stack`` is a subset of services from [ITISFoundation/osparc-ops](https://github.com/ITISFoundation/osparc-ops) used
 for operations during development. This is a representation of ``simcore-stack``:
 
 ![](docs/img/.stack-simcore-version.yml.png)
@@ -100,6 +101,26 @@ In **windows**, it works under [WSL] (windows subsystem for linux). Some details
 -  Follow **all details** on [how to setup flawlessly](https://nickjanetakis.com/blog/setting-up-docker-for-windows-and-wsl-to-work-flawlessly) docker for windows and [WSL]
 
 In **MacOS**, [replacing the MacOS utilities with GNU utils](https://apple.stackexchange.com/a/69332) might be required.
+
+#### Upgrading services requirements
+
+Updates are upgraded using a docker container and pip-sync.
+Build and start the container:
+
+    cd requirements/tools
+    make build
+    make shell
+
+Once inside the container navigate to the service's requirements directory.
+
+To upgrade all requirements run:
+
+    make reqs
+
+To upgrade a single requirement named `fastapi`run:
+
+    make reqs upgrade=fastapi
+
 
 ## Releases
 

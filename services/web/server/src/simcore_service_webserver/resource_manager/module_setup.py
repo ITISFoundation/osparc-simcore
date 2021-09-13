@@ -9,7 +9,7 @@
 import logging
 
 from aiohttp import web
-from servicelib.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .config import (
     APP_CLIENT_SOCKET_REGISTRY_KEY,

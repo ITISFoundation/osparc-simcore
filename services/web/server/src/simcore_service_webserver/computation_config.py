@@ -8,7 +8,7 @@ from typing import Dict
 from aiohttp.web import Application
 
 from models_library.settings.celery import CeleryConfig
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 
 SERVICE_NAME = "computation"
 CONFIG_SECTION_NAME = SERVICE_NAME

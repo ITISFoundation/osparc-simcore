@@ -25,16 +25,17 @@ async function runTutorial() {
 
     await tutorial.waitFor(5000, 'Some time for loading the workbench');
 
+    await tutorial.showLogger(true);
     await tutorial.runPipeline();
     await tutorial.waitForStudyDone(studyId, 120000);
+    await tutorial.showLogger(false);
 
     const outFiles = [
       "logs.zip",
       "output.h5",
       "log.tgz"
     ];
-    await tutorial.openNodeFiles(1)
-    await tutorial.checkResults2(outFiles);
+    await tutorial.checkNodeOutputs(1, outFiles);
 
     // check logs
     const mustHave = "Running MPI version 3.1 on 2 processes";

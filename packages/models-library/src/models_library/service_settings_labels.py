@@ -96,7 +96,7 @@ class PathMappingsLabel(BaseModel):
 
     class Config(_BaseConfig):
         schema_extra = {
-            "examples": {
+            "example": {
                 "outputs_path": "/tmp/outputs",  # nosec
                 "inputs_path": "/tmp/inputs",  # nosec
                 "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # nosec
@@ -144,7 +144,8 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @validator("container_http_entry", always=True)
     @classmethod
-    def compose_spec_requires_container_http_entry(cls, v, values):
+    def compose_spec_requires_container_http_entry(cls, v, values) -> Optional[str]:
+        v = None if v == "" else v
         if v is None and values.get("compose_spec") is not None:
             raise ValueError(
                 "Field `container_http_entry` must be defined but is missing"
@@ -186,6 +187,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
     )
 
     class Config(_BaseConfig):
+        extra = Extra.allow
         schema_extra = {
             "examples": [
                 # legacy service
@@ -200,7 +202,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
                     "simcore.service.paths-mapping": json.dumps(
-                        PathMappingsLabel.Config.schema_extra["examples"]
+                        PathMappingsLabel.Config.schema_extra["example"]
                     ),
                 },
                 # dynamic-service with compose spec
@@ -209,7 +211,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
                     "simcore.service.paths-mapping": json.dumps(
-                        PathMappingsLabel.Config.schema_extra["examples"]
+                        PathMappingsLabel.Config.schema_extra["example"]
                     ),
                     "simcore.service.compose-spec": json.dumps(
                         {

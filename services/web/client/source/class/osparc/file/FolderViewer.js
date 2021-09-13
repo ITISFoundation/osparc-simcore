@@ -36,6 +36,8 @@ qx.Class.define("osparc.file.FolderViewer", {
     this.getChildControl("folder-path");
     this.getChildControl("view-options-icons");
     this.getChildControl("view-options-list");
+    this.getChildControl("icons-layout");
+    this.getChildControl("table");
 
     this.bind("folder", this.getChildControl("folder-up"), "enabled", {
       converter: folder => Boolean(folder && folder.getPathLabel && folder.getPathLabel().length > 1)
@@ -153,6 +155,13 @@ qx.Class.define("osparc.file.FolderViewer", {
           header.addAt(control, 3);
           break;
         }
+        case "content-stack": {
+          control = new qx.ui.container.Stack();
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        }
         case "table": {
           const tableModel = new qx.ui.table.model.Simple();
           tableModel.setColumns([
@@ -176,9 +185,7 @@ qx.Class.define("osparc.file.FolderViewer", {
           });
           const scroll = new qx.ui.container.Scroll();
           scroll.add(control);
-          this._add(scroll, {
-            flex: 1
-          });
+          this.getChildControl("content-stack").add(scroll);
           break;
         }
         case "icons-layout": {
@@ -189,9 +196,7 @@ qx.Class.define("osparc.file.FolderViewer", {
           });
           const scroll = new qx.ui.container.Scroll();
           scroll.add(control);
-          this._add(scroll, {
-            flex: 1
-          });
+          this.getChildControl("content-stack").add(scroll);
           break;
         }
       }
@@ -282,7 +287,7 @@ qx.Class.define("osparc.file.FolderViewer", {
     },
 
     __reloadFolderContent: function() {
-      let entries = this.__getEntries();
+      const entries = this.__getEntries();
       if (this.getMode() === "list") {
         const table = this.getChildControl("table");
         table.setData(entries);
@@ -298,6 +303,8 @@ qx.Class.define("osparc.file.FolderViewer", {
           iconsLayout.add(entry);
         });
       }
+      const stack = this.getChildControl("content-stack");
+      stack.setSelection([stack.getSelectables()[this.getMode() === "icons" ? 0 : 1]]);
     },
 
     __itemTapped: function(item) {

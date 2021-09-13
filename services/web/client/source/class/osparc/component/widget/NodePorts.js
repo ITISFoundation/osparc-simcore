@@ -72,18 +72,7 @@ qx.Class.define("osparc.component.widget.NodePorts", {
       }
     }, this);
     node.getStatus().bind("output", this.getChildControl("icon"), "textColor", {
-      converter: output => {
-        switch (output) {
-          case "up-to-date":
-            return osparc.utils.StatusUI.getColor("ready");
-          case "out-of-date":
-          case "busy":
-            return osparc.utils.StatusUI.getColor("modified");
-          case "not-available":
-          default:
-            return osparc.utils.StatusUI.getColor();
-        }
-      }
+      converter: output => osparc.utils.StatusUI.getColor(output)
     }, this);
     node.getStatus().bind("output", this.getChildControl("icon"), "toolTipText", {
       converter: output => {

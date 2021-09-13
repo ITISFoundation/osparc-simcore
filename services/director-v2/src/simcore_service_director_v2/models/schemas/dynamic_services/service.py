@@ -1,5 +1,5 @@
 from enum import Enum, unique
-from functools import lru_cache, total_ordering
+from functools import cached_property, lru_cache, total_ordering
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -108,8 +108,11 @@ class ServiceState(Enum):
 
 class RunningDynamicServiceDetails(ServiceDetails):
     boot_type: ServiceBootType = Field(
-        ...,
-        description="describes how the dynamic services was started (legacy=V0, modern=V2)",
+        ServiceBootType.V0,
+        description=(
+            "Describes how the dynamic services was started (legacy=V0, modern=V2)."
+            "Since legacy services do not have this label it defaults to V0."
+        ),
     )
 
     host: str = Field(
@@ -136,6 +139,10 @@ class RunningDynamicServiceDetails(ServiceDetails):
         alias="service_message",
     )
 
+    @cached_property
+    def legacy_service_url(self) -> str:
+        return f"http://{self.host}:{self.internal_port}{self.basepath}"
+
     @classmethod
     def from_scheduler_data(
         cls,
@@ -158,6 +165,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
         )
 
     class Config(ServiceDetails.Config):
+        keep_untouched = (cached_property,)
         schema_extra = {
             "examples": [
                 {

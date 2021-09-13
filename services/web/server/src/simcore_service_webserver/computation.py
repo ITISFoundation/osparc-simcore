@@ -5,7 +5,7 @@
 import logging
 
 from aiohttp import web
-from servicelib.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .computation_comp_tasks_listening_task import setup as setup_comp_tasks_listener
 from .computation_config import CONFIG_SECTION_NAME
@@ -28,6 +28,3 @@ def setup_computation(app: web.Application):
 
     # setup comp_task listener
     setup_comp_tasks_listener(app)
-
-
-__all__ = "setup_computation"

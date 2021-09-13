@@ -6,6 +6,7 @@ from copy import deepcopy
 from typing import Deque, Dict, Optional
 from uuid import UUID
 
+import httpx
 from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
@@ -64,7 +65,7 @@ async def _apply_observation_cycle(
         logger.warning(
             "Removing service %s from observation", scheduler_data.service_name
         )
-        await scheduler.remove_service_to_observe(
+        await scheduler.remove_service(
             node_uuid=scheduler_data.node_uuid,
             save_state=scheduler_data.dynamic_sidecar.can_save_state,
         )
@@ -110,12 +111,12 @@ class DynamicSidecarsScheduler:
         self._app: FastAPI = app
         self._lock: Lock = Lock()
 
-        self._to_observe: Dict[str, LockWithSchedulerData] = dict()
+        self._to_observe: Dict[str, LockWithSchedulerData] = {}
         self._keep_running: bool = False
-        self._inverse_search_mapping: Dict[UUID, str] = dict()
+        self._inverse_search_mapping: Dict[UUID, str] = {}
         self._scheduler_task: Optional[Task] = None
 
-    async def add_service_to_observe(self, scheduler_data: SchedulerData) -> None:
+    async def add_service(self, scheduler_data: SchedulerData) -> None:
         """Invoked before the service is started
 
         Because we do not have all items require to compute the service_name the node_uuid is used to
@@ -146,7 +147,7 @@ class DynamicSidecarsScheduler:
             )
             logger.debug("Added service '%s' to observe", scheduler_data.service_name)
 
-    async def remove_service_to_observe(
+    async def remove_service(
         self, node_uuid: NodeID, save_state: Optional[bool]
     ) -> None:
         """Handles the removal cycle of the services, saving states etc..."""
@@ -165,9 +166,12 @@ class DynamicSidecarsScheduler:
 
             current: LockWithSchedulerData = self._to_observe[service_name]
             dynamic_sidecar_endpoint = current.scheduler_data.dynamic_sidecar.endpoint
-            await dynamic_sidecar_client.begin_service_destruction(
-                dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
-            )
+            try:
+                await dynamic_sidecar_client.begin_service_destruction(
+                    dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
+                )
+            except httpx.HTTPError:
+                logger.warning("Could not begin destruction of %s", service_name)
 
             dynamic_sidecar_settings: DynamicSidecarSettings = (
                 self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
@@ -192,84 +196,76 @@ class DynamicSidecarsScheduler:
             logger.debug("Removed service '%s' from scheduler", service_name)
 
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
-        async with self._lock:
-            if node_uuid not in self._inverse_search_mapping:
-                raise DynamicSidecarNotFoundError(node_uuid)
+        if node_uuid not in self._inverse_search_mapping:
+            raise DynamicSidecarNotFoundError(node_uuid)
+        service_name = self._inverse_search_mapping[node_uuid]
 
-            service_name = self._inverse_search_mapping[node_uuid]
+        scheduler_data: SchedulerData = self._to_observe[service_name].scheduler_data
 
-            scheduler_data: SchedulerData = self._to_observe[
-                service_name
-            ].scheduler_data
-
-            # check if there was an error picked up by the scheduler
-            # and marked this service as failing
-            if scheduler_data.dynamic_sidecar.status.current != DynamicSidecarStatus.OK:
-                return RunningDynamicServiceDetails.from_scheduler_data(
-                    node_uuid=node_uuid,
-                    scheduler_data=scheduler_data,
-                    service_state=ServiceState.FAILED,
-                    service_message=scheduler_data.dynamic_sidecar.status.info,
-                )
-
-            dynamic_sidecar_settings: DynamicSidecarSettings = (
-                self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-            )
-            dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-                self._app
+        # check if there was an error picked up by the scheduler
+        # and marked this service as failing
+        if scheduler_data.dynamic_sidecar.status.current != DynamicSidecarStatus.OK:
+            return RunningDynamicServiceDetails.from_scheduler_data(
+                node_uuid=node_uuid,
+                scheduler_data=scheduler_data,
+                service_state=ServiceState.FAILED,
+                service_message=scheduler_data.dynamic_sidecar.status.info,
             )
 
-            service_state, service_message = await get_dynamic_sidecar_state(
-                # the service_name is unique and will not collide with other names
-                # it can be used in place of the service_id here, as the docker API accepts both
-                service_id=scheduler_data.service_name,
-                dynamic_sidecar_settings=dynamic_sidecar_settings,
+        service_state, service_message = await get_dynamic_sidecar_state(
+            # the service_name is unique and will not collide with other names
+            # it can be used in place of the service_id here, as the docker API accepts both
+            service_id=scheduler_data.service_name
+        )
+
+        # while the dynamic-sidecar state is not RUNNING report it's state
+        if service_state != ServiceState.RUNNING:
+            return RunningDynamicServiceDetails.from_scheduler_data(
+                node_uuid=node_uuid,
+                scheduler_data=scheduler_data,
+                service_state=service_state,
+                service_message=service_message,
             )
 
-            # while the dynamic-sidecar state is not RUNNING report it's state
-            if service_state != ServiceState.RUNNING:
-                return RunningDynamicServiceDetails.from_scheduler_data(
-                    node_uuid=node_uuid,
-                    scheduler_data=scheduler_data,
-                    service_state=service_state,
-                    service_message=service_message,
-                )
+        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
+            self._app
+        )
 
+        try:
             docker_statuses: Optional[
                 Dict[str, Dict[str, str]]
             ] = await dynamic_sidecar_client.containers_docker_status(
                 dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
             )
-
+        except httpx.HTTPError:
             # error fetching docker_statues, probably someone should check
-            if docker_statuses is None:
-                return RunningDynamicServiceDetails.from_scheduler_data(
-                    node_uuid=node_uuid,
-                    scheduler_data=scheduler_data,
-                    service_state=ServiceState.STARTING,
-                    service_message="There was an error while trying to fetch the stautes form the contianers",
-                )
-
-            # wait for containers to start
-            if len(docker_statuses) == 0:
-                # marks status as waiting for containers
-                return RunningDynamicServiceDetails.from_scheduler_data(
-                    node_uuid=node_uuid,
-                    scheduler_data=scheduler_data,
-                    service_state=ServiceState.STARTING,
-                    service_message="",
-                )
-
-            # compute composed containers states
-            container_state, container_message = extract_containers_minimim_statuses(
-                docker_statuses
-            )
             return RunningDynamicServiceDetails.from_scheduler_data(
                 node_uuid=node_uuid,
                 scheduler_data=scheduler_data,
-                service_state=container_state,
-                service_message=container_message,
+                service_state=ServiceState.STARTING,
+                service_message="There was an error while trying to fetch the stautes form the contianers",
             )
+
+        # wait for containers to start
+        if len(docker_statuses) == 0:
+            # marks status as waiting for containers
+            return RunningDynamicServiceDetails.from_scheduler_data(
+                node_uuid=node_uuid,
+                scheduler_data=scheduler_data,
+                service_state=ServiceState.STARTING,
+                service_message="",
+            )
+
+        # compute composed containers states
+        container_state, container_message = extract_containers_minimim_statuses(
+            docker_statuses
+        )
+        return RunningDynamicServiceDetails.from_scheduler_data(
+            node_uuid=node_uuid,
+            scheduler_data=scheduler_data,
+            service_state=container_state,
+            service_message=container_message,
+        )
 
     async def _runner(self) -> None:
         """This code runs under a lock and can safely change the SchedulerData of all entries"""
@@ -347,13 +343,13 @@ class DynamicSidecarsScheduler:
                 service_labels_stored_data=service_to_observe,
                 port=dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
             )
-            await self.add_service_to_observe(scheduler_data)
+            await self.add_service(scheduler_data)
 
     async def shutdown(self):
         logging.info("Shutting down dynamic-sidecar scheduler")
         self._keep_running = False
-        self._inverse_search_mapping = dict()
-        self._to_observe = dict()
+        self._inverse_search_mapping = {}
+        self._to_observe = {}
 
         if self._scheduler_task is not None:
             await self._scheduler_task
@@ -368,7 +364,7 @@ async def setup_scheduler(app: FastAPI):
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
     if not settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED:
-        logger.warning("Scheduler will not be started!!!")
+        logger.warning("dynamic-sidecar scheduler will not be started!!!")
         return
 
     await dynamic_sidecars_scheduler.start()

@@ -11,8 +11,8 @@
     "jest-puppeteer": "^4.4.0",
     "log-timestamp": "^0.3.0",
     "log4js": "^6.3.0",
-    "puppeteer": "^2.1.1",
-    "node-fetch": "^2.6.1"
+    "node-fetch": "^2.6.1",
+    "puppeteer": "^2.1.1"
   },
   "scripts": {
     "test": "jest --debug --runInBand --colors",

@@ -11,7 +11,7 @@ from aiohttp import web
 from aiohttp.client_exceptions import ClientConnectionError
 from celery import Celery
 from pytest_simcore.helpers.utils_assert import assert_status
-from servicelib.application import create_safe_application
+from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.activity import handlers, setup_activity
 from simcore_service_webserver.computation_config import ComputationSettings
 from simcore_service_webserver.rest import setup_rest

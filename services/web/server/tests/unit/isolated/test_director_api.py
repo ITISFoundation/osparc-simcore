@@ -18,7 +18,7 @@ import simcore_service_webserver.director.config as director_config
 import yaml
 from aiohttp import web
 from aioresponses.core import CallbackResult, aioresponses
-from servicelib.client_session import get_client_session
+from servicelib.aiohttp.client_session import get_client_session
 from simcore_service_webserver.director.config import DirectorSettings
 from simcore_service_webserver.director.director_api import (
     get_running_interactive_services,
@@ -389,6 +389,8 @@ async def test_director_workflow(
             service_key,
             service_version,
             service_uuid,
+            "localhost",
+            "http",
         )
 
         # now is running

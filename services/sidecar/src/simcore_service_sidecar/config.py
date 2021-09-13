@@ -1,21 +1,13 @@
 import logging
-import multiprocessing
 import os
 from distutils.util import strtobool
 from pathlib import Path
 
 from models_library.settings.celery import CeleryConfig
+from settings_library.comp_services import ComputationalServices
 
-SERVICES_MAX_NANO_CPUS: int = min(
-    multiprocessing.cpu_count() * pow(10, 9),
-    int(os.environ.get("SIDECAR_SERVICES_MAX_NANO_CPUS", 4 * pow(10, 9))),
-)
-SERVICES_MAX_MEMORY_BYTES: int = int(
-    os.environ.get("SIDECAR_SERVICES_MAX_MEMORY_BYTES", 2 * pow(1024, 3))
-)
-SERVICES_TIMEOUT_SECONDS: int = int(
-    os.environ.get("SIDECAR_SERVICES_TIMEOUT_SECONDS", 0)
-)
+COMP_SERVICES = ComputationalServices()
+
 SWARM_STACK_NAME: str = os.environ.get("SWARM_STACK_NAME", "simcore")
 
 SIDECAR_INPUT_FOLDER: Path = Path(
@@ -73,6 +65,7 @@ FORCE_START_GPU_MODE: bool = strtobool(os.environ.get("START_AS_MODE_GPU", "fals
 TARGET_MPI_NODE_CPU_COUNT: int = int(os.environ.get("TARGET_MPI_NODE_CPU_COUNT", "-1"))
 
 CELERY_CONFIG = CeleryConfig.create_from_env()
+
 
 MAIN_QUEUE_NAME: str = CELERY_CONFIG.task_name
 CPU_QUEUE_NAME: str = f"{MAIN_QUEUE_NAME}.cpu"

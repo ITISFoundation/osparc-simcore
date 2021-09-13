@@ -32,7 +32,6 @@
  * <pre class='javascript'>
  *   let node = new osparc.data.model.Node(key, version, uuid);
  *   node.populateNodeData(nodeData);
- *   node.giveUniqueName();
  *   node.startDynamicService();
  * </pre>
  */
@@ -42,11 +41,12 @@ qx.Class.define("osparc.data.model.Node", {
   include: qx.locale.MTranslation,
 
   /**
+    * @param study {osparc.data.model.Study} Study or Serialized Study Object
     * @param key {String} key of the service represented by the node
     * @param version {String} version of the service represented by the node
     * @param uuid {String} uuid of the service represented by the node (not needed for new Nodes)
   */
-  construct: function(key, version, uuid) {
+  construct: function(study, key, version, uuid) {
     this.base(arguments);
 
     this.__metaData = {};
@@ -56,8 +56,11 @@ qx.Class.define("osparc.data.model.Node", {
     this.setOutputs({});
 
     this.__inputNodes = [];
-    this.__outputNodes = [];
+    this.__exposedNodes = [];
 
+    if (study) {
+      this.setStudy(study);
+    }
     this.set({
       key,
       version,
@@ -84,6 +87,13 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   properties: {
+    study: {
+      check: "osparc.data.model.Study",
+      init: null,
+      nullable: false,
+      event: "changeStudy"
+    },
+
     key: {
       check: "String",
       nullable: true
@@ -137,7 +147,7 @@ qx.Class.define("osparc.data.model.Node", {
     outputs: {
       check: "Object",
       nullable: false,
-      apply: "__repopulateOutputPortData",
+      apply: "__applyOutputs",
       event: "changeOutputs"
     },
 
@@ -157,6 +167,20 @@ qx.Class.define("osparc.data.model.Node", {
       check: "osparc.component.form.renderer.PropFormEditor",
       init: null,
       nullable: true
+    },
+
+    inputConnected: {
+      check: "Boolean",
+      init: false,
+      nullable: true,
+      event: "changeInputConnected"
+    },
+
+    outputConnected: {
+      check: "Boolean",
+      init: false,
+      nullable: true,
+      event: "changeOutputConnected"
     },
 
     loadingPage: {
@@ -182,6 +206,7 @@ qx.Class.define("osparc.data.model.Node", {
   events: {
     "retrieveInputs": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
+    "parameterNodeRequested": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data",
     "outputListChanged": "qx.event.type.Event"
   },
@@ -191,8 +216,16 @@ qx.Class.define("osparc.data.model.Node", {
       return (metaData && metaData.key && metaData.key.includes("file-picker"));
     },
 
+    isParameter: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("/parameter/"));
+    },
+
     isContainer: function(metaData) {
       return (metaData && metaData.key && metaData.key.includes("nodes-group"));
+    },
+
+    isIterator: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("data-iterator"));
     },
 
     isDynamic: function(metaData) {
@@ -208,7 +241,7 @@ qx.Class.define("osparc.data.model.Node", {
     __metaData: null,
     __innerNodes: null,
     __inputNodes: null,
-    __outputNodes: null,
+    __exposedNodes: null,
     __settingsForm: null,
     __inputs: null,
     __inputsDefault: null,
@@ -218,8 +251,7 @@ qx.Class.define("osparc.data.model.Node", {
     __posY: null,
 
     getWorkbench: function() {
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      return study.getWorkbench();
+      return this.getStudy().getWorkbench();
     },
 
     isInKey: function(str) {
@@ -236,8 +268,16 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.data.model.Node.isFilePicker(this.getMetaData());
     },
 
+    isParameter: function() {
+      return osparc.data.model.Node.isParameter(this.getMetaData());
+    },
+
     isContainer: function() {
       return osparc.data.model.Node.isContainer(this.getMetaData());
+    },
+
+    isIterator: function() {
+      return osparc.data.model.Node.isIterator(this.getMetaData());
     },
 
     isDynamic: function() {
@@ -275,6 +315,22 @@ qx.Class.define("osparc.data.model.Node", {
       return this.getOutputs()[outputId];
     },
 
+    getFirstOutput: function() {
+      const outputs = this.getOutputs();
+      if (Object.keys(outputs).length) {
+        return outputs[Object.keys(outputs)[0]];
+      }
+      return null;
+    },
+
+    hasInputs: function() {
+      return Object.keys(this.__inputs).length;
+    },
+
+    hasOutputs: function() {
+      return Object.keys(this.getOutputs()).length;
+    },
+
     hasChildren: function() {
       const innerNodes = this.getInnerNodes();
       if (innerNodes) {
@@ -310,8 +366,8 @@ qx.Class.define("osparc.data.model.Node", {
       const workbench = this.getWorkbench();
 
       let outputNodes = [];
-      for (let i=0; i<this.__outputNodes.length; i++) {
-        const outputNode = workbench.getNode(this.__outputNodes[i]);
+      for (let i=0; i<this.__exposedNodes.length; i++) {
+        const outputNode = workbench.getNode(this.__exposedNodes[i]);
         if (outputNode.isContainer()) {
           let myOutputNodes = outputNode.getExposedInnerNodes();
           outputNodes = outputNodes.concat(myOutputNodes);
@@ -349,6 +405,10 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.isDynamic()) {
         this.__initIFrame();
       }
+
+      if (this.isParameter()) {
+        this.__initParameter();
+      }
     },
 
     populateNodeUIData: function(nodeUIData) {
@@ -385,32 +445,13 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    giveUniqueName: function() {
-      const label = this.getLabel();
-      this.__giveUniqueName(label, 2);
-    },
-
-    __giveUniqueName: function(label, suffix) {
-      const newLabel = label + "_" + suffix;
-      const allModels = this.getWorkbench().getNodes(true);
-      const nodes = Object.values(allModels);
-      for (const node of nodes) {
-        if (node.getNodeId() !== this.getNodeId() &&
-            node.getLabel().localeCompare(this.getLabel()) === 0) {
-          this.setLabel(newLabel);
-          this.__giveUniqueName(label, suffix+1);
-        }
-      }
-    },
-
     startInBackend: function() {
       // create the node in the backend here
       const key = this.getKey();
       const version = this.getVersion();
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
       const params = {
         url: {
-          projectId: study.getUuid()
+          studyId: this.getStudy().getUuid()
         },
         data: {
           "service_id": this.getNodeId(),
@@ -436,10 +477,9 @@ qx.Class.define("osparc.data.model.Node", {
 
     stopInBackend: function() {
       // remove node in the backend
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
       const params = {
         url: {
-          projectId: study.getUuid(),
+          studyId: this.getStudy().getUuid(),
           nodeId: this.getNodeId()
         }
       };
@@ -447,7 +487,7 @@ qx.Class.define("osparc.data.model.Node", {
         .catch(err => console.error(err));
     },
 
-    __repopulateOutputPortData: function() {
+    __applyOutputs: function() {
       if (this.__outputWidget) {
         this.__outputWidget.populatePortsData();
       }
@@ -463,27 +503,11 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     /**
-     * Remove those inputs that can't be respresented in the settings form
-     * (Those are needed for creating connections between nodes)
-     *
-     */
-    __removeNonSettingInputs: function(inputs) {
-      let filteredInputs = JSON.parse(JSON.stringify(inputs));
-      for (const inputId in filteredInputs) {
-        let input = filteredInputs[inputId];
-        if (input.type.includes("data:application/s4l-api/")) {
-          delete filteredInputs[inputId];
-        }
-      }
-      return filteredInputs;
-    },
-
-    /**
      * Add settings widget with those inputs that can be represented in a form
      */
     __addSettings: function(inputs) {
       const form = this.__settingsForm = new osparc.component.form.Auto(inputs);
-      const propsForm = new osparc.component.form.renderer.PropForm(form, this);
+      const propsForm = new osparc.component.form.renderer.PropForm(form, this, this.getStudy());
       this.setPropsForm(propsForm);
       propsForm.addListener("linkFieldModified", e => {
         const linkFieldModified = e.getData();
@@ -512,13 +536,18 @@ qx.Class.define("osparc.data.model.Node", {
         this.callRetrieveInputs(portId);
       }, this);
 
-      propsForm.addListener("filePickerRequested", e => {
-        const portId = e.getData();
-        this.fireDataEvent("filePickerRequested", {
-          portId,
-          nodeId: this.getNodeId()
-        });
-      }, this);
+      [
+        "filePickerRequested",
+        "parameterNodeRequested"
+      ].forEach(nodeRequestSignal => {
+        propsForm.addListener(nodeRequestSignal, e => {
+          const portId = e.getData();
+          this.fireDataEvent(nodeRequestSignal, {
+            portId,
+            nodeId: this.getNodeId()
+          });
+        }, this);
+      });
     },
 
     __addSettingsEditor: function(inputs) {
@@ -553,7 +582,7 @@ qx.Class.define("osparc.data.model.Node", {
       for (const portId in inputs) {
         if (inputs[portId] && Object.prototype.hasOwnProperty.call(inputs[portId], "nodeUuid")) {
           if (inputs[portId]["nodeUuid"] === inputNodeId) {
-            this.getPropsForm().removeLink(portId);
+            this.getPropsForm().removePortLink(portId);
           }
         }
       }
@@ -591,19 +620,15 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.__settingsForm && inputs) {
         const inputData = {};
         const inputLinks = {};
-        const inputParameters = {};
         const inputsCopy = osparc.utils.Utils.deepCloneObject(inputs);
         for (let key in inputsCopy) {
           if (osparc.utils.Ports.isDataALink(inputsCopy[key])) {
             inputLinks[key] = inputsCopy[key];
-          } else if (osparc.utils.Ports.isDataAParameter(inputsCopy[key])) {
-            inputParameters[key] = inputsCopy[key];
           } else {
             inputData[key] = inputsCopy[key];
           }
         }
-        this.getPropsForm().addLinks(inputLinks);
-        this.getPropsForm().addParameters(inputParameters);
+        this.getPropsForm().addPortLinks(inputLinks);
         this.__settingsForm.setData(inputData);
       }
     },
@@ -615,7 +640,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.getPropsFormEditor().setAccessLevel(inputAccess);
       }
 
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const study = this.getStudy();
       if (study && study.isReadOnly() && this.getPropsForm()) {
         this.getPropsForm().setEnabled(false);
       }
@@ -637,7 +662,7 @@ qx.Class.define("osparc.data.model.Node", {
         }
         this.getStatus().setHasOutputs(hasOutputs);
 
-        if (hasOutputs && (this.isFilePicker() || this.isDynamic())) {
+        if (hasOutputs && (this.isFilePicker() || this.isParameter() || this.isDynamic())) {
           this.getStatus().setModified(false);
         }
 
@@ -645,22 +670,19 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
+    getOutputData: function(outputKey) {
+      const outputs = this.getOutputs();
+      if (outputKey in outputs && "value" in outputs[outputKey]) {
+        return outputs[outputKey]["value"];
+      }
+      return null;
+    },
+
     // post edge creation routine
     edgeAdded: function(edge) {
       const inputNode = this.getWorkbench().getNode(edge.getInputNodeId());
       const outputNode = this.getWorkbench().getNode(edge.getOutputNodeId());
       this.__createAutoPortConnection(inputNode, outputNode);
-
-      if (this.isInKey("multi-plot")) {
-        const innerNodes = Object.values(this.getInnerNodes());
-        for (let i=0; i<innerNodes.length; i++) {
-          const innerNode = innerNodes[i];
-          if (innerNode.addInputNode(inputNode.getNodeId())) {
-            this.__createAutoPortConnection(inputNode, innerNode);
-          }
-        }
-        this.callRetrieveInputs();
-      }
     },
 
     // Iterate over output ports and connect them to first compatible input port
@@ -694,7 +716,7 @@ qx.Class.define("osparc.data.model.Node", {
         osparc.utils.Ports.arePortsCompatible(fromNode, fromPortId, this, toPortId)
           .then(compatible => {
             if (compatible) {
-              resolve(this.getPropsForm().addLink(toPortId, fromNodeId, fromPortId));
+              resolve(this.getPropsForm().addPortLink(toPortId, fromNodeId, fromPortId));
             }
             resolve(false);
           });
@@ -706,20 +728,20 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__inputNodes;
     },
 
-    addInputNodes: function(inputNodes) {
-      if (inputNodes) {
-        inputNodes.forEach(inputNode => {
-          this.addInputNode(inputNode);
-        });
-      }
-    },
-
     addInputNode: function(inputNodeId) {
       if (!this.__inputNodes.includes(inputNodeId)) {
         this.__inputNodes.push(inputNodeId);
         return true;
       }
       return false;
+    },
+
+    addInputNodes: function(inputNodes) {
+      if (inputNodes) {
+        inputNodes.forEach(inputNode => {
+          this.addInputNode(inputNode);
+        });
+      }
     },
 
     removeInputNode: function(inputNodeId) {
@@ -740,7 +762,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     // ----- Output Nodes -----
     getOutputNodes: function() {
-      return this.__outputNodes;
+      return this.__exposedNodes;
     },
 
     addOutputNodes: function(outputNodes) {
@@ -752,8 +774,8 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     addOutputNode: function(outputNodeId) {
-      if (!this.__outputNodes.includes(outputNodeId)) {
-        this.__outputNodes.push(outputNodeId);
+      if (!this.__exposedNodes.includes(outputNodeId)) {
+        this.__exposedNodes.push(outputNodeId);
         this.fireEvent("outputListChanged");
         return true;
       }
@@ -761,17 +783,17 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     removeOutputNode: function(outputNodeId) {
-      const index = this.__outputNodes.indexOf(outputNodeId);
+      const index = this.__exposedNodes.indexOf(outputNodeId);
       if (index > -1) {
         // remove node connection
-        this.__outputNodes.splice(index, 1);
+        this.__exposedNodes.splice(index, 1);
         this.fireEvent("outputListChanged");
       }
       return false;
     },
 
     isOutputNode: function(outputNodeId) {
-      const index = this.__outputNodes.indexOf(outputNodeId);
+      const index = this.__exposedNodes.indexOf(outputNodeId);
       return (index > -1);
     },
     // !---- Output Nodes -----
@@ -854,6 +876,26 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
+    __initParameter: function() {
+      if (this.isParameter() && this.getOutputData("out_1") === null) {
+        const type = osparc.component.node.ParameterEditor.getParameterOutputType(this);
+        // set default values if none
+        let val = null;
+        switch (type) {
+          case "boolean":
+            val = true;
+            break;
+          case "number":
+          case "integer":
+            val = 1;
+            break;
+        }
+        if (val !== null) {
+          osparc.component.node.ParameterEditor.setParameterOutputValue(this, val);
+        }
+      }
+    },
+
     callRetrieveInputs: function(portKey) {
       if (this.isContainer()) {
         const innerNodes = Object.values(this.getInnerNodes());
@@ -903,7 +945,6 @@ qx.Class.define("osparc.data.model.Node", {
               const sizeBytes = (data && ("size_bytes" in data)) ? data["size_bytes"] : 0;
               this.getPropsForm().retrievedPortData(portKey, true, sizeBytes);
             }
-            console.log(data);
           }, this);
           updReq.addListener("fail", e => {
             const {
@@ -974,16 +1015,25 @@ qx.Class.define("osparc.data.model.Node", {
           break;
         }
         case "running": {
-          const servicePath = data["service_basepath"];
-          const entryPointD = data["entry_point"];
           const nodeId = data["service_uuid"];
           if (nodeId !== this.getNodeId()) {
             return;
           }
-          if (servicePath) {
-            const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
-            const srvUrl = servicePath + entryPoint;
+
+          const isDynamicType = data["boot_type"] === "V2" || false;
+          if (isDynamicType) {
+            // dynamic service
+            const srvUrl = window.location.protocol + "//" + nodeId + ".services." + window.location.host;
             this.__waitForServiceReady(srvUrl);
+          } else {
+            // old implementation
+            const servicePath = data["service_basepath"];
+            const entryPointD = data["entry_point"];
+            if (servicePath) {
+              const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
+              const srvUrl = servicePath + entryPoint;
+              this.__waitForServiceReady(srvUrl);
+            }
           }
           break;
         }
@@ -1006,19 +1056,18 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
     __nodeState: function() {
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
       // Check if study is still there
-      if (study === null) {
+      if (this.getStudy() === null) {
         return;
       }
       // Check if node is still there
-      if (study.getWorkbench().getNode(this.getNodeId()) === null) {
+      if (this.getWorkbench().getNode(this.getNodeId()) === null) {
         return;
       }
 
       const params = {
         url: {
-          projectId: study.getUuid(),
+          studyId: this.getStudy().getUuid(),
           nodeId: this.getNodeId()
         }
       };
@@ -1064,8 +1113,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.getStatus().setInteractive("connecting");
         console.log("service not ready yet, waiting... " + error);
         // Check if node is still there
-        const study = osparc.store.Store.getInstance().getCurrentStudy();
-        if (study.getWorkbench().getNode(this.getNodeId()) === null) {
+        if (this.getWorkbench().getNode(this.getNodeId()) === null) {
           return;
         }
         const interval = 1000;
@@ -1158,13 +1206,19 @@ qx.Class.define("osparc.data.model.Node", {
       };
 
       if (this.isContainer()) {
-        nodeEntry.outputNodes = this.getOutputNodes();
-      }
-
-      if (this.isFilePicker()) {
+        nodeEntry.outputNodes = this.getExposedNodeIDs();
+      } else if (this.isFilePicker()) {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
+      } else if (this.isParameter()) {
+        const paramOutKey = "out_1";
+        if (this.getOutputData(paramOutKey) !== null) {
+          const output = {};
+          output[paramOutKey] = this.getOutputData(paramOutKey);
+          nodeEntry.outputs = output;
+        }
       }
+
       // remove null entries from the payload
       let filteredNodeEntry = {};
       for (const key in nodeEntry) {

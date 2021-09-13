@@ -27,6 +27,7 @@ tags:
   - name: authentication
   - name: user
   - name: project
+  - name: cluster
   - name: catalog
   - name: storage
   - name: service
@@ -5997,6 +5998,11 @@ paths:
                   type: boolean
                   default: false
                   description: if true will force re-running all dependent nodes
+                cluster_id:
+                  type: integer
+                  description: 'the computation shall use the cluster described by its id, 0 is the default cluster'
+                  default: 0
+                  minimum: 0
                 subgraph:
                   description: The node uuids selected for running a partial pipeline
                   type: array
@@ -13244,6 +13250,477 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
+  '/projects/{project_id}/snapshots':
+    get:
+      tags:
+        - project
+        - snapshot
+      summary: List Snapshots
+      description: Lists all snapshots taken from a given project
+      operationId: simcore_service_webserver.repos_snapshots_api_handlers.list_snapshots
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+        - description: index to the first item to return (pagination)
+          required: false
+          schema:
+            title: Offset
+            exclusiveMinimum: false
+            type: integer
+            description: index to the first item to return (pagination)
+            default: 0
+          name: offset
+          in: query
+        - description: maximum number of items to return (pagination)
+          required: false
+          schema:
+            title: Limit
+            maximum: 50
+            minimum: 1
+            type: integer
+            description: maximum number of items to return (pagination)
+            default: 20
+          name: limit
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: Response List Snapshots Projects  Project Id  Snapshots Get
+                type: array
+                items:
+                  title: SnapshotResource
+                  required:
+                    - parent_uuid
+                    - project_uuid
+                    - url
+                    - url_parent
+                    - url_project
+                  type: object
+                  properties:
+                    id:
+                      title: Id
+                      type: integer
+                      description: Unique snapshot identifier
+                    name:
+                      title: Name
+                      type: string
+                      description: Unique human readable display name
+                    created_at:
+                      title: Created At
+                      type: string
+                      description: Timestamp of the time snapshot was taken from parent.Notice that parent might change with time
+                      format: date-time
+                    parent_uuid:
+                      title: Parent Uuid
+                      type: string
+                      description: Parent's project uuid
+                      format: uuid
+                    project_uuid:
+                      title: Project Uuid
+                      type: string
+                      description: Current project's uuid
+                      format: uuid
+                    url:
+                      title: Url
+                      maxLength: 65536
+                      minLength: 1
+                      type: string
+                      format: uri
+                    url_parent:
+                      title: Url Parent
+                      maxLength: 65536
+                      minLength: 1
+                      type: string
+                      format: uri
+                    url_project:
+                      title: Url Project
+                      maxLength: 65536
+                      minLength: 1
+                      type: string
+                      format: uri
+                  description: Model for a snapshot API resource
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                title: HTTPValidationError
+                type: object
+                properties:
+                  detail:
+                    title: Detail
+                    type: array
+                    items:
+                      title: ValidationError
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      type: object
+                      properties:
+                        loc:
+                          title: Location
+                          type: array
+                          items:
+                            type: string
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
+    post:
+      tags:
+        - project
+        - snapshot
+      summary: Create Snapshot
+      description: Takes a snapshot of the project at this time
+      operationId: simcore_service_webserver.repos_snapshots_api_handlers.create_snapshot
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+        - required: false
+          schema:
+            title: Snapshot Label
+            type: string
+          name: snapshot_label
+          in: query
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: SnapshotResource
+                required:
+                  - parent_uuid
+                  - project_uuid
+                  - url
+                  - url_parent
+                  - url_project
+                type: object
+                properties:
+                  id:
+                    title: Id
+                    type: integer
+                    description: Unique snapshot identifier
+                  name:
+                    title: Name
+                    type: string
+                    description: Unique human readable display name
+                  created_at:
+                    title: Created At
+                    type: string
+                    description: Timestamp of the time snapshot was taken from parent.Notice that parent might change with time
+                    format: date-time
+                  parent_uuid:
+                    title: Parent Uuid
+                    type: string
+                    description: Parent's project uuid
+                    format: uuid
+                  project_uuid:
+                    title: Project Uuid
+                    type: string
+                    description: Current project's uuid
+                    format: uuid
+                  url:
+                    title: Url
+                    maxLength: 65536
+                    minLength: 1
+                    type: string
+                    format: uri
+                  url_parent:
+                    title: Url Parent
+                    maxLength: 65536
+                    minLength: 1
+                    type: string
+                    format: uri
+                  url_project:
+                    title: Url Project
+                    maxLength: 65536
+                    minLength: 1
+                    type: string
+                    format: uri
+                description: Model for a snapshot API resource
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                title: HTTPValidationError
+                type: object
+                properties:
+                  detail:
+                    title: Detail
+                    type: array
+                    items:
+                      title: ValidationError
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      type: object
+                      properties:
+                        loc:
+                          title: Location
+                          type: array
+                          items:
+                            type: string
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
+  '/projects/{project_id}/snapshots/{snapshot_id}':
+    get:
+      tags:
+        - project
+        - snapshot
+      summary: Get Snapshot
+      description: Gets commit info for a given snapshot
+      operationId: simcore_service_webserver.repos_snapshots_api_handlers.get_snapshot
+      parameters:
+        - required: true
+          schema:
+            title: Snapshot Id
+            exclusiveMinimum: false
+            type: integer
+          name: snapshot_id
+          in: path
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: SnapshotResource
+                required:
+                  - parent_uuid
+                  - project_uuid
+                  - url
+                  - url_parent
+                  - url_project
+                type: object
+                properties:
+                  id:
+                    title: Id
+                    type: integer
+                    description: Unique snapshot identifier
+                  name:
+                    title: Name
+                    type: string
+                    description: Unique human readable display name
+                  created_at:
+                    title: Created At
+                    type: string
+                    description: Timestamp of the time snapshot was taken from parent.Notice that parent might change with time
+                    format: date-time
+                  parent_uuid:
+                    title: Parent Uuid
+                    type: string
+                    description: Parent's project uuid
+                    format: uuid
+                  project_uuid:
+                    title: Project Uuid
+                    type: string
+                    description: Current project's uuid
+                    format: uuid
+                  url:
+                    title: Url
+                    maxLength: 65536
+                    minLength: 1
+                    type: string
+                    format: uri
+                  url_parent:
+                    title: Url Parent
+                    maxLength: 65536
+                    minLength: 1
+                    type: string
+                    format: uri
+                  url_project:
+                    title: Url Project
+                    maxLength: 65536
+                    minLength: 1
+                    type: string
+                    format: uri
+                description: Model for a snapshot API resource
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                title: HTTPValidationError
+                type: object
+                properties:
+                  detail:
+                    title: Detail
+                    type: array
+                    items:
+                      title: ValidationError
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      type: object
+                      properties:
+                        loc:
+                          title: Location
+                          type: array
+                          items:
+                            type: string
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
+    delete:
+      tags:
+        - project
+        - snapshot
+      summary: Delete Snapshot
+      description: Deletes both the commit and the project itself
+      operationId: simcore_service_webserver.repos_snapshots_api_handlers.delete_snapshot
+      parameters:
+        - required: true
+          schema:
+            title: Snapshot Id
+            exclusiveMinimum: false
+            type: integer
+          name: snapshot_id
+          in: path
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                title: HTTPValidationError
+                type: object
+                properties:
+                  detail:
+                    title: Detail
+                    type: array
+                    items:
+                      title: ValidationError
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      type: object
+                      properties:
+                        loc:
+                          title: Location
+                          type: array
+                          items:
+                            type: string
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
+    patch:
+      tags:
+        - project
+        - snapshot
+      summary: Update Snapshot
+      description: Updates label/name of a snapshot
+      operationId: simcore_service_webserver.repos_snapshots_api_handlers.update_snapshot
+      parameters:
+        - required: true
+          schema:
+            title: Snapshot Id
+            exclusiveMinimum: false
+            type: integer
+          name: snapshot_id
+          in: path
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: SnapshotPatchBody
+              type: object
+              properties:
+                name:
+                  title: Name
+                  type: string
+                  description: Unique human readable display name
+              description: Model to patch a snapshot resource
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                title: HTTPValidationError
+                type: object
+                properties:
+                  detail:
+                    title: Detail
+                    type: array
+                    items:
+                      title: ValidationError
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      type: object
+                      properties:
+                        loc:
+                          title: Location
+                          type: array
+                          items:
+                            type: string
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
   /activity/status:
     get:
       operationId: get_status
@@ -15395,6 +15872,811 @@ paths:
                 type: object
           description: Validation Error
       summary: Get Compatible Outputs Given Target Input
+  /clusters:
+    get:
+      summary: List my clusters
+      operationId: list_clusters_handler
+      tags:
+        - cluster
+      responses:
+        '200':
+          description: list of the clusters I have access to
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          description: the cluster id
+                          type: integer
+                          minimum: 1
+                        name:
+                          description: the cluster name
+                          type: string
+                        description:
+                          description: the cluster description
+                          type: string
+                        type:
+                          description: the cluster type
+                          type: string
+                          enum:
+                            - ON_PREMISE
+                            - AWS
+                        owner:
+                          description: the cluster owner group
+                          type: integer
+                          minimum: 1
+                        accessRights:
+                          type: object
+                          description: object containing the GroupID as key and read/write/execution permissions as value
+                          x-patternProperties:
+                            ^\S+$:
+                              description: defines acesss rights for the cluster
+                              type: object
+                              properties:
+                                read:
+                                  type: boolean
+                                  description: allows usage of the cluster
+                                write:
+                                  type: boolean
+                                  description: allows modification of the cluster
+                                delete:
+                                  type: boolean
+                                  description: allows deletion of the cluster
+                              required:
+                                - read
+                                - write
+                                - delete
+                      required:
+                        - id
+                        - name
+                        - accessRights
+                      example:
+                        - id: 1
+                          name: AWS cluster
+                          type: AWS
+                          owner: 2
+                          accessRights:
+                            '2':
+                              read: true
+                              write: true
+                              delete: true
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    post:
+      summary: Create a new cluster
+      operationId: create_cluster_handler
+      tags:
+        - cluster
+      requestBody:
+        required: true
+        description: the cluster to create
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  description: the cluster name
+                  type: string
+                description:
+                  description: the cluster description
+                  type: string
+                type:
+                  description: the cluster type
+                  type: string
+                  enum:
+                    - ON_PREMISE
+                    - AWS
+              required:
+                - name
+                - type
+      responses:
+        '201':
+          description: cluster created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        description: the cluster id
+                        type: integer
+                        minimum: 1
+                      name:
+                        description: the cluster name
+                        type: string
+                      description:
+                        description: the cluster description
+                        type: string
+                      type:
+                        description: the cluster type
+                        type: string
+                        enum:
+                          - ON_PREMISE
+                          - AWS
+                      owner:
+                        description: the cluster owner group
+                        type: integer
+                        minimum: 1
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
+                        x-patternProperties:
+                          ^\S+$:
+                            description: defines acesss rights for the cluster
+                            type: object
+                            properties:
+                              read:
+                                type: boolean
+                                description: allows usage of the cluster
+                              write:
+                                type: boolean
+                                description: allows modification of the cluster
+                              delete:
+                                type: boolean
+                                description: allows deletion of the cluster
+                            required:
+                              - read
+                              - write
+                              - delete
+                    required:
+                      - id
+                      - name
+                      - accessRights
+                    example:
+                      - id: 1
+                        name: AWS cluster
+                        type: AWS
+                        owner: 2
+                        accessRights:
+                          '2':
+                            read: true
+                            write: true
+                            delete: true
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+  '/clusters/{cluster_id}':
+    parameters:
+      - name: cluster_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - cluster
+      summary: Gets one cluster details
+      operationId: get_cluster_handler
+      responses:
+        '200':
+          description: got cluster
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        description: the cluster id
+                        type: integer
+                        minimum: 1
+                      name:
+                        description: the cluster name
+                        type: string
+                      description:
+                        description: the cluster description
+                        type: string
+                      type:
+                        description: the cluster type
+                        type: string
+                        enum:
+                          - ON_PREMISE
+                          - AWS
+                      owner:
+                        description: the cluster owner group
+                        type: integer
+                        minimum: 1
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
+                        x-patternProperties:
+                          ^\S+$:
+                            description: defines acesss rights for the cluster
+                            type: object
+                            properties:
+                              read:
+                                type: boolean
+                                description: allows usage of the cluster
+                              write:
+                                type: boolean
+                                description: allows modification of the cluster
+                              delete:
+                                type: boolean
+                                description: allows deletion of the cluster
+                            required:
+                              - read
+                              - write
+                              - delete
+                    required:
+                      - id
+                      - name
+                      - accessRights
+                    example:
+                      - id: 1
+                        name: AWS cluster
+                        type: AWS
+                        owner: 2
+                        accessRights:
+                          '2':
+                            read: true
+                            write: true
+                            delete: true
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    patch:
+      summary: Update one cluster
+      operationId: update_cluster_handler
+      tags:
+        - cluster
+      requestBody:
+        required: true
+        description: the cluster to update
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  description: the cluster name
+                  type: string
+                description:
+                  description: the cluster description
+                  type: string
+                type:
+                  description: the cluster type
+                  type: string
+                  enum:
+                    - ON_PREMISE
+                    - AWS
+                owner:
+                  description: the cluster owner group
+                  type: integer
+                  minimum: 1
+                accessRights:
+                  type: object
+                  description: object containing the GroupID as key and read/write/execution permissions as value
+                  x-patternProperties:
+                    ^\S+$:
+                      description: defines acesss rights for the cluster
+                      type: object
+                      properties:
+                        read:
+                          type: boolean
+                          description: allows usage of the cluster
+                        write:
+                          type: boolean
+                          description: allows modification of the cluster
+                        delete:
+                          type: boolean
+                          description: allows deletion of the cluster
+                      required:
+                        - read
+                        - write
+                        - delete
+      responses:
+        '200':
+          description: the modified cluster
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        description: the cluster id
+                        type: integer
+                        minimum: 1
+                      name:
+                        description: the cluster name
+                        type: string
+                      description:
+                        description: the cluster description
+                        type: string
+                      type:
+                        description: the cluster type
+                        type: string
+                        enum:
+                          - ON_PREMISE
+                          - AWS
+                      owner:
+                        description: the cluster owner group
+                        type: integer
+                        minimum: 1
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
+                        x-patternProperties:
+                          ^\S+$:
+                            description: defines acesss rights for the cluster
+                            type: object
+                            properties:
+                              read:
+                                type: boolean
+                                description: allows usage of the cluster
+                              write:
+                                type: boolean
+                                description: allows modification of the cluster
+                              delete:
+                                type: boolean
+                                description: allows deletion of the cluster
+                            required:
+                              - read
+                              - write
+                              - delete
+                    required:
+                      - id
+                      - name
+                      - accessRights
+                    example:
+                      - id: 1
+                        name: AWS cluster
+                        type: AWS
+                        owner: 2
+                        accessRights:
+                          '2':
+                            read: true
+                            write: true
+                            delete: true
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    delete:
+      tags:
+        - cluster
+      summary: Deletes one cluster
+      operationId: delete_cluster_handler
+      responses:
+        '204':
+          description: cluster has been successfully deleted
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
   /viewers:
     get:
       operationId: list_viewers

@@ -15,11 +15,16 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
   extend: osparc.component.form.renderer.PropFormBase,
 
   /**
-   * @param form {osparc.component.form.Auto} form widget to embedd
+   * @param form {osparc.component.form.Auto} form widget to embed
    * @param node {osparc.data.model.Node} Node owning the widget
+   * @param study {osparc.data.model.Study} Study owning the node
    */
-  construct: function(form, node) {
+  construct: function(form, node, study) {
     this.base(arguments, form, node);
+
+    if (study) {
+      this.setStudy(study);
+    }
 
     this.__ctrlLinkMap = {};
     this.__ctrlParamMap = {};
@@ -34,7 +39,16 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
   events: {
     "linkFieldModified": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
+    "parameterNodeRequested": "qx.event.type.Data",
     "changeChildVisibility": "qx.event.type.Event"
+  },
+
+  properties: {
+    study: {
+      check: "osparc.data.model.Study",
+      init: null,
+      nullable: false
+    }
   },
 
   statics: {
@@ -55,6 +69,15 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     gridPos: {
       ...osparc.component.form.renderer.PropFormBase.gridPos,
       retrieveStatus: Object.keys(osparc.component.form.renderer.PropFormBase.gridPos).length
+    },
+
+    isFieldParametrizable: function(field) {
+      const supportedTypes = [];
+      const paramsMD = osparc.utils.Services.getParametersMetadata();
+      paramsMD.forEach(paramMD => {
+        supportedTypes.push(osparc.component.node.ParameterEditor.getParameterOutputTypeFromMD(paramMD));
+      });
+      return supportedTypes.includes(field.type);
     }
   },
 
@@ -74,14 +97,14 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       if (["FileButton"].includes(field.widgetType)) {
         return this.__getSelectFileButton(field.key);
       }
-      if (["Number", "Spinner"].includes(field.widgetType)) {
+      if (this.self().isFieldParametrizable(field)) {
         const paramsMenuBtn = this.__getParamsMenuButton(field.key).set({
           visibility: "excluded"
         });
-        osparc.data.model.Sweeper.isSweeperEnabled()
-          .then(isSweeperEnabled => {
+        osparc.utils.Utils.isDevelopmentPlatform()
+          .then(areParamsEnabled => {
             field.bind("visibility", paramsMenuBtn, "visibility", {
-              converter: visibility => (visibility === "visible" && isSweeperEnabled) ? "visible" : "excluded"
+              converter: visibility => (visibility === "visible" && areParamsEnabled) ? "visible" : "excluded"
             });
           });
         return paramsMenuBtn;
@@ -104,16 +127,18 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
       const newParamBtn = new qx.ui.menu.Button(this.tr("Set new parameter"));
       newParamBtn.addListener("execute", () => {
-        this.__createNewParameter(portId);
+        this.fireDataEvent("parameterNodeRequested", portId);
       }, this);
       paramsMenu.add(newParamBtn);
 
       const existingParamMenu = new qx.ui.menu.Menu();
-      this.__populateExistingParamsMenu(portId, existingParamMenu);
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      study.getSweeper().addListener("changeParameters", () => {
+      const study = this.getStudy();
+      if (study) {
         this.__populateExistingParamsMenu(portId, existingParamMenu);
-      }, this);
+        study.addListener("changeParameters", () => {
+          this.__populateExistingParamsMenu(portId, existingParamMenu);
+        }, this);
+      }
 
       const existingParamBtn = new qx.ui.menu.Button(this.tr("Set existing parameter"), null, null, existingParamMenu);
       paramsMenu.add(existingParamBtn);
@@ -128,35 +153,21 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return menuBtn;
     },
 
-    __createNewParameter: function(fieldKey) {
-      const title = this.tr("Create new parameter");
-      const newParamName = new osparc.component.widget.Renamer(null, null, title);
-      newParamName.addListener("labelChanged", e => {
-        const study = osparc.store.Store.getInstance().getCurrentStudy();
-        let newParameterLabel = e.getData()["newLabel"];
-        newParameterLabel = newParameterLabel.replace(/ /g, "_").replace(/"/g, "'");
-        if (study.getSweeper().parameterLabelExists(newParameterLabel)) {
-          const msg = this.tr("Parameter name already exists");
-          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-        } else {
-          const param = study.getSweeper().addNewParameter(newParameterLabel);
-          this.addParameter(fieldKey, param);
-          newParamName.close();
-        }
-      }, this);
-      newParamName.center();
-      newParamName.open();
-    },
-
     __populateExistingParamsMenu: function(fieldKey, existingParamMenu) {
       existingParamMenu.removeAll();
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      study.getSweeper().getParameters().forEach(param => {
-        const paramButton = new qx.ui.menu.Button(param.label);
-        paramButton.addListener("execute", () => {
-          this.addParameter(fieldKey, param);
-        }, this);
-        existingParamMenu.add(paramButton);
+      this.getStudy().getParameters().forEach(paramNode => {
+        osparc.utils.Ports.arePortsCompatible(paramNode, "out_1", this.getNode(), fieldKey)
+          .then(compatible => {
+            if (compatible) {
+              const paramButton = new qx.ui.menu.Button();
+              paramNode.bind("label", paramButton, "label");
+              paramButton.addListener("execute", () => {
+                this.getNode().addInputNode(paramNode.getNodeId());
+                this.getNode().addPortLink(fieldKey, paramNode.getNodeId(), "out_1");
+              }, this);
+              existingParamMenu.add(paramButton);
+            }
+          });
       });
     },
 
@@ -311,8 +322,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           resolve(false);
           return;
         }
-        const study = osparc.store.Store.getInstance().getCurrentStudy();
-        const workbench = study.getWorkbench();
+        const workbench = this.getStudy().getWorkbench();
         const node1 = workbench.getNode(node1Id);
         const node2 = workbench.getNode(node2Id);
         if (workbench && node1 && node2) {
@@ -509,7 +519,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
         const unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
         unlinkBtn.addListener("execute", function() {
-          this.removeLink(portId);
+          this.removePortLink(portId);
         }, this);
         hBox.add(unlinkBtn);
 
@@ -530,7 +540,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
     },
 
-    __linkRemoved: function(portId) {
+    __portLinkRemoved: function(portId) {
       if (this.__resetCtrlField(portId)) {
         // enable fieldOpts button
         const fieldOpts = this._getFieldOptsChild(portId);
@@ -564,7 +574,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return links;
     },
 
-    addLink: function(toPortId, fromNodeId, fromPortId) {
+    addPortLink: function(toPortId, fromNodeId, fromPortId) {
+      const study = this.getStudy();
+      if (!study) {
+        return null;
+      }
       if (!this.__isPortAvailable(toPortId)) {
         return false;
       }
@@ -574,7 +588,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         output: fromPortId
       };
 
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
       const workbench = study.getWorkbench();
       const fromNode = workbench.getNode(fromNodeId);
       const port = fromNode.getOutput(fromPortId);
@@ -588,21 +601,21 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return true;
     },
 
-    addLinks: function(data) {
+    addPortLinks: function(data) {
       for (let key in data) {
         if (osparc.utils.Ports.isDataALink(data[key])) {
-          this.addLink(key, data[key].nodeUuid, data[key].output);
+          this.addPortLink(key, data[key].nodeUuid, data[key].output);
         }
       }
     },
 
-    removeLink: function(toPortId) {
+    removePortLink: function(toPortId) {
       this.getControlLink(toPortId).setEnabled(false);
       if ("link" in this._form.getControl(toPortId)) {
         delete this._form.getControl(toPortId)["link"];
       }
 
-      this.__linkRemoved(toPortId);
+      this.__portLinkRemoved(toPortId);
     },
     /* /LINKS */
 
@@ -652,36 +665,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __parameterRemoved: function(portId) {
       this.__resetCtrlField(portId);
-    },
-
-    // overridden
-    addParameter: function(portId, parameter) {
-      if (!this.__isPortAvailable(portId)) {
-        return false;
-      }
-      if (!parameter) {
-        return false;
-      }
-
-      this.getControlParam(portId).setEnabled(false);
-      this._form.getControl(portId).parameter = parameter;
-      // ToDo: Binding missing
-      this.getControlParam(portId).setValue(this.tr("Parameter: ") + parameter.label);
-      this.__parameterAdded(portId);
-      return true;
-    },
-
-    addParameters: function(data) {
-      for (let key in data) {
-        if (osparc.utils.Ports.isDataAParameter(data[key])) {
-          const parameterId = data[key].replace("{{", "").replace("}}", "");
-          const study = osparc.store.Store.getInstance().getCurrentStudy();
-          const parameter = study.getSweeper().getParameter(parameterId);
-          if (parameter) {
-            this.addParameter(key, parameter);
-          }
-        }
-      }
     },
 
     removeParameter: function(portId) {

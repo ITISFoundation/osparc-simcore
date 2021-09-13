@@ -10,7 +10,6 @@ from math import ceil
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 from unittest.mock import call
 
-import aiohttp
 import pytest
 from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
@@ -27,7 +26,7 @@ from models_library.projects_state import (
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib import async_utils
-from servicelib.application import create_safe_application
+from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver import catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
@@ -64,7 +63,7 @@ def client(
     aiohttp_client,
     app_cfg,
     postgres_db,
-    mocked_director_api,
+    mocked_director_v2_api,
     mock_orphaned_services,
     redis_client,
 ):
@@ -855,33 +854,32 @@ async def test_delete_project(
     user_project,
     expected,
     storage_subsystem_mock,
-    mocked_director_api,
+    mocked_director_v2_api,
     catalog_subsystem_mock,
     fake_services,
 ):
     # DELETE /v0/projects/{project_id}
 
     fakes = fake_services(5)
-    mocked_director_api["get_running_interactive_services"].return_value = fakes
+    mocked_director_v2_api["director_v2.get_services"].return_value = fakes
 
     await _delete_project(client, user_project, expected)
     await asyncio.sleep(2)  # let some time fly for the background tasks to run
 
     if expected == web.HTTPNoContent:
-        mocked_director_api["get_running_interactive_services"].assert_called_once()
+        mocked_director_v2_api["director_v2.get_services"].assert_called_once()
 
         expected_calls = [
             call(
-                # app=
-                client.server.app,
-                # service_uuid=
-                service["service_uuid"],
-                # save_state=
-                True,
+                app=client.server.app,
+                service_uuid=service["service_uuid"],
+                save_state=True,
             )
             for service in fakes
         ]
-        mocked_director_api["stop_service"].assert_has_calls(expected_calls)
+        mocked_director_v2_api["director_v2.stop_service"].assert_has_calls(
+            expected_calls
+        )
 
         # wait for the fire&forget to run
         await asyncio.sleep(2)
@@ -901,7 +899,7 @@ async def test_delete_multiple_opened_project_forbidden(
     client,
     logged_user,
     user_project,
-    mocked_director_api,
+    mocked_director_v2_api,
     mocked_dynamic_service,
     socketio_client_factory: Callable,
     client_session_id_factory: Callable,

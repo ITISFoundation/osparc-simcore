@@ -3,12 +3,16 @@
 
 """
 import logging
-import urllib
+import urllib.parse
 from dataclasses import dataclass
+from typing import List, Optional
 
 import httpx
+import yarl
 from fastapi import FastAPI, HTTPException, Request, Response
+from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
+from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceDockerData, ServiceKeyVersion
 
 # Module's business logic ---------------------------------------------
@@ -16,7 +20,9 @@ from starlette import status
 from starlette.datastructures import URL
 
 from ..core.settings import DirectorV0Settings
-from ..models.schemas.services import RunningServiceDetails, ServiceExtras
+from ..models.schemas.constants import UserID
+from ..models.schemas.dynamic_services import RunningDynamicServiceDetails
+from ..models.schemas.services import ServiceExtras
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
 from ..utils.logging_utils import log_decorator
@@ -95,7 +101,7 @@ class DirectorV0Client:
         self, service: ServiceKeyVersion
     ) -> ServiceDockerData:
         resp = await self.request(
-            "GET", f"services/{urllib.parse.quote_plus(service.key)}/{service.version}"
+            "GET", f"/services/{urllib.parse.quote_plus(service.key)}/{service.version}"
         )
         if resp.status_code == status.HTTP_200_OK:
             return ServiceDockerData.parse_obj(unenvelope_or_raise_error(resp)[0])
@@ -105,7 +111,7 @@ class DirectorV0Client:
     async def get_service_extras(self, service: ServiceKeyVersion) -> ServiceExtras:
         resp = await self.request(
             "GET",
-            f"service_extras/{urllib.parse.quote_plus(service.key)}/{service.version}",
+            f"/service_extras/{urllib.parse.quote_plus(service.key)}/{service.version}",
         )
         if resp.status_code == status.HTTP_200_OK:
             return ServiceExtras.parse_obj(unenvelope_or_raise_error(resp))
@@ -114,8 +120,44 @@ class DirectorV0Client:
     @log_decorator(logger=logger)
     async def get_running_service_details(
         self, service_uuid: NodeID
-    ) -> RunningServiceDetails:
+    ) -> RunningDynamicServiceDetails:
         resp = await self.request("GET", f"running_interactive_services/{service_uuid}")
         if resp.status_code == status.HTTP_200_OK:
-            return RunningServiceDetails.parse_obj(unenvelope_or_raise_error(resp))
+            return RunningDynamicServiceDetails.parse_obj(
+                unenvelope_or_raise_error(resp)
+            )
+        raise HTTPException(status_code=resp.status_code, detail=resp.content)
+
+    @log_decorator(logger=logger)
+    async def get_service_labels(
+        self, service: ServiceKeyVersion
+    ) -> SimcoreServiceLabels:
+        resp = await self.request(
+            "GET",
+            f"services/{urllib.parse.quote_plus(service.key)}/{service.version}/labels",
+        )
+        resp.raise_for_status()
+        if resp.status_code == status.HTTP_200_OK:
+            return SimcoreServiceLabels.parse_obj(unenvelope_or_raise_error(resp))
+        raise HTTPException(status_code=resp.status_code, detail=resp.content)
+
+    @log_decorator(logger=logger)
+    async def get_running_services(
+        self, user_id: Optional[UserID] = None, project_id: Optional[ProjectID] = None
+    ) -> List[RunningDynamicServiceDetails]:
+        query_params = {}
+        if user_id is not None:
+            query_params["user_id"] = f"{user_id}"
+        if project_id is not None:
+            query_params["study_id"] = f"{project_id}"
+        request_url = yarl.URL("running_interactive_services").with_query(query_params)
+
+        resp = await self.request("GET", str(request_url))
+        resp.raise_for_status()
+
+        if resp.status_code == status.HTTP_200_OK:
+            return [
+                RunningDynamicServiceDetails(**x)
+                for x in unenvelope_or_raise_error(resp)
+            ]
         raise HTTPException(status_code=resp.status_code, detail=resp.content)

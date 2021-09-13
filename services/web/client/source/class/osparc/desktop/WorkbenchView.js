@@ -44,7 +44,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   events: {
-    "startStudy": "qx.event.type.Data"
+    "startSnapshot": "qx.event.type.Data"
   },
 
   properties: {
@@ -96,6 +96,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__loggerView.setCurrentNodeId("");
         return;
       }
+
+      const study = this.getStudy();
+      const workbench = study.getWorkbench();
+      const node = workbench.getNode(nodeId);
+      if (node && node.isParameter()) {
+        this.__popUpParameterEditor(node);
+        return;
+      }
+
       if (this.__nodesTree) {
         this.__nodesTree.setCurrentNodeId(nodeId);
       }
@@ -107,11 +116,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
       const prevNodeId = this.__currentNodeId;
       this.__currentNodeId = nodeId;
-      this.getStudy().getUi().setCurrentNodeId(nodeId);
+      study.getUi().setCurrentNodeId(nodeId);
 
-      const study = this.getStudy();
-      const workbench = study.getWorkbench();
-      const node = workbench.getNode(nodeId);
       if (node === null || nodeId === study.getUuid()) {
         this.__showInMainView(this.__workbenchUI, study.getUuid());
         this.__workbenchUI.loadModel(workbench);
@@ -133,6 +139,23 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__showInMainView(this.__nodeView, nodeId);
         this.__nodeView.populateLayout();
       }
+    },
+
+    __popUpParameterEditor: function(node) {
+      const parameterEditor = new osparc.component.node.ParameterEditor(node);
+      const win = osparc.ui.window.Window.popUpInWindow(parameterEditor, "Edit Parameter", 250, 175);
+      parameterEditor.addListener("editParameter", () => {
+        const label = parameterEditor.getLabel();
+        node.setLabel(label);
+
+        const val = parameterEditor.getValue();
+        osparc.component.node.ParameterEditor.setParameterOutputValue(node, val);
+
+        win.close();
+      }, this);
+      parameterEditor.addListener("cancel", () => {
+        win.close();
+      }, this);
     },
 
     getLogger: function() {
@@ -162,27 +185,45 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __showSweeper: function() {
+    __takeSnapshot: function() {
       const study = this.getStudy();
-      const sweeper = new osparc.component.sweeper.Sweeper(study);
-      const title = this.tr("Sweeper");
-      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 400, 700);
-      sweeper.addListener("iterationSelected", e => {
-        win.close();
-        const iterationStudyId = e.getData();
+      const takeSnapshotView = new osparc.component.snapshots.TakeSnapshotView(study);
+      const title = this.tr("Take Snapshot");
+      const win = osparc.ui.window.Window.popUpInWindow(takeSnapshotView, title, 400, 140);
+      takeSnapshotView.addListener("takeSnapshot", () => {
+        const label = takeSnapshotView.getLabel();
+        const workbenchToolbar = this.__mainPanel.getToolbar();
+        const takeSnapshotBtn = workbenchToolbar.getChildControl("take-snapshot-btn");
+        takeSnapshotBtn.setFetching(true);
         const params = {
           url: {
-            "projectId": iterationStudyId
+            "studyId": study.getUuid(),
+            "snapshot_label": label
           }
         };
-        osparc.data.Resources.getOne("studies", params)
-          .then(studyData => {
-            study.removeIFrames();
-            const data = {
-              studyId: studyData.uuid
-            };
-            this.fireDataEvent("startStudy", data);
-          });
+        osparc.data.Resources.fetch("snapshots", "takeSnapshot", params)
+          .then(data => {
+            workbenchToolbar.evalSnapshotsBtn();
+          })
+          .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"))
+          .finally(takeSnapshotBtn.setFetching(false));
+
+        win.close();
+      }, this);
+      takeSnapshotView.addListener("cancel", () => {
+        win.close();
+      }, this);
+    },
+
+    __showSnapshots: function() {
+      const study = this.getStudy();
+      const snapshots = new osparc.component.snapshots.SnapshotsView(study);
+      const title = this.tr("Snapshots");
+      const win = osparc.ui.window.Window.popUpInWindow(snapshots, title, 1000, 500);
+      snapshots.addListener("openSnapshot", e => {
+        win.close();
+        const snapshot = e.getData();
+        this.fireDataEvent("startSnapshot", snapshot);
       });
     },
 
@@ -309,9 +350,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree();
       nodesTree.setStudy(study);
-      nodesTree.addListener("slidesEdit", () => {
-        this.__editSlides();
-      }, this);
       nodesTree.addListener("removeNode", e => {
         if (this.getStudy().isReadOnly()) {
           return;
@@ -449,7 +487,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __connectEvents: function() {
       const workbench = this.getStudy().getWorkbench();
-      workbench.addListener("nNodesChanged", this.__workbenchChanged, this);
+      workbench.addListener("pipelineChanged", this.__workbenchChanged, this);
 
       workbench.addListener("showInLogger", ev => {
         const data = ev.getData();
@@ -471,7 +509,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.nodeSelected(nodeId);
         }, this);
       });
-      workbenchToolbar.addListener("showSweeper", this.__showSweeper, this);
+      if (!workbenchToolbar.hasListener("takeSnapshot")) {
+        workbenchToolbar.addListener("takeSnapshot", this.__takeSnapshot, this);
+      }
+      if (!workbenchToolbar.hasListener("showSnapshots")) {
+        workbenchToolbar.addListener("showSnapshots", this.__showSnapshots, this);
+      }
 
       nodesTree.addListener("changeSelectedNode", e => {
         const node = workbenchUI.getNodeUI(e.getData());

@@ -14,6 +14,9 @@
      * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
+/**
+ * @ignore(fetch)
+ */
 
 /**
  * Widget managing the layout once the user is logged in.
@@ -102,10 +105,23 @@ qx.Class.define("osparc.desktop.MainPage", {
         }
       }, this);
 
+      navBar.addListener("slidesFullStart", () => {
+        if (this.__studyEditor) {
+          navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[3]);
+          this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[3]);
+        }
+      }, this);
+
       navBar.addListener("slidesStop", () => {
         if (this.__studyEditor) {
           navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
           this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
+        }
+      }, this);
+
+      navBar.addListener("slidesEdit", () => {
+        if (this.__studyEditor) {
+          this.__studyEditor.editSlides();
         }
       }, this);
 
@@ -122,6 +138,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           this.__showDashboard();
           this.__dashboard.getStudyBrowser().invalidateStudies();
           this.__dashboard.getStudyBrowser().reloadStudies();
+          this.__dashboard.getStudyBrowser().resetSelection();
           this.__dashboard.getStudyBrowser().reloadStudy(studyId)
             .then(() => {
               this.__closeStudy(studyId);
@@ -151,9 +168,8 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __createDashboardStack: function() {
       const nStudyItemsPerRow = 5;
-      const studyButtons = osparc.dashboard.StudyBrowserButtonBase;
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard().set({
-        width: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) // padding + scrollbar
+        width: nStudyItemsPerRow * (osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING) + 8 // padding + scrollbar
       });
       const sideSearch = new osparc.dashboard.SideSearch();
       dashboard.bind("selection", sideSearch, "visibility", {
@@ -230,44 +246,74 @@ qx.Class.define("osparc.desktop.MainPage", {
 
       const params = {
         url: {
-          "projectId": studyId
+          "studyId": studyId
         }
       };
       osparc.data.Resources.getOne("studies", params)
-        .then(latestStudyData => {
-          if (!latestStudyData) {
+        .then(studyData => {
+          if (!studyData) {
             const msg = this.tr("Study not found");
             throw new Error(msg);
           }
+          this.__loadStudy(studyData, pageContext);
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          this.__showDashboard();
+          return;
+        });
+    },
 
-          let locked = false;
-          let lockedBy = false;
-          if ("state" in latestStudyData && "locked" in latestStudyData["state"]) {
-            locked = latestStudyData["state"]["locked"]["value"];
-            lockedBy = latestStudyData["state"]["locked"]["owner"];
-          }
-          if (locked && lockedBy["user_id"] !== osparc.auth.Data.getInstance().getUserId()) {
-            const msg = this.tr("Study is already open by ") + lockedBy["first_name"];
+    __startSnapshot: function(snapshotData) {
+      this.__showLoadingPage(this.tr("Loading Snapshot"));
+      const params = {
+        url: {
+          "studyId": snapshotData["ParentId"],
+          "snapshotId": snapshotData["SnapshotId"]
+        }
+      };
+      osparc.data.Resources.getOne("snapshots", params)
+        .then(snapshotResp => {
+          if (!snapshotResp) {
+            const msg = this.tr("Snapshot not found");
             throw new Error(msg);
           }
-          const store = osparc.store.Store.getInstance();
-          store.getInaccessibleServices(latestStudyData)
-            .then(inaccessibleServices => {
-              if (inaccessibleServices.length) {
-                this.__dashboard.getStudyBrowser().resetSelection();
-                const msg = osparc.utils.Study.getInaccessibleServicesMsg(inaccessibleServices);
-                throw new Error(msg);
-              }
-              this.__showStudyEditor(this.__getStudyEditor());
-              this.__studyEditor.setStudyData(latestStudyData)
-                .then(() => {
-                  this.__syncStudyEditor(pageContext);
-                });
-            })
-            .catch(err => {
-              osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-              this.__showDashboard();
-              return;
+          fetch(snapshotResp["url_project"])
+            .then(response => response.json())
+            .then(data => {
+              this.__loadStudy(data["data"]);
+            });
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          this.__showDashboard();
+          return;
+        });
+    },
+
+    __loadStudy: function(studyData, pageContext) {
+      let locked = false;
+      let lockedBy = false;
+      if ("state" in studyData && "locked" in studyData["state"]) {
+        locked = studyData["state"]["locked"]["value"];
+        lockedBy = studyData["state"]["locked"]["owner"];
+      }
+      if (locked && lockedBy["user_id"] !== osparc.auth.Data.getInstance().getUserId()) {
+        const msg = this.tr("Study is already open by ") + lockedBy["first_name"];
+        throw new Error(msg);
+      }
+      const store = osparc.store.Store.getInstance();
+      store.getInaccessibleServices(studyData)
+        .then(inaccessibleServices => {
+          if (inaccessibleServices.length) {
+            this.__dashboard.getStudyBrowser().resetSelection();
+            const msg = osparc.utils.Study.getInaccessibleServicesMsg(inaccessibleServices);
+            throw new Error(msg);
+          }
+          this.__showStudyEditor(this.__getStudyEditor());
+          this.__studyEditor.setStudyData(studyData)
+            .then(() => {
+              this.__syncStudyEditor(pageContext);
             });
         })
         .catch(err => {
@@ -280,24 +326,19 @@ qx.Class.define("osparc.desktop.MainPage", {
     __closeStudy: function(studyId) {
       const params = {
         url: {
-          projectId: studyId
+          "studyId": studyId
         },
         data: osparc.utils.Utils.getClientSessionID()
       };
       osparc.data.Resources.fetch("studies", "close", params);
     },
 
-    __syncStudyEditor: function(pageContext) {
+    __syncStudyEditor: function(pageContext = "workbench") {
       const studyEditor = this.__studyEditor;
       const study = studyEditor.getStudy();
       this.__navBar.setStudy(study);
-      if (pageContext === "slideshow") {
-        this.__navBar.setPageContext("slideshow");
-        studyEditor.setPageContext("slideshow");
-      } else {
-        this.__navBar.setPageContext("workbench");
-        studyEditor.setPageContext("workbench");
-      }
+      this.__navBar.setPageContext(pageContext);
+      studyEditor.setPageContext(pageContext);
 
       this.__studyEditor.addListener("forceBackToDashboard", () => {
         this.__showDashboard();
@@ -305,10 +346,13 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __getStudyEditor: function() {
-      const studyEditor = this.__studyEditor || new osparc.desktop.StudyEditor();
-      studyEditor.addListenerOnce("startStudy", e => {
-        const startStudyData = e.getData();
-        this.__startStudy(startStudyData);
+      if (this.__studyEditor) {
+        return this.__studyEditor;
+      }
+      const studyEditor = new osparc.desktop.StudyEditor();
+      studyEditor.addListener("startSnapshot", e => {
+        const snapshotData = e.getData();
+        this.__startSnapshot(snapshotData);
       }, this);
       return studyEditor;
     },

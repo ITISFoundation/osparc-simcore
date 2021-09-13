@@ -45,6 +45,13 @@ qx.Class.define("osparc.utils.Ports", {
 
     isDataAParameter: function(data) {
       return (data !== null && typeof data === "string" && data.startsWith("{{") && data.endsWith("}}"));
+    },
+
+    getPortType: function(portsMetadata, portId) {
+      if (portId in portsMetadata) {
+        return portsMetadata[portId]["type"];
+      }
+      return null;
     }
   }
 });

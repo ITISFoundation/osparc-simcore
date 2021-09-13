@@ -4,9 +4,11 @@
 
 import json
 import logging
+from typing import Dict, List, Union
 
 from aiohttp import web
 
+from .. import director_v2
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
 from . import projects_api
@@ -75,10 +77,17 @@ async def get_node(request: web.Request) -> web.Response:
             include_templates=True,
         )
 
-        node_details = await projects_api.get_project_node(
-            request, project_uuid, user_id, node_uuid
+        # NOTE: for legacy services a redirect to director-v0 is made
+        reply: Union[Dict, List] = await director_v2.get_service_state(
+            app=request.app, node_uuid=node_uuid
         )
-        return web.json_response({"data": node_details})
+
+        if "data" not in reply:
+            # dynamic-service NODE STATE
+            return web.json_response({"data": reply})
+
+        # LEGACY-service NODE STATE
+        return web.json_response({"data": reply["data"]})
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 

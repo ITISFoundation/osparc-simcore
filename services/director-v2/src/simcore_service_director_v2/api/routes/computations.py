@@ -7,8 +7,6 @@ import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_state import RunningState
-from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
-from simcore_service_director_v2.utils.async_utils import run_sequentially_in_context
 from starlette import status
 from starlette.requests import Request
 from tenacity import (
@@ -19,6 +17,8 @@ from tenacity import (
     wait_random,
 )
 
+from ...core.errors import PipelineNotFoundError, ProjectNotFoundError, SchedulerError
+from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_tasks import CompTaskAtDB
 from ...models.schemas.comp_tasks import (
     ComputationTaskCreate,
@@ -27,12 +27,11 @@ from ...models.schemas.comp_tasks import (
     ComputationTaskStop,
 )
 from ...models.schemas.constants import UserID
-from ...modules.celery import CeleryClient
+from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.director_v0 import DirectorV0Client
-from ...modules.scheduler import CeleryScheduler
 from ...utils.async_utils import run_sequentially_in_context
 from ...utils.computations import (
     get_pipeline_state_from_task_states,
@@ -46,8 +45,6 @@ from ...utils.dags import (
     create_minimal_computational_graph_based_on_selection,
     find_computational_node_cycles,
 )
-from ...utils.exceptions import PipelineNotFoundError, ProjectNotFoundError
-from ..dependencies.celery import get_celery_client
 from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
 from ..dependencies.scheduler import get_scheduler
@@ -56,20 +53,6 @@ router = APIRouter()
 log = logging.getLogger(__file__)
 
 PIPELINE_ABORT_TIMEOUT_S = 10
-
-
-async def _abort_pipeline_tasks(
-    project: ProjectAtDB,
-    tasks: List[CompTaskAtDB],
-    computation_tasks: CompTasksRepository,
-    celery_client: CeleryClient,
-) -> None:
-    await computation_tasks.mark_project_tasks_as_aborted(project)
-    celery_client.abort_computation_tasks([str(t.job_id) for t in tasks])
-    log.debug(
-        "Computational task stopped for project %s",
-        project.uuid,
-    )
 
 
 @router.post(
@@ -90,9 +73,8 @@ async def create_computation(
     computation_tasks: CompTasksRepository = Depends(
         get_repository(CompTasksRepository)
     ),
-    celery_client: CeleryClient = Depends(get_celery_client),
     director_client: DirectorV0Client = Depends(get_director_v0_client),
-    scheduler: CeleryScheduler = Depends(get_scheduler),
+    scheduler: BaseCompScheduler = Depends(get_scheduler),
 ) -> ComputationTaskOut:
     log.debug(
         "User %s is creating a new computation from project %s",
@@ -108,9 +90,7 @@ async def create_computation(
         comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             job.project_id
         )
-        pipeline_state = get_pipeline_state_from_task_states(
-            comp_tasks, celery_client.settings.CELERY_PUBLICATION_TIMEOUT
-        )
+        pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
         if is_pipeline_running(pipeline_state):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -123,12 +103,12 @@ async def create_computation(
         computational_dag = await create_minimal_computational_graph_based_on_selection(
             complete_dag=complete_dag,
             selected_nodes=job.subgraph or [],
-            force_restart=job.force_restart,
+            force_restart=job.force_restart or False,
         )
 
         # ok so put the tasks in the db
         await computation_pipelines.upsert_pipeline(
-            job.user_id, project.uuid, computational_dag, job.start_pipeline
+            job.user_id, project.uuid, computational_dag, job.start_pipeline or False
         )
         inserted_comp_tasks = await computation_tasks.upsert_tasks_from_project(
             project,
@@ -150,7 +130,13 @@ async def create_computation(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"Project {job.project_id} has no computational services, or contains cycles",
                 )
-            await scheduler.run_new_pipeline(job.user_id, job.project_id)
+
+            await scheduler.run_new_pipeline(
+                job.user_id,
+                job.project_id,
+                job.cluster_id
+                or request.app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
+            )
 
         return ComputationTaskOut(
             id=job.project_id,
@@ -187,7 +173,6 @@ async def get_computation(
     computation_tasks: CompTasksRepository = Depends(
         get_repository(CompTasksRepository)
     ),
-    celery_client: CeleryClient = Depends(get_celery_client),
 ) -> ComputationTaskOut:
     log.debug("User %s getting computation status for project %s", user_id, project_id)
     try:
@@ -212,9 +197,7 @@ async def get_computation(
         filtered_tasks = [
             t for t in all_comp_tasks if str(t.node_id) in list(pipeline_dag.nodes())
         ]
-        pipeline_state = get_pipeline_state_from_task_states(
-            filtered_tasks, celery_client.settings.CELERY_PUBLICATION_TIMEOUT
-        )
+        pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 
         log.debug(
             "Computational task status by user %s for project %s is %s",
@@ -257,7 +240,7 @@ async def stop_computation_project(
     computation_tasks: CompTasksRepository = Depends(
         get_repository(CompTasksRepository)
     ),
-    celery_client: CeleryClient = Depends(get_celery_client),
+    scheduler: BaseCompScheduler = Depends(get_scheduler),
 ) -> ComputationTaskOut:
     log.debug(
         "User %s stopping computation for project %s",
@@ -265,8 +248,8 @@ async def stop_computation_project(
         project_id,
     )
     try:
-        # get the project
-        project: ProjectAtDB = await project_repo.get_project(project_id)
+        # check the project exists
+        await project_repo.get_project(project_id)
         # get the project pipeline
         pipeline_at_db: CompPipelineAtDB = await computation_pipelines.get_pipeline(
             project_id
@@ -280,14 +263,11 @@ async def stop_computation_project(
         filtered_tasks = [
             t for t in tasks if str(t.node_id) in list(pipeline_dag.nodes())
         ]
-        pipeline_state = get_pipeline_state_from_task_states(
-            filtered_tasks, celery_client.settings.CELERY_PUBLICATION_TIMEOUT
-        )
+        pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 
         if is_pipeline_running(pipeline_state):
-            await _abort_pipeline_tasks(
-                project, filtered_tasks, computation_tasks, celery_client
-            )
+            await scheduler.stop_pipeline(comp_task_stop.user_id, project_id)
+
         return ComputationTaskOut(
             id=project_id,
             state=pipeline_state,
@@ -298,6 +278,8 @@ async def stop_computation_project(
         )
 
     except ProjectNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    except SchedulerError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
@@ -317,7 +299,7 @@ async def delete_pipeline(
     computation_tasks: CompTasksRepository = Depends(
         get_repository(CompTasksRepository)
     ),
-    celery_client: CeleryClient = Depends(get_celery_client),
+    scheduler: BaseCompScheduler = Depends(get_scheduler),
 ) -> None:
     try:
         # get the project
@@ -326,9 +308,7 @@ async def delete_pipeline(
         comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             project_id
         )
-        pipeline_state = get_pipeline_state_from_task_states(
-            comp_tasks, celery_client.settings.CELERY_PUBLICATION_TIMEOUT
-        )
+        pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
         if is_pipeline_running(pipeline_state):
             if not comp_task_stop.force:
                 raise HTTPException(
@@ -336,9 +316,14 @@ async def delete_pipeline(
                     detail=f"Projet {project_id} is currently running and cannot be deleted, current state is {pipeline_state}",
                 )
             # abort the pipeline first
-            await _abort_pipeline_tasks(
-                project, comp_tasks, computation_tasks, celery_client
-            )
+            try:
+                await scheduler.stop_pipeline(comp_task_stop.user_id, project_id)
+            except SchedulerError as e:
+                log.warning(
+                    "Project %s could not be stopped properly.\n reason: %s",
+                    project_id,
+                    e,
+                )
 
             def return_last_value(retry_state: Any) -> Any:
                 """return the result of the last call attempt"""
@@ -358,7 +343,6 @@ async def delete_pipeline(
                 )
                 pipeline_state = get_pipeline_state_from_task_states(
                     comp_tasks,
-                    celery_client.settings.CELERY_PUBLICATION_TIMEOUT,
                 )
                 return is_pipeline_stopped(pipeline_state)
 

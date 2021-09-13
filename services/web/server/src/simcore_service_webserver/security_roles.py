@@ -45,6 +45,9 @@ ROLES_PERMISSIONS = {
     },
     UserRole.USER: {
         "can": [
+            "clusters.delete",
+            "clusters.read",
+            "clusters.write",
             "project.create",  # "studies.user.create",
             "project.close",
             "project.delete",  # "study.node.create",
@@ -76,9 +79,7 @@ ROLES_PERMISSIONS = {
         "inherits": [UserRole.GUEST, UserRole.ANONYMOUS],
     },
     UserRole.TESTER: {
-        "can": [
-            "diagnostics.read",
-        ],
+        "can": ["clusters.create", "diagnostics.read"],
         "inherits": [UserRole.USER],
     },
     UserRole.ADMIN: {

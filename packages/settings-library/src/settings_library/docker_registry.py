@@ -1,7 +1,7 @@
 from functools import cached_property
 from typing import Optional
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, validator
 
 from .base import BaseCustomSettings
 
@@ -22,6 +22,11 @@ class RegistrySettings(BaseCustomSettings):
         ..., description="password to access the docker registry"
     )
     REGISTRY_SSL: bool = Field(..., description="access to registry through ssl")
+
+    @validator("REGISTRY_PATH", pre=True)
+    @classmethod
+    def escape_none_string(cls, v) -> Optional[str]:
+        return None if v == "None" else v
 
     @cached_property
     def resolved_registry_url(self) -> str:

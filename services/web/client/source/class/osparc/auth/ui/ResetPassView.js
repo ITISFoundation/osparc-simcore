@@ -56,6 +56,8 @@ qx.Class.define("osparc.auth.ui.ResetPassView", {
       });
       this.add(code);
 
+      validator.add(password, osparc.auth.core.Utils.passwordLengthValidator);
+      validator.add(confirm, osparc.auth.core.Utils.passwordLengthValidator);
       validator.setValidator(function(_itemForms) {
         return osparc.auth.core.Utils.checkSamePasswords(password, confirm);
       });

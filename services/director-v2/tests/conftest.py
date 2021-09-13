@@ -1,26 +1,43 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint:disable=no-value-for-parameter
 
 import asyncio
 import json
 import logging
 import os
 from copy import deepcopy
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Iterator
+from pprint import pformat
+from random import randint
+from typing import Any, Callable, Dict, Iterator, List
+from uuid import uuid4
 
 import dotenv
 import httpx
 import nest_asyncio
 import pytest
 import simcore_service_director_v2
+import sqlalchemy as sa
+from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.test_utils import loop_context
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
-from models_library.projects import Node, Workbench
+from models_library.projects import Node, ProjectAtDB, Workbench
+from pydantic.main import BaseModel
+from pydantic.types import PositiveInt
+from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
+from simcore_postgres_database.models.comp_tasks import comp_tasks
+from simcore_postgres_database.models.projects import ProjectType, projects
+from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
+from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
+from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB, Image
+from simcore_service_director_v2.utils.computations import to_node_class
+from sqlalchemy import literal_column
 from starlette.testclient import TestClient
 
 nest_asyncio.apply()
@@ -39,6 +56,7 @@ pytest_plugins = [
     "pytest_simcore.schemas",
     "pytest_simcore.simcore_services",
     "pytest_simcore.tmp_path_extra",
+    "pytest_simcore.simcore_dask_service",
 ]
 
 logger = logging.getLogger(__name__)
@@ -84,11 +102,7 @@ def loop() -> asyncio.AbstractEventLoop:
 
 
 @pytest.fixture(scope="function")
-def mock_env(monkeypatch) -> None:
-    # TODO: PC-> ANE: Avoid using stand-alone environs setups and
-    # use instead mock_env_devel_environment or project_env_devel_environment
-    # which resemble real environment
-
+def mock_env(monkeypatch: MonkeyPatch) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
@@ -103,20 +117,25 @@ def mock_env(monkeypatch) -> None:
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
-
-    # DISABLE dynamic-service app module
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "false")
+    monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
-    monkeypatch.setenv("DYNAMIC_SCHEDULER", "null")
-    monkeypatch.setenv("DYNAMIC_SIDECAR", "null")
+
+    monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
+    monkeypatch.setenv("POSTGRES_USER", "mocked_user")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
+    monkeypatch.setenv("POSTGRES_DB", "mocked_db")
+    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
 
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
 
 @pytest.fixture(scope="function")
-def client(loop: asyncio.AbstractEventLoop, mock_env) -> TestClient:
+def client(loop: asyncio.AbstractEventLoop, mock_env: None) -> TestClient:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
-
+    print("Application settings\n", pformat(settings))
     # NOTE: this way we ensure the events are run in the application
     # since it starts the app on a test server
     with TestClient(app, raise_server_exceptions=True) as client:
@@ -124,7 +143,14 @@ def client(loop: asyncio.AbstractEventLoop, mock_env) -> TestClient:
 
 
 @pytest.fixture(scope="function")
-async def initialized_app() -> Iterator[FastAPI]:
+async def initialized_app(monkeypatch: MonkeyPatch) -> Iterator[FastAPI]:
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "itisfoundation/dynamic-sidecar:MOCK")
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
+    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
+    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv("SC_BOOT_MODE", "production")
+
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
     async with LifespanManager(app):
@@ -185,6 +211,18 @@ def fake_workbench_as_dict(fake_workbench_file: Path) -> Dict[str, Any]:
     return workbench_dict
 
 
+@pytest.fixture
+def fake_workbench_without_outputs(
+    fake_workbench_as_dict: Dict[str, Any]
+) -> Dict[str, Any]:
+    workbench = deepcopy(fake_workbench_as_dict)
+    # remove all the outputs from the workbench
+    for _, data in workbench.items():
+        data["outputs"] = {}
+
+    return workbench
+
+
 @pytest.fixture(scope="session")
 def fake_workbench_computational_adjacency_file(mocks_dir: Path) -> Path:
     file_path = mocks_dir / "fake_workbench_computational_adjacency_list.json"
@@ -211,3 +249,153 @@ def fake_workbench_complete_adjacency(
     fake_workbench_complete_adjacency_file: Path,
 ) -> Dict[str, Any]:
     return json.loads(fake_workbench_complete_adjacency_file.read_text())
+
+
+@pytest.fixture(scope="session")
+def user_id() -> PositiveInt:
+    return randint(0, 10000)
+
+
+@pytest.fixture(scope="module")
+def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Dict:
+    with postgres_db.connect() as con:
+        result = con.execute(
+            users.insert()
+            .values(
+                id=user_id,
+                name="test user",
+                email="test@user.com",
+                password_hash="testhash",
+                status=UserStatus.ACTIVE,
+                role=UserRole.USER,
+            )
+            .returning(literal_column("*"))
+        )
+
+        user = result.first()
+
+        yield dict(user)
+
+        con.execute(users.delete().where(users.c.id == user["id"]))
+
+
+@pytest.fixture
+def project(postgres_db: sa.engine.Engine, user_db: Dict) -> Callable[..., ProjectAtDB]:
+    created_project_ids: List[str] = []
+
+    def creator(**overrides) -> ProjectAtDB:
+        project_config = {
+            "uuid": f"{uuid4()}",
+            "name": "my test project",
+            "type": ProjectType.STANDARD.name,
+            "description": "my test description",
+            "prj_owner": user_db["id"],
+            "access_rights": {"1": {"read": True, "write": True, "delete": True}},
+            "thumbnail": "",
+            "workbench": {},
+        }
+        project_config.update(**overrides)
+        with postgres_db.connect() as con:
+            result = con.execute(
+                projects.insert()
+                .values(**project_config)
+                .returning(literal_column("*"))
+            )
+
+            project = ProjectAtDB.parse_obj(result.first())
+            created_project_ids.append(f"{project.uuid}")
+            return project
+
+    yield creator
+
+    # cleanup
+    with postgres_db.connect() as con:
+        con.execute(projects.delete().where(projects.c.uuid.in_(created_project_ids)))
+
+
+@pytest.fixture
+def pipeline(postgres_db: sa.engine.Engine) -> Callable[..., CompPipelineAtDB]:
+    created_pipeline_ids: List[str] = []
+
+    def creator(**overrides) -> CompPipelineAtDB:
+        pipeline_config = {
+            "project_id": f"{uuid4()}",
+            "dag_adjacency_list": {},
+            "state": StateType.NOT_STARTED,
+        }
+        pipeline_config.update(**overrides)
+        with postgres_db.connect() as conn:
+            result = conn.execute(
+                comp_pipeline.insert()
+                .values(**pipeline_config)
+                .returning(literal_column("*"))
+            )
+            new_pipeline = CompPipelineAtDB.parse_obj(result.first())
+            created_pipeline_ids.append(f"{new_pipeline.project_id}")
+            return new_pipeline
+
+    yield creator
+
+    # cleanup
+    with postgres_db.connect() as conn:
+        conn.execute(
+            comp_pipeline.delete().where(
+                comp_pipeline.c.project_id.in_(created_pipeline_ids)
+            )
+        )
+
+
+@pytest.fixture
+def tasks(postgres_db: sa.engine.Engine) -> Callable[..., List[CompTaskAtDB]]:
+    created_task_ids: List[int] = []
+
+    def creator(project: ProjectAtDB, **overrides) -> List[CompTaskAtDB]:
+        created_tasks: List[CompTaskAtDB] = []
+        for internal_id, (node_id, node_data) in enumerate(project.workbench.items()):
+            task_config = {
+                "project_id": f"{project.uuid}",
+                "node_id": f"{node_id}",
+                "schema": {"inputs": {}, "outputs": {}},
+                "inputs": {
+                    key: json.loads(value.json(by_alias=True, exclude_unset=True))
+                    if isinstance(value, BaseModel)
+                    else value
+                    for key, value in node_data.inputs.items()
+                }
+                if node_data.inputs
+                else {},
+                "outputs": {
+                    key: json.loads(value.json(by_alias=True, exclude_unset=True))
+                    if isinstance(value, BaseModel)
+                    else value
+                    for key, value in node_data.outputs.items()
+                }
+                if node_data.outputs
+                else {},
+                "image": Image(
+                    name=node_data.key,
+                    tag=node_data.version,
+                ).dict(by_alias=True, exclude_unset=True),
+                "node_class": to_node_class(node_data.key),
+                "internal_id": internal_id + 1,
+                "submit": datetime.utcnow(),
+            }
+            task_config.update(**overrides)
+            with postgres_db.connect() as conn:
+                result = conn.execute(
+                    comp_tasks.insert()
+                    .values(**task_config)
+                    .returning(literal_column("*"))
+                )
+                new_task = CompTaskAtDB.parse_obj(result.first())
+                created_tasks.append(new_task)
+            created_task_ids.extend([t.task_id for t in created_tasks if t.task_id])
+        return created_tasks
+
+    yield creator
+
+    # cleanup
+    with postgres_db.connect() as conn:
+        conn.execute(
+            comp_tasks.delete().where(comp_tasks.c.task_id.in_(created_task_ids))
+        )

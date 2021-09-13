@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field, HttpUrl, ValidationError, constr, validat
 from simcore_postgres_database.models.classifiers import group_classifiers
 
 from .constants import APP_DB_ENGINE_KEY
-from .scicrunch.scicrunch_db import ResearchResourceRepository
+from .scicrunch.db import ResearchResourceRepository
 from .scicrunch.service_client import SciCrunch
 
 logger = logging.getLogger(__name__)
@@ -124,7 +124,7 @@ async def build_rrids_tree_view(app, tree_view_mode="std") -> Dict[str, Any]:
                 classifier=resource.rrid,
                 display_name=resource.name.title(),
                 short_description=resource.description,
-                url=scicrunch.get_rrid_link(resource.rrid),
+                url=scicrunch.get_resolver_web_url(resource.rrid),
             )
 
             node = validated_item.display_name.replace(":", " ")

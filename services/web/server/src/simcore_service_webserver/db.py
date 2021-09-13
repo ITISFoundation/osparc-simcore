@@ -7,16 +7,16 @@ from typing import Any, Dict, Iterator, Optional
 
 from aiohttp import web
 from aiopg.sa import Engine
-from servicelib.aiopg_utils import (
+from servicelib.common_aiopg_utils import create_pg_engine
+from servicelib.aiohttp.aiopg_utils import (
     DataSourceName,
     PostgresRetryPolicyUponInitialization,
-    create_pg_engine,
     get_pg_engine_stateinfo,
     is_pg_responsive,
     raise_if_not_responsive,
 )
-from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
-from servicelib.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from tenacity import AsyncRetrying
 
 from .db_config import CONFIG_SECTION_NAME, assert_valid_config

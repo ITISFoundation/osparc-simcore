@@ -1,153 +1,37 @@
 """
-    Layer to interact with with scicrunch service API (https://scicrunch.org/api/)
-
-    - http client for API requests
-    - Error handling:
-        - translates network errors
-        - translates request error codes
+   Client to interact with scicrunch service (https://scicrunch.org)
+    - both with REST API and resolver API
 
 """
 
 import logging
-from typing import Any, Dict, List, MutableMapping, Optional
+from typing import Any, List, MutableMapping, Optional
 
-from aiohttp import ClientSession, client_exceptions, web_exceptions
+from aiohttp import ClientSession, client_exceptions
 from pydantic import ValidationError
-from servicelib.client_session import get_client_session
+from servicelib.aiohttp.client_session import get_client_session
 from yarl import URL
 
 from ._config import SciCrunchSettings
-from .scicrunch_models import (
-    ListOfResourceHits,
-    ResearchResource,
-    ResourceHit,
-    ResourceView,
-    normalize_rrid_tags,
+from ._resolver import ResolvedItem, resolve_rrid
+from ._rest import ResourceHit, autocomplete_by_name, get_resource_fields
+from .errors import (
+    InvalidRRID,
+    ScicrunchAPIError,
+    ScicrunchConfigError,
+    ScicrunchServiceError,
+    map_to_scicrunch_error,
 )
+from .models import ResearchResource, normalize_rrid_tags
 
 logger = logging.getLogger(__name__)
-
-
-## RAW REQUESTS  ------
-#
-# Free functions with raw request scicrunch.org API
-#    - client request context
-#    - raise_for_status=True -> Raise an aiohttp.ClientResponseError if the response status is 400 or higher
-#    - validates response and prunes using pydantic models
-#
-# SEE test_scicrunch_service_api.py
-
-
-async def get_all_versions(
-    unprefixed_rrid: str, client: ClientSession, settings: SciCrunchSettings
-) -> List[Dict[str, Any]]:
-    async with client.get(
-        f"{settings.api_base_url}/resource/versions/all/{unprefixed_rrid}",
-        params={"key": settings.api_key.get_secret_value()},
-        raise_for_status=True,
-    ) as resp:
-        body = await resp.json()
-        return body.get("data") if body.get("success") else []
-
-
-async def get_resource_fields(
-    rrid: str, client: ClientSession, settings: SciCrunchSettings
-) -> ResourceView:
-    async with client.get(
-        f"{settings.api_base_url}/resource/fields/view/{rrid}",
-        params={"key": settings.api_key.get_secret_value()},
-        raise_for_status=True,
-    ) as resp:
-        body = await resp.json()
-
-        assert body.get("success")  # nosec
-        return ResourceView(**body.get("data", {}))
-
-
-async def autocomplete_by_name(
-    guess_name: str, client: ClientSession, settings: SciCrunchSettings
-) -> ListOfResourceHits:
-    async with client.get(
-        f"{settings.api_base_url}/resource/fields/autocomplete",
-        params={
-            "key": settings.api_key.get_secret_value(),
-            "field": "Resource Name",
-            "value": guess_name.strip(),
-        },
-        raise_for_status=True,
-    ) as resp:
-        body = await resp.json()
-        assert body.get("success")  # nosec
-        return ListOfResourceHits.parse_obj(body.get("data", []))
-
-
-## ERROR  ------
-
-
-class ScicrunchError(Exception):
-    def __init__(self, reason: str) -> None:
-        self.reason = reason.strip()
-        super().__init__(self.reason)
-
-
-class ScicrunchServiceError(ScicrunchError):
-    # service down
-    # requests time-out
-    # not reachable (e.g. network slow)
-    pass
-
-
-class ScicrunchAPIError(ScicrunchError):
-    # service API changed?
-    # ValidationError in response
-    # Different entrypoint?
-    pass
-
-
-class ScicrunchConfigError(ScicrunchError):
-    # wrong token?
-    # wrong formatting?
-    pass
-
-
-class InvalidRRID(ScicrunchError):
-    def __init__(self, rrid_or_msg) -> None:
-        super().__init__(reason=f"Invalid RRID {rrid_or_msg}")
-
-
-def map_to_scicrunch_error(rrid: str, error_code: int, message: str) -> ScicrunchError:
-    # NOTE: error handling designed based on test_scicrunch_service_api.py
-    assert 400 <= error_code < 600, error_code  # nosec
-
-    custom_error = ScicrunchError("Unexpected error in scicrunch.org")
-
-    if error_code in (
-        web_exceptions.HTTPBadRequest.status_code,
-        web_exceptions.HTTPNotFound.status_code,
-    ):
-        custom_error = InvalidRRID(rrid)
-
-    elif error_code == web_exceptions.HTTPUnauthorized.status_code:
-        # might not have correct cookie?
-        custom_error = ScicrunchConfigError("scicrunch.org authentication failed")
-
-    elif error_code >= 500:  # scicrunch.org server error
-        custom_error = ScicrunchServiceError(
-            "scicrunch.org cannot perform our requests"
-        )
-
-    logger.error("%s: %s", custom_error, message)
-    return custom_error
-
-
-## THICK CLIENT  ------
 
 
 class SciCrunch:
     """Proxy object to interact with scicrunch.org service
 
     - wraps all requests to scicrunch.org API
-        - return domain models or raises ScicrunchError
+        - return domain models or raises ScicrunchError-based errors
 
     - one instance per application
         - uses app aiohttp client session instance
@@ -158,8 +42,8 @@ class SciCrunch:
         self.settings = settings
         self.client = client
         self.base_url = URL.build(
-            scheme=self.settings.api_base_url.scheme,
-            host=self.settings.api_base_url.host,
+            scheme=self.settings.SCICRUNCH_API_BASE_URL.scheme,
+            host=self.settings.SCICRUNCH_API_BASE_URL.host,
         )
 
         self.portal_site_url = str(self.base_url.with_path("/resources/"))
@@ -175,7 +59,7 @@ class SciCrunch:
     def acquire_instance(
         cls, app: MutableMapping[str, Any], settings: SciCrunchSettings
     ) -> "SciCrunch":
-        """ Returns single instance for the application and stores it """
+        """Returns single instance for the application and stores it"""
         obj = app.get(f"{__name__}.{cls.__name__}")
         if obj is None:
             session = get_client_session(app)
@@ -183,7 +67,7 @@ class SciCrunch:
         return obj
 
     @classmethod
-    def get_instance(cls, app: MutableMapping[str, Any]) -> Optional["SciCrunch"]:
+    def get_instance(cls, app: MutableMapping[str, Any]) -> "SciCrunch":
         obj = app.get(f"{__name__}.{cls.__name__}")
         if obj is None:
             raise ScicrunchConfigError(
@@ -193,38 +77,63 @@ class SciCrunch:
 
     # MEMBERS --------
 
-    def get_rrid_link(self, rrid: str) -> str:
+    def get_search_web_url(self, rrid: str) -> str:
         # NOTE: for some reason scicrunch query does not like prefix!
         prefixless_rrid = rrid.replace("RRID:", "").strip()
+        # example https://scicrunch.org/resources/Any/search?q=AB_90755&l=AB_90755
         return str(
             self.base_url.with_path("/resources/Any/search").with_query(
                 q="undefined", l=prefixless_rrid
             )
         )
 
+    def get_resolver_web_url(self, rrid: str) -> str:
+        # example https://scicrunch.org/resolver/RRID:AB_90755
+        return f"{self.settings.SCICRUNCH_RESOLVER_BASE_URL}/{rrid}"
+
     @classmethod
-    def validate_identifier(cls, rrid: str) -> str:
+    def validate_identifier(cls, rrid: str, *, for_api: bool = False) -> str:
         try:
             rrid = normalize_rrid_tags(rrid, with_prefix=False)
-        except ValueError:
-            raise InvalidRRID(rrid)
+        except ValueError as err:
+            raise InvalidRRID(rrid) from err
 
-        if not rrid.startswith("SCR_"):
+        if for_api and not rrid.startswith("SCR_"):
             # "SCR" for the SciCrunch registry of tools
             # scicrunch API does not support anything else but tools (see test_scicrunch_services.py)
             raise InvalidRRID(": only 'SCR' from scicrunch registry of tools allowed")
 
         return rrid
 
+    async def _get_resource_field_using_api(self, rrid: str) -> ResearchResource:
+        # NOTE: This is currently replaced by 'resolve_rrid'.
+        # This option uses rest API which requires authentication
+        #
+        rrid = self.validate_identifier(rrid, for_api=True)
+        resource_view = await get_resource_fields(rrid, self.client, self.settings)
+
+        # convert to domain model
+        return ResearchResource(
+            rrid=resource_view.scicrunch_id,
+            name=resource_view.get_name(),
+            description=resource_view.get_description(),
+        )
+
     async def get_resource_fields(self, rrid: str) -> ResearchResource:
         try:
-            rrid = self.validate_identifier(rrid)
-            resource_view = await get_resource_fields(rrid, self.client, self.settings)
-            # convert to domain model
+            # NOTE: replaces former call to API.
+            # Resolver entrypoint does NOT require authentication
+            # and has an associated website
+            resolved: Optional[ResolvedItem] = await resolve_rrid(
+                rrid, self.client, self.settings
+            )
+            if not resolved:
+                raise InvalidRRID(f".Could not resolve {rrid}")
+
             return ResearchResource(
-                rrid=resource_view.scicrunch_id,
-                name=resource_view.get_name(),
-                description=resource_view.get_description(),
+                rrid=rrid,
+                name=resolved.name,
+                description=resolved.description,
             )
 
         except client_exceptions.ClientResponseError as err:

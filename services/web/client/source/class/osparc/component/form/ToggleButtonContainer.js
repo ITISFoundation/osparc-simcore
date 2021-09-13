@@ -6,13 +6,22 @@
  */
 
 /**
- * Container for StudyBrowserButtonItems or any other ToggleButtons, with some convenient methods.
+ * Container for GridButtonItems or any other ToggleButtons, with some convenient methods.
  */
 qx.Class.define("osparc.component.form.ToggleButtonContainer", {
   extend: qx.ui.container.Composite,
 
   construct: function(layout) {
     this.base(arguments, layout);
+  },
+
+  properties: {
+    mode: {
+      check: ["grid", "list"],
+      init: "grid",
+      nullable: false,
+      event: "changeMode"
+    }
   },
 
   events: {
@@ -33,6 +42,10 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
         child.addListener("changeVisibility", e => {
           this.fireDataEvent("changeVisibility", this.getVisibles());
         }, this);
+        if (this.getMode() === "list") {
+          const width = this.getBounds().width - 15;
+          child.setWidth(width);
+        }
       } else {
         console.error("ToggleButtonContainer only allows ToggleButton as its children.");
       }

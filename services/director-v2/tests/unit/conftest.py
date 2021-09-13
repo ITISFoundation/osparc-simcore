@@ -1,7 +1,14 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+
+import random
+
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
+from dask.distributed import LocalCluster, Scheduler, Worker
+from distributed.deploy.spec import SpecCluster
 from models_library.service_settings_labels import SimcoreServiceLabels
+from pydantic.types import NonNegativeInt
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
 )
@@ -10,6 +17,7 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     ServiceDetails,
     ServiceLabelsStoredData,
 )
+from yarl import URL
 
 
 @pytest.fixture
@@ -75,3 +83,70 @@ def scheduler_data_from_service_labels_stored_data(
     return SchedulerData.from_service_labels_stored_data(
         service_labels_stored_data=service_labels_stored_data, port=dynamic_sidecar_port
     )
+
+
+@pytest.fixture
+async def dask_local_cluster(monkeypatch: MonkeyPatch) -> LocalCluster:
+    async with LocalCluster(
+        n_workers=2, threads_per_worker=1, asynchronous=True
+    ) as cluster:
+        scheduler_address = URL(cluster.scheduler_address)
+        monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
+        monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
+        yield cluster
+
+
+@pytest.fixture
+def cluster_id() -> NonNegativeInt:
+    return random.randint(0, 10)
+
+
+@pytest.fixture
+def cluster_id_resource(cluster_id: NonNegativeInt) -> str:
+    return f"CLUSTER_{cluster_id}"
+
+
+@pytest.fixture
+async def dask_spec_local_cluster(
+    monkeypatch: MonkeyPatch, cluster_id_resource: str
+) -> SpecCluster:
+    # in this mode we can precisely create a specific cluster
+    workers = {
+        "cpu-worker": {
+            "cls": Worker,
+            "options": {
+                "nthreads": 2,
+                "resources": {"CPU": 2, "RAM": 48e9, cluster_id_resource: 1},
+            },
+        },
+        "gpu-worker": {
+            "cls": Worker,
+            "options": {
+                "nthreads": 1,
+                "resources": {"CPU": 1, "GPU": 1, "RAM": 48e9, cluster_id_resource: 1},
+            },
+        },
+        "mpi-worker": {
+            "cls": Worker,
+            "options": {
+                "nthreads": 1,
+                "resources": {"CPU": 8, "MPI": 1, "RAM": 768e9, cluster_id_resource: 1},
+            },
+        },
+        "gpu-mpi-worker": {
+            "cls": Worker,
+            "options": {
+                "nthreads": 1,
+                "resources": {"GPU": 1, "MPI": 1, "RAM": 768e9, cluster_id_resource: 1},
+            },
+        },
+    }
+    scheduler = {"cls": Scheduler, "options": {"dashboard_address": ":8787"}}
+
+    async with SpecCluster(
+        workers=workers, scheduler=scheduler, asynchronous=True
+    ) as cluster:
+        scheduler_address = URL(cluster.scheduler_address)
+        monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
+        monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
+        yield cluster

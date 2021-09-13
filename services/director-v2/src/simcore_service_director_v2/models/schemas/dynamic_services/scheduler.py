@@ -59,6 +59,7 @@ class Status(BaseModel):
         self._update(DynamicSidecarStatus.OK, info)
 
     def update_failing_status(self, info: str) -> None:
+        logger.error(info)
         self._update(DynamicSidecarStatus.FAILING, info)
 
     def __eq__(self, other: "Status") -> bool:
@@ -196,7 +197,7 @@ class ServiceLabelsStoredData(CommonServiceDetails, DynamicSidecarServiceLabels)
             user_id=int(labels["user_id"]),
         )
         if "compose_spec" in labels:
-            params["compose_spec"] = json.loads(labels["compose_spec"])
+            params["compose_spec"] = labels["compose_spec"]
         if "container_http_entry" in labels:
             params["container_http_entry"] = labels["container_http_entry"]
 
@@ -212,7 +213,7 @@ class ServiceLabelsStoredData(CommonServiceDetails, DynamicSidecarServiceLabels)
                 "key": "simcore/services/dynamic/3dviewer",
                 "version": "2.4.5",
                 "paths_mapping": PathMappingsLabel.parse_obj(
-                    PathMappingsLabel.Config.schema_extra["examples"]
+                    PathMappingsLabel.Config.schema_extra["example"]
                 ),
                 "compose_spec": SimcoreServiceLabels.Config.schema_extra["examples"][2][
                     "simcore.service.compose-spec"
@@ -332,28 +333,28 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         request_scheme: str = None,
     ) -> "SchedulerData":
         dynamic_sidecar_names = DynamicSidecarNames.make(service.node_uuid)
-        return cls.parse_obj(
-            dict(
-                service_name=dynamic_sidecar_names.service_name_dynamic_sidecar,
-                node_uuid=service.node_uuid,
-                project_id=service.project_id,
-                user_id=service.user_id,
-                key=service.key,
-                version=service.version,
-                paths_mapping=simcore_service_labels.paths_mapping,
-                compose_spec=simcore_service_labels.compose_spec,
-                container_http_entry=simcore_service_labels.container_http_entry,
-                dynamic_sidecar_network_name=dynamic_sidecar_names.dynamic_sidecar_network_name,
-                simcore_traefik_zone=dynamic_sidecar_names.simcore_traefik_zone,
-                request_dns=request_dns,
-                request_scheme=request_scheme,
-                proxy_service_name=dynamic_sidecar_names.proxy_service_name,
-                dynamic_sidecar=dict(
-                    hostname=dynamic_sidecar_names.service_name_dynamic_sidecar,
-                    port=port,
-                ),
-            )
+
+        obj_dict = dict(
+            service_name=dynamic_sidecar_names.service_name_dynamic_sidecar,
+            node_uuid=service.node_uuid,
+            project_id=service.project_id,
+            user_id=service.user_id,
+            key=service.key,
+            version=service.version,
+            paths_mapping=simcore_service_labels.paths_mapping,
+            compose_spec=json.dumps(simcore_service_labels.compose_spec),
+            container_http_entry=simcore_service_labels.container_http_entry,
+            dynamic_sidecar_network_name=dynamic_sidecar_names.dynamic_sidecar_network_name,
+            simcore_traefik_zone=dynamic_sidecar_names.simcore_traefik_zone,
+            request_dns=request_dns,
+            request_scheme=request_scheme,
+            proxy_service_name=dynamic_sidecar_names.proxy_service_name,
+            dynamic_sidecar=dict(
+                hostname=dynamic_sidecar_names.service_name_dynamic_sidecar,
+                port=port,
+            ),
         )
+        return cls.parse_obj(obj_dict)
 
     @classmethod
     def from_service_labels_stored_data(
