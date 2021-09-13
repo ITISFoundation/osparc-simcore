@@ -26,10 +26,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
   events: {
     "takeSnapshot": "qx.event.type.Event",
-    "convertToStudy": "qx.event.type.Event",
-    "showParameters": "qx.event.type.Event",
-    "showSnapshots": "qx.event.type.Event",
-    "openPrimaryStudy": "qx.event.type.Data"
+    "showSnapshots": "qx.event.type.Event"
   },
 
   members: {
@@ -62,17 +59,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
           this._add(control);
           break;
         }
-        case "convert-to-study-btn": {
-          control = new osparc.ui.form.FetchButton(this.tr("Convert To Study")).set({
-            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-            allowGrowX: false
-          });
-          control.addListener("execute", () => {
-            this.fireDataEvent("convertToStudy");
-          }, this);
-          this._add(control);
-          break;
-        }
         case "snapshots-btn": {
           control = new qx.ui.form.Button(this.tr("Snapshots")).set({
             icon: "@FontAwesome5Solid/copy/14",
@@ -81,21 +67,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
           });
           control.addListener("execute", () => {
             this.fireDataEvent("showSnapshots");
-          }, this);
-          this._add(control);
-          break;
-        }
-        case "primary-study-btn": {
-          control = new qx.ui.form.Button(this.tr("Open Main Study")).set({
-            icon: "@FontAwesome5Solid/external-link-alt/14",
-            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-            allowGrowX: false
-          });
-          control.addListener("execute", () => {
-            const primaryStudyId = this.getStudy().getSweeper().getPrimaryStudyId();
-            if (primaryStudyId) {
-              this.fireDataEvent("openPrimaryStudy", primaryStudyId);
-            }
           }, this);
           this._add(control);
           break;
@@ -112,9 +83,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
       const takeSnapshotBtn = this.getChildControl("take-snapshot-btn");
       takeSnapshotBtn.exclude();
-
-      const convertToStudy = this.getChildControl("convert-to-study-btn");
-      convertToStudy.exclude();
 
       const primaryBtn = this.getChildControl("primary-study-btn");
       primaryBtn.exclude();
@@ -134,16 +102,10 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
         this._navNodes.populateButtons(nodeIds, "slash");
 
         const takeSnapshotBtn = this.getChildControl("take-snapshot-btn");
-        const convertToStudyBtn = this.getChildControl("convert-to-study-btn");
-        const primaryBtn = this.getChildControl("primary-study-btn");
         if (study.isSnapshot()) {
           takeSnapshotBtn.exclude();
-          convertToStudyBtn.show();
-          primaryBtn.show();
         } else {
           takeSnapshotBtn.setVisibility(osparc.data.Permissions.getInstance().canDo("study.snapshot.create") ? "visible" : "excluded");
-          convertToStudyBtn.exclude();
-          primaryBtn.exclude();
         }
 
         study.getWorkbench().addListener("nNodesChanged", this.evalSnapshotsBtn, this);

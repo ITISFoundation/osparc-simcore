@@ -523,7 +523,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return null;
     },
 
-
     __edgeRepresetationExists: function(edge) {
       for (let i=0; i<this.__edgesUI.length; i++) {
         const edgeUI = this.__edgesUI[i];

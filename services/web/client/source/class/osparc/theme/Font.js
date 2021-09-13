@@ -28,19 +28,6 @@ qx.Theme.define("osparc.theme.Font", {
       bold: true
     },
 
-    "title-24": {
-      size: 24,
-      family: ["Roboto"],
-      color: "text",
-      bold: true
-    },
-
-    "text-24": {
-      size: 24,
-      family: ["Roboto"],
-      color: "text"
-    },
-
     "title-22": {
       size: 22,
       family: ["Roboto"],

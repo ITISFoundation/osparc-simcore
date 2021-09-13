@@ -185,18 +185,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __showParameters: function() {
-      const study = this.getStudy();
-      const sweeper = new osparc.component.sweeper.Sweeper(study);
-      const title = this.tr("Sweeper");
-      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 400, 500);
-      sweeper.addListener("openPrimaryStudy", e => {
-        win.close();
-        const primaryStudyId = e.getData();
-        this.__switchStudy(primaryStudyId);
-      });
-    },
-
     __takeSnapshot: function() {
       const study = this.getStudy();
       const takeSnapshotView = new osparc.component.snapshots.TakeSnapshotView(study);
@@ -237,23 +225,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const snapshot = e.getData();
         this.fireDataEvent("startSnapshot", snapshot);
       });
-    },
-
-    __switchStudy: function(studyId) {
-      const params = {
-        url: {
-          "studyId": studyId
-        }
-      };
-      osparc.data.Resources.getOne("studies", params)
-        .then(studyData => {
-          const study = this.getStudy();
-          study.removeIFrames();
-          const data = {
-            studyId: studyData.uuid
-          };
-          this.fireDataEvent("startStudy", data);
-        });
     },
 
     __showWorkbenchUI: function() {

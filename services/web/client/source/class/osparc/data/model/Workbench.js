@@ -343,34 +343,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       };
     },
 
-    __getFreeSpotPostition: function(node0) {
-      // do not overlap the new node with other nodes
-      const pos = node0.getPosition();
-      const nodeWidth = osparc.component.workbench.NodeUI.NODE_WIDTH;
-      const nodeHeight = osparc.component.workbench.NodeUI.NODE_HEIGHT;
-      const xPos = Math.max(0, pos.x-nodeWidth-30);
-      let yPos = pos.y;
-      const allNodes = this.getNodes();
-      const avoidY = [];
-      for (const nId in allNodes) {
-        const node = allNodes[nId];
-        if (node.getPosition().x >= xPos-nodeWidth && node.getPosition().x <= (xPos+nodeWidth)) {
-          avoidY.push(node.getPosition().y);
-        }
-      }
-      avoidY.sort((a, b) => a - b); // For ascending sort
-      avoidY.forEach(y => {
-        if (yPos >= y-nodeHeight && yPos <= (y+nodeHeight)) {
-          yPos = y+nodeHeight+20;
-        }
-      });
-
-      return {
-        x: xPos,
-        y: yPos
-      };
-    },
-
     __filePickerRequested: function(nodeId, portId) {
       // Create/Reuse File Picker. Reuse it if a File Picker is already
       // connecteted and it is not used anywhere else
