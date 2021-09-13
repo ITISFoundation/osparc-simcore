@@ -1,3 +1,6 @@
+import logging
+import re
+
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
@@ -55,15 +58,24 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, mock.Mock]:
 
 
 @pytest.mark.parametrize(
-    "service_key, service_version, command, input_data, expected_output_data",
+    "service_key, service_version, command, input_data, expected_output_data, expected_logs",
     [
         (
             "ubuntu",
             "latest",
-            ["/bin/bash", "-c", "sleep 5 && echo hello"],
-            {"in_1": 123},
+            ["/bin/bash", "-c", "echo hello"],
             {},
-        )
+            {},
+            ["hello"],
+        ),
+        (
+            "itisfoundation/sleeper",
+            "2.1.1",
+            [],
+            {},
+            {},
+            ["hello"],
+        ),
     ],
 )
 async def test_run_computational_sidecar(
@@ -73,13 +85,23 @@ async def test_run_computational_sidecar(
     command: List[str],
     input_data: Dict[str, Any],
     expected_output_data: Dict[str, Any],
+    expected_logs: List[str],
+    caplog,
 ):
+    caplog.set_level(logging.INFO)
     output_data = await run_computational_sidecar(
         service_key=service_key,
         service_version=service_version,
         input_data=input_data,
         command=command,
     )
+
+    # check that expected logs are there
+    for log in expected_logs:
+        assert re.search(
+            rf"\[{service_key}:{service_version} - .+\/.+\]: {log}", caplog.text
+        )
+
     assert output_data == expected_output_data
 
 
