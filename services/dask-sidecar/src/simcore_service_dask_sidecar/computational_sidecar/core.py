@@ -11,70 +11,17 @@ from typing import Any, AsyncIterator, Awaitable, Dict, List, Optional, Type
 from uuid import uuid4
 
 from aiodocker import Docker
-from aiodocker.containers import DockerContainer
-from aiodocker.exceptions import DockerError
 from simcore_service_dask_sidecar.computational_sidecar.errors import ServiceRunError
 from simcore_service_sidecar.task_shared_volume import TaskSharedVolumes
 
-from .docker_utils import create_container_config, managed_container
+from .docker_utils import (
+    create_container_config,
+    managed_container,
+    managed_monitor_container_log_task,
+)
 
 logger = logging.getLogger(__name__)
 CONTAINER_WAIT_TIME_SECS = 2
-
-
-async def monitor_container_logs(
-    container: DockerContainer, service_key: str, service_version: str
-):
-    try:
-        container_info = await container.show()
-        container_name = container_info.get("Name", "undefined")
-        logger.info(
-            "Starting to parse information of task [%s:%s - %s%s]",
-            service_key,
-            service_version,
-            container.id,
-            container_name,
-        )
-        async for log_line in container.log(stdout=True, stderr=True, follow=True):
-            logger.info(
-                "[%s:%s - %s%s]: %s",
-                service_key,
-                service_version,
-                container.id,
-                container_name,
-                log_line,
-            )
-        logger.info(
-            "Finished parsing information of task [%s:%s - %s%s]",
-            service_key,
-            service_version,
-            container.id,
-            container_name,
-        )
-    except DockerError as exc:
-        logger.exception(
-            "log monitoring of [%s:%s - %s] stopped with unexpected error:\n%s",
-            service_key,
-            service_version,
-            container.id,
-            exc,
-        )
-
-
-@asynccontextmanager
-async def managed_monitor_container_log_task(
-    container: DockerContainer, service_key: str, service_version: str
-) -> AsyncIterator[asyncio.Task]:
-    monitoring_task = None
-    try:
-        monitoring_task = asyncio.create_task(
-            monitor_container_logs(container, service_key, service_version),
-            name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
-        )
-        yield monitoring_task
-    finally:
-        if monitoring_task:
-            monitoring_task.cancel()
 
 
 @asynccontextmanager
