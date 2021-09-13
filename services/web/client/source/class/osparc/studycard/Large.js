@@ -343,7 +343,7 @@ qx.Class.define("osparc.studycard.Large", {
     __openDescriptionEditor: function() {
       const title = this.tr("Edit Description");
       const subtitle = this.tr("Supports Markdown");
-      const textEditor = new osparc.component.widget.TextEditor(this.getStudy().getDescription(), subtitle, title);
+      const textEditor = new osparc.component.editor.TextEditor(this.getStudy().getDescription(), subtitle, title);
       const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
       textEditor.addListener("textChanged", e => {
         win.close();

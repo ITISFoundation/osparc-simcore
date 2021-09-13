@@ -17,19 +17,16 @@
 ************************************************************************ */
 
 /**
- * Widget used mainly by StudyBrowser for displaying Studies
- *
- * It consists of a thumbnail and creator and last change as caption
+ * Widget used by StudyBrowser and Explore Browser for displaying Studies, Templates and Services
  */
 
-qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
-  extend: qx.ui.form.ToggleButton,
-  implement : [qx.ui.form.IModel, osparc.component.filter.IFilterable],
-  include : [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],
+qx.Class.define("osparc.dashboard.GridButtonBase", {
+  extend: osparc.dashboard.CardBase,
   type: "abstract",
 
   construct: function() {
     this.base(arguments);
+
     this.set({
       width: this.self().ITEM_WIDTH,
       height: this.self().ITEM_HEIGHT,
@@ -49,16 +46,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
       bottom: 0,
       left: 0
     });
-
-    [
-      "pointerover",
-      "focus"
-    ].forEach(e => this.addListener(e, this._onPointerOver, this));
-
-    [
-      "pointerout",
-      "focusout"
-    ].forEach(e => this.addListener(e, this._onPointerOut, this));
   },
 
   statics: {
@@ -81,23 +68,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
     "action": "qx.event.type.Event"
   },
 
-  properties: {
-    appearance: {
-      refine : true,
-      init : "pb-listitem"
-    }
-  },
-
-  members: { // eslint-disable-line qx-rules/no-refs-in-members
-    _forwardStates: {
-      focused : true,
-      hovered : true,
-      selected : true,
-      dragover : true
-    },
-
+  members: {
     _mainLayout: null,
 
+    // overridden
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -148,28 +122,15 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           });
           break;
         }
-        case "tsr-rating": {
-          const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
-            toolTipText: this.tr("Ten Simple Rules")
-          });
-          const tsrLabel = new qx.ui.basic.Label(this.tr("TSR:"));
-          tsrLayout.add(tsrLabel);
-          control = new osparc.ui.basic.StarsRating();
-          tsrLayout.add(control);
-          this._mainLayout.addAt(tsrLayout, this.self().POS.TSR);
-          break;
-        }
-        case "tags":
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
-            anonymous: true
-          });
-          this._mainLayout.addAt(control, this.self().POS.TAGS);
-          break;
       }
       return control || this.base(arguments, id);
     },
 
+    // overridden
     _applyIcon: function(value, old) {
+      if (value.includes("@FontAwesome5Solid/")) {
+        value += "50";
+      }
       const image = this.getChildControl("icon").getChildControl("image");
       image.set({
         source: value
@@ -183,6 +144,25 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           this.__fitIconHeight();
         }, this);
       });
+    },
+
+    // overridden
+    _applyTitle: function(value, old) {
+      const label = this.getChildControl("title");
+      label.setValue(value);
+      label.addListener("appear", () => {
+        qx.event.Timer.once(() => {
+          const labelDom = label.getContentElement().getDomElement();
+          if (label.getMaxWidth() === parseInt(labelDom.style.width)) {
+            label.setToolTipText(value);
+          }
+        }, this, 50);
+      });
+    },
+
+    // overridden
+    _applyDescription: function() {
+      return;
     },
 
     __fitIconHeight: function() {
@@ -222,23 +202,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
 
     _unfilter: function() {
       this.show();
-    },
-
-    _shouldApplyFilter: function(data) {
-      throw new Error("Abstract method called!");
-    },
-
-    _shouldReactToFilter: function(data) {
-      if (data.text && data.text.length > 1) {
-        return true;
-      }
-      if (data.tags && data.tags.length) {
-        return true;
-      }
-      if (data.classifiers && data.classifiers.length) {
-        return true;
-      }
-      return false;
     }
   },
 
