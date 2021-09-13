@@ -33,6 +33,274 @@ env:
   DEFAULT_MAX_MEMORY: 268435456
 
 jobs:
+  build-test-images:
+    # make PR faster by executing this one straight as PR cannot push to the registry anyway
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    name: "[build] docker images"
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker buildx
+        if: github.event_name == 'push'
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        if: github.event_name == 'push'
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: show system environs
+        if: github.event_name == 'push'
+        run: ./ci/helpers/show_system_versions.bash
+      - name: build images
+        if: github.event_name == 'push'
+        run: ./ci/build/test-images.bash build_images
+      - name: set owner variable
+        if: github.event_name == 'push'
+        run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
+      - name: push images
+        # only pushes have access to the docker credentials
+        if: github.event_name == 'push'
+        run: ./ci/deploy/dockerhub-test-images.bash
+
+  unit-test-webserver-isolated:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    name: "[unit] webserver isolated"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-webserver-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install webserver
+        run: ./ci/github/unit-testing/webserver.bash install
+      - name: test
+        run: ./ci/github/unit-testing/webserver.bash test_isolated
+      - uses: codecov/codecov-action@v2.0.3
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  unit-test-webserver-01:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    name: "[unit] webserver 01"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-webserver-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install webserver
+        run: ./ci/github/unit-testing/webserver.bash install
+      - name: test
+        run: ./ci/github/unit-testing/webserver.bash test_with_db 01
+      - uses: codecov/codecov-action@v2.0.3
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  unit-test-webserver-04:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    name: "[unit] webserver 04"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-webserver-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install webserver
+        run: ./ci/github/unit-testing/webserver.bash install
+      - name: test
+        run: ./ci/github/unit-testing/webserver.bash test_with_db 04
+      - uses: codecov/codecov-action@v2.0.3
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  unit-test-webserver-10:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    name: "[unit] webserver 10"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-webserver-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install webserver
+        run: ./ci/github/unit-testing/webserver.bash install
+      - name: test
+        run: ./ci/github/unit-testing/webserver.bash test_with_db 10
+      - uses: codecov/codecov-action@v2.0.3
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
   unit-test-api:
     timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] api"
@@ -120,7 +388,7 @@ jobs:
         run: ./ci/github/unit-testing/api-server.bash install
       - name: test
         run: ./ci/github/unit-testing/api-server.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v2.0.3
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -183,7 +451,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v2.0.3
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -244,7 +512,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/datcore-adapter/test_failures
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v2.0.3
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -302,7 +570,7 @@ jobs:
         run: ./ci/github/unit-testing/director.bash install
       - name: test
         run: ./ci/github/unit-testing/director.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v2.0.3
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -363,7 +631,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v2.0.3
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -420,7 +688,7 @@ jobs:
         run: ./ci/github/unit-testing/sidecar.bash install
       - name: test
         run: ./ci/github/unit-testing/sidecar.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v2.0.3
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -477,7 +745,7 @@ jobs:
         run: ./ci/github/unit-testing/dask-sidecar.bash install
       - name: test
         run: ./ci/github/unit-testing/dask-sidecar.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v2.0.3
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -536,7 +804,7 @@ jobs:
         run: ./ci/github/unit-testing/dynamic-sidecar.bash codestyle
       - name: test
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v2.0.3
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -550,7 +818,8 @@ jobs:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
-  unit-test-frontend:
+
+  unit-test-service-library:
     timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] frontend"
     runs-on: ${{ matrix.os }}
@@ -579,58 +848,32 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/frontend.bash install
-      - name: test
-        run: ./ci/github/unit-testing/frontend.bash test
-    # no coverage here??
-    # - uses: codecov/codecov-action@v2.1.0
-    #   with:
-    #     flags: unittests #optional
-
-  unit-test-python-linting:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
-    name: "[unit] python-linting"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: [3.8, 3.9]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v2
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python }}
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-linting-${{ hashFiles('ci/helpers/install_pylint.bash') }}
+          key: ${{ runner.os }}-pip-service-library-${{ hashFiles('packages/service-library/requirements/ci[all].txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-linting-
             ${{ runner.os }}-pip-
             ${{ runner.os }}-
       - name: install
-        run: ./ci/github/unit-testing/python-linting.bash install
+        run: ./ci/github/unit-testing/service-library.bash install_all
       - name: test
-        run: ./ci/github/unit-testing/python-linting.bash test
+        run: ./ci/github/unit-testing/service-library.bash test_all
+      - uses: codecov/codecov-action@v2.1.0
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-postgres-database:
     timeout-minutes: 14 # if this timeout gets too small, then split the tests
@@ -675,7 +918,7 @@ jobs:
         run: ./ci/github/unit-testing/postgres-database.bash install
       - name: test
         run: ./ci/github/unit-testing/postgres-database.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v2.0.3
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -733,7 +976,7 @@ jobs:
         run: ./ci/github/unit-testing/service-integration.bash install
       - name: test
         run: ./ci/github/unit-testing/service-integration.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v2.0.3
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -746,7 +989,6 @@ jobs:
         with:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
-
 
   unit-test-service-library:
     timeout-minutes: 14 # if this timeout gets too small, then split the tests
@@ -782,16 +1024,73 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-service-library-${{ hashFiles('packages/service-library/requirements/ci[all].txt') }}
+          key: ${{ runner.os }}-pip-service-library-${{ hashFiles('packages/service-library/requirements/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-service-library-
             ${{ runner.os }}-pip-
             ${{ runner.os }}-
       - name: install
-        run: ./ci/github/unit-testing/service-library.bash install_all
+        run: ./ci/github/unit-testing/service-library.bash install
       - name: test
-        run: ./ci/github/unit-testing/service-library.bash test_all
-      - uses: codecov/codecov-action@v2.1.0
+        run: ./ci/github/unit-testing/service-library.bash test
+      - uses: codecov/codecov-action@v2.0.3
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  unit-test-service-library-aiohttp:
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    name: "[unit] service-library[aiohttp]"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-service-library-${{ hashFiles('packages/service-library/requirements/ci[aiohttp].txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-service-library-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install
+        run: ./ci/github/unit-testing/service-library.bash install_aiohttp
+      - name: test
+        run: ./ci/github/unit-testing/service-library.bash test_aiohttp
+      - uses: codecov/codecov-action@v2.0.3
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -848,7 +1147,7 @@ jobs:
         run: ./ci/github/unit-testing/settings-library.bash install
       - name: test
         run: ./ci/github/unit-testing/settings-library.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v2.0.3
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -905,7 +1204,7 @@ jobs:
         run: ./ci/github/unit-testing/models-library.bash install
       - name: test
         run: ./ci/github/unit-testing/models-library.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v2.0.3
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -962,7 +1261,7 @@ jobs:
         run: ./ci/github/unit-testing/simcore-sdk.bash install
       - name: test
         run: ./ci/github/unit-testing/simcore-sdk.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v2.0.3
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -1019,7 +1318,7 @@ jobs:
         run: ./ci/github/unit-testing/storage.bash install
       - name: test
         run: ./ci/github/unit-testing/storage.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v2.0.3
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -1032,274 +1331,6 @@ jobs:
         with:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
-
-  unit-test-webserver-isolated:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
-    name: "[unit] webserver isolated"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: [3.8]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v2
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python }}
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v2
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-webserver-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
-      - name: install webserver
-        run: ./ci/github/unit-testing/webserver.bash install
-      - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_isolated
-      - uses: codecov/codecov-action@v2.1.0
-        with:
-          flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
-        uses: actions/upload-artifact@v2
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
-
-  unit-test-webserver-01:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
-    name: "[unit] webserver 01"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: [3.8]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v2
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python }}
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v2
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-webserver-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
-      - name: install webserver
-        run: ./ci/github/unit-testing/webserver.bash install
-      - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_with_db 01
-      - uses: codecov/codecov-action@v2.1.0
-        with:
-          flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
-        uses: actions/upload-artifact@v2
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
-
-  unit-test-webserver-04:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
-    name: "[unit] webserver 04"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: [3.8]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v2
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python }}
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v2
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-webserver-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
-      - name: install webserver
-        run: ./ci/github/unit-testing/webserver.bash install
-      - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_with_db 04
-      - uses: codecov/codecov-action@v2.1.0
-        with:
-          flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
-        uses: actions/upload-artifact@v2
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
-
-  unit-test-webserver-10:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
-    name: "[unit] webserver 10"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: [3.8]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v2
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python }}
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v2
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-webserver-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
-      - name: install webserver
-        run: ./ci/github/unit-testing/webserver.bash install
-      - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_with_db 10
-      - uses: codecov/codecov-action@v2.1.0
-        with:
-          flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
-        uses: actions/upload-artifact@v2
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
-
-  build-test-images:
-    # make PR faster by executing this one straight as PR cannot push to the registry anyway
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: [3.8]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    name: "[build] docker images"
-    steps:
-      - uses: actions/checkout@v2
-      - name: setup docker buildx
-        if: github.event_name == 'push'
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker
-      - name: setup docker-compose
-        if: github.event_name == 'push'
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: show system environs
-        if: github.event_name == 'push'
-        run: ./ci/helpers/show_system_versions.bash
-      - name: build images
-        if: github.event_name == 'push'
-        run: ./ci/build/test-images.bash build_images
-      - name: set owner variable
-        if: github.event_name == 'push'
-        run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
-      - name: push images
-        # only pushes have access to the docker credentials
-        if: github.event_name == 'push'
-        run: ./ci/deploy/dockerhub-test-images.bash
 
   integration-test-webserver-01:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
