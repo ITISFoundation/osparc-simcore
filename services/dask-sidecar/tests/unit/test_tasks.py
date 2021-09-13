@@ -72,9 +72,9 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, mock.Mock]:
             "itisfoundation/sleeper",
             "2.1.1",
             [],
+            {"input_2": 2, "input_4": 1},
             {},
-            {},
-            ["hello"],
+            ["Remaining sleep time"],
         ),
     ],
 )
@@ -96,7 +96,7 @@ async def test_run_computational_sidecar(
         command=command,
     )
 
-    # check that expected logs are there
+    # check that the task produces expected logs
     for log in expected_logs:
         assert re.search(
             rf"\[{service_key}:{service_version} - .+\/.+\]: {log}", caplog.text

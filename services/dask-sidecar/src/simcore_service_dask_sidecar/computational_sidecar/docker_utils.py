@@ -5,6 +5,7 @@ from typing import AsyncIterator, List
 
 from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
+from simcore_service_sidecar.task_shared_volume import TaskSharedVolumes
 
 from .models import ContainerHostConfig, DockerContainerConfig
 
@@ -12,15 +13,33 @@ logger = logging.getLogger(__name__)
 
 
 async def create_container_config(
-    service_key: str, service_version: str, command: List[str]
+    service_key: str,
+    service_version: str,
+    command: List[str],
+    volumes: TaskSharedVolumes,
 ) -> DockerContainerConfig:
 
     return DockerContainerConfig(
-        Env=[],
+        Env=[
+            f"{name.upper()}_FOLDER=/{name}s"
+            for name in [
+                "input",
+                "output",
+                "log",
+            ]
+        ],
         Cmd=command,
         Image=f"{service_key}:{service_version}",
         Labels={},
-        HostConfig=ContainerHostConfig(Binds=[], Memory=1024 ** 3, NanoCPUs=1e9),
+        HostConfig=ContainerHostConfig(
+            Binds=[
+                f"{volumes.input_folder}:/inputs",
+                f"{volumes.output_folder}:/outputs",
+                f"{volumes.log_folder}:/logs",
+            ],
+            Memory=1024 ** 3,
+            NanoCPUs=1e9,
+        ),
     )
 
 
