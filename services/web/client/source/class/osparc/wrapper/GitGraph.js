@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2019 IT'IS Foundation, https://itis.swiss
+     2021 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -32,7 +32,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
   type: "singleton",
 
   statics: {
-    NAME: "gitGraph",
+    NAME: "GitGraph",
     VERSION: "1.4.0",
     URL: "https://github.com/nicoespeon/gitgraph.js/tree/master/packages/gitgraph-js"
   },

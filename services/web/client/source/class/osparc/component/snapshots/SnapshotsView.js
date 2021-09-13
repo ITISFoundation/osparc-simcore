@@ -41,6 +41,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
   members: {
     __snapshotsSection: null,
     __snapshotsTable: null,
+    __gitGraphCanvas: null,
     __snapshotPreview: null,
     __selectedSnapshot: null,
     __editSnapshotBtn: null,
@@ -73,6 +74,28 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
     },
 
     __rebuildSnapshotsTable: function() {
+      if (this.__gitGraphCanvas) {
+        this.__snapshotsSection.remove(this.__gitGraphCanvas);
+      }
+
+      const gitGraphCanvas = this.__gitGraphCanvas = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+
+      gitGraphCanvas.addListenerOnce("appear", () => {
+        const el = gitGraphCanvas.getContentElement().getDomElement();
+        const gitGraphWrapper = osparc.wrapper.GitGraph.getInstance();
+        gitGraphWrapper.init()
+          .then(() => {
+            const gitGraph = gitGraphWrapper.createGraph(el);
+            gitGraphWrapper.example(gitGraph);
+          }, this);
+      });
+
+      this.__snapshotsSection.addAt(gitGraphCanvas, 0, {
+        width: "50%"
+      });
+    },
+
+    __rebuildSnapshotsTableOld: function() {
       if (this.__snapshotsTable) {
         this.__snapshotsSection.remove(this.__snapshotsTable);
       }
