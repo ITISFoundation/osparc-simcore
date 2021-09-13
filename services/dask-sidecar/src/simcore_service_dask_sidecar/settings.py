@@ -10,6 +10,8 @@ class Settings(BaseCustomSettings):
     SC_BUILD_TARGET: Optional[str] = None
     SC_BOOT_MODE: Optional[str] = None
 
+    SWARM_STACK_NAME: str = "simcore"
+
     # sidecar config ---
 
     SIDECAR_INPUT_FOLDER: Path = config.SIDECAR_INPUT_FOLDER
