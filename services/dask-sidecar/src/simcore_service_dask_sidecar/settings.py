@@ -14,6 +14,9 @@ class Settings(BaseCustomSettings):
 
     # sidecar config ---
 
+    # DASK_SIDECAR_DOCKER_SERVICES_DATA: str
+    # DASK_SIDECAR_SERVICES_DATA_FOLDER: Path
+
     SIDECAR_INPUT_FOLDER: Path = config.SIDECAR_INPUT_FOLDER
     SIDECAR_OUTPUT_FOLDER: Path = config.SIDECAR_OUTPUT_FOLDER
     SIDECAR_LOG_FOLDER: Path = config.SIDECAR_LOG_FOLDER
