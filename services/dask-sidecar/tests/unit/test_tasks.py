@@ -4,7 +4,7 @@ import re
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Pattern
 from unittest import mock
 from uuid import UUID, uuid4
 
@@ -73,7 +73,7 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, mock.Mock]:
             "2.1.1",
             [],
             {"input_2": 2, "input_4": 1},
-            {},
+            {"output_2": re.compile(r"\d")},
             ["Remaining sleep time"],
         ),
     ],
@@ -102,7 +102,12 @@ async def test_run_computational_sidecar(
             rf"\[{service_key}:{service_version} - .+\/.+\]: {log}", caplog.text
         )
 
-    assert output_data == expected_output_data
+    for k, v in expected_output_data.items():
+        assert k in output_data
+        if isinstance(v, re.Pattern):
+            assert v.match(f"{output_data[k]}")
+        else:
+            assert output_data[k] == v
 
 
 @pytest.mark.parametrize(

@@ -3,6 +3,7 @@ import json
 import logging
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from json.decoder import JSONDecodeError
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
@@ -145,6 +146,16 @@ class ComputationalSidecar:
                             container_data["State"]["ExitCode"],
                             await container.log(stdout=True, stderr=True, tail=20),
                         )
+            # get the outputs
+            output_data_file = task_volumes.output_folder / "outputs.json"
+            if output_data_file.exists():
+                try:
+                    output_data = json.loads(output_data_file.read_text())
+                    return output_data
+                except JSONDecodeError as exc:
+                    logger.exception(
+                        "Could not load data in %s: %s", output_data_file, exc
+                    )
 
         return {}
 
