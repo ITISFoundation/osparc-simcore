@@ -73,8 +73,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         }
       }
       return false;
-    },
-
+    }
   },
 
   properties: {
