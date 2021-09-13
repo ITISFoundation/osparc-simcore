@@ -307,7 +307,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           this.getDescription(),
           this.getOwner()
         ];
-        if (checks.filter(label => label.toLowerCase().trim().includes(text)).length == 0) {
+        if (checks.filter(label => label && label.toLowerCase().trim().includes(text)).length == 0) {
           return true;
         }
       }
