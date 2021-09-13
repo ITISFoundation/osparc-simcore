@@ -19,7 +19,7 @@ fake_task = fake_task_factory(first_internal_id=1)
 async def engine(loop, make_engine):
 
     engine = await make_engine()
-    sync_engine = make_engine(False)
+    sync_engine = make_engine(is_async=False)
     metadata.drop_all(sync_engine)
     metadata.create_all(sync_engine)
 

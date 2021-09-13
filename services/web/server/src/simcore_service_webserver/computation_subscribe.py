@@ -7,7 +7,7 @@ from typing import Callable, Coroutine, Dict
 
 import aio_pika
 from aiohttp import web
-from servicelib.monitor_services import (
+from servicelib.aiohttp.monitor_services import (
     SERVICE_STARTED_LABELS,
     SERVICE_STOPPED_LABELS,
     service_started,

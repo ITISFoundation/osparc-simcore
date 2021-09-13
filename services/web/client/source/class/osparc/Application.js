@@ -37,6 +37,7 @@ qx.Class.define("osparc.Application", {
 
   members: {
     __current: null,
+    __themeSwitcher: null,
     __mainPage: null,
 
     /**
@@ -93,6 +94,7 @@ qx.Class.define("osparc.Application", {
       this.__loadCommonCss();
 
       this.__updateTabName();
+      this.__updateFavicon();
       this.__checkCookiesAccepted();
 
       // onload, load, DOMContentLoaded, appear... didn't work
@@ -179,8 +181,7 @@ qx.Class.define("osparc.Application", {
             osparc.auth.Manager.getInstance().validateToken()
               .then(() => {
                 const studyId = urlFragment.nav[1];
-                osparc.store.Store.getInstance().setCurrentStudyId(studyId);
-                this.__loadMainPage();
+                this.__loadMainPage(studyId);
               })
               .catch(() => this.__loadLoginPage());
           }
@@ -198,8 +199,7 @@ qx.Class.define("osparc.Application", {
                 if (["anonymous", "guest"].includes(data.role.toLowerCase())) {
                   this.__loadNodeViewerPage(studyId, viewerNodeId);
                 } else {
-                  osparc.store.Store.getInstance().setCurrentStudyId(studyId);
-                  this.__loadMainPage();
+                  this.__loadMainPage(studyId);
                 }
               });
           }
@@ -254,6 +254,16 @@ qx.Class.define("osparc.Application", {
         });
     },
 
+    __updateFavicon: function() {
+      let link = document.querySelector("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.getElementsByTagName("head")[0].appendChild(link);
+      }
+      link.href = "/resource/osparc/favicon-"+qx.core.Environment.get("product.name")+".png";
+    },
+
     __checkCookiesAccepted: function() {
       osparc.utils.LibVersions.getPlatformName()
         .then(platformName => {
@@ -277,14 +287,6 @@ qx.Class.define("osparc.Application", {
             }
           }
         });
-    },
-
-    __updateFavicon: function() {
-      const link = document.querySelector("link[rel*='icon']") || document.createElement("link");
-      link.type = "image/x-icon";
-      link.rel = "shortcut icon";
-      link.href = "resource/osparc/favicon-osparc.png";
-      document.getElementsByTagName("head")[0].appendChild(link);
     },
 
     __restart: function() {
@@ -329,13 +331,22 @@ qx.Class.define("osparc.Application", {
       view.addListener("done", () => this.__restart(), this);
     },
 
-    __loadMainPage: function() {
+    __loadMainPage: function(studyId = null) {
+      // Invalidate the entire cache
+      osparc.store.Store.getInstance().invalidate();
+
+      if (studyId) {
+        osparc.store.Store.getInstance().setCurrentStudyId(studyId);
+      }
       this.__connectWebSocket();
       const mainPage = this.__mainPage = new osparc.desktop.MainPage();
       this.__loadView(mainPage);
     },
 
     __loadNodeViewerPage: function(studyId, viewerNodeId) {
+      // Invalidate the entire cache
+      osparc.store.Store.getInstance().invalidate();
+
       this.__connectWebSocket();
       this.__loadView(new osparc.viewer.MainPage(studyId, viewerNodeId));
     },
@@ -351,12 +362,25 @@ qx.Class.define("osparc.Application", {
       this.assert(view!==null);
       // Update root document and currentness
       let doc = this.getRoot();
-      if (doc.hasChildren() && this.__current) {
-        doc.remove(this.__current);
-        // this.__current.destroy();
+      if (doc.hasChildren()) {
+        if (this.__current) {
+          doc.remove(this.__current);
+        }
+        if (this.__themeSwitcher) {
+          doc.remove(this.__themeSwitcher);
+          this.__themeSwitcher = null;
+        }
       }
       doc.add(view, options);
       this.__current = view;
+      if (!(view instanceof osparc.desktop.MainPage)) {
+        this.__themeSwitcher = new osparc.ui.switch.ThemeSwitcher();
+        doc.add(this.__themeSwitcher, {
+          top: 10,
+          right: 15
+        });
+      }
+
       // Clear URL
       window.history.replaceState(null, "", "/");
     },

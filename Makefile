@@ -36,7 +36,6 @@ SERVICES_LIST := \
 	director-v2 \
 	dynamic-sidecar \
 	migration \
-	sidecar \
 	static-webserver \
 	storage \
 	webserver
@@ -206,8 +205,9 @@ printf "$$rows" 'Postgres DB' 'http://$(get_my_ip).nip.io:18080/?pgsql=postgres&
 printf "$$rows" Portainer 'http://$(get_my_ip).nip.io:9000' admin adminadmin;\
 printf "$$rows" Redis 'http://$(get_my_ip).nip.io:18081';\
 printf "$$rows" 'Docker Registry' $${REGISTRY_URL} $${REGISTRY_USER} $${REGISTRY_PW};\
-echo "⚠️ if a DNS is not used (as displayed above), the interactive services started via dynamic-sidecar"
-echo "⚠️ will not be shown. The frontend accesses them via the uuid.services.YOUR_IP.nip.io:9081"
+printf "$$rows" "Dask Dashboard" "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1).nip.io:8787";
+printf "\n%s\n" "⚠️ if a DNS is not used (as displayed above), the interactive services started via dynamic-sidecar";\
+echo "⚠️ will not be shown. The frontend accesses them via the uuid.services.YOUR_IP.nip.io:9081";
 endef
 
 show-endpoints:
@@ -372,6 +372,7 @@ pylint: ## Runs python linter framework's wide
 	@/bin/bash -c "pylint --version"
 	# Running linter
 	@/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
+											-not -path "*ignore*" \
 											-not -path "*.venv*" \
 											-not -path "*/client/*" \
 											-not -path "*egg*" \
@@ -380,6 +381,7 @@ pylint: ## Runs python linter framework's wide
 											-not -path "*sandbox*" \
 											-not -path "*-sdk/python*" \
 											-not -path "*generated_code*" \
+											-not -path "*build*" \
 											-not -path "*datcore.py" \
 											-not -path "*web/server*"))"
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes

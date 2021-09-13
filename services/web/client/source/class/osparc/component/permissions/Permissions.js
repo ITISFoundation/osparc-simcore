@@ -63,7 +63,6 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     __organizationsAndMembers: null,
     __collaboratorsModel: null,
     __collaborators: null,
-    __addCollaboratorBtn: null,
 
     __buildLayout: function() {
       const addCollaborator = this.__createAddCollaboratorSection();
@@ -100,7 +99,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
         flex: 1
       });
 
-      const addCollaboratorBtn = this.__addCollaboratorBtn = new qx.ui.form.Button(this.tr("Add")).set({
+      const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Add")).set({
         allowGrowY: false,
         enabled: false
       });
@@ -109,7 +108,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       }, this);
       qx.event.message.Bus.getInstance().subscribe("OrgAndMembPermsFilter", () => {
         const anySelected = Boolean(this.__organizationsAndMembers.getSelectedGIDs().length);
-        this.__addCollaboratorBtn.setEnabled(anySelected);
+        addCollaboratorBtn.setEnabled(anySelected);
       }, this);
 
       hBox.add(addCollaboratorBtn);
@@ -134,7 +133,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       const collaboratorsModel = this.__collaboratorsModel = new qx.data.Array();
       const collaboratorsCtrl = new qx.data.controller.List(collaboratorsModel, collaboratorsUIList, "name");
       collaboratorsCtrl.setDelegate({
-        createItem: () => new osparc.dashboard.CollaboratorListItem(),
+        createItem: () => new osparc.ui.list.CollaboratorListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("gid", "model", null, item, id);
           ctrl.bindProperty("gid", "key", null, item, id);
@@ -142,7 +141,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id); // user
           ctrl.bindProperty("label", "title", null, item, id); // organization
-          ctrl.bindProperty("login", "subtitle", null, item, id); // user
+          ctrl.bindProperty("login", "subtitleMD", null, item, id); // user
           ctrl.bindProperty("description", "subtitle", null, item, id); // organization
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
@@ -211,23 +210,9 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     },
 
     getCollaborators: function() {
-      const store = osparc.store.Store.getInstance();
-      const promises = [];
-      promises.push(store.getGroupsOrganizations());
-      promises.push(store.getVisibleMembers());
-      Promise.all(promises)
-        .then(values => {
-          const orgs = values[0]; // array
-          const orgMembers = values[1]; // object
-          orgs.forEach(org => {
-            org["collabType"] = 1;
-            this.__collaborators[org["gid"]] = org;
-          });
-          for (const gid of Object.keys(orgMembers)) {
-            const orgMember = orgMembers[gid];
-            orgMember["collabType"] = 2;
-            this.__collaborators[gid] = orgMember;
-          }
+      osparc.store.Store.getInstance().getPotentialCollaborators()
+        .then(potentialCollaborators => {
+          this.__collaborators = potentialCollaborators;
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
         });

@@ -2,36 +2,16 @@
 # Specifies third-party dependencies for 'service-library'
 #
 --constraint ../../../requirements/constraints.txt
+--constraint ./constraints.txt
 
-openapi-core==0.12.0     # frozen until https://github.com/ITISFoundation/osparc-simcore/pull/1396 is CLOSED
-lazy-object-proxy~=1.4.3 # cannot upgrade due to contraints in openapi-core
-
-aiohttp
-aiozipkin
-aiopg[sa]
 ujson
-werkzeug
-jsonschema
-prometheus_client
-tenacity
-attrs
-trafaret
-aiodebug
+
 pydantic
-sqlalchemy
-psycopg2-binary
 pyyaml
+
+# misc
+aiodebug
+tenacity
 
 # used for monitoring of slow callbacks
 pyinstrument
-
-# These are limitations introduced by testing libraries
-
-#   idna==3.1 (from -c requirements/_base.txt (line 35))
-#   idna<3,>=2.5 (from requests==2.25.1->coveralls==3.0.1->-r requirements/_test.in (line 24))
-idna<3,>=2.5
-
-
- # attrs>=19.2.0 (from pytest==6.2.4->-r requirements/_test.in (line 13))
- # attrs<21,>=19 (from pytest-docker==0.10.1
- attrs<21,>=19.2.0

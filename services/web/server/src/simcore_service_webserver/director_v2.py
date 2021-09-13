@@ -6,11 +6,11 @@ from aiohttp import ClientError, ClientTimeout, web
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.settings.services_common import ServicesCommonSettings
-from pydantic.types import PositiveInt
-from servicelib.application_setup import ModuleCategory, app_module_setup
+from pydantic.types import NonNegativeInt, PositiveInt
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import log_decorator
-from servicelib.rest_responses import wrap_as_envelope
-from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
+from servicelib.aiohttp.rest_responses import wrap_as_envelope
+from servicelib.aiohttp.rest_routing import iter_path_operations, map_handlers_with_operations
 from servicelib.utils import logged_gather
 from yarl import URL
 
@@ -163,10 +163,12 @@ async def start_pipeline(request: web.Request) -> web.Response:
     project_id = request.match_info.get("project_id", None)
     subgraph: Set[str] = set()
     force_restart = False
+    cluster_id: NonNegativeInt = 0
     if request.can_read_body:
         body = await request.json()
         subgraph = body.get("subgraph")
         force_restart = body.get("force_restart")
+        cluster_id = body.get("cluster_id")
 
     backend_url = URL(f"{director2_settings.endpoint}/computations")
     log.debug("Redirecting '%s' -> '%s'", request.url, backend_url)
@@ -176,6 +178,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
         "start_pipeline": True,
         "subgraph": list(subgraph),  # sets are not natively json serializable
         "force_restart": force_restart,
+        "cluster_id": cluster_id,
     }
 
     # request to director-v2

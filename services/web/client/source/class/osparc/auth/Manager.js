@@ -154,6 +154,12 @@ qx.Class.define("osparc.auth.Manager", {
         osparc.auth.Data.getInstance().setOrgIds(orgIds);
       }
       osparc.data.Permissions.getInstance().setRole(profile.role);
+
+      this.__fetchStartUpResources();
+    },
+
+    __fetchStartUpResources: function() {
+      osparc.data.Resources.get("clusters");
     },
 
     __logoutUser: function() {

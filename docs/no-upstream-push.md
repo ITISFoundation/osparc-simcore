@@ -19,7 +19,7 @@ your local repository.
     $ git remote add upstream git@github.com:GITUSER/osparc-simcore.git
 
     \path-to\osparc-simcore (master -> origin)
-    $ git remote set-url upstream --push "You shall not push but use PR instead"
+    $ git remote set-url upstream --push "You_shall_not_push_but_use_PR_instead"
 
     \path-to\osparc-simcore (master -> origin)
     $ git remote -vv

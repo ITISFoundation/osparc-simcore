@@ -8,13 +8,13 @@ from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
-from simcore_service_director_v2.utils.db import RUNNING_STATE_TO_DB
 from sqlalchemy.sql import or_
 from sqlalchemy.sql.elements import literal_column
 from sqlalchemy.sql.expression import desc
 
 from ....models.domains.comp_runs import CompRunsAtDB
-from ....models.schemas.constants import UserID
+from ....models.schemas.constants import ClusterID, UserID
+from ....utils.db import RUNNING_STATE_TO_DB
 from ..tables import comp_runs
 from ._base import BaseRepository
 
@@ -44,6 +44,8 @@ class CompRunsRepository(BaseRepository):
         self,
         user_id: UserID,
         project_id: ProjectID,
+        cluster_id: ClusterID,
+        default_cluster_id: ClusterID,
         iteration: Optional[PositiveInt] = None,
     ) -> CompRunsAtDB:
         async with self.db_engine.acquire() as conn:
@@ -63,7 +65,8 @@ class CompRunsRepository(BaseRepository):
                 comp_runs.insert()  # pylint: disable=no-value-for-parameter
                 .values(
                     user_id=user_id,
-                    project_uuid=str(project_id),
+                    project_uuid=f"{project_id}",
+                    cluster_id=cluster_id if cluster_id != default_cluster_id else None,
                     iteration=iteration,
                     result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
                     started=datetime.utcnow(),
@@ -75,7 +78,7 @@ class CompRunsRepository(BaseRepository):
 
     async def update(
         self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt, **values
-    ) -> CompRunsAtDB:
+    ) -> Optional[CompRunsAtDB]:
         async with self.db_engine.acquire() as conn:
             result = await conn.execute(
                 sa.update(comp_runs)
@@ -88,7 +91,7 @@ class CompRunsRepository(BaseRepository):
                 .returning(literal_column("*"))
             )
             row: RowProxy = await result.first()
-            return CompRunsAtDB.from_orm(row)
+            return CompRunsAtDB.from_orm(row) if row else None
 
     async def set_run_result(
         self,
@@ -97,7 +100,7 @@ class CompRunsRepository(BaseRepository):
         iteration: PositiveInt,
         result_state: RunningState,
         final_state: Optional[bool] = False,
-    ) -> CompRunsAtDB:
+    ) -> Optional[CompRunsAtDB]:
         values = {"result": RUNNING_STATE_TO_DB[result_state]}
         if final_state:
             values.update({"ended": datetime.utcnow()})

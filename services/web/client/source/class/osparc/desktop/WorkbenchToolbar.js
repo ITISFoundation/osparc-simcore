@@ -33,11 +33,13 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
   },
 
   members: {
+    __navNodes: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "breadcrumb-navigation": {
-          const breadcrumbNavigation = this._navNodes = new osparc.navigation.BreadcrumbsWorkbench();
+          const breadcrumbNavigation = this.__navNodes = new osparc.navigation.BreadcrumbsWorkbench();
           breadcrumbNavigation.addListener("nodeSelected", e => {
             this.fireDataEvent("nodeSelected", e.getData());
           }, this);
@@ -50,7 +52,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
         }
         case "take-snapshot-btn": {
           control = new osparc.ui.form.FetchButton(this.tr("Take Snapshot")).set({
-            icon: "@FontAwesome5Solid/camera/14",
+            icon: "@FontAwesome5Solid/code-branch/14",
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
             allowGrowX: false
           });
@@ -165,7 +167,11 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
     __attachEventHandlers: function() {
       qx.event.message.Bus.subscribe("changeWorkbenchSelection", e => {
         const selectedNodes = e.getData();
-        this.getStartStopButtons().nodeSelectionChanged(selectedNodes);
+        const selectedNodeIds = [];
+        selectedNodes.forEach(selectedNode => {
+          selectedNodeIds.push(selectedNode.getNodeId());
+        });
+        this.getStartStopButtons().nodeSelectionChanged(selectedNodeIds);
       }, this);
     }
   }

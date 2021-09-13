@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from aiohttp import ClientSession, web
 from models_library.settings.services_common import ServicesCommonSettings
-from servicelib.client_session import get_client_session
+from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import logged_gather
 from yarl import URL
 

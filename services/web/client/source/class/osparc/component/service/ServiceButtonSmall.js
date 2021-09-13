@@ -20,7 +20,7 @@
  * It also adds filtering capabilities.
  */
 qx.Class.define("osparc.component.service.ServiceButtonSmall", {
-  extend: osparc.dashboard.StudyBrowserButtonBase,
+  extend: osparc.dashboard.GridButtonBase,
 
   construct: function(serviceModel) {
     this.base(arguments);
@@ -39,18 +39,18 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
     serviceModel: {
       check: "qx.core.Object",
       nullable: false,
-      apply: "__applyResourceData"
+      apply: "__applyServiceModel"
     }
   },
 
   statics: {
     ITEM_WIDTH: 180,
-    ITEM_HEIGHT: 150,
+    ITEM_HEIGHT: 140,
     SERVICE_ICON: "@FontAwesome5Solid/paw/50"
   },
 
   members: {
-    __applyResourceData: function(serviceModel) {
+    __applyServiceModel: function(serviceModel) {
       serviceModel.bind("name", this.getChildControl("title"), "value");
       if (serviceModel.getThumbnail()) {
         this.setIcon(serviceModel.getThumbnail());
@@ -68,8 +68,13 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
           hint.exclude();
         };
         this.addListener("mouseover", showHint);
-        this.addListener("mouseout", hideHint);
-        this.addListener("dbltap", hideHint);
+        [
+          "mouseout",
+          "dbltap",
+          "keypress"
+        ].forEach(e => {
+          this.addListener(e, hideHint);
+        });
       } else {
         serviceModel.bind("description", this.getChildControl("subtitle-text"), "value");
         this.getChildControl("subtitle-text").set({
@@ -78,38 +83,6 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
           allowGrowY: true
         });
       }
-    },
-
-    __filterText: function(text) {
-      if (text) {
-        const checks = [
-          this.getServiceModel().getName()
-        ];
-        if (checks.filter(label => label.toLowerCase().trim().includes(text)).length == 0) {
-          return true;
-        }
-      }
-      return false;
-    },
-
-    __filterTags: function(tags) {
-      if (tags && tags.length) {
-        const type = this.getServiceModel().getType() || "";
-        if (!tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
-          return true;
-        }
-      }
-      return false;
-    },
-
-    _shouldApplyFilter: function(data) {
-      if (this.__filterText(data.text)) {
-        return true;
-      }
-      if (this.__filterTags(data.tags)) {
-        return true;
-      }
-      return false;
     }
   }
 });

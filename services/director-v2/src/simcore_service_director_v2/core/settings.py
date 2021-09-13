@@ -21,7 +21,7 @@ from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
 
 from ..meta import api_vtag
-from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
+from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE, ClusterID
 
 MINS = 60
 API_ROOT: str = "api"
@@ -95,7 +95,7 @@ class CelerySettings(BaseCelerySettings):
 
 class DynamicSidecarTraefikSettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_TRAEFIK_VERSION: str = Field(
-        "v2.2.1",
+        "v2.4.13",
         description="current version of the Traefik image to be pulled and used from dockerhub",
     )
     DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL: str = Field(
@@ -224,19 +224,37 @@ class DynamicServicesSettings(BaseCustomSettings):
 
 class PGSettings(PostgresSettings):
     DIRECTOR_V2_POSTGRES_ENABLED: bool = Field(
-        True, description="Enables/Disables connection with service"
+        True,
+        description="Enables/Disables connection with service",
     )
 
 
 class CelerySchedulerSettings(BaseCustomSettings):
     DIRECTOR_V2_CELERY_SCHEDULER_ENABLED: bool = Field(
-        True,
-        description="Enables/Disables the scheduler",
+        False, description="Enables/Disables the scheduler", deprecated=True
     )
 
 
 class DaskSchedulerSettings(BaseCustomSettings):
-    DIRECTOR_V2_DASK_SCHEDULER_ENABLED: bool = True
+    DIRECTOR_V2_DASK_SCHEDULER_ENABLED: bool = Field(
+        True,
+    )
+    DIRECTOR_V2_DASK_CLIENT_ENABLED: bool = Field(
+        True,
+    )
+    DASK_SCHEDULER_HOST: str = Field(
+        "dask-scheduler",
+        description="Address of the scheduler to register (only if started as worker )",
+    )
+    DASK_SCHEDULER_PORT: PortInt = 8786
+
+    DASK_CLUSTER_ID_PREFIX: Optional[str] = Field(
+        "CLUSTER_", description="This defines the cluster name prefix"
+    )
+
+    DASK_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
+        0, description="This defines the default cluster id when none is defined"
+    )
 
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
@@ -249,6 +267,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         LogLevel.INFO.value,
         env=["DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
+    DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
 
     # for passing self-signed certificate to spawned services
     # TODO: fix these variables once the timeout-minutes: 30 is able to start dynamic services
@@ -308,3 +327,15 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     @classmethod
     def _validate_loglevel(cls, value) -> str:
         return cls.validate_log_level(value)
+
+    @validator("DASK_SCHEDULER")
+    @classmethod
+    def _check_only_one_comp_scheduler_enabled(cls, v, values) -> DaskSchedulerSettings:
+        celery_settings: CelerySchedulerSettings = values["CELERY_SCHEDULER"]
+        dask_settings: DaskSchedulerSettings = v
+        if (
+            celery_settings.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED
+            and dask_settings.DIRECTOR_V2_DASK_SCHEDULER_ENABLED
+        ):
+            celery_settings.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED = False
+        return v

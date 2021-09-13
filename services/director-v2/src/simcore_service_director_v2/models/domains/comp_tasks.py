@@ -7,18 +7,47 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import Inputs, NodeID, Outputs
 from models_library.projects_state import RunningState
 from models_library.services import KEY_RE, PropertyName, ServiceInputs, ServiceOutput
-from pydantic import BaseModel, Extra, Field, constr, validator
+from pydantic import BaseModel, Extra, Field, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
 
 from ...utils.db import DB_TO_RUNNING_STATE, RUNNING_STATE_TO_DB
+from ..schemas.services import NodeRequirements
 
 
 class Image(BaseModel):
-    name: constr(regex=KEY_RE)
-    tag: constr(regex=VERSION_RE)
-    requires_gpu: bool
-    requires_mpi: bool
+    name: str = Field(..., regex=KEY_RE)
+    tag: str = Field(..., regex=VERSION_RE)
+    requires_gpu: Optional[bool] = Field(None, deprecated=True)
+    requires_mpi: Optional[bool] = Field(None, deprecated=True)
+    node_requirements: NodeRequirements = Field(
+        None, description="the requirements for the service to run on a node"
+    )
+
+    @validator("node_requirements", pre=True, always=True)
+    @classmethod
+    def migrate_from_requirements(cls, v, values):
+        if v is None:
+            v = NodeRequirements(
+                CPU=1.0,
+                GPU=1 if values.get("requires_gpu") else 0,
+                RAM="128 MiB",
+                MPI=1 if values.get("requires_mpi") else 0,
+            )
+        return v
+
+    class Config:
+        orm_mode = True
+        schema_extra = {
+            "examples": [
+                {
+                    "name": "simcore/services/dynamic/jupyter-octave-python-math",
+                    "tag": "1.3.1",
+                    "node_requirements": node_req_example,
+                }
+                for node_req_example in NodeRequirements.Config.schema_extra["examples"]
+            ]
+        }
 
 
 # NOTE: for a long time defaultValue field was added to ServiceOutput wrongly in the DB.
@@ -120,15 +149,11 @@ class CompTaskAtDB(BaseModel):
                             "path": "341351c4-23d1-4366-95d0-bc01386001a7/7f62be0e-1298-4fe4-be76-66b6e859c260/output_1.zip",
                         }
                     },
-                    "image": {
-                        "name": "simcore/services/dynamic/jupyter-octave-python-math",
-                        "tag": "1.3.1",
-                        "requires_gpu": False,
-                        "requires_mpi": False,
-                    },
+                    "image": image_example,
                     "submit": "2021-03-01 13:07:34.19161",
                     "node_class": "INTERACTIVE",
                     "state": "NOT_STARTED",
                 }
+                for image_example in Image.Config.schema_extra["examples"]
             ]
         }

@@ -3,7 +3,7 @@ import logging
 import os
 
 import trafaret_config
-import trafaret_config.commandline as commandline
+from trafaret_config import commandline
 
 from .resources import resources
 
@@ -12,13 +12,13 @@ log = logging.getLogger(__name__)
 
 def add_cli_options(argument_parser, default_config):
     """
-        Adds settings group to cli with options:
+    Adds settings group to cli with options:
 
-        -c CONFIG, --config CONFIG
-                                Configuration file (default: 'config.yaml')
-        --print-config        Print config as it is read after parsing and exit
-        --print-config-vars   Print variables used in configuration file
-        -C, --check-config    Check configuration and exit
+    -c CONFIG, --config CONFIG
+                            Configuration file (default: 'config.yaml')
+    --print-config        Print config as it is read after parsing and exit
+    --print-config-vars   Print variables used in configuration file
+    -C, --check-config    Check configuration and exit
     """
     if argument_parser is None:
         argument_parser = argparse.ArgumentParser()
@@ -65,10 +65,10 @@ def read_and_validate(filepath, vars=None):  # pylint: disable=W0622
 
 def config_from_file(filepath) -> dict:
     """
-        Loads and validates app configuration from file
-        Some values in the configuration are defined as environment variables
+    Loads and validates app configuration from file
+    Some values in the configuration are defined as environment variables
 
-        Raises trafaret_config.ConfigError
+    Raises trafaret_config.ConfigError
     """
     from .application_config import app_schema
 

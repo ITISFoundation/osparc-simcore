@@ -1,27 +1,23 @@
 # pylint: disable=no-value-for-parameter
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 from typing import List
 
 import pytest
 import sqlalchemy as sa
+from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from psycopg2.errors import ForeignKeyViolation  # pylint: disable=no-name-in-module
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
-from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import projects, users
 
 
 @pytest.fixture
-async def engine(make_engine, loop):
-    engine = await make_engine()
-    sync_engine = make_engine(False)
-    metadata.drop_all(sync_engine)
-    metadata.create_all(sync_engine)
+async def engine(pg_engine: Engine):
 
-    async with engine.acquire() as conn:
+    async with pg_engine.acquire() as conn:
         await conn.execute(users.insert().values(**random_user(name="A")))
         await conn.execute(users.insert().values(**random_user()))
         await conn.execute(users.insert().values(**random_user()))
@@ -32,10 +28,7 @@ async def engine(make_engine, loop):
         with pytest.raises(ForeignKeyViolation):
             await conn.execute(projects.insert().values(**random_project(prj_owner=4)))
 
-    yield engine
-
-    engine.close()
-    await engine.wait_closed()
+    yield pg_engine
 
 
 @pytest.mark.skip(reason="sandbox for dev purposes")

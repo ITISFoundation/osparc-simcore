@@ -6,14 +6,13 @@ import logging
 from typing import Any, Dict
 
 from aiohttp import web
-from servicelib.application import create_safe_application
+from servicelib.aiohttp.application import create_safe_application
 from servicelib.rest_pagination_utils import monkey_patch_pydantic_url_regex
-
-monkey_patch_pydantic_url_regex()
 
 from ._meta import WELCOME_MSG
 from .activity import setup_activity
 from .catalog import setup_catalog
+from .clusters import setup_clusters
 from .computation import setup_computation
 from .db import setup_db
 from .diagnostics import setup_diagnostics
@@ -31,6 +30,7 @@ from .rest import setup_rest
 from .security import setup_security
 from .session import setup_session
 from .settings import setup_settings
+from .snapshots import setup_snapshots
 from .socketio import setup_socketio
 from .statics import setup_statics
 from .storage import setup_storage
@@ -39,6 +39,9 @@ from .studies_dispatcher.module_setup import setup_studies_dispatcher
 from .tags import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
+
+monkey_patch_pydantic_url_regex()
+
 
 log = logging.getLogger(__name__)
 
@@ -75,6 +78,7 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_users(app)
     setup_groups(app)
     setup_projects(app)
+    setup_snapshots(app)
     setup_activity(app)
     setup_resource_manager(app)
     setup_tags(app)
@@ -84,6 +88,7 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_studies_access(app)
     setup_studies_dispatcher(app)
     setup_exporter(app)
+    setup_clusters(app)
 
     return app
 

@@ -44,7 +44,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   events: {
-    "startStudy": "qx.event.type.Data"
+    "startSnapshot": "qx.event.type.Data"
   },
 
   properties: {
@@ -201,25 +201,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const study = this.getStudy();
       const takeSnapshotView = new osparc.component.snapshots.TakeSnapshotView(study);
       const title = this.tr("Take Snapshot");
-      const win = osparc.ui.window.Window.popUpInWindow(takeSnapshotView, title, 400, 300);
+      const win = osparc.ui.window.Window.popUpInWindow(takeSnapshotView, title, 400, 140);
       takeSnapshotView.addListener("takeSnapshot", () => {
         const label = takeSnapshotView.getLabel();
-        const saveData = takeSnapshotView.getSaveData();
         const workbenchToolbar = this.__mainPanel.getToolbar();
         const takeSnapshotBtn = workbenchToolbar.getChildControl("take-snapshot-btn");
         takeSnapshotBtn.setFetching(true);
         const params = {
           url: {
-            "studyId": study.getUuid()
-          },
-          data: {
-            "label": label,
-            "save_data": saveData
+            "studyId": study.getUuid(),
+            "snapshot_label": label
           }
         };
         osparc.data.Resources.fetch("snapshots", "takeSnapshot", params)
           .then(data => {
-            console.log(data);
             workbenchToolbar.evalSnapshotsBtn();
           })
           .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"))
@@ -234,18 +229,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __showSnapshots: function() {
       const study = this.getStudy();
-      const sweeper = new osparc.component.snapshots.SnapshotsView(study);
+      const snapshots = new osparc.component.snapshots.SnapshotsView(study);
       const title = this.tr("Snapshots");
-      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 600, 500);
-      [
-        "openPrimaryStudy",
-        "openSnapshot"
-      ].forEach(signalName => {
-        sweeper.addListener(signalName, e => {
-          win.close();
-          const studyId = e.getData();
-          this.__switchStudy(studyId);
-        });
+      const win = osparc.ui.window.Window.popUpInWindow(snapshots, title, 1000, 500);
+      snapshots.addListener("openSnapshot", e => {
+        win.close();
+        const snapshot = e.getData();
+        this.fireDataEvent("startSnapshot", snapshot);
       });
     },
 
@@ -389,9 +379,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree();
       nodesTree.setStudy(study);
-      nodesTree.addListener("slidesEdit", () => {
-        this.__editSlides();
-      }, this);
       nodesTree.addListener("removeNode", e => {
         if (this.getStudy().isReadOnly()) {
           return;
@@ -529,7 +516,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __connectEvents: function() {
       const workbench = this.getStudy().getWorkbench();
-      workbench.addListener("nNodesChanged", this.__workbenchChanged, this);
+      workbench.addListener("pipelineChanged", this.__workbenchChanged, this);
 
       workbench.addListener("showInLogger", ev => {
         const data = ev.getData();
@@ -551,21 +538,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.nodeSelected(nodeId);
         }, this);
       });
-      workbenchToolbar.addListener("showSweeper", this.__showParameters, this);
-      if (!workbenchToolbar.hasListener("showParameters")) {
-        workbenchToolbar.addListener("showParameters", this.__showParameters, this);
-      }
       if (!workbenchToolbar.hasListener("takeSnapshot")) {
         workbenchToolbar.addListener("takeSnapshot", this.__takeSnapshot, this);
       }
       if (!workbenchToolbar.hasListener("showSnapshots")) {
         workbenchToolbar.addListener("showSnapshots", this.__showSnapshots, this);
-      }
-      if (!workbenchToolbar.hasListener("openPrimaryStudy")) {
-        workbenchToolbar.addListener("openPrimaryStudy", e => {
-          const primaryStudyId = e.getData();
-          this.__switchStudy(primaryStudyId);
-        }, this);
       }
 
       nodesTree.addListener("changeSelectedNode", e => {

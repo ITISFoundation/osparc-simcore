@@ -117,14 +117,28 @@ def full_file_path_from_dir_and_subdirs(dir_path: Path) -> List[Path]:
     return [x for x in dir_path.rglob("*") if x.is_file()]
 
 
+def _escape_undecodable_str(s: str) -> str:
+    return s.encode(errors="replace").decode("utf-8")
+
+
+def _escape_undecodable_path(path: Path) -> Path:
+    return Path(_escape_undecodable_str(str(path)))
+
+
 async def assert_same_directory_content(
-    dir_to_compress: Path, output_dir: Path, inject_relative_path: Path = None
+    dir_to_compress: Path,
+    output_dir: Path,
+    inject_relative_path: Path = None,
+    unsupported_replace: bool = False,
 ) -> None:
     def _relative_path(input_path: Path) -> Path:
         return Path(str(inject_relative_path / str(input_path))[1:])
 
     input_set = get_all_files_in_dir(dir_to_compress)
     output_set = get_all_files_in_dir(output_dir)
+
+    if unsupported_replace:
+        input_set = {_escape_undecodable_path(x) for x in input_set}
 
     if inject_relative_path is not None:
         input_set = {_relative_path(x) for x in input_set}
@@ -140,6 +154,9 @@ async def assert_same_directory_content(
         for k, v in (
             await compute_hashes(full_file_path_from_dir_and_subdirs(dir_to_compress))
         ).items()
+    }
+    dir_to_compress_hashes = {
+        _escape_undecodable_path(k): v for k, v in dir_to_compress_hashes.items()
     }
 
     # computing the hashes for output_dir and map in a dict
@@ -161,7 +178,11 @@ async def assert_same_directory_content(
 
 
 def assert_unarchived_paths(
-    unarchived_paths: Set[Path], src_dir: Path, dst_dir: Path, is_saved_as_relpath: bool
+    unarchived_paths: Set[Path],
+    src_dir: Path,
+    dst_dir: Path,
+    is_saved_as_relpath: bool,
+    unsupported_replace: bool = False,
 ):
     is_file_or_emptydir = lambda p: p.is_file() or (p.is_dir() and not any(p.glob("*")))
 
@@ -182,6 +203,8 @@ def assert_unarchived_paths(
         for f in src_dir.rglob("*")
         if is_file_or_emptydir(f)
     )
+    if unsupported_replace:
+        expected_tails = {_escape_undecodable_str(x) for x in expected_tails}
     assert got_tails == expected_tails
 
 
@@ -203,13 +226,12 @@ async def test_archive_unarchive_same_structure_dir(
 
     archive_file = temp_dir_one / "archive.zip"
 
-    archive_result = await archive_dir(
+    await archive_dir(
         dir_to_compress=dir_with_random_content,
         destination=archive_file,
         store_relative_path=store_relative_path,
         compress=compress,
     )
-    assert archive_result is True
 
     unarchived_paths: Set[Path] = await unarchive_dir(
         archive_to_extract=archive_file, destination_folder=temp_dir_two
@@ -241,13 +263,12 @@ async def test_unarchive_in_same_dir_as_archive(
 ):
     archive_file = tmp_path / "archive.zip"
 
-    archive_result = await archive_dir(
+    await archive_dir(
         dir_to_compress=dir_with_random_content,
         destination=archive_file,
         store_relative_path=store_relative_path,
         compress=compress,
     )
-    assert archive_result is True
 
     unarchived_paths = await unarchive_dir(
         archive_to_extract=archive_file, destination_folder=tmp_path
@@ -266,4 +287,56 @@ async def test_unarchive_in_same_dir_as_archive(
         dir_with_random_content,
         tmp_path,
         None if store_relative_path else dir_with_random_content,
+    )
+
+
+@pytest.mark.parametrize(
+    "compress,store_relative_path",
+    itertools.product([True, False], repeat=2),
+)
+async def test_regression_unsupported_characters(
+    tmp_path: Path,
+    compress: bool,
+    store_relative_path: bool,
+) -> None:
+    archive_path = tmp_path / "archive.zip"
+    dir_to_archive = tmp_path / "to_compress"
+    dir_to_archive.mkdir()
+    dst_dir = tmp_path / "decompressed"
+    dst_dir.mkdir()
+
+    def _create_file(file_name: str, content: str) -> None:
+        file_path = dir_to_archive / file_name
+        file_path.write_text(content)
+        assert file_path.read_text() == content
+
+    # unsupported file name
+    _create_file("something\udce6likethis.txt", "payload1")
+    # supported name
+    _create_file("this_file_name_works.txt", "payload2")
+
+    await archive_dir(
+        dir_to_compress=dir_to_archive,
+        destination=archive_path,
+        store_relative_path=store_relative_path,
+        compress=compress,
+    )
+
+    unarchived_paths = await unarchive_dir(
+        archive_to_extract=archive_path, destination_folder=dst_dir
+    )
+
+    assert_unarchived_paths(
+        unarchived_paths,
+        src_dir=dir_to_archive,
+        dst_dir=dst_dir,
+        is_saved_as_relpath=store_relative_path,
+        unsupported_replace=True,
+    )
+
+    await assert_same_directory_content(
+        dir_to_compress=dir_to_archive,
+        output_dir=dst_dir,
+        inject_relative_path=None if store_relative_path else dir_to_archive,
+        unsupported_replace=True,
     )

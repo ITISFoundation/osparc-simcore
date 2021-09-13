@@ -128,6 +128,7 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/projects/{studyId}"
           },
           addNode: {
+            useCache: false,
             method: "POST",
             url: statics.API + "/projects/{studyId}/nodes"
           },
@@ -137,14 +138,17 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}"
           },
           deleteNode: {
+            useCache: false,
             method: "DELETE",
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}"
           },
           addTag: {
+            useCache: false,
             method: "PUT",
             url: statics.API + "/projects/{studyId}/tags/{tagId}"
           },
           removeTag: {
+            useCache: false,
             method: "DELETE",
             url: statics.API + "/projects/{studyId}/tags/{tagId}"
           }
@@ -154,7 +158,6 @@ qx.Class.define("osparc.data.Resources", {
        * SNAPSHOTS
        */
       "snapshots": {
-        useCache: true,
         idField: "uuid",
         endpoints: {
           get: {
@@ -175,9 +178,13 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/{studyId}/snapshots/{snapshotId}/parameters"
           },
+          updateSnapshot: {
+            method: "PATCH",
+            url: statics.API + "/projects/{studyId}/snapshots/{snapshotId}"
+          },
           takeSnapshot: {
             method: "POST",
-            url: statics.API + "/projects/{studyId}/snapshots"
+            url: statics.API + "/projects/{studyId}/snapshots?snapshot_label={snapshot_label}"
           }
         }
       },
@@ -392,6 +399,34 @@ qx.Class.define("osparc.data.Resources", {
           patch: {
             method: "PATCH",
             url: statics.API + "/groups/{gid}/users/{uid}"
+          }
+        }
+      },
+      /*
+       * CLUSTERS
+       */
+      "clusters": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/clusters"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/clusters"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/clusters/{cid}"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/clusters/{cid}"
+          },
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/clusters/{cid}"
           }
         }
       },

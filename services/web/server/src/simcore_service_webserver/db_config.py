@@ -11,7 +11,7 @@ from pydantic import BaseSettings
 from typing import Optional
 
 from models_library.settings.postgres import PostgresSettings
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from simcore_sdk.config.db import CONFIG_SCHEMA as _PG_SCHEMA
 
 CONFIG_SECTION_NAME = "db"

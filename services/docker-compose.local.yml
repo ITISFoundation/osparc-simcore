@@ -73,6 +73,8 @@ services:
     ports:
       # dashboard UI
       - "8787:8787"
+      # scheduler API
+      - "8786:8786"
 
   postgres:
     ports:

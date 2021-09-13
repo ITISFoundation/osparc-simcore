@@ -13,7 +13,7 @@ import aiohttp_security
 from aiohttp import web
 from aiohttp_security.session_identity import SessionIdentityPolicy
 
-from servicelib.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .security_access_model import RoleBasedAccessModel
 from .security_authorization import AuthorizationPolicy
@@ -34,7 +34,3 @@ def setup_security(app: web.Application):
     # when you do that, also update the openapi to reflect that
     authorization_policy = AuthorizationPolicy(app, access_model)
     aiohttp_security.setup(app, identity_policy, authorization_policy)
-
-
-
-__all__ = "setup_security"

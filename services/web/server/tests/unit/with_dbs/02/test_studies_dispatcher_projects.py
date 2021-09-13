@@ -49,6 +49,7 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, redis_service):
         "catalog",
         "computation",
         "studies_access",
+        "clusters",
     }
     include = {
         "db",

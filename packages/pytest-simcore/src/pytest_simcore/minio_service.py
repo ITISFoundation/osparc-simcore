@@ -24,11 +24,13 @@ def _ensure_remove_bucket(client: Minio, bucket_name: str):
         objs: Iterator[Object] = client.list_objects(
             bucket_name, prefix=None, recursive=True
         )
-        errors: Iterator[DeleteError] = client.remove_objects(
-            bucket_name, [DeleteObject(o.object_name) for o in objs]
-        )
 
-        assert not any(errors), list(errors)
+        # FIXME: minio 7.1.0 does NOT remove all objects!? Added in requirements/constraints.txt
+        to_delete = [DeleteObject(o.object_name) for o in objs]
+        errors: Iterator[DeleteError] = client.remove_objects(bucket_name, to_delete)
+
+        list_of_errors = list(errors)
+        assert not any(list_of_errors), list(list_of_errors)
 
         # remove bucket
         client.remove_bucket(bucket_name)
@@ -94,7 +96,7 @@ def minio_service(minio_config: Dict[str, str]) -> Iterator[Minio]:
 
 
 @pytest.fixture(scope="module")
-def bucket(minio_config: Dict[str, str], minio_service: Minio) -> str:
+def bucket(minio_config: Dict[str, str], minio_service: Minio) -> Iterator[str]:
     bucket_name = minio_config["bucket_name"]
 
     _ensure_remove_bucket(minio_service, bucket_name)

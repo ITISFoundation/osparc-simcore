@@ -205,6 +205,16 @@ qx.Class.define("osparc.wrapper.Svg", {
 
     removeNodeUI: function(nodeUI) {
       nodeUI.remove();
+    },
+
+    drawPath: function(draw, controls) {
+      const polygon = draw.path(controls)
+        .fill("none")
+        .stroke({
+          width: 0
+        })
+        .move(0, 0);
+      return polygon;
     }
   },
 

@@ -6,7 +6,7 @@
 import asyncio
 import json
 import logging
-from asyncio import Future, sleep
+from asyncio import Future
 from copy import deepcopy
 from typing import Any, Callable, Dict
 from unittest.mock import call
@@ -22,12 +22,17 @@ from aioresponses import aioresponses
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject
-from servicelib.application import create_safe_application
+from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
+from simcore_service_webserver.projects.projects_api import (
+    delete_project_from_db,
+    remove_project_interactive_services,
+)
+from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
 from simcore_service_webserver.resource_manager import (
     config,
     garbage_collector,
@@ -44,6 +49,7 @@ from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.users import setup_users
+from simcore_service_webserver.users_api import delete_user
 from tenacity import after_log, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 logger = logging.getLogger(__name__)
@@ -67,6 +73,14 @@ def mock_garbage_collector_task(mocker):
     mocker.patch(
         "simcore_service_webserver.resource_manager.module_setup.setup_garbage_collector",
         return_value="",
+    )
+
+
+@pytest.fixture
+def mock_delete_data_folders_for_project(mocker):
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api.delete_data_folders_of_project",
+        return_value=None,
     )
 
 
@@ -729,3 +743,30 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
         storage_subsystem_mock[1].assert_not_called()
         # make sure `delete_user` not called
         # asyncpg_storage_system_mock.assert_not_called()
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER, UserRole.GUEST])
+async def test_regression_removing_unexisting_user(
+    client,
+    logged_user,
+    empty_user_project,
+    user_role,
+    mock_delete_data_folders_for_project,
+) -> None:
+    # regression test for https://github.com/ITISFoundation/osparc-simcore/issues/2504
+
+    # remove project
+    await delete_project_from_db(
+        app=client.server.app,
+        project_uuid=empty_user_project["uuid"],
+        user_id=logged_user["id"],
+    )
+    # remove user
+    await delete_user(app=client.server.app, user_id=logged_user["id"])
+
+    with pytest.raises(ProjectNotFoundError):
+        await remove_project_interactive_services(
+            user_id=logged_user["id"],
+            project_uuid=empty_user_project["uuid"],
+            app=client.server.app,
+        )

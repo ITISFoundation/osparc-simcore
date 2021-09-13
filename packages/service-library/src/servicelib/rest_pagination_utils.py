@@ -119,7 +119,7 @@ class PageResponseLimitOffset(BaseModel):
     @classmethod
     def convert_none_to_empty_list(cls, v):
         if v is None:
-            v = list()
+            v = []
         return v
 
     @validator("data")

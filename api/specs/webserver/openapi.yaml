@@ -27,6 +27,7 @@ tags:
   - name: authentication
   - name: user
   - name: project
+  - name: cluster
   - name: catalog
   - name: storage
   - name: service
@@ -210,6 +211,12 @@ paths:
   /projects/{study_uuid}/tags/{tag_id}:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{study_uuid}~1tags~1{tag_id}"
 
+  /projects/{project_id}/snapshots:
+    $ref: "./openapi-projects.yaml#/paths/projects_snapshots"
+
+  /projects/{project_id}/snapshots/{snapshot_id}:
+    $ref: "./openapi-projects.yaml#/paths/projects_id_snapshots_id"
+
   # ACTIVITY -------------------------------------------------------------------------
   /activity/status:
     $ref: "./openapi-activity.yaml#/paths/~1activity~1status"
@@ -247,6 +254,12 @@ paths:
     $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs_output_key"
   /catalog/services/{service_key}/{service_version}/outputs:match:
     $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs_match"
+
+  # CLUSTER -------------------------------------------------------------------------
+  /clusters:
+    $ref: "./openapi-clusters.yaml#/paths/~1clusters"
+  /clusters/{cluster_id}:
+    $ref: "./openapi-clusters.yaml#/paths/~1clusters~1{cluster_id}"
 
   # VIEWER -------------------------------------------------------------------------
   /viewers:

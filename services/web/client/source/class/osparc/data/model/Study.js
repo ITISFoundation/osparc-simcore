@@ -58,10 +58,11 @@ qx.Class.define("osparc.data.model.Study", {
     });
 
     const wbData = studyData.workbench || this.getWorkbench();
-    this.setWorkbench(new osparc.data.model.Workbench(wbData, studyData.ui));
-    this.setUi(new osparc.data.model.StudyUI(studyData.ui));
+    const workbench = new osparc.data.model.Workbench(wbData, studyData.ui);
+    this.setWorkbench(workbench);
+    workbench.setStudy(this);
 
-    this.setSweeper(new osparc.data.model.Sweeper(studyData));
+    this.setUi(new osparc.data.model.StudyUI(studyData.ui));
   },
 
   properties: {
@@ -147,11 +148,6 @@ qx.Class.define("osparc.data.model.Study", {
       nullable: true
     },
 
-    sweeper: {
-      check: "osparc.data.model.Sweeper",
-      nullable: true
-    },
-
     state: {
       check: "Object",
       nullable: true,
@@ -232,6 +228,37 @@ qx.Class.define("osparc.data.model.Study", {
         return true;
       }
       return false;
+    },
+
+    getSnapshots: function(studyId) {
+      return new Promise((resolve, reject) => {
+        const params = {
+          url: {
+            "studyId": studyId
+          }
+        };
+        osparc.data.Resources.get("snapshots", params)
+          .then(snapshots => {
+            resolve(snapshots);
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
+    },
+
+    hasSnapshots: function(studyId) {
+      return new Promise((resolve, reject) => {
+        this.self().getSnapshots(studyId)
+          .then(snapshots => {
+            resolve(Boolean(snapshots.length));
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
     }
   },
 
@@ -245,25 +272,15 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     isSnapshot: function() {
-      if (this.getSweeper()) {
-        const primaryStudyId = this.getSweeper().getPrimaryStudyId();
-        return primaryStudyId !== null;
-      }
       return false;
     },
 
+    getSnapshots: function() {
+      return this.self().getSnapshots(this.getUuid());
+    },
+
     hasSnapshots: function() {
-      return new Promise((resolve, reject) => {
-        const params = {
-          url: {
-            "studyId": this.getUuid()
-          }
-        };
-        osparc.data.Resources.get("snapshots", params)
-          .then(snapshots => {
-            resolve(snapshots.length);
-          });
-      });
+      return this.self().hasSnapshots(this.getUuid());
     },
 
     __applyAccessRights: function(value) {
@@ -322,6 +339,10 @@ qx.Class.define("osparc.data.model.Study", {
       return iterators;
     },
 
+    hasSlideshow: function() {
+      return !this.getUi().getSlideshow().isEmpty();
+    },
+
     serialize: function() {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
@@ -335,11 +356,6 @@ qx.Class.define("osparc.data.model.Study", {
         }
         if (key === "ui") {
           jsonObject[key] = this.getUi().serialize();
-          return;
-        }
-        if (key === "sweeper") {
-          jsonObject["dev"] = {};
-          jsonObject["dev"]["sweeper"] = this.getSweeper().serialize();
           return;
         }
         const value = this.get(key);
@@ -379,8 +395,7 @@ qx.Class.define("osparc.data.model.Study", {
         creationDate: new Date(data.creationDate),
         lastChangeDate: new Date(data.lastChangeDate),
         workbench: this.getWorkbench(),
-        ui: this.getUi(),
-        sweeper: this.getSweeper()
+        ui: this.getUi()
       });
 
       const nodes = this.getWorkbench().getNodes(true);

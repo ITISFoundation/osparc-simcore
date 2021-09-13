@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 from aiohttp import web
-from servicelib.incidents import LimitedOrderedStack, SlowCallback
+from servicelib.aiohttp.incidents import LimitedOrderedStack, SlowCallback
 
 log = logging.getLogger(__name__)
 

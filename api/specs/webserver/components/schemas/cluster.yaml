@@ -1,0 +1,135 @@
+ClusterAccessRights:
+  description: defines acesss rights for the cluster
+  type: object
+  properties:
+    read:
+      type: boolean
+      description: allows usage of the cluster
+    write:
+      type: boolean
+      description: allows modification of the cluster
+    delete:
+      type: boolean
+      description: allows deletion of the cluster
+  required:
+    - read
+    - write
+    - delete
+
+ClusterCreate:
+  type: object
+  properties:
+    name:
+      description: the cluster name
+      type: string
+    description:
+      description: the cluster description
+      type: string
+    type:
+      description: the cluster type
+      type: string
+      enum:
+        - ON_PREMISE
+        - AWS
+
+  required:
+    - name
+    - type
+
+ClusterPatch:
+  type: object
+  properties:
+    name:
+      description: the cluster name
+      type: string
+    description:
+      description: the cluster description
+      type: string
+    type:
+      description: the cluster type
+      type: string
+      enum:
+        - ON_PREMISE
+        - AWS
+    owner:
+      description: the cluster owner group
+      type: integer
+      minimum: 1
+    accessRights:
+      type: object
+      description: >-
+        object containing the GroupID as key and read/write/execution permissions
+        as value
+      x-patternProperties:
+        ^\S+$:
+          $ref: "#/ClusterAccessRights"
+
+Cluster:
+  type: object
+  properties:
+    id:
+      description: the cluster id
+      type: integer
+      minimum: 1
+    name:
+      description: the cluster name
+      type: string
+    description:
+      description: the cluster description
+      type: string
+    type:
+      description: the cluster type
+      type: string
+      enum:
+        - ON_PREMISE
+        - AWS
+    owner:
+      description: the cluster owner group
+      type: integer
+      minimum: 1
+    accessRights:
+      type: object
+      description: >-
+        object containing the GroupID as key and read/write/execution permissions
+        as value
+      x-patternProperties:
+        ^\S+$:
+          $ref: "#/ClusterAccessRights"
+  required:
+    - id
+    - name
+    - accessRights
+  example:
+    - id: 1
+      name: AWS cluster
+      type: AWS
+      owner: 2
+      accessRights:
+        "2":
+          read: true
+          write: true
+          delete: true
+
+ClusterEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: "#/Cluster"
+    error:
+      nullable: true
+      default: null
+
+ClustersEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      type: array
+      items:
+        $ref: "#/Cluster"
+    error:
+      nullable: true
+      default: null

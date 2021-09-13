@@ -11,8 +11,8 @@ import pytest
 import simcore_service_webserver
 from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
-from servicelib.application import create_safe_application
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application import create_safe_application
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.diagnostics import (
     kMAX_AVG_RESP_LATENCY,
     setup_diagnostics,

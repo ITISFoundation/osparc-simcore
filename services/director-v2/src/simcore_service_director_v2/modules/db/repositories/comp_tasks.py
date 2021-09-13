@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -14,8 +15,9 @@ from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
-from ....models.schemas.services import NodeRequirement, ServiceExtras
+from ....models.schemas.services import ServiceExtras
 from ....utils.computations import to_node_class
+from ....utils.db import RUNNING_STATE_TO_DB
 from ....utils.logging_utils import log_decorator
 from ...director_v0 import DirectorV0Client
 from ..tables import NodeClass, StateType, comp_tasks
@@ -49,7 +51,6 @@ async def _generate_tasks_list_from_project(
 ) -> List[CompTaskAtDB]:
 
     list_comp_tasks = []
-
     for internal_id, node_id in enumerate(project.workbench, 1):
         node: Node = project.workbench[node_id]
 
@@ -63,24 +64,18 @@ async def _generate_tasks_list_from_project(
         if node_class == NodeClass.FRONTEND:
             node_details = _FRONTEND_SERVICES_CATALOG.get(service_key_version.key, None)
         else:
-            node_details = await director_client.get_service_details(
-                service_key_version
+            node_details, node_extras = await asyncio.gather(
+                director_client.get_service_details(service_key_version),
+                director_client.get_service_extras(service_key_version),
             )
-            node_extras = await director_client.get_service_extras(service_key_version)
+
         if not node_details:
             continue
-
-        requires_mpi = False
-        requires_gpu = False
-        if node_extras:
-            requires_gpu = NodeRequirement.GPU in node_extras.node_requirements
-            requires_mpi = NodeRequirement.MPI in node_extras.node_requirements
 
         image = Image(
             name=service_key_version.key,
             tag=service_key_version.version,
-            requires_gpu=requires_gpu,
-            requires_mpi=requires_mpi,
+            node_requirements=node_extras.node_requirements if node_extras else None,
         )
 
         assert node.state is not None  # nosec
@@ -204,13 +199,13 @@ class CompTasksRepository(BaseRepository):
             return inserted_comp_tasks_db
 
     @log_decorator(logger=logger)
-    async def mark_project_tasks_as_aborted(self, project: ProjectAtDB) -> None:
+    async def mark_project_tasks_as_aborted(self, project_id: ProjectID) -> None:
         # block all pending tasks, so the sidecars stop taking them
         async with self.db_engine.acquire() as conn:
             await conn.execute(
                 sa.update(comp_tasks)
                 .where(
-                    (comp_tasks.c.project_id == str(project.uuid))
+                    (comp_tasks.c.project_id == str(project_id))
                     & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                     & (
                         (comp_tasks.c.state == StateType.PUBLISHED)
@@ -221,8 +216,8 @@ class CompTasksRepository(BaseRepository):
             )
 
     @log_decorator(logger=logger)
-    async def mark_project_tasks_as_pending(
-        self, project_id: ProjectID, tasks: List[NodeID]
+    async def set_project_tasks_state(
+        self, project_id: ProjectID, tasks: List[NodeID], state: RunningState
     ) -> None:
         # block all pending tasks, so the sidecars stop taking them
         async with self.db_engine.acquire() as conn:
@@ -232,7 +227,7 @@ class CompTasksRepository(BaseRepository):
                     (comp_tasks.c.project_id == str(project_id))
                     & (comp_tasks.c.node_id.in_([str(t) for t in tasks]))
                 )
-                .values(state=StateType.PENDING)
+                .values(state=RUNNING_STATE_TO_DB[state])
             )
 
     @log_decorator(logger=logger)

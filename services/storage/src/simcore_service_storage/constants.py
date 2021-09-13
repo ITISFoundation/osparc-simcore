@@ -1,4 +1,4 @@
-from servicelib import application_keys
+from servicelib.aiohttp import application_keys
 
 from . import meta
 

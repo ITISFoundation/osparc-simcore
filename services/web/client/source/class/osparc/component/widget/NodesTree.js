@@ -50,7 +50,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   },
 
   events: {
-    "slidesEdit": "qx.event.type.Event",
     "nodeSelected": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
     "exportNode": "qx.event.type.Data",
@@ -88,7 +87,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   members: {
     __toolBar: null,
     __tree: null,
-    __editSlidesButton: null,
     __exportButton: null,
     __openButton: null,
     __renameButton: null,
@@ -114,8 +112,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       return control || this.base(arguments, id);
     },
 
-    _applyStudy: function(study) {
-      this.__populateToolbar();
+    _applyStudy: function() {
       this.populateTree();
     },
 
@@ -131,14 +128,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     __buildToolbar: function() {
       const iconSize = 14;
       const toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
-
-      const editBtn = this.__editSlidesButton = new qx.ui.toolbar.Button(this.tr("Edit Guided mode"), "@FontAwesome5Solid/caret-square-right/"+iconSize).set({
-        visibility: "excluded"
-      });
-      editBtn.addListener("execute", () => {
-        this.fireEvent("slidesEdit");
-      }, this);
-      toolbar.add(editBtn);
 
       toolbar.addSpacer();
 
@@ -208,13 +197,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       });
       osparc.utils.Utils.setIdToWidget(tree, "nodesTree");
       return tree;
-    },
-
-    __populateToolbar: function() {
-      const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
-      const study = this.getStudy();
-      const isOwner = osparc.data.model.Study.isOwner(study);
-      this.__editSlidesButton.setVisibility(areSlidesEnabled && isOwner ? "visible" : "excluded");
     },
 
     populateTree: function() {
@@ -354,9 +336,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     __updateButtons: function(nodeId, item) {
       const studyId = this.getStudy().getUuid();
       const readOnly = this.getStudy().isReadOnly();
-      if (this.__editSlidesButton) {
-        this.__editSlidesButton.setEnabled(!readOnly);
-      }
       if (this.__exportButton) {
         this.__exportButton.setEnabled(studyId !== nodeId && item.getIsContainer());
       }

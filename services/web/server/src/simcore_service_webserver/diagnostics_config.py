@@ -3,9 +3,8 @@
 from typing import Dict
 
 from aiohttp.web import Application
-from models_library.basic_types import NonNegativeFloat
-from pydantic import BaseSettings, Field, PositiveFloat, validator
-from servicelib.application_keys import APP_CONFIG_KEY
+from pydantic import BaseSettings, Field, NonNegativeFloat, PositiveFloat, validator
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 
 
 class DiagnosticsSettings(BaseSettings):

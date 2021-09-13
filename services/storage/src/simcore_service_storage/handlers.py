@@ -7,8 +7,8 @@ from typing import Any, Dict
 import attr
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.rest_utils import extract_and_validate
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.rest_utils import extract_and_validate
 
 from .access_layer import InvalidFileIdentifier
 from .constants import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR

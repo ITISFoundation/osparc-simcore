@@ -9,3 +9,22 @@ ops/
 
 # virtualenv
 .venv
+
+#python eggs
+**/*.egg-info
+
+
+#pytest folders
+**/.pytest_cache
+
+# coverage files
+.coverage*
+
+# pytest-fixture-tools output
+artifacts
+
+# dask artifacts in devel mode
+dask*-space/
+
+# produced when mounting volumes on docker and pip installing
+.local/

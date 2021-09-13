@@ -27,8 +27,8 @@ from models_library.projects_state import (
     RunningState,
 )
 from pydantic.types import PositiveInt
-from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
-from servicelib.jsonschema_validation import validate_instance
+from servicelib.aiohttp.application_keys import APP_JSONSCHEMA_SPECS_KEY
+from servicelib.aiohttp.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
@@ -161,7 +161,7 @@ async def start_project_interactive_services(
             service_version=service["version"],
             service_uuid=service_uuid,
             request_dns=extract_dns_without_default_port(request.url),
-            request_scheme=request.url.scheme,
+            request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
         )
         for service_uuid, service in project_needed_services.items()
     ]
@@ -348,7 +348,7 @@ async def add_project_node(
             service_version=service_version,
             service_uuid=node_uuid,
             request_dns=extract_dns_without_default_port(request.url),
-            request_scheme=request.url.scheme,
+            request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
         )
     return node_uuid
 

@@ -16,9 +16,11 @@ from models_library.settings.celery import CeleryConfig
 from models_library.settings.rabbit import RabbitConfig
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
+from simcore_postgres_database.models.comp_pipeline import comp_pipeline
+from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.storage_models import projects, users
-from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
 from simcore_service_sidecar import config, utils
+from simcore_service_sidecar.boot_mode import BootMode
 from yarl import URL
 
 SIMCORE_S3_ID = 0
@@ -220,16 +222,15 @@ async def _assert_incoming_data_logs(
 )
 async def pipeline(
     sidecar_config: None,
-    postgres_host_config: Dict[str, str],
-    postgres_session: sa.orm.session.Session,
+    postgres_db: sa.engine.Engine,
     storage_service: URL,
-    project_id: str,
     osparc_service: Dict[str, str],
+    user_id: int,
+    project_id: str,
     pipeline_cfg: Dict,
     mock_dir: Path,
-    user_id: int,
     request,
-) -> ComputationalPipeline:
+) -> str:
     """creates a full pipeline.
     NOTE: 'pipeline', defined as parametrization
     """
@@ -244,52 +245,59 @@ async def pipeline(
         tasks: Dict[str, Any],
         dag: Dict[str, List[str]],
         inputs: Dict[str, Dict[str, Any]],
-    ) -> ComputationalPipeline:
+    ) -> str:
 
         # add a pipeline
-        pipeline = ComputationalPipeline(project_id=project_id, dag_adjacency_list=dag)
-        postgres_session.add(pipeline)
-        postgres_session.commit()
+        with postgres_db.connect() as conn:
+            conn.execute(
+                comp_pipeline.insert().values(  # pylint: disable=no-value-for-parameter
+                    project_id=project_id, dag_adjacency_list=dag
+                )
+            )
 
+            # create the tasks for each pipeline's node
+            for node_uuid, service in tasks.items():
+                node_inputs = inputs[node_uuid]
+                conn.execute(
+                    comp_tasks.insert().values(  # pylint: disable=no-value-for-parameter
+                        project_id=project_id,
+                        node_id=node_uuid,
+                        schema=service["schema"],
+                        image=service["image"],
+                        inputs=node_inputs,
+                        state="PENDING",
+                        outputs={},
+                    )
+                )
+
+        # check if file must be uploaded
         # create the tasks for each pipeline's node
         for node_uuid, service in tasks.items():
             node_inputs = inputs[node_uuid]
-
-            comp_task = ComputationalTask(
-                project_id=project_id,
-                node_id=node_uuid,
-                schema=service["schema"],
-                image=service["image"],
-                inputs=node_inputs,
-                state="PENDING",
-                outputs={},
-            )
-            postgres_session.add(comp_task)
-            postgres_session.commit()
-
-            # check if file must be uploaded
             for input_key in node_inputs:
                 if (
                     isinstance(node_inputs[input_key], dict)
                     and "path" in node_inputs[input_key]
                 ):
                     # update the files in mock_dir to S3
-                    # FIXME: node_ports config shall not global! here making a hack so it works
-                    np.node_config.USER_ID = user_id
-                    np.node_config.PROJECT_ID = project_id
-                    np.node_config.NODE_UUID = node_uuid
-
                     print("--" * 10)
                     print_module_variables(module=np.node_config)
                     print("--" * 10)
 
-                    PORTS = await np.ports()
+                    PORTS = await np.ports(user_id, project_id, node_uuid)
                     await (await PORTS.inputs)[input_key].set(
                         mock_dir / node_inputs[input_key]["path"]
                     )
-        return pipeline
+        return project_id
 
     yield await _create(tasks, dag, inputs)
+
+    # cleanup
+    with postgres_db.connect() as conn:
+        conn.execute(comp_tasks.delete().where(comp_tasks.c.project_id == project_id))
+        conn.execute(
+            comp_pipeline.delete().where(comp_pipeline.c.project_id == project_id)
+        )
 
 
 SLEEPERS_STUDY = (
@@ -439,11 +447,12 @@ async def test_run_services(
     storage_service: URL,
     osparc_service: Dict[str, str],
     sidecar_config: None,
-    pipeline: ComputationalPipeline,
+    pipeline: str,
     service_repo: str,
     service_tag: str,
     pipeline_cfg: Dict,
     user_id: int,
+    project_id: str,
     mocker,
 ):
     """
@@ -468,14 +477,16 @@ async def test_run_services(
     # run nodes
     for node_id in pipeline_cfg:
         job_id += 1
-        await cli.run_sidecar(job_id, user_id, pipeline.project_id, node_id)
+        await cli.run_sidecar(
+            job_id, user_id, project_id, node_id, sidecar_mode=BootMode.CPU
+        )
 
     await asyncio.sleep(15)  # wait a little bit for logs to come in
     _sidecar_logs, tasks_logs, _progress_logs = await _assert_incoming_data_logs(
         list(pipeline_cfg.keys()),
         incoming_data,
         user_id,
-        pipeline.project_id,
+        project_id,
         service_repo,
         service_tag,
     )

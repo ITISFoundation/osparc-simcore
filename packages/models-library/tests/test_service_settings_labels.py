@@ -117,7 +117,7 @@ def test_raises_error_if_http_entrypoint_is_missing() -> None:
 
 
 def test_path_mappings_none_state_paths() -> None:
-    sample_data = deepcopy(PathMappingsLabel.Config.schema_extra["examples"])
+    sample_data = deepcopy(PathMappingsLabel.Config.schema_extra["example"])
     sample_data["state_paths"] = None
     with pytest.raises(ValidationError):
         PathMappingsLabel(**sample_data)

@@ -26,16 +26,17 @@ async function runTutorial () {
     await tutorial.waitFor(10000, 'Some time for loading the workbench');
     await utils.takeScreenshot(page, screenshotPrefix + 'workbench_loaded');
 
+    await tutorial.showLogger(true);
     await tutorial.runPipeline();
     await tutorial.waitForStudyDone(studyId, 1500000);
+    await tutorial.showLogger(false);
 
     const outFiles0 = [
       "logs.zip",
       "allresult_1Hz.txt",
       "vm_1Hz.txt"
     ];
-    await tutorial.openNodeFiles(1)
-    await tutorial.checkResults2(outFiles0);
+    await tutorial.checkNodeOutputs(1, outFiles0);
 
     const outFiles1 = [
       "model_INPUT.from1D",
@@ -44,15 +45,13 @@ async function runTutorial () {
       "ap_1D.txt",
       "ECGs.txt"
     ];
-    await tutorial.openNodeFiles(2)
-    await tutorial.checkResults2(outFiles1);
+    await tutorial.checkNodeOutputs(2, outFiles1);
 
     const outFiles2 = [
       "aps.zip",
       "logs.zip"
     ];
-    await tutorial.openNodeFiles(3)
-    await tutorial.checkResults2(outFiles2);
+    await tutorial.checkNodeOutputs(3, outFiles2);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);

@@ -8,13 +8,14 @@ from pydantic import BaseModel, PositiveInt, validator
 from simcore_postgres_database.models.comp_pipeline import StateType
 
 from ...utils.db import DB_TO_RUNNING_STATE
-from ..schemas.constants import UserID
+from ..schemas.constants import ClusterID, UserID
 
 
 class CompRunsAtDB(BaseModel):
     run_id: PositiveInt
     project_uuid: ProjectID
     user_id: UserID
+    cluster_id: Optional[ClusterID]
     iteration: PositiveInt
     result: RunningState
     created: datetime
@@ -43,6 +44,7 @@ class CompRunsAtDB(BaseModel):
                     "run_id": 432,
                     "project_uuid": "65fee9d2-e030-452c-a29c-45d288577ca5",
                     "user_id": 132,
+                    "cluster_id": 0,
                     "iteration": 42,
                     "result": "NOT_STARTED",
                     "created": "2021-03-01 13:07:34.19161",
@@ -52,6 +54,7 @@ class CompRunsAtDB(BaseModel):
                     "run_id": 43243,
                     "project_uuid": "65fee9d2-e030-452c-a29c-45d288577ca5",
                     "user_id": 132,
+                    "cluster_id": 123,
                     "iteration": 12,
                     "result": "SUCCESS",
                     "created": "2021-03-01 13:07:34.19161",

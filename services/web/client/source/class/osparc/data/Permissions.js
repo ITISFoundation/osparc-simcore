@@ -163,6 +163,7 @@ qx.Class.define("osparc.data.Permissions", {
           "studies.template.create.all",
           "services.all.read",
           "user.role.update",
+          "user.clusters.create",
           "study.service.update",
           "study.snapshot.create",
           "study.nodestree.uuid.read",

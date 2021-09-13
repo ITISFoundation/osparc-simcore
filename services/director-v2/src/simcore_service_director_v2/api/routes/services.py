@@ -41,7 +41,7 @@ ServiceKeyVersionPath = Path(
 
 @router.get(
     "/{service_key:path}/{service_version}/extras",
-    description="Currently returns the node_requirements an array of resoruces needed for scheduling",
+    description="Returns the service extras",
     response_model=ServiceExtrasEnveloped,
 )
 async def get_extra_service_versioned(
