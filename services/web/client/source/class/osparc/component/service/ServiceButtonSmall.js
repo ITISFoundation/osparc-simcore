@@ -89,7 +89,7 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
       const checks = [
         this.getServiceModel().getName(),
         this.getServiceModel().getDescription(),
-        this.getServiceModel().getAuthor()
+        this.getServiceModel().getContact()
       ];
       return osparc.dashboard.CardBase.filterText(checks, text);
     },
