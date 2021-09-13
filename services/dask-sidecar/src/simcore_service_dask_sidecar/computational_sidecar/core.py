@@ -11,36 +11,10 @@ from aiodocker.containers import DockerContainer
 from aiodocker.exceptions import DockerError
 from simcore_service_dask_sidecar.computational_sidecar.errors import ServiceRunError
 
-from .models import DockerContainerConfig
-from .utils import create_container_config
+from .docker_utils import create_container_config, managed_container
 
 logger = logging.getLogger(__name__)
 CONTAINER_WAIT_TIME_SECS = 2
-
-
-@asynccontextmanager
-async def managed_container(
-    docker_client: Docker, config: DockerContainerConfig, *, name=None
-) -> AsyncIterator[DockerContainer]:
-    container = None
-    try:
-        container = await docker_client.containers.create(
-            config.dict(by_alias=True), name=name
-        )
-        yield container
-    finally:
-        try:
-            if container:
-                await container.delete(remove=True, v=True, force=True)
-        except DockerError:
-            logger.exception(
-                "Unknown error with docker client when running container %s",
-                name,
-            )
-            raise
-        except asyncio.CancelledError:
-            logger.warning("Cancelling container...")
-            raise
 
 
 async def monitor_container_logs(
@@ -74,11 +48,10 @@ async def monitor_container_logs(
         )
     except DockerError as exc:
         logger.exception(
-            "log monitoring of [%s:%s - %s%s] stopped with unexpected error:\n%s",
+            "log monitoring of [%s:%s - %s] stopped with unexpected error:\n%s",
             service_key,
             service_version,
             container.id,
-            container_name,
             exc,
         )
 
