@@ -81,7 +81,9 @@ qx.Class.define("osparc.wrapper.GitGraph", {
 
     createGraph: function(graphContainer) {
       // Instantiate the graph.
-      const gitgraph = GitgraphJS.createGitgraph(graphContainer);
+      const gitgraph = GitgraphJS.createGitgraph(graphContainer, {
+        "mode": "compact"
+      });
       return gitgraph;
     },
 
@@ -96,7 +98,6 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       const aFeature = develop.branch("a-feature");
       aFeature
         .commit("Make it work")
-        .commit("Make it right")
         .commit("Make it fast");
 
       develop.merge(aFeature);
