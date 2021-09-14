@@ -1104,7 +1104,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __applyScale: function(value) {
-      this.__setZoom(this.__workbenchLayout.getContentElement().getDomElement(), value);
+      const el = this.__workbenchLayout.getContentElement().getDomElement();
+      osparc.utils.Utils.setZoom(el, value);
 
       const oldBounds = this.__workbenchLayout.getBounds();
       const width = parseInt(oldBounds.width / this.getScale());
@@ -1115,19 +1116,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       });
 
       this.__updateWorkbenchBounds();
-    },
-
-    __setZoom: function(el, zoom) {
-      const transformOrigin = [0, 0];
-      const p = ["webkit", "moz", "ms", "o"];
-      const s = `scale(${zoom})`;
-      const oString = (transformOrigin[0] * 100) + "% " + (transformOrigin[1] * 100) + "%";
-      for (let i = 0; i < p.length; i++) {
-        el.style[p[i] + "Transform"] = s;
-        el.style[p[i] + "TransformOrigin"] = oString;
-      }
-      el.style["transform"] = s;
-      el.style["transformOrigin"] = oString;
     },
 
     __updateWorkbenchBounds: function() {
