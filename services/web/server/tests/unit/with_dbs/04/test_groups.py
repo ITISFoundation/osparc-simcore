@@ -522,7 +522,7 @@ async def test_group_access_rights(
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_add_user_gets_added_to_group(
-    client, standard_groups: List[Dict[str, str]], user_role, expected
+    client, standard_groups: List[Dict[str, str]], user_role, expected, postgres_db
 ):
     emails = [
         "good@sparc.io",
@@ -548,3 +548,6 @@ async def test_add_user_gets_added_to_group(
         )
         if not error:
             assert len(data["organizations"]) == (0 if "bad" in email else 1)
+    # cleanup users
+    for email in emails:
+        postgres_db.execute(f"DELETE FROM users WHERE email='{email}'")
