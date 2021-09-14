@@ -12,24 +12,11 @@ from settings_library.base import BaseSettings
 from settings_library.docker_registry import RegistrySettings
 
 
-class NonFastAPIDynamicSidecarSettings(BaseSettings):
-    DY_SIDECAR_PATH_INPUTS: Path = Field(
-        ..., description="path where to expect the inputs folder"
-    )
-    DY_SIDECAR_PATH_OUTPUTS: Path = Field(
-        ..., description="path where to expect the outputs folder"
-    )
-    DY_SIDECAR_USER_ID: UserID
-    DY_SIDECAR_PROJECT_ID: ProjectID
-    DY_SIDECAR_NODE_ID: NodeID
-
-
 class DynamicSidecarSettings(BaseSettings):
     @classmethod
     def create(cls, **settings_kwargs: Any) -> "DynamicSidecarSettings":
         return cls(
             REGISTRY_SETTINGS=RegistrySettings(),
-            NON_FAST_API_DYNAMIC_SIDECAR_SETTINGS=NonFastAPIDynamicSidecarSettings(),
             **settings_kwargs,
         )
 
@@ -92,9 +79,17 @@ class DynamicSidecarSettings(BaseSettings):
         15, description="used during shutdown when containers swapend will be removed"
     )
 
-    REGISTRY_SETTINGS: RegistrySettings
+    DY_SIDECAR_PATH_INPUTS: Path = Field(
+        ..., description="path where to expect the inputs folder"
+    )
+    DY_SIDECAR_PATH_OUTPUTS: Path = Field(
+        ..., description="path where to expect the outputs folder"
+    )
+    DY_SIDECAR_USER_ID: UserID
+    DY_SIDECAR_PROJECT_ID: ProjectID
+    DY_SIDECAR_NODE_ID: NodeID
 
-    NON_FAST_API_DYNAMIC_SIDECAR_SETTINGS: NonFastAPIDynamicSidecarSettings
+    REGISTRY_SETTINGS: RegistrySettings
 
     @property
     def is_development_mode(self) -> bool:
@@ -107,6 +102,6 @@ class DynamicSidecarSettings(BaseSettings):
 
 
 @lru_cache
-def get_non_fastpi_settings() -> NonFastAPIDynamicSidecarSettings:
+def get_settings() -> DynamicSidecarSettings:
     """used outside the context of a request"""
-    return NonFastAPIDynamicSidecarSettings()
+    return DynamicSidecarSettings.create()
