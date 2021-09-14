@@ -41,29 +41,34 @@ qx.Class.define("osparc.wrapper.GitGraph", {
         colors: [
           "#F00",
           "#0F0",
-          "#00F"
+          "#0F0",
+          "#0F0",
+          "#0F0",
+          "#0F0"
         ], // branches colors, 1 per column
-        branch: {
-          lineWidth: 4,
-          spacingX: 25,
-          showLabel: true // display branch names on graph
-        },
         commit: {
-          spacingY: -40,
+          spacingX: 5,
+          spacingY: 10,
           dot: {
             size: 6
           },
           message: {
-            displayAuthor: true,
+            displayAuthor: false,
             displayBranch: false,
             displayHash: false,
-            font: "normal 10pt Roboto"
+            font: "normal 11pt Roboto"
           },
           shouldDisplayTooltipsInCompactMode: true, // default = true
           tooltipHTMLFormatter: commit => {
             console.log(commit);
             return commit.sha1 + ": " + commit.message;
           }
+        },
+        branch: {
+          lineWidth: 3,
+          spacingX: 10,
+          spacingY: 15,
+          showLabel: true // display branch names on graph
         }
       };
     }
@@ -120,22 +125,18 @@ qx.Class.define("osparc.wrapper.GitGraph", {
     },
 
     example: function(gitgraph) {
-      // Simulate git commands with Gitgraph API.
       const master = gitgraph.branch("master");
       master.commit("Initial commit");
+      master.commit("Some changes");
 
-      const develop = master.branch("develop");
-      develop.commit("Add TypeScript");
+      const it1 = master.branch("iteration-1");
+      it1.commit("x=1");
 
-      const aFeature = develop.branch("a-feature");
-      aFeature
-        .commit("Make it work")
-        .commit("Make it fast");
+      const it2 = master.branch("iteration-2");
+      it2.commit("x=2");
 
-      develop.merge(aFeature);
-      develop.commit("Prepare v1");
-
-      master.merge(develop).tag("v1.0.0");
+      const it3 = master.branch("iteration-3");
+      it3.commit("x=3");
     }
   }
 });
