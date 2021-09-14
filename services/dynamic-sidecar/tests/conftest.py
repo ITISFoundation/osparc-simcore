@@ -20,6 +20,7 @@ from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
 from simcore_service_dynamic_sidecar.core.shared_handlers import (
     write_file_and_run_command,
 )
+from simcore_service_dynamic_sidecar.core.utils import docker_client
 from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 
@@ -36,15 +37,20 @@ def io_temp_dir() -> Iterator[Path]:
         yield Path(temp_dir)
 
 
+@pytest.fixture(scope="module")
+def compose_namespace() -> str:
+    return "test-space"
+
+
 @pytest.fixture(scope="module", autouse=True)
-def app(io_temp_dir: Path, mock_dy_volumes: Path) -> FastAPI:
+def app(io_temp_dir: Path, mock_dy_volumes: Path, compose_namespace: str) -> FastAPI:
     inputs_dir = io_temp_dir / "inputs"
     outputs_dir = io_temp_dir / "outputs"
     with mock.patch.dict(
         os.environ,
         {
             "SC_BOOT_MODE": "production",
-            "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "test-space",
+            "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
             "REGISTRY_AUTH": "false",
             "REGISTRY_USER": "test",
             "REGISTRY_PW": "test",
@@ -60,13 +66,32 @@ def app(io_temp_dir: Path, mock_dy_volumes: Path) -> FastAPI:
 
 
 @pytest.fixture
+async def ensure_external_volumes(compose_namespace: str) -> None:
+    """ensures inputs and outputs volumes for the service are present"""
+    async with docker_client() as client:
+        inputs_volume = await client.volumes.create(
+            {"Name": f"{compose_namespace}_inputs"}
+        )
+        outputs_volume = await client.volumes.create(
+            {"Name": f"{compose_namespace}_outputs"}
+        )
+
+        yield
+
+        await inputs_volume.delete()
+        await outputs_volume.delete()
+
+
+@pytest.fixture
 async def test_client(app: FastAPI) -> TestClient:
     async with TestClient(app) as client:
         yield client
 
 
 @pytest.fixture(autouse=True)
-async def cleanup_containers(app: FastAPI) -> AsyncGenerator[None, None]:
+async def cleanup_containers(
+    app: FastAPI, ensure_external_volumes: None
+) -> AsyncGenerator[None, None]:
     yield
     # run docker compose down here
 
