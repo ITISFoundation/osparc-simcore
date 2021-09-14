@@ -49,6 +49,10 @@ class ComputationalSidecar:
     input_data: Dict[str, Any]
     output_data_keys: Dict[str, Any]
 
+    async def _write_input_data(self, task_volumes: TaskSharedVolumes):
+        input_data_file = task_volumes.input_folder / "inputs.json"
+        input_data_file.write_text(json.dumps(self.input_data))
+
     async def _retrieve_output_data(
         self, task_volumes: TaskSharedVolumes
     ) -> Dict[str, Any]:
@@ -106,8 +110,7 @@ class ComputationalSidecar:
             )
 
             # set up the inputs
-            input_data_file = task_volumes.input_folder / "inputs.json"
-            input_data_file.write_text(json.dumps(self.input_data))
+            await self._write_input_data(task_volumes)
 
             # run the image
             async with managed_container(docker_client, config) as container:
