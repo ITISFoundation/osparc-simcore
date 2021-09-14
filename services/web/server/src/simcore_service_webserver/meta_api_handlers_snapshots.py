@@ -16,7 +16,7 @@ from .meta_api_handlers_base import (
 )
 from .meta_core_snapshots import ProjectDict, take_snapshot
 from .meta_db_snapshots import ProjectsRepository, SnapshotsRepository
-from .meta_models_snapshots import Snapshot, SnapshotPatchBody, SnapshotResource
+from .meta_models_snapshots import Snapshot, SnapshotItem, SnapshotPatch
 from .projects import projects_api
 from .security_decorators import permission_required
 from .utils_aiohttp import rename_routes_as_handler_function, view_routes
@@ -29,14 +29,18 @@ logger = logging.getLogger(__name__)
 
 
 # API ROUTES HANDLERS ---------------------------------------------------------
+
+# API ROUTES HANDLERS ---------------------------------------------------------
 routes = web.RouteTableDef()
 
 
-@routes.post(f"/{vtag}/projects/{{project_id}}/snapshots")
+@routes.post(
+    f"/{vtag}/projects/{{project_id}}/snapshots", name="create_project_snapshot_handler"
+)
 @login_required
 @permission_required("project.create")
 @handle_request_errors
-async def create_snapshot(request: web.Request):
+async def create_project_snapshot_handler(request: web.Request):
     snapshots_repo = SnapshotsRepository(request)
     projects_repo = ProjectsRepository(request)
     user_id = request[RQT_USERID_KEY]
@@ -88,16 +92,19 @@ async def create_snapshot(request: web.Request):
         snapshot_label=request.query.get("snapshot_label"),
     )
 
-    data = SnapshotResource.from_snapshot(snapshot, url_for)
+    data = SnapshotItem.from_snapshot(snapshot, url_for)
 
     return enveloped_response(data, status_cls=web.HTTPCreated)
 
 
-@routes.get(f"/{vtag}/projects/{{project_id}}/snapshots")
+@routes.get(
+    f"/{vtag}/projects/{{project_id}}/snapshots",
+    name="list_project_snapshots_handler",
+)
 @login_required
 @permission_required("project.read")
 @handle_request_errors
-async def list_snapshots(request: web.Request):
+async def list_project_snapshots_handler(request: web.Request):
     """
     Lists references on project snapshots
     """
@@ -122,17 +129,18 @@ async def list_snapshots(request: web.Request):
     )
     # TODO: async for snapshot in await list_snapshot is the same?
 
-    data = [SnapshotResource.from_snapshot(snp, url_for) for snp in snapshots]
+    data = [SnapshotItem.from_snapshot(snp, url_for) for snp in snapshots]
     return enveloped_response(data)
 
 
 @routes.get(
     f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}",
+    name="get_project_snapshot_handler",
 )
 @login_required
 @permission_required("project.read")
 @handle_request_errors
-async def get_snapshot(request: web.Request):
+async def get_project_snapshot_handler(request: web.Request):
     snapshots_repo = SnapshotsRepository(request)
     url_for = create_url_for_function(request)
 
@@ -152,7 +160,7 @@ async def get_snapshot(request: web.Request):
         snapshot_id=request.match_info["snapshot_id"],
     )
 
-    data = SnapshotResource.from_snapshot(snapshot, url_for)
+    data = SnapshotItem.from_snapshot(snapshot, url_for)
     return enveloped_response(data)
 
 
@@ -163,7 +171,7 @@ async def get_snapshot(request: web.Request):
 @login_required
 @permission_required("project.delete")
 @handle_request_errors
-async def delete_snapshot(request: web.Request):
+async def delete_project_snapshot_handler(request: web.Request) -> None:
     snapshots_repo = SnapshotsRepository(request)
 
     @validate_arguments
@@ -197,21 +205,19 @@ async def delete_snapshot(request: web.Request):
 
 @routes.patch(
     f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}",
+    name="patch_project_snapshot_handler",
 )
 @login_required
 @permission_required("project.update")
 @handle_request_errors
-async def update_snapshot(request: web.Request):
+async def patch_project_snapshot_handler(request: web.Request):
     snapshots_repo = SnapshotsRepository(request)
     url_for = create_url_for_function(request)
 
     @validate_arguments
     async def _update_snapshot(
-        project_id: UUID, snapshot_id: int, update: SnapshotPatchBody
+        project_id: UUID, snapshot_id: int, update: SnapshotPatch
     ):
-        if not update.label:
-            raise web.HTTPBadRequest(reason="Empty update")
-
         snapshot_orm = await snapshots_repo.update_name(
             project_id, snapshot_id, name=update.label
         )
@@ -224,11 +230,11 @@ async def update_snapshot(request: web.Request):
     snapshot = await _update_snapshot(
         project_id=request.match_info["project_id"],  # type: ignore
         snapshot_id=request.match_info["snapshot_id"],  # type: ignore
-        update=SnapshotPatchBody.parse_obj(await request.json()),
+        update=SnapshotPatch.parse_obj(await request.json()),
         # TODO: skip_return_updated
     )
 
-    data = SnapshotResource.from_snapshot(snapshot, url_for)
+    data = SnapshotItem.from_snapshot(snapshot, url_for)
     return enveloped_response(data)
 
 

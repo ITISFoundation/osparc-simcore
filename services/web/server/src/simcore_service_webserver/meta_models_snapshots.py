@@ -60,23 +60,12 @@ class Snapshot(BaseSnapshot):
 ## API models ----------
 
 
-class SnapshotPatchBody(BaseSnapshot):
-    """Model to patch a snapshot resource"""
-
-    label: Optional[str] = Snapshot.as_field("label")
+class SnapshotPatch(BaseSnapshot):
+    label: str = Snapshot.as_field("label")
 
 
-#
-# assert Snapshot.Config
-# SnapshotPatch = create_model(
-#     "SnapshotPatch",
-#     __config__=Snapshot.Config,
-#     label=(Snapshot.__fields__["label"].type_, Snapshot.__fields__["label"].field_info),
-# )
-
-
-class SnapshotResource(Snapshot):
-    """Model for a snapshot API resource"""
+class SnapshotItem(Snapshot):
+    """API model for an array item of snapshots"""
 
     url: AnyUrl
     url_parent: AnyUrl
@@ -85,16 +74,21 @@ class SnapshotResource(Snapshot):
     @classmethod
     def from_snapshot(
         cls, snapshot: Snapshot, url_for: Callable[..., URL]
-    ) -> "SnapshotResource":
+    ) -> "SnapshotItem":
         # TODO: is this the right place?  requires pre-defined routes
         # how to guarantee routes names
         return cls(
             url=url_for(
-                "simcore_service_webserver.meta_api_handlers.get_snapshot",
+                "get_project_snapshot_handler",
                 project_id=snapshot.parent_uuid,
                 snapshot_id=snapshot.id,
             ),
             url_parent=url_for("get_project", project_id=snapshot.parent_uuid),
-            url_project=url_for("get_project", project_id=snapshot.parent_uuid),
+            url_project=url_for("get_project", project_id=snapshot.project_uuid),
+            url_parameters=url_for(
+                "get_snapshot_parameters_handler",
+                project_id=snapshot.parent_uuid,
+                snapshot_id=snapshot.id,
+            ),
             **snapshot.dict(by_alias=True),
         )

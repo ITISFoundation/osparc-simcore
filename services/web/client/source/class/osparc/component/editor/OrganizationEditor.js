@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2021 IT'IS Foundation, https://itis.swiss
+     2020 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -15,10 +15,10 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.ClusterEditor", {
+qx.Class.define("osparc.component.editor.OrganizationEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(newCluster = true) {
+  construct: function(newOrg = true) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(8));
@@ -28,15 +28,16 @@ qx.Class.define("osparc.dashboard.ClusterEditor", {
     title.setRequired(true);
     manager.add(title);
     this.getChildControl("description");
-    newCluster ? this.getChildControl("create") : this.getChildControl("save");
+    this.getChildControl("thumbnail");
+    newOrg ? this.getChildControl("create") : this.getChildControl("save");
   },
 
   properties: {
-    cid: {
+    gid: {
       check: "Number",
       init: 0,
       nullable: false,
-      event: "changeCid"
+      event: "changeGid"
     },
 
     label: {
@@ -51,12 +52,19 @@ qx.Class.define("osparc.dashboard.ClusterEditor", {
       init: "",
       nullable: false,
       event: "changeDescription"
+    },
+
+    thumbnail: {
+      check: "String",
+      init: "",
+      nullable: false,
+      event: "changeThumbnail"
     }
   },
 
   events: {
-    "createCluster": "qx.event.type.Event",
-    "updateCluster": "qx.event.type.Event",
+    "createOrg": "qx.event.type.Event",
+    "updateOrg": "qx.event.type.Event",
     "cancel": "qx.event.type.Event"
   },
 
@@ -89,13 +97,24 @@ qx.Class.define("osparc.dashboard.ClusterEditor", {
           this._add(control);
           break;
         }
+        case "thumbnail": {
+          control = new qx.ui.form.TextField().set({
+            font: "text-14",
+            placeholder: this.tr("Thumbnail"),
+            height: 35
+          });
+          this.bind("thumbnail", control, "value");
+          control.bind("value", this, "thumbnail");
+          this._add(control);
+          break;
+        }
         case "create": {
           const buttons = this.getChildControl("buttonsLayout");
           control = new osparc.ui.form.FetchButton(this.tr("Create"));
           control.addListener("execute", () => {
             if (this.__validator.validate()) {
               control.setFetching(true);
-              this.fireEvent("createCluster");
+              this.fireEvent("createOrg");
             }
           }, this);
           buttons.addAt(control, 0);
@@ -107,7 +126,7 @@ qx.Class.define("osparc.dashboard.ClusterEditor", {
           control.addListener("execute", () => {
             if (this.__validator.validate()) {
               control.setFetching(true);
-              this.fireEvent("updateCluster");
+              this.fireEvent("updateOrg");
             }
           }, this);
           buttons.addAt(control, 0);

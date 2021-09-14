@@ -36,7 +36,6 @@ SERVICES_LIST := \
 	director-v2 \
 	dynamic-sidecar \
 	migration \
-	sidecar \
 	static-webserver \
 	storage \
 	webserver

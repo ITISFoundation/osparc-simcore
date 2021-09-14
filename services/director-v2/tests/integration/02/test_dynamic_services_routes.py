@@ -83,6 +83,8 @@ async def test_client(
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
 
     monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "false")
+    monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "false")
     monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
     monkeypatch.setenv("POSTGRES_USER", "mocked_user")
     monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")

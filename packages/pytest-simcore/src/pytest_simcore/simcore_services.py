@@ -15,7 +15,7 @@ from .helpers.utils_docker import get_service_published_port
 
 log = logging.getLogger(__name__)
 
-SERVICES_TO_SKIP = ["dask-sidecar", "sidecar", "postgres", "redis", "rabbit"]
+SERVICES_TO_SKIP = ["dask-sidecar", "postgres", "redis", "rabbit"]
 SERVICE_PUBLISHED_PORT = {}
 SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "director-v2": "/",

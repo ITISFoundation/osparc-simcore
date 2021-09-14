@@ -15,8 +15,8 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.StudyBrowserButtonPlaceholder", {
-  extend: osparc.dashboard.StudyBrowserButtonBase,
+qx.Class.define("osparc.dashboard.ListButtonPlaceholder", {
+  extend: osparc.dashboard.ListButtonBase,
 
   construct: function() {
     this.base(arguments);
@@ -28,8 +28,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonPlaceholder", {
 
   statics: {
     POS: {
-      STATE: osparc.dashboard.StudyBrowserButtonBase.THUMBNAIL + 1,
-      PROGRESS: osparc.dashboard.StudyBrowserButtonBase.THUMBNAIL + 2
+      STATE: osparc.dashboard.GridButtonBase.THUMBNAIL + 1,
+      PROGRESS: osparc.dashboard.GridButtonBase.THUMBNAIL + 2
     }
   },
 
@@ -39,13 +39,13 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonPlaceholder", {
       switch (id) {
         case "state-label":
           control = new qx.ui.basic.Label();
-          this._mainLayout.addAt(control, this.self().POS.STATE);
+          this._addAt(control, this.self().POS.STATE);
           break;
         case "progress-bar":
           control = new qx.ui.indicator.ProgressBar().set({
             height: 10
           });
-          this._mainLayout.addAt(control, this.self().POS.PROGRESS);
+          this._addAt(control, this.self().POS.PROGRESS);
           break;
       }
       return control || this.base(arguments, id);

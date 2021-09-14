@@ -54,7 +54,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       });
       createClusterBtn.addListener("execute", function() {
         const newCluster = true;
-        const clusterEditor = new osparc.dashboard.ClusterEditor(newCluster);
+        const clusterEditor = new osparc.component.editor.ClusterEditor(newCluster);
         const title = this.tr("Cluster Details Editor");
         const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 200);
         clusterEditor.addListener("createCluster", () => {
@@ -290,7 +290,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       }
 
       const newCluster = false;
-      const clusterEditor = new osparc.dashboard.ClusterEditor(newCluster);
+      const clusterEditor = new osparc.component.editor.ClusterEditor(newCluster);
       cluster.bind("id", clusterEditor, "cid");
       cluster.bind("name", clusterEditor, "label");
       cluster.bind("description", clusterEditor, "description");

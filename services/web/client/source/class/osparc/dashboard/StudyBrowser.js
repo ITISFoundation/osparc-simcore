@@ -43,6 +43,28 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __userStudies: null,
     __newStudyBtn: null,
 
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "scroll-container":
+          control = new qx.ui.container.Scroll();
+          this._add(control, {
+            flex: 1
+          });
+          control.getChildControl("pane").addListener("scrollY", () => {
+            this._moreStudiesRequired();
+          }, this);
+          break;
+        case "studies-layout": {
+          const scroll = this.getChildControl("scroll-container");
+          control = this.__createUserStudiesLayout();
+          scroll.add(control);
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
+    },
+
     /**
      * Function that resets the selected item
      */
@@ -99,7 +121,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       Promise.all(resourcePromises)
         .then(() => {
-          this.__createStudiesLayout();
+          this.getChildControl("studies-layout");
           this.__reloadResources();
           this.__attachEventHandlers();
           const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
@@ -142,74 +164,116 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __createStudiesLayout: function() {
-      const userStudyLayout = this.__createUserStudiesLayout();
-      const scrollStudies = new qx.ui.container.Scroll();
-      scrollStudies.add(userStudyLayout);
-      this._add(scrollStudies, {
-        flex: 1
-      });
-
-      scrollStudies.getChildControl("pane").addListener("scrollY", () => {
-        this._moreStudiesRequired();
-      }, this);
-    },
-
-    __createNewStudyButton: function() {
-      const newStudyBtn = new osparc.dashboard.StudyBrowserButtonNew();
+    __createNewStudyButton: function(mode = "grid") {
+      const newStudyBtn = this.__newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew() : new osparc.dashboard.ListButtonNew();
       newStudyBtn.subscribeToFilterGroup("sideSearchFilter");
       osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
       newStudyBtn.addListener("execute", () => this.__createStudyBtnClkd());
       return newStudyBtn;
     },
 
-    __createButtonsLayout: function(title, content) {
+    __createLoadMoreStudiesButton: function(mode = "grid") {
+      const loadingStudiesBtn = this._loadingStudiesBtn = (mode === "grid") ? new osparc.dashboard.GridButtonLoadMore() : new osparc.dashboard.ListButtonLoadMore();
+      osparc.utils.Utils.setIdToWidget(loadingStudiesBtn, "studiesLoading");
+      return loadingStudiesBtn;
+    },
+
+    __createCollapsibleView: function(title) {
       const userStudyLayout = new osparc.component.widget.CollapsibleView(title);
       userStudyLayout.getChildControl("title").set({
         font: "title-16"
       });
       userStudyLayout._getLayout().setSpacing(8); // eslint-disable-line no-underscore-dangle
-      userStudyLayout.setContent(content);
       return userStudyLayout;
     },
 
     __createUserStudiesLayout: function() {
-      const userStudyContainer = this._studiesContainer = this.__createStudyListLayout();
+      const userStudyLayout = this.__createCollapsibleView(this.tr("Recent studies"));
 
-      const newStudyButton = this.__newStudyBtn = this.__createNewStudyButton();
+      const titleBarBtnsContainerLeft = userStudyLayout.getTitleBarBtnsContainerLeft();
+      const importStudyButton = this.__createImportButton();
+      titleBarBtnsContainerLeft.add(importStudyButton);
+      const studiesDeleteButton = this.__createDeleteButton(false);
+      titleBarBtnsContainerLeft.add(studiesDeleteButton);
+
+      const titleBarBtnsContainerRight = userStudyLayout.getTitleBarBtnsContainerRight();
+      const viewGridBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/apps/18");
+      titleBarBtnsContainerRight.add(viewGridBtn);
+      const viewListBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/reorder/18");
+      titleBarBtnsContainerRight.add(viewListBtn);
+      const group = new qx.ui.form.RadioGroup();
+      group.add(viewGridBtn);
+      group.add(viewListBtn);
+
+      const userStudyContainer = this._studiesContainer = this.__createStudiesContainer();
+      userStudyLayout.setContent(userStudyContainer);
+      osparc.utils.Utils.setIdToWidget(userStudyContainer, "userStudiesList");
+
+      const newStudyButton = this.__createNewStudyButton();
       userStudyContainer.add(newStudyButton);
 
-      const loadingStudiesBtn = this._loadingStudiesBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
-      osparc.utils.Utils.setIdToWidget(loadingStudiesBtn, "studiesLoading");
+      const loadingStudiesBtn = this.__createLoadMoreStudiesButton();
       userStudyContainer.add(loadingStudiesBtn);
 
-      osparc.utils.Utils.setIdToWidget(userStudyContainer, "userStudiesList");
-      const userStudyLayout = this.__createButtonsLayout(this.tr("Recent studies"), userStudyContainer);
-
-      const studiesTitleContainer = userStudyLayout.getTitleBar();
-
-      const importStudyButton = this.__createImportButton();
-      studiesTitleContainer.add(new qx.ui.core.Spacer(20, null));
-      studiesTitleContainer.add(importStudyButton);
-
-      // Delete Studies Button
-      const studiesDeleteButton = this.__createDeleteButton(false);
-      studiesTitleContainer.add(new qx.ui.core.Spacer(20, null));
-      studiesTitleContainer.add(studiesDeleteButton);
+      viewGridBtn.addListener("execute", () => {
+        this.__setStudiesContainerMode("grid");
+      });
+      viewListBtn.addListener("execute", () => {
+        this.__setStudiesContainerMode("list");
+      });
 
       userStudyContainer.addListener("changeSelection", e => {
         const nSelected = e.getData().length;
-        this.__newStudyBtn.setEnabled(!nSelected);
         this._studiesContainer.getChildren().forEach(userStudyItem => {
-          if (userStudyItem instanceof osparc.dashboard.StudyBrowserButtonItem) {
+          if (osparc.dashboard.ResourceBrowserBase.isCardButtonItem(userStudyItem)) {
             userStudyItem.setMultiSelectionMode(Boolean(nSelected));
           }
         });
-        this.__updateDeleteStudiesButton(studiesDeleteButton);
       }, this);
+      userStudyContainer.bind("selection", this.__newStudyBtn, "enabled", {
+        converter: selection => !selection.length
+      });
+      userStudyContainer.bind("selection", importStudyButton, "enabled", {
+        converter: selection => !selection.length
+      });
+      userStudyContainer.bind("selection", studiesDeleteButton, "visibility", {
+        converter: selection => selection.length ? "visible" : "excluded"
+      });
+      userStudyContainer.bind("selection", studiesDeleteButton, "label", {
+        converter: selection => selection.length > 1 ? this.tr("Delete selected")+" ("+selection.length+")" : this.tr("Delete")
+      });
 
-      userStudyContainer.addListener("changeVisibility", e => {
-        this._moreStudiesRequired();
+      userStudyContainer.addListener("changeVisibility", () => this._moreStudiesRequired());
+
+      userStudyContainer.addListener("changeMode", () => {
+        this._resetStudiesList();
+
+        const userStudyItems = this._studiesContainer.getChildren();
+        userStudyItems.forEach((userStudyItem, i) => {
+          if (!osparc.dashboard.ResourceBrowserBase.isCardButtonItem(userStudyItem)) {
+            if (userStudyItem === this.__newStudyBtn) {
+              this._studiesContainer.remove(userStudyItem);
+              const newBtn = this.__createNewStudyButton(this._studiesContainer.getMode());
+              this._studiesContainer.addAt(newBtn, i);
+              if (this._studiesContainer.getMode() === "list") {
+                const width = this._studiesContainer.getBounds().width - 15;
+                newBtn.setWidth(width);
+              }
+            }
+
+            if (userStudyItem === this._loadingStudiesBtn) {
+              const fetching = userStudyItem.getFetching();
+              const visibility = userStudyItem.getVisibility();
+              this._studiesContainer.remove(userStudyItem);
+              const loadMoreBtn = this.__createLoadMoreStudiesButton(this._studiesContainer.getMode());
+              loadMoreBtn.set({
+                fetching,
+                visibility
+              });
+              this._studiesContainer.add(loadMoreBtn);
+            }
+          }
+        });
       }, this);
 
       return userStudyLayout;
@@ -287,7 +351,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (idx > -1) {
         this.__userStudies[idx]["state"] = state;
       }
-      const studyItem = this._studiesContainer.getChildren().find(card => (card instanceof osparc.dashboard.StudyBrowserButtonItem) && (card.getUuid() === studyId));
+      const studyItem = this._studiesContainer.getChildren().find(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === studyId);
       if (studyItem) {
         studyItem.setState(state);
       }
@@ -371,10 +435,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _resetStudiesList: function(userStudiesList) {
+      if (userStudiesList === undefined) {
+        userStudiesList = this.__userStudies;
+      }
       const userStudyItems = this._studiesContainer.getChildren();
       for (let i=userStudyItems.length-1; i>=0; i--) {
         const userStudyItem = userStudyItems[i];
-        if (userStudyItem instanceof osparc.dashboard.StudyBrowserButtonItem) {
+        if (osparc.dashboard.ResourceBrowserBase.isCardButtonItem(userStudyItem)) {
           this._studiesContainer.remove(userStudyItem);
         }
       }
@@ -394,15 +461,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (osparc.data.model.Study.isStudySecondary(userStudy)) {
           return;
         }
-        const idx = studyList.findIndex(card => card instanceof osparc.dashboard.StudyBrowserButtonItem && card.getUuid() === userStudy["uuid"]);
+        const idx = studyList.findIndex(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === userStudy["uuid"]);
         if (idx !== -1) {
           return;
         }
         const studyItem = this.__createStudyItem(userStudy);
         this._studiesContainer.add(studyItem);
       });
-      osparc.dashboard.ResourceBrowserBase.sortStudyList(studyList.filter(card => card instanceof osparc.dashboard.StudyBrowserButtonItem));
-      const idx = studyList.findIndex(card => card instanceof osparc.dashboard.StudyBrowserButtonLoadMore);
+      osparc.dashboard.ResourceBrowserBase.sortStudyList(studyList.filter(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)));
+      const idx = studyList.findIndex(card => (card instanceof osparc.dashboard.GridButtonLoadMore) || (card instanceof osparc.dashboard.ListButtonLoadMore));
       if (idx !== -1) {
         studyList.push(studyList.splice(idx, 1)[0]);
       }
@@ -414,20 +481,31 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (idx > -1) {
         this.__userStudies.splice(idx, 1);
       }
-      const studyItem = this._studiesContainer.getChildren().find(card => (card instanceof osparc.dashboard.StudyBrowserButtonItem) && (card.getUuid() === studyId));
+      const studyItem = this._studiesContainer.getChildren().find(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === studyId);
       if (studyItem) {
         this._studiesContainer.remove(studyItem);
       }
     },
 
-    __createStudyListLayout: function() {
-      const spacing = osparc.dashboard.StudyBrowserButtonBase.SPACING;
+    __createStudiesContainer: function() {
+      const spacing = osparc.dashboard.GridButtonBase.SPACING;
       return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
+    },
+
+    __setStudiesContainerMode: function(mode = "grid") {
+      const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
+      this._studiesContainer.getLayout().set({
+        spacingX: spacing,
+        spacingY: spacing
+      });
+      this._studiesContainer.setMode(mode);
     },
 
     __createStudyItem: function(studyData) {
       const tags = studyData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => studyData.tags.includes(tag.id)) : [];
-      const item = new osparc.dashboard.StudyBrowserButtonItem().set({
+
+      const item = this._studiesContainer.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
+      item.set({
         resourceData: studyData,
         tags
       });
@@ -677,10 +755,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const text = this.tr("Duplicate process started and added to the background tasks");
       osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
 
-      const duplicatingStudyCard = new osparc.dashboard.StudyBrowserButtonPlaceholder();
+      const isGrid = this._studiesContainer.getMode() === "grid";
+      const duplicatingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
       duplicatingStudyCard.buildLayout(
         this.tr("Duplicating ") + studyData["name"],
-        "@FontAwesome5Solid/copy/60"
+        "@FontAwesome5Solid/copy/" + isGrid ? "60" : "24"
       );
       duplicatingStudyCard.subscribeToFilterGroup("sideSearchFilter");
       this._studiesContainer.addAt(duplicatingStudyCard, 1);
@@ -734,10 +813,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
 
       const uploadingLabel = this.tr("Uploading file");
-      const importingStudyCard = new osparc.dashboard.StudyBrowserButtonPlaceholder();
+      const isGrid = this._studiesContainer.getMode() === "grid";
+      const importingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
       importingStudyCard.buildLayout(
         this.tr("Importing Study..."),
-        "@FontAwesome5Solid/cloud-upload-alt/60",
+        "@FontAwesome5Solid/cloud-upload-alt/" + isGrid ? "60" : "24",
         uploadingLabel,
         true
       );
@@ -813,16 +893,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       req.open("POST", "/v0/projects:import", true);
       req.send(body);
-    },
-
-    __updateDeleteStudiesButton: function(studiesDeleteButton) {
-      const nSelected = this._studiesContainer.getSelection().length;
-      if (nSelected) {
-        studiesDeleteButton.setLabel(nSelected > 1 ? this.tr("Delete selected")+" ("+nSelected+")" : this.tr("Delete"));
-        studiesDeleteButton.setVisibility("visible");
-      } else {
-        studiesDeleteButton.setVisibility("excluded");
-      }
     },
 
     __deleteStudy: function(studyData) {
