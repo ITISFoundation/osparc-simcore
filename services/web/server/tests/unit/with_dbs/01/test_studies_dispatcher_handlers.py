@@ -53,6 +53,64 @@ def inject_tables(postgres_db: sa.engine.Engine):
     with postgres_db.connect() as conn:
         conn.execute(stmt_create_services)
         conn.execute(stmt_create_services_consume_filetypes)
+    yield
+    # cleanup
+    with postgres_db.connect() as conn:
+        conn.execute(
+            text(
+                "DELETE FROM services_consume_filetypes WHERE service_key='simcore/services/dynamic/bio-formats-web' AND service_version='1.0.1' AND filetype='PNG'"
+            )
+        )
+        conn.execute(
+            text(
+                "DELETE FROM services_consume_filetypes WHERE service_key='simcore/services/dynamic/raw-graphs' AND service_version='2.11.1' AND filetype='CSV'"
+            )
+        )
+        conn.execute(
+            text(
+                "DELETE FROM services_consume_filetypes WHERE service_key='simcore/services/dynamic/bio-formats-web' AND service_version='1.0.1' AND filetype='JPEG'"
+            )
+        )
+        conn.execute(
+            text(
+                "DELETE FROM services_consume_filetypes WHERE service_key='simcore/services/dynamic/raw-graphs' AND service_version='2.11.1' AND filetype='TSV'"
+            )
+        )
+        conn.execute(
+            text(
+                "DELETE FROM services_consume_filetypes WHERE service_key='simcore/services/dynamic/raw-graphs' AND service_version='2.11.1' AND filetype='XSLX'"
+            )
+        )
+        conn.execute(
+            text(
+                "DELETE FROM services_consume_filetypes WHERE service_key='simcore/services/dynamic/raw-graphs' AND service_version='2.11.1' AND filetype='JSON'"
+            )
+        )
+        conn.execute(
+            text(
+                "DELETE FROM services_consume_filetypes WHERE service_key='simcore/services/dynamic/jupyter-octave-python-math' AND service_version='1.6.9' AND filetype='PY'"
+            )
+        )
+        conn.execute(
+            text(
+                "DELETE FROM services_consume_filetypes WHERE service_key='simcore/services/dynamic/jupyter-octave-python-math' AND service_version='1.6.9' AND filetype='IPYNB'"
+            )
+        )
+        conn.execute(
+            text(
+                "DELETE FROM services_meta_data WHERE key='simcore/services/dynamic/raw-graphs' AND version='2.11.1'"
+            )
+        )
+        conn.execute(
+            text(
+                "DELETE FROM services_meta_data WHERE key='simcore/services/dynamic/bio-formats-web' AND version='1.0.1'"
+            )
+        )
+        conn.execute(
+            text(
+                "DELETE FROM services_meta_data WHERE key='simcore/services/dynamic/jupyter-octave-python-math' AND version='1.6.9'"
+            )
+        )
 
 
 FAKE_VIEWS_LIST = [
