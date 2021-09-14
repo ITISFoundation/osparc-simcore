@@ -6,6 +6,7 @@ from dask.distributed import get_worker
 from distributed.worker import TaskState
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from simcore_service_sidecar.boot_mode import BootMode
 from simcore_service_sidecar.cli import run_sidecar
 
@@ -68,7 +69,7 @@ async def run_computational_sidecar(
 
 
 def run_task_in_service(
-    job_id: str, user_id: int, project_id: ProjectID, node_id: NodeID
+    job_id: str, user_id: UserID, project_id: ProjectID, node_id: NodeID
 ) -> None:
     """
     To run a task, it spawns a service corresponding to `project.node_id` under `user_id` session and
