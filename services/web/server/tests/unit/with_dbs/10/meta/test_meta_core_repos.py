@@ -100,17 +100,13 @@ async def test_workflow(
     # -------------------------------------
     await user_modifier(project_uuid)
 
-    project = await projects_api.get_project_for_user(
-        aiohttp_mocked_request.app, str(project_uuid), user_id
-    )
-    assert project != user_project
-
     checkpoint2 = await create_checkpoint(
         vc_repo, project_uuid, tag="v1", message="second commit"
     )
 
     assert checkpoint2.tags == ("v1",)
     assert (checkpoint1.id,) == checkpoint2.parents_ids
+    assert checkpoint1.checksum != checkpoint2.checksum
 
     # -------------------------------------
     checkpoints, total_count = await list_checkpoints(vc_repo, project_uuid)
@@ -135,7 +131,6 @@ async def test_workflow(
         aiohttp_mocked_request.app, str(project_uuid), user_id
     )
     assert project["workbench"] == user_project["workbench"]
-    assert project["ui"] == user_project["ui"]
 
     # -------------------------------------
     # creating branches
@@ -152,10 +147,6 @@ async def test_workflow(
     assert total_count == 3
     assert checkpoints == [checkpoint3, checkpoint2, checkpoint1]
 
-    assert checkpoint3.parents_ids == [
-        checkpoint1.id,
-    ]
-    assert checkpoint2.parents_ids == [
-        checkpoint1.id,
-    ]
+    assert checkpoint3.parents_ids == checkpoint2.parents_ids
+    assert checkpoint2.parents_ids == (checkpoint1.id,)
     # This is detached!

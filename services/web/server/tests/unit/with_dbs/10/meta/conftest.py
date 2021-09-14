@@ -7,9 +7,16 @@ from copy import deepcopy
 from typing import Any, Dict, Iterator
 
 import pytest
+from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.rawdata_fakers import random_project
+from pytest_simcore.helpers.utils_login import UserDict
 from pytest_simcore.helpers.utils_projects import NewProject
+from simcore_postgres_database.models.projects_version_control import (
+    projects_vc_repos,
+    projects_vc_snapshots,
+)
 from simcore_service_webserver import catalog
+from simcore_service_webserver.db import APP_DB_ENGINE_KEY
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.log import setup_logging
 
@@ -100,13 +107,23 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, catalog_subsystem_mock, monkey
 
 
 @pytest.fixture
-async def user_id(logged_user) -> int:
+async def user_id(logged_user: UserDict) -> int:
     return logged_user["id"]
 
 
 @pytest.fixture
 async def user_project(
-    client, fake_project: ProjectDict, user_id
+    client: TestClient, fake_project: ProjectDict, user_id
 ) -> Iterator[ProjectDict]:
     async with NewProject(fake_project, client.app, user_id=user_id) as project:
+
         yield project
+
+        # cleanup repos
+        engine = client.app[APP_DB_ENGINE_KEY]
+        async with engine.acquire() as conn:
+            # pylint: disable=no-value-for-parameter
+
+            # cascade deletes everything except projects_vc_snapshot
+            await conn.execute(projects_vc_repos.delete())
+            await conn.execute(projects_vc_snapshots.delete())

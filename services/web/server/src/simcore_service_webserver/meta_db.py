@@ -252,7 +252,7 @@ class VersionControlRepository(BaseRepository):
                     commit_id = await self.CommitsOrm(conn).insert(
                         repo_id=repo_id,
                         parent_commit_id=commit_id,
-                        message=None if tag else message,
+                        message=message,
                         snapshot_checksum=repo.project_checksum,
                     )
                     assert commit_id  # nosec
