@@ -82,7 +82,6 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
 
       gitGraphCanvas.addListenerOnce("appear", () => {
         const el = gitGraphCanvas.getContentElement().getDomElement();
-        osparc.utils.Utils.setZoom(el, 0.6);
         const gitGraphWrapper = osparc.wrapper.GitGraph.getInstance();
         gitGraphWrapper.init()
           .then(() => {

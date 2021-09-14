@@ -34,11 +34,39 @@ qx.Class.define("osparc.wrapper.GitGraph", {
   statics: {
     NAME: "GitGraph",
     VERSION: "1.4.0",
-    URL: "https://github.com/nicoespeon/gitgraph.js/tree/master/packages/gitgraph-js"
-  },
+    URL: "https://github.com/nicoespeon/gitgraph.js/tree/master/packages/gitgraph-js",
 
-  construct: function() {
-    this.base(arguments);
+    getTemplateConfig: function() {
+      return {
+        colors: [
+          "#F00",
+          "#0F0",
+          "#00F"
+        ], // branches colors, 1 per column
+        branch: {
+          lineWidth: 4,
+          spacingX: 25,
+          showLabel: true // display branch names on graph
+        },
+        commit: {
+          spacingY: -40,
+          dot: {
+            size: 6
+          },
+          message: {
+            displayAuthor: true,
+            displayBranch: false,
+            displayHash: false,
+            font: "normal 10pt Roboto"
+          },
+          shouldDisplayTooltipsInCompactMode: true, // default = true
+          tooltipHTMLFormatter: commit => {
+            console.log(commit);
+            return commit.sha1 + ": " + commit.message;
+          }
+        }
+      };
+    }
   },
 
   properties: {
@@ -80,9 +108,13 @@ qx.Class.define("osparc.wrapper.GitGraph", {
     },
 
     createGraph: function(graphContainer) {
+      // osparc.utils.Utils.setZoom(graphContainer, 0.6);
+
+      const myTemplate = GitgraphJS.templateExtend("metro", this.self().getTemplateConfig());
+
       // Instantiate the graph.
       const gitgraph = GitgraphJS.createGitgraph(graphContainer, {
-        "mode": "compact"
+        template: myTemplate
       });
       return gitgraph;
     },
