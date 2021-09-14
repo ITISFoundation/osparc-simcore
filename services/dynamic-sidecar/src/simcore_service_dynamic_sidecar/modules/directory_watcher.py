@@ -15,10 +15,14 @@ from simcore_service_dynamic_sidecar.modules.nodeports import (
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
+from .mounted_fs import MountedVolumes, setup_mounted_fs
+
 DETECTION_INTERVAL: float = 1.0
 TASK_NAME_FOR_CLEANUP = f"{name}.InvokeTask"
 
 logger = logging.getLogger(__name__)
+
+_dir_watcher: Optional["DirectoryWatcherObservers"] = None
 
 
 class AsyncLockedFloat:
@@ -168,3 +172,22 @@ class DirectoryWatcherObservers:
 
             # awaiting pending spawned tasks will not raise warnings
             await logged_gather(*tasks_to_await)
+
+
+async def setup_directory_watcher() -> None:
+    global _dir_watcher  # pylint: disable=global-statement
+
+    mounted_volumes: MountedVolumes = setup_mounted_fs()
+
+    _dir_watcher = DirectoryWatcherObservers()
+    _dir_watcher.observe_directory(mounted_volumes.disk_outputs_path)
+    _dir_watcher.start()
+
+
+async def teardown_directory_watcher() -> None:
+    global _dir_watcher  # pylint: disable=global-statement
+    if _dir_watcher is not None:
+        await _dir_watcher.stop()
+
+
+__all__ = ["setup_directory_watcher", "teardown_directory_watcher"]
