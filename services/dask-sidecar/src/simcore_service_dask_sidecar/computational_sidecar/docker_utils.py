@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+from pprint import pformat
 from typing import AsyncIterator, List
 
 from aiodocker import Docker, DockerError
@@ -118,6 +119,22 @@ async def managed_monitor_container_log_task(
             name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
         )
         yield monitoring_task
+        # wait for task to complete, so we get the complete log
+        await monitoring_task
     finally:
         if monitoring_task:
             monitoring_task.cancel()
+
+
+async def pull_image(
+    docker_client: Docker, service_key: str, service_version: str
+) -> None:
+    async for pull_progress in docker_client.images.pull(
+        f"{service_key}:{service_version}", stream=True
+    ):
+        logger.info(
+            "pulling %s:%s: %s",
+            service_key,
+            service_version,
+            pformat(pull_progress),
+        )

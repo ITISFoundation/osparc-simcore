@@ -5,7 +5,6 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from pprint import pformat
 from types import TracebackType
 from typing import Any, AsyncIterator, Awaitable, Dict, List, Optional, Type
 from uuid import uuid4
@@ -18,6 +17,7 @@ from .docker_utils import (
     create_container_config,
     managed_container,
     managed_monitor_container_log_task,
+    pull_image,
 )
 
 logger = logging.getLogger(__name__)
@@ -48,16 +48,7 @@ class ComputationalSidecar:
         async with Docker() as docker_client, managed_task_volumes(
             Path(f"/tmp/{uuid4()}")
         ) as task_volumes:
-            # pull the image
-            async for pull_progress in docker_client.images.pull(
-                f"{self.service_key}:{self.service_version}", stream=True
-            ):
-                logger.info(
-                    "pulling %s:%s: %s",
-                    self.service_key,
-                    self.service_version,
-                    pformat(pull_progress),
-                )
+            await pull_image(docker_client, self.service_key, self.service_version)
 
             config = await create_container_config(
                 service_key=self.service_key,
