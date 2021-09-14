@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 import pytest
 from aiohttp import web
+from faker import Faker
 from pytest_simcore.helpers.utils_assert import assert_error, assert_status
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
 from servicelib.aiohttp.rest_responses import unwrap_envelope
@@ -10,17 +11,16 @@ from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login.cfg import cfg, get_storage
 from simcore_service_webserver.login.registration import get_confirmation_info
 
-EMAIL, PASSWORD = "tester@test.com", "password"
 
-
-async def test_regitration_availibility(client):
+async def test_regitration_availibility(client, faker: Faker):
     url = client.app.router["auth_register"].url_for()
+    password = faker.numerify(text="#" * 5)
     r = await client.post(
         url,
         json={
-            "email": EMAIL,
-            "password": PASSWORD,
-            "confirm": PASSWORD,
+            "email": faker.email(),
+            "password": password,
+            "confirm": password,
         },
     )
 
@@ -73,34 +73,45 @@ async def test_registration_with_expired_confirmation(client, monkeypatch):
     await assert_error(r, web.HTTPConflict, cfg.MSG_EMAIL_EXISTS)
 
 
-async def test_registration_without_confirmation(client, monkeypatch):
+async def test_registration_without_confirmation(client, monkeypatch, faker: Faker):
     monkeypatch.setitem(cfg, "REGISTRATION_CONFIRMATION_REQUIRED", False)
+    registration_data = {
+        "password": faker.numerify(text="#" * 5),
+        "email": faker.email(),
+    }
+
     db = get_storage(client.app)
     url = client.app.router["auth_register"].url_for()
     r = await client.post(
-        url, json={"email": EMAIL, "password": PASSWORD, "confirm": PASSWORD}
+        url, json={**registration_data, "confirm": registration_data["password"]}
     )
     data, error = unwrap_envelope(await r.json())
 
     assert r.status == 200, (data, error)
     assert cfg.MSG_LOGGED_IN in data["message"]
 
-    user = await db.get_user({"email": EMAIL})
+    user = await db.get_user({"email": registration_data["email"]})
     assert user
     await db.delete_user(user)
 
 
-async def test_registration_with_confirmation(client, capsys, monkeypatch):
+async def test_registration_with_confirmation(
+    client, capsys, monkeypatch, faker: Faker
+):
     monkeypatch.setitem(cfg, "REGISTRATION_CONFIRMATION_REQUIRED", True)
     db = get_storage(client.app)
     url = client.app.router["auth_register"].url_for()
+    registration_data = {
+        "password": faker.numerify(text="#" * 5),
+        "email": faker.email(),
+    }
     r = await client.post(
-        url, json={"email": EMAIL, "password": PASSWORD, "confirm": PASSWORD}
+        url, json={**registration_data, "confirm": registration_data["password"]}
     )
     data, error = unwrap_envelope(await r.json())
     assert r.status == 200, (data, error)
 
-    user = await db.get_user({"email": EMAIL})
+    user = await db.get_user({"email": registration_data["email"]})
     assert user["status"] == UserStatus.CONFIRMATION_PENDING.name
 
     assert "verification link" in data["message"]
@@ -118,7 +129,7 @@ async def test_registration_with_confirmation(client, capsys, monkeypatch):
     )
     assert resp.status == 200
 
-    user = await db.get_user({"email": EMAIL})
+    user = await db.get_user({"email": registration_data["email"]})
     assert user["status"] == UserStatus.ACTIVE.name
     await db.delete_user(user)
 
@@ -133,7 +144,11 @@ async def test_registration_with_confirmation(client, capsys, monkeypatch):
     ],
 )
 async def test_registration_with_invitation(
-    client, is_invitation_required, has_valid_invitation, expected_response
+    client,
+    is_invitation_required,
+    has_valid_invitation,
+    expected_response,
+    faker: Faker,
 ):
     from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
     from simcore_service_webserver.login.config import CONFIG_SECTION_NAME
@@ -149,6 +164,11 @@ async def test_registration_with_invitation(
     #
     # Front end then creates the following request
     #
+    registration_data = {
+        "password": faker.numerify(text="#" * 5),
+        "email": faker.email(),
+    }
+
     async with NewInvitation(client) as confirmation:
         print(get_confirmation_info(confirmation))
 
@@ -157,9 +177,8 @@ async def test_registration_with_invitation(
         r = await client.post(
             url,
             json={
-                "email": EMAIL,
-                "password": PASSWORD,
-                "confirm": PASSWORD,
+                **registration_data,
+                "confirm": registration_data["password"],
                 "invitation": confirmation["code"]
                 if has_valid_invitation
                 else "WRONG_CODE",
@@ -170,7 +189,11 @@ async def test_registration_with_invitation(
         # check optional fields in body
         if not has_valid_invitation or not is_invitation_required:
             r = await client.post(
-                url, json={"email": "new-user" + EMAIL, "password": PASSWORD}
+                url,
+                json={
+                    "email": "new-user" + registration_data["email"],
+                    "password": registration_data["password"],
+                },
             )
             await assert_status(r, expected_response)
 
