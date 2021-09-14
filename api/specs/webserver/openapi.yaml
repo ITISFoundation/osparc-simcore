@@ -212,6 +212,12 @@ paths:
   /projects/{study_uuid}/tags/{tag_id}:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{study_uuid}~1tags~1{tag_id}"
 
+  /projects/{project_id}/snapshots:
+    $ref: "./openapi-projects.yaml#/paths/projects_snapshots"
+
+  /projects/{project_id}/snapshots/{snapshot_id}:
+    $ref: "./openapi-projects.yaml#/paths/projects_id_snapshots_id"
+
   # REPOSITORY -------------------------------------------------------------------------
   /repos/projects:
     $ref: "./openapi-repos.yaml#/paths/~1repos~1projects"

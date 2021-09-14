@@ -10,11 +10,9 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.projects import Project
-from openapi_core.schema.specs.models import Spec
 from pydantic.main import BaseModel
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.rest_pagination_utils import PageResponseLimitOffset
-from simcore_service_webserver import meta_api_handlers_repos
 from simcore_service_webserver._meta import api_vtag as vtag
 from simcore_service_webserver.meta_models_repos import CheckpointApiModel, RepoApiModel
 
@@ -47,24 +45,6 @@ async def assert_status_and_body(
 
 
 # TESTS
-@pytest.mark.parametrize(
-    "route",
-    meta_api_handlers_repos.routes,
-    ids=lambda r: f"{r.method.upper()} {r.path}",
-)
-def test_route_against_openapi_specs(route, openapi_specs: Spec):
-
-    assert route.path.startswith(f"/{vtag}")
-    path = route.path.replace(f"/{vtag}", "")
-
-    assert (
-        route.method.lower() in openapi_specs.paths[path].operations
-    ), f"operation {route.method} undefined in OAS"
-
-    assert (
-        openapi_specs.paths[path].operations[route.method.lower()].operation_id
-        == route.kwargs["name"]
-    ), "route's name differs from OAS operation_id"
 
 
 @pytest.mark.acceptance_test
