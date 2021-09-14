@@ -114,7 +114,7 @@ class VersionControlRepository(BaseRepository):
 
     async def get_repo_id(self, project_uuid: UUID) -> Optional[int]:
         async with self.engine.acquire() as conn:
-            repo_orm = self.ReposOrm(conn).set_default(project_uuid=str(project_uuid))
+            repo_orm = self.ReposOrm(conn).set_filter(project_uuid=str(project_uuid))
             repo = await repo_orm.fetch("id")
             return repo.id if repo else None
 
@@ -153,7 +153,7 @@ class VersionControlRepository(BaseRepository):
         """Returns None if detached head"""
         h = await self.HeadsOrm(conn).fetch("head_branch_id", rowid=repo_id)
         if h and h.head_branch_id:
-            branches_orm = self.BranchesOrm(conn).set_default(rowid=h.head_branch_id)
+            branches_orm = self.BranchesOrm(conn).set_filter(rowid=h.head_branch_id)
             branch = await branches_orm.fetch("id name head_commit_id")
             return branch
 
@@ -177,7 +177,7 @@ class VersionControlRepository(BaseRepository):
             if not branch:
                 raise NotImplementedError("Detached heads still not implemented")
 
-            branches_orm = self.BranchesOrm(conn).set_default(rowid=branch.id)
+            branches_orm = self.BranchesOrm(conn).set_filter(rowid=branch.id)
 
             async with conn.begin():
                 commits_orm = self.CommitsOrm(conn)
@@ -233,12 +233,12 @@ class VersionControlRepository(BaseRepository):
         Returns checksum if a snapshot is taken because it has changes wrt previous commit
         """
         # current repo
-        repo_orm = self.ReposOrm(conn).set_default(id=repo_id)
+        repo_orm = self.ReposOrm(conn).set_filter(id=repo_id)
         repo = await repo_orm.fetch("id project_uuid project_checksum modified")
         assert repo  #  nosec
 
         # fetch project
-        project_orm = self.ProjectsOrm(conn).set_default(uuid=repo.project_uuid)
+        project_orm = self.ProjectsOrm(conn).set_filter(uuid=repo.project_uuid)
         project = await project_orm.fetch("workbench ui last_change_date")
         assert project  # nosec
 
@@ -272,7 +272,7 @@ class VersionControlRepository(BaseRepository):
 
                 tags: List[TagProxy] = (
                     await self.TagsOrm(conn)
-                    .set_default(commit_id=commit.id, hidden=False)
+                    .set_filter(commit_id=commit.id, hidden=False)
                     .fetch_all("name message")
                 )
                 return commit, tags
@@ -286,21 +286,20 @@ class VersionControlRepository(BaseRepository):
     ) -> Tuple[List[CommitLog], NonNegativeInt]:
 
         async with self.engine.acquire() as conn:
-            commits_orm = self.CommitsOrm(conn).set_default(repo_id=repo_id)
+            commits_orm = self.CommitsOrm(conn).set_filter(repo_id=repo_id)
             tags_orm = self.TagsOrm(conn)
 
             commits: List[CommitProxy]
             commits, total_count = await commits_orm.fetch_page(
-                "project_uuid",
                 offset=offset,
                 limit=limit,
                 order=sa.desc(commits_orm.columns["created"]),
             )
 
-            infos = []
+            logs = []
             for commit in commits:
                 tags: List[TagProxy]
-                tags = await tags_orm.set_default(commit_id=commit.id).fetch_all()
-                infos.append((commit, tags))
+                tags = await tags_orm.set_filter(commit_id=commit.id).fetch_all()
+                logs.append((commit, tags))
 
-            return infos, total_count
+            return logs, total_count

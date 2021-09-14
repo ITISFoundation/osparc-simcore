@@ -107,7 +107,7 @@ async def test_orm_fetch_defaults(
     assert scicrunch_id2 == "RRID:bar"
 
     # pins row using default
-    scicrunch_orm.set_default(scicrunch_id1)
+    scicrunch_orm.set_filter(scicrunch_id1)
     scicrunch_resource = await scicrunch_orm.fetch()
     assert scicrunch_resource
     assert scicrunch_resource.rrid == scicrunch_id1
@@ -220,7 +220,7 @@ async def test_orm_update(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[
     assert all(row.name == "w/o pin" for row in rows)
 
     # let's use default to pin the rwo to update
-    scicrunch_orm.set_default(scicrunch_id2)
+    scicrunch_orm.set_filter(scicrunch_id2)
     assert await scicrunch_orm.update(name="w/ pin") == scicrunch_id2
 
     assert (await scicrunch_orm.fetch(rowid=scicrunch_id1)).name == "w/o pin"
@@ -233,7 +233,7 @@ async def test_orm_update_with_different_returns(
 
     scicrunch_id1, _ = fake_scicrunch_ids
 
-    scicrunch_orm.set_default(rowid=scicrunch_id1)
+    scicrunch_orm.set_filter(rowid=scicrunch_id1)
 
     scicrunch1_before = await scicrunch_orm.fetch()
     assert scicrunch1_before

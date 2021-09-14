@@ -127,7 +127,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         assert repo_id is not None
         assert isinstance(repo_id, int)
 
-        repo_orm.set_default(rowid=repo_id)
+        repo_orm.set_filter(rowid=repo_id)
         repo = await repo_orm.fetch()
         assert repo
         assert repo.project_uuid == project.uuid
@@ -140,7 +140,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         assert branch_id is not None
         assert isinstance(branch_id, int)
 
-        branches_orm.set_default(rowid=branch_id)
+        branches_orm.set_filter(rowid=branch_id)
         main_branch: Optional[RowProxy] = await branches_orm.fetch()
         assert main_branch
         assert main_branch.name == "main", "Expected 'main' as default branch"
@@ -151,7 +151,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         heads_orm = HeadsOrm(conn)
         await heads_orm.insert(repo_id=repo.id, head_branch_id=branch_id)
 
-        heads_orm.set_default(rowid=repo.id)
+        heads_orm.set_filter(rowid=repo.id)
         head = await heads_orm.fetch()
         assert head
 
@@ -162,7 +162,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
     repo = await repo_orm.fetch("id project_uuid project_checksum")
     assert repo
 
-    project_orm = ProjectsOrm(conn).set_default(uuid=repo.project_uuid)
+    project_orm = ProjectsOrm(conn).set_filter(uuid=repo.project_uuid)
     project_wc = await project_orm.fetch()
     assert project_wc
     assert project == project_wc
@@ -178,7 +178,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
 
         # get HEAD = repo.branch_id -> .head_commit_id
         assert head.repo_id == repo.id
-        branches_orm.set_default(head.head_branch_id)
+        branches_orm.set_filter(head.head_branch_id)
         branch = await branches_orm.fetch("head_commit_id name")
         assert branch
         assert branch.name == "main"
@@ -226,8 +226,8 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
     repo = await repo_orm.fetch()
     assert repo
 
-    project_orm.set_default(uuid=repo.project_uuid)
-    assert project_orm.is_default_set()
+    project_orm.set_filter(uuid=repo.project_uuid)
+    assert project_orm.is_filter_set()
 
     await project_orm.update(
         workbench={

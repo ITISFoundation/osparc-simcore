@@ -57,7 +57,7 @@ class BaseOrm(Generic[RowUId]):
         self._writeonce: Set = writeonce or set()
 
         # row selection logic
-        self._unique_match = None
+        self._where_clause = None
         try:
             self._primary_key: Column = next(c for c in table.columns if c.primary_key)
             # FIXME: how can I compare a concrete with a generic type??
@@ -117,7 +117,7 @@ class BaseOrm(Generic[RowUId]):
     def columns(self) -> ImmutableColumnCollection:
         return self._table.columns
 
-    def set_default(self, rowid: Optional[RowUId] = None, **unique_id) -> "BaseOrm":
+    def set_filter(self, rowid: Optional[RowUId] = None, **unique_id) -> "BaseOrm":
         """
         Sets default for read operations either by passing a row identifier or a filter
         """
@@ -125,27 +125,27 @@ class BaseOrm(Generic[RowUId]):
             raise ValueError("Either identifier or unique condition but not both")
 
         if rowid:
-            self._unique_match = self._primary_key == rowid
+            self._where_clause = self._primary_key == rowid
         elif unique_id:
-            self._unique_match = functools.reduce(
+            self._where_clause = functools.reduce(
                 operator.and_,
                 (
                     operator.eq(self._table.columns[name], value)
                     for name, value in unique_id.items()
                 ),
             )
-        if not self.is_default_set():
+        if not self.is_filter_set():
             raise ValueError(
                 "Either identifier or unique condition required. None provided"
             )
         return self
 
-    def clear_default(self) -> None:
-        self._unique_match = None
+    def clear_filter(self) -> None:
+        self._where_clause = None
 
-    def is_default_set(self) -> bool:
+    def is_filter_set(self) -> bool:
         # WARNING: self._unique_match can evaluate false. Keep explicit
-        return self._unique_match is not None
+        return self._where_clause is not None
 
     async def fetch(
         self,
@@ -157,9 +157,9 @@ class BaseOrm(Generic[RowUId]):
         if rowid:
             # overrides pinned row
             query = query.where(self._primary_key == rowid)
-        elif self.is_default_set():
-            assert self._unique_match is not None  # nosec
-            query = query.where(self._unique_match)
+        elif self.is_filter_set():
+            assert self._where_clause is not None  # nosec
+            query = query.where(self._where_clause)
 
         result: ResultProxy = await self._conn.execute(query)
         row: Optional[RowProxy] = await result.first()
@@ -171,6 +171,9 @@ class BaseOrm(Generic[RowUId]):
     ) -> List[RowProxy]:
 
         query = self._compose_select_query(returning_cols)
+        if self.is_filter_set():
+            assert self._where_clause is not None  # nosec
+            query = query.where(self._where_clause)
 
         result: ResultProxy = await self._conn.execute(query)
         rows: List[RowProxy] = await result.fetchall()
@@ -192,7 +195,7 @@ class BaseOrm(Generic[RowUId]):
         """
 
         query = self._compose_select_query(returning_cols).order_by(
-            order if order else self._primary_key
+            self._primary_key if order is None else order
         )
 
         total_count = None
@@ -222,9 +225,9 @@ class BaseOrm(Generic[RowUId]):
         self._check_access_rights(self._writeonce, values)
 
         query: Update = self._table.update().values(**values)
-        if self.is_default_set():
-            assert self._unique_match is not None  # nosec
-            query = query.where(self._unique_match)
+        if self.is_filter_set():
+            assert self._where_clause is not None  # nosec
+            query = query.where(self._where_clause)
 
         query, is_scalar = self._append_returning(returning_cols, query)
         if is_scalar:
