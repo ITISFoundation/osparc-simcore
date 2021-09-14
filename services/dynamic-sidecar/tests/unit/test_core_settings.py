@@ -8,8 +8,8 @@ from pathlib import Path, PosixPath
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from simcore_service_dynamic_sidecar.core.settings import (
-    NonFastAPIDynamicSidecarSettings,
-    get_non_fastpi_settings,
+    DynamicSidecarSettings,
+    get_settings,
 )
 
 
@@ -19,9 +19,16 @@ def tmp_dir(tmp_path: PosixPath) -> Path:
 
 
 @pytest.fixture
-def mocked_non_fast_api_settings(tmp_dir: Path, monkeypatch: MonkeyPatch) -> None:
+def mocked_non_request_settings(tmp_dir: Path, monkeypatch: MonkeyPatch) -> None:
     inputs_dir = tmp_dir / "inputs"
     outputs_dir = tmp_dir / "outputs"
+
+    monkeypatch.setenv("SC_BOOT_MODE", "production")
+    monkeypatch.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", "test-space")
+    monkeypatch.setenv("REGISTRY_AUTH", "false")
+    monkeypatch.setenv("REGISTRY_USER", "test")
+    monkeypatch.setenv("REGISTRY_PW", "test")
+    monkeypatch.setenv("REGISTRY_SSL", "false")
     monkeypatch.setenv("DY_SIDECAR_PATH_INPUTS", str(inputs_dir))
     monkeypatch.setenv("DY_SIDECAR_PATH_OUTPUTS", str(outputs_dir))
     monkeypatch.setenv("DY_SIDECAR_USER_ID", "1")
@@ -29,11 +36,11 @@ def mocked_non_fast_api_settings(tmp_dir: Path, monkeypatch: MonkeyPatch) -> Non
     monkeypatch.setenv("DY_SIDECAR_NODE_ID", f"{uuid.uuid4()}")
 
 
-def test_non_fast_api_dynamic_sidecar_settings(
-    mocked_non_fast_api_settings: None,
+def test_non_request_dynamic_sidecar_settings(
+    mocked_non_request_settings: None,
 ) -> None:
-    assert NonFastAPIDynamicSidecarSettings()
+    assert DynamicSidecarSettings.create()
 
 
-def test_cached_settings_is_same_object(mocked_non_fast_api_settings: None) -> None:
-    assert id(get_non_fastpi_settings()) == id(get_non_fastpi_settings())
+def test_cached_settings_is_same_object(mocked_non_request_settings: None) -> None:
+    assert id(get_settings()) == id(get_settings())
