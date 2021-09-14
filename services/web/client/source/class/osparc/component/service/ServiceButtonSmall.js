@@ -109,27 +109,6 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
     _filterClassifiers: function(classifiers) {
       const checks = this.getServiceModel().getClassifiers();
       return osparc.dashboard.CardBase.filterText(checks, classifiers);
-    },
-
-    // implement osparc.component.filter.IFilterable
-    _filter: function() {
-      this.exclude();
-    },
-
-    // implement osparc.component.filter.IFilterable
-    _unfilter: function() {
-      this.show();
-    },
-
-    // implement osparc.component.filter.IFilterable
-    _shouldReactToFilter: function(data) {
-      if (data.text && data.text.length > 1) {
-        return true;
-      }
-      if (data.tags && data.tags.length) {
-        return true;
-      }
-      return false;
     }
   }
 });
