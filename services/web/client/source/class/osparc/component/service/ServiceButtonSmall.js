@@ -94,9 +94,8 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
       return osparc.dashboard.CardBase.filterText(checks, text);
     },
 
-    _filterTags: function(tags) {
-      const checks = this.getServiceModel().getTags().map(tag => tag.name);
-      return osparc.dashboard.CardBase.filterText(checks, tags);
+    _filterTags: function() {
+      return false;
     },
 
     _filterClassifiers: function(classifiers) {
