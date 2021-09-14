@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections import deque
 from pprint import pformat
@@ -23,6 +24,7 @@ from ..docker_api import (
     get_swarm_network,
     remove_dynamic_sidecar_network,
     remove_dynamic_sidecar_stack,
+    remove_dynamic_sidecar_volumes,
 )
 from ..docker_compose_specs import assemble_spec
 from ..docker_service_specs import (
@@ -344,6 +346,11 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
         await remove_dynamic_sidecar_network(
             scheduler_data.dynamic_sidecar_network_name
         )
+
+        # remove created inputs and outputs volumes
+        while not await remove_dynamic_sidecar_volumes(scheduler_data.node_uuid):
+            logger.info("Waiting before trying to remove volumes again")
+            await asyncio.sleep(1)
 
         logger.debug(
             "Removed dynamic-sidecar created services for '%s'",

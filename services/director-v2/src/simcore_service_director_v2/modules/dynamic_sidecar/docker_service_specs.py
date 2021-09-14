@@ -30,6 +30,10 @@ MATCH_SIMCORE_REGISTRY = "${SIMCORE_REGISTRY}"
 MATCH_IMAGE_START = f"{MATCH_SIMCORE_REGISTRY}/"
 MATCH_IMAGE_END = f":{MATCH_SERVICE_VERSION}"
 
+DYNAMIC_SIDECAR_VOLUME_MOUNT_PATH = "/dy-volumes"
+DYNAMIC_SIDECAR_INPUTS_VOLUME = f"{DYNAMIC_SIDECAR_VOLUME_MOUNT_PATH}/inputs"
+DYNAMIC_SIDECAR_OUTPUTS_VOLUME = f"{DYNAMIC_SIDECAR_VOLUME_MOUNT_PATH}/outputs"
+
 
 log = logging.getLogger(__name__)
 
@@ -510,13 +514,48 @@ async def get_dynamic_sidecar_spec(
     of the dynamic service. The director-v2 directly coordinates with
     the dynamic-sidecar for this purpose.
     """
+    # To avoid collisions for started docker resources a unique identifier is computed:
+    # - avoids container level collisions on same node
+    # - avoids volume level collisions on same node
+    compose_namespace = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{scheduler_data.node_uuid}"
+
     mounts = [
         # docker socket needed to use the docker api
         {
             "Source": "/var/run/docker.sock",
             "Target": "/var/run/docker.sock",
             "Type": "bind",
-        }
+        },
+        # Docker does not allow mounting of subfolders from volumes as the following:
+        #   `volume_name/inputs:/target_folder/inputs`
+        #   `volume_name/outputs:/target_folder/inputs`
+        #
+        # Two separate volumes are required to achieve the following on the spawned
+        # dynamic-sidecar containers:
+        #   `volume_name_inputs:/target_folder/inputs`
+        #   `volume_name_outputs:/target_folder/outputs`
+        {
+            "Source": f"{compose_namespace}_inputs",
+            "Target": DYNAMIC_SIDECAR_INPUTS_VOLUME,
+            "Type": "volume",
+            "VolumeOptions": {
+                "Labels": {
+                    "com.simcore.description": "dynamic-sidecar inputs data volume",
+                    "uuid": f"{scheduler_data.node_uuid}",
+                },
+            },
+        },
+        {
+            "Source": f"{compose_namespace}_outputs",
+            "Target": DYNAMIC_SIDECAR_OUTPUTS_VOLUME,
+            "Type": "volume",
+            "VolumeOptions": {
+                "Labels": {
+                    "com.simcore.description": "dynamic-sidecar outputs data volume",
+                    "uuid": f"{scheduler_data.node_uuid}",
+                },
+            },
+        },
     ]
 
     endpint_spec = {}
@@ -573,9 +612,6 @@ async def get_dynamic_sidecar_spec(
                 "TargetPort": dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
             }
         ]
-
-    # used for the container name to avoid collisions for started containers on the same node
-    compose_namespace = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{scheduler_data.node_uuid}"
 
     create_service_params = {
         "endpoint_spec": endpint_spec,

@@ -1,4 +1,6 @@
 # wraps all calls to underlying docker engine
+
+
 import asyncio
 import logging
 import time
@@ -27,6 +29,52 @@ NO_PENDING_OVERWRITE = {
 }
 
 log = logging.getLogger(__name__)
+
+
+def _monkey_patch_aiodocker() -> None:
+    """Raises an error once the library is up to date."""
+    from aiodocker import volumes
+    from aiodocker.utils import clean_filters
+    from aiodocker.volumes import DockerVolume
+    from packaging.version import parse
+
+    if parse(aiodocker.__version__) > parse("0.21.0"):
+        raise RuntimeError(
+            "Please check that PR https://github.com/aio-libs/aiodocker/pull/623 "
+            "is not part of the current bump version. "
+            "Otherwise, if the current PR is part of this new release "
+            "remove monkey_patch."
+        )
+
+    # pylint: disable=protected-access
+    # pylint: disable=redefined-builtin
+    async def list(self, *, filters=None):
+        """
+        Return a list of volumes
+
+        Args:
+            filters: a dict with a list of filters
+
+        Available filters:
+            dangling=<boolean>
+            driver=<volume-driver-name>
+            label=<key> or label=<key>:<value>
+            name=<volume-name>
+        """
+        params = {} if filters is None else {"filters": clean_filters(filters)}
+
+        data = await self.docker._query_json("volumes", params=params)
+        return data
+
+    async def get(self, id):
+        data = await self.docker._query_json("volumes/{id}".format(id=id), method="GET")
+        return DockerVolume(self.docker, data["Name"])
+
+    volumes.DockerVolumes.list = list
+    setattr(volumes.DockerVolumes, "get", get)
+
+
+_monkey_patch_aiodocker()
 
 
 @asynccontextmanager
@@ -320,6 +368,28 @@ async def remove_dynamic_sidecar_network(network_name: str) -> bool:
             "containers attaced to it."
         )
         log.warning(message)
+        return False
+
+
+async def remove_dynamic_sidecar_volumes(node_uuid: NodeID) -> bool:
+    try:
+        async with docker_client() as client:
+            volumes_response = await client.volumes.list(
+                filters={"label": f"uuid={node_uuid}"}
+            )
+            volumes = volumes_response["Volumes"]
+            for volume_data in volumes:
+                volume = await client.volumes.get(volume_data["Name"])
+                await volume.delete()
+
+            if len(volumes) != 2:
+                log.error("Expected 2 volumes, found %s. %s", len(volumes), volumes)
+                return False
+            return True
+    except GenericDockerError as e:
+        if "volume is in use" not in str(e):
+            message = f"{str(e)}\nUnexpected error detected"
+            log.warning(message)
         return False
 
 
