@@ -222,6 +222,8 @@ class VersionControlRepository(BaseRepository):
 
         Message is added to tag if set otherwise to commit
         """
+        if tag in ["HEAD", HEAD]:
+            raise ValueError(f"tag cannot be named {tag}")
 
         async with self.engine.acquire() as conn:
             # FIXME: get head commit in one execution
@@ -372,9 +374,11 @@ class VersionControlRepository(BaseRepository):
                 elif isinstance(ref_id, int):
                     commit_id = ref_id
                 else:
-                    assert isinstance(ref_id, str)
+                    assert isinstance(ref_id, str)  # nosec
                     # head branch or tag
-                    raise NotImplementedError("WIP: Tag or head branches as ref_id")
+                    raise NotImplementedError(
+                        f"WIP: Tag or head branches as ref_id={ref_id}"
+                    )
 
             if not commit_id or not repo:
                 raise ValueError(

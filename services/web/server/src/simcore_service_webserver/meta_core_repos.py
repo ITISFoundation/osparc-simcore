@@ -54,9 +54,7 @@ async def list_checkpoints(
 
     checkpoints = [Checkpoint.from_commit_log(commit, tags) for commit, tags in logs]
     assert len(checkpoints) <= limit if limit else True  # nosec
-    assert (  # nosec
-        limit <= total_number_of_commits if limit else total_number_of_commits > 0
-    )  # nosec
+    assert total_number_of_commits > 0
 
     return checkpoints, total_number_of_commits
 
@@ -104,10 +102,10 @@ async def update_checkpoint(
     ref_id: RefID,
     *,
     message: Optional[str] = None,
-    tag_name: Optional[str] = None,
+    tag: Optional[str] = None,
 ) -> Checkpoint:
 
-    if message is None and tag_name is None:
+    if message is None and tag is None:
         raise ValueError("Nothing to update")
 
     repo_id, commit_id = await vc_repo.as_repo_and_commit_ids(project_uuid, ref_id)
@@ -115,7 +113,7 @@ async def update_checkpoint(
     if repo_id is None or commit_id is None:
         raise ValueError(f"Could not find reference {ref_id} for {project_uuid}")
 
-    await vc_repo.update_annotations(repo_id, commit_id, message, tag_name)
+    await vc_repo.update_annotations(repo_id, commit_id, message, tag)
 
     commit, tags = await vc_repo.get_commit_log(commit_id)
     return Checkpoint.from_commit_log(commit, tags)

@@ -22,7 +22,7 @@ ProjectDict = Dict
 
 HEAD = f"{__file__}/ref/HEAD"
 
-RefID = Union[str, int]
+RefID = Union[int, str]
 
 
 class Checkpoint(BaseModel):
@@ -68,7 +68,7 @@ class CheckpointApiModel(Checkpoint):
 class CheckpointNew(BaseModel):
     tag: str
     message: Optional[str] = None
-    new_branch: Optional[str] = None
+    # new_branch: Optional[str] = None
 
 
 class CheckpointAnnotations(BaseModel):

@@ -2,10 +2,10 @@ import logging
 from typing import List
 
 from aiohttp import web
+from pydantic.decorator import validate_arguments
 from servicelib.rest_pagination_utils import PageResponseLimitOffset
 
 from ._meta import api_version_prefix as vtag
-from .constants import RQT_USERID_KEY
 from .login.decorators import login_required
 from .meta_api_handlers_base import (
     create_url_for_function,
@@ -21,12 +21,13 @@ from .meta_core_repos import (
     list_repos,
     update_checkpoint_safe,
 )
-from .meta_db import VersionControlRepository
+from .meta_db import HEAD, VersionControlRepository
 from .meta_models_repos import (
     Checkpoint,
     CheckpointAnnotations,
     CheckpointApiModel,
     CheckpointNew,
+    RefID,
     RepoApiModel,
     WorkbenchView,
     WorkbenchViewApiModel,
@@ -40,6 +41,13 @@ logger = logging.getLogger(__name__)
 
 # FIXME: access rights using same approach as in access_layer.py in storage.
 # A user can only check snapshots (subresource) of its project (parent resource)
+
+
+@validate_arguments
+def _normalize_refid(ref_id: RefID) -> RefID:
+    if ref_id == "HEAD":
+        return HEAD
+    return ref_id
 
 
 # API ROUTES HANDLERS ---------------------------------------------------------
@@ -72,7 +80,7 @@ async def _list_repos_handler(request: web.Request):
                     f"{__name__}._list_checkpoints_handler",
                     project_uuid=row.project_uuid,
                 ),
-                **row.dict(),
+                **dict(row.items()),
             }
         )
         for row in repos_rows
@@ -104,7 +112,7 @@ async def _create_checkpoint_handler(request: web.Request):
     checkpoint: Checkpoint = await create_checkpoint_safe(
         vc_repo,
         project_uuid=_project_uuid,  # type: ignore
-        **_body.dict(include={"tag", "message", "new_branch"}),
+        **_body.dict(include={"tag", "message"}),
     )
 
     data = CheckpointApiModel.parse_obj(
@@ -136,10 +144,9 @@ async def _list_checkpoints_handler(request: web.Request):
 
     checkpoints, total = await list_checkpoints_safe(
         vc_repo,
-        url_for,
         project_uuid=_project_uuid,  # type: ignore
-        limit=_limit,
         offset=_offset,
+        limit=_limit,
     )
 
     # parse and validate
@@ -180,7 +187,7 @@ async def _get_checkpoint_handler(request: web.Request):
     vc_repo = VersionControlRepository(request)
 
     _project_uuid = request.match_info["project_uuid"]
-    _ref_id = request.match_info["ref_id"]
+    _ref_id = _normalize_refid(request.match_info["ref_id"])
 
     checkpoint: Checkpoint = await get_checkpoint_safe(
         vc_repo,
@@ -212,7 +219,7 @@ async def _update_checkpoint_annotations_handler(request: web.Request):
     vc_repo = VersionControlRepository(request)
 
     _project_uuid = request.match_info["project_uuid"]
-    _ref_id = request.match_info["ref_id"]
+    _ref_id = _normalize_refid(request.match_info["ref_id"])
 
     _body = CheckpointAnnotations.parse_obj(await request.json())
 
@@ -220,7 +227,7 @@ async def _update_checkpoint_annotations_handler(request: web.Request):
         vc_repo,
         project_uuid=_project_uuid,  # type: ignore
         ref_id=_ref_id,
-        **_body.dict(include={"tag", "message"}),
+        **_body.dict(include={"tag", "message"}, exclude_none=True),
     )
 
     data = CheckpointApiModel.parse_obj(
@@ -245,7 +252,7 @@ async def _checkout_handler(request: web.Request):
     vc_repo = VersionControlRepository(request)
 
     _project_uuid = request.match_info["project_uuid"]
-    _ref_id = request.match_info["ref_id"]
+    _ref_id = _normalize_refid(request.match_info["ref_id"])
 
     checkpoint: Checkpoint = await checkout_checkpoint_safe(
         vc_repo,
@@ -277,7 +284,7 @@ async def _view_project_workbench_handler(request: web.Request):
     vc_repo = VersionControlRepository(request)
 
     _project_uuid = request.match_info["project_uuid"]
-    _ref_id = request.match_info["ref_id"]
+    _ref_id = _normalize_refid(request.match_info["ref_id"])
 
     checkpoint: Checkpoint = await get_checkpoint_safe(
         vc_repo,

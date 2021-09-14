@@ -24,7 +24,7 @@ ProjectDict = Dict[str, Any]
 async def assert_resp_page(
     resp: aiohttp.ClientResponse, expected_total: int, expected_count: int
 ) -> PageResponseLimitOffset:
-    assert resp.status == web.HTTPOk.status_code
+    assert resp.status == web.HTTPOk.status_code, f"Got {await resp.text()}"
     body = await resp.json()
 
     page = PageResponseLimitOffset.parse_obj(body)
