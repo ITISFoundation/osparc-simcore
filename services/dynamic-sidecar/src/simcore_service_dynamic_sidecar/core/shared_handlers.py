@@ -39,7 +39,7 @@ async def remove_the_compose_spec(
 
     command = (
         "docker-compose -p {project} -f {file_path} "
-        "down --remove-orphans -t {stop_and_remove_timeout}"
+        "down --volumes --remove-orphans -t {stop_and_remove_timeout}"
     )
     result = await write_file_and_run_command(
         settings=settings,
