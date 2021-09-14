@@ -92,15 +92,12 @@ async def create_project_snapshot_handler(request: web.Request):
         snapshot_label=request.query.get("snapshot_label"),
     )
 
-    data = SnapshotItem.from_snapshot(snapshot, url_for)
+    data = SnapshotItem.from_snapshot(snapshot, url_for, prefix=__name__)
 
     return enveloped_response(data, status_cls=web.HTTPCreated)
 
 
-@routes.get(
-    f"/{vtag}/projects/{{project_id}}/snapshots",
-    name="list_project_snapshots_handler",
-)
+@routes.get(f"/{vtag}/projects/{{project_id}}/snapshots")
 @login_required
 @permission_required("project.read")
 @handle_request_errors
@@ -129,13 +126,14 @@ async def list_project_snapshots_handler(request: web.Request):
     )
     # TODO: async for snapshot in await list_snapshot is the same?
 
-    data = [SnapshotItem.from_snapshot(snp, url_for) for snp in snapshots]
+    data = [
+        SnapshotItem.from_snapshot(snp, url_for, prefix=__name__) for snp in snapshots
+    ]
     return enveloped_response(data)
 
 
 @routes.get(
     f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}",
-    name="get_project_snapshot_handler",
 )
 @login_required
 @permission_required("project.read")
@@ -160,7 +158,7 @@ async def get_project_snapshot_handler(request: web.Request):
         snapshot_id=request.match_info["snapshot_id"],
     )
 
-    data = SnapshotItem.from_snapshot(snapshot, url_for)
+    data = SnapshotItem.from_snapshot(snapshot, url_for, prefix=__name__)
     return enveloped_response(data)
 
 
@@ -234,7 +232,7 @@ async def patch_project_snapshot_handler(request: web.Request):
         # TODO: skip_return_updated
     )
 
-    data = SnapshotItem.from_snapshot(snapshot, url_for)
+    data = SnapshotItem.from_snapshot(snapshot, url_for, prefix=__name__)
     return enveloped_response(data)
 
 

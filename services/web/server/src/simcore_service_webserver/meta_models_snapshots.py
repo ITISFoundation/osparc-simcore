@@ -73,22 +73,17 @@ class SnapshotItem(Snapshot):
 
     @classmethod
     def from_snapshot(
-        cls, snapshot: Snapshot, url_for: Callable[..., URL]
+        cls, snapshot: Snapshot, url_for: Callable[..., URL], prefix: str
     ) -> "SnapshotItem":
-        # TODO: is this the right place?  requires pre-defined routes
+        # TODO: is this NOT the right place?  requires pre-defined routes
         # how to guarantee routes names
         return cls(
             url=url_for(
-                "get_project_snapshot_handler",
+                f"{prefix}.get_project_snapshot_handler",
                 project_id=snapshot.parent_uuid,
                 snapshot_id=snapshot.id,
             ),
             url_parent=url_for("get_project", project_id=snapshot.parent_uuid),
             url_project=url_for("get_project", project_id=snapshot.project_uuid),
-            url_parameters=url_for(
-                "get_snapshot_parameters_handler",
-                project_id=snapshot.parent_uuid,
-                snapshot_id=snapshot.id,
-            ),
             **snapshot.dict(by_alias=True),
         )
