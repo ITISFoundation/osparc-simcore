@@ -1,14 +1,16 @@
-import logging
-import re
-
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-from typing import Any, Dict, List, Pattern
+import logging
+import re
+from typing import Any, Dict, List
 from unittest import mock
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.tasks import (
     _is_aborted_cb,
@@ -25,17 +27,17 @@ def job_id() -> str:
 
 
 @pytest.fixture
-def user_id() -> int:
+def user_id() -> UserID:
     return 1
 
 
 @pytest.fixture
-def project_id() -> UUID:
+def project_id() -> ProjectID:
     return uuid4()
 
 
 @pytest.fixture
-def node_id() -> UUID:
+def node_id() -> NodeID:
     return uuid4()
 
 
@@ -139,9 +141,9 @@ async def test_run_computational_sidecar(
 def test_run_task_in_service(
     loop,
     job_id: str,
-    user_id: int,
-    project_id: UUID,
-    node_id: UUID,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
     mocker,
     resource_restrictions: Dict[str, Any],
     exp_bootmode: BootMode,
