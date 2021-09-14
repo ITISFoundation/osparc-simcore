@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from contextlib import asynccontextmanager
 from pprint import pformat
 from typing import AsyncIterator, List
@@ -8,9 +7,10 @@ from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from simcore_service_sidecar.task_shared_volume import TaskSharedVolumes
 
+from ..utils import create_dask_worker_logger
 from .models import ContainerHostConfig, DockerContainerConfig
 
-logger = logging.getLogger(__name__)
+logger = create_dask_worker_logger(__name__)
 
 
 async def create_container_config(

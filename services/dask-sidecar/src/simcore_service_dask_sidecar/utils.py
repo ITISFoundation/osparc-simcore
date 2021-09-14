@@ -12,6 +12,10 @@ from .settings import Settings
 logger = logging.getLogger(__name__)
 
 
+def create_dask_worker_logger(name: str) -> logging.Logger:
+    return logging.getLogger(f"distributed.worker.{name}")
+
+
 def wrap_async_call(fct: Awaitable[Any]) -> Any:
     return asyncio.get_event_loop().run_until_complete(fct)
 

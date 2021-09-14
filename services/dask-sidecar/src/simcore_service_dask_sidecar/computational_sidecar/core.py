@@ -1,6 +1,5 @@
 import asyncio
 import json
-import logging
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from json.decoder import JSONDecodeError
@@ -10,21 +9,22 @@ from typing import Any, AsyncIterator, Awaitable, Dict, List, Optional, Type
 from uuid import uuid4
 
 from aiodocker import Docker
-from simcore_service_dask_sidecar.computational_sidecar.errors import (
-    ServiceBadFormattedOutputError,
-    ServiceMissingOutputError,
-    ServiceRunError,
-)
 from simcore_service_sidecar.task_shared_volume import TaskSharedVolumes
 
+from ..utils import create_dask_worker_logger
 from .docker_utils import (
     create_container_config,
     managed_container,
     managed_monitor_container_log_task,
     pull_image,
 )
+from .errors import (
+    ServiceBadFormattedOutputError,
+    ServiceMissingOutputError,
+    ServiceRunError,
+)
 
-logger = logging.getLogger(__name__)
+logger = create_dask_worker_logger(__name__)
 CONTAINER_WAIT_TIME_SECS = 2
 
 

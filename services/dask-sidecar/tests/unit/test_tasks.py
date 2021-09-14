@@ -4,11 +4,14 @@
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Type
+from pprint import pformat
+from typing import Any, Dict, List
 from unittest import mock
 from uuid import uuid4
 
+import dask
 import pytest
+from distributed import Client
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
@@ -60,6 +63,18 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, mock.Mock]:
     }
 
 
+@pytest.fixture
+def dask_client() -> Client:
+    print(pformat(dask.config.get("distributed")))
+    with dask.config.set(
+        {
+            "logging.distributed.worker": logging.DEBUG,
+        }
+    ):
+        with Client(n_workers=1) as client:
+            yield client
+
+
 @pytest.mark.parametrize(
     "service_key, service_version, command, input_data, output_data_keys, expected_output_data, expected_logs",
     [
@@ -94,7 +109,7 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, mock.Mock]:
     ],
 )
 async def test_run_computational_sidecar(
-    dask_subsystem_mock: Dict[str, mock.Mock],
+    dask_client: Client,
     service_key: str,
     service_version: str,
     command: List[str],
@@ -105,13 +120,16 @@ async def test_run_computational_sidecar(
     caplog,
 ):
     caplog.set_level(logging.INFO)
-    output_data = await run_computational_sidecar(
-        service_key=service_key,
-        service_version=service_version,
-        input_data=input_data,
-        output_data_keys=output_data_keys,
-        command=command,
+    future = dask_client.submit(
+        run_computational_sidecar,
+        service_key,
+        service_version,
+        input_data,
+        output_data_keys,
+        command,
+        resources={},
     )
+    output_data = future.result()
 
     # check that the task produces expected logs
     for log in expected_logs:

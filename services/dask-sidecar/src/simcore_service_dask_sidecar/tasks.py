@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from typing import Any, Dict, List, Optional, Type, cast
 
 from dask.distributed import get_worker
@@ -13,8 +12,9 @@ from simcore_service_sidecar.cli import run_sidecar
 from .computational_sidecar.core import ComputationalSidecar
 from .meta import print_banner
 from .settings import Settings
+from .utils import create_dask_worker_logger
 
-log = logging.getLogger(__name__)
+log = create_dask_worker_logger(__name__)
 
 print_banner()
 
@@ -25,6 +25,7 @@ def get_settings() -> str:
 
 def _get_dask_task_state() -> Optional[TaskState]:
     worker = get_worker()
+    worker.log_event("myevent", "it sucks")
     return worker.tasks.get(worker.get_current_task())
 
 
@@ -35,7 +36,7 @@ def _is_aborted_cb() -> bool:
 
 
 def _get_task_boot_mode(task: Optional[TaskState]) -> BootMode:
-    if not task:
+    if not task or not task.resource_restrictions:
         return BootMode.CPU
     if task.resource_restrictions.get("MPI", 0) > 0:
         return BootMode.MPI
@@ -44,7 +45,7 @@ def _get_task_boot_mode(task: Optional[TaskState]) -> BootMode:
     return BootMode.CPU
 
 
-async def run_computational_sidecar(
+async def _run_computational_sidecar_async(
     service_key: str,
     service_version: str,
     input_data: Dict[str, Any],
@@ -61,12 +62,28 @@ async def run_computational_sidecar(
     _retry = 0
     _max_retries = 1
     _sidecar_bootmode = _get_task_boot_mode(task)
-
     async with ComputationalSidecar(
         service_key, service_version, input_data, output_data_keys
     ) as sidecar:
         output_data = await sidecar.run(command=command)
     return output_data
+
+
+def run_computational_sidecar(
+    service_key: str,
+    service_version: str,
+    input_data: Dict[str, Any],
+    output_data_keys: Dict[str, Any],
+    command: List[str],
+) -> Dict[str, Any]:
+    # TODO: redirect the stdout to logging if possible
+    print("this message is printed")
+
+    return asyncio.get_event_loop().run_until_complete(
+        _run_computational_sidecar_async(
+            service_key, service_version, input_data, output_data_keys, command
+        )
+    )
 
 
 def run_task_in_service(
