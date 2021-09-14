@@ -3,7 +3,8 @@
 # pylint: disable=unused-variable
 import logging
 import re
-from typing import Any, Dict, List
+from pathlib import Path
+from typing import Any, Dict, List, Type
 from unittest import mock
 from uuid import uuid4
 
@@ -60,7 +61,7 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, mock.Mock]:
 
 
 @pytest.mark.parametrize(
-    "service_key, service_version, command, input_data, expected_output_data, expected_logs",
+    "service_key, service_version, command, input_data, output_data_keys, expected_output_data, expected_logs",
     [
         (
             "ubuntu",
@@ -71,6 +72,7 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, mock.Mock]:
                 'echo hello && echo {\\"pytest_output_1\\":\\"is quite an amazing feat\\"} > ${OUTPUT_FOLDER}/outputs.json',
             ],
             {},
+            {"pytest_output_1": {"type": str}},
             {"pytest_output_1": "is quite an amazing feat"},
             ["hello"],
         ),
@@ -79,7 +81,14 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, mock.Mock]:
             "2.1.1",
             [],
             {"input_2": 2, "input_4": 1},
-            {"output_2": re.compile(r"\d")},
+            {
+                "output_1": {"type": Path, "name": "single_number.txt"},
+                "output_2": {"type": int},
+            },
+            {
+                "output_1": re.compile(r".+/single_number.txt"),
+                "output_2": re.compile(r"\d"),
+            },
             ["Remaining sleep time"],
         ),
     ],
@@ -90,6 +99,7 @@ async def test_run_computational_sidecar(
     service_version: str,
     command: List[str],
     input_data: Dict[str, Any],
+    output_data_keys: Dict[str, Any],
     expected_output_data: Dict[str, Any],
     expected_logs: List[str],
     caplog,
@@ -99,6 +109,7 @@ async def test_run_computational_sidecar(
         service_key=service_key,
         service_version=service_version,
         input_data=input_data,
+        output_data_keys=output_data_keys,
         command=command,
     )
 

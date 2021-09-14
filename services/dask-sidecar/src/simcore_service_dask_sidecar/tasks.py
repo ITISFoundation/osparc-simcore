@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Type, cast
 
 from dask.distributed import get_worker
 from distributed.worker import TaskState
@@ -48,6 +48,7 @@ async def run_computational_sidecar(
     service_key: str,
     service_version: str,
     input_data: Dict[str, Any],
+    output_data_keys: Dict[str, Type],
     command: List[str],
 ) -> Dict[str, Any]:
     log.debug(
@@ -62,7 +63,7 @@ async def run_computational_sidecar(
     _sidecar_bootmode = _get_task_boot_mode(task)
 
     async with ComputationalSidecar(
-        service_key, service_version, input_data
+        service_key, service_version, input_data, output_data_keys
     ) as sidecar:
         output_data = await sidecar.run(command=command)
     return output_data
