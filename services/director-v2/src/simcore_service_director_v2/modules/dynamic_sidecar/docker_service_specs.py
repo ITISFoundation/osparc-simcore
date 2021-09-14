@@ -12,7 +12,11 @@ from models_library.service_settings_labels import (
 from models_library.services import ServiceKeyVersion
 
 from ...api.dependencies.director_v0 import DirectorV0Client
-from ...core.settings import DynamicSidecarSettings, DynamicSidecarTraefikSettings
+from ...core.settings import (
+    DynamicSidecarSettings,
+    DynamicSidecarTraefikSettings,
+    PGSettings,
+)
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 from ...models.schemas.dynamic_services import SchedulerData, ServiceType
 from ...utils.registry import get_dynamic_sidecar_env_vars
@@ -492,13 +496,21 @@ async def merge_settings_before_use(
     return SimcoreServiceSettingsLabel.parse_obj(settings)
 
 
-def _get_dy_sidecar_env_vars(scheduler_data: SchedulerData) -> Dict[str, str]:
+def _get_dy_sidecar_env_vars(
+    scheduler_data: SchedulerData, pg_settings: PGSettings
+) -> Dict[str, str]:
     return {
-        "DY_SIDECAR_PATH_INPUTS": str(scheduler_data.paths_mapping.inputs_path),
-        "DY_SIDECAR_PATH_OUTPUTS": str(scheduler_data.paths_mapping.outputs_path),
+        "DY_SIDECAR_PATH_INPUTS": f"{scheduler_data.paths_mapping.inputs_path}",
+        "DY_SIDECAR_PATH_OUTPUTS": f"{scheduler_data.paths_mapping.outputs_path}",
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
         "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
         "DY_SIDECAR_NODE_ID": f"{scheduler_data.node_uuid}",
+        "POSTGRES_HOST": f"{pg_settings.POSTGRES_HOST}",
+        "POSTGRES_ENDPOINT": f"{pg_settings.POSTGRES_HOST}:{pg_settings.POSTGRES_PORT}",
+        "POSTGRES_PASSWORD": f"{pg_settings.POSTGRES_PASSWORD}",
+        "POSTGRES_PORT": f"{pg_settings.POSTGRES_PORT}",
+        "POSTGRES_USER": f"{pg_settings.POSTGRES_USER}",
+        "POSTGRES_DB": f"{pg_settings.POSTGRES_DB}",
     }
 
 
@@ -508,6 +520,7 @@ async def get_dynamic_sidecar_spec(
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
     settings: SimcoreServiceSettingsLabel,
+    pg_settings: PGSettings,
 ) -> Dict[str, Any]:
     """
     The dynamic-sidecar is responsible for managing the lifecycle
@@ -645,7 +658,7 @@ async def get_dynamic_sidecar_spec(
                     "SIMCORE_HOST_NAME": scheduler_data.service_name,
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
                     **get_dynamic_sidecar_env_vars(dynamic_sidecar_settings.REGISTRY),
-                    **_get_dy_sidecar_env_vars(scheduler_data),
+                    **_get_dy_sidecar_env_vars(scheduler_data, pg_settings),
                 },
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,

@@ -117,6 +117,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             dynamic_sidecar_network_id=dynamic_sidecar_network_id,
             swarm_network_id=swarm_network_id,
             settings=settings,
+            pg_settings=app.state.settings.POSTGRES,
         )
         logger.debug(
             "dynamic-sidecar create_service_params %s",
