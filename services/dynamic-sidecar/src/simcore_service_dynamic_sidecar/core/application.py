@@ -7,6 +7,10 @@ from .._meta import __version__, api_vtag
 from ..api import main_router
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
+from ..modules.directory_watcher import (
+    setup_directory_watcher,
+    teardown_directory_watcher,
+)
 from .remote_debug import setup as remote_debug_setup
 from .settings import DynamicSidecarSettings
 from .shared_handlers import on_shutdown_handler
@@ -69,6 +73,7 @@ def assemble_application() -> FastAPI:
         app: FastAPI,
     ) -> Callable[[], Coroutine[Any, Any, None]]:
         async def on_startup() -> None:
+            await setup_directory_watcher()
             await login_registry(app.state.settings.REGISTRY_SETTINGS)
             print(WELCOME_MSG, flush=True)
 
@@ -76,6 +81,7 @@ def assemble_application() -> FastAPI:
 
     # setting up handler for lifecycle
     async def on_shutdown() -> None:
+        await teardown_directory_watcher()
         await on_shutdown_handler(application)
         logger.info("shutdown cleanup completed")
 
