@@ -40,10 +40,6 @@ qx.Class.define("osparc.utils.Services", {
       dynamic: {
         label: "Interactive",
         icon: "@FontAwesome5Solid/mouse-pointer/"
-      },
-      container: {
-        label: "Group of nodes",
-        icon: "@FontAwesome5Solid/box-open/"
       }
     },
 
