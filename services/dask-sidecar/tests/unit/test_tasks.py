@@ -129,12 +129,16 @@ async def test_run_computational_sidecar(
         command,
         resources={},
     )
+
+    worker_name = next(iter(dask_client.scheduler_info()["workers"]))
+
     output_data = future.result()
 
     # check that the task produces expected logs
     for log in expected_logs:
         assert re.search(
-            rf"\[{service_key}:{service_version} - .+\/.+\]: {log}", caplog.text
+            rf"\[{service_key}:{service_version} - .+\/.+\]: {log}",
+            dask_client.get_worker_logs()[worker_name],
         )
 
     for k, v in expected_output_data.items():
