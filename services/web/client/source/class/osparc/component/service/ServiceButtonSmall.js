@@ -33,6 +33,8 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
     if (serviceModel) {
       this.setServiceModel(serviceModel);
     }
+
+    this.subscribeToFilterGroup("serviceCatalog");
   },
 
   properties: {
@@ -95,8 +97,13 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
     },
 
     _filterTags: function(tags) {
-      const checks = this.getServiceModel().getTags().map(tag => tag.name);
-      return osparc.dashboard.CardBase.filterText(checks, tags);
+      if (tags && tags.length) {
+        const type = this.getServiceModel().getType() || "";
+        if (!tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
+          return true;
+        }
+      }
+      return false;
     },
 
     _filterClassifiers: function(classifiers) {
