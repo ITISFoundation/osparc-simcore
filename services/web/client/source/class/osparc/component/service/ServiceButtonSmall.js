@@ -20,7 +20,7 @@
  * It also adds filtering capabilities.
  */
 qx.Class.define("osparc.component.service.ServiceButtonSmall", {
-  extend: osparc.dashboard.StudyBrowserButtonBase,
+  extend: osparc.dashboard.GridButtonBase,
 
   construct: function(serviceModel) {
     this.base(arguments);
@@ -33,13 +33,15 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
     if (serviceModel) {
       this.setServiceModel(serviceModel);
     }
+
+    this.subscribeToFilterGroup("serviceCatalog");
   },
 
   properties: {
     serviceModel: {
       check: "qx.core.Object",
       nullable: false,
-      apply: "__applyResourceData"
+      apply: "__applyServiceModel"
     }
   },
 
@@ -50,7 +52,7 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
   },
 
   members: {
-    __applyResourceData: function(serviceModel) {
+    __applyServiceModel: function(serviceModel) {
       serviceModel.bind("name", this.getChildControl("title"), "value");
       if (serviceModel.getThumbnail()) {
         this.setIcon(serviceModel.getThumbnail());
@@ -85,19 +87,16 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
       }
     },
 
-    __filterText: function(text) {
-      if (text) {
-        const checks = [
-          this.getServiceModel().getName()
-        ];
-        if (checks.filter(label => label.toLowerCase().trim().includes(text)).length == 0) {
-          return true;
-        }
-      }
-      return false;
+    _filterText: function(text) {
+      const checks = [
+        this.getServiceModel().getName(),
+        this.getServiceModel().getDescription(),
+        this.getServiceModel().getContact()
+      ];
+      return osparc.dashboard.CardBase.filterText(checks, text);
     },
 
-    __filterTags: function(tags) {
+    _filterTags: function(tags) {
       if (tags && tags.length) {
         const type = this.getServiceModel().getType() || "";
         if (!tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
@@ -107,14 +106,9 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
       return false;
     },
 
-    _shouldApplyFilter: function(data) {
-      if (this.__filterText(data.text)) {
-        return true;
-      }
-      if (this.__filterTags(data.tags)) {
-        return true;
-      }
-      return false;
+    _filterClassifiers: function(classifiers) {
+      const checks = this.getServiceModel().getClassifiers();
+      return osparc.dashboard.CardBase.filterText(checks, classifiers);
     }
   }
 });

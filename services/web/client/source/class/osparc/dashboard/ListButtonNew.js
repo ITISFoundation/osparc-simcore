@@ -5,18 +5,15 @@
    https://osparc.io
 
    Copyright:
-     2018 IT'IS Foundation, https://itis.swiss
+     2021 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
 
    Authors:
      * Odei Maiz (odeimaiz)
-     * Tobias Oetiker (oetiker)
 
 ************************************************************************ */
-
-/* eslint "qx-rules/no-refs-in-members": "warn" */
 
 /**
  * Widget used mainly by StudyBrowser for displaying Studies
@@ -24,8 +21,8 @@
  * It consists of a thumbnail and creator and last change as caption
  */
 
-qx.Class.define("osparc.dashboard.StudyBrowserButtonNew", {
-  extend: osparc.dashboard.StudyBrowserButtonBase,
+qx.Class.define("osparc.dashboard.ListButtonNew", {
+  extend: osparc.dashboard.ListButtonBase,
 
   construct: function() {
     this.base(arguments);
@@ -38,10 +35,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonNew", {
       const title = this.getChildControl("title");
       title.setValue(this.tr("Empty Study"));
 
-      const desc = this.getChildControl("subtitle-text");
-      desc.setValue(this.tr("Start with a empty study").toString());
+      const desc = this.getChildControl("description");
+      desc.setValue(this.tr("Start with an empty study").toString());
 
-      this.setIcon("@FontAwesome5Solid/plus/60");
+      this.setIcon(osparc.dashboard.CardBase.NEW_ICON);
     },
 
     _onToggleChange: function(e) {

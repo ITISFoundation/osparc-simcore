@@ -65,6 +65,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       studyList.sort(sortByProperty("lastChangeDate"));
     },
 
+    isCardButtonItem: function(card) {
+      return (card instanceof osparc.dashboard.GridButtonItem || card instanceof osparc.dashboard.ListButtonItem);
+    },
+
     PAGINATED_STUDIES: 10,
     MIN_FILTERED_STUDIES: 15
   },

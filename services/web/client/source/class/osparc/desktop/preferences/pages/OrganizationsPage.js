@@ -51,7 +51,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       });
       createOrgBtn.addListener("execute", function() {
         const newOrg = true;
-        const orgEditor = new osparc.dashboard.OrganizationEditor(newOrg);
+        const orgEditor = new osparc.component.editor.OrganizationEditor(newOrg);
         const title = this.tr("Organization Details Editor");
         const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 250);
         orgEditor.addListener("createOrg", () => {
@@ -268,7 +268,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       }
 
       const newOrg = false;
-      const orgEditor = new osparc.dashboard.OrganizationEditor(newOrg);
+      const orgEditor = new osparc.component.editor.OrganizationEditor(newOrg);
       org.bind("gid", orgEditor, "gid");
       org.bind("label", orgEditor, "label");
       org.bind("description", orgEditor, "description");

@@ -39,6 +39,8 @@ def minimal_director_config(project_env_devel_environment, monkeypatch):
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_CELERY_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "0")
 
 
 @pytest.fixture
@@ -240,6 +242,7 @@ async def test_get_service_extras(
 
 
 async def test_get_service_labels(
+    minimal_director_config: None,
     minimal_app: FastAPI,
     mocked_director_service_fcts,
     fake_service_labels: Dict[str, Any],
@@ -255,6 +258,7 @@ async def test_get_service_labels(
 
 
 async def test_get_running_service_details(
+    minimal_director_config: None,
     minimal_app: FastAPI,
     mocked_director_service_fcts,
     fake_running_service_details: RunningDynamicServiceDetails,

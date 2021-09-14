@@ -5,10 +5,12 @@ from uuid import UUID
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
-from simcore_service_webserver.snapshots_models import Snapshot
+from simcore_postgres_database.models.projects_snapshots import projects_snapshots
+from sqlalchemy import not_
 
 from .db_base_repository import BaseRepository
 from .projects.projects_db import APP_PROJECT_DBAPI
+from .snapshots_models import Snapshot
 
 # alias for readability
 # SEE https://pydantic-docs.helpmanual.io/usage/models/#orm-mode-aka-arbitrary-class-instances
@@ -19,23 +21,7 @@ ProjectRow = RowProxy
 ProjectDict = Dict
 
 
-###################################################
-# FIXME: some temporary placeholders until next PR
-# from simcore_postgres_database.models.projects_snapshots import projects_snapshots
-
-projects_snapshots: sa.Table
-
-
-class TemporaryNoDatabaseSchemasAvailable(BaseRepository):
-    def __init__(self, request: web.Request):
-        super().__init__(request)
-        raise NotImplementedError()
-
-
-###################################################
-
-
-class SnapshotsRepository(TemporaryNoDatabaseSchemasAvailable):
+class SnapshotsRepository(BaseRepository):
     """
     Abstracts access to snapshots database table
 
@@ -46,12 +32,14 @@ class SnapshotsRepository(TemporaryNoDatabaseSchemasAvailable):
         self, project_uuid: UUID, limit: Optional[int] = None
     ) -> List[SnapshotRow]:
         """Returns sorted list of snapshots in project"""
-        # TODO: add pagination
 
         async with self.engine.acquire() as conn:
             query = (
                 projects_snapshots.select()
-                .where(projects_snapshots.c.parent_uuid == str(project_uuid))
+                .where(
+                    (projects_snapshots.c.parent_uuid == str(project_uuid))
+                    & not_(projects_snapshots.c.deleted)
+                )
                 .order_by(projects_snapshots.c.id)
             )
             if limit and limit > 0:
@@ -63,21 +51,13 @@ class SnapshotsRepository(TemporaryNoDatabaseSchemasAvailable):
         async with self.engine.acquire() as conn:
             return await (await conn.execute(query)).first()
 
-    async def get_by_name(
-        self, project_uuid: UUID, snapshot_name: str
-    ) -> Optional[SnapshotRow]:
-        query = projects_snapshots.select().where(
-            (projects_snapshots.c.parent_uuid == str(project_uuid))
-            & (projects_snapshots.c.name == snapshot_name)
-        )
-        return await self._first(query)
-
     async def get_by_id(
         self, parent_uuid: UUID, snapshot_id: int
     ) -> Optional[SnapshotRow]:
         query = projects_snapshots.select().where(
             (projects_snapshots.c.parent_uuid == str(parent_uuid))
             & (projects_snapshots.c.id == snapshot_id)
+            & not_(projects_snapshots.c.deleted)
         )
         return await self._first(query)
 
@@ -90,8 +70,27 @@ class SnapshotsRepository(TemporaryNoDatabaseSchemasAvailable):
         query = projects_snapshots.select().where(
             (projects_snapshots.c.parent_uuid == str(parent_uuid))
             & (projects_snapshots.c.project_uuid == str(snapshot_project_uuid))
+            & not_(projects_snapshots.c.deleted)
         )
         return await self._first(query)
+
+    async def mark_as_deleted(
+        self, project_id: UUID, snapshot_id: int
+    ) -> Optional[UUID]:
+        # pylint: disable=no-value-for-parameter
+        query = (
+            projects_snapshots.update()
+            .where(
+                (projects_snapshots.c.parent_uuid == str(project_id))
+                & (projects_snapshots.c.id == snapshot_id)
+            )
+            .values(deleted=True)
+            .returning(projects_snapshots.c.project_uuid)
+        )
+
+        async with self.engine.acquire() as conn:
+            if snapshot_project_uuid := await conn.scalar(query):
+                return UUID(snapshot_project_uuid)
 
     async def list_snapshot_names(self, parent_uuid: UUID) -> List[Tuple[str, int]]:
         query = (
@@ -113,8 +112,26 @@ class SnapshotsRepository(TemporaryNoDatabaseSchemasAvailable):
         assert row  # nosec
         return row
 
+    async def update_name(
+        self, parent_uuid: UUID, snapshot_id: int, name: str
+    ) -> Optional[SnapshotRow]:
+        # pylint: disable=no-value-for-parameter
+        query = (
+            projects_snapshots.update()
+            .returning(projects_snapshots)
+            .where(
+                (projects_snapshots.c.parent_uuid == str(parent_uuid))
+                & (projects_snapshots.c.id == snapshot_id)
+                & not_(projects_snapshots.c.deleted)
+            )
+            .values(name=name)
+        )
 
-class ProjectsRepository(TemporaryNoDatabaseSchemasAvailable):
+        row = await self._first(query)
+        return row
+
+
+class ProjectsRepository(BaseRepository):
     def __init__(self, request: web.Request):
         super().__init__(request)
         self._dbapi = request.config_dict[APP_PROJECT_DBAPI]

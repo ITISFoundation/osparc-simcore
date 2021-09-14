@@ -379,6 +379,12 @@ qx.Class.define("osparc.data.model.Node", {
       return uniqueNodes;
     },
 
+    getExposedNodeIDs: function() {
+      const exposedInnerNodes = this.getExposedInnerNodes();
+      const exposedNodeIDs = exposedInnerNodes.map(exposedInnerNode => exposedInnerNode.getNodeId());
+      return exposedNodeIDs;
+    },
+
     populateNodeData: function(nodeData) {
       if (nodeData) {
         if (nodeData.label) {

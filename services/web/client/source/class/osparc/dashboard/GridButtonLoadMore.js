@@ -19,22 +19,13 @@
  * Study card to show that more studies are being fetched
  */
 
-qx.Class.define("osparc.dashboard.StudyBrowserButtonLoadMore", {
-  extend: osparc.dashboard.StudyBrowserButtonBase,
+qx.Class.define("osparc.dashboard.GridButtonLoadMore", {
+  extend: osparc.dashboard.GridButtonBase,
 
   construct: function() {
     this.base(arguments);
 
-    this.__applyFetching(false);
-  },
-
-  properties: {
-    fetching: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      apply: "__applyFetching"
-    }
+    this._applyFetching(false);
   },
 
   members: {
@@ -61,19 +52,19 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonLoadMore", {
       return checkIsOnScreen;
     },
 
-    __applyFetching: function(value) {
+    _applyFetching: function(value) {
       const title = this.getChildControl("title");
       const desc = this.getChildControl("subtitle-text");
       if (value) {
-        title.setValue(this.tr("Loading studies..."));
+        title.setValue(this.tr("Loading..."));
         desc.setValue("");
-        this.setIcon("@FontAwesome5Solid/circle-notch/60");
+        this.setIcon(osparc.dashboard.CardBase.LOADING_ICON);
         this.getChildControl("icon").getChildControl("image").getContentElement()
           .addClass("rotate");
       } else {
         title.setValue(this.tr("Load More"));
         desc.setValue(this.tr("Click to load more").toString());
-        this.setIcon("@FontAwesome5Solid/paw/60");
+        this.setIcon("@FontAwesome5Solid/paw/");
         this.getChildControl("icon").getChildControl("image").getContentElement()
           .removeClass("rotate");
       }

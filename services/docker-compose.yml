@@ -189,12 +189,11 @@ services:
       - default
       - interactive_services_subnet
 
-  sidecar:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
+  dask-sidecar:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    deploy:
-      mode: replicated
-      replicas: 8
+    deploy: &dask-sidecar-deploy
+      mode: global
       endpoint_mode: dnsrr
       resources:
         reservations:
@@ -207,6 +206,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment: &sidecar-environment
+      DASK_SCHEDULER_HOST: ${DASK_SCHEDULER_HOST:-dask-scheduler}
       DEFAULT_MAX_NANO_CPUS: ${DEFAULT_MAX_NANO_CPUS:-0}
       DEFAULT_MAX_MEMORY: ${DEFAULT_MAX_MEMORY:-0}
       RABBIT_HOST: ${RABBIT_HOST}
@@ -235,24 +235,6 @@ services:
       SIDECAR_LOGLEVEL: ${LOG_LEVEL:-WARNING}
       SIDECAR_HOST_HOSTNAME_PATH: ${SIDECAR_HOST_HOSTNAME_PATH:-/home/scu/hostname}
       START_AS_MODE_CPU: ${SIDECAR_FORCE_CPU_NODE:-0}
-
-    networks:
-      - computational_services_subnet
-
-  dask-sidecar:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
-    init: true
-    deploy: &dask-sidecar-deploy
-      mode: global
-      endpoint_mode: dnsrr
-      resources:
-        reservations:
-          cpus: "0.10"
-          memory: "100M"
-    volumes: *sidecar-volumes
-    environment:
-      <<: *sidecar-environment
-      DASK_SCHEDULER_HOST: ${DASK_SCHEDULER_HOST:-dask-scheduler}
     networks:
       - computational_services_subnet
 

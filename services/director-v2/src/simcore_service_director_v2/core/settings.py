@@ -239,17 +239,16 @@ class PGSettings(PostgresSettings):
 
 class CelerySchedulerSettings(BaseCustomSettings):
     DIRECTOR_V2_CELERY_SCHEDULER_ENABLED: bool = Field(
-        True,
-        description="Enables/Disables the scheduler",
+        False, description="Enables/Disables the scheduler", deprecated=True
     )
 
 
 class DaskSchedulerSettings(BaseCustomSettings):
     DIRECTOR_V2_DASK_SCHEDULER_ENABLED: bool = Field(
-        False,
+        True,
     )
     DIRECTOR_V2_DASK_CLIENT_ENABLED: bool = Field(
-        False,
+        True,
     )
     DASK_SCHEDULER_HOST: str = Field(
         "dask-scheduler",

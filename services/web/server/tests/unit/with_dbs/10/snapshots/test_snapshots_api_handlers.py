@@ -10,14 +10,9 @@ from aiohttp import web
 from models_library.projects import Project
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver._meta import api_vtag as vtag
-from simcore_service_webserver.snapshots_models import SnapshotItem
+from simcore_service_webserver.snapshots_models import SnapshotItem, SnapshotPatch
 
 ProjectDict = Dict[str, Any]
-
-
-pytestmark = pytest.mark.skip(
-    reason="Until PR https://github.com/ITISFoundation/osparc-simcore/pull/2519 is merged"
-)
 
 
 async def test_create_snapshot_workflow(client, user_project: ProjectDict):
@@ -39,7 +34,7 @@ async def test_create_snapshot_workflow(client, user_project: ProjectDict):
 
     # create snapshot
     resp = await client.post(f"/{vtag}/projects/{project_uuid}/snapshots")
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, web.HTTPCreated)
 
     assert data
     snapshot = SnapshotItem.parse_obj(data)
@@ -62,7 +57,7 @@ async def test_create_snapshot_workflow(client, user_project: ProjectDict):
         exclude=different_fields
     )
 
-    # snapshot projects are hiddden, and therefore NOT listed
+    # snapshot projects are hidden, and therefore NOT listed
     resp = await client.get(f"/{vtag}/projects")
     data, _ = await assert_status(resp, web.HTTPOk)
 
@@ -79,3 +74,95 @@ async def test_create_snapshot_workflow(client, user_project: ProjectDict):
 
     assert len(data) == 1
     assert snapshot == SnapshotItem.parse_obj(data[0])
+
+
+async def test_create_snapshot(client, user_project: ProjectDict):
+
+    project_uuid = user_project["uuid"]
+
+    # create snapshot
+    resp = await client.post(f"/{vtag}/projects/{project_uuid}/snapshots")
+    data, _ = await assert_status(resp, web.HTTPCreated)
+
+    assert data
+    snapshot = SnapshotItem.parse_obj(data)
+
+    assert str(snapshot.parent_uuid) == project_uuid
+
+    # snapshot project can be now retrieved
+    resp = await client.get(f"/{vtag}/projects/{snapshot.project_uuid}")
+    data, _ = await assert_status(resp, web.HTTPOk)
+
+    assert data
+    snapshot_project = Project.parse_obj(data)
+    assert snapshot_project.uuid == snapshot.project_uuid
+
+
+async def test_delete_snapshot(
+    client, user_project: ProjectDict, storage_subsystem_mock, mocker
+):
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api.director_v2.delete_pipeline",
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api.delete_data_folders_of_project",
+    )
+
+    project_uuid = user_project["uuid"]
+
+    # create snapshot
+    resp = await client.post(f"/{vtag}/projects/{project_uuid}/snapshots")
+    data, _ = await assert_status(resp, web.HTTPCreated)
+
+    assert data
+    snapshot = SnapshotItem.parse_obj(data)
+
+    # delete snapshot
+    resp = await client.delete(
+        f"/{vtag}/projects/{project_uuid}/snapshots/{snapshot.id}"
+    )
+    await assert_status(resp, web.HTTPNoContent)
+
+    # not there
+    resp = await client.get(f"/{vtag}/projects/{project_uuid}/snapshots/{snapshot.id}")
+    await assert_status(resp, web.HTTPNotFound)
+
+    # project is also deleted
+    resp = await client.get(f"/{vtag}/projects/{snapshot.project_uuid}")
+    await assert_status(resp, web.HTTPNotFound)
+
+
+@pytest.fixture
+async def fake_snapshot(client, user_project: ProjectDict) -> SnapshotItem:
+    project_uuid = user_project["uuid"]
+
+    # create snapshot
+    resp = await client.post(f"/{vtag}/projects/{project_uuid}/snapshots")
+    data, _ = await assert_status(resp, web.HTTPCreated)
+
+    assert data
+    snapshot = SnapshotItem.parse_obj(data)
+    return snapshot
+
+
+async def test_update_snapshot_label(client, fake_snapshot: SnapshotItem):
+
+    assert SnapshotPatch(name="new label")
+
+    resp = await client.patch(fake_snapshot.url.path, json={"name": "new label"})
+    data, _ = await assert_status(resp, web.HTTPOk)
+
+    assert data
+    updated_snapshot = SnapshotItem.parse_obj(data)
+    assert updated_snapshot.label == "new label"
+
+    # the rest is the same
+    different_fields = {"label"}
+    assert updated_snapshot.dict(exclude=different_fields) == fake_snapshot.dict(
+        exclude=different_fields
+    )
+
+    # let's get it again
+    resp = await client.get(updated_snapshot.url.path)
+    data, _ = await assert_status(resp, web.HTTPOk)
+    assert SnapshotItem.parse_obj(data).label == "new label"

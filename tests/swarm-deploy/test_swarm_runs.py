@@ -93,7 +93,6 @@ def test_all_services_up(
         "postgres",
         "rabbit",
         "redis",
-        "sidecar",
         "static-webserver",
         "storage",
         "traefik",
