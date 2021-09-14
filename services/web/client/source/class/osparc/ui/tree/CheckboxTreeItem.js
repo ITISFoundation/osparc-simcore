@@ -28,11 +28,16 @@ qx.Class.define("osparc.ui.tree.CheckboxTreeItem", {
       this.addSpacer();
       this.addOpenButton();
       this._add(this.getChildControl("checkbox"));
-      this.addLabel();
+      const label = this.getChildControl("label");
+      this._add(label, {
+        flex: 1
+      });
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
       });
       this.addHint();
+
+      this.setMaxWidth(240);
     },
 
     _createChildControlImpl: function(id) {
