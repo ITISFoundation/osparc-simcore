@@ -20,7 +20,7 @@ from simcore_postgres_database.utils_aiopg_orm import BaseOrm
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .db_base_repository import BaseRepository
-from .meta_models_repos import CommitLog, CommitProxy, SHA1Str, TagProxy
+from .meta_models_repos import HEAD, CommitLog, CommitProxy, RefID, SHA1Str, TagProxy
 
 
 def eval_checksum(workbench: Dict[str, Any]) -> SHA1Str:
@@ -58,7 +58,9 @@ class VersionControlRepository(BaseRepository):
                 connection,
                 readonly={"id", "created", "modified"},
                 # pylint: disable=no-member
-                writeonce=set(c for c in projects_vc_commits.columns.keys()),
+                writeonce=set(
+                    c for c in projects_vc_commits.columns.keys() if c != "message"
+                ),
             )
 
     class TagsOrm(BaseOrm[int]):
@@ -149,7 +151,9 @@ class VersionControlRepository(BaseRepository):
 
                 return repo_id
 
-    async def _get_HEAD(self, repo_id: int, conn: SAConnection) -> Optional[RowProxy]:
+    async def _get_head_branch(
+        self, repo_id: int, conn: SAConnection
+    ) -> Optional[RowProxy]:
         """Returns None if detached head"""
         h = await self.HeadsOrm(conn).fetch("head_branch_id", rowid=repo_id)
         if h and h.head_branch_id:
@@ -159,7 +163,14 @@ class VersionControlRepository(BaseRepository):
 
     async def get_head_commit(self, repo_id: int) -> Optional[RowProxy]:
         async with self.engine.acquire() as conn:
-            return await self._get_HEAD(repo_id, conn)
+            branch = await self._get_head_branch(repo_id, conn)
+            if branch and branch.head_commit_id:
+                commit = (
+                    await self.CommitsOrm(conn)
+                    .set_filter(id=branch.head_commit_id)
+                    .fetch()
+                )
+                return commit
 
     async def commit(
         self, repo_id: int, tag: Optional[str] = None, message: Optional[str] = None
@@ -173,7 +184,7 @@ class VersionControlRepository(BaseRepository):
             # FIXME: get head commit in one execution
 
             # get head commit
-            branch = await self._get_HEAD(repo_id, conn)
+            branch = await self._get_head_branch(repo_id, conn)
             if not branch:
                 raise NotImplementedError("Detached heads still not implemented")
 
@@ -303,3 +314,45 @@ class VersionControlRepository(BaseRepository):
                 logs.append((commit, tags))
 
             return logs, total_count
+
+    async def update_annotations(
+        self,
+        repo_id: int,
+        commit_id: int,
+        message: Optional[str] = None,
+        tag_name: Optional[str] = None,
+    ):
+        async with self.engine.acquire() as conn:
+            if message:
+                await self.CommitsOrm(conn).set_filter(id=commit_id).update(
+                    message=message
+                )
+
+            if tag_name:
+                tag = (
+                    await self.TagsOrm(conn)
+                    .set_filter(repo_id=repo_id, commit_id=commit_id, hidden=False)
+                    .fetch("id")
+                )
+
+                if tag:
+                    await self.TagsOrm(conn).set_filter(rowid=tag.id).update(
+                        name=tag_name
+                    )
+
+    async def as_repo_and_commit_ids(self, project_uuid: UUID, ref_id: RefID):
+        commit_id: Optional[int] = None
+        repo_id: Optional[int] = await self.get_repo_id(project_uuid)
+        if repo_id:
+            if ref_id == HEAD:
+                commit = await self.get_head_commit(repo_id)
+                if commit:
+                    commit_id = commit.id
+            elif isinstance(ref_id, int):
+                commit_id = ref_id
+            else:
+                assert isinstance(ref_id, str)
+                # head branch or tag
+                raise NotImplementedError("WIP: Tag or head branches as ref_id")
+
+        return repo_id, commit_id

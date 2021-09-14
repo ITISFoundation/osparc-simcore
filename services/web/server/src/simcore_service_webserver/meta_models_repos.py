@@ -20,6 +20,10 @@ CommitLog = Tuple[CommitProxy, List[TagProxy]]
 ProjectProxy = RowProxy
 ProjectDict = Dict
 
+HEAD = f"{__file__}/ref/HEAD"
+
+RefID = Union[str, int]
+
 
 class Checkpoint(BaseModel):
     id: PositiveInt

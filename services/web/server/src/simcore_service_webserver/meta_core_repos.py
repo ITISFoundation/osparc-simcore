@@ -8,8 +8,7 @@
     (*) This is a concept introduced for the front-end to avoid using
     more fine grained concepts as tags and commits directly
 """
-from contextlib import suppress
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 from uuid import UUID
 
 from aiohttp import web
@@ -17,11 +16,7 @@ from aiopg.sa.result import RowProxy
 from pydantic import NonNegativeInt, PositiveInt, validate_arguments
 from simcore_service_webserver.meta_db import CommitLog, VersionControlRepository
 
-from .meta_models_repos import Checkpoint, WorkbenchView
-
-HEAD = f"{__file__}/ref/HEAD"
-
-RefID = Union[str, int]
+from .meta_models_repos import Checkpoint, RefID, WorkbenchView
 
 cfg = {"arbitrary_types_allowed": True}
 
@@ -91,28 +86,16 @@ async def get_checkpoint(
     ref_id: RefID,
 ) -> Checkpoint:
 
-    repo_id = await vc_repo.get_repo_id(project_uuid)
-    if repo_id:
-        commit_id = None
+    try:
+        repo_id, commit_id = await vc_repo.as_repo_and_commit_ids(project_uuid, ref_id)
 
-        if ref_id == HEAD:
-            commit = await vc_repo.get_head_commit(repo_id)
-            if commit:
-                commit_id = commit.id
+        if repo_id is None or commit_id is None:
+            raise ValueError(f"Could not find reference {ref_id} for {project_uuid}")
 
-        elif isinstance(ref_id, int):
-            commit_id = ref_id
-
-        else:
-            assert isinstance(ref_id, str)
-            # head branch or tag
-            raise NotImplementedError("WIP: Tag or head branches as ref_id")
-
-        with suppress(ValueError):
-            commit, tags = await vc_repo.get_commit_log(commit_id)
-            return Checkpoint.from_commit_log(commit, tags)
-
-    raise web.HTTPNotFound(reason="Entrypoint not found")
+        commit, tags = await vc_repo.get_commit_log(commit_id)
+        return Checkpoint.from_commit_log(commit, tags)
+    except ValueError as err:
+        raise web.HTTPNotFound(reason=str(err.args) or "Entrypoint not found") from err
 
 
 async def update_checkpoint(
@@ -121,8 +104,21 @@ async def update_checkpoint(
     ref_id: RefID,
     *,
     message: Optional[str] = None,
+    tag_name: Optional[str] = None,
 ) -> Checkpoint:
-    ...
+
+    if message is None and tag_name is None:
+        raise ValueError("Nothing to update")
+
+    repo_id, commit_id = await vc_repo.as_repo_and_commit_ids(project_uuid, ref_id)
+
+    if repo_id is None or commit_id is None:
+        raise ValueError(f"Could not find reference {ref_id} for {project_uuid}")
+
+    await vc_repo.update_annotations(repo_id, commit_id, message, tag_name)
+
+    commit, tags = await vc_repo.get_commit_log(commit_id)
+    return Checkpoint.from_commit_log(commit, tags)
 
 
 async def get_working_copy(
