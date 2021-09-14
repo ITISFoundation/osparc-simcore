@@ -15,7 +15,7 @@ from servicelib.aiohttp.application_setup import (
     app_module_setup,
 )
 
-from . import meta_api_handlers_repos
+from . import meta_api_handlers_repos, meta_api_handlers_snapshots
 from .constants import APP_SETTINGS_KEY
 from .settings import ApplicationSettings
 
@@ -34,5 +34,5 @@ def setup_meta(app: web.Application):
     if not settings.WEBSERVER_DEV_FEATURES_ENABLED:
         raise SkipModuleSetup(reason="Development feature")
 
-    # TODO: validate routes against OAS
     app.add_routes(meta_api_handlers_repos.routes)
+    app.add_routes(meta_api_handlers_snapshots.routes)
