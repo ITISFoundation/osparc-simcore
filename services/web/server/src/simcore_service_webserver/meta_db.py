@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
@@ -22,6 +23,8 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from .db_base_repository import BaseRepository
 from .meta_models_repos import HEAD, CommitLog, CommitProxy, RefID, SHA1Str, TagProxy
 
+log = logging.getLogger(__name__)
+
 
 def eval_checksum(workbench: Dict[str, Any]) -> SHA1Str:
     # FIXME: dump workbench correctly (i.e. spaces, quotes ... -indepenent)
@@ -34,6 +37,8 @@ class VersionControlRepository(BaseRepository):
     """
     db layer to access multiple tables within projects_version_control
     """
+
+    # FIXME: optimize all db queries
 
     class ReposOrm(BaseOrm[int]):
         def __init__(self, connection: SAConnection):
@@ -98,6 +103,65 @@ class VersionControlRepository(BaseRepository):
 
     # ------------
 
+    async def _get_head_branch(
+        self, repo_id: int, conn: SAConnection
+    ) -> Optional[RowProxy]:
+        if h := await self.HeadsOrm(conn).fetch("head_branch_id", rowid=repo_id):
+            branch = (
+                await self.BranchesOrm(conn)
+                .set_filter(id=h.head_branch_id)
+                .fetch("id name head_commit_id")
+            )
+            return branch
+
+    async def _get_head_commit(
+        self, repo_id: int, conn: SAConnection
+    ) -> Optional[RowProxy]:
+        if branch := await self._get_head_branch(repo_id, conn):
+            commit = (
+                await self.CommitsOrm(conn).set_filter(id=branch.head_commit_id).fetch()
+            )
+            return commit
+
+    async def _update_state(self, repo_id: int, conn: SAConnection):
+
+        head_commit: Optional[RowProxy] = await self._get_head_commit(repo_id, conn)
+
+        # current repo
+        repo_orm = self.ReposOrm(conn).set_filter(id=repo_id)
+        returning_cols = "id project_uuid project_checksum modified"
+        repo = await repo_orm.fetch(returning_cols)
+        assert repo  #  nosec
+
+        # fetch project
+        project_orm = self.ProjectsOrm(conn).set_filter(uuid=repo.project_uuid)
+        project = await project_orm.fetch("last_change_date workbench ui")
+        assert project  # nosec
+
+        checksum: Optional[SHA1Str] = repo.project_checksum
+        if not checksum or (checksum and repo.modified < project.last_change_date):
+            checksum = eval_checksum(project.workbench)
+            repo = await repo_orm.update(returning_cols, project_checksum=checksum)
+            assert repo
+        return repo, head_commit, project
+
+    async def _upsert_snapshot(
+        self, repo: RowProxy, project: RowProxy, conn: SAConnection
+    ):
+        # has changes wrt previous commit
+        # if exists, ui might change
+        insert_stmt = pg_insert(projects_vc_snapshots).values(
+            checksum=repo.project_checksum,
+            content={"workbench": project.workbench, "ui": project.ui},
+        )
+        upsert_snapshot = insert_stmt.on_conflict_do_update(
+            constraint=projects_vc_snapshots.primary_key,
+            set_=dict(content=insert_stmt.excluded.content),
+        )
+        await conn.execute(upsert_snapshot)
+
+    # PUBLIC
+
     async def list_repos(
         self,
         offset: NonNegativeInt = 0,
@@ -151,27 +215,6 @@ class VersionControlRepository(BaseRepository):
 
                 return repo_id
 
-    async def _get_head_branch(
-        self, repo_id: int, conn: SAConnection
-    ) -> Optional[RowProxy]:
-        """Returns None if detached head"""
-        h = await self.HeadsOrm(conn).fetch("head_branch_id", rowid=repo_id)
-        if h and h.head_branch_id:
-            branches_orm = self.BranchesOrm(conn).set_filter(rowid=h.head_branch_id)
-            branch = await branches_orm.fetch("id name head_commit_id")
-            return branch
-
-    async def get_head_commit(self, repo_id: int) -> Optional[RowProxy]:
-        async with self.engine.acquire() as conn:
-            branch = await self._get_head_branch(repo_id, conn)
-            if branch and branch.head_commit_id:
-                commit = (
-                    await self.CommitsOrm(conn)
-                    .set_filter(id=branch.head_commit_id)
-                    .fetch()
-                )
-                return commit
-
     async def commit(
         self, repo_id: int, tag: Optional[str] = None, message: Optional[str] = None
     ) -> int:
@@ -188,92 +231,56 @@ class VersionControlRepository(BaseRepository):
             if not branch:
                 raise NotImplementedError("Detached heads still not implemented")
 
-            branches_orm = self.BranchesOrm(conn).set_filter(rowid=branch.id)
+            log.info("On branch %s", branch.name)
+
+            # get head commit
+            repo, head_commit, project = await self._update_state(repo_id, conn)
+
+            if head_commit is None:
+                previous_checksum = None
+                commit_id = None
+            else:
+                previous_checksum = head_commit.snapshot_checksum
+                commit_id = head_commit.id
 
             async with conn.begin():
-                commits_orm = self.CommitsOrm(conn)
-                head_commit = await commits_orm.fetch(
-                    "id snapshot_checksum", rowid=branch.head_commit_id
-                )
-
-                previous_checksum = ""
-                commit_id = None
-                if head_commit:
-                    previous_checksum = (head_commit.snapshot_checksum,)
-                    commit_id = head_commit.id
-
                 # take a snapshot if needed
-                if snapshot_checksum := await self._add_changes(
-                    repo_id, previous_checksum, conn
-                ):
+                if repo.project_checksum != previous_checksum:
+                    await self._upsert_snapshot(repo, project, conn)
+
                     # commit new snapshot in history
-                    commit_id = await commits_orm.insert(
+                    commit_id = await self.CommitsOrm(conn).insert(
                         repo_id=repo_id,
                         parent_commit_id=commit_id,
                         message=None if tag else message,
-                        snapshot_checksum=snapshot_checksum,
+                        snapshot_checksum=repo.project_checksum,
                     )
                     assert commit_id  # nosec
 
                     # updates head/branch
-                    await branches_orm.update(head_commit_id=commit_id)
+                    await self.BranchesOrm(conn).set_filter(id=branch.id).update(
+                        head_commit_id=commit_id
+                    )
 
-                # tag it (again)
-                if tag:
-                    insert_stmt = pg_insert(projects_vc_tags).values(
-                        repo_id=repo_id,
-                        commit_id=commit_id,
-                        name=tag,
-                        message=message,
-                        hidden=False,
-                    )
-                    upsert_tag = insert_stmt.on_conflict_do_update(
-                        constraint="repo_tag_uniqueness",
-                        set_=dict(message=insert_stmt.excluded.message),
-                    )
-                    await conn.execute(upsert_tag)
+                    # tag it (again)
+                    if tag:
+                        insert_stmt = pg_insert(projects_vc_tags).values(
+                            repo_id=repo_id,
+                            commit_id=commit_id,
+                            name=tag,
+                            message=message,
+                            hidden=False,
+                        )
+                        upsert_tag = insert_stmt.on_conflict_do_update(
+                            constraint="repo_tag_uniqueness",
+                            set_=dict(message=insert_stmt.excluded.message),
+                        )
+                        await conn.execute(upsert_tag)
+                else:
+                    log.info("Nothing to commit, working tree clean")
 
             assert isinstance(commit_id, int)
             return commit_id
-
-    async def _add_changes(
-        self, repo_id: int, previous_checksum, conn
-    ) -> Optional[str]:
-        """
-        Snapshots current working copy and evals checksum
-        Returns checksum if a snapshot is taken because it has changes wrt previous commit
-        """
-        # current repo
-        repo_orm = self.ReposOrm(conn).set_filter(id=repo_id)
-        repo = await repo_orm.fetch("id project_uuid project_checksum modified")
-        assert repo  #  nosec
-
-        # fetch project
-        project_orm = self.ProjectsOrm(conn).set_filter(uuid=repo.project_uuid)
-        project = await project_orm.fetch("workbench ui last_change_date")
-        assert project  # nosec
-
-        checksum = repo.project_checksum
-        if not checksum or (checksum and repo.modified < project.last_change_date):
-            checksum = eval_checksum(project.workbench)
-            await repo_orm.update(project_checksum=checksum)
-
-        if checksum != previous_checksum:
-            # has changes wrt previous commit
-            # if exists, ui might change
-            insert_stmt = pg_insert(projects_vc_snapshots).values(
-                checksum=checksum,
-                content={"workbench": project.workbench, "ui": project.ui},
-            )
-            upsert_snapshot = insert_stmt.on_conflict_do_update(
-                constraint=projects_vc_snapshots.primary_key,
-                set_=dict(content=insert_stmt.excluded.content),
-            )
-            await conn.execute(upsert_snapshot)
-            return checksum
-
-        # no changes
-        return None
 
     async def get_commit_log(self, commit_id: int) -> CommitLog:
         async with self.engine.acquire() as conn:
@@ -340,19 +347,103 @@ class VersionControlRepository(BaseRepository):
                         name=tag_name
                     )
 
-    async def as_repo_and_commit_ids(self, project_uuid: UUID, ref_id: RefID):
-        commit_id: Optional[int] = None
-        repo_id: Optional[int] = await self.get_repo_id(project_uuid)
-        if repo_id:
-            if ref_id == HEAD:
-                commit = await self.get_head_commit(repo_id)
-                if commit:
-                    commit_id = commit.id
-            elif isinstance(ref_id, int):
-                commit_id = ref_id
-            else:
-                assert isinstance(ref_id, str)
-                # head branch or tag
-                raise NotImplementedError("WIP: Tag or head branches as ref_id")
+    async def as_repo_and_commit_ids(
+        self, project_uuid: UUID, ref_id: RefID
+    ) -> Tuple[int, int]:
+        """[summary]
 
-        return repo_id, commit_id
+        :raises NotImplementedError: WIP
+        :raises ValueError: invalid references
+        :return: repo and commit identifiers
+        :rtype: Tuple[int, int]
+        """
+        async with self.engine.acquire() as conn:
+            repo = (
+                await self.ReposOrm(conn)
+                .set_filter(project_uuid=str(project_uuid))
+                .fetch("id")
+            )
+            commit_id = None
+            if repo:
+                if ref_id == HEAD:
+                    commit = await self._get_head_commit(repo.id, conn)
+                    if commit:
+                        commit_id = commit.id
+                elif isinstance(ref_id, int):
+                    commit_id = ref_id
+                else:
+                    assert isinstance(ref_id, str)
+                    # head branch or tag
+                    raise NotImplementedError("WIP: Tag or head branches as ref_id")
+
+            if not commit_id or not repo:
+                raise ValueError(
+                    f"{ref_id} is an invalid reference for project {project_uuid}"
+                )
+
+            return repo.id, commit_id
+
+    async def checkout(self, repo_id: int, commit_id: int) -> int:
+        """checks out working copy of project_uuid to commit ref_id
+
+        :raises RuntimeError: if local copy has changes (i.e. dirty)
+        :return: commit id
+        :rtype: int
+        """
+        async with self.engine.acquire() as conn:
+            repo, head_commit, _ = await self._update_state(repo_id, conn)
+
+            # check if working copy has changes, if so, fail
+            if repo.project_checksum != head_commit.snapshot_checksum:
+                raise RuntimeError(
+                    "Your local changes to the following files would be overwritten by checkout. "
+                    "Cannot checkout without commit changes first."
+                )
+
+            # already in head commit
+            if head_commit.id == commit_id:
+                return commit_id
+
+            async with conn.begin():
+                commit = (
+                    await self.CommitsOrm(conn)
+                    .set_filter(id=commit_id)
+                    .fetch("snapshot_checksum")
+                )
+                assert commit  # nosec
+
+                # restores project snapshot
+                snapshot = (
+                    await self.SnapshotsOrm(conn)
+                    .set_filter(commit.snapshot_checksum)
+                    .fetch("content")
+                )
+                assert snapshot  # nosec
+
+                await self.ProjectsOrm(conn).set_filter(uuid=repo.project_uuid).update(
+                    **snapshot.content
+                )
+
+                # create detached branch that points to (repo_id, commit_id)
+                # upsert "detached" branch
+                insert_stmt = (
+                    pg_insert(projects_vc_branches)
+                    .values(
+                        repo_id=repo_id,
+                        head_commit_id=commit_id,
+                        name="DETACHED",
+                    )
+                    .returning(projects_vc_branches.c.id)
+                )
+                upsert_tag = insert_stmt.on_conflict_do_update(
+                    constraint="repo_branch_uniqueness",
+                    set_=dict(head_commit_id=insert_stmt.excluded.head_commit_id),
+                )
+                branch_id = await conn.scalar(upsert_tag)
+
+                # updates head
+                await self.HeadsOrm(conn).set_filter(repo_id=repo_id).update(
+                    head_branch_id=branch_id
+                )
+
+        return commit_id

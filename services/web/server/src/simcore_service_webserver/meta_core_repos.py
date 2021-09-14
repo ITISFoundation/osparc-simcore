@@ -133,7 +133,18 @@ async def checkout_checkpoint(
     project_uuid: UUID,
     ref_id: RefID,
 ) -> Checkpoint:
-    ...
+
+    repo_id, commit_id = await vc_repo.as_repo_and_commit_ids(project_uuid, ref_id)
+
+    # check if working copy has changes, if so, auto commit it
+    try:
+        commit_id = await vc_repo.checkout(repo_id, commit_id)
+    except RuntimeError:
+        await vc_repo.commit(repo_id, message="auto commit")
+        commit_id = await vc_repo.checkout(repo_id, commit_id)
+
+    commit, tags = await vc_repo.get_commit_log(commit_id)
+    return Checkpoint.from_commit_log(commit, tags)
 
 
 async def get_workbench(
