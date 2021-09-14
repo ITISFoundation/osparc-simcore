@@ -49,6 +49,49 @@ class ComputationalSidecar:
     input_data: Dict[str, Any]
     output_data_keys: Dict[str, Any]
 
+    async def _retrieve_output_data(
+        self, task_volumes: TaskSharedVolumes
+    ) -> Dict[str, Any]:
+        output_data = {}
+        for output_key, output_params in self.output_data_keys.items():
+            # path outputs are located in the outputs folder
+            if output_params["type"] in [Path, Optional[Path]]:
+                # their file names might be the key or the alternative name if it exists
+                file_path = task_volumes.output_folder / output_params.get(
+                    "name", output_key
+                )
+                if not file_path.exists():
+                    if output_params["type"] == Path:
+                        raise ServiceMissingOutputError(
+                            self.service_key, self.service_version, output_key
+                        )
+                    # optional output
+                    continue
+                output_data[output_key] = file_path
+            else:
+                # all other outputs should be located in a JSON file
+                output_data_file = task_volumes.output_folder / "outputs.json"
+                if not output_data_file.exists():
+                    if output_params["type"] != Optional[Any]:
+                        raise ServiceMissingOutputError(
+                            self.service_key, self.service_version, output_key
+                        )
+                    continue
+                try:
+                    service_output = json.loads(output_data_file.read_text())
+                    if output_key not in service_output:
+                        if output_params["type"] != Optional[Any]:
+                            raise ServiceMissingOutputError(
+                                self.service_key, self.service_version, output_key
+                            )
+                        continue
+                    output_data[output_key] = service_output[output_key]
+                except JSONDecodeError as exc:
+                    raise ServiceBadFormattedOutputError(
+                        self.service_key, self.service_version, output_key
+                    ) from exc
+        return output_data
+
     async def run(self, command: List[str]) -> Dict[str, Any]:
         async with Docker() as docker_client, managed_task_volumes(
             Path(f"/tmp/{uuid4()}")
@@ -90,46 +133,7 @@ class ComputationalSidecar:
                             await container.log(stdout=True, stderr=True, tail=20),
                         )
             # get the outputs
-            output_data = {}
-            for output_key, output_params in self.output_data_keys.items():
-                # path outputs are located in the outputs folder
-                if output_params["type"] in [Path, Optional[Path]]:
-                    # their file names might be the key or the alternative name if it exists
-                    file_path = task_volumes.output_folder / output_params.get(
-                        "name", output_key
-                    )
-                    if not file_path.exists():
-                        if output_params["type"] == Path:
-                            raise ServiceMissingOutputError(
-                                self.service_key, self.service_version, output_key
-                            )
-                        # optional output
-                        continue
-                    output_data[output_key] = file_path
-                else:
-                    # all other outputs should be located in a JSON file
-                    output_data_file = task_volumes.output_folder / "outputs.json"
-                    if not output_data_file.exists():
-                        if output_params["type"] != Optional[Any]:
-                            raise ServiceMissingOutputError(
-                                self.service_key, self.service_version, output_key
-                            )
-                        continue
-                    try:
-                        service_output = json.loads(output_data_file.read_text())
-                        if output_key not in service_output:
-                            if output_params["type"] != Optional[Any]:
-                                raise ServiceMissingOutputError(
-                                    self.service_key, self.service_version, output_key
-                                )
-                            continue
-                        output_data[output_key] = service_output[output_key]
-                    except JSONDecodeError as exc:
-                        raise ServiceBadFormattedOutputError(
-                            self.service_key, self.service_version, output_key
-                        ) from exc
-
-            return output_data
+            return await self._retrieve_output_data(task_volumes)
 
     async def __aenter__(self) -> "ComputationalSidecar":
         return self
