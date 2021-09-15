@@ -4,7 +4,7 @@
 
 import logging
 from copy import deepcopy
-from typing import Any, Callable, Dict, Iterator
+from typing import Any, Awaitable, Callable, Dict, Iterator
 from uuid import UUID
 
 import aiohttp
@@ -140,11 +140,10 @@ async def user_project(
 
 
 @pytest.fixture
-def user_project_modifier(
+def do_update_user_project(
     logged_user: UserDict, client: TestClient, faker: Faker
-) -> Callable:
-    async def go(project_uuid: UUID):
-
+) -> Callable[[UUID], Awaitable]:
+    async def _doit(project_uuid: UUID):
         resp: aiohttp.ClientResponse = await client.get(
             f"{vtag}/projects/{project_uuid}"
         )
@@ -166,4 +165,25 @@ def user_project_modifier(
         body = await resp.json()
         assert resp.status == 200, str(body)
 
-    return go
+    return _doit
+
+
+@pytest.fixture
+def do_delete_user_project(
+    logged_user: UserDict, client: TestClient, mocker
+) -> Callable[[UUID], Awaitable]:
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api.director_v2.delete_pipeline",
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api.delete_data_folders_of_project",
+    )
+
+    async def _doit(project_uuid: UUID):
+
+        resp: aiohttp.ClientResponse = await client.delete(
+            f"{vtag}/projects/{project_uuid}"
+        )
+        assert resp.status == 204
+
+    return _doit

@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Any, Callable, Dict, Type
+from typing import Any, Awaitable, Callable, Dict, Type
 from uuid import UUID
 
 import aiohttp
@@ -49,7 +49,9 @@ async def assert_status_and_body(
 
 @pytest.mark.acceptance_test
 async def test_workflow(
-    client: TestClient, user_project: ProjectDict, user_project_modifier: Callable
+    client: TestClient,
+    user_project: ProjectDict,
+    do_update_user_project: Callable[[UUID], Awaitable],
 ):
 
     project_uuid = user_project["uuid"]
@@ -133,7 +135,7 @@ async def test_workflow(
     assert data["workbench"] == project.workbench
 
     # do some changes in project
-    await user_project_modifier(project.uuid)
+    await do_update_user_project(project.uuid)
 
     # CREATE new checkpoint
     resp = await client.post(
@@ -197,8 +199,30 @@ async def test_create_checkpoint_without_changes(
     ), "Consecutive create w/o changes shall not add a new checkpoint"
 
 
-def test_invalid_tags():
-    # unique
-    # no-spaces
-    # only letters and numbers
-    ...
+async def test_delete_project_and_repo(
+    client: TestClient,
+    project_uuid: UUID,
+    do_delete_user_project: Callable[[UUID], Awaitable],
+):
+
+    # CREATE a checkpoint
+    resp = await client.post(
+        f"/{vtag}/repos/projects/{project_uuid}/checkpoints",
+        json={"tag": "v1", "message": "first commit"},
+    )
+    data, _ = await assert_status(resp, web.HTTPCreated)
+
+    # LIST
+    resp = await client.get(f"/{vtag}/repos/projects/{project_uuid}/checkpoints")
+    await assert_resp_page(resp, expected_total=1, expected_count=1)
+
+    # DELETE project -> projects_vc_*  deletion follow
+    await do_delete_user_project(project_uuid)
+
+    # LIST empty
+    resp = await client.get(f"/{vtag}/repos/projects/{project_uuid}/checkpoints")
+    await assert_resp_page(resp, expected_total=0, expected_count=0)
+
+    # GET HEAD
+    resp = await client.get(f"/{vtag}/repos/projects/{project_uuid}/HEAD")
+    await assert_status(resp, web.HTTPNotFound)

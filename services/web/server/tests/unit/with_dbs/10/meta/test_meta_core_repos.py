@@ -45,7 +45,7 @@ async def test_workflow(
     user_id: int,
     user_project: ProjectDict,
     aiohttp_mocked_request: web.Request,
-    user_project_modifier: Callable,
+    do_update_user_project: Callable,
 ):
     vc_repo = VersionControlRepository(aiohttp_mocked_request)
 
@@ -61,7 +61,7 @@ async def test_workflow(
     # TODO: project w/o changes, raise error .. or add new tag?
 
     # -------------------------------------
-    await user_project_modifier(project_uuid)
+    await do_update_user_project(project_uuid)
 
     checkpoint2 = await create_checkpoint(
         vc_repo, project_uuid, tag="v1", message="second commit"
@@ -97,7 +97,7 @@ async def test_workflow(
 
     # -------------------------------------
     # creating branches
-    await user_project_modifier(project_uuid)
+    await do_update_user_project(project_uuid)
 
     checkpoint3 = await create_checkpoint(
         vc_repo,
