@@ -1,7 +1,7 @@
 import logging
 import traceback
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import httpx
 from fastapi import FastAPI
@@ -157,12 +157,12 @@ class DynamicSidecarClient:
             raise e
 
     async def service_state_save(
-        self, dynamic_sidecar_endpoint: str, path: Path
+        self, dynamic_sidecar_endpoint: str, state_paths: List[Path]
     ) -> None:
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers:save-state")
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
-                response = await client.put(url, data=dict(path=path))
+                response = await client.put(url, json=[str(p) for p in state_paths])
             if response.status_code != 204:
                 message = (
                     f"ERROR while saving service state: "
@@ -175,12 +175,12 @@ class DynamicSidecarClient:
             raise e
 
     async def service_state_restore(
-        self, dynamic_sidecar_endpoint: str, path: Path
+        self, dynamic_sidecar_endpoint: str, state_paths: List[Path]
     ) -> None:
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers:restore-state")
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
-                response = await client.put(url, data=dict(path=path))
+                response = await client.put(url, json=[str(p) for p in state_paths])
             if response.status_code != 204:
                 message = (
                     f"ERROR while restoring service state: "
