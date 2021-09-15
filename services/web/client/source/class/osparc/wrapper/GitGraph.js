@@ -37,38 +37,38 @@ qx.Class.define("osparc.wrapper.GitGraph", {
     URL: "https://github.com/nicoespeon/gitgraph.js/tree/master/packages/gitgraph-js",
 
     getTemplateConfig: function() {
+      const textColor = qx.theme.manager.Color.getInstance().resolve("text");
       return {
         colors: [
-          "#F00",
-          "#0F0",
-          "#0F0",
-          "#0F0",
-          "#0F0",
-          "#0F0"
-        ], // branches colors, 1 per column
+          "#1486da",
+          "#e01a94",
+          "#e01a94",
+          "#e01a94",
+          "#e01a94"
+        ],
         commit: {
-          spacingX: 5,
-          spacingY: 10,
+          spacing: 20,
           dot: {
-            size: 6
+            size: 3
           },
           message: {
             displayAuthor: false,
             displayBranch: false,
             displayHash: false,
-            font: "normal 11pt Roboto"
+            color: textColor,
+            font: "normal 13px Roboto"
           },
-          shouldDisplayTooltipsInCompactMode: true, // default = true
-          tooltipHTMLFormatter: commit => {
-            console.log(commit);
-            return commit.sha1 + ": " + commit.message;
-          }
+          shouldDisplayTooltipsInCompactMode: true,
+          tooltipHTMLFormatter: commit => commit.message
         },
         branch: {
-          lineWidth: 3,
-          spacingX: 10,
-          spacingY: 15,
-          showLabel: true // display branch names on graph
+          spacing: 20,
+          lineWidth: 1,
+          label: {
+            display: false,
+            bgColor: "transparent",
+            strokeColor: "transparent"
+          }
         }
       };
     }
@@ -113,15 +113,25 @@ qx.Class.define("osparc.wrapper.GitGraph", {
     },
 
     createGraph: function(graphContainer) {
-      // osparc.utils.Utils.setZoom(graphContainer, 0.6);
-
       const myTemplate = GitgraphJS.templateExtend("metro", this.self().getTemplateConfig());
 
-      // Instantiate the graph.
       const gitgraph = GitgraphJS.createGitgraph(graphContainer, {
-        template: myTemplate
+        // "mode": "compact",
+        "template": myTemplate
       });
+      // gitgraph.canvas.addEventListener("commit:mouseover", e => this.__mouseOver(e));
+      // gitgraph.canvas.addEventListener("commit:mouseout", e => this.__mouseOut(e));
       return gitgraph;
+    },
+
+    __mouseOver: function(e) {
+      console.log("You're over a commit", e.data);
+      this.style.cursor = "pointer";
+    },
+
+    __mouseOut: function(e) {
+      console.log("You just left this commit", e.data);
+      this.style.cursor = "auto";
     },
 
     example: function(gitgraph) {
@@ -130,13 +140,15 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       master.commit("Some changes");
 
       const it1 = master.branch("iteration-1");
-      it1.commit("x=1");
+      it1.commit("[iteration-1] - x=1");
 
       const it2 = master.branch("iteration-2");
       it2.commit("x=2");
 
       const it3 = master.branch("iteration-3");
       it3.commit("x=3");
+
+      master.commit("Changes after iterations");
     }
   }
 });

@@ -53,6 +53,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
         flex: 1
       });
       this.__rebuildSnapshotsTable();
+      this.__rebuildSnapshotsGraph();
       this.__buildSnapshotPreview();
 
       const buttonsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox());
@@ -74,6 +75,21 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
     },
 
     __rebuildSnapshotsTable: function() {
+      if (this.__snapshotsTable) {
+        this.__snapshotsSection.remove(this.__snapshotsTable);
+      }
+
+      const snapshotsTable = this.__snapshotsTable = new osparc.component.snapshots.Snapshots(this.__primaryStudy);
+      snapshotsTable.addListener("cellTap", e => {
+        this.__snapshotsSelected(e);
+      });
+
+      this.__snapshotsSection.addAt(snapshotsTable, 0, {
+        width: "33%"
+      });
+    },
+
+    __rebuildSnapshotsGraph: function(params) {
       if (this.__gitGraphCanvas) {
         this.__snapshotsSection.remove(this.__gitGraphCanvas);
       }
@@ -90,30 +106,15 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
           }, this);
       });
 
-      this.__snapshotsSection.addAt(gitGraphCanvas, 0, {
-        width: "50%"
-      });
-    },
-
-    __rebuildSnapshotsTableOld: function() {
-      if (this.__snapshotsTable) {
-        this.__snapshotsSection.remove(this.__snapshotsTable);
-      }
-
-      const snapshotsTable = this.__snapshotsTable = new osparc.component.snapshots.Snapshots(this.__primaryStudy);
-      snapshotsTable.addListener("cellTap", e => {
-        this.__snapshotsSelected(e);
-      });
-
-      this.__snapshotsSection.addAt(snapshotsTable, 0, {
-        width: "50%"
+      this.__snapshotsSection.addAt(gitGraphCanvas, 1, {
+        width: "33%"
       });
     },
 
     __buildSnapshotPreview: function() {
       const snapshotPreview = this.__snapshotPreview = new osparc.component.workbench.WorkbenchUIPreview();
-      this.__snapshotsSection.addAt(snapshotPreview, 1, {
-        width: "50%"
+      this.__snapshotsSection.addAt(snapshotPreview, 2, {
+        width: "33%"
       });
     },
 
