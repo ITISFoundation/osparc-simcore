@@ -6,7 +6,6 @@ from typing import Any, Deque, Dict, List, Optional, Type
 
 import httpx
 from fastapi import FastAPI
-from servicelib.utils import logged_gather
 
 from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.dynamic_services import (
@@ -223,22 +222,11 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
-        tasks = deque()
 
         logger.info("Calling into dynamic-sidecar to restore state")
-
-        tasks.append(
-            dynamic_sidecar_client.service_state_restore(
-                dynamic_sidecar_endpoint, scheduler_data.paths_mapping.inputs_path
-            )
+        await dynamic_sidecar_client.service_state_restore(
+            dynamic_sidecar_endpoint, scheduler_data.paths_mapping.state_paths
         )
-        for state_path in scheduler_data.paths_mapping.state_paths:
-            tasks.append(
-                dynamic_sidecar_client.service_state_restore(
-                    dynamic_sidecar_endpoint, state_path
-                )
-            )
-        await logged_gather(*tasks, reraise=False)
         logger.info("State restored by dynamic-sidecar")
 
         scheduler_data.dynamic_sidecar.service_environment_prepared = True
@@ -320,22 +308,11 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
         if scheduler_data.dynamic_sidecar.service_removal_data.save_state:
             dynamic_sidecar_client = get_dynamic_sidecar_client(app)
             dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
-            tasks = deque()
 
             logger.info("Calling into dynamic-sidecar to save state")
-
-            tasks.append(
-                dynamic_sidecar_client.service_state_save(
-                    dynamic_sidecar_endpoint, scheduler_data.paths_mapping.outputs_path
-                )
+            await dynamic_sidecar_client.service_state_save(
+                dynamic_sidecar_endpoint, scheduler_data.paths_mapping.state_paths
             )
-            for state_path in scheduler_data.paths_mapping.state_paths:
-                tasks.append(
-                    dynamic_sidecar_client.service_state_save(
-                        dynamic_sidecar_endpoint, state_path
-                    )
-                )
-            await logged_gather(*tasks, reraise=False)
             logger.info("State saved by dynamic-sidecar")
 
         # remove the 2 services
@@ -351,6 +328,8 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
         # remove created inputs and outputs volumes
         while not await remove_dynamic_sidecar_volumes(scheduler_data.node_uuid):
             logger.info("Waiting before trying to remove volumes again")
+            # TODO: maybe use an exponential wait capped
+            # at some point and make it fail afterwards
             await asyncio.sleep(1)
 
         logger.debug(
