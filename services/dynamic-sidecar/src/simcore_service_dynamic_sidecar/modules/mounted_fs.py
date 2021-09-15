@@ -9,7 +9,7 @@ from simcore_service_dynamic_sidecar.core.settings import (
 
 DY_VOLUMES = Path("/dy-volumes")
 
-_mounted_paths: Optional["MountedVolumes"] = None
+_mounted_volumes: Optional["MountedVolumes"] = None
 
 
 def _ensure_path(path: Path) -> Path:
@@ -69,26 +69,26 @@ class MountedVolumes:
 
 
 def setup_mounted_fs() -> MountedVolumes:
-    global _mounted_paths  # pylint: disable=global-statement
+    global _mounted_volumes  # pylint: disable=global-statement
 
     settings: DynamicSidecarSettings = get_settings()
 
-    _mounted_paths = MountedVolumes(
+    _mounted_volumes = MountedVolumes(
         inputs_path=settings.DY_SIDECAR_PATH_INPUTS,
         outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS,
     )
-    _mounted_paths.ensure_directories()
+    _mounted_volumes.ensure_directories()
 
-    return _mounted_paths
+    return _mounted_volumes
 
 
 def get_mounted_volumes() -> MountedVolumes:
-    global _mounted_paths  # pylint: disable=global-statement
-    if _mounted_paths is None:
+    global _mounted_volumes  # pylint: disable=global-statement
+    if _mounted_volumes is None:
         raise RuntimeError(
             f"{MountedVolumes.__name__} was not initialized, did not call setup"
         )
-    return _mounted_paths
+    return _mounted_volumes
 
 
 __all__ = ["get_mounted_volumes", "MountedVolumes"]
