@@ -1,10 +1,10 @@
-import asyncio
 import logging
 from collections import deque
 from pprint import pformat
 from typing import Any, Deque, Dict, List, Optional, Type
 
 import httpx
+import tenacity
 from fastapi import FastAPI
 
 from ....core.settings import DynamicSidecarSettings
@@ -32,7 +32,7 @@ from ..docker_service_specs import (
     get_dynamic_sidecar_spec,
     merge_settings_before_use,
 )
-from ..errors import DynamicSidecarNetworkError
+from ..errors import DynamicSidecarNetworkError, GenericDockerError
 from .abc import DynamicSchedulerEvent
 
 logger = logging.getLogger(__name__)
@@ -326,11 +326,16 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
         )
 
         # remove created inputs and outputs volumes
-        while not await remove_dynamic_sidecar_volumes(scheduler_data.node_uuid):
-            logger.info("Waiting before trying to remove volumes again")
-            # TODO: maybe use an exponential wait capped
-            # at some point and make it fail afterwards
-            await asyncio.sleep(1)
+        async for attempt in tenacity.AsyncRetrying(
+            wait=tenacity.wait_exponential(min=1),
+            stop=tenacity.stop_after_delay(20),
+            retry_error_cls=GenericDockerError,
+        ):
+            with attempt:
+                logger.info(
+                    "Trying to remove volumes for %s", scheduler_data.service_name
+                )
+                await remove_dynamic_sidecar_volumes(scheduler_data.node_uuid)
 
         logger.debug(
             "Removed dynamic-sidecar created services for '%s'",
