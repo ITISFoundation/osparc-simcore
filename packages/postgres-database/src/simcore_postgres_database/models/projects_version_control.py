@@ -32,7 +32,7 @@ projects_vc_repos = sa.Table(
         sa.ForeignKey(
             projects.c.uuid,
             name="fk_projects_vc_repos_project_uuid",
-            # ondelete: if project is deleted, this repo is invalidated.
+            ondelete="CASCADE",  # if project is deleted, all references in project_vc_* tables are deleted except for projects_vc_snapshots.
         ),
         nullable=False,
         unique=True,
