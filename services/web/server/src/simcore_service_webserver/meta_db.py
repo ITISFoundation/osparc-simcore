@@ -460,16 +460,14 @@ class VersionControlRepository(BaseRepository):
         self, repo_id: int, commit_id: int
     ) -> Optional[RowProxy]:
         async with self.engine.acquire() as conn:
-            commit = (
-                await self.CommitsOrm(conn)
+            if (
+                commit := await self.CommitsOrm(conn)
                 .set_filter(repo_id=repo_id, id=commit_id)
                 .fetch("snapshot_checksum")
-            )
-            if commit:
-                snapshot = (
-                    await self.SnapshotsOrm(conn)
+            ):
+                if (
+                    snapshot := await self.SnapshotsOrm(conn)
                     .set_filter(checksum=commit.snapshot_checksum)
                     .fetch("content")
-                )
-                if snapshot:
+                ):
                     return snapshot.content
