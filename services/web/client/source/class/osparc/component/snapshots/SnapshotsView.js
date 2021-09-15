@@ -98,11 +98,10 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
 
       gitGraphCanvas.addListenerOnce("appear", () => {
         const el = gitGraphCanvas.getContentElement().getDomElement();
-        const gitGraphWrapper = osparc.wrapper.GitGraph.getInstance();
-        gitGraphWrapper.init()
-          .then(() => {
-            const gitGraph = gitGraphWrapper.createGraph(el);
-            gitGraphWrapper.example(gitGraph);
+        const gitGraphWrapper = new osparc.wrapper.GitGraph();
+        gitGraphWrapper.init(el)
+          .then(gitgraph => {
+            gitGraphWrapper.buildExample();
           }, this);
       });
 

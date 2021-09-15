@@ -28,8 +28,7 @@
  */
 
 qx.Class.define("osparc.wrapper.GitGraph", {
-  extend: qx.core.Object,
-  type: "singleton",
+  extend: qx.ui.core.Widget,
 
   statics: {
     NAME: "GitGraph",
@@ -83,10 +82,13 @@ qx.Class.define("osparc.wrapper.GitGraph", {
   },
 
   members: {
-    init: function() {
+    __gitgraph: null,
+
+    init: function(graphContainer) {
       return new Promise((resolve, reject) => {
         if (this.getLibReady()) {
-          resolve();
+          const gitgraph = this.__createGraph(graphContainer);
+          resolve(gitgraph);
           return;
         }
 
@@ -98,8 +100,9 @@ qx.Class.define("osparc.wrapper.GitGraph", {
 
         dynLoader.addListenerOnce("ready", e => {
           console.log(gitGraphPath + " loaded");
+          const gitgraph = this.__createGraph(graphContainer);
           this.setLibReady(true);
-          resolve();
+          resolve(gitgraph);
         }, this);
 
         dynLoader.addListener("failed", e => {
@@ -112,43 +115,76 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       });
     },
 
-    createGraph: function(graphContainer) {
+    __createGraph: function(graphContainer) {
       const myTemplate = GitgraphJS.templateExtend("metro", this.self().getTemplateConfig());
 
-      const gitgraph = GitgraphJS.createGitgraph(graphContainer, {
+      const gitgraph = this.__gitgraph = GitgraphJS.createGitgraph(graphContainer, {
         // "mode": "compact",
         "template": myTemplate
       });
-      // gitgraph.canvas.addEventListener("commit:mouseover", e => this.__mouseOver(e));
-      // gitgraph.canvas.addEventListener("commit:mouseout", e => this.__mouseOut(e));
       return gitgraph;
     },
 
-    __mouseOver: function(e) {
-      console.log("You're over a commit", e.data);
-      this.style.cursor = "pointer";
+    __dotClick: function(commit) {
+      console.log("Click on dot", commit);
     },
 
-    __mouseOut: function(e) {
-      console.log("You just left this commit", e.data);
-      this.style.cursor = "auto";
+    __dotOver: function(commit) {
+      console.log("You're over a commit", commit);
+      this.set({
+        cursor: "pointer"
+      });
     },
 
-    example: function(gitgraph) {
-      const master = gitgraph.branch("master");
-      master.commit("Initial commit");
-      master.commit("Some changes");
+    __dotOut: function(commit) {
+      console.log("You just left this commit", commit);
+      this.set({
+        cursor: "auto"
+      });
+    },
+
+    __messageClick: function(commit) {
+      console.log("Click on message", commit);
+    },
+
+    commit: function(branch, msg) {
+      const that = this;
+      branch.commit({
+        subject: msg,
+        onClick(commit) {
+          // eslint-disable-next-line no-underscore-dangle
+          that.__dotClick(commit);
+        },
+        onMouseOver(commit) {
+          // eslint-disable-next-line no-underscore-dangle
+          that.__dotOver(commit);
+        },
+        onMouseOut(commit) {
+          // eslint-disable-next-line no-underscore-dangle
+          that.__dotOut(commit);
+        },
+        onMessageClick(commit) {
+          // eslint-disable-next-line no-underscore-dangle
+          that.__messageClick(commit);
+        }
+      });
+    },
+
+    buildExample: function() {
+      const master = this.__gitgraph.branch("master");
+      this.commit(master, "Initial commit");
+      this.commit(master, "Some changes");
 
       const it1 = master.branch("iteration-1");
-      it1.commit("[iteration-1] - x=1");
+      this.commit(it1, "x=1");
 
       const it2 = master.branch("iteration-2");
-      it2.commit("x=2");
+      this.commit(it2, "x=2");
 
       const it3 = master.branch("iteration-3");
-      it3.commit("x=3");
+      this.commit(it3, "x=3");
 
-      master.commit("Changes after iterations");
+      this.commit(master, "Changes after iterations");
     }
   }
 });
