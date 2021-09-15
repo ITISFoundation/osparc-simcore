@@ -372,24 +372,18 @@ async def remove_dynamic_sidecar_network(network_name: str) -> bool:
 
 
 async def remove_dynamic_sidecar_volumes(node_uuid: NodeID) -> bool:
-    try:
-        async with docker_client() as client:
-            volumes_response = await client.volumes.list(
-                filters={"label": f"uuid={node_uuid}"}
-            )
-            volumes = volumes_response["Volumes"]
-            for volume_data in volumes:
-                volume = await client.volumes.get(volume_data["Name"])
-                await volume.delete()
+    async with docker_client() as client:
+        volumes_response = await client.volumes.list(
+            filters={"label": f"uuid={node_uuid}"}
+        )
+        volumes = volumes_response["Volumes"]
+        for volume_data in volumes:
+            volume = await client.volumes.get(volume_data["Name"])
+            await volume.delete()
 
-            if len(volumes) != 2:
-                log.error("Expected 2 volumes, found %s. %s", len(volumes), volumes)
-            return True
-    except GenericDockerError as e:
-        if "volume is in use" not in str(e):
-            message = f"{str(e)}\nUnexpected error detected"
-            log.warning(message)
-        return False
+        if len(volumes) != 2:
+            log.error("Expected 2 volumes, found %s. %s", len(volumes), volumes)
+        return True
 
 
 async def list_dynamic_sidecar_services(
