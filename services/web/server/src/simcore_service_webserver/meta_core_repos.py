@@ -157,6 +157,7 @@ async def get_workbench(
     raise web.HTTPNotFound(reason=f"Could not find snapshot for project {project_uuid}")
 
 
+list_repos_safe = validate_arguments(list_repos, config=cfg)
 list_checkpoints_safe = validate_arguments(list_checkpoints, config=cfg)
 create_checkpoint_safe = validate_arguments(create_checkpoint, config=cfg)
 get_checkpoint_safe = validate_arguments(get_checkpoint, config=cfg)

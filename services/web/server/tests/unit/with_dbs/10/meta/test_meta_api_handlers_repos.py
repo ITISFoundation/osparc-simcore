@@ -89,9 +89,13 @@ async def test_workflow(client: TestClient, user_project: ProjectDict):
     data, _ = await assert_status(resp, web.HTTPOk)
     assert CheckpointApiModel.parse_obj(data) == checkpoint1
 
-    # GET checkpoint with tag
-    resp = await client.get(f"/{vtag}/repos/projects/{project_uuid}/checkpoints/v1")
-    assert CheckpointApiModel.parse_obj(data) == checkpoint1
+    # TODO: GET checkpoint with tag
+    with pytest.raises(aiohttp.ClientResponseError) as excinfo:
+        resp = await client.get(f"/{vtag}/repos/projects/{project_uuid}/checkpoints/v1")
+        resp.raise_for_status()
+        assert CheckpointApiModel.parse_obj(data) == checkpoint1
+
+    assert excinfo.value.status == web.HTTPMethodNotAllowed.status_code
 
     # GET checkpoint with id
     resp = await client.get(
@@ -109,12 +113,13 @@ async def test_workflow(client: TestClient, user_project: ProjectDict):
     # UPDATE checkpoint annotations
     resp = await client.patch(
         f"/{vtag}/repos/projects/{project_uuid}/checkpoints/v1",
-        json={"tag": "Version1", "message": "updated message"},
+        json={"message": "updated message", "tag": "Version 1"},
     )
     data, _ = await assert_status(resp, web.HTTPOk)
     checkpoint1_updated = CheckpointApiModel.parse_obj(data)
 
-    assert checkpoint1_updated.tag == "Version1"
+    assert checkpoint1.id == checkpoint1_updated.id
+    assert checkpoint1_updated.tags == ("Version 1",)
     assert checkpoint1_updated.message == "updated message"
 
     # GET view
@@ -134,7 +139,7 @@ async def test_workflow(client: TestClient, user_project: ProjectDict):
     )
     data, _ = await assert_status(resp, web.HTTPCreated)
     checkpoint2 = CheckpointApiModel.parse_obj(data)
-    assert checkpoint2.tag == "v2"
+    assert checkpoint2.tags == ("v2",)
 
     # GET checkpoint with HEAD
     resp = await client.get(f"/{vtag}/repos/projects/{project_uuid}/checkpoints/HEAD")
@@ -142,8 +147,8 @@ async def test_workflow(client: TestClient, user_project: ProjectDict):
     assert CheckpointApiModel.parse_obj(data) == checkpoint2
 
     # CHECKOUT
-    resp = await client.get(
-        f"/{vtag}/repos/projects/{project_uuid}/checkpoints/Version1"
+    resp = await client.post(
+        f"/{vtag}/repos/projects/{project_uuid}/checkpoints/{checkpoint1.id}:checkout"
     )
     data, _ = await assert_status(resp, web.HTTPOk)
     assert CheckpointApiModel.parse_obj(data) == checkpoint1_updated

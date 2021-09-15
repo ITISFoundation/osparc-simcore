@@ -81,3 +81,4 @@ class CheckpointAnnotations(BaseModel):
 
 class WorkbenchViewApiModel(WorkbenchView):
     url: HttpUrl
+    checkpoint_url: HttpUrl

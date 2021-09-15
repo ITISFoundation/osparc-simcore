@@ -16,9 +16,9 @@ from .meta_core_repos import (
     checkout_checkpoint_safe,
     create_checkpoint_safe,
     get_checkpoint_safe,
-    get_workbench,
+    get_workbench_safe,
     list_checkpoints_safe,
-    list_repos,
+    list_repos_safe,
     update_checkpoint_safe,
 )
 from .meta_db import HEAD, VersionControlRepository
@@ -66,7 +66,7 @@ async def _list_repos_handler(request: web.Request):
     _limit = int(request.query.get("limit", 20))
     _offset = int(request.query.get("offset", 0))
 
-    repos_rows, total_number_of_repos = await list_repos(
+    repos_rows, total_number_of_repos = await list_repos_safe(
         vc_repo, offset=_offset, limit=_limit
     )
 
@@ -292,7 +292,7 @@ async def _view_project_workbench_handler(request: web.Request):
         ref_id=_ref_id,
     )
 
-    view: WorkbenchView = await get_workbench(
+    view: WorkbenchView = await get_workbench_safe(
         vc_repo,
         project_uuid=_project_uuid,  # type: ignore
         ref_id=checkpoint.id,
@@ -301,7 +301,12 @@ async def _view_project_workbench_handler(request: web.Request):
     data = WorkbenchViewApiModel.parse_obj(
         {
             "url": url_for(
-                f"{__name__}._get_checkpoint_workbench_handler",
+                f"{__name__}._view_project_workbench_handler",
+                project_uuid=_project_uuid,
+                ref_id=checkpoint.id,
+            ),
+            "checkpoint_url": url_for(
+                f"{__name__}._get_checkpoint_handler",
                 project_uuid=_project_uuid,
                 ref_id=checkpoint.id,
             ),
