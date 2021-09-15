@@ -87,37 +87,40 @@ def create_data_response(
 
 
 def create_error_response(
-    errors: List[Exception],
+    errors: Union[List[Exception], Exception],
     reason: Optional[str] = None,
-    error_cls: Optional[Type[web.HTTPError]] = None,
+    http_error_cls: Type[web.HTTPError] = web.HTTPInternalServerError,
     *,
-    skip_internal_error_details=False
+    skip_internal_error_details: bool = False
 ) -> web.HTTPError:
     """
     - Response body conforms OAS schema model
     - Can skip internal details when 500 status e.g. to avoid transmitting server
     exceptions to the client in production
     """
-    # TODO: guarantee no throw!
-    if error_cls is None:
-        error_cls = web.HTTPInternalServerError
+    if not isinstance(errors, list):
+        errors = [
+            errors,
+        ]
 
-    is_internal_error: bool = error_cls == web.HTTPInternalServerError
+    # TODO: guarantee no throw!
+
+    is_internal_error: bool = http_error_cls == web.HTTPInternalServerError
 
     if is_internal_error and skip_internal_error_details:
         error = ErrorType(
             errors=[],
-            status=error_cls.status_code,
+            status=http_error_cls.status_code,
         )
     else:
         error = ErrorType(
             errors=[ErrorItemType.from_error(err) for err in errors],
-            status=error_cls.status_code,
+            status=http_error_cls.status_code,
         )
 
     payload = wrap_as_envelope(error=attr.asdict(error))
 
-    response = error_cls(
+    response = http_error_cls(
         reason=reason, text=jsonify(payload), content_type=JSON_CONTENT_TYPE
     )
 
