@@ -384,7 +384,6 @@ async def remove_dynamic_sidecar_volumes(node_uuid: NodeID) -> bool:
 
             if len(volumes) != 2:
                 log.error("Expected 2 volumes, found %s. %s", len(volumes), volumes)
-                return False
             return True
     except GenericDockerError as e:
         if "volume is in use" not in str(e):
