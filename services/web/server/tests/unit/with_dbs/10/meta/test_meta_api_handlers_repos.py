@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Any, Dict, Type
+from typing import Any, Callable, Dict, Type
 from uuid import UUID
 
 import aiohttp
@@ -48,7 +48,9 @@ async def assert_status_and_body(
 
 
 @pytest.mark.acceptance_test
-async def test_workflow(client: TestClient, user_project: ProjectDict):
+async def test_workflow(
+    client: TestClient, user_project: ProjectDict, user_project_modifier: Callable
+):
 
     project_uuid = user_project["uuid"]
 
@@ -95,7 +97,7 @@ async def test_workflow(client: TestClient, user_project: ProjectDict):
         resp.raise_for_status()
         assert CheckpointApiModel.parse_obj(data) == checkpoint1
 
-    assert excinfo.value.status == web.HTTPMethodNotAllowed.status_code
+    assert excinfo.value.status == web.HTTPNotImplemented.status_code
 
     # GET checkpoint with id
     resp = await client.get(
@@ -112,13 +114,14 @@ async def test_workflow(client: TestClient, user_project: ProjectDict):
 
     # UPDATE checkpoint annotations
     resp = await client.patch(
-        f"/{vtag}/repos/projects/{project_uuid}/checkpoints/v1",
+        f"/{vtag}/repos/projects/{project_uuid}/checkpoints/{checkpoint1.id}",
         json={"message": "updated message", "tag": "Version 1"},
     )
     data, _ = await assert_status(resp, web.HTTPOk)
     checkpoint1_updated = CheckpointApiModel.parse_obj(data)
 
     assert checkpoint1.id == checkpoint1_updated.id
+    assert checkpoint1.checksum == checkpoint1_updated.checksum
     assert checkpoint1_updated.tags == ("Version 1",)
     assert checkpoint1_updated.message == "updated message"
 
@@ -127,10 +130,10 @@ async def test_workflow(client: TestClient, user_project: ProjectDict):
         f"/{vtag}/repos/projects/{project_uuid}/checkpoints/HEAD/workbench/view"
     )
     data, _ = await assert_status(resp, web.HTTPOk)
-    assert data == project.dict(include={"workbench", "ui"})
+    assert data["workbench"] == project.workbench
 
     # do some changes in project
-    # TODO:
+    await user_project_modifier(project.uuid)
 
     # CREATE new checkpoint
     resp = await client.post(

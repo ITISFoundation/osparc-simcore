@@ -40,7 +40,7 @@ class Checkpoint(BaseModel):
             id=commit.id,
             checksum=commit.snapshot_checksum,
             tags=tuple(tag.name for tag in tags),
-            message=tags[0].message if tags else commit.message,
+            message=commit.message,
             parents_ids=(commit.parent_commit_id,) if commit.parent_commit_id else None,
             created_at=commit.created,
         )

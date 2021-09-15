@@ -4,10 +4,13 @@
 
 import logging
 from copy import deepcopy
-from typing import Any, Dict, Iterator
+from typing import Any, Callable, Dict, Iterator
+from uuid import UUID
 
+import aiohttp
 import pytest
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import random_project
 from pytest_simcore.helpers.utils_login import UserDict
 from pytest_simcore.helpers.utils_projects import NewProject
@@ -16,6 +19,7 @@ from simcore_postgres_database.models.projects_version_control import (
     projects_vc_snapshots,
 )
 from simcore_service_webserver import catalog
+from simcore_service_webserver._meta import api_vtag as vtag
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.log import setup_logging
@@ -115,6 +119,8 @@ async def user_id(logged_user: UserDict) -> int:
 async def user_project(
     client: TestClient, fake_project: ProjectDict, user_id
 ) -> Iterator[ProjectDict]:
+    # pylint: disable=no-value-for-parameter
+
     async with NewProject(fake_project, client.app, user_id=user_id) as project:
 
         yield project
@@ -122,8 +128,37 @@ async def user_project(
         # cleanup repos
         engine = client.app[APP_DB_ENGINE_KEY]
         async with engine.acquire() as conn:
-            # pylint: disable=no-value-for-parameter
 
             # cascade deletes everything except projects_vc_snapshot
             await conn.execute(projects_vc_repos.delete())
             await conn.execute(projects_vc_snapshots.delete())
+
+
+@pytest.fixture
+def user_project_modifier(
+    logged_user: UserDict, client: TestClient, faker: Faker
+) -> Callable:
+    async def go(project_uuid: UUID):
+
+        resp: aiohttp.ClientResponse = await client.get(
+            f"{vtag}/projects/{project_uuid}"
+        )
+
+        assert resp.status == 200
+        body = await resp.json()
+        assert body
+
+        project = body["data"]
+        project["workbench"] = {
+            faker.uuid4(): {
+                "key": f"simcore/services/comp/test_{__name__}",
+                "version": "1.0.0",
+                "label": f"test_{__name__}",
+                "inputs": {"x": faker.pyint(), "y": faker.pyint()},
+            }
+        }
+        resp = await client.put(f"{vtag}/projects/{project_uuid}", json=project)
+        body = await resp.json()
+        assert resp.status == 200, str(body)
+
+    return go

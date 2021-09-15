@@ -2,17 +2,13 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from copy import deepcopy
 from typing import Any, Callable, Dict
 from uuid import UUID
 
-import aiohttp
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
-from pytest_simcore.helpers.utils_login import UserDict
-from simcore_service_webserver._meta import api_vtag as vtag
 from simcore_service_webserver.constants import RQT_USERID_KEY
 from simcore_service_webserver.meta_core_repos import (
     checkout_checkpoint,
@@ -44,34 +40,6 @@ def aiohttp_mocked_request(client: TestClient, user_id: int) -> web.Request:
     return req
 
 
-@pytest.fixture
-def user_modifier(logged_user: UserDict, client: TestClient, faker: Faker) -> Callable:
-    async def go(project_uuid: UUID):
-
-        resp: aiohttp.ClientResponse = await client.get(
-            f"{vtag}/projects/{project_uuid}"
-        )
-
-        assert resp.status == 200
-        body = await resp.json()
-        assert body
-
-        project = body["data"]
-        project["workbench"] = {
-            faker.uuid4(): {
-                "key": f"simcore/services/comp/test_{__name__}",
-                "version": "1.0.0",
-                "label": f"test_{__name__}",
-                "inputs": {"x": faker.pyint(), "y": faker.pyint()},
-            }
-        }
-        resp = await client.put(f"{vtag}/projects/{project_uuid}", json=project)
-        body = await resp.json()
-        assert resp.status == 200, str(body)
-
-    return go
-
-
 # TESTS
 
 
@@ -82,7 +50,7 @@ async def test_workflow(
     user_id: int,
     user_project: ProjectDict,
     aiohttp_mocked_request: web.Request,
-    user_modifier: Callable,
+    user_project_modifier: Callable,
 ):
     vc_repo = VersionControlRepository(aiohttp_mocked_request)
 
@@ -98,7 +66,7 @@ async def test_workflow(
     # TODO: project w/o changes, raise error .. or add new tag?
 
     # -------------------------------------
-    await user_modifier(project_uuid)
+    await user_project_modifier(project_uuid)
 
     checkpoint2 = await create_checkpoint(
         vc_repo, project_uuid, tag="v1", message="second commit"
@@ -134,7 +102,7 @@ async def test_workflow(
 
     # -------------------------------------
     # creating branches
-    await user_modifier(project_uuid)
+    await user_project_modifier(project_uuid)
 
     checkpoint3 = await create_checkpoint(
         vc_repo,
