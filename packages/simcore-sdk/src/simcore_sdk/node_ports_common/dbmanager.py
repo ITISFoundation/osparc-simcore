@@ -49,7 +49,7 @@ async def _get_node_from_db(
 @tenacity.retry(**PostgresRetryPolicyUponInitialization().kwargs)
 async def wait_till_postgres_responsive(dsn: DataSourceName) -> None:
     if not is_postgres_responsive(dsn):
-        raise Exception
+        raise Exception(f"Could not reach Postgres on {dsn.to_uri()}")
 
 
 class DBContextManager:
