@@ -12,6 +12,7 @@ from fastapi import (
     HTTPException,
     Query,
     Request,
+    Response,
     status,
 )
 from fastapi.responses import PlainTextResponse
@@ -23,6 +24,7 @@ from ..core.utils import assemble_container_names, docker_client
 from ..core.validation import InvalidComposeSpec, validate_compose_spec
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
+from ..modules import nodeports
 
 logger = logging.getLogger(__name__)
 
@@ -237,8 +239,20 @@ async def inspect_container(
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def save_state(path: Path) -> None:
-    print(path)
+async def save_state(state_paths: List[Path]) -> Response:
+    """
+    When saving the state:
+    - push outputs via nodeports
+    - push all the extra state paths
+    """
+    logger.debug("Saving state %s", state_paths)
+    # TODO: push outputs via nodeports
+    # push the extra state_paths
+    # maybe do this in parallel?
+    await nodeports.upload_outputs(port_keys=[])
+
+    # SEE https://github.com/tiangolo/fastapi/issues/2253
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @containers_router.put(
@@ -247,8 +261,20 @@ async def save_state(path: Path) -> None:
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def restore_state(path: Path) -> None:
-    print(path)
+async def restore_state(state_paths: List[str]) -> Response:
+    """
+    When restoring the state:
+    - pull inputs via nodeports
+    - pull all the extra state paths
+    """
+    logger.debug("Restoring state %s", state_paths)
+    # TODO: pull inputs via nodeports
+    # pull the extra state_paths
+    # maybe do this in parallel?
+    await nodeports.download_inputs(port_keys=[])
+
+    # SEE https://github.com/tiangolo/fastapi/issues/2253
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 __all__ = ["containers_router"]
