@@ -43,7 +43,9 @@ def compose_namespace() -> str:
 
 
 @pytest.fixture(scope="module", autouse=True)
-def app(io_temp_dir: Path, mock_dy_volumes: Path, compose_namespace: str) -> FastAPI:
+def app(
+    io_temp_dir: Path, mock_dy_volumes: Path, compose_namespace: str
+) -> Iterator[FastAPI]:
     inputs_dir = io_temp_dir / "inputs"
     outputs_dir = io_temp_dir / "outputs"
     with mock.patch.dict(
@@ -66,7 +68,7 @@ def app(io_temp_dir: Path, mock_dy_volumes: Path, compose_namespace: str) -> Fas
 
 
 @pytest.fixture
-async def ensure_external_volumes(compose_namespace: str) -> None:
+async def ensure_external_volumes(compose_namespace: str) -> AsyncGenerator[None, None]:
     """ensures inputs and outputs volumes for the service are present"""
     async with docker_client() as client:
         inputs_volume = await client.volumes.create(
