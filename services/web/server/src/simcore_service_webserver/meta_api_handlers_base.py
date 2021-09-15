@@ -9,6 +9,7 @@ from pydantic.error_wrappers import ValidationError
 from pydantic.main import BaseModel
 from yarl import URL
 
+from .meta_errors import InvalidParameterError, NoCommitError, NotFoundError
 from .projects.projects_exceptions import ProjectNotFoundError
 from .rest_utils import RESPONSE_MODEL_POLICY
 
@@ -61,6 +62,12 @@ def handle_request_errors(handler: HandlerCoroutine) -> HandlerCoroutine:
                 text=json_dumps({"error": err.errors()}),
                 content_type="application/json",
             ) from err
+
+        except (InvalidParameterError, NoCommitError) as err:
+            raise web.HTTPUnprocessableEntity(reason=str(err)) from err
+
+        except NotFoundError as err:
+            raise web.HTTPNotFound(reason=str(err)) from err
 
         except ProjectNotFoundError as err:
             logger.debug(err, exc_info=True)

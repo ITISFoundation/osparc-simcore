@@ -21,6 +21,12 @@ from simcore_postgres_database.utils_aiopg_orm import BaseOrm
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .db_base_repository import BaseRepository
+from .meta_errors import (
+    CleanRequiredError,
+    InvalidParameterError,
+    NoCommitError,
+    NotFoundError,
+)
 from .meta_models_repos import HEAD, CommitLog, CommitProxy, RefID, SHA1Str, TagProxy
 
 log = logging.getLogger(__name__)
@@ -223,7 +229,7 @@ class VersionControlRepository(BaseRepository):
         Message is added to tag if set otherwise to commit
         """
         if tag in ["HEAD", HEAD]:
-            raise ValueError(f"tag cannot be named {tag}")
+            raise InvalidParameterError(name="tag", reason="is a reserved word")
 
         async with self.engine.acquire() as conn:
             # FIXME: get head commit in one execution
@@ -281,7 +287,7 @@ class VersionControlRepository(BaseRepository):
                 else:
                     log.info("Nothing to commit, working tree clean")
 
-            assert isinstance(commit_id, int)
+            assert isinstance(commit_id, int)  # nosec
             return commit_id
 
     async def get_commit_log(self, commit_id: int) -> CommitLog:
@@ -296,7 +302,7 @@ class VersionControlRepository(BaseRepository):
                     .fetch_all("name message")
                 )
                 return commit, tags
-            raise ValueError(f"Invalid commit {commit_id}")
+            raise NotFoundError(name="commit", value=commit_id)
 
     async def log(
         self,
@@ -354,8 +360,6 @@ class VersionControlRepository(BaseRepository):
     ) -> Tuple[int, int]:
         """Translates (project-uuid, ref-id) to (repo-id, commit-id)
 
-        :raises NotImplementedError: WIP
-        :raises ValueError: invalid references
         :return: tuple with repo and commit identifiers
         """
         async with self.engine.acquire() as conn:
@@ -380,8 +384,8 @@ class VersionControlRepository(BaseRepository):
                     )
 
             if not commit_id or not repo:
-                raise ValueError(
-                    f"{ref_id} is an invalid reference for project {project_uuid}"
+                raise NotFoundError(
+                    name="project {project_uuid} reference", value=ref_id
                 )
 
             return repo.id, commit_id
@@ -397,14 +401,14 @@ class VersionControlRepository(BaseRepository):
             repo, head_commit, _ = await self._update_state(repo_id, conn)
 
             if head_commit is None:
-                raise RuntimeError(
-                    "No commit found. Cannot checkout without commit changes first"
+                raise NoCommitError(
+                    details="Cannot checkout without commit changes first"
                 )
 
             # check if working copy has changes, if so, fail
             if repo.project_checksum != head_commit.snapshot_checksum:
-                raise RuntimeError(
-                    "Your local changes to the following files would be overwritten by checkout. "
+                raise CleanRequiredError(
+                    details="Your local changes would be overwritten by checkout. "
                     "Cannot checkout without commit changes first."
                 )
 
@@ -471,3 +475,5 @@ class VersionControlRepository(BaseRepository):
                     .fetch("content")
                 ):
                     return snapshot.content
+
+        raise NotFoundError(name="snapshot for commit", value=(repo_id, commit_id))
