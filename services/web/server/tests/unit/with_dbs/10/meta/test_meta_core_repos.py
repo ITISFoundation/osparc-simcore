@@ -28,11 +28,6 @@ ProjectDict = Dict[str, Any]
 # FIXTURES
 
 
-@pytest.fixture()
-def project_uuid(user_project: ProjectDict) -> UUID:
-    return UUID(user_project["uuid"])
-
-
 @pytest.fixture
 def aiohttp_mocked_request(client: TestClient, user_id: int) -> web.Request:
     req = make_mocked_request("GET", "/", app=client.app)

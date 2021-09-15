@@ -21,6 +21,9 @@ ProjectDict = Dict[str, Any]
 # HELPERS
 
 
+# FIXTURES
+
+
 async def assert_resp_page(
     resp: aiohttp.ClientResponse, expected_total: int, expected_count: int
 ) -> PageResponseLimitOffset:
@@ -39,9 +42,6 @@ async def assert_status_and_body(
     data, _ = await assert_status(resp, expected_cls)
     model = expected_model.parse_obj(data)
     return model
-
-
-# FIXTURES
 
 
 # TESTS
@@ -169,14 +169,35 @@ async def test_workflow(
     assert project_wc != project
 
 
-def test_create_checkpoint_without_changes():
-    # create checkpoint
+async def test_create_checkpoint_without_changes(
+    client: TestClient, project_uuid: UUID
+):
+    # CREATE a checkpoint
+    resp = await client.post(
+        f"/{vtag}/repos/projects/{project_uuid}/checkpoints",
+        json={"tag": "v1", "message": "first commit"},
+    )
+    data, _ = await assert_status(resp, web.HTTPCreated)
 
-    # create checkpoint without changes
-    ...
+    assert data
+    checkpoint1 = CheckpointApiModel.parse_obj(data)  # NOTE: this is NOT API model
+
+    # CREATE checkpoint WITHOUT changes
+    resp = await client.post(
+        f"/{vtag}/repos/projects/{project_uuid}/checkpoints",
+        json={"tag": "v2", "message": "second commit"},
+    )
+    data, _ = await assert_status(resp, web.HTTPCreated)
+
+    assert data
+    checkpoint2 = CheckpointApiModel.parse_obj(data)  # NOTE: this is NOT API model
+
+    assert (
+        checkpoint1 == checkpoint2
+    ), "Consecutive create w/o changes shall not add a new checkpoint"
 
 
-def test_checkpoint_tags():
+def test_invalid_tags():
     # unique
     # no-spaces
     # only letters and numbers

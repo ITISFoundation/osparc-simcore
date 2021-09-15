@@ -1,10 +1,10 @@
-import itertools
-
-import pytest
-
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+
+import itertools
+
+import pytest
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from simcore_service_webserver._meta import api_vtag as vtag
 from simcore_service_webserver.meta import (

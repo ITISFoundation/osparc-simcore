@@ -115,6 +115,11 @@ async def user_id(logged_user: UserDict) -> int:
     return logged_user["id"]
 
 
+@pytest.fixture()
+def project_uuid(user_project: ProjectDict) -> UUID:
+    return UUID(user_project["uuid"])
+
+
 @pytest.fixture
 async def user_project(
     client: TestClient, fake_project: ProjectDict, user_id
