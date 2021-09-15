@@ -171,7 +171,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
     },
 
     addCommit: function(branch, commitData) {
-      this.commit(branch, commitData["label"]);
+      this.commit(branch, commitData["createdAt"] + " - " + commitData["label"]);
     },
 
     buildExample: function() {
