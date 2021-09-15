@@ -49,6 +49,9 @@ class Checkpoint(BaseModel):
 class WorkbenchView(BaseModel):
     """A view (i.e. read-only and visual) of the project's workbench"""
 
+    class Config:
+        orm_mode = True
+
     workbench: Dict[UUID, Node] = {}
     ui: Dict[UUID, Any] = {}
 

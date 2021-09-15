@@ -119,13 +119,6 @@ async def update_checkpoint(
     return Checkpoint.from_commit_log(commit, tags)
 
 
-async def get_working_copy(
-    vc_repo: VersionControlRepository,
-    project_uuid: UUID,
-):
-    ...
-
-
 async def checkout_checkpoint(
     vc_repo: VersionControlRepository,
     project_uuid: UUID,
@@ -150,7 +143,18 @@ async def get_workbench(
     project_uuid: UUID,
     ref_id: RefID,
 ) -> WorkbenchView:
-    ...
+
+    repo_id, commit_id = await vc_repo.as_repo_and_commit_ids(project_uuid, ref_id)
+
+    if repo_id is None or commit_id is None:
+        raise web.HTTPNotFound(
+            reason=f"Entrypoint {ref_id} for project {project_uuid} not found"
+        )
+
+    if content := await vc_repo.get_snapshot_content(repo_id, commit_id):
+        return WorkbenchView.from_orm(content)
+
+    raise web.HTTPNotFound(reason=f"Could not find snapshot for project {project_uuid}")
 
 
 list_checkpoints_safe = validate_arguments(list_checkpoints, config=cfg)

@@ -352,12 +352,11 @@ class VersionControlRepository(BaseRepository):
     async def as_repo_and_commit_ids(
         self, project_uuid: UUID, ref_id: RefID
     ) -> Tuple[int, int]:
-        """[summary]
+        """Translates (project-uuid, ref-id) to (repo-id, commit-id)
 
         :raises NotImplementedError: WIP
         :raises ValueError: invalid references
-        :return: repo and commit identifiers
-        :rtype: Tuple[int, int]
+        :return: tuple with repo and commit identifiers
         """
         async with self.engine.acquire() as conn:
             repo = (
@@ -396,6 +395,11 @@ class VersionControlRepository(BaseRepository):
         """
         async with self.engine.acquire() as conn:
             repo, head_commit, _ = await self._update_state(repo_id, conn)
+
+            if head_commit is None:
+                raise RuntimeError(
+                    "No commit found. Cannot checkout without commit changes first"
+                )
 
             # check if working copy has changes, if so, fail
             if repo.project_checksum != head_commit.snapshot_checksum:
@@ -451,3 +455,21 @@ class VersionControlRepository(BaseRepository):
                 )
 
         return commit_id
+
+    async def get_snapshot_content(
+        self, repo_id: int, commit_id: int
+    ) -> Optional[RowProxy]:
+        async with self.engine.acquire() as conn:
+            commit = (
+                await self.CommitsOrm(conn)
+                .set_filter(repo_id=repo_id, id=commit_id)
+                .fetch("snapshot_checksum")
+            )
+            if commit:
+                snapshot = (
+                    await self.SnapshotsOrm(conn)
+                    .set_filter(checksum=commit.snapshot_checksum)
+                    .fetch("content")
+                )
+                if snapshot:
+                    return snapshot.content
