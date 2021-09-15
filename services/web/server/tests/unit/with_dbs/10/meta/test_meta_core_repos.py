@@ -113,7 +113,7 @@ async def test_workflow(
 
     checkpoints, total_count = await list_checkpoints(vc_repo, project_uuid)
     assert total_count == 3
-    assert checkpoints == [checkpoint3, checkpoint2, checkpoint1]
+    assert checkpoints == [checkpoint3, checkpoint2_updated, checkpoint1]
 
     assert checkpoint3.parents_ids == checkpoint2.parents_ids
     assert checkpoint2.parents_ids == (checkpoint1.id,)

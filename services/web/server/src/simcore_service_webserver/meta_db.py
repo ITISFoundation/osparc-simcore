@@ -275,7 +275,7 @@ class VersionControlRepository(BaseRepository):
                         )
                         upsert_tag = insert_stmt.on_conflict_do_update(
                             constraint="repo_tag_uniqueness",
-                            set_=dict(message=insert_stmt.excluded.message),
+                            set_=dict(name=insert_stmt.excluded.name),
                         )
                         await conn.execute(upsert_tag)
                 else:
