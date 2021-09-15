@@ -15,7 +15,6 @@ from typing import Dict, Generic, List, Optional, Set, Tuple, TypeVar, Union
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
-from pydantic.types import NonNegativeInt, PositiveInt
 from sqlalchemy.sql.base import ImmutableColumnCollection
 from sqlalchemy.sql.dml import Insert, Update, UpdateBase
 from sqlalchemy.sql.elements import literal_column
@@ -183,16 +182,18 @@ class BaseOrm(Generic[RowUId]):
         self,
         returning_cols: Union[str, List[str]] = ALL_COLUMNS,
         *,
-        offset: NonNegativeInt,
-        limit: Optional[PositiveInt] = None,
+        offset: int,
+        limit: Optional[int] = None,
         order=None,
-    ) -> Tuple[List[RowProxy], NonNegativeInt]:
+    ) -> Tuple[List[RowProxy], int]:
         """Support for paginated fetchall
 
         IMPORTANT: pages are sorted by primary-key
 
         Returns limited list and total count
         """
+        assert offset >= 0  # nosec
+        assert limit is None or limit > 0  # nosec
 
         query = self._compose_select_query(returning_cols).order_by(
             self._primary_key if order is None else order
@@ -213,7 +214,8 @@ class BaseOrm(Generic[RowUId]):
 
         if not total_count:
             total_count = result.rowcount
-        assert total_count is not None
+        assert total_count is not None  # nosec
+        assert total_count >= 0  # nosec
 
         rows: List[RowProxy] = await result.fetchall()
         return rows, total_count
