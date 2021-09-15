@@ -507,7 +507,7 @@ def _get_dy_sidecar_env_vars(
         "DY_SIDECAR_NODE_ID": f"{scheduler_data.node_uuid}",
         "POSTGRES_HOST": f"{pg_settings.POSTGRES_HOST}",
         "POSTGRES_ENDPOINT": f"{pg_settings.POSTGRES_HOST}:{pg_settings.POSTGRES_PORT}",
-        "POSTGRES_PASSWORD": f"{pg_settings.POSTGRES_PASSWORD}",
+        "POSTGRES_PASSWORD": f"{pg_settings.POSTGRES_PASSWORD.get_secret_value()}",
         "POSTGRES_PORT": f"{pg_settings.POSTGRES_PORT}",
         "POSTGRES_USER": f"{pg_settings.POSTGRES_USER}",
         "POSTGRES_DB": f"{pg_settings.POSTGRES_DB}",
