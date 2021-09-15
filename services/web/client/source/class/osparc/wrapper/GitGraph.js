@@ -170,6 +170,10 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       });
     },
 
+    addCommit: function(branch, commitData) {
+      this.commit(branch, commitData["label"]);
+    },
+
     buildExample: function() {
       const master = this.__gitgraph.branch("master");
       this.commit(master, "Initial commit");

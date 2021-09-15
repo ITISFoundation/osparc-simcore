@@ -89,7 +89,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
       });
     },
 
-    __rebuildSnapshotsGraph: function(params) {
+    __rebuildSnapshotsGraph: function() {
       if (this.__gitGraphCanvas) {
         this.__snapshotsSection.remove(this.__gitGraphCanvas);
       }
@@ -101,7 +101,22 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
         const gitGraphWrapper = new osparc.wrapper.GitGraph();
         gitGraphWrapper.init(el)
           .then(gitgraph => {
-            gitGraphWrapper.buildExample();
+            this.__primaryStudy.getSnapshots()
+              .then(snapshots => {
+                const master = gitgraph.branch("master");
+                snapshots.forEach(snapshot => {
+                  const date = new Date(snapshot["created_at"]);
+                  const commitData = {
+                    studyUuid: snapshot["project_uuid"],
+                    label: snapshot["label"],
+                    createdAt: osparc.utils.Utils.formatDateAndTime(date),
+                    id: snapshot["id"],
+                    parentUuid: snapshot["parent_uuid"]
+                  };
+                  gitGraphWrapper.addCommit(master, commitData);
+                });
+              });
+            // gitGraphWrapper.buildExample();
           }, this);
       });
 
