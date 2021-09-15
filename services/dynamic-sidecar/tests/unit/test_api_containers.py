@@ -3,12 +3,14 @@
 
 
 import json
+from pathlib import Path
 from typing import Any, Dict, List
 
 import faker
 import pytest
 from async_asgi_testclient import TestClient
 from fastapi import status
+from pytest_mock.plugin import MockerFixture
 from simcore_service_dynamic_sidecar._meta import api_vtag
 from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
 from simcore_service_dynamic_sidecar.core.shared_handlers import (
@@ -20,6 +22,8 @@ from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedSt
 DEFAULT_COMMAND_TIMEOUT = 5.0
 
 pytestmark = pytest.mark.asyncio
+
+# FIXTURES
 
 
 @pytest.fixture
@@ -95,6 +99,26 @@ async def started_containers(test_client: TestClient, compose_spec: str) -> List
 @pytest.fixture
 def not_started_containers() -> List[str]:
     return [f"missing-container-{i}" for i in range(5)]
+
+
+@pytest.fixture
+def state_paths() -> List[Path]:
+    return [Path("/mock"), Path("/me/too")]
+
+
+@pytest.fixture
+def mock_nodeports(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.nodeports.upload_outputs",
+        return_value=None,
+    )
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.nodeports.download_inputs",
+        return_value=None,
+    )
+
+
+# TESTS
 
 
 async def test_start_containers_wrong_spec(test_client: TestClient) -> None:
@@ -285,3 +309,23 @@ async def test_container_docker_error(
         response = await test_client.get(f"/{api_vtag}/containers/{container}")
         assert response.status_code == mock_containers_get, response.text
         assert response.json() == _expected_error_string()
+
+
+async def test_container_save_state(
+    test_client: TestClient, state_paths: List[Path], mock_nodeports: None
+) -> None:
+    response = await test_client.put(
+        f"/{api_vtag}/containers:save-state", json=[str(x) for x in state_paths]
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+    assert response.json() == None
+
+
+async def test_container_restore_state(
+    test_client: TestClient, state_paths: List[Path], mock_nodeports: None
+) -> None:
+    response = await test_client.put(
+        f"/{api_vtag}/containers:restore-state", json=[str(x) for x in state_paths]
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+    assert response.json() == None
