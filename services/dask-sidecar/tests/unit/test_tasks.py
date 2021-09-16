@@ -3,6 +3,8 @@
 # pylint: disable=unused-variable
 import logging
 import re
+from collections import namedtuple
+from pathlib import Path
 from pprint import pformat
 from typing import Any, Dict, List
 from unittest import mock
@@ -74,13 +76,19 @@ def dask_client() -> Client:
             yield client
 
 
+ServiceExampleParam = namedtuple(
+    "ServiceExampleParam",
+    "service_key, service_version, command, input_data, output_data_keys, expected_output_data, expected_logs",
+)
+
+
 @pytest.mark.parametrize(
     "service_key, service_version, command, input_data, output_data_keys, expected_output_data, expected_logs",
     [
-        (
-            "ubuntu",
-            "latest",
-            [
+        ServiceExampleParam(
+            service_key="ubuntu",
+            service_version="latest",
+            command=[
                 "/bin/bash",
                 "-c",
                 "echo User: $(id $(whoami));"
@@ -88,31 +96,33 @@ def dask_client() -> Client:
                 "cat ${INPUT_FOLDER}/inputs.json;"
                 'echo {\\"pytest_output_1\\":\\"is quite an amazing feat\\"} > ${OUTPUT_FOLDER}/outputs.json',
             ],
-            {
-                "input_1": 23
-                # "input_23": "a string input",
-                # "the_input_43": 15.0,
-                # "the_bool_input_54": False,
+            input_data={
+                "input_1": 23,
+                "input_23": "a string input",
+                "the_input_43": 15.0,
+                "the_bool_input_54": False,
             },
-            {"pytest_output_1": {"type": str}},
-            {"pytest_output_1": "is quite an amazing feat"},
-            ['{"input_1": 23}'],
+            output_data_keys={"pytest_output_1": {"type": str}},
+            expected_output_data={"pytest_output_1": "is quite an amazing feat"},
+            expected_logs=[
+                '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}'
+            ],
         ),
-        # (
-        #     "itisfoundation/sleeper",
-        #     "2.1.1",
-        #     [],
-        #     {"input_2": 2, "input_4": 1},
-        #     {
-        #         "output_1": {"type": Path, "name": "single_number.txt"},
-        #         "output_2": {"type": int},
-        #     },
-        #     {
-        #         "output_1": re.compile(r".+/single_number.txt"),
-        #         "output_2": re.compile(r"\d"),
-        #     },
-        #     ["Remaining sleep time"],
-        # ),
+        ServiceExampleParam(
+            service_key="itisfoundation/sleeper",
+            service_version="2.1.1",
+            command=[],
+            input_data={"input_2": 2, "input_4": 1},
+            output_data_keys={
+                "output_1": {"type": Path, "name": "single_number.txt"},
+                "output_2": {"type": int},
+            },
+            expected_output_data={
+                "output_1": re.compile(r".+/single_number.txt"),
+                "output_2": re.compile(r"\d"),
+            },
+            expected_logs=["Remaining sleep time"],
+        ),
     ],
 )
 async def test_run_computational_sidecar(
