@@ -49,7 +49,7 @@ class ComputationalSidecar:
     input_data: Dict[str, Any]
     output_data_keys: Dict[str, Any]
 
-    async def _write_input_data(self, task_volumes: TaskSharedVolumes):
+    async def _write_input_data(self, task_volumes: TaskSharedVolumes) -> None:
         input_data_file = task_volumes.input_folder / "inputs.json"
         input_data_file.write_text(json.dumps(self.input_data))
 

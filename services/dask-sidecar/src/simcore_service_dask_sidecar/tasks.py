@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, List, Optional, Type, cast
+from typing import Any, Dict, List, Optional, cast
 
 from dask.distributed import get_worker
 from distributed.worker import TaskState
@@ -49,7 +49,7 @@ async def _run_computational_sidecar_async(
     service_key: str,
     service_version: str,
     input_data: Dict[str, Any],
-    output_data_keys: Dict[str, Type],
+    output_data_keys: Dict[str, Any],
     command: List[str],
 ) -> Dict[str, Any]:
     log.debug(
