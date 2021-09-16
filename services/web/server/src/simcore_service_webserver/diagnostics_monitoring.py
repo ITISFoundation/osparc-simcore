@@ -3,10 +3,11 @@
 """
 import logging
 import time
-from typing import Callable, Coroutine
+from asyncio.exceptions import CancelledError
 
 import prometheus_client
 from aiohttp import web
+from aiohttp.web_middlewares import _Handler, _Middleware
 from prometheus_client import CONTENT_TYPE_LATEST, Counter
 from prometheus_client.registry import CollectorRegistry
 from servicelib.monitor_services import add_instrumentation
@@ -58,13 +59,16 @@ async def metrics_handler(request: web.Request):
     return response
 
 
-def middleware_factory(app_name: str) -> Coroutine:
+def middleware_factory(app_name: str) -> _Middleware:
     @web.middleware
-    async def _middleware_handler(request: web.Request, handler: Callable):
+    async def _middleware_handler(request: web.Request, handler: _Handler):
         if request.rel_url.path == "/socket.io/":
             return await handler(request)
 
         log_exception = None
+        resp: web.StreamResponse = web.HTTPInternalServerError(
+            reason="Unexpected exception"
+        )
 
         try:
             request[kSTART_TIME] = time.time()
@@ -91,6 +95,11 @@ def middleware_factory(app_name: str) -> Coroutine:
             resp = web.HTTPInternalServerError(reason=str(exc))
             resp.__cause__ = exc
             log_exception = exc
+        except CancelledError as exc:
+            # Mostly for logging
+            resp = web.HTTPInternalServerError(reason=str(exc))
+            log_exception = exc
+            raise
 
         finally:
             resp_time_secs: float = time.time() - request[kSTART_TIME]

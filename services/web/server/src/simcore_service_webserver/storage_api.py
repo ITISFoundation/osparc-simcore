@@ -13,6 +13,8 @@ from .storage_config import get_client_session, get_storage_config
 
 log = logging.getLogger(__name__)
 
+TOTAL_TIMEOUT_TO_COPY_DATA_SECS = 60 * 60
+
 
 def _get_storage_client(app: web.Application) -> Tuple[ClientSession, URL]:
     cfg = get_storage_config(app)
@@ -27,10 +29,15 @@ def _get_storage_client(app: web.Application) -> Tuple[ClientSession, URL]:
 
 
 async def copy_data_folders_from_project(
-    app, source_project, destination_project, nodes_map, user_id
+    app: web.Application,
+    source_project: Dict,
+    destination_project: Dict,
+    nodes_map: Dict,
+    user_id: int,
 ):
     # TODO: optimize if project has actualy data or not before doing the call
     client, api_endpoint = _get_storage_client(app)
+    log.debug("Coying %d nodes", len(nodes_map))
 
     # /simcore-s3/folders:
     url = (api_endpoint / "simcore-s3/folders").with_query(user_id=user_id)
@@ -42,6 +49,8 @@ async def copy_data_folders_from_project(
             "nodes_map": nodes_map,
         },
         ssl=False,
+        # NOTE: extends time for copying operation
+        timeout=ClientTimeout(total=TOTAL_TIMEOUT_TO_COPY_DATA_SECS),
     ) as resp:
         payload = await resp.json()
 
