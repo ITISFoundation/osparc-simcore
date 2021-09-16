@@ -32,7 +32,7 @@ from .meta_models_repos import HEAD, CommitLog, CommitProxy, RefID, SHA1Str, Tag
 log = logging.getLogger(__name__)
 
 
-def eval_checksum(workbench: Dict[str, Any]) -> SHA1Str:
+def compute_checksum(workbench: Dict[str, Any]) -> SHA1Str:
     # FIXME: dump workbench correctly (i.e. spaces, quotes ... -indepenent)
     block_string = json.dumps(workbench, sort_keys=True).encode("utf-8")
     raw_hash = hashlib.sha1(block_string)
@@ -96,7 +96,7 @@ class VersionControlRepository(BaseRepository):
             super().__init__(
                 projects_vc_snapshots,
                 connection,
-                writeonce={"checksum"},  # TODO:  all? cannot delete snapshots?
+                writeonce={"checksum"},
             )
 
     class HeadsOrm(BaseOrm[int]):
@@ -146,7 +146,7 @@ class VersionControlRepository(BaseRepository):
 
         checksum: Optional[SHA1Str] = repo.project_checksum
         if not checksum or (checksum and repo.modified < project.last_change_date):
-            checksum = eval_checksum(project.workbench)
+            checksum = compute_checksum(project.workbench)
             repo = await repo_orm.update(returning_cols, project_checksum=checksum)
             assert repo
         return repo, head_commit, project
@@ -319,7 +319,7 @@ class VersionControlRepository(BaseRepository):
             commits, total_count = await commits_orm.fetch_page(
                 offset=offset,
                 limit=limit,
-                order=sa.desc(commits_orm.columns["created"]),
+                sort_by=sa.desc(commits_orm.columns["created"]),
             )
 
             logs = []
@@ -338,22 +338,23 @@ class VersionControlRepository(BaseRepository):
         tag_name: Optional[str] = None,
     ):
         async with self.engine.acquire() as conn:
-            if message:
-                await self.CommitsOrm(conn).set_filter(id=commit_id).update(
-                    message=message
-                )
-
-            if tag_name:
-                tag = (
-                    await self.TagsOrm(conn)
-                    .set_filter(repo_id=repo_id, commit_id=commit_id, hidden=False)
-                    .fetch("id")
-                )
-
-                if tag:
-                    await self.TagsOrm(conn).set_filter(rowid=tag.id).update(
-                        name=tag_name
+            async with conn.begin():
+                if message:
+                    await self.CommitsOrm(conn).set_filter(id=commit_id).update(
+                        message=message
                     )
+
+                if tag_name:
+                    tag = (
+                        await self.TagsOrm(conn)
+                        .set_filter(repo_id=repo_id, commit_id=commit_id, hidden=False)
+                        .fetch("id")
+                    )
+
+                    if tag:
+                        await self.TagsOrm(conn).set_filter(rowid=tag.id).update(
+                            name=tag_name
+                        )
 
     async def as_repo_and_commit_ids(
         self, project_uuid: UUID, ref_id: RefID

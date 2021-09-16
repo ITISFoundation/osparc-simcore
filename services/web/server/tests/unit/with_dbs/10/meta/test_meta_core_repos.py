@@ -58,8 +58,6 @@ async def test_workflow(
     assert checkpoint1.tags == ("v0",)
     assert checkpoint1.message == "first commit"
 
-    # TODO: project w/o changes, raise error .. or add new tag?
-
     # -------------------------------------
     await do_update_user_project(project_uuid)
 

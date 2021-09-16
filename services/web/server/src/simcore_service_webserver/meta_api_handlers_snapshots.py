@@ -236,5 +236,7 @@ async def patch_project_snapshot_handler(request: web.Request):
     return enveloped_response(data)
 
 
+# WARNING: changes in handlers naming will have an effect
+# since they are in sync with operation_id  (checked in tests)
 rename_routes_as_handler_function(routes, prefix=__name__)
 logger.debug("Routes collected in  %s:\n %s", __name__, view_routes(routes))

@@ -99,9 +99,7 @@ def create_error_response(
     exceptions to the client in production
     """
     if not isinstance(errors, list):
-        errors = [
-            errors,
-        ]
+        errors = [errors]
 
     # TODO: guarantee no throw!
 
