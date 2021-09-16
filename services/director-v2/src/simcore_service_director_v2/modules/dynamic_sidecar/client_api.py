@@ -1,7 +1,6 @@
 import logging
 import traceback
-from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import httpx
 from fastapi import FastAPI
