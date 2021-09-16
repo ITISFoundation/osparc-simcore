@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 @permission_required("groups.read")
 async def list_groups(request: web.Request):
     user_id = request[RQT_USERID_KEY]
+    print("user_id received: ", user_id)
     primary_group, user_groups, all_group = await groups_api.list_user_groups(
         request.app, user_id
     )

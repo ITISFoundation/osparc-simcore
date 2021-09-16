@@ -204,15 +204,18 @@ async def auto_add_user_to_groups(app: web.Application, user_id: int) -> None:
                     possible_gids.add(row[groups.c.gid])
 
         # now add the user to these groups if possible
-        for gid in possible_gids:
-            await conn.execute(
-                # pylint: disable=no-value-for-parameter
-                insert(user_to_groups)
-                .values(
-                    uid=user_id, gid=gid, access_rights=DEFAULT_GROUP_READ_ACCESS_RIGHTS
+        async with conn.begin():
+            for gid in possible_gids:
+                await conn.execute(
+                    # pylint: disable=no-value-for-parameter
+                    insert(user_to_groups)
+                    .values(
+                        uid=user_id,
+                        gid=gid,
+                        access_rights=DEFAULT_GROUP_READ_ACCESS_RIGHTS,
+                    )
+                    .on_conflict_do_nothing()  # in case the user was already added
                 )
-                .on_conflict_do_nothing()  # in case the user was already added
-            )
 
 
 async def add_user_in_group(
