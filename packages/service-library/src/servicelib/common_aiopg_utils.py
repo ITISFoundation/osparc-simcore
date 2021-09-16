@@ -33,7 +33,9 @@ class DataSourceName:
         return uri
 
 
-def create_pg_engine(dsn: DataSourceName, minsize: int = 1, maxsize: int = 4):
+def create_pg_engine(
+    dsn: DataSourceName, minsize: int = 1, maxsize: int = 4, **pool_kwargs
+):
     """Adapts the arguments of aiopg.sa.create_engine
 
     Returns a coroutine that is awaitable, i.e.
@@ -48,6 +50,7 @@ def create_pg_engine(dsn: DataSourceName, minsize: int = 1, maxsize: int = 4):
         application_name=dsn.application_name,
         minsize=minsize,
         maxsize=maxsize,
+        **pool_kwargs,
     )
     return awaitable_engine_coro
 
