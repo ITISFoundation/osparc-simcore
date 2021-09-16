@@ -92,6 +92,20 @@ def fake_input_file(tmp_path: Path, faker: Faker) -> Path:
 
 
 @pytest.fixture()
+def fake_command(fake_input_file: Path) -> List[str]:
+    return [
+        "/bin/bash",
+        "-c",
+        "echo User: $(id $(whoami)) && "
+        "(test -f ${INPUT_FOLDER}/inputs.json || (echo ${INPUT_FOLDER}/inputs.json file does not exists && exit 1)) && "
+        "cat ${INPUT_FOLDER}/inputs.json && "
+        f"(test -f ${{INPUT_FOLDER}}/{fake_input_file.name} || (echo ${{INPUT_FOLDER}}/{fake_input_file.name} does not exists && exit 1)) && "
+        f"cat ${{INPUT_FOLDER}}/{fake_input_file.name} &&"
+        'echo {\\"pytest_output_1\\":\\"is quite an amazing feat\\"} > ${OUTPUT_FOLDER}/outputs.json',
+    ]
+
+
+@pytest.fixture()
 def fake_input_data(fake_input_file: Path) -> Dict[str, Any]:
     return {
         "input_1": 23,
@@ -108,14 +122,7 @@ def fake_input_data(fake_input_file: Path) -> Dict[str, Any]:
         ServiceExampleParam(
             service_key="ubuntu",
             service_version="latest",
-            command=[
-                "/bin/bash",
-                "-c",
-                "echo User: $(id $(whoami));"
-                "test ${INPUT_FOLDER}/inputs.json && echo inputs file exists;"
-                "cat ${INPUT_FOLDER}/inputs.json;"
-                'echo {\\"pytest_output_1\\":\\"is quite an amazing feat\\"} > ${OUTPUT_FOLDER}/outputs.json',
-            ],
+            command=pytest.lazy_fixture("fake_command"),
             input_data=pytest.lazy_fixture("fake_input_data"),
             output_data_keys={"pytest_output_1": {"type": str}},
             expected_output_data={"pytest_output_1": "is quite an amazing feat"},
