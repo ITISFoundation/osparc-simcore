@@ -1,13 +1,14 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
+import json
 import os
 import random
 import sys
 import tempfile
 import uuid
 from pathlib import Path
-from typing import Any, AsyncGenerator, Iterator
+from typing import Any, AsyncGenerator, Iterator, List
 from unittest import mock
 
 import aiodocker
@@ -48,6 +49,7 @@ def app(
 ) -> Iterator[FastAPI]:
     inputs_dir = io_temp_dir / "inputs"
     outputs_dir = io_temp_dir / "outputs"
+    state_paths_dirs: List[str] = [str(io_temp_dir / f"dir_{x}") for x in range(4)]
     with mock.patch.dict(
         os.environ,
         {
@@ -59,11 +61,13 @@ def app(
             "REGISTRY_SSL": "false",
             "DY_SIDECAR_PATH_INPUTS": str(inputs_dir),
             "DY_SIDECAR_PATH_OUTPUTS": str(outputs_dir),
+            "DY_SIDECAR_STATE_PATHS": json.dumps(state_paths_dirs),
             "DY_SIDECAR_USER_ID": "1",
             "DY_SIDECAR_PROJECT_ID": f"{uuid.uuid4()}",
             "DY_SIDECAR_NODE_ID": f"{uuid.uuid4()}",
         },
     ), mock.patch.object(mounted_fs, "DY_VOLUMES", mock_dy_volumes):
+        print(os.environ)
         yield assemble_application()
 
 

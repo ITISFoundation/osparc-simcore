@@ -3,6 +3,7 @@
 
 
 import json
+from os import read
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -116,6 +117,23 @@ def mock_nodeports(mocker: MockerFixture) -> None:
         "simcore_service_dynamic_sidecar.modules.nodeports.download_inputs",
         return_value=None,
     )
+
+
+@pytest.fixture
+def mock_data_manager(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.data_manager.upload_path_if_exists",
+        return_value=None,
+    )
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.data_manager.pull_path_if_exists",
+        return_value=None,
+    )
+    from importlib import reload
+
+    import simcore_service_dynamic_sidecar
+
+    reload(simcore_service_dynamic_sidecar.api.containers)
 
 
 # TESTS
@@ -312,20 +330,26 @@ async def test_container_docker_error(
 
 
 async def test_container_save_state(
-    test_client: TestClient, state_paths: List[Path], mock_nodeports: None
+    test_client: TestClient,
+    state_paths: List[Path],
+    mock_nodeports: None,
+    mock_data_manager: None,
 ) -> None:
     response = await test_client.put(
         f"/{api_vtag}/containers:save-state", json=[str(x) for x in state_paths]
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-    assert response.json() == None
+    assert response.text == ""
 
 
 async def test_container_restore_state(
-    test_client: TestClient, state_paths: List[Path], mock_nodeports: None
+    test_client: TestClient,
+    state_paths: List[Path],
+    mock_nodeports: None,
+    mock_data_manager: None,
 ) -> None:
     response = await test_client.put(
         f"/{api_vtag}/containers:restore-state", json=[str(x) for x in state_paths]
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-    assert response.json() == None
+    assert response.text == ""
