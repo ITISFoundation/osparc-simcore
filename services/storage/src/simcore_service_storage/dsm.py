@@ -24,6 +24,7 @@ from aiopg.sa.result import RowProxy
 from servicelib.aiohttp.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql.expression import literal_column
 from tenacity import retry
 from yarl import URL
@@ -497,14 +498,15 @@ class DataStorageManager:
                 fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
                 fmd.user_id = user_id  # NOTE: takes ownership of uploaded data
 
-                query = sa.select([file_meta_data]).where(
-                    file_meta_data.c.file_uuid == file_uuid
-                )
                 # if file already exists, we might want to update a time-stamp
-                exists = await (await conn.execute(query)).scalar()
-                if exists is None:
-                    ins = file_meta_data.insert().values(**vars(fmd))
-                    await conn.execute(ins)
+
+                # upsert file_meta_data
+                insert_stmt = pg_insert(file_meta_data).values(**vars(fmd))
+                do_nothing_stmt = insert_stmt.on_conflict_do_nothing(
+                    index_elements=["file_uuid"]
+                )
+                await conn.execute(do_nothing_stmt)
+
                 return fmd.file_size, fmd.last_modified
 
         file_size, last_modified = await _init_metadata()
