@@ -201,16 +201,22 @@ async def validate_compose_spec(
 
         # inject paths to be mounted
         service_volumes = service_content.get("volumes", [])
+
         service_volumes.append(mounted_paths.get_inputs_docker_volume())
         service_volumes.append(mounted_paths.get_outputs_docker_volume())
+        for state_paths_docker_volume in mounted_paths.get_state_paths_docker_volumes():
+            service_volumes.append(state_paths_docker_volume)
+
         service_content["volumes"] = service_volumes
 
     # inject volumes creation in spec
     volumes = parsed_compose_spec.get("volumes", {})
+
     volumes[mounted_paths.volume_name_inputs] = dict(external=True)
     volumes[mounted_paths.volume_name_outputs] = dict(external=True)
     for volume_name_state_path in mounted_paths.volume_name_state_paths():
         volumes[volume_name_state_path] = dict(external=True)
+
     parsed_compose_spec["volumes"] = volumes
 
     # if more then one container is defined, add an "backend" network

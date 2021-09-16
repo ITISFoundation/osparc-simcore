@@ -62,6 +62,12 @@ def test_expected_paths_and_volumes(
     state_paths_dirs: List[Path],
     compose_namespace: str,
 ) -> None:
+    assert (
+        len(set(mounted_volumes.volume_name_state_paths()))
+        == len(set(mounted_volumes.get_state_paths_docker_volumes()))
+        == len(set(mounted_volumes.disk_state_paths()))
+    )
+
     # check location on disk
     assert mounted_volumes.disk_outputs_path == mounted_fs.DY_VOLUMES / "outputs"
     assert mounted_volumes.disk_inputs_path == mounted_fs.DY_VOLUMES / "inputs"
@@ -76,4 +82,21 @@ def test_expected_paths_and_volumes(
 
     assert set(mounted_volumes.volume_name_state_paths()) == {
         f"{compose_namespace}{_replace_slashes(x)}" for x in state_paths_dirs
+    }
+
+    # check docker_volume
+    assert (
+        mounted_volumes.get_inputs_docker_volume()
+        == f"{mounted_volumes.volume_name_inputs}:{mounted_volumes.inputs_path}"
+    )
+    assert (
+        mounted_volumes.get_outputs_docker_volume()
+        == f"{mounted_volumes.volume_name_outputs}:{mounted_volumes.outputs_path}"
+    )
+
+    assert set(mounted_volumes.get_state_paths_docker_volumes()) == {
+        f"{volume_state_path}:{state_path}"
+        for volume_state_path, state_path in zip(
+            mounted_volumes.volume_name_state_paths(), state_paths_dirs
+        )
     }

@@ -44,13 +44,13 @@ class MountedVolumes:
 
         self._ensure_directories()
 
-    @property
+    @cached_property
     def volume_name_inputs(self) -> str:
         """Same name as the namespace, to easily track components"""
         compose_namespace = get_settings().DYNAMIC_SIDECAR_COMPOSE_NAMESPACE
         return f"{compose_namespace}_inputs"
 
-    @property
+    @cached_property
     def volume_name_outputs(self) -> str:
         compose_namespace = get_settings().DYNAMIC_SIDECAR_COMPOSE_NAMESPACE
         return f"{compose_namespace}_outputs"
@@ -88,6 +88,12 @@ class MountedVolumes:
 
     def get_outputs_docker_volume(self) -> str:
         return f"{self.volume_name_outputs}:{self.outputs_path}"
+
+    def get_state_paths_docker_volumes(self) -> Generator[str, None, None]:
+        for volume_state_path, state_path in zip(
+            self.volume_name_state_paths(), self.state_paths
+        ):
+            yield f"{volume_state_path}:{state_path}"
 
 
 def setup_mounted_fs() -> MountedVolumes:
