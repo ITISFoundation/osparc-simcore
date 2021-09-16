@@ -1,10 +1,11 @@
 import asyncio
 from contextlib import asynccontextmanager
 from pprint import pformat
-from typing import AsyncIterator, List
+from typing import AsyncIterator, Awaitable, List
 
 from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
+from pydantic import ByteSize
 from simcore_service_sidecar.task_shared_volume import TaskSharedVolumes
 
 from ..utils import create_dask_worker_logger
@@ -38,15 +39,15 @@ async def create_container_config(
                 f"{volumes.output_folder}:/outputs",
                 f"{volumes.log_folder}:/logs",
             ],
-            Memory=1024 ** 3,
-            NanoCPUs=1e9,
+            Memory=ByteSize(1024 ** 3),
+            NanoCPUs=1000000000,
         ),
     )
 
 
 @asynccontextmanager
 async def managed_container(
-    docker_client: Docker, config: DockerContainerConfig, *, name=None
+    docker_client: Docker, config: DockerContainerConfig, *, name: str = None
 ) -> AsyncIterator[DockerContainer]:
     container = None
     try:
@@ -71,7 +72,7 @@ async def managed_container(
 
 async def monitor_container_logs(
     container: DockerContainer, service_key: str, service_version: str
-):
+) -> None:
     try:
         container_info = await container.show()
         container_name = container_info.get("Name", "undefined")
@@ -111,7 +112,7 @@ async def monitor_container_logs(
 @asynccontextmanager
 async def managed_monitor_container_log_task(
     container: DockerContainer, service_key: str, service_version: str
-) -> AsyncIterator[asyncio.Task]:
+) -> AsyncIterator[Awaitable[None]]:
     monitoring_task = None
     try:
         monitoring_task = asyncio.create_task(
