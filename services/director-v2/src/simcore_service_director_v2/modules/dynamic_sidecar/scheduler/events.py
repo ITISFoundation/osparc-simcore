@@ -6,6 +6,7 @@ from typing import Any, Deque, Dict, List, Optional, Type
 import httpx
 import tenacity
 from fastapi import FastAPI
+from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 
 from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.dynamic_services import (
@@ -82,7 +83,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         # the provided docker-compose spec
         # also other encodes the env vars to target the proper container
         director_v0_client: DirectorV0Client = _get_director_v0_client(app)
-        settings = await merge_settings_before_use(
+        settings: SimcoreServiceSettingsLabel = await merge_settings_before_use(
             director_v0_client=director_v0_client,
             service_key=scheduler_data.key,
             service_tag=scheduler_data.version,
@@ -116,7 +117,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             dynamic_sidecar_network_id=dynamic_sidecar_network_id,
             swarm_network_id=swarm_network_id,
             settings=settings,
-            pg_settings=app.state.settings.POSTGRES,
+            app_settings=app.state.settings,
         )
         logger.debug(
             "dynamic-sidecar create_service_params %s",
@@ -224,9 +225,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
         logger.info("Calling into dynamic-sidecar to restore state")
-        await dynamic_sidecar_client.service_state_restore(
-            dynamic_sidecar_endpoint, scheduler_data.paths_mapping.state_paths
-        )
+        await dynamic_sidecar_client.service_state_restore(dynamic_sidecar_endpoint)
         logger.info("State restored by dynamic-sidecar")
 
         scheduler_data.dynamic_sidecar.service_environment_prepared = True
@@ -310,9 +309,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
             logger.info("Calling into dynamic-sidecar to save state")
-            await dynamic_sidecar_client.service_state_save(
-                dynamic_sidecar_endpoint, scheduler_data.paths_mapping.state_paths
-            )
+            await dynamic_sidecar_client.service_state_save(dynamic_sidecar_endpoint)
             logger.info("State saved by dynamic-sidecar")
 
         # remove the 2 services

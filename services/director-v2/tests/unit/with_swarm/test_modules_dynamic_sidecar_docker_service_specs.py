@@ -11,7 +11,10 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from pytest_lazyfixture import lazy_fixture
-from simcore_service_director_v2.core.settings import DynamicSidecarSettings, PGSettings
+from simcore_service_director_v2.core.settings import (
+    AppSettings,
+    DynamicSidecarSettings,
+)
 from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs import (
     get_dynamic_sidecar_spec,
@@ -83,7 +86,7 @@ async def test_get_dynamic_proxy_spec(
         dynamic_sidecar_network_id=dynamic_sidecar_network_id,
         swarm_network_id=swarm_network_id,
         settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
-        pg_settings=PGSettings(),
+        app_settings=AppSettings.create_from_envs(),
     )
     assert dynamic_sidecar_spec
     pprint(dynamic_sidecar_spec)
