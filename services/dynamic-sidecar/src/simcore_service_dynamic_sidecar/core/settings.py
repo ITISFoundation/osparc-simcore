@@ -1,7 +1,7 @@
 import logging
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.projects import ProjectID
@@ -84,6 +84,9 @@ class DynamicSidecarSettings(BaseSettings):
     )
     DY_SIDECAR_PATH_OUTPUTS: Path = Field(
         ..., description="path where to expect the outputs folder"
+    )
+    DY_SIDECAR_STATE_PATHS: List[Path] = Field(
+        ..., description="list of additional paths to be synced"
     )
     DY_SIDECAR_USER_ID: UserID
     DY_SIDECAR_PROJECT_ID: ProjectID

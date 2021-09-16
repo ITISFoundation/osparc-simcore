@@ -1,9 +1,10 @@
+# pylint: disable=redefined-builtin
+
 import logging
 import traceback
+from collections import deque
 from pathlib import Path
-
-# pylint: disable=redefined-builtin
-from typing import Any, Dict, List, Union
+from typing import Any, Awaitable, Deque, Dict, List, Optional, Union
 
 from fastapi import (
     APIRouter,
@@ -16,6 +17,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import PlainTextResponse
+from servicelib.utils import logged_gather
 
 from ..core.dependencies import get_application_health, get_settings, get_shared_store
 from ..core.settings import DynamicSidecarSettings
@@ -25,6 +27,7 @@ from ..core.validation import InvalidComposeSpec, validate_compose_spec
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
 from ..modules import nodeports
+from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
 
 logger = logging.getLogger(__name__)
 
@@ -246,10 +249,15 @@ async def save_state(state_paths: List[Path]) -> Response:
     - push all the extra state paths
     """
     logger.debug("Saving state %s", state_paths)
-    # TODO: push outputs via nodeports
-    # push the extra state_paths
-    # maybe do this in parallel?
-    await nodeports.upload_outputs(port_keys=[])
+
+    awaitables: Deque[Awaitable[Optional[Any]]] = deque()
+
+    awaitables.append(nodeports.upload_outputs(port_keys=[]))
+
+    for state_path in state_paths:
+        awaitables.append(upload_path_if_exists(state_path))
+
+    await logged_gather(*awaitables)
 
     # SEE https://github.com/tiangolo/fastapi/issues/2253
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -261,17 +269,21 @@ async def save_state(state_paths: List[Path]) -> Response:
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def restore_state(state_paths: List[str]) -> Response:
+async def restore_state(state_paths: List[Path]) -> Response:
     """
     When restoring the state:
     - pull inputs via nodeports
     - pull all the extra state paths
     """
     logger.debug("Restoring state %s", state_paths)
-    # TODO: pull inputs via nodeports
-    # pull the extra state_paths
-    # maybe do this in parallel?
-    await nodeports.download_inputs(port_keys=[])
+
+    awaitables: Deque[Awaitable[Optional[Any]]] = deque()
+
+    awaitables.append(nodeports.download_inputs(port_keys=[]))
+    for state_path in state_paths:
+        awaitables.append(pull_path_if_exists(state_path))
+
+    await logged_gather(*awaitables)
 
     # SEE https://github.com/tiangolo/fastapi/issues/2253
     return Response(status_code=status.HTTP_204_NO_CONTENT)
