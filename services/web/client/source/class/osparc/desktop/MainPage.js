@@ -263,37 +263,41 @@ qx.Class.define("osparc.desktop.MainPage", {
 
       this.__studyEditor.closeEditor();
       this.__closeStudy(studyId);
-      const params = {
-        url: {
-          "studyId": studyId,
-          "snapshotId": snapshotId
-        }
-      };
-      osparc.data.Resources.fetch("snapshots", "checkout", params)
-        .then(snapshotResp => {
-          if (!snapshotResp) {
-            const msg = this.tr("Snapshot not found");
-            throw new Error(msg);
+      // TODO: wait for closed
+      // Give a 2 seconds delay
+      setTimeout(() => {
+        const params = {
+          url: {
+            "studyId": studyId,
+            "snapshotId": snapshotId
           }
-          const params2 = {
-            url: {
-              "studyId": studyId
+        };
+        osparc.data.Resources.fetch("snapshots", "checkout", params)
+          .then(snapshotResp => {
+            if (!snapshotResp) {
+              const msg = this.tr("Snapshot not found");
+              throw new Error(msg);
             }
-          };
-          osparc.data.Resources.getOne("studies", params2)
-            .then(studyData => {
-              if (!studyData) {
-                const msg = this.tr("Study not found");
-                throw new Error(msg);
+            const params2 = {
+              url: {
+                "studyId": studyId
               }
-              this.__loadStudy(studyData);
-            });
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-          this.__showDashboard();
-          return;
-        });
+            };
+            osparc.data.Resources.getOne("studies", params2)
+              .then(studyData => {
+                if (!studyData) {
+                  const msg = this.tr("Study not found");
+                  throw new Error(msg);
+                }
+                this.__loadStudy(studyData);
+              });
+          })
+          .catch(err => {
+            osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+            this.__showDashboard();
+            return;
+          });
+      }, 2000);
     },
 
     __loadStudy: function(studyData, pageContext) {
