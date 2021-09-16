@@ -549,7 +549,7 @@ class DataStorageManager:
             stmt = sa.select([file_meta_data.c.object_name]).where(
                 file_meta_data.c.file_uuid == file_uuid
             )
-            object_name: str = await conn.scalar(stmt)
+            object_name: Optional[str] = await conn.scalar(stmt)
 
             if object_name is None:
                 raise web.HTTPNotFound(

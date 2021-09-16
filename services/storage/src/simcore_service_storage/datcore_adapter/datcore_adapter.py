@@ -3,6 +3,7 @@ import logging
 from math import ceil
 from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
 
+import aiohttp
 from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.client_session import ClientSession, get_client_session
@@ -166,7 +167,7 @@ async def list_all_files_metadatas_in_dataset(
                 created_at=d["created_at"],
                 last_modified=d["last_modified_at"],
                 display_file_path=d["name"],
-            ),
+            ),  # type: ignore
         )
         for d in all_files
     ]
