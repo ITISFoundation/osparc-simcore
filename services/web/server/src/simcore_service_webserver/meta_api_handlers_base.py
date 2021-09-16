@@ -1,10 +1,11 @@
 import logging
 from functools import wraps
-from typing import Any, Awaitable, Callable, Optional, Type
+from typing import Any, Callable, Optional, Type
 
 import orjson
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPException
+from aiohttp.web_middlewares import _Handler
 from pydantic.error_wrappers import ValidationError
 from pydantic.main import BaseModel
 from yarl import URL
@@ -36,10 +37,7 @@ def enveloped_response(
     )
 
 
-HandlerCoroutine = Callable[[web.Request], Awaitable[Optional[web.Response]]]
-
-
-def handle_request_errors(handler: HandlerCoroutine) -> HandlerCoroutine:
+def handle_request_errors(handler: _Handler) -> _Handler:
     """
     - required and type validation of path and query parameters
     """
@@ -84,7 +82,7 @@ def create_url_for_function(request: web.Request) -> Callable:
     def url_for(router_name: str, **params) -> Optional[str]:
         try:
             rel_url: URL = app.router[router_name].url_for(
-                **{k: str(v) for k, v in params.items()}
+                **{k: f"{v}" for k, v in params.items()}
             )
             url = (
                 request.url.origin()
@@ -93,7 +91,7 @@ def create_url_for_function(request: web.Request) -> Callable:
                 )
                 .with_path(str(rel_url))
             )
-            return str(url)
+            return f"{url}"
 
         except KeyError:
             return None

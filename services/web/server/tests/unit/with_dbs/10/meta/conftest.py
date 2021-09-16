@@ -11,6 +11,8 @@ import aiohttp
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.projects import ProjectID
+from models_library.users import UserID
 from pytest_simcore.helpers.rawdata_fakers import random_project
 from pytest_simcore.helpers.utils_login import UserDict
 from pytest_simcore.helpers.utils_projects import NewProject
@@ -55,7 +57,7 @@ def fake_project(faker: Faker) -> ProjectDict:
 
 
 @pytest.fixture
-async def catalog_subsystem_mock(monkeypatch, fake_project):
+async def catalog_subsystem_mock(monkeypatch, fake_project) -> None:
     services_in_project = [
         {"key": s["key"], "version": s["version"]}
         for _, s in fake_project["workbench"].items()
@@ -70,7 +72,9 @@ async def catalog_subsystem_mock(monkeypatch, fake_project):
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg, aiohttp_unused_port, catalog_subsystem_mock, monkeypatch):
+def app_cfg(
+    default_app_cfg, aiohttp_unused_port, catalog_subsystem_mock, monkeypatch
+) -> Dict[str, Any]:
     """App's configuration used for every test in this module
 
     NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
@@ -127,12 +131,12 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, catalog_subsystem_mock, monkey
 
 
 @pytest.fixture
-async def user_id(logged_user: UserDict) -> int:
+async def user_id(logged_user: UserDict) -> UserID:
     return logged_user["id"]
 
 
 @pytest.fixture()
-def project_uuid(user_project: ProjectDict) -> UUID:
+def project_uuid(user_project: ProjectDict) -> ProjectID:
     return UUID(user_project["uuid"])
 
 
@@ -159,7 +163,7 @@ async def user_project(
 def do_update_user_project(
     logged_user: UserDict, client: TestClient, faker: Faker
 ) -> Callable[[UUID], Awaitable]:
-    async def _doit(project_uuid: UUID):
+    async def _doit(project_uuid: UUID) -> None:
         resp: aiohttp.ClientResponse = await client.get(
             f"{vtag}/projects/{project_uuid}"
         )
@@ -195,7 +199,7 @@ def do_delete_user_project(
         "simcore_service_webserver.projects.projects_api.delete_data_folders_of_project",
     )
 
-    async def _doit(project_uuid: UUID):
+    async def _doit(project_uuid: UUID) -> None:
 
         resp: aiohttp.ClientResponse = await client.delete(
             f"{vtag}/projects/{project_uuid}"
