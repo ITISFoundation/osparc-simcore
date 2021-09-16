@@ -209,6 +209,8 @@ async def validate_compose_spec(
     volumes = parsed_compose_spec.get("volumes", {})
     volumes[mounted_paths.volume_name_inputs] = dict(external=True)
     volumes[mounted_paths.volume_name_outputs] = dict(external=True)
+    for volume_name_state_path in mounted_paths.volume_name_state_paths():
+        volumes[volume_name_state_path] = dict(external=True)
     parsed_compose_spec["volumes"] = volumes
 
     # if more then one container is defined, add an "backend" network

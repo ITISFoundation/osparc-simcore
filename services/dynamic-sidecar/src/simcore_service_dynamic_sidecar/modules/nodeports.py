@@ -19,8 +19,6 @@ from simcore_service_dynamic_sidecar.core.settings import (
     get_settings,
 )
 
-from .mounted_fs import MountedVolumes, get_mounted_volumes
-
 _FILE_TYPE_PREFIX = "data:"
 _KEY_VALUE_FILE_NAME = "key_values.json"
 
@@ -51,7 +49,7 @@ async def _set_data_to_port(port: Port, value: Optional[Any]) -> int:
 
 
 @run_sequentially_in_context()
-async def upload_outputs(port_keys: List[str]) -> None:
+async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
     """calls to this function will get queued and invoked in sequence"""
     # pylint: disable=too-many-branches
     logger.info("uploading data to simcore...")
@@ -63,8 +61,6 @@ async def upload_outputs(port_keys: List[str]) -> None:
         project_id=str(settings.DY_SIDECAR_PROJECT_ID),
         node_uuid=str(settings.DY_SIDECAR_NODE_ID),
     )
-    mounted_paths: MountedVolumes = get_mounted_volumes()
-    outputs_path = mounted_paths.disk_outputs_path
 
     # let's gather the tasks
     temp_files: List[Path] = []
@@ -127,7 +123,7 @@ async def upload_outputs(port_keys: List[str]) -> None:
 async def dispatch_update_for_directory(directory_path: Path) -> None:
     logger.info("Uploading data for directory %s", directory_path)
     # TODO: how to figure out from directory_path which is the correct target to upload
-    await upload_outputs([])
+    await upload_outputs(directory_path, [])
 
 
 # INPUTS section
@@ -150,7 +146,7 @@ async def _get_data_from_port(port: Port) -> Tuple[Port, ItemConcreteValue]:
     return (port, ret)
 
 
-async def download_inputs(port_keys: List[str]) -> None:
+async def download_inputs(inputs_path: Path, port_keys: List[str]) -> None:
     logger.info("retrieving data from simcore...")
     start_time = time.perf_counter()
 
@@ -160,8 +156,6 @@ async def download_inputs(port_keys: List[str]) -> None:
         project_id=str(settings.DY_SIDECAR_PROJECT_ID),
         node_uuid=str(settings.DY_SIDECAR_NODE_ID),
     )
-    mounted_paths: MountedVolumes = get_mounted_volumes()
-    inputs_path = mounted_paths.disk_inputs_path
     data = {}
 
     # let's gather all the data

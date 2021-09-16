@@ -3,7 +3,6 @@
 import logging
 import traceback
 from collections import deque
-from pathlib import Path
 from typing import Any, Awaitable, Deque, Dict, List, Optional, Union
 
 from fastapi import (
@@ -28,6 +27,7 @@ from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
 from ..modules import nodeports
 from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
+from ..modules.mounted_fs import MountedVolumes, get_mounted_volumes
 
 logger = logging.getLogger(__name__)
 
@@ -237,25 +237,27 @@ async def inspect_container(
 
 
 @containers_router.put(
-    "/containers:save-state",
-    summary="Stores the state of the dynamic service",
+    "/containers:restore-state",
+    summary="Restores the state of the dynamic service",
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def save_state(state_paths: List[Path]) -> Response:
+async def restore_state() -> Response:
     """
-    When saving the state:
-    - push outputs via nodeports
-    - push all the extra state paths
+    When restoring the state:
+    - pull inputs via nodeports
+    - pull all the extra state paths
     """
-    logger.debug("Saving state %s", state_paths)
+    mounted_volumes: MountedVolumes = get_mounted_volumes()
 
     awaitables: Deque[Awaitable[Optional[Any]]] = deque()
 
-    awaitables.append(nodeports.upload_outputs(port_keys=[]))
-
-    for state_path in state_paths:
-        awaitables.append(upload_path_if_exists(state_path))
+    awaitables.append(
+        nodeports.download_inputs(mounted_volumes.disk_inputs_path, port_keys=[])
+    )
+    for state_path in mounted_volumes.disk_state_paths():
+        logger.debug("Downloading state %s", state_path)
+        awaitables.append(pull_path_if_exists(state_path))
 
     await logged_gather(*awaitables)
 
@@ -264,24 +266,28 @@ async def save_state(state_paths: List[Path]) -> Response:
 
 
 @containers_router.put(
-    "/containers:restore-state",
-    summary="Restores the state of the dynamic service",
+    "/containers:save-state",
+    summary="Stores the state of the dynamic service",
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def restore_state(state_paths: List[Path]) -> Response:
+async def save_state() -> Response:
     """
-    When restoring the state:
-    - pull inputs via nodeports
-    - pull all the extra state paths
+    When saving the state:
+    - push outputs via nodeports
+    - push all the extra state paths
     """
-    logger.debug("Restoring state %s", state_paths)
+    mounted_volumes: MountedVolumes = get_mounted_volumes()
 
     awaitables: Deque[Awaitable[Optional[Any]]] = deque()
 
-    awaitables.append(nodeports.download_inputs(port_keys=[]))
-    for state_path in state_paths:
-        awaitables.append(pull_path_if_exists(state_path))
+    awaitables.append(
+        nodeports.upload_outputs(mounted_volumes.disk_outputs_path, port_keys=[])
+    )
+
+    for state_path in mounted_volumes.disk_state_paths():
+        logger.debug("Saving state %s", state_path)
+        awaitables.append(upload_path_if_exists(state_path))
 
     await logged_gather(*awaitables)
 

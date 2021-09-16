@@ -156,13 +156,11 @@ class DynamicSidecarClient:
             log_httpx_http_error(url, "POST", traceback.format_exc())
             raise e
 
-    async def service_state_save(
-        self, dynamic_sidecar_endpoint: str, state_paths: List[Path]
-    ) -> None:
+    async def service_state_save(self, dynamic_sidecar_endpoint: str) -> None:
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers:save-state")
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
-                response = await client.put(url, json=[str(p) for p in state_paths])
+                response = await client.put(url)
             if response.status_code != 204:
                 message = (
                     f"ERROR while saving service state: "
@@ -174,13 +172,11 @@ class DynamicSidecarClient:
             log_httpx_http_error(url, "PUT", traceback.format_exc())
             raise e
 
-    async def service_state_restore(
-        self, dynamic_sidecar_endpoint: str, state_paths: List[Path]
-    ) -> None:
+    async def service_state_restore(self, dynamic_sidecar_endpoint: str) -> None:
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers:restore-state")
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
-                response = await client.put(url, json=[str(p) for p in state_paths])
+                response = await client.put(url)
             if response.status_code != 204:
                 message = (
                     f"ERROR while restoring service state: "

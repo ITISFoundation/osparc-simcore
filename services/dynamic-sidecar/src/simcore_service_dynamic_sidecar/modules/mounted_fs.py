@@ -1,6 +1,7 @@
+import os
 from functools import cached_property
 from pathlib import Path
-from typing import Optional
+from typing import Generator, List, Optional
 
 from simcore_service_dynamic_sidecar.core.settings import (
     DynamicSidecarSettings,
@@ -17,6 +18,11 @@ def _ensure_path(path: Path) -> Path:
     return path
 
 
+def _name_from_full_path(path: Path) -> str:
+    """transforms: /path/to/a/file -> _path_to_a_file"""
+    return str(path).replace(os.sep, "_")
+
+
 class MountedVolumes:
     """
     The inputs and outputs directories are created and by the dynamic-sidecar
@@ -29,20 +35,30 @@ class MountedVolumes:
         - /dy-sidecar_UUID_outputs:/outputs-dir
     """
 
-    def __init__(self, inputs_path: Path, outputs_path: Path) -> None:
+    def __init__(
+        self, inputs_path: Path, outputs_path: Path, state_paths: List[Path]
+    ) -> None:
         self.inputs_path: Path = inputs_path
         self.outputs_path: Path = outputs_path
+        self.state_paths: List[Path] = state_paths
 
-    @cached_property
+        self._ensure_directories()
+
+    @property
     def volume_name_inputs(self) -> str:
         """Same name as the namespace, to easily track components"""
         compose_namespace = get_settings().DYNAMIC_SIDECAR_COMPOSE_NAMESPACE
         return f"{compose_namespace}_inputs"
 
-    @cached_property
+    @property
     def volume_name_outputs(self) -> str:
         compose_namespace = get_settings().DYNAMIC_SIDECAR_COMPOSE_NAMESPACE
         return f"{compose_namespace}_outputs"
+
+    def volume_name_state_paths(self) -> Generator[str, None, None]:
+        compose_namespace = get_settings().DYNAMIC_SIDECAR_COMPOSE_NAMESPACE
+        for state_path in self.state_paths:
+            yield f"{compose_namespace}{_name_from_full_path(state_path)}"
 
     @cached_property
     def disk_inputs_path(self) -> Path:
@@ -52,14 +68,20 @@ class MountedVolumes:
     def disk_outputs_path(self) -> Path:
         return _ensure_path(DY_VOLUMES / "outputs")
 
-    def ensure_directories(self) -> None:
+    def disk_state_paths(self) -> Generator[Path, None, None]:
+        for state_path in self.state_paths:
+            yield _ensure_path(DY_VOLUMES / _name_from_full_path(state_path))
+
+    def _ensure_directories(self) -> None:
         """
-        Creates the directories on its file system, these will be mounted
-        elsewere.
+        Creates the directories on its file system,
+        these will be mounted elsewere.
         """
         _ensure_path(DY_VOLUMES)
         self.disk_inputs_path  # pylint:disable= pointless-statement
         self.disk_outputs_path  # pylint:disable= pointless-statement
+        for disk_state_path in self.disk_state_paths():
+            _ensure_path(disk_state_path)
 
     def get_inputs_docker_volume(self) -> str:
         return f"{self.volume_name_inputs}:{self.inputs_path}"
@@ -76,8 +98,8 @@ def setup_mounted_fs() -> MountedVolumes:
     _mounted_volumes = MountedVolumes(
         inputs_path=settings.DY_SIDECAR_PATH_INPUTS,
         outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS,
+        state_paths=settings.DY_SIDECAR_STATE_PATHS,
     )
-    _mounted_volumes.ensure_directories()
 
     return _mounted_volumes
 
