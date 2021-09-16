@@ -15,17 +15,13 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
+qx.Class.define("osparc.component.snapshots.EditSnapshotView", {
   extend: qx.ui.core.Widget,
 
-  construct: function(study) {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
-
-    this.set({
-      study
-    });
 
     this.__buildForm();
   },
@@ -35,21 +31,13 @@ qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
     "cancel": "qx.event.type.Event"
   },
 
-  properties: {
-    study: {
-      check: "osparc.data.model.Study",
-      init: null,
-      nullable: false
-    }
-  },
-
   members: {
     __form: null,
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "tag":
+        case "tags":
           control = new qx.ui.form.TextField();
           break;
         case "message":
@@ -89,14 +77,8 @@ qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
       const renderer = this.__renderer = new qx.ui.form.renderer.Single(form);
       this._add(renderer);
 
-      const study = this.getStudy();
-
-      const tag = this.getChildControl("tag");
-      form.add(tag, "Tag", null, "tag");
-      study.getSnapshots()
-        .then(snapshots => {
-          tag.setValue("V"+snapshots.length);
-        });
+      const tags = this.getChildControl("tags");
+      form.add(tags, "Tags", null, "tags");
 
       const message = this.getChildControl("message");
       form.add(message, "Message", null, "message");
@@ -109,7 +91,7 @@ qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
     },
 
     getTag: function() {
-      return this.__form.getItem("tag").getValue();
+      return this.__form.getItem("tags").getValue();
     },
 
     getMessage: function() {

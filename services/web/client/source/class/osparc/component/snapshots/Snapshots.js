@@ -30,7 +30,7 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
       statusBarVisible: false
     });
 
-    this.setColumnWidth(this.self().T_POS.TAG.col, 100);
+    this.setColumnWidth(this.self().T_POS.TAGS.col, 100);
     this.setColumnWidth(this.self().T_POS.MESSAGE.col, 150);
     this.setColumnWidth(this.self().T_POS.DATE.col, 130);
 
@@ -43,9 +43,9 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
         col: 0,
         label: "Id"
       },
-      TAG: {
+      TAGS: {
         col: 1,
-        label: qx.locale.Manager.tr("Name")
+        label: qx.locale.Manager.tr("Tags")
       },
       MESSAGE: {
         col: 2,
@@ -81,8 +81,8 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
 
     __populateSnapshotsTable: function() {
       const columnModel = this.getTableColumnModel();
-      columnModel.setDataCellRenderer(this.self().T_POS.ID.col, new qx.ui.table.cellrenderer.String());
-      columnModel.setDataCellRenderer(this.self().T_POS.TAG.col, new qx.ui.table.cellrenderer.String());
+      columnModel.setDataCellRenderer(this.self().T_POS.ID.col, new qx.ui.table.cellrenderer.Number());
+      columnModel.setDataCellRenderer(this.self().T_POS.TAGS.col, new qx.ui.table.cellrenderer.String());
       columnModel.setDataCellRenderer(this.self().T_POS.MESSAGE.col, new qx.ui.table.cellrenderer.String());
       columnModel.setDataCellRenderer(this.self().T_POS.DATE.col, new qx.ui.table.cellrenderer.Date());
 
@@ -92,7 +92,7 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
           snapshots.forEach(snapshot => {
             const row = [];
             row[this.self().T_POS.ID.col] = snapshot["id"];
-            row[this.self().T_POS.TAG.col] = snapshot["tags"].join(", ");
+            row[this.self().T_POS.TAGS.col] = snapshot["tags"].join(", ");
             row[this.self().T_POS.MESSAGE.col] = snapshot["message"];
             const date = new Date(snapshot["created_at"]);
             row[this.self().T_POS.DATE.col] = osparc.utils.Utils.formatDateAndTime(date);

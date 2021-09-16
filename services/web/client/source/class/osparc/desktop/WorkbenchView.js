@@ -186,13 +186,18 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __takeSnapshot: function() {
+      const editSnapshotView = new osparc.component.snapshots.EditSnapshotView();
+      const tagCtrl = editSnapshotView.getChildControl("tag");
       const study = this.getStudy();
-      const takeSnapshotView = new osparc.component.snapshots.TakeSnapshotView(study);
+      study.getSnapshots()
+        .then(snapshots => {
+          tagCtrl.setValue("V"+snapshots.length);
+        });
       const title = this.tr("Take Snapshot");
-      const win = osparc.ui.window.Window.popUpInWindow(takeSnapshotView, title, 400, 180);
-      takeSnapshotView.addListener("takeSnapshot", () => {
-        const tag = takeSnapshotView.getTag();
-        const message = takeSnapshotView.getMessage();
+      const win = osparc.ui.window.Window.popUpInWindow(editSnapshotView, title, 400, 180);
+      editSnapshotView.addListener("takeSnapshot", () => {
+        const tag = editSnapshotView.getTag();
+        const message = editSnapshotView.getMessage();
         const workbenchToolbar = this.__mainPanel.getToolbar();
         const takeSnapshotBtn = workbenchToolbar.getChildControl("take-snapshot-btn");
         takeSnapshotBtn.setFetching(true);
@@ -214,7 +219,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
         win.close();
       }, this);
-      takeSnapshotView.addListener("cancel", () => {
+      editSnapshotView.addListener("cancel", () => {
         win.close();
       }, this);
     },
