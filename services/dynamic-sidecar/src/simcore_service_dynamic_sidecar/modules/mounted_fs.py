@@ -70,7 +70,7 @@ class MountedVolumes:
 
     def disk_state_paths(self) -> Generator[Path, None, None]:
         for state_path in self.state_paths:
-            yield _ensure_path(DY_VOLUMES / _name_from_full_path(state_path))
+            yield _ensure_path(DY_VOLUMES / _name_from_full_path(state_path).strip("_"))
 
     def _ensure_directories(self) -> None:
         """
