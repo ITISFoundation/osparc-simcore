@@ -135,11 +135,11 @@ async def test_run_computational_sidecar(
     output_data = future.result()
 
     # check that the task produces expected logs
+    worker_logs = [log for _, log in dask_client.get_worker_logs()[worker_name]]
     for log in expected_logs:
-        assert re.search(
-            rf"\[{service_key}:{service_version} - .+\/.+\]: {log}",
-            dask_client.get_worker_logs()[worker_name],
-        )
+        r = re.compile(rf"\[{service_key}:{service_version} - .+\/.+\]: {log}")
+        search_results = list(filter(r.search, worker_logs))
+        assert len(search_results) > 0
 
     for k, v in expected_output_data.items():
         assert k in output_data
