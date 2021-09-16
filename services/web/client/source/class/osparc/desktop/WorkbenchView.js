@@ -187,7 +187,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __takeSnapshot: function() {
       const editSnapshotView = new osparc.component.snapshots.EditSnapshotView();
-      const tagCtrl = editSnapshotView.getChildControl("tag");
+      const tagCtrl = editSnapshotView.getChildControl("tags");
       const study = this.getStudy();
       study.getSnapshots()
         .then(snapshots => {

@@ -258,24 +258,35 @@ qx.Class.define("osparc.desktop.MainPage", {
         });
     },
 
-    __startSnapshot: function(snapshotData) {
+    __startSnapshot: function(studyId, snapshotId) {
       this.__showLoadingPage(this.tr("Loading Snapshot"));
+
+      this.__studyEditor.closeEditor();
+      this.__closeStudy(studyId);
       const params = {
         url: {
-          "studyId": snapshotData["ParentId"],
-          "snapshotId": snapshotData["SnapshotId"]
+          "studyId": studyId,
+          "snapshotId": snapshotId
         }
       };
-      osparc.data.Resources.getOne("snapshots", params)
+      osparc.data.Resources.fetch("snapshots", "checkout", params)
         .then(snapshotResp => {
           if (!snapshotResp) {
             const msg = this.tr("Snapshot not found");
             throw new Error(msg);
           }
-          fetch(snapshotResp["url_project"])
-            .then(response => response.json())
-            .then(data => {
-              this.__loadStudy(data["data"]);
+          const params2 = {
+            url: {
+              "studyId": studyId
+            }
+          };
+          osparc.data.Resources.getOne("studies", params2)
+            .then(studyData => {
+              if (!studyData) {
+                const msg = this.tr("Study not found");
+                throw new Error(msg);
+              }
+              this.__loadStudy(studyData);
             });
         })
         .catch(err => {
@@ -346,7 +357,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const studyEditor = new osparc.desktop.StudyEditor();
       studyEditor.addListener("startSnapshot", e => {
         const snapshotData = e.getData();
-        this.__startSnapshot(snapshotData);
+        this.__startSnapshot(this.__studyEditor.getStudy().getUuid(), snapshotData["Id"]);
       }, this);
       return studyEditor;
     },
