@@ -1,6 +1,7 @@
 import json
 import logging
 from collections import deque
+from pathlib import Path
 from typing import Any, Deque, Dict, List, cast
 
 from models_library.service_settings_labels import (
@@ -21,6 +22,7 @@ from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 from ...models.schemas.dynamic_services import SchedulerData, ServiceType
 from ...utils.registry import get_dynamic_sidecar_env_vars
 from .errors import DynamicSidecarError
+from .volumes_resolver import DynamicSidecarVolumesPathsResolver
 
 # Notes on below env var names:
 # - SIMCORE_REGISTRY will be replaced by the url of the simcore docker registry
@@ -33,10 +35,6 @@ MATCH_SERVICE_VERSION = "${SERVICE_VERSION}"
 MATCH_SIMCORE_REGISTRY = "${SIMCORE_REGISTRY}"
 MATCH_IMAGE_START = f"{MATCH_SIMCORE_REGISTRY}/"
 MATCH_IMAGE_END = f":{MATCH_SERVICE_VERSION}"
-
-DYNAMIC_SIDECAR_VOLUME_MOUNT_PATH = "/dy-volumes"
-DYNAMIC_SIDECAR_INPUTS_VOLUME = f"{DYNAMIC_SIDECAR_VOLUME_MOUNT_PATH}/inputs"
-DYNAMIC_SIDECAR_OUTPUTS_VOLUME = f"{DYNAMIC_SIDECAR_VOLUME_MOUNT_PATH}/outputs"
 
 
 log = logging.getLogger(__name__)
@@ -502,6 +500,9 @@ def _get_dy_sidecar_env_vars(
     return {
         "DY_SIDECAR_PATH_INPUTS": f"{scheduler_data.paths_mapping.inputs_path}",
         "DY_SIDECAR_PATH_OUTPUTS": f"{scheduler_data.paths_mapping.outputs_path}",
+        "DY_SIDECAR_STATE_PATHS": json.dumps(
+            [str(x) for x in scheduler_data.paths_mapping.state_paths]
+        ),
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
         "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
         "DY_SIDECAR_NODE_ID": f"{scheduler_data.node_uuid}",
@@ -539,38 +540,30 @@ async def get_dynamic_sidecar_spec(
             "Source": "/var/run/docker.sock",
             "Target": "/var/run/docker.sock",
             "Type": "bind",
-        },
-        # Docker does not allow mounting of subfolders from volumes as the following:
-        #   `volume_name/inputs:/target_folder/inputs`
-        #   `volume_name/outputs:/target_folder/inputs`
-        #
-        # Two separate volumes are required to achieve the following on the spawned
-        # dynamic-sidecar containers:
-        #   `volume_name_inputs:/target_folder/inputs`
-        #   `volume_name_outputs:/target_folder/outputs`
-        {
-            "Source": f"{compose_namespace}_inputs",
-            "Target": DYNAMIC_SIDECAR_INPUTS_VOLUME,
-            "Type": "volume",
-            "VolumeOptions": {
-                "Labels": {
-                    "com.simcore.description": "dynamic-sidecar inputs data volume",
-                    "uuid": f"{scheduler_data.node_uuid}",
-                },
-            },
-        },
-        {
-            "Source": f"{compose_namespace}_outputs",
-            "Target": DYNAMIC_SIDECAR_OUTPUTS_VOLUME,
-            "Type": "volume",
-            "VolumeOptions": {
-                "Labels": {
-                    "com.simcore.description": "dynamic-sidecar outputs data volume",
-                    "uuid": f"{scheduler_data.node_uuid}",
-                },
-            },
-        },
+        }
     ]
+
+    # Docker does not allow mounting of subfolders from volumes as the following:
+    #   `volume_name/inputs:/target_folder/inputs`
+    #   `volume_name/outputs:/target_folder/inputs`
+    #   `volume_name/path/to/sate/01:/target_folder/path_to_sate_01`
+    #
+    # Two separate volumes are required to achieve the following on the spawned
+    # dynamic-sidecar containers:
+    #   `volume_name_inputs:/target_folder/inputs`
+    #   `volume_name_outputs:/target_folder/outputs`
+    #   `volume_name_path_to_sate_01:/target_folder/path_to_sate_01`
+    for path_to_mount in [
+        Path("/inputs"),
+        Path("/outputs"),
+    ] + scheduler_data.paths_mapping.state_paths:
+        mounts.append(
+            DynamicSidecarVolumesPathsResolver.mount_entry(
+                compose_namespace=compose_namespace,
+                state_path=path_to_mount,
+                node_uuid=f"{scheduler_data.node_uuid}",
+            )
+        )
 
     endpint_spec = {}
 
