@@ -9,7 +9,7 @@
     more fine grained concepts as tags and commits directly
 """
 import logging
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from uuid import UUID
 
 from aiohttp import web
@@ -142,10 +142,13 @@ async def get_workbench(
 ) -> WorkbenchView:
     repo_id, commit_id = await vc_repo.as_repo_and_commit_ids(project_uuid, ref_id)
 
-    content = await vc_repo.get_snapshot_content(repo_id, commit_id)
-    return WorkbenchView.from_orm(content)
+    content: Dict = await vc_repo.get_snapshot_content(repo_id, commit_id)
+    return WorkbenchView.parse_obj(content)
 
 
+#
+# All above with validated arguments
+#
 list_repos_safe = validate_arguments(list_repos, config=CFG)
 list_checkpoints_safe = validate_arguments(list_checkpoints, config=CFG)
 create_checkpoint_safe = validate_arguments(create_checkpoint, config=CFG)

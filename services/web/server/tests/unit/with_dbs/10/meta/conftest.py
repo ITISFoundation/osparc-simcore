@@ -26,6 +26,11 @@ from simcore_service_webserver.log import setup_logging
 
 ProjectDict = Dict[str, Any]
 
+# HELPERS
+
+
+# FIXTURES
+
 
 @pytest.fixture
 def user_role() -> UserRole:
@@ -33,9 +38,20 @@ def user_role() -> UserRole:
 
 
 @pytest.fixture
-def fake_project() -> ProjectDict:
+def fake_project(faker: Faker) -> ProjectDict:
     # API model project data
-    return random_project(name=f"{__file__}-project")
+    suffix = faker.word()
+    return random_project(
+        name=f"{__file__}-project",
+        workbench={
+            faker.uuid4(): {
+                "key": f"simcore/services/comp/test_{__name__}_{suffix}",
+                "version": "1.2.3",
+                "label": f"test_{__name__}_{suffix}",
+                "inputs": {"x": faker.pyint(), "y": faker.pyint()},
+            }
+        },
+    )
 
 
 @pytest.fixture

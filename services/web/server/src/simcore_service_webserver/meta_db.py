@@ -460,9 +460,7 @@ class VersionControlRepository(BaseRepository):
 
         return commit_id
 
-    async def get_snapshot_content(
-        self, repo_id: int, commit_id: int
-    ) -> Optional[RowProxy]:
+    async def get_snapshot_content(self, repo_id: int, commit_id: int) -> Dict:
         async with self.engine.acquire() as conn:
             if (
                 commit := await self.CommitsOrm(conn)

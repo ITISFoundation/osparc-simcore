@@ -52,7 +52,7 @@ class WorkbenchView(BaseModel):
     class Config:
         orm_mode = True
 
-    workbench: Dict[UUID, Node] = {}
+    workbench: Dict[UUID, Node]
     ui: Dict[UUID, Any] = {}
 
 
