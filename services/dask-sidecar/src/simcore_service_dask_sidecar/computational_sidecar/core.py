@@ -51,7 +51,11 @@ class ComputationalSidecar:
 
     async def _write_input_data(self, task_volumes: TaskSharedVolumes) -> None:
         input_data_file = task_volumes.input_folder / "inputs.json"
-        input_data_file.write_text(json.dumps(self.input_data))
+        input_data_file.write_text(
+            json.dumps(
+                {k: v for k, v in self.input_data.items() if not isinstance(v, Path)}
+            )
+        )
 
     async def _retrieve_output_data(
         self, task_volumes: TaskSharedVolumes

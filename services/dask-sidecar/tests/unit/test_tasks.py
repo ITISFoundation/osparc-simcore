@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=no-member
 import logging
 import re
 from collections import namedtuple
@@ -13,6 +14,7 @@ from uuid import uuid4
 import dask
 import pytest
 from distributed import Client
+from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
@@ -82,6 +84,24 @@ ServiceExampleParam = namedtuple(
 )
 
 
+@pytest.fixture()
+def fake_input_file(tmp_path: Path, faker: Faker) -> Path:
+    fake_file = tmp_path / faker.file_name()
+    fake_file.write_text("This is some fake data here")
+    return fake_file
+
+
+@pytest.fixture()
+def fake_input_data(fake_input_file: Path) -> Dict[str, Any]:
+    return {
+        "input_1": 23,
+        "input_23": "a string input",
+        "the_input_43": 15.0,
+        "the_bool_input_54": False,
+        "some_file_input": fake_input_file,
+    }
+
+
 @pytest.mark.parametrize(
     "service_key, service_version, command, input_data, output_data_keys, expected_output_data, expected_logs",
     [
@@ -96,33 +116,28 @@ ServiceExampleParam = namedtuple(
                 "cat ${INPUT_FOLDER}/inputs.json;"
                 'echo {\\"pytest_output_1\\":\\"is quite an amazing feat\\"} > ${OUTPUT_FOLDER}/outputs.json',
             ],
-            input_data={
-                "input_1": 23,
-                "input_23": "a string input",
-                "the_input_43": 15.0,
-                "the_bool_input_54": False,
-            },
+            input_data=pytest.lazy_fixture("fake_input_data"),
             output_data_keys={"pytest_output_1": {"type": str}},
             expected_output_data={"pytest_output_1": "is quite an amazing feat"},
             expected_logs=[
                 '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}'
             ],
         ),
-        ServiceExampleParam(
-            service_key="itisfoundation/sleeper",
-            service_version="2.1.1",
-            command=[],
-            input_data={"input_2": 2, "input_4": 1},
-            output_data_keys={
-                "output_1": {"type": Path, "name": "single_number.txt"},
-                "output_2": {"type": int},
-            },
-            expected_output_data={
-                "output_1": re.compile(r".+/single_number.txt"),
-                "output_2": re.compile(r"\d"),
-            },
-            expected_logs=["Remaining sleep time"],
-        ),
+        # ServiceExampleParam(
+        #     service_key="itisfoundation/sleeper",
+        #     service_version="2.1.1",
+        #     command=[],
+        #     input_data={"input_2": 2, "input_4": 1},
+        #     output_data_keys={
+        #         "output_1": {"type": Path, "name": "single_number.txt"},
+        #         "output_2": {"type": int},
+        #     },
+        #     expected_output_data={
+        #         "output_1": re.compile(r".+/single_number.txt"),
+        #         "output_2": re.compile(r"\d"),
+        #     },
+        #     expected_logs=["Remaining sleep time"],
+        # ),
     ],
 )
 async def test_run_computational_sidecar(
@@ -134,9 +149,7 @@ async def test_run_computational_sidecar(
     output_data_keys: Dict[str, Any],
     expected_output_data: Dict[str, Any],
     expected_logs: List[str],
-    caplog,
 ):
-    caplog.set_level(logging.INFO)
     future = dask_client.submit(
         run_computational_sidecar,
         service_key,
