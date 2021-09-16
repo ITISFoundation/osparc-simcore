@@ -164,7 +164,7 @@ class DataStorageManager:
             aws_secret_access_key=self.s3_client.secret_key,
         )
 
-    def _get_datcore_tokens(self, user_id: str) -> Tuple[str, str]:
+    def _get_datcore_tokens(self, user_id: str) -> Tuple[Optional[str], Optional[str]]:
         # pylint: disable=no-member
         token = self.datcore_tokens.get(user_id, DatCoreApiToken())
         return token.to_tuple()
@@ -175,11 +175,13 @@ class DataStorageManager:
         locs.append(simcore_s3)
 
         api_token, api_secret = self._get_datcore_tokens(user_id)
-        if await datcore_adapter.check_user_can_connect(
-            self.app, api_token, api_secret
-        ):
-            datcore = {"name": DATCORE_STR, "id": DATCORE_ID}
-            locs.append(datcore)
+
+        if api_token and api_secret and self.app:
+            if await datcore_adapter.check_user_can_connect(
+                self.app, api_token, api_secret
+            ):
+                datcore = {"name": DATCORE_STR, "id": DATCORE_ID}
+                locs.append(datcore)
 
         return locs
 

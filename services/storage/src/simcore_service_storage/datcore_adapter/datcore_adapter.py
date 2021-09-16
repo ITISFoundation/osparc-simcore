@@ -113,6 +113,10 @@ async def check_service_health(app: web.Application) -> bool:
 async def check_user_can_connect(
     app: web.Application, api_key: str, api_secret: str
 ) -> bool:
+    if not api_key or not api_secret:
+        # no need to ask, datcore is an authenticated service
+        return False
+
     try:
         await _request(app, api_key, api_secret, "GET", "/user/profile")
         return True
