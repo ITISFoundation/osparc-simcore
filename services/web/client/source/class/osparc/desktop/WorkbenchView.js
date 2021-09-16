@@ -189,16 +189,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const study = this.getStudy();
       const takeSnapshotView = new osparc.component.snapshots.TakeSnapshotView(study);
       const title = this.tr("Take Snapshot");
-      const win = osparc.ui.window.Window.popUpInWindow(takeSnapshotView, title, 400, 140);
+      const win = osparc.ui.window.Window.popUpInWindow(takeSnapshotView, title, 400, 180);
       takeSnapshotView.addListener("takeSnapshot", () => {
-        const label = takeSnapshotView.getLabel();
+        const tag = takeSnapshotView.getTag();
+        const message = takeSnapshotView.getMessage();
         const workbenchToolbar = this.__mainPanel.getToolbar();
         const takeSnapshotBtn = workbenchToolbar.getChildControl("take-snapshot-btn");
         takeSnapshotBtn.setFetching(true);
         const params = {
           url: {
-            "studyId": study.getUuid(),
-            "snapshot_label": label
+            "studyId": study.getUuid()
+          },
+          data: {
+            "tag": tag,
+            "message": message
           }
         };
         osparc.data.Resources.fetch("snapshots", "takeSnapshot", params)

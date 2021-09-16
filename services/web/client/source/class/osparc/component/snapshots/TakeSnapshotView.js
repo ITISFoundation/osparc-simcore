@@ -49,13 +49,13 @@ qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "label":
+        case "tag":
           control = new qx.ui.form.TextField();
           break;
-        case "save-data":
-          control = new qx.ui.form.CheckBox().set({
-            value: false,
-            enabled: false
+        case "message":
+          control = new qx.ui.form.TextArea().set({
+            autoSize: true,
+            minimalLineHeight: 3
           });
           break;
         case "cancel-button": {
@@ -91,12 +91,15 @@ qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
 
       const study = this.getStudy();
 
-      const label = this.getChildControl("label");
-      form.add(label, "Label", null, "label");
+      const tag = this.getChildControl("tag");
+      form.add(tag, "Tag", null, "tag");
       study.getSnapshots()
         .then(snapshots => {
-          label.setValue("V"+snapshots.length);
+          tag.setValue("V"+snapshots.length);
         });
+
+      const message = this.getChildControl("message");
+      form.add(message, "Message", null, "message");
 
       // buttons
       const cancelButton = this.getChildControl("cancel-button");
@@ -105,12 +108,12 @@ qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
       form.addButton(okButton);
     },
 
-    getLabel: function() {
-      return this.__form.getItem("label").getValue();
+    getTag: function() {
+      return this.__form.getItem("tag").getValue();
     },
 
-    getSaveData: function() {
-      return this.__form.getItem("save-data").getValue();
+    getMessage: function() {
+      return this.__form.getItem("message").getValue();
     }
   }
 });
