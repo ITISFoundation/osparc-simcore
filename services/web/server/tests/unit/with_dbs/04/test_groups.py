@@ -13,6 +13,7 @@ from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
 from servicelib.aiohttp.application import create_safe_application
+from simcore_postgres_database.models.users import users
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.groups import setup_groups
 from simcore_service_webserver.groups_api import (
@@ -537,8 +538,9 @@ async def test_add_user_gets_added_to_group(
             user_data={"role": user_role.name, "email": email},
             enable_check=user_role != UserRole.ANONYMOUS,
         )
-        await auto_add_user_to_groups(client.app, user["id"])
+        print("user_id: ", user["id"])
 
+        await auto_add_user_to_groups(client.app, user["id"])
         url = client.app.router["list_groups"].url_for()
         assert str(url) == f"{PREFIX}"
 
@@ -548,6 +550,9 @@ async def test_add_user_gets_added_to_group(
         )
         if not error:
             assert len(data["organizations"]) == (0 if "bad" in email else 1)
+
     # cleanup users
-    for email in emails:
-        postgres_db.execute(f"DELETE FROM users WHERE email='{email}'")
+    with postgres_db.begin() as conn:
+        for email in emails:
+            # pylint: disable=no-value-for-parameter
+            conn.execute(users.delete().where(users.c.email == email))
