@@ -76,9 +76,6 @@ def run_computational_sidecar(
     output_data_keys: Dict[str, Any],
     command: List[str],
 ) -> Dict[str, Any]:
-    # TODO: redirect the stdout to logging if possible
-    print("this message is printed")
-
     return asyncio.get_event_loop().run_until_complete(
         _run_computational_sidecar_async(
             service_key, service_version, input_data, output_data_keys, command
