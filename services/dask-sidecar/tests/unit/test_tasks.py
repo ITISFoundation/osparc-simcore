@@ -98,9 +98,9 @@ def fake_command(fake_input_file: Path) -> List[str]:
         "-c",
         "echo User: $(id $(whoami)) && "
         "(test -f ${INPUT_FOLDER}/inputs.json || (echo ${INPUT_FOLDER}/inputs.json file does not exists && exit 1)) && "
-        "cat ${INPUT_FOLDER}/inputs.json && "
+        "echo $(cat ${INPUT_FOLDER}/inputs.json) && "
         f"(test -f ${{INPUT_FOLDER}}/{fake_input_file.name} || (echo ${{INPUT_FOLDER}}/{fake_input_file.name} does not exists && exit 1)) && "
-        f"cat ${{INPUT_FOLDER}}/{fake_input_file.name} &&"
+        f"echo $(cat ${{INPUT_FOLDER}}/{fake_input_file.name}) &&"
         'echo {\\"pytest_output_1\\":\\"is quite an amazing feat\\"} > ${OUTPUT_FOLDER}/outputs.json',
     ]
 
