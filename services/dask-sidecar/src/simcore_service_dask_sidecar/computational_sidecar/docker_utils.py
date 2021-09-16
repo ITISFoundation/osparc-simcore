@@ -1,5 +1,6 @@
 import asyncio
 from contextlib import asynccontextmanager
+from datetime import datetime
 from pprint import pformat
 from typing import AsyncIterator, Awaitable, List
 
@@ -70,6 +71,20 @@ async def managed_container(
             raise
 
 
+DOCKER_TIMESTAMP_LENGTH = len("2020-10-09T12:28:14.7710")
+
+
+def to_datetime(docker_timestamp: str) -> datetime:
+    # datetime_str is typically '2020-10-09T12:28:14.771034099Z'
+    #  - The T separates the date portion from the time-of-day portion
+    #  - The Z on the end means UTC, that is, an offset-from-UTC
+    # The 099 before the Z is not clear, therefore we will truncate the last part
+    # NOTE: must be in UNIX Timestamp format
+    return datetime.strptime(
+        docker_timestamp[:DOCKER_TIMESTAMP_LENGTH], "%Y-%m-%dT%H:%M:%S.%f"
+    )
+
+
 async def monitor_container_logs(
     container: DockerContainer, service_key: str, service_version: str
 ) -> None:
@@ -83,7 +98,28 @@ async def monitor_container_logs(
             container.id,
             container_name,
         )
-        async for log_line in container.log(stdout=True, stderr=True, follow=True):
+        latest_log_timestamp = "2000-01-01T00:00:00.000000000Z"
+        async for log_line in container.log(
+            stdout=True, stderr=True, follow=True, timestamps=True
+        ):
+            logger.info(
+                "[%s:%s - %s%s]: %s",
+                service_key,
+                service_version,
+                container.id,
+                container_name,
+                log_line,
+            )
+            latest_log_timestamp = log_line.split(" ")[0]
+        # NOTE: The log stream may be interrupted before all the logs are gathered!
+        # therefore it is needed to get the remaining logs
+        missing_logs = await container.log(
+            stdout=True,
+            stderr=True,
+            timestamps=True,
+            since=to_datetime(latest_log_timestamp).strftime("%s"),
+        )
+        for log_line in missing_logs:
             logger.info(
                 "[%s:%s - %s%s]: %s",
                 service_key,
