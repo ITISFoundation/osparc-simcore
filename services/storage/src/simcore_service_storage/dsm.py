@@ -153,11 +153,12 @@ class DataStorageManager:
     datcore_tokens: Dict[str, DatCoreApiToken] = attr.Factory(dict)
     app: Optional[web.Application] = None
 
-    def _create_client_context(self) -> ClientCreatorContext:
+    def _create_aiobotocore_client_context(self) -> ClientCreatorContext:
         assert hasattr(self.session, "create_client")
         # pylint: disable=no-member
 
         # SEE API in https://botocore.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html
+        # SEE https://aiobotocore.readthedocs.io/en/latest/index.html
         return self.session.create_client(
             "s3",
             endpoint_url=self.s3_client.endpoint_url,
@@ -420,14 +421,14 @@ class DataStorageManager:
         """
         current_iteraction = 0
 
-        async with self._create_client_context() as client:
+        async with self._create_aiobotocore_client_context() as aioboto_client:
             current_iteraction += 1
             continue_loop = True
             sleep_generator = expo()
             update_succeeded = False
 
             while continue_loop:
-                result = await client.list_objects_v2(
+                result = await aioboto_client.list_objects_v2(
                     Bucket=bucket_name, Prefix=object_name
                 )
                 sleep_amount = next(sleep_generator)
@@ -742,16 +743,30 @@ class DataStorageManager:
             if new_node_id is not None:
                 uuid_name_dict[new_node_id] = src_node["label"]
 
-        async with self._create_client_context() as client:
+        async with self._create_aiobotocore_client_context() as aioboto_client:
+
+            logger.debug(
+                "Listing all items under  %s:%s/",
+                self.simcore_bucket_name,
+                source_folder,
+            )
 
             # Step 1: List all objects for this project replace them with the destination object name
             # and do a copy at the same time collect some names
             # Note: the / at the end of the Prefix is VERY important, makes the listing several order of magnitudes faster
-            response = await client.list_objects_v2(
+            response = await aioboto_client.list_objects_v2(
                 Bucket=self.simcore_bucket_name, Prefix=f"{source_folder}/"
             )
 
-            for item in response.get("Contents", []):
+            contents: List = response.get("Contents", [])
+            logger.debug(
+                "Listed  %s items under %s:%s/",
+                len(contents),
+                self.simcore_bucket_name,
+                source_folder,
+            )
+
+            for item in contents:
                 source_object_name = item["Key"]
                 source_object_parts = Path(source_object_name).parts
 
@@ -772,7 +787,7 @@ class DataStorageManager:
                         Path(dest_folder) / new_node_id / old_filename
                     )
 
-                    await client.copy_object(
+                    copy_kwargs = dict(
                         CopySource={
                             "Bucket": self.simcore_bucket_name,
                             "Key": source_object_name,
@@ -780,6 +795,11 @@ class DataStorageManager:
                         Bucket=self.simcore_bucket_name,
                         Key=dest_object_name,
                     )
+                    logger.debug("Copying %s ...", copy_kwargs)
+
+                    # FIXME: if 5GB, it must use multipart upload Upload Part - Copy API
+                    # SEE https://botocore.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.copy_object
+                    await aioboto_client.copy_object(**copy_kwargs)
 
         # Step 2: List all references in outputs that point to datcore and copy over
         for node_id, node in destination_project["workbench"].items():
@@ -808,11 +828,11 @@ class DataStorageManager:
                     output["path"] = destination
 
         fmds = []
-        async with self._create_client_context() as client:
+        async with self._create_aiobotocore_client_context() as aioboto_client:
 
             # step 3: list files first to create fmds
             # Note: the / at the end of the Prefix is VERY important, makes the listing several order of magnitudes faster
-            response = await client.list_objects_v2(
+            response = await aioboto_client.list_objects_v2(
                 Bucket=self.simcore_bucket_name, Prefix=f"{dest_folder}/"
             )
 
@@ -935,9 +955,9 @@ class DataStorageManager:
                 delete_me = delete_me.where(file_meta_data.c.node_id == node_id)
             await conn.execute(delete_me)
 
-        async with self._create_client_context() as client:
+        async with self._create_aiobotocore_client_context() as aioboto_client:
             # Note: the / at the end of the Prefix is VERY important, makes the listing several order of magnitudes faster
-            response = await client.list_objects_v2(
+            response = await aioboto_client.list_objects_v2(
                 Bucket=self.simcore_bucket_name,
                 Prefix=f"{project_id}/{node_id}/" if node_id else f"{project_id}/",
             )
@@ -947,7 +967,7 @@ class DataStorageManager:
                 objects_to_delete.append({"Key": f["Key"]})
 
             if objects_to_delete:
-                response = await client.delete_objects(
+                response = await aioboto_client.delete_objects(
                     Bucket=self.simcore_bucket_name,
                     Delete={"Objects": objects_to_delete},
                 )
@@ -1055,7 +1075,7 @@ class DataStorageManager:
                 "synchronisation of database/s3 storage started, this will take some time..."
             )
 
-            async with self.engine.acquire() as conn, self._create_client_context() as s3_client:
+            async with self.engine.acquire() as conn, self._create_aiobotocore_client_context() as aioboto_client:
 
                 number_of_rows_in_db = await conn.scalar(file_meta_data.count()) or 0
                 logger.warning(
@@ -1063,7 +1083,7 @@ class DataStorageManager:
                     number_of_rows_in_db,
                 )
 
-                assert isinstance(s3_client, AioBaseClient)  # nosec
+                assert isinstance(aioboto_client, AioBaseClient)  # nosec
 
                 async for row in conn.execute(
                     sa.select([file_meta_data.c.object_name])
@@ -1072,7 +1092,7 @@ class DataStorageManager:
 
                     # now check if the file exists in S3
                     # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
-                    response = await s3_client.list_objects_v2(
+                    response = await aioboto_client.list_objects_v2(
                         Bucket=self.simcore_bucket_name, Prefix=s3_key
                     )
                     if response.get("KeyCount", 0) == 0:

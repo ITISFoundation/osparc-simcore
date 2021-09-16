@@ -14,6 +14,8 @@ from .storage_config import get_client_session, get_storage_config
 
 log = logging.getLogger(__name__)
 
+TOTAL_TIMEOUT_TO_COPY_DATA_SECS = 60 * 60
+
 
 def _get_storage_client(app: web.Application) -> Tuple[ClientSession, URL]:
     cfg = get_storage_config(app)
@@ -49,7 +51,7 @@ async def copy_data_folders_from_project(
         },
         ssl=False,
         # NOTE: extends time for copying operation
-        timeout=ClientTimeout(total=10 * 60),
+        timeout=ClientTimeout(total=TOTAL_TIMEOUT_TO_COPY_DATA_SECS),
     ) as resp:
         payload = await resp.json()
 
