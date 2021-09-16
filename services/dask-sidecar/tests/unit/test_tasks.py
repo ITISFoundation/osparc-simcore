@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 import logging
 import re
-from pathlib import Path
 from pprint import pformat
 from typing import Any, Dict, List
 from unittest import mock
@@ -84,29 +83,36 @@ def dask_client() -> Client:
             [
                 "/bin/bash",
                 "-c",
-                "cat ${INPUT_FOLDER}/inputs.json "
-                '&& echo {\\"pytest_output_1\\":\\"is quite an amazing feat\\"} > ${OUTPUT_FOLDER}/outputs.json',
+                "echo User: $(id $(whoami));"
+                "test ${INPUT_FOLDER}/inputs.json && echo inputs file exists;"
+                "cat ${INPUT_FOLDER}/inputs.json;"
+                'echo {\\"pytest_output_1\\":\\"is quite an amazing feat\\"} > ${OUTPUT_FOLDER}/outputs.json',
             ],
-            {"input_1": 23},
+            {
+                "input_1": 23
+                # "input_23": "a string input",
+                # "the_input_43": 15.0,
+                # "the_bool_input_54": False,
+            },
             {"pytest_output_1": {"type": str}},
             {"pytest_output_1": "is quite an amazing feat"},
             ['{"input_1": 23}'],
         ),
-        (
-            "itisfoundation/sleeper",
-            "2.1.1",
-            [],
-            {"input_2": 2, "input_4": 1},
-            {
-                "output_1": {"type": Path, "name": "single_number.txt"},
-                "output_2": {"type": int},
-            },
-            {
-                "output_1": re.compile(r".+/single_number.txt"),
-                "output_2": re.compile(r"\d"),
-            },
-            ["Remaining sleep time"],
-        ),
+        # (
+        #     "itisfoundation/sleeper",
+        #     "2.1.1",
+        #     [],
+        #     {"input_2": 2, "input_4": 1},
+        #     {
+        #         "output_1": {"type": Path, "name": "single_number.txt"},
+        #         "output_2": {"type": int},
+        #     },
+        #     {
+        #         "output_1": re.compile(r".+/single_number.txt"),
+        #         "output_2": re.compile(r"\d"),
+        #     },
+        #     ["Remaining sleep time"],
+        # ),
     ],
 )
 async def test_run_computational_sidecar(
@@ -138,9 +144,11 @@ async def test_run_computational_sidecar(
     # check that the task produces expected logs
     worker_logs = [log for _, log in dask_client.get_worker_logs()[worker_name]]
     for log in expected_logs:
-        r = re.compile(rf"\[{service_key}:{service_version} - .+\/.+\]: {log}")
+        r = re.compile(rf"\[{service_key}:{service_version} - .+\/.+\]: (.+) ({log})")
         search_results = list(filter(r.search, worker_logs))
-        assert len(search_results) > 0
+        assert (
+            len(search_results) > 0
+        ), f"Could not find {log} in worker_logs:\n {pformat(worker_logs, width=240)}"
 
     for k, v in expected_output_data.items():
         assert k in output_data
