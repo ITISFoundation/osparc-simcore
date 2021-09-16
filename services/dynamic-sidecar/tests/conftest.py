@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
+import asyncio
 import json
 import os
 import random
@@ -32,24 +33,40 @@ def mock_dy_volumes() -> Iterator[Path]:
         yield Path(temp_dir)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def io_temp_dir() -> Iterator[Path]:
     with tempfile.TemporaryDirectory() as temp_dir:
         yield Path(temp_dir)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def compose_namespace() -> str:
-    return "test-space"
+    return f"dy-sidecar_{uuid.uuid4()}"
 
 
-@pytest.fixture(scope="module", autouse=True)
-def app(
-    io_temp_dir: Path, mock_dy_volumes: Path, compose_namespace: str
-) -> Iterator[FastAPI]:
-    inputs_dir = io_temp_dir / "inputs"
-    outputs_dir = io_temp_dir / "outputs"
-    state_paths_dirs: List[str] = [str(io_temp_dir / f"dir_{x}") for x in range(4)]
+@pytest.fixture(scope="session")
+def inputs_dir(io_temp_dir: Path) -> Path:
+    return io_temp_dir / "inputs"
+
+
+@pytest.fixture(scope="session")
+def outputs_dir(io_temp_dir: Path) -> Path:
+    return io_temp_dir / "outputs"
+
+
+@pytest.fixture(scope="session")
+def state_paths_dirs(io_temp_dir: Path) -> List[Path]:
+    return [io_temp_dir / f"dir_{x}" for x in range(4)]
+
+
+@pytest.fixture(scope="module")
+def mock_environment(
+    mock_dy_volumes: Path,
+    compose_namespace: str,
+    inputs_dir: Path,
+    outputs_dir: Path,
+    state_paths_dirs: List[Path],
+) -> Iterator[None]:
     with mock.patch.dict(
         os.environ,
         {
@@ -61,31 +78,43 @@ def app(
             "REGISTRY_SSL": "false",
             "DY_SIDECAR_PATH_INPUTS": str(inputs_dir),
             "DY_SIDECAR_PATH_OUTPUTS": str(outputs_dir),
-            "DY_SIDECAR_STATE_PATHS": json.dumps(state_paths_dirs),
+            "DY_SIDECAR_STATE_PATHS": json.dumps([str(x) for x in state_paths_dirs]),
             "DY_SIDECAR_USER_ID": "1",
             "DY_SIDECAR_PROJECT_ID": f"{uuid.uuid4()}",
             "DY_SIDECAR_NODE_ID": f"{uuid.uuid4()}",
         },
     ), mock.patch.object(mounted_fs, "DY_VOLUMES", mock_dy_volumes):
         print(os.environ)
-        yield assemble_application()
+        yield
+
+
+@pytest.fixture(scope="module")
+def app(mock_environment: None) -> FastAPI:
+    return assemble_application()
 
 
 @pytest.fixture
-async def ensure_external_volumes(compose_namespace: str) -> AsyncGenerator[None, None]:
+async def ensure_external_volumes(
+    compose_namespace: str, state_paths_dirs: List[Path]
+) -> AsyncGenerator[None, None]:
     """ensures inputs and outputs volumes for the service are present"""
+
+    volume_names = [f"{compose_namespace}_inputs", f"{compose_namespace}_outputs"]
+    for state_paths_dir in state_paths_dirs:
+        name_from_path = str(state_paths_dir).replace(os.sep, "_")
+        volume_names.append(f"{compose_namespace}{name_from_path}")
+
     async with docker_client() as client:
-        inputs_volume = await client.volumes.create(
-            {"Name": f"{compose_namespace}_inputs"}
-        )
-        outputs_volume = await client.volumes.create(
-            {"Name": f"{compose_namespace}_outputs"}
+        volumes = await asyncio.gather(
+            *[
+                client.volumes.create({"Name": volume_name})
+                for volume_name in volume_names
+            ]
         )
 
         yield
 
-        await inputs_volume.delete()
-        await outputs_volume.delete()
+        await asyncio.gather(*[volume.delete() for volume in volumes])
 
 
 @pytest.fixture

@@ -275,34 +275,9 @@
         "summary": "Stores the state of the dynamic service",
         "description": "When saving the state:\n- push outputs via nodeports\n- push all the extra state paths",
         "operationId": "save_state_v1_containers_save_state_put",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "title": "State Paths",
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "format": "path"
-                }
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "204": {
             "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
           }
         }
       }
@@ -315,34 +290,9 @@
         "summary": "Restores the state of the dynamic service",
         "description": "When restoring the state:\n- pull inputs via nodeports\n- pull all the extra state paths",
         "operationId": "restore_state_v1_containers_restore_state_put",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "title": "State Paths",
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "format": "path"
-                }
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "204": {
             "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
           }
         }
       }
