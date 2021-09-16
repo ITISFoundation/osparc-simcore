@@ -84,12 +84,13 @@ def dask_client() -> Client:
             [
                 "/bin/bash",
                 "-c",
-                'echo hello && echo {\\"pytest_output_1\\":\\"is quite an amazing feat\\"} > ${OUTPUT_FOLDER}/outputs.json',
+                "cat ${INPUT_FOLDER}/inputs.json "
+                '&& echo {\\"pytest_output_1\\":\\"is quite an amazing feat\\"} > ${OUTPUT_FOLDER}/outputs.json',
             ],
-            {},
+            {"input_1": 23},
             {"pytest_output_1": {"type": str}},
             {"pytest_output_1": "is quite an amazing feat"},
-            ["hello"],
+            ['{"input_1": 23}'],
         ),
         (
             "itisfoundation/sleeper",
