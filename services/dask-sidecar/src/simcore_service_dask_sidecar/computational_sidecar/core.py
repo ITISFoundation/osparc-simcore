@@ -1,5 +1,6 @@
 import asyncio
 import json
+import shutil
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from json.decoder import JSONDecodeError
@@ -51,11 +52,14 @@ class ComputationalSidecar:
 
     async def _write_input_data(self, task_volumes: TaskSharedVolumes) -> None:
         input_data_file = task_volumes.input_folder / "inputs.json"
-        input_data_file.write_text(
-            json.dumps(
-                {k: v for k, v in self.input_data.items() if not isinstance(v, Path)}
-            )
-        )
+        input_data = {}
+        for input_key, input_params in self.input_data.items():
+            if isinstance(input_params, Path):
+                file_path = task_volumes.input_folder / input_params.name
+                shutil.copy(input_params, file_path)
+            else:
+                input_data[input_key] = input_params
+        input_data_file.write_text(json.dumps(input_data))
 
     async def _retrieve_output_data(
         self, task_volumes: TaskSharedVolumes

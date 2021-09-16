@@ -127,7 +127,8 @@ def fake_input_data(fake_input_file: Path) -> Dict[str, Any]:
             output_data_keys={"pytest_output_1": {"type": str}},
             expected_output_data={"pytest_output_1": "is quite an amazing feat"},
             expected_logs=[
-                '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}'
+                '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
+                "This is some fake data here",
             ],
         ),
         # ServiceExampleParam(
