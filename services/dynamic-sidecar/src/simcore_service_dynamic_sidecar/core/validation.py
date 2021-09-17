@@ -178,7 +178,7 @@ async def validate_compose_spec(
 
     spec_services_to_container_name: Dict[str, str] = {}
 
-    mounted_paths: MountedVolumes = get_mounted_volumes()
+    mounted_volumes: MountedVolumes = get_mounted_volumes()
     spec_services = parsed_compose_spec["services"]
     for index, service in enumerate(spec_services):
         service_content = spec_services[service]
@@ -202,9 +202,11 @@ async def validate_compose_spec(
         # inject paths to be mounted
         service_volumes = service_content.get("volumes", [])
 
-        service_volumes.append(mounted_paths.get_inputs_docker_volume())
-        service_volumes.append(mounted_paths.get_outputs_docker_volume())
-        for state_paths_docker_volume in mounted_paths.get_state_paths_docker_volumes():
+        service_volumes.append(mounted_volumes.get_inputs_docker_volume())
+        service_volumes.append(mounted_volumes.get_outputs_docker_volume())
+        for (
+            state_paths_docker_volume
+        ) in mounted_volumes.get_state_paths_docker_volumes():
             service_volumes.append(state_paths_docker_volume)
 
         service_content["volumes"] = service_volumes
@@ -212,9 +214,9 @@ async def validate_compose_spec(
     # inject volumes creation in spec
     volumes = parsed_compose_spec.get("volumes", {})
 
-    volumes[mounted_paths.volume_name_inputs] = dict(external=True)
-    volumes[mounted_paths.volume_name_outputs] = dict(external=True)
-    for volume_name_state_path in mounted_paths.volume_name_state_paths():
+    volumes[mounted_volumes.volume_name_inputs] = dict(external=True)
+    volumes[mounted_volumes.volume_name_outputs] = dict(external=True)
+    for volume_name_state_path in mounted_volumes.volume_name_state_paths():
         volumes[volume_name_state_path] = dict(external=True)
 
     parsed_compose_spec["volumes"] = volumes
