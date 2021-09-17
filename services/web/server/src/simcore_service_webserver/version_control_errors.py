@@ -1,28 +1,28 @@
-""" meta exceptions
+""" Version Control exceptions
 
 """
 from pydantic.errors import PydanticErrorMixin
 
 
-class BaseMetaValueError(PydanticErrorMixin, ValueError):
+class VersionControlValueError(PydanticErrorMixin, ValueError):
     pass
 
 
-class BaseMetaRuntimeError(PydanticErrorMixin, RuntimeError):
+class VersionControlRuntimeError(PydanticErrorMixin, RuntimeError):
     pass
 
 
-class NotFoundError(BaseMetaValueError):
+class NotFoundError(VersionControlValueError):
     msg_template = "Could not find {name} '{value}'"
 
 
-class InvalidParameterError(BaseMetaValueError):
+class InvalidParameterError(VersionControlValueError):
     msg_template = "invalid {name}: {reason}"
 
 
-class NoCommitError(BaseMetaRuntimeError):
+class NoCommitError(VersionControlRuntimeError):
     msg_template = "No commit found: {details}"
 
 
-class CleanRequiredError(BaseMetaRuntimeError):
+class CleanRequiredError(VersionControlRuntimeError):
     msg_template = "working copy w/o changes (clean) is required: {details}"

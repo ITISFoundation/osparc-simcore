@@ -22,7 +22,6 @@ from .email import setup_email
 from .exporter import setup_exporter
 from .groups import setup_groups
 from .login import setup_login
-from .meta import setup_version_control
 from .products import setup_products
 from .projects import setup_projects
 from .publications import setup_publications
@@ -39,6 +38,7 @@ from .studies_dispatcher.module_setup import setup_studies_dispatcher
 from .tags import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
+from .version_control import setup_version_control
 
 monkey_patch_pydantic_url_regex()
 
