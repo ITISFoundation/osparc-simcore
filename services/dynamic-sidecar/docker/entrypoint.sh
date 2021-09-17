@@ -89,8 +89,7 @@ if stat $DOCKER_MOUNT >/dev/null 2>&1; then
 fi
 
 # Change ownership of volumes mount directory
-chown --no-dereference -v $SC_USER_NAME:$GROUPNAME /dy-volumes/inputs
-chown --no-dereference -v $SC_USER_NAME:$GROUPNAME /dy-volumes/outputs
+chown --no-dereference --verbose --recursive $SC_USER_NAME:$GROUPNAME /dy-volumes/
 
 echo "$INFO Starting $* ..."
 echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
