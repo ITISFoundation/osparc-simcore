@@ -94,22 +94,20 @@ class ComputationalSidecar:
             if output_data_file.exists():
                 try:
                     service_output = json.loads(output_data_file.read_text())
-                    if output_key not in service_output:
-                        if output_params["type"] != Optional[Any]:
-                            raise ServiceMissingOutputError(
-                                self.service_key, self.service_version, output_key
-                            )
-                        continue
-                    output_data[output_key] = service_output[output_key]
+                    output_data[output_key] = service_output.get(output_key, None)
+                    if output_data[output_key] is None:
+                        raise ServiceMissingOutputError(
+                            self.service_key, self.service_version, output_key
+                        )
                 except JSONDecodeError as exc:
                     raise ServiceBadFormattedOutputError(
                         self.service_key, self.service_version, output_key
                     ) from exc
             # json file does not exist
-            if output_params["type"] != Optional[Any]:
-                raise ServiceMissingOutputError(
-                    self.service_key, self.service_version, output_key
-                )
+            # if output_params["type"] != Optional[Any]:
+            #     raise ServiceMissingOutputError(
+            #         self.service_key, self.service_version, output_key
+            #     )
             # but the entry is optional
             continue
 
