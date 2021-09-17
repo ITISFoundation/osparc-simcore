@@ -89,6 +89,8 @@ if stat $DOCKER_MOUNT >/dev/null 2>&1; then
 fi
 
 # Change ownership of volumes mount directory
+# directories are empty at this point
+# each individual subdirectory is a unique volume
 chown --no-dereference --verbose --recursive $SC_USER_NAME:$GROUPNAME /dy-volumes/
 
 echo "$INFO Starting $* ..."
