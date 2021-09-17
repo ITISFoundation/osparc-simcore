@@ -109,7 +109,7 @@ def app_cfg(
         "login",
         "products",
         "projects",
-        "meta",
+        "version_control",  # MODULE UNDER TEST
         "rest",
         "users",
     }
