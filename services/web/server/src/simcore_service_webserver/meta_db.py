@@ -319,6 +319,7 @@ class VersionControlRepository(BaseRepository):
             commits, total_count = await commits_orm.fetch_page(
                 offset=offset,
                 limit=limit,
+                # TODO: sortby should have
                 sort_by=sa.desc(commits_orm.columns["created"]),
             )
 

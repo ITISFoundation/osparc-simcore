@@ -149,23 +149,27 @@ async def test_orm_fetchall_page(
     page1, total_rows = await scicrunch_orm.fetch_page("rrid", offset=0, limit=1)
     assert total_rows == 2
     assert len(page1) == 1
-    assert page1[0].rrid == "RRID:bar"
+    assert page1[0].rrid == scicrunch_id1
 
     page2, total_rows = await scicrunch_orm.fetch_page("rrid", offset=1)
     assert total_rows == 2
     assert len(page2) == 1
-    assert page2[0].rrid == "RRID:foo"
+    assert page2[0].rrid == scicrunch_id2
 
     # same as fetchall if offset=0 and limit is None
     page, total_rows = await scicrunch_orm.fetch_page("rrid", offset=0)
     assert len(page) == total_rows
-    assert (
-        sorted(
-            all_scicrunch_resources,
-            key=lambda x: x[0],
-        )
-        == page
+    assert all_scicrunch_resources == page
+
+    # sorted
+    # pylint: disable=protected-access
+    page, total_rows = await scicrunch_orm.fetch_page(
+        "rrid", offset=0, sort_by=scicrunch_orm._primary_key
     )
+    assert len(page) == total_rows
+
+    all_scicrunch_resources.reverse()
+    assert all_scicrunch_resources == page
 
 
 async def test_orm_insert(scicrunch_orm: BaseOrm[str]):
