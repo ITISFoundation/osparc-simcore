@@ -1,3 +1,5 @@
+import asyncio
+
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
@@ -20,6 +22,7 @@ import dask
 import pytest
 import requests
 from _pytest.tmpdir import TempPathFactory
+from aiohttp.test_utils import loop_context
 from distributed import Client
 from faker import Faker
 from models_library.projects import ProjectID
@@ -100,7 +103,15 @@ def fake_input_file(tmp_path: Path, faker: Faker) -> Path:
 
 
 @pytest.fixture(scope="module")
-def directory_server(tmp_path_factory: TempPathFactory) -> Iterable[List[URL]]:
+def loop() -> asyncio.AbstractEventLoop:
+    with loop_context() as loop:
+        yield loop
+
+
+@pytest.fixture(scope="module")
+async def directory_server(
+    loop, tmp_path_factory: TempPathFactory
+) -> Iterable[List[URL]]:
     faker = Faker()
     files = ["file_1", "file_2", "file_3"]
     base_url = URL("http://localhost:8999")
@@ -113,18 +124,20 @@ def directory_server(tmp_path_factory: TempPathFactory) -> Iterable[List[URL]]:
                 f.write(f"{s}\n")
 
     cmd = [sys.executable, "-m", "http.server", "8999"]
-    with subprocess.Popen(cmd, cwd=directory_path) as p:
-        timeout = 10
-        while True:
-            try:
-                requests.get(f"{base_url}")
-                break
-            except requests.exceptions.ConnectionError as e:
-                time.sleep(0.1)
-                timeout -= 0.1
-                if timeout < 0:
-                    raise RuntimeError("Server did not appear") from e
-        yield [base_url.with_path(f) for f in files]
+
+    p = await asyncio.create_subprocess_shell(" ".join(cmd), cwd=directory_path)
+    timeout = 10
+    while True:
+        try:
+            requests.get(f"{base_url}")
+            break
+        except requests.exceptions.ConnectionError as e:
+            time.sleep(0.1)
+            timeout -= 0.1
+            if timeout < 0:
+                raise RuntimeError("Server did not appear") from e
+    yield [base_url.with_path(f) for f in files]
+    p.terminate()
 
 
 @pytest.fixture()
