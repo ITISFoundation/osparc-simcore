@@ -3,7 +3,10 @@ from typing import List
 
 from aiohttp import web
 from pydantic.decorator import validate_arguments
-from servicelib.rest_pagination_utils import PageResponseLimitOffset
+from servicelib.rest_pagination_utils import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    PageResponseLimitOffset,
+)
 
 from ._meta import api_version_prefix as vtag
 from .login.decorators import login_required
@@ -63,7 +66,7 @@ async def _list_repos_handler(request: web.Request):
     url_for = create_url_for_function(request)
     vc_repo = VersionControlRepository(request)
 
-    _limit = int(request.query.get("limit", 20))
+    _limit = int(request.query.get("limit", DEFAULT_NUMBER_OF_ITEMS_PER_PAGE))
     _offset = int(request.query.get("offset", 0))
 
     repos_rows, total_number_of_repos = await list_repos_safe(
@@ -137,7 +140,7 @@ async def _list_checkpoints_handler(request: web.Request):
     vc_repo = VersionControlRepository(request)
 
     _project_uuid = request.match_info["project_uuid"]
-    _limit = int(request.query.get("limit", 20))
+    _limit = int(request.query.get("limit", DEFAULT_NUMBER_OF_ITEMS_PER_PAGE))
     _offset = int(request.query.get("offset", 0))
 
     checkpoints: List[Checkpoint]

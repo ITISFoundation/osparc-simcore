@@ -4,7 +4,8 @@ from uuid import UUID
 
 from aiopg.sa.result import RowProxy
 from models_library.basic_types import SHA1Str
-from models_library.projects_nodes import Node
+from models_library.projects import ProjectID
+from models_library.projects_nodes import Node, NodeID
 from pydantic import BaseModel, PositiveInt, StrictBool, StrictFloat, StrictInt
 from pydantic.networks import HttpUrl
 
@@ -52,7 +53,7 @@ class WorkbenchView(BaseModel):
     class Config:
         orm_mode = True
 
-    workbench: Dict[UUID, Node] = {}
+    workbench: Dict[NodeID, Node]
     ui: Dict[UUID, Any] = {}
 
 
@@ -60,7 +61,7 @@ class WorkbenchView(BaseModel):
 
 
 class RepoApiModel(BaseModel):
-    project_uuid: UUID
+    project_uuid: ProjectID
     url: HttpUrl
 
 

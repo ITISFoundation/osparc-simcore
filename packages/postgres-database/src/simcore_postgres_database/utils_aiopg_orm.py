@@ -184,7 +184,7 @@ class BaseOrm(Generic[RowUId]):
         *,
         offset: int,
         limit: Optional[int] = None,
-        order=None,
+        sort_by=None,
     ) -> Tuple[List[RowProxy], int]:
         """Support for paginated fetchall
 
@@ -195,9 +195,9 @@ class BaseOrm(Generic[RowUId]):
         assert offset >= 0  # nosec
         assert limit is None or limit > 0  # nosec
 
-        query = self._compose_select_query(returning_cols).order_by(
-            self._primary_key if order is None else order
-        )
+        query = self._compose_select_query(returning_cols)
+        if sort_by is not None:
+            query = query.order_by(sort_by)
 
         total_count = None
         if offset > 0 or limit:

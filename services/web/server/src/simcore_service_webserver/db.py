@@ -3,11 +3,11 @@
 """
 
 import logging
+import os
 from typing import Any, Dict, Iterator, Optional
 
 from aiohttp import web
 from aiopg.sa import Engine
-from servicelib.common_aiopg_utils import create_pg_engine
 from servicelib.aiohttp.aiopg_utils import (
     DataSourceName,
     PostgresRetryPolicyUponInitialization,
@@ -17,6 +17,7 @@ from servicelib.aiohttp.aiopg_utils import (
 )
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from servicelib.common_aiopg_utils import create_pg_engine
 from tenacity import AsyncRetrying
 
 from .db_config import CONFIG_SECTION_NAME, assert_valid_config
@@ -40,18 +41,23 @@ async def pg_engine(app: web.Application):
         port=pg_cfg["port"],
     )  # type: ignore
 
+    pool_kwargs: Dict[str, Any] = {}
+    if app[APP_CONFIG_KEY]["main"]["testing"]:
+        pool_kwargs["echo"] = True
+
     log.info("Creating pg engine for %s", dsn)
+
     async for attempt in AsyncRetrying(
         **PostgresRetryPolicyUponInitialization(log).kwargs
     ):
         with attempt:
             engine = await create_pg_engine(
-                dsn, minsize=pg_cfg["minsize"], maxsize=pg_cfg["maxsize"]
+                dsn, minsize=pg_cfg["minsize"], maxsize=pg_cfg["maxsize"], **pool_kwargs
             )
             await raise_if_not_responsive(engine)
 
-    assert engine  # nosec
-    app[APP_DB_ENGINE_KEY] = engine
+        assert engine  # nosec
+        app[APP_DB_ENGINE_KEY] = engine
 
     yield  # -------------------
 

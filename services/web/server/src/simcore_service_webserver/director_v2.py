@@ -8,9 +8,12 @@ from models_library.projects_pipeline import ComputationTask
 from models_library.settings.services_common import ServicesCommonSettings
 from pydantic.types import NonNegativeInt, PositiveInt
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from servicelib.logging_utils import log_decorator
 from servicelib.aiohttp.rest_responses import wrap_as_envelope
-from servicelib.aiohttp.rest_routing import iter_path_operations, map_handlers_with_operations
+from servicelib.aiohttp.rest_routing import (
+    iter_path_operations,
+    map_handlers_with_operations,
+)
+from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
 from yarl import URL
 
@@ -101,7 +104,7 @@ async def create_or_update_pipeline(
     director2_settings: Directorv2Settings = get_settings(app)
 
     backend_url = URL(f"{director2_settings.endpoint}/computations")
-    body = {"user_id": user_id, "project_id": str(project_id)}
+    body = {"user_id": user_id, "project_id": f"{project_id}"}
     # request to director-v2
     try:
         computation_task_out = await _request_director_v2(

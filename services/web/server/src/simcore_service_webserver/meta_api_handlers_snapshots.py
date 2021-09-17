@@ -55,7 +55,7 @@ async def create_project_snapshot_handler(request: web.Request):
         # fetch parent's project
         parent: ProjectDict = await projects_api.get_project_for_user(
             request.app,
-            str(project_id),
+            f"{project_id}",
             user_id,
             include_templates=False,
             include_state=False,
@@ -190,7 +190,7 @@ async def delete_project_snapshot_handler(request: web.Request) -> None:
 
         assert snapshots_repo.user_id is not None
         await projects_api.delete_project(
-            request.app, str(snapshot_uuid), snapshots_repo.user_id
+            request.app, f"{snapshot_uuid}", snapshots_repo.user_id
         )
 
     await _delete_snapshot(
@@ -236,5 +236,7 @@ async def patch_project_snapshot_handler(request: web.Request):
     return enveloped_response(data)
 
 
+# WARNING: changes in handlers naming will have an effect
+# since they are in sync with operation_id  (checked in tests)
 rename_routes_as_handler_function(routes, prefix=__name__)
 logger.debug("Routes collected in  %s:\n %s", __name__, view_routes(routes))
