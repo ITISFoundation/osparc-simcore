@@ -41,7 +41,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
   members: {
     __snapshotsSection: null,
     __snapshotsTable: null,
-    __gitGraphCanvas: null,
+    __gitGraphLayout: null,
     __snapshotPreview: null,
     __selectedSnapshot: null,
     __editSnapshotBtn: null,
@@ -90,15 +90,29 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
     },
 
     __rebuildSnapshotsGraph: function() {
-      if (this.__gitGraphCanvas) {
-        this.__snapshotsSection.remove(this.__gitGraphCanvas);
+      if (this.__gitGraphLayout) {
+        this.__snapshotsSection.remove(this.__gitGraphLayout);
       }
 
-      const gitGraphCanvas = this.__gitGraphCanvas = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      const gitGraphLayout = this.__gitGraphLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      const gitGraphCanvas = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      const gitGraphInteract = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      gitGraphLayout.add(gitGraphCanvas, {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
+      });
+      gitGraphLayout.add(gitGraphInteract, {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
+      });
 
       gitGraphCanvas.addListenerOnce("appear", () => {
         const gitGraphWrapper = new osparc.wrapper.GitGraph();
-        gitGraphWrapper.init(gitGraphCanvas)
+        gitGraphWrapper.init(gitGraphCanvas, gitGraphInteract)
           .then(gitgraph => {
             this.__primaryStudy.getSnapshots()
               .then(snapshots => {
@@ -117,9 +131,12 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
               });
             // gitGraphWrapper.buildExample();
           }, this);
+        gitGraphWrapper.addListener("snapshotTap", e => {
+          console.log("snapshot selected", e.getData());
+        });
       });
 
-      this.__snapshotsSection.addAt(gitGraphCanvas, 1, {
+      this.__snapshotsSection.addAt(gitGraphLayout, 1, {
         width: "33%"
       });
     },

@@ -87,13 +87,18 @@ qx.Class.define("osparc.wrapper.GitGraph", {
     }
   },
 
+  events: {
+    "snapshotTap": "qx.event.type.Data"
+  },
+
   members: {
-    __gitgraphCanvas: null,
+    __gitGraphCanvas: null,
     __gitgraph: null,
 
-    init: function(gitGraphCanvas) {
+    init: function(gitGraphCanvas, gitGraphInteract) {
       return new Promise((resolve, reject) => {
-        this.__gitgraphCanvas = gitGraphCanvas;
+        this.__gitGraphCanvas = gitGraphCanvas;
+        this.__gitGraphInteract = gitGraphInteract;
         const el = gitGraphCanvas.getContentElement().getDomElement();
         if (this.getLibReady()) {
           const gitgraph = this.__createGraph(el);
@@ -179,14 +184,14 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       });
 
       const widget = new qx.ui.core.Widget().set({
-        opacity: 0.05,
+        opacity: 0.1,
         height: 20,
         minWidth: 50,
         allowGrowX: true
       });
-      this.__gitgraphCanvas.add(widget, {
-        top: 20*this.__commits.length,
-        left: 50,
+      this.__gitGraphInteract.add(widget, {
+        top: 20*this.__commits.length + 3,
+        left: 0,
         right: 0
       });
       this.__commits.push({
@@ -207,6 +212,9 @@ qx.Class.define("osparc.wrapper.GitGraph", {
           backgroundColor: bgColor,
           cursor: "auto"
         });
+      });
+      widget.addListener("tap", () => {
+        this.fireDataEvent("snapshotTap", id);
       });
     },
 
