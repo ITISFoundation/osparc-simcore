@@ -97,9 +97,8 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
       const gitGraphCanvas = this.__gitGraphCanvas = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
 
       gitGraphCanvas.addListenerOnce("appear", () => {
-        const el = gitGraphCanvas.getContentElement().getDomElement();
         const gitGraphWrapper = new osparc.wrapper.GitGraph();
-        gitGraphWrapper.init(el)
+        gitGraphWrapper.init(gitGraphCanvas)
           .then(gitgraph => {
             this.__primaryStudy.getSnapshots()
               .then(snapshots => {

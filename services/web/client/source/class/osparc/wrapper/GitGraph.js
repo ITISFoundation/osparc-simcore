@@ -30,6 +30,12 @@
 qx.Class.define("osparc.wrapper.GitGraph", {
   extend: qx.ui.core.Widget,
 
+  construct: function() {
+    this.base(arguments);
+
+    this.__commits = [];
+  },
+
   statics: {
     NAME: "GitGraph",
     VERSION: "1.4.0",
@@ -82,12 +88,15 @@ qx.Class.define("osparc.wrapper.GitGraph", {
   },
 
   members: {
+    __gitgraphCanvas: null,
     __gitgraph: null,
 
-    init: function(graphContainer) {
+    init: function(gitGraphCanvas) {
       return new Promise((resolve, reject) => {
+        this.__gitgraphCanvas = gitGraphCanvas;
+        const el = gitGraphCanvas.getContentElement().getDomElement();
         if (this.getLibReady()) {
-          const gitgraph = this.__createGraph(graphContainer);
+          const gitgraph = this.__createGraph(el);
           resolve(gitgraph);
           return;
         }
@@ -100,7 +109,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
 
         dynLoader.addListenerOnce("ready", e => {
           console.log(gitGraphPath + " loaded");
-          const gitgraph = this.__createGraph(graphContainer);
+          const gitgraph = this.__createGraph(el);
           this.setLibReady(true);
           resolve(gitgraph);
         }, this);
@@ -147,7 +156,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       console.log("Click on message", commit);
     },
 
-    commit: function(branch, msg) {
+    commit: function(branch, msg, id) {
       const that = this;
       branch.commit({
         subject: msg,
@@ -168,10 +177,41 @@ qx.Class.define("osparc.wrapper.GitGraph", {
           that.__messageClick(commit);
         }
       });
+
+      const widget = new qx.ui.core.Widget().set({
+        opacity: 0.05,
+        height: 20,
+        minWidth: 50,
+        allowGrowX: true
+      });
+      this.__gitgraphCanvas.add(widget, {
+        top: 20*this.__commits.length,
+        left: 50,
+        right: 0
+      });
+      this.__commits.push({
+        id,
+        branch,
+        msg,
+        widget
+      });
+      const bgColor = widget.getBackgroundColor();
+      widget.addListener("mouseover", () => {
+        widget.set({
+          backgroundColor: "white",
+          cursor: "pointer"
+        });
+      });
+      widget.addListener("mouseout", () => {
+        widget.set({
+          backgroundColor: bgColor,
+          cursor: "auto"
+        });
+      });
     },
 
     addCommit: function(branch, commitData) {
-      this.commit(branch, commitData["createdAt"] + " - " + commitData["label"]);
+      this.commit(branch, commitData["createdAt"] + " - " + commitData["label"], commitData["id"]);
     },
 
     buildExample: function() {
