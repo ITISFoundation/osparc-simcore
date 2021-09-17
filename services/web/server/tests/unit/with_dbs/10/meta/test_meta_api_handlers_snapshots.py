@@ -15,6 +15,9 @@ from simcore_service_webserver.meta_models_snapshots import SnapshotItem, Snapsh
 ProjectDict = Dict[str, Any]
 
 
+pytestmark = pytest.mark.skip(reason="DEPRECATED")
+
+
 async def test_create_snapshot_workflow(client, user_project: ProjectDict):
 
     project_uuid = user_project["uuid"]
@@ -53,9 +56,9 @@ async def test_create_snapshot_workflow(client, user_project: ProjectDict):
     project.ui.slideshow = {}
 
     different_fields = {"name", "uuid", "creation_date", "last_change_date"}
-    assert snapshot_project.dict(exclude=different_fields) == project.dict(
-        exclude=different_fields
-    )
+    assert snapshot_project.dict(
+        exclude=different_fields, exclude_none=True, exclude_unset=True
+    ) == project.dict(exclude=different_fields, exclude_none=True, exclude_unset=True)
 
     # snapshot projects are hidden, and therefore NOT listed
     resp = await client.get(f"/{vtag}/projects")

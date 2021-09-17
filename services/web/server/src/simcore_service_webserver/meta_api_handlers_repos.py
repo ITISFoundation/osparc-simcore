@@ -205,7 +205,7 @@ async def _get_checkpoint_handler(request: web.Request):
                 project_uuid=_project_uuid,
                 ref_id=checkpoint.id,
             ),
-            **checkpoint.dict(),
+            **checkpoint.dict(**RESPONSE_MODEL_POLICY),
         }
     )
     return enveloped_response(data)
@@ -240,7 +240,7 @@ async def _update_checkpoint_annotations_handler(request: web.Request):
                 project_uuid=_project_uuid,
                 ref_id=checkpoint.id,
             ),
-            **checkpoint.dict(),
+            **checkpoint.dict(**RESPONSE_MODEL_POLICY),
         }
     )
     return enveloped_response(data)
@@ -270,7 +270,7 @@ async def _checkout_handler(request: web.Request):
                 project_uuid=_project_uuid,
                 ref_id=checkpoint.id,
             ),
-            **checkpoint.dict(),
+            **checkpoint.dict(**RESPONSE_MODEL_POLICY),
         }
     )
     return enveloped_response(data)
@@ -313,7 +313,7 @@ async def _view_project_workbench_handler(request: web.Request):
                 project_uuid=_project_uuid,
                 ref_id=checkpoint.id,
             ),
-            **view.dict(),
+            **view.dict(**RESPONSE_MODEL_POLICY),
         }
     )
 

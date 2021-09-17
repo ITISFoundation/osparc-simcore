@@ -53,8 +53,10 @@ class WorkbenchView(BaseModel):
     class Config:
         orm_mode = True
 
-    workbench: Dict[NodeID, Node]
-    ui: Dict[UUID, Any] = {}
+    # FIXME: Tmp replacing UUIDS by str due to a problem serializing to json UUID keys
+    # in the response https://github.com/samuelcolvin/pydantic/issues/2096#issuecomment-814860206
+    workbench: Dict[str, Node]
+    ui: Dict[str, Any] = {}
 
 
 # API models ---------------

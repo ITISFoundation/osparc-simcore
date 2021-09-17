@@ -132,7 +132,10 @@ async def test_workflow(
         f"/{vtag}/repos/projects/{project_uuid}/checkpoints/HEAD/workbench/view"
     )
     data, _ = await assert_status(resp, web.HTTPOk)
-    assert data["workbench"] == project.workbench
+    assert (
+        data["workbench"]
+        == project.dict(exclude_none=True, exclude_unset=True)["workbench"]
+    )
 
     # do some changes in project
     await do_update_user_project(project.uuid)
