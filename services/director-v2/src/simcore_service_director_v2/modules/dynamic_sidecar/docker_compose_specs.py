@@ -1,3 +1,4 @@
+import json
 from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
@@ -66,6 +67,9 @@ def _inject_paths_mappings(
         environment_vars: List[str] = service_content.get("environment", [])
         environment_vars.append(f"DY_SIDECAR_PATH_INPUTS={path_mappings.inputs_path}")
         environment_vars.append(f"DY_SIDECAR_PATH_OUTPUTS={path_mappings.outputs_path}")
+        str_path_mappings = json.dumps([str(x) for x in path_mappings.state_paths])
+        environment_vars.append(f"DY_SIDECAR_STATE_PATHS={str_path_mappings}")
+
         service_content["environment"] = environment_vars
 
 
