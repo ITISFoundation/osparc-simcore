@@ -60,7 +60,6 @@ class ComputationalSidecar:
                 destination_path = task_volumes.input_folder / input_params.path.strip(
                     "/"
                 )
-                destination_path.touch()
                 with openfile as src, destination_path.open("wb") as dest:
                     dest.write(src.read())
 
@@ -79,23 +78,20 @@ class ComputationalSidecar:
                 file_path = task_volumes.output_folder / output_params.get(
                     "name", output_key
                 )
-                if not file_path.exists():
-                    if output_params["type"] == Path:
-                        raise ServiceMissingOutputError(
-                            self.service_key, self.service_version, output_key
-                        )
-                    # optional output
+                if file_path.exists():
+                    output_data[output_key] = file_path
                     continue
-                output_data[output_key] = file_path
-            else:
-                # all other outputs should be located in a JSON file
-                output_data_file = task_volumes.output_folder / "outputs.json"
-                if not output_data_file.exists():
-                    if output_params["type"] != Optional[Any]:
-                        raise ServiceMissingOutputError(
-                            self.service_key, self.service_version, output_key
-                        )
-                    continue
+                # file is not present, raise if it should not be optional
+                if output_params["type"] == Path:
+                    raise ServiceMissingOutputError(
+                        self.service_key, self.service_version, output_key
+                    )
+                # optional output
+                continue
+
+            # all other outputs should be located in a JSON file
+            output_data_file = task_volumes.output_folder / "outputs.json"
+            if output_data_file.exists():
                 try:
                     service_output = json.loads(output_data_file.read_text())
                     if output_key not in service_output:
@@ -109,6 +105,14 @@ class ComputationalSidecar:
                     raise ServiceBadFormattedOutputError(
                         self.service_key, self.service_version, output_key
                     ) from exc
+            # json file does not exist
+            if output_params["type"] != Optional[Any]:
+                raise ServiceMissingOutputError(
+                    self.service_key, self.service_version, output_key
+                )
+            # but the entry is optional
+            continue
+
         return output_data
 
     async def run(self, command: List[str]) -> Dict[str, Any]:
