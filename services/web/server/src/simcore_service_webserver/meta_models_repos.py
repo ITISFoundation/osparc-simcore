@@ -1,11 +1,10 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union
-from uuid import UUID
 
 from aiopg.sa.result import RowProxy
 from models_library.basic_types import SHA1Str
 from models_library.projects import ProjectID
-from models_library.projects_nodes import Node, NodeID
+from models_library.projects_nodes import Node
 from pydantic import BaseModel, PositiveInt, StrictBool, StrictFloat, StrictInt
 from pydantic.networks import HttpUrl
 
