@@ -6,11 +6,9 @@ import asyncio
 # pylint: disable=no-member
 import logging
 import re
-import subprocess
 
 # copied out from dask
 import sys
-import time
 from collections import namedtuple
 from pathlib import Path
 from pprint import pformat
@@ -21,6 +19,7 @@ from uuid import uuid4
 import dask
 import pytest
 import requests
+import tenacity
 from _pytest.tmpdir import TempPathFactory
 from aiohttp.test_utils import loop_context
 from distributed import Client
@@ -37,6 +36,7 @@ from simcore_service_dask_sidecar.tasks import (
 from simcore_service_sidecar.boot_mode import BootMode
 from yarl import URL
 
+logger = logging.getLogger(__name__)
 
 # TODO: real db tables
 @pytest.fixture
@@ -127,15 +127,15 @@ async def directory_server(
 
     p = await asyncio.create_subprocess_shell(" ".join(cmd), cwd=directory_path)
     timeout = 10
-    while True:
-        try:
+
+    async for attempt in tenacity.AsyncRetrying(
+        wait=tenacity.wait_random(0, 5),
+        stop=tenacity.stop_after_delay(15),
+        before=tenacity.before_log(logger, logging.INFO),
+    ):
+        with attempt:
             requests.get(f"{base_url}")
-            break
-        except requests.exceptions.ConnectionError as e:
-            time.sleep(0.1)
-            timeout -= 0.1
-            if timeout < 0:
-                raise RuntimeError("Server did not appear") from e
+
     yield [base_url.with_path(f) for f in files]
     p.terminate()
 
