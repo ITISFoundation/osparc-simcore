@@ -196,6 +196,11 @@ class BaseOrm(Generic[RowUId]):
         assert limit is None or limit > 0  # nosec
 
         query = self._compose_select_query(returning_cols)
+
+        if self.is_filter_set():
+            assert self._where_clause is not None  # nosec
+            query = query.where(self._where_clause)
+
         if sort_by is not None:
             query = query.order_by(sort_by)
 
