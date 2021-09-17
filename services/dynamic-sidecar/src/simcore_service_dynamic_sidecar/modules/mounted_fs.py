@@ -80,8 +80,7 @@ class MountedVolumes:
         _ensure_path(DY_VOLUMES)
         self.disk_inputs_path  # pylint:disable= pointless-statement
         self.disk_outputs_path  # pylint:disable= pointless-statement
-        for disk_state_path in self.disk_state_paths():
-            _ensure_path(disk_state_path)
+        set(self.disk_state_paths())
 
     def get_inputs_docker_volume(self) -> str:
         return f"{self.volume_name_inputs}:{self.inputs_path}"
