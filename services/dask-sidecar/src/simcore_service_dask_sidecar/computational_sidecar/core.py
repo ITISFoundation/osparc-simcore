@@ -1,6 +1,5 @@
 import asyncio
 import json
-import shutil
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from json.decoder import JSONDecodeError
@@ -9,8 +8,10 @@ from types import TracebackType
 from typing import Any, AsyncIterator, Awaitable, Dict, List, Optional, Type
 from uuid import uuid4
 
+import fsspec
 from aiodocker import Docker
 from simcore_service_sidecar.task_shared_volume import TaskSharedVolumes
+from yarl import URL
 
 from ..utils import create_dask_worker_logger
 from .docker_utils import (
@@ -54,9 +55,15 @@ class ComputationalSidecar:
         input_data_file = task_volumes.input_folder / "inputs.json"
         input_data = {}
         for input_key, input_params in self.input_data.items():
-            if isinstance(input_params, Path):
-                file_path = task_volumes.input_folder / input_params.name
-                shutil.copy(input_params, file_path)
+            if isinstance(input_params, URL):
+                openfile = fsspec.open(f"{input_params}")
+                destination_path = task_volumes.input_folder / input_params.path.strip(
+                    "/"
+                )
+                destination_path.touch()
+                with openfile as src, destination_path.open("wb") as dest:
+                    dest.write(src.read())
+
             else:
                 input_data[input_key] = input_params
         input_data_file.write_text(json.dumps(input_data))

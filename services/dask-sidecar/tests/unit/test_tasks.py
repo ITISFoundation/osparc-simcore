@@ -4,15 +4,22 @@
 # pylint: disable=no-member
 import logging
 import re
+import subprocess
+
+# copied out from dask
+import sys
+import time
 from collections import namedtuple
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterable, List
 from unittest import mock
 from uuid import uuid4
 
 import dask
 import pytest
+import requests
+from _pytest.tmpdir import TempPathFactory
 from distributed import Client
 from faker import Faker
 from models_library.projects import ProjectID
@@ -25,6 +32,7 @@ from simcore_service_dask_sidecar.tasks import (
     run_task_in_service,
 )
 from simcore_service_sidecar.boot_mode import BootMode
+from yarl import URL
 
 
 # TODO: real db tables
@@ -91,28 +99,70 @@ def fake_input_file(tmp_path: Path, faker: Faker) -> Path:
     return fake_file
 
 
+@pytest.fixture(scope="module")
+def directory_server(tmp_path_factory: TempPathFactory) -> Iterable[List[URL]]:
+    faker = Faker()
+    files = ["file_1", "file_2", "file_3"]
+    base_url = URL("http://localhost:8999")
+    directory_path = tmp_path_factory.mktemp("directory_server")
+    assert directory_path.exists()
+    for fn in files:
+        with (directory_path / fn).open("wt") as f:
+            f.write(f"This file is named: {fn}\n")
+            for s in faker.sentences():
+                f.write(f"{s}\n")
+
+    cmd = [sys.executable, "-m", "http.server", "8999"]
+    with subprocess.Popen(cmd, cwd=directory_path) as p:
+        timeout = 10
+        while True:
+            try:
+                requests.get(f"{base_url}")
+                break
+            except requests.exceptions.ConnectionError as e:
+                time.sleep(0.1)
+                timeout -= 0.1
+                if timeout < 0:
+                    raise RuntimeError("Server did not appear") from e
+        yield [base_url.with_path(f) for f in files]
+
+
 @pytest.fixture()
-def fake_command(fake_input_file: Path) -> List[str]:
+def fake_command(directory_server: List[URL]) -> List[str]:
+    file_names = [file.path for file in directory_server]
+    check_input_file_command = " && ".join(
+        [
+            f"(test -f ${{INPUT_FOLDER}}/{file} || (echo ${{INPUT_FOLDER}}/{file} does not exists && exit 1))"
+            for file in file_names
+        ]
+    )
+    echo_input_files_in_log_command = " && ".join(
+        [f"echo $(cat ${{INPUT_FOLDER}}/{file})" for file in file_names]
+    )
+
     return [
         "/bin/bash",
         "-c",
         "echo User: $(id $(whoami)) && "
         "(test -f ${INPUT_FOLDER}/inputs.json || (echo ${INPUT_FOLDER}/inputs.json file does not exists && exit 1)) && "
         "echo $(cat ${INPUT_FOLDER}/inputs.json) && "
-        f"(test -f ${{INPUT_FOLDER}}/{fake_input_file.name} || (echo ${{INPUT_FOLDER}}/{fake_input_file.name} does not exists && exit 1)) && "
-        f"echo $(cat ${{INPUT_FOLDER}}/{fake_input_file.name}) &&"
+        f"{check_input_file_command} && "
+        f"{echo_input_files_in_log_command} &&"
         'echo {\\"pytest_output_1\\":\\"is quite an amazing feat\\"} > ${OUTPUT_FOLDER}/outputs.json',
     ]
 
 
 @pytest.fixture()
-def fake_input_data(fake_input_file: Path) -> Dict[str, Any]:
+def fake_input_data(directory_server: List[URL]) -> Dict[str, Any]:
     return {
         "input_1": 23,
         "input_23": "a string input",
         "the_input_43": 15.0,
         "the_bool_input_54": False,
-        "some_file_input": fake_input_file,
+        **{
+            f"some_file_input_{index+1}": file
+            for index, file in enumerate(directory_server)
+        },
     }
 
 
@@ -128,7 +178,9 @@ def fake_input_data(fake_input_file: Path) -> Dict[str, Any]:
             expected_output_data={"pytest_output_1": "is quite an amazing feat"},
             expected_logs=[
                 '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
-                "This is some fake data here",
+                "This file is named: file_1",
+                "This file is named: file_2",
+                "This file is named: file_3",
             ],
         ),
         # ServiceExampleParam(
