@@ -3,7 +3,6 @@
 """
 
 import logging
-import os
 from typing import Any, Dict, Iterator, Optional
 
 from aiohttp import web
@@ -47,6 +46,8 @@ async def pg_engine(app: web.Application):
 
     log.info("Creating pg engine for %s", dsn)
 
+    engine: Optional[Engine] = None
+
     async for attempt in AsyncRetrying(
         **PostgresRetryPolicyUponInitialization(log).kwargs
     ):
@@ -56,8 +57,8 @@ async def pg_engine(app: web.Application):
             )
             await raise_if_not_responsive(engine)
 
-        assert engine  # nosec
-        app[APP_DB_ENGINE_KEY] = engine
+    assert engine  # nosec
+    app[APP_DB_ENGINE_KEY] = engine
 
     yield  # -------------------
 

@@ -5,7 +5,6 @@
 import json
 import logging
 from typing import Any, Coroutine, Dict, List, Optional, Set
-from uuid import UUID
 
 from aiohttp import web
 from jsonschema import ValidationError
