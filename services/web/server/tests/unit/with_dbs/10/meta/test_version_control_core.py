@@ -10,14 +10,14 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
 from simcore_service_webserver.constants import RQT_USERID_KEY
-from simcore_service_webserver.meta_core_repos import (
+from simcore_service_webserver.projects import projects_api
+from simcore_service_webserver.version_control_core import (
     checkout_checkpoint,
     create_checkpoint,
     list_checkpoints,
     update_checkpoint,
 )
-from simcore_service_webserver.meta_db import HEAD, VersionControlRepository
-from simcore_service_webserver.projects import projects_api
+from simcore_service_webserver.version_control_db import HEAD, VersionControlRepository
 
 ProjectDict = Dict[str, Any]
 

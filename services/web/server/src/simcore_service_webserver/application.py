@@ -22,7 +22,7 @@ from .email import setup_email
 from .exporter import setup_exporter
 from .groups import setup_groups
 from .login import setup_login
-from .meta import setup_meta
+from .meta import setup_version_control
 from .products import setup_products
 from .projects import setup_projects
 from .publications import setup_publications
@@ -78,7 +78,7 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_users(app)
     setup_groups(app)
     setup_projects(app)
-    setup_meta(app)
+    setup_version_control(app)
     setup_activity(app)
     setup_resource_manager(app)
     setup_tags(app)

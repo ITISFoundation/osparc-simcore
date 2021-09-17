@@ -6,8 +6,8 @@ from datetime import datetime, timezone
 from typing import Any, Dict
 
 from models_library.projects import Project
-from simcore_service_webserver.meta_core_snapshots import take_snapshot
-from simcore_service_webserver.meta_models_snapshots import Snapshot
+from simcore_service_webserver.version_control_core_snapshots import take_snapshot
+from simcore_service_webserver.version_control_models_snapshots import Snapshot
 
 ProjectDict = Dict[str, Any]
 

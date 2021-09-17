@@ -10,12 +10,10 @@ from servicelib.rest_pagination_utils import (
 
 from ._meta import api_version_prefix as vtag
 from .login.decorators import login_required
-from .meta_api_handlers_base import (
-    create_url_for_function,
-    enveloped_response,
-    handle_request_errors,
-)
-from .meta_core_repos import (
+from .rest_utils import RESPONSE_MODEL_POLICY
+from .security_decorators import permission_required
+from .utils_aiohttp import rename_routes_as_handler_function, view_routes
+from .version_control_core import (
     checkout_checkpoint_safe,
     create_checkpoint_safe,
     get_checkpoint_safe,
@@ -24,8 +22,13 @@ from .meta_core_repos import (
     list_repos_safe,
     update_checkpoint_safe,
 )
-from .meta_db import HEAD, VersionControlRepository
-from .meta_models_repos import (
+from .version_control_db import HEAD, VersionControlRepository
+from .version_control_handlers_base import (
+    create_url_for_function,
+    enveloped_response,
+    handle_request_errors,
+)
+from .version_control_models import (
     Checkpoint,
     CheckpointAnnotations,
     CheckpointApiModel,
@@ -35,9 +38,6 @@ from .meta_models_repos import (
     WorkbenchView,
     WorkbenchViewApiModel,
 )
-from .rest_utils import RESPONSE_MODEL_POLICY
-from .security_decorators import permission_required
-from .utils_aiohttp import rename_routes_as_handler_function, view_routes
 
 logger = logging.getLogger(__name__)
 

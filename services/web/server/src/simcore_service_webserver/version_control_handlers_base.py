@@ -10,9 +10,9 @@ from pydantic.error_wrappers import ValidationError
 from pydantic.main import BaseModel
 from yarl import URL
 
-from .meta_errors import InvalidParameterError, NoCommitError, NotFoundError
 from .projects.projects_exceptions import ProjectNotFoundError
 from .rest_utils import RESPONSE_MODEL_POLICY
+from .version_control_errors import InvalidParameterError, NoCommitError, NotFoundError
 
 logger = logging.getLogger(__name__)
 

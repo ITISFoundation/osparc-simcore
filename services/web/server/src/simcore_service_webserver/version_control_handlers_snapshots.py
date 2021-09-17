@@ -1,4 +1,5 @@
 import logging
+import warnings
 from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
@@ -9,26 +10,30 @@ from pydantic.decorator import validate_arguments
 from ._meta import api_version_prefix as vtag
 from .constants import RQT_USERID_KEY
 from .login.decorators import login_required
-from .meta_api_handlers_base import (
+from .projects import projects_api
+from .security_decorators import permission_required
+from .utils_aiohttp import rename_routes_as_handler_function, view_routes
+from .version_control_core_snapshots import ProjectDict, take_snapshot
+from .version_control_db_snapshots import ProjectsRepository, SnapshotsRepository
+from .version_control_handlers_base import (
     create_url_for_function,
     enveloped_response,
     handle_request_errors,
 )
-from .meta_core_snapshots import ProjectDict, take_snapshot
-from .meta_db_snapshots import ProjectsRepository, SnapshotsRepository
-from .meta_models_snapshots import Snapshot, SnapshotItem, SnapshotPatch
-from .projects import projects_api
-from .security_decorators import permission_required
-from .utils_aiohttp import rename_routes_as_handler_function, view_routes
+from .version_control_models_snapshots import Snapshot, SnapshotItem, SnapshotPatch
 
 logger = logging.getLogger(__name__)
 
 
+warnings.warn(
+    "version_control_*_snapshots.py modules are the first generation of vc."
+    "It is just temporarily kept it functional until it gets fully replaced",
+    DeprecationWarning,
+)
+
 # FIXME: access rights using same approach as in access_layer.py in storage.
 # A user can only check snapshots (subresource) of its project (parent resource)
 
-
-# API ROUTES HANDLERS ---------------------------------------------------------
 
 # API ROUTES HANDLERS ---------------------------------------------------------
 routes = web.RouteTableDef()

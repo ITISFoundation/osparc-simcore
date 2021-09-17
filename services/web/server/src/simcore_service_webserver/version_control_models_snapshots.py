@@ -1,3 +1,4 @@
+import warnings
 from datetime import datetime
 from typing import Any, Callable, Optional, Union
 from uuid import UUID, uuid3
@@ -13,6 +14,13 @@ from pydantic import (
 )
 from pydantic.main import BaseConfig
 from yarl import URL
+
+warnings.warn(
+    "version_control_*_snapshots.py modules are the first generation of vc."
+    "It is just temporarily kept it functional until it gets fully replaced",
+    DeprecationWarning,
+)
+
 
 BuiltinTypes = Union[StrictBool, StrictInt, StrictFloat, str]
 

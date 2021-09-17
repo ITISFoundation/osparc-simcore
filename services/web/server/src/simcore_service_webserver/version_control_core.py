@@ -14,10 +14,13 @@ from uuid import UUID
 
 from aiopg.sa.result import RowProxy
 from pydantic import NonNegativeInt, PositiveInt, validate_arguments
-from simcore_service_webserver.meta_db import CommitLog, VersionControlRepository
+from simcore_service_webserver.version_control_db import (
+    CommitLog,
+    VersionControlRepository,
+)
 
-from .meta_errors import CleanRequiredError
-from .meta_models_repos import Checkpoint, RefID, WorkbenchView
+from .version_control_errors import CleanRequiredError
+from .version_control_models import Checkpoint, RefID, WorkbenchView
 
 CFG = {"arbitrary_types_allowed": True}
 

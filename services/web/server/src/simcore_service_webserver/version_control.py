@@ -1,5 +1,7 @@
 """ Version control app module
 
+    Manages version control of studies, both the project document and the associated data
+
 """
 import logging
 

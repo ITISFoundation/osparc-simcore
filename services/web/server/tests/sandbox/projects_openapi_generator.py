@@ -17,9 +17,9 @@ from types import FunctionType
 from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union
 from uuid import UUID, uuid3
 
-import simcore_service_webserver.meta_api_handlers_repos
 import simcore_service_webserver.projects.projects_handlers
 import simcore_service_webserver.projects.projects_node_handlers
+import simcore_service_webserver.version_control_handlers
 from fastapi import Depends, FastAPI
 from fastapi import Path as PathParam
 from fastapi import Query, Request, status
@@ -39,7 +39,7 @@ from pydantic import (
 from pydantic.generics import GenericModel
 from pydantic.networks import HttpUrl
 from servicelib.rest_pagination_utils import PageLinks, PageMetaInfoLimitOffset
-from simcore_service_webserver.meta_models_snapshots import SnapshotResource
+from simcore_service_webserver.version_control_models_snapshots import SnapshotResource
 from starlette.datastructures import URL
 
 CURRENT_FILENAME_STEM = Path(sys.argv[0] if __name__ == "__main__" else __file__).stem
@@ -841,7 +841,7 @@ def view_project_workbench(
 
 redefine_operation_id_in_router(
     repo_routes,
-    operation_id_prefix=simcore_service_webserver.meta_api_handlers_repos.__name__,
+    operation_id_prefix=simcore_service_webserver.version_control_handlers.__name__,
 )
 
 

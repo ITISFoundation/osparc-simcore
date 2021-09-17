@@ -21,13 +21,20 @@ from simcore_postgres_database.utils_aiopg_orm import BaseOrm
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .db_base_repository import BaseRepository
-from .meta_errors import (
+from .version_control_errors import (
     CleanRequiredError,
     InvalidParameterError,
     NoCommitError,
     NotFoundError,
 )
-from .meta_models_repos import HEAD, CommitLog, CommitProxy, RefID, SHA1Str, TagProxy
+from .version_control_models import (
+    HEAD,
+    CommitLog,
+    CommitProxy,
+    RefID,
+    SHA1Str,
+    TagProxy,
+)
 
 log = logging.getLogger(__name__)
 

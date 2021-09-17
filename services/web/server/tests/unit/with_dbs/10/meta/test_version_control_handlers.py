@@ -14,7 +14,10 @@ from pydantic.main import BaseModel
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.rest_pagination_utils import PageResponseLimitOffset
 from simcore_service_webserver._meta import api_vtag as vtag
-from simcore_service_webserver.meta_models_repos import CheckpointApiModel, RepoApiModel
+from simcore_service_webserver.version_control_models import (
+    CheckpointApiModel,
+    RepoApiModel,
+)
 
 ProjectDict = Dict[str, Any]
 
