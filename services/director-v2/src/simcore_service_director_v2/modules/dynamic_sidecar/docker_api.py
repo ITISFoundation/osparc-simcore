@@ -381,8 +381,7 @@ async def remove_dynamic_sidecar_volumes(node_uuid: NodeID) -> bool:
             volume = await client.volumes.get(volume_data["Name"])
             await volume.delete()
 
-        if len(volumes) != 2:
-            log.error("Expected 2 volumes, found %s. %s", len(volumes), volumes)
+        log.debug("Remove volumes: %s", [v["Name"] for v in volumes])
         return True
 
 
