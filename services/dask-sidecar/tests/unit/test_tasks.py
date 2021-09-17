@@ -31,6 +31,7 @@ from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.tasks import (
     _is_aborted_cb,
+    _run_computational_sidecar_async,
     run_computational_sidecar,
     run_task_in_service,
 )
@@ -62,6 +63,8 @@ def node_id() -> NodeID:
 
 @pytest.fixture()
 def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, mock.Mock]:
+    dask_client_mock = mocker.patch("distributed.Client", autospec=True)
+
     dask_distributed_worker_mock = mocker.patch(
         "simcore_service_dask_sidecar.tasks.get_worker", autospec=True
     )
@@ -71,23 +74,14 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, mock.Mock]:
     dask_task_mock.resource_restrictions = {}
 
     dask_distributed_worker_mock.return_value.tasks.get.return_value = dask_task_mock
-
-    return {
-        "dask_task": dask_task_mock,
-        "dask_distributed_worker": dask_distributed_worker_mock,
-    }
+    return dask_client_mock
 
 
 @pytest.fixture
 def dask_client() -> Client:
     print(pformat(dask.config.get("distributed")))
-    with dask.config.set(
-        {
-            "logging.distributed.worker": logging.DEBUG,
-        }
-    ):
-        with Client(n_workers=1) as client:
-            yield client
+    with Client(nanny=False) as client:
+        yield client
 
 
 ServiceExampleParam = namedtuple(
@@ -139,6 +133,8 @@ async def directory_server(
                     raise RuntimeError("Server did not appear") from e
         # the server must be up
         yield [base_url.with_path(f) for f in files]
+        # cleanup now, sometimes it hangs
+        p.kill()
 
 
 @pytest.fixture()
@@ -178,6 +174,54 @@ def fake_input_data(directory_server: List[URL]) -> Dict[str, Any]:
             for index, file in enumerate(directory_server)
         },
     }
+
+
+@pytest.mark.parametrize(
+    "service_key, service_version, command, input_data, output_data_keys, expected_output_data, expected_logs",
+    [
+        ServiceExampleParam(
+            service_key="ubuntu",
+            service_version="latest",
+            command=pytest.lazy_fixture("fake_command"),
+            input_data=pytest.lazy_fixture("fake_input_data"),
+            output_data_keys={"pytest_output_1": {"type": str}},
+            expected_output_data={"pytest_output_1": "is quite an amazing feat"},
+            expected_logs=[
+                '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
+                "This file is named: file_1",
+                "This file is named: file_2",
+                "This file is named: file_3",
+            ],
+        ),
+    ],
+)
+async def test_run_computational_sidecar_real_fct(
+    dask_subsystem_mock,
+    service_key: str,
+    service_version: str,
+    command: List[str],
+    input_data: Dict[str, Any],
+    output_data_keys: Dict[str, Any],
+    expected_output_data: Dict[str, Any],
+    expected_logs: List[str],
+):
+    output_data = await _run_computational_sidecar_async(
+        service_key, service_version, input_data, output_data_keys, command
+    )
+
+    for k, v in expected_output_data.items():
+        assert k in output_data
+        if isinstance(v, re.Pattern):
+            assert v.match(f"{output_data[k]}")
+        else:
+            assert output_data[k] == v
+
+    for k, v in output_data.items():
+        assert k in expected_output_data
+        if isinstance(expected_output_data[k], re.Pattern):
+            assert expected_output_data[k].match(f"{v}")
+        else:
+            assert v == expected_output_data[k]
 
 
 @pytest.mark.parametrize(
