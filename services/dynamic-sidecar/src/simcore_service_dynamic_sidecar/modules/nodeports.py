@@ -10,6 +10,7 @@ from typing import Any, List, Optional, Set, Tuple, cast
 
 from servicelib.archiving_utils import PrunableFolder, archive_dir, unarchive_dir
 from servicelib.async_utils import run_sequentially_in_context
+from servicelib.pools import async_on_threadpool
 from servicelib.utils import logged_gather
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import Nodeports, Port
@@ -113,8 +114,10 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
         finally:
             # clean up possible compressed files
             for file_path in temp_files:
-                # TODO: run this on threadpool
-                shutil.rmtree(file_path.parent, ignore_errors=True)
+                await async_on_threadpool(
+                    # pylint: disable=cell-var-from-loop
+                    lambda: shutil.rmtree(file_path.parent, ignore_errors=True)
+                )
 
     elapsed_time = time.perf_counter() - start_time
     logger.info("Uploaded %s bytes in %s seconds", total_bytes, elapsed_time)
@@ -213,7 +216,11 @@ async def download_inputs(inputs_path: Path, port_keys: List[str]) -> None:
                 else:
                     logger.info("moving %s", downloaded_file)
                     dest_path = dest_path / Path(downloaded_file).name
-                    shutil.move(str(downloaded_file), dest_path)
+                    # TODO: run this on threadpool
+                    await async_on_threadpool(
+                        # pylint: disable=cell-var-from-loop
+                        lambda: shutil.move(str(downloaded_file), dest_path)
+                    )
                     logger.info("all moved to %s", dest_path)
             else:
                 transfer_bytes = transfer_bytes + sys.getsizeof(value)

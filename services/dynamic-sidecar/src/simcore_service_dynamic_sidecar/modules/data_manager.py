@@ -1,11 +1,12 @@
 import logging
 import shutil
 import tempfile
-from contextlib import contextmanager
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Iterator
 
 from servicelib.archiving_utils import archive_dir
+from servicelib.pools import async_on_threadpool
 from simcore_sdk.node_data import data_manager
 from simcore_service_dynamic_sidecar.core.settings import (
     DynamicSidecarSettings,
@@ -44,15 +45,14 @@ async def pull_path_if_exists(path: Path) -> None:
     logger.info("Finished pulling and extracting %s", str(path))
 
 
-@contextmanager
-def _isolated_temp_zip_path(path_to_compress: Path) -> Iterator[Path]:
+@asynccontextmanager
+async def _isolated_temp_zip_path(path_to_compress: Path) -> Iterator[Path]:
     base_dir = Path(tempfile.mkdtemp())
     zip_temp_name = base_dir / f"{path_to_compress.name}.zip"
     try:
         yield zip_temp_name
     finally:
-        # TODO: run on Threadpool in background, create a utility for this to send such commands
-        shutil.rmtree(base_dir, ignore_errors=True)
+        await async_on_threadpool(lambda: shutil.rmtree(base_dir, ignore_errors=True))
 
 
 async def upload_path_if_exists(path: Path) -> None:
@@ -63,7 +63,7 @@ async def upload_path_if_exists(path: Path) -> None:
     # pylint: disable=unnecessary-comprehension
     logger.info("Files in %s: %s", path, [x for x in path.rglob("*")])
 
-    with _isolated_temp_zip_path(path) as archive_path:
+    async with _isolated_temp_zip_path(path) as archive_path:
         await archive_dir(
             dir_to_compress=path,
             destination=archive_path,
