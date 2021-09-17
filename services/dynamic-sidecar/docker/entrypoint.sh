@@ -91,10 +91,11 @@ fi
 # Change ownership of volumes mount directory
 # directories are empty at this point
 # each individual subdirectory is a unique volume
-chown --no-dereference --verbose --recursive $SC_USER_NAME:$GROUPNAME /dy-volumes/
+chown --verbose --recursive "$SC_USER_NAME":"$GROUPNAME" "${DY_VOLUMES}"
 
 echo "$INFO Starting $* ..."
 echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
 echo "  local dir : $(ls -al)"
+echo "  volumes dir : $(ls -al "${DY_VOLUMES}")"
 
 exec gosu "$SC_USER_NAME" "$@"
