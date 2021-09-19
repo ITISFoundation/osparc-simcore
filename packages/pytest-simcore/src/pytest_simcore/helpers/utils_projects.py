@@ -6,7 +6,7 @@
 import json
 import re
 import uuid as uuidlib
-from typing import Dict
+from typing import Dict, Optional
 
 from aiohttp import web
 from simcore_service_webserver.projects.projects_db import (
@@ -101,10 +101,10 @@ class NewProject:
         self,
         params_override: Dict = None,
         app: web.Application = None,
-        clear_all=True,
-        user_id=None,
+        clear_all: bool = True,
+        user_id: Optional[int] = None,
         *,
-        force_uuid=False,
+        force_uuid: bool = False,
     ):
         assert app  # nosec
 

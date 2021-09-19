@@ -10,9 +10,15 @@ from aiohttp import web
 from models_library.projects import Project
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver._meta import api_vtag as vtag
-from simcore_service_webserver.snapshots_models import SnapshotItem, SnapshotPatch
+from simcore_service_webserver.version_control_models_snapshots import (
+    SnapshotItem,
+    SnapshotPatch,
+)
 
 ProjectDict = Dict[str, Any]
+
+
+pytestmark = pytest.mark.skip(reason="DEPRECATED")
 
 
 async def test_create_snapshot_workflow(client, user_project: ProjectDict):
@@ -53,9 +59,9 @@ async def test_create_snapshot_workflow(client, user_project: ProjectDict):
     project.ui.slideshow = {}
 
     different_fields = {"name", "uuid", "creation_date", "last_change_date"}
-    assert snapshot_project.dict(exclude=different_fields) == project.dict(
-        exclude=different_fields
-    )
+    assert snapshot_project.dict(
+        exclude=different_fields, exclude_none=True, exclude_unset=True
+    ) == project.dict(exclude=different_fields, exclude_none=True, exclude_unset=True)
 
     # snapshot projects are hidden, and therefore NOT listed
     resp = await client.get(f"/{vtag}/projects")

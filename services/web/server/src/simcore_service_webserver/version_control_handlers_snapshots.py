@@ -1,108 +1,35 @@
 import logging
+import warnings
 from datetime import datetime
-from functools import wraps
-from typing import Any, Awaitable, Callable, List, Optional, Type
+from typing import List, Optional
 from uuid import UUID
 
-import orjson
 from aiohttp import web
-from aiohttp.web_exceptions import HTTPException
 from pydantic.decorator import validate_arguments
-from pydantic.error_wrappers import ValidationError
-from pydantic.main import BaseModel
-from yarl import URL
 
 from ._meta import api_version_prefix as vtag
-from .constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
+from .constants import RQT_USERID_KEY
 from .login.decorators import login_required
 from .projects import projects_api
-from .projects.projects_exceptions import ProjectNotFoundError
 from .security_decorators import permission_required
-from .snapshots_core import ProjectDict, take_snapshot
-from .snapshots_db import ProjectsRepository, SnapshotsRepository
-from .snapshots_models import Snapshot, SnapshotItem, SnapshotPatch
+from .utils_aiohttp import rename_routes_as_handler_function, view_routes
+from .version_control_core_snapshots import ProjectDict, take_snapshot
+from .version_control_db_snapshots import ProjectsRepository, SnapshotsRepository
+from .version_control_handlers_base import (
+    create_url_for_function,
+    enveloped_response,
+    handle_request_errors,
+)
+from .version_control_models_snapshots import Snapshot, SnapshotItem, SnapshotPatch
 
 logger = logging.getLogger(__name__)
 
 
-def _default(obj):
-    if isinstance(obj, BaseModel):
-        return obj.dict()
-    raise TypeError
-
-
-def json_dumps(v) -> str:
-    # orjson.dumps returns bytes, to match standard json.dumps we need to decode
-    return orjson.dumps(v, default=_default).decode()
-
-
-def enveloped_response(
-    data: Any, status_cls: Type[HTTPException] = web.HTTPOk, **extra
-) -> web.Response:
-    enveloped: str = json_dumps({"data": data, **extra})
-    return web.Response(
-        text=enveloped, content_type="application/json", status=status_cls.status_code
-    )
-
-
-HandlerCoroutine = Callable[[web.Request], Awaitable[web.Response]]
-
-
-def handle_request_errors(handler: HandlerCoroutine) -> HandlerCoroutine:
-    """
-    - required and type validation of path and query parameters
-    """
-
-    @wraps(handler)
-    async def wrapped(request: web.Request):
-        try:
-            resp = await handler(request)
-            return resp
-
-        except KeyError as err:
-            # NOTE: handles required request.match_info[*] or request.query[*]
-            logger.debug(err, exc_info=True)
-            raise web.HTTPBadRequest(reason=f"Expected parameter {err}") from err
-
-        except ValidationError as err:
-            #  NOTE: pydantic.validate_arguments parses and validates -> ValidationError
-            logger.debug(err, exc_info=True)
-            raise web.HTTPUnprocessableEntity(
-                text=json_dumps({"error": err.errors()}),
-                content_type="application/json",
-            ) from err
-
-        except ProjectNotFoundError as err:
-            logger.debug(err, exc_info=True)
-            raise web.HTTPNotFound(
-                reason=f"Project not found {err.project_uuid} or not accessible. Skipping snapshot"
-            ) from err
-
-    return wrapped
-
-
-def create_url_for_function(request: web.Request) -> Callable:
-    app = request.app
-
-    def url_for(router_name: str, **params) -> Optional[str]:
-        try:
-            rel_url: URL = app.router[router_name].url_for(
-                **{k: str(v) for k, v in params.items()}
-            )
-
-            url = (
-                request.url.origin()
-                .with_scheme(
-                    request.headers.get("X-Forwarded-Proto", request.url.scheme)
-                )
-                .with_path(str(rel_url))
-            )
-            return str(url)
-        except KeyError:
-            return None
-
-    return url_for
-
+warnings.warn(
+    "version_control_*_snapshots.py modules are the first generation of vc."
+    "It is just temporarily kept it functional until it gets fully replaced",
+    DeprecationWarning,
+)
 
 # FIXME: access rights using same approach as in access_layer.py in storage.
 # A user can only check snapshots (subresource) of its project (parent resource)
@@ -133,7 +60,7 @@ async def create_project_snapshot_handler(request: web.Request):
         # fetch parent's project
         parent: ProjectDict = await projects_api.get_project_for_user(
             request.app,
-            str(project_id),
+            f"{project_id}",
             user_id,
             include_templates=False,
             include_state=False,
@@ -170,15 +97,12 @@ async def create_project_snapshot_handler(request: web.Request):
         snapshot_label=request.query.get("snapshot_label"),
     )
 
-    data = SnapshotItem.from_snapshot(snapshot, url_for)
+    data = SnapshotItem.from_snapshot(snapshot, url_for, prefix=__name__)
 
     return enveloped_response(data, status_cls=web.HTTPCreated)
 
 
-@routes.get(
-    f"/{vtag}/projects/{{project_id}}/snapshots",
-    name="list_project_snapshots_handler",
-)
+@routes.get(f"/{vtag}/projects/{{project_id}}/snapshots")
 @login_required
 @permission_required("project.read")
 @handle_request_errors
@@ -207,13 +131,14 @@ async def list_project_snapshots_handler(request: web.Request):
     )
     # TODO: async for snapshot in await list_snapshot is the same?
 
-    data = [SnapshotItem.from_snapshot(snp, url_for) for snp in snapshots]
+    data = [
+        SnapshotItem.from_snapshot(snp, url_for, prefix=__name__) for snp in snapshots
+    ]
     return enveloped_response(data)
 
 
 @routes.get(
     f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}",
-    name="get_project_snapshot_handler",
 )
 @login_required
 @permission_required("project.read")
@@ -238,7 +163,7 @@ async def get_project_snapshot_handler(request: web.Request):
         snapshot_id=request.match_info["snapshot_id"],
     )
 
-    data = SnapshotItem.from_snapshot(snapshot, url_for)
+    data = SnapshotItem.from_snapshot(snapshot, url_for, prefix=__name__)
     return enveloped_response(data)
 
 
@@ -249,7 +174,7 @@ async def get_project_snapshot_handler(request: web.Request):
 @login_required
 @permission_required("project.delete")
 @handle_request_errors
-async def delete_project_snapshot_handler(request: web.Request):
+async def delete_project_snapshot_handler(request: web.Request) -> None:
     snapshots_repo = SnapshotsRepository(request)
 
     @validate_arguments
@@ -270,7 +195,7 @@ async def delete_project_snapshot_handler(request: web.Request):
 
         assert snapshots_repo.user_id is not None
         await projects_api.delete_project(
-            request.app, str(snapshot_uuid), snapshots_repo.user_id
+            request.app, f"{snapshot_uuid}", snapshots_repo.user_id
         )
 
     await _delete_snapshot(
@@ -312,37 +237,11 @@ async def patch_project_snapshot_handler(request: web.Request):
         # TODO: skip_return_updated
     )
 
-    data = SnapshotItem.from_snapshot(snapshot, url_for)
+    data = SnapshotItem.from_snapshot(snapshot, url_for, prefix=__name__)
     return enveloped_response(data)
 
 
-## projects/*/snapshots/*/parameters  -----------------------------
-
-
-@routes.get(
-    f"/{vtag}/projects/{{project_id}}/snapshots/{{snapshot_id}}/parameters",
-    name="get_snapshot_parameters_handler",
-)
-@login_required
-@permission_required("project.read")
-@handle_request_errors
-async def get_project_snapshot_parameters_handler(
-    request: web.Request,
-):
-    # pylint: disable=unused-variable
-    # pylint: disable=unused-argument
-    user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
-
-    @validate_arguments
-    async def get_snapshot_parameters(
-        project_id: UUID,
-        snapshot_id: str,
-    ):
-        return {"x": 4, "y": "yes"}
-
-    params = await get_snapshot_parameters(
-        project_id=request.match_info["project_id"],  # type: ignore
-        snapshot_id=request.match_info["snapshot_id"],
-    )
-
-    return params
+# WARNING: changes in handlers naming will have an effect
+# since they are in sync with operation_id  (checked in tests)
+rename_routes_as_handler_function(routes, prefix=__name__)
+logger.debug("Routes collected in  %s:\n %s", __name__, view_routes(routes))

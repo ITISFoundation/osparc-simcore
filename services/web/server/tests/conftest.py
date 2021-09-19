@@ -10,15 +10,16 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import Dict
 
 import pytest
 import simcore_service_webserver
 from integration.utils import get_fake_data_dir, get_fake_project
-from pytest_simcore.helpers.utils_login import LoggedUser
+from pytest_simcore.helpers.utils_login import LoggedUser, UserDict
 from simcore_service_webserver.db_models import UserRole
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 
 @pytest.fixture(scope="session")
 def package_dir() -> Path:
-    """ osparc-simcore installed directory """
+    """osparc-simcore installed directory"""
     dirpath = Path(simcore_service_webserver.__file__).resolve().parent
     assert dirpath.exists()
     return dirpath
@@ -55,7 +56,7 @@ def fake_project(fake_data_dir: Path) -> Dict:
 
 
 @pytest.fixture()
-async def logged_user(client, user_role: UserRole) -> Dict[str, Any]:
+async def logged_user(client, user_role: UserRole) -> UserDict:
     """adds a user in db and logs in with client
 
     NOTE: `user_role` fixture is defined as a parametrization below!!!

@@ -443,7 +443,7 @@ paths:
         - snapshot
       summary: List Snapshots
       description: Lists all snapshots taken from a given project
-      operationId: simcore_service_webserver.repos_snapshots_api_handlers.list_snapshots
+      operationId: simcore_service_webserver.version_control_handlers_snapshots.list_project_snapshots_handler
       parameters:
         - required: true
           schema:
@@ -482,7 +482,7 @@ paths:
                 title: Response List Snapshots Projects  Project Id  Snapshots Get
                 type: array
                 items:
-                  $ref: "#/components/schemas/SnapshotResource"
+                  $ref: "#/components/schemas/SnapshotItem"
         "422":
           description: Validation Error
           content:
@@ -495,7 +495,7 @@ paths:
         - snapshot
       summary: Create Snapshot
       description: Takes a snapshot of the project at this time
-      operationId: simcore_service_webserver.repos_snapshots_api_handlers.create_snapshot
+      operationId: simcore_service_webserver.version_control_handlers_snapshots.create_project_snapshot_handler
       parameters:
         - required: true
           schema:
@@ -516,7 +516,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SnapshotResource"
+                $ref: "#/components/schemas/SnapshotItem"
         "422":
           description: Validation Error
           content:
@@ -531,7 +531,7 @@ paths:
         - snapshot
       summary: Get Snapshot
       description: Gets commit info for a given snapshot
-      operationId: simcore_service_webserver.repos_snapshots_api_handlers.get_snapshot
+      operationId: simcore_service_webserver.version_control_handlers_snapshots.get_project_snapshot_handler
       parameters:
         - required: true
           schema:
@@ -553,7 +553,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SnapshotResource"
+                $ref: "#/components/schemas/SnapshotItem"
         "422":
           description: Validation Error
           content:
@@ -566,7 +566,7 @@ paths:
         - snapshot
       summary: Delete Snapshot
       description: Deletes both the commit and the project itself
-      operationId: simcore_service_webserver.repos_snapshots_api_handlers.delete_snapshot
+      operationId: simcore_service_webserver.version_control_handlers_snapshots.delete_project_snapshot_handler
       parameters:
         - required: true
           schema:
@@ -597,7 +597,7 @@ paths:
         - snapshot
       summary: Update Snapshot
       description: Updates label/name of a snapshot
-      operationId: simcore_service_webserver.repos_snapshots_api_handlers.update_snapshot
+      operationId: simcore_service_webserver.version_control_handlers_snapshots.patch_project_snapshot_handler
       parameters:
         - required: true
           schema:
@@ -694,8 +694,8 @@ components:
           description: Unique human readable display name
       description: Model to patch a snapshot resource
 
-    SnapshotResource:
-      title: SnapshotResource
+    SnapshotItem:
+      title: SnapshotItem
       required:
         - parent_uuid
         - project_uuid

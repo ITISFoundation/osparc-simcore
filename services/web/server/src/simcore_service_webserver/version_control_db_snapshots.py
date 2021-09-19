@@ -1,3 +1,4 @@
+import warnings
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 from uuid import UUID
@@ -10,7 +11,14 @@ from sqlalchemy import not_
 
 from .db_base_repository import BaseRepository
 from .projects.projects_db import APP_PROJECT_DBAPI
-from .snapshots_models import Snapshot
+from .version_control_models_snapshots import Snapshot
+
+warnings.warn(
+    "version_control_*_snapshots.py modules are the first generation of vc."
+    "It is just temporarily kept it functional until it gets fully replaced",
+    DeprecationWarning,
+)
+
 
 # alias for readability
 # SEE https://pydantic-docs.helpmanual.io/usage/models/#orm-mode-aka-arbitrary-class-instances

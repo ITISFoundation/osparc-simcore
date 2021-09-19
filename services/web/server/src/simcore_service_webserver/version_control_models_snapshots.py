@@ -1,3 +1,4 @@
+import warnings
 from datetime import datetime
 from typing import Any, Callable, Optional, Union
 from uuid import UUID, uuid3
@@ -13,6 +14,13 @@ from pydantic import (
 )
 from pydantic.main import BaseConfig
 from yarl import URL
+
+warnings.warn(
+    "version_control_*_snapshots.py modules are the first generation of vc."
+    "It is just temporarily kept it functional until it gets fully replaced",
+    DeprecationWarning,
+)
+
 
 BuiltinTypes = Union[StrictBool, StrictInt, StrictFloat, str]
 
@@ -61,7 +69,7 @@ class Snapshot(BaseSnapshot):
 
 
 class SnapshotPatch(BaseSnapshot):
-    label: Optional[str] = Snapshot.as_field("label")
+    label: str = Snapshot.as_field("label")
 
 
 class SnapshotItem(Snapshot):
@@ -70,26 +78,20 @@ class SnapshotItem(Snapshot):
     url: AnyUrl
     url_parent: AnyUrl
     url_project: AnyUrl
-    url_parameters: Optional[AnyUrl] = None
 
     @classmethod
     def from_snapshot(
-        cls, snapshot: Snapshot, url_for: Callable[..., URL]
+        cls, snapshot: Snapshot, url_for: Callable[..., URL], prefix: str
     ) -> "SnapshotItem":
-        # TODO: is this the right place?  requires pre-defined routes
+        # TODO: is this NOT the right place?  requires pre-defined routes
         # how to guarantee routes names
         return cls(
             url=url_for(
-                "get_project_snapshot_handler",
+                f"{prefix}.get_project_snapshot_handler",
                 project_id=snapshot.parent_uuid,
                 snapshot_id=snapshot.id,
             ),
             url_parent=url_for("get_project", project_id=snapshot.parent_uuid),
             url_project=url_for("get_project", project_id=snapshot.project_uuid),
-            url_parameters=url_for(
-                "get_snapshot_parameters_handler",
-                project_id=snapshot.parent_uuid,
-                snapshot_id=snapshot.id,
-            ),
             **snapshot.dict(by_alias=True),
         )

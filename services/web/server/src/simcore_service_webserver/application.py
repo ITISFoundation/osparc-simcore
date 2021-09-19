@@ -30,7 +30,6 @@ from .rest import setup_rest
 from .security import setup_security
 from .session import setup_session
 from .settings import setup_settings
-from .snapshots import setup_snapshots
 from .socketio import setup_socketio
 from .statics import setup_statics
 from .storage import setup_storage
@@ -39,6 +38,7 @@ from .studies_dispatcher.module_setup import setup_studies_dispatcher
 from .tags import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
+from .version_control import setup_version_control
 
 monkey_patch_pydantic_url_regex()
 
@@ -78,7 +78,7 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_users(app)
     setup_groups(app)
     setup_projects(app)
-    setup_snapshots(app)
+    setup_version_control(app)
     setup_activity(app)
     setup_resource_manager(app)
     setup_tags(app)
