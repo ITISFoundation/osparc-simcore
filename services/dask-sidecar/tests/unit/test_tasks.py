@@ -241,10 +241,7 @@ async def test_run_computational_sidecar_real_fct(
 
     for k, v in task.expected_output_data.items():
         assert k in output_data
-        if isinstance(v, re.Pattern):
-            assert v.match(f"{output_data[k]}")
-        else:
-            assert output_data[k] == v
+        assert output_data[k] == v
 
     for k, v in output_data.items():
         assert k in task.expected_output_data
@@ -302,10 +299,7 @@ async def test_run_computational_sidecar_dask(
 
     for k, v in task.expected_output_data.items():
         assert k in output_data
-        if isinstance(v, re.Pattern):
-            assert v.match(f"{output_data[k]}")
-        else:
-            assert output_data[k] == v
+        assert output_data[k] == v
 
     for k, v in output_data.items():
         assert k in task.expected_output_data
