@@ -157,15 +157,11 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       }
       const hintText = texts.join("<br>");
       const hint = new osparc.ui.hint.Hint(widget, hintText);
-      this.__gitGraphInteract.add(widget, {
-        top: this.self().COMMIT_SPACING*this.__commits.length + 3,
-        left: 0,
-        right: 0
-      });
+      this.__gitGraphInteract.addAt(widget, 0);
       this.__commits.push({
         id: commitData["id"],
         branch,
-        msg: commitData["tags"],
+        commitData,
         widget
       });
       const bgColor = widget.getBackgroundColor();
@@ -205,7 +201,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
 
     populateGraph: function(snapshots) {
       const master = this.__gitgraph.branch("master");
-      snapshots.forEach(snapshot => {
+      snapshots.reverse().forEach(snapshot => {
         const date = new Date(snapshot["created_at"]);
         const commitData = {
           id: snapshot["id"],

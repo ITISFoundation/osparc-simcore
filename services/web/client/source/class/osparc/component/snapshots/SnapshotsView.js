@@ -111,7 +111,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
 
       const gitGraphLayout = this.__gitGraphLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
       const gitGraphCanvas = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-      const gitGraphInteract = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      const gitGraphInteract = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       gitGraphLayout.add(gitGraphCanvas, {
         top: 0,
         right: 0,
@@ -119,7 +119,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
         left: 0
       });
       gitGraphLayout.add(gitGraphInteract, {
-        top: 0,
+        top: 3,
         right: 0,
         bottom: 0,
         left: 0
