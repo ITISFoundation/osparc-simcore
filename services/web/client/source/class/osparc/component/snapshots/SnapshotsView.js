@@ -28,7 +28,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     if (study.hasSnapshots()) {
-      this.__primaryStudy = study;
+      this.__study = study;
       this.__buildLayout();
     }
   },
@@ -77,7 +77,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
         this.__snapshotsSection.remove(this.__snapshotsTable);
       }
 
-      const snapshotsTable = this.__snapshotsTable = new osparc.component.snapshots.Snapshots(this.__primaryStudy);
+      const snapshotsTable = this.__snapshotsTable = new osparc.component.snapshots.Snapshots(this.__study);
       snapshotsTable.addListener("cellTap", e => {
         this.__snapshotsSelected(e);
       });
@@ -97,28 +97,24 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
     __loadSnapshotsPreview: function(snapshotData) {
       const params = {
         url: {
-          "studyId": snapshotData["ParentId"],
-          "snapshotId": snapshotData["SnapshotId"]
+          "studyId": this.__study.getUuid(),
+          "snapshotId": snapshotData["Id"]
         }
       };
-      osparc.data.Resources.getOne("snapshots", params)
-        .then(snapshotResp => {
-          if (!snapshotResp) {
-            const msg = this.tr("Snapshot not found");
-            throw new Error(msg);
-          }
-          fetch(snapshotResp["url_project"])
-            .then(response => response.json())
-            .then(data => {
-              const studyData = data["data"];
-              const study = new osparc.data.model.Study(studyData);
-              study.buildWorkbench();
-              study.setReadOnly(true);
-              this.__snapshotPreview.set({
-                study: study
-              });
-              this.__snapshotPreview.loadModel(study.getWorkbench());
-            });
+      osparc.data.Resources.fetch("snapshots", "getPreview", params)
+        .then(data => {
+          const studyData = this.__study.serialize();
+          console.log(studyData);
+          console.log(data["data"]);
+          /*
+          const study = new osparc.data.model.Study(studyData);
+          study.buildWorkbench();
+          study.setReadOnly(true);
+          this.__snapshotPreview.set({
+            study: study
+          });
+          this.__snapshotPreview.loadModel(study.getWorkbench());
+          */
         });
     },
 
@@ -138,31 +134,34 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
 
     __editSnapshot: function() {
       if (this.__selectedSnapshot) {
-        const snapshotRenamer = new osparc.component.widget.Renamer(this.__selectedSnapshot["Snapshot Name"]);
-        snapshotRenamer.addListener("labelChanged", e => {
-          const {
-            newLabel
-          } = e.getData();
+        const editSnapshotView = new osparc.component.snapshots.EditSnapshotView();
+        const tagCtrl = editSnapshotView.getChildControl("tags");
+        tagCtrl.setValue(this.__selectedSnapshot["Tags"]);
+        const msgCtrl = editSnapshotView.getChildControl("message");
+        msgCtrl.setValue(this.__selectedSnapshot["Message"]);
+        const title = this.tr("Edit Snapshot");
+        const win = osparc.ui.window.Window.popUpInWindow(editSnapshotView, title, 400, 180);
+        editSnapshotView.addListener("takeSnapshot", () => {
           const params = {
             url: {
-              "studyId": this.__selectedSnapshot["ParentId"],
-              "snapshotId": this.__selectedSnapshot["SnapshotId"]
+              "studyId": this.__study.getUuid(),
+              "snapshotId": this.__selectedSnapshot["Id"]
             },
             data: {
-              "name": newLabel
+              "tag": editSnapshotView.getTag(),
+              "message": editSnapshotView.getMessage()
             }
           };
           osparc.data.Resources.fetch("snapshots", "updateSnapshot", params)
             .then(() => {
               this.__rebuildSnapshotsTable();
             })
-            .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"))
-            .finally(() => {
-              snapshotRenamer.close();
-            });
+            .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
+          win.close();
         }, this);
-        snapshotRenamer.center();
-        snapshotRenamer.open();
+        editSnapshotView.addListener("cancel", () => {
+          win.close();
+        }, this);
       }
     },
 
