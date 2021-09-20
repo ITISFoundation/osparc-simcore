@@ -61,6 +61,17 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     nodeId: {
       check: "String",
       nullable: false
+    },
+
+    serviceUrl: {
+      check: "String",
+      nullable: true
+    },
+
+    dynamicV2: {
+      check: "Boolean",
+      init: false,
+      nullable: true
     }
   },
 
@@ -131,20 +142,13 @@ qx.Class.define("osparc.viewer.NodeViewer", {
             return;
           }
 
-          const isDynamicType = data["boot_type"] === "V2" || false;
-          if (isDynamicType) {
-            // dynamic service
-            const srvUrl = window.location.protocol + "//" + nodeId + ".services." + window.location.host;
+          const {
+            srvUrl,
+            isDynamicV2
+          } = osparc.utils.Utils.computeServiceUrl(data);
+          this.setDynamicV2(isDynamicV2);
+          if (srvUrl) {
             this.__waitForServiceReady(srvUrl);
-          } else {
-            // old implementation
-            const servicePath = data["service_basepath"];
-            const entryPointD = data["entry_point"];
-            if (servicePath) {
-              const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
-              const srvUrl = servicePath + entryPoint;
-              this.__waitForServiceReady(srvUrl);
-            }
           }
           break;
         }
@@ -165,7 +169,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       // ping for some time until it is really ready
       const pingRequest = new qx.io.request.Xhr(srvUrl);
       pingRequest.addListenerOnce("success", () => {
-        this.__retrieveInputs(srvUrl);
+        this.__serviceReadyIn(srvUrl);
       }, this);
       pingRequest.addListenerOnce("fail", () => {
         const interval = 2000;
@@ -174,23 +178,30 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       pingRequest.send();
     },
 
-    __retrieveInputs: function(srvUrl) {
-      let urlUpdate = srvUrl + "/retrieve";
-      urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
-      const updReq = new qx.io.request.Xhr();
-      const reqData = {
-        "port_keys": []
-      };
-      updReq.set({
-        url: urlUpdate,
-        method: "POST",
-        requestData: qx.util.Serializer.toJson(reqData)
-      });
-      updReq.addListener("success", e => {
-        this.getIFrame().setSource(srvUrl);
-        this.__iFrameChanged();
-      }, this);
-      updReq.send();
+    __serviceReadyIn: function(srvUrl) {
+      this.setServiceUrl(srvUrl);
+      this.__retrieveInputs();
+    },
+
+    __retrieveInputs: function() {
+      const srvUrl = this.getServiceUrl();
+      if (srvUrl) {
+        const urlUpdate = osparc.utils.Utils.computeServiceRetrieveUrl(srvUrl, this.isDynamicV2());
+        const updReq = new qx.io.request.Xhr();
+        const reqData = {
+          "port_keys": []
+        };
+        updReq.set({
+          url: urlUpdate,
+          method: "POST",
+          requestData: qx.util.Serializer.toJson(reqData)
+        });
+        updReq.addListener("success", e => {
+          this.getIFrame().setSource(srvUrl);
+          this.__iFrameChanged();
+        }, this);
+        updReq.send();
+      }
     },
 
     __iFrameChanged: function() {

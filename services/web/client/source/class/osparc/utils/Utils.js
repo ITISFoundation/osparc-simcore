@@ -30,6 +30,42 @@ qx.Class.define("osparc.utils.Utils", {
   type: "static",
 
   statics: {
+    computeServiceUrl: function(resp) {
+      const data = {
+        srvUrl: null,
+        isDynamicV2: null
+      };
+      const isDynamicV2 = resp["boot_type"] === "V2" || false;
+      data["isDynamicV2"] = isDynamicV2;
+      if (isDynamicV2) {
+        // dynamic service
+        const srvUrl = window.location.protocol + "//" + resp["service_uuid"] + ".services." + window.location.host;
+        data["srvUrl"] = srvUrl;
+      } else {
+        // old implementation
+        const servicePath = resp["service_basepath"];
+        const entryPointD = resp["entry_point"];
+        if (servicePath) {
+          const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
+          const srvUrl = servicePath + entryPoint;
+          data["srvUrl"] = srvUrl;
+        }
+      }
+      return data;
+    },
+
+    computeServiceRetrieveUrl: function(srvUrl, isDynamicV2 = false) {
+      let urlRetrieve = null;
+      if (isDynamicV2) {
+        urlRetrieve = srvUrl + ":retrieve";
+        urlRetrieve = urlRetrieve.replace("/:retrieve", ":retrieve");
+      } else {
+        urlRetrieve = srvUrl + "/retrieve";
+        urlRetrieve = urlRetrieve.replace("//retrieve", "/retrieve");
+      }
+      return urlRetrieve;
+    },
+
     isDevelopmentPlatform: function() {
       return new Promise((resolve, reject) => {
         osparc.utils.LibVersions.getPlatformName()
