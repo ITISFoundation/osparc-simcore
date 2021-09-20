@@ -15,6 +15,7 @@ from pydantic import (
     StrictInt,
     StrictStr,
 )
+from pydantic.types import SecretStr
 from typing_extensions import Annotated
 
 
@@ -133,3 +134,9 @@ class TaskOutputData(BaseModel):
                     data[output_key] = {"url": f"file://{file_path.name}"}
 
         return cls.parse_obj(data)
+
+
+class DockerBasicAuth(BaseModel):
+    server_address: str
+    username: str
+    password: SecretStr

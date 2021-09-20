@@ -10,12 +10,13 @@ from pydantic import ByteSize
 from simcore_service_sidecar.task_shared_volume import TaskSharedVolumes
 
 from ..utils import create_dask_worker_logger
-from .models import ContainerHostConfig, DockerContainerConfig
+from .models import ContainerHostConfig, DockerBasicAuth, DockerContainerConfig
 
 logger = create_dask_worker_logger(__name__)
 
 
 async def create_container_config(
+    docker_registry: str,
     service_key: str,
     service_version: str,
     command: List[str],
@@ -32,7 +33,7 @@ async def create_container_config(
             ]
         ],
         Cmd=command,
-        Image=f"{service_key}:{service_version}",
+        Image=f"{docker_registry}/{service_key}:{service_version}",
         Labels={},
         HostConfig=ContainerHostConfig(
             Binds=[
@@ -164,10 +165,18 @@ async def managed_monitor_container_log_task(
 
 
 async def pull_image(
-    docker_client: Docker, service_key: str, service_version: str
+    docker_client: Docker,
+    docker_auth: DockerBasicAuth,
+    service_key: str,
+    service_version: str,
 ) -> None:
     async for pull_progress in docker_client.images.pull(
-        f"{service_key}:{service_version}", stream=True
+        f"{docker_auth.server_address}/{service_key}:{service_version}",
+        stream=True,
+        auth={
+            "username": docker_auth.username,
+            "password": docker_auth.password.get_secret_value(),
+        },
     ):
         logger.info(
             "pulling %s:%s: %s",
@@ -175,3 +184,4 @@ async def pull_image(
             service_version,
             pformat(pull_progress),
         )
+    logger.info("%s:%s pulled", service_key, service_version)
