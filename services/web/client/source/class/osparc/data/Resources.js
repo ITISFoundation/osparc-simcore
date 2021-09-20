@@ -181,7 +181,7 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/repos/projects/{studyId}/checkpoints/{snapshotId}:checkout"
           },
-          getPreview: {
+          preview: {
             useCache: false,
             method: "GET",
             url: statics.API + "/repos/projects/{studyId}/checkpoints/{snapshotId}/workbench/view"

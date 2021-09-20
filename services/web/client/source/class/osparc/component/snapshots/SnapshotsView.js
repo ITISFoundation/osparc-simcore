@@ -101,12 +101,11 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
           "snapshotId": snapshotData["Id"]
         }
       };
-      osparc.data.Resources.fetch("snapshots", "getPreview", params)
+      osparc.data.Resources.fetch("snapshots", "preview", params)
         .then(data => {
           const studyData = this.__study.serialize();
-          console.log(studyData);
-          console.log(data["data"]);
-          /*
+          studyData["workbench"] = data["workbench"];
+          studyData["ui"] = data["ui"];
           const study = new osparc.data.model.Study(studyData);
           study.buildWorkbench();
           study.setReadOnly(true);
@@ -114,7 +113,6 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
             study: study
           });
           this.__snapshotPreview.loadModel(study.getWorkbench());
-          */
         });
     },
 
