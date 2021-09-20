@@ -252,9 +252,6 @@ async def restore_state() -> Response:
 
     awaitables: Deque[Awaitable[Optional[Any]]] = deque()
 
-    awaitables.append(
-        nodeports.download_inputs(mounted_volumes.disk_inputs_path, port_keys=[])
-    )
     for state_path in mounted_volumes.disk_state_paths():
         logger.debug("Downloading state %s", state_path)
         awaitables.append(pull_path_if_exists(state_path))
@@ -272,24 +269,49 @@ async def restore_state() -> Response:
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def save_state() -> Response:
-    """
-    When saving the state:
-    - push outputs via nodeports
-    - push all the extra state paths
-    """
     mounted_volumes: MountedVolumes = get_mounted_volumes()
 
     awaitables: Deque[Awaitable[Optional[Any]]] = deque()
-
-    awaitables.append(
-        nodeports.upload_outputs(mounted_volumes.disk_outputs_path, port_keys=[])
-    )
 
     for state_path in mounted_volumes.disk_state_paths():
         logger.debug("Saving state %s", state_path)
         awaitables.append(upload_path_if_exists(state_path))
 
     await logged_gather(*awaitables)
+
+    # SEE https://github.com/tiangolo/fastapi/issues/2253
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@containers_router.put(
+    "/containers:pull-nodeports",
+    summary="Pull input ports data",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)  # pylint: disable=dangerous-default-value
+async def pull_input_ports(port_keys: List[str] = []) -> Response:
+    mounted_volumes: MountedVolumes = get_mounted_volumes()
+
+    await nodeports.download_inputs(
+        mounted_volumes.disk_inputs_path, port_keys=port_keys
+    )
+
+    # SEE https://github.com/tiangolo/fastapi/issues/2253
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@containers_router.put(
+    "/containers:push-nodeports",
+    summary="Push output ports data",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)  # pylint: disable=dangerous-default-value
+async def push_output_ports(port_keys: List[str] = []) -> Response:
+    mounted_volumes: MountedVolumes = get_mounted_volumes()
+
+    await nodeports.upload_outputs(
+        mounted_volumes.disk_outputs_path, port_keys=port_keys
+    )
 
     # SEE https://github.com/tiangolo/fastapi/issues/2253
     return Response(status_code=status.HTTP_204_NO_CONTENT)

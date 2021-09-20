@@ -327,9 +327,7 @@ async def test_container_docker_error(
 
 
 async def test_container_save_state(
-    test_client: TestClient,
-    mock_nodeports: None,
-    mock_data_manager: None,
+    test_client: TestClient, mock_data_manager: None
 ) -> None:
     response = await test_client.put(f"/{api_vtag}/containers:save-state")
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
@@ -337,10 +335,24 @@ async def test_container_save_state(
 
 
 async def test_container_restore_state(
-    test_client: TestClient,
-    mock_nodeports: None,
-    mock_data_manager: None,
+    test_client: TestClient, mock_data_manager: None
 ) -> None:
     response = await test_client.put(f"/{api_vtag}/containers:restore-state")
+    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+    assert response.text == ""
+
+
+async def test_container_pull_input_ports(
+    test_client: TestClient, mock_nodeports: None
+) -> None:
+    response = await test_client.put(f"/{api_vtag}/containers:pull-nodeports")
+    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+    assert response.text == ""
+
+
+async def test_container_push_output_ports(
+    test_client: TestClient, mock_nodeports: None
+) -> None:
+    response = await test_client.put(f"/{api_vtag}/containers:push-nodeports")
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
