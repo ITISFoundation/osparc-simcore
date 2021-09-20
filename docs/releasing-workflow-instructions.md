@@ -130,20 +130,24 @@ A bug was found in version 1.2.0 of the simcore stack. The team decides to fix i
 
 1. Generate *Github*  release tag
 
-  ```bash
-  git clone https://github.com/ITISFoundation/osparc-simcore.git
-  cd osparc-simcore
-  # let's checkout the release with the issue, typically a release tag such as v1.4.5
-  git checkout VERSION_TAG_FOR_HOTFIXING
-  # create the hotfix branch, the name must follow the hotfix_v* convention, what lies after v is free
-  git checkout -b hotfix_v1_4_x
-  # develop the fix here, git commit, git push, have someone review your code
-  # git commit -m "this is my awsome fix for this problematic issue"
-  # git push --set-upstream origin/hotfix_v1_4_x
-  # wait until the CI completed the its run (going through ALL the tests and generating the docker images)
-  # once ALL the images are in dockerhub, create the new version
-  make release-hotfix version=MAJ.MIN.PATCH (git_sha=OPTIONAL)
-  ```
+```bash
+git clone https://github.com/ITISFoundation/osparc-simcore.git
+cd osparc-simcore
+# let's checkout the release with the issue, typically a release tag such as v1.4.5
+git checkout VERSION_TAG_FOR_HOTFIXING
+# create the hotfix branch, the name must follow the hotfix_v* convention, what lies after v is free
+git checkout -b hotfix_v1_4_x
+# develop the fix here, git commit, git push, have someone review your code
+
+git commit -m "this is my awsome fix for this problematic issue"
+git push --set-upstream origin/hotfix_v1_4_x
+
+# - NO NEED to pull request
+# - WAIT until the CI completed the its run (going through ALL the tests and generating the docker images)
+# - once ALL the images are in dockerhub, create the new version
+
+make release-hotfix version=MAJ.MIN.PATCH (git_sha=OPTIONAL)
+```
 
 2. Adjust the list of changes if needed
 3. Press the **Publish release** button

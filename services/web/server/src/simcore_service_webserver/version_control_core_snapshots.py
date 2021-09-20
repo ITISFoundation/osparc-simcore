@@ -1,3 +1,12 @@
+""" Core module: snapshots (and parametrization)
+
+    Extend project's business logic by adding two new concepts, namely
+        - project snapshots and
+        - parametrizations
+
+"""
+
+import warnings
 from datetime import datetime
 from typing import Any, Dict, Optional, Tuple
 from uuid import UUID
@@ -5,7 +14,13 @@ from uuid import UUID
 from models_library.projects import Project
 
 from .projects import projects_utils
-from .snapshots_models import Snapshot
+from .version_control_models_snapshots import Snapshot
+
+warnings.warn(
+    "version_control_*_snapshots.py modules are the first generation of vc."
+    "It is just temporarily kept it functional until it gets fully replaced",
+    DeprecationWarning,
+)
 
 ProjectDict = Dict[str, Any]
 

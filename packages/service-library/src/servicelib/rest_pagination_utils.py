@@ -12,6 +12,8 @@ from pydantic import (
 )
 from yarl import URL
 
+DEFAULT_NUMBER_OF_ITEMS_PER_PAGE = 20
+
 
 def monkey_patch_pydantic_url_regex() -> None:
     # waiting for PR https://github.com/samuelcolvin/pydantic/pull/2512 to be released into
@@ -58,7 +60,7 @@ monkey_patch_pydantic_url_regex()
 
 
 class PageMetaInfoLimitOffset(BaseModel):
-    limit: PositiveInt
+    limit: PositiveInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
     total: NonNegativeInt
     offset: NonNegativeInt = 0
     count: NonNegativeInt

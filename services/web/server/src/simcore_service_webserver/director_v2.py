@@ -104,7 +104,7 @@ async def create_or_update_pipeline(
     director2_settings: Directorv2Settings = get_settings(app)
 
     backend_url = URL(f"{director2_settings.endpoint}/computations")
-    body = {"user_id": user_id, "project_id": str(project_id)}
+    body = {"user_id": user_id, "project_id": f"{project_id}"}
     # request to director-v2
     try:
         computation_task_out = await _request_director_v2(

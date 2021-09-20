@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "osparc-simcore web API"
-  version: 0.6.0
+  version: 0.7.0
   description: "API designed for the front-end app"
   contact:
     name: IT'IS Foundation
@@ -49,6 +49,7 @@ tags:
       oSPARC users can make publications. Starting from submission of new service candidates, but this could
       end up accepting other types of publications.
   - name: viewer
+  - name: repository
 
 paths:
   # DIAGNOSTICS ---------------------------------------------------------
@@ -219,6 +220,22 @@ paths:
 
   /projects/{project_id}/snapshots/{snapshot_id}:
     $ref: "./openapi-projects.yaml#/paths/projects_id_snapshots_id"
+
+  # REPOSITORY -------------------------------------------------------------------------
+  /repos/projects:
+    $ref: "./openapi-repos.yaml#/paths/~1repos~1projects"
+
+  "/repos/projects/{project_uuid}/checkpoints":
+    $ref: "./openapi-repos.yaml#/paths/~1repos~1projects~1{project_uuid}~1checkpoints"
+
+  "/repos/projects/{project_uuid}/checkpoints/{ref_id}":
+    $ref: "./openapi-repos.yaml#/paths/~1repos~1projects~1{project_uuid}~1checkpoints~1{ref_id}"
+
+  "/repos/projects/{project_uuid}/checkpoints/{ref_id}:checkout":
+    $ref: "./openapi-repos.yaml#/paths/~1repos~1projects~1{project_uuid}~1checkpoints~1{ref_id}:checkout"
+
+  "/repos/projects/{project_uuid}/checkpoints/{ref_id}/workbench/view":
+    $ref: "./openapi-repos.yaml#/paths/~1repos~1projects~1{project_uuid}~1checkpoints~1{ref_id}~1workbench~1view"
 
   # ACTIVITY -------------------------------------------------------------------------
   /activity/status:

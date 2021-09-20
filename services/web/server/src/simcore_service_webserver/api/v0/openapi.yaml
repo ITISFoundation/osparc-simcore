@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.6.0
+  version: 0.7.0
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -49,6 +49,7 @@ tags:
       oSPARC users can make publications. Starting from submission of new service candidates, but this could
       end up accepting other types of publications.
   - name: viewer
+  - name: repository
 paths:
   /:
     get:
@@ -13372,7 +13373,7 @@ paths:
         - snapshot
       summary: List Snapshots
       description: Lists all snapshots taken from a given project
-      operationId: simcore_service_webserver.repos_snapshots_api_handlers.list_snapshots
+      operationId: simcore_service_webserver.version_control_handlers_snapshots.list_project_snapshots_handler
       parameters:
         - required: true
           schema:
@@ -13411,7 +13412,7 @@ paths:
                 title: Response List Snapshots Projects  Project Id  Snapshots Get
                 type: array
                 items:
-                  title: SnapshotResource
+                  title: SnapshotItem
                   required:
                     - parent_uuid
                     - project_uuid
@@ -13498,7 +13499,7 @@ paths:
         - snapshot
       summary: Create Snapshot
       description: Takes a snapshot of the project at this time
-      operationId: simcore_service_webserver.repos_snapshots_api_handlers.create_snapshot
+      operationId: simcore_service_webserver.version_control_handlers_snapshots.create_project_snapshot_handler
       parameters:
         - required: true
           schema:
@@ -13519,7 +13520,7 @@ paths:
           content:
             application/json:
               schema:
-                title: SnapshotResource
+                title: SnapshotItem
                 required:
                   - parent_uuid
                   - project_uuid
@@ -13607,7 +13608,7 @@ paths:
         - snapshot
       summary: Get Snapshot
       description: Gets commit info for a given snapshot
-      operationId: simcore_service_webserver.repos_snapshots_api_handlers.get_snapshot
+      operationId: simcore_service_webserver.version_control_handlers_snapshots.get_project_snapshot_handler
       parameters:
         - required: true
           schema:
@@ -13629,7 +13630,7 @@ paths:
           content:
             application/json:
               schema:
-                title: SnapshotResource
+                title: SnapshotItem
                 required:
                   - parent_uuid
                   - project_uuid
@@ -13716,7 +13717,7 @@ paths:
         - snapshot
       summary: Delete Snapshot
       description: Deletes both the commit and the project itself
-      operationId: simcore_service_webserver.repos_snapshots_api_handlers.delete_snapshot
+      operationId: simcore_service_webserver.version_control_handlers_snapshots.delete_project_snapshot_handler
       parameters:
         - required: true
           schema:
@@ -13771,7 +13772,7 @@ paths:
         - snapshot
       summary: Update Snapshot
       description: Updates label/name of a snapshot
-      operationId: simcore_service_webserver.repos_snapshots_api_handlers.update_snapshot
+      operationId: simcore_service_webserver.version_control_handlers_snapshots.patch_project_snapshot_handler
       parameters:
         - required: true
           schema:
@@ -13806,6 +13807,963 @@ paths:
           content:
             application/json:
               schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                title: HTTPValidationError
+                type: object
+                properties:
+                  detail:
+                    title: Detail
+                    type: array
+                    items:
+                      title: ValidationError
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      type: object
+                      properties:
+                        loc:
+                          title: Location
+                          type: array
+                          items:
+                            type: string
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
+  /repos/projects:
+    get:
+      tags:
+        - repository
+      summary: List Repos
+      description: List info about versioned projects
+      operationId: simcore_service_webserver.version_control_handlers._list_repos_handler
+      parameters:
+        - description: index to the first item to return (pagination)
+          required: false
+          schema:
+            title: Offset
+            exclusiveMinimum: false
+            type: integer
+            description: index to the first item to return (pagination)
+            default: 0
+          name: offset
+          in: query
+        - description: maximum number of items to return (pagination)
+          required: false
+          schema:
+            title: Limit
+            maximum: 50
+            minimum: 1
+            type: integer
+            description: maximum number of items to return (pagination)
+            default: 20
+          name: limit
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Page[Repo]'
+                required:
+                  - _meta
+                  - _links
+                  - data
+                type: object
+                properties:
+                  _meta:
+                    title: PageMetaInfoLimitOffset
+                    required:
+                      - limit
+                      - total
+                      - count
+                    type: object
+                    properties:
+                      limit:
+                        title: Limit
+                        exclusiveMinimum: false
+                        type: integer
+                      total:
+                        title: Total
+                        minimum: 0
+                        type: integer
+                      offset:
+                        title: Offset
+                        minimum: 0
+                        type: integer
+                        default: 0
+                      count:
+                        title: Count
+                        minimum: 0
+                        type: integer
+                    additionalProperties: false
+                  _links:
+                    title: PageLinks
+                    required:
+                      - self
+                      - first
+                      - last
+                    type: object
+                    properties:
+                      self:
+                        title: Self
+                        maxLength: 65536
+                        minLength: 1
+                        type: string
+                        format: uri
+                      first:
+                        title: First
+                        maxLength: 65536
+                        minLength: 1
+                        type: string
+                        format: uri
+                      prev:
+                        title: Prev
+                        maxLength: 65536
+                        minLength: 1
+                        type: string
+                        format: uri
+                      next:
+                        title: Next
+                        maxLength: 65536
+                        minLength: 1
+                        type: string
+                        format: uri
+                      last:
+                        title: Last
+                        maxLength: 65536
+                        minLength: 1
+                        type: string
+                        format: uri
+                    additionalProperties: false
+                  data:
+                    title: Data
+                    type: array
+                    items:
+                      title: Repo
+                      required:
+                        - project_uuid
+                        - url
+                      type: object
+                      properties:
+                        project_uuid:
+                          title: Project Uuid
+                          type: string
+                          format: uuid
+                        url:
+                          title: Url
+                          maxLength: 2083
+                          minLength: 1
+                          type: string
+                          format: uri
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                title: HTTPValidationError
+                type: object
+                properties:
+                  detail:
+                    title: Detail
+                    type: array
+                    items:
+                      title: ValidationError
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      type: object
+                      properties:
+                        loc:
+                          title: Location
+                          type: array
+                          items:
+                            type: string
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
+  '/repos/projects/{project_uuid}/checkpoints':
+    get:
+      tags:
+        - repository
+      summary: List Checkpoints
+      description: Lists commits&tags tree of the project
+      operationId: simcore_service_webserver.version_control_handlers._list_checkpoints_handler
+      parameters:
+        - description: Project unique identifier
+          required: true
+          schema:
+            title: Project Uuid
+            type: string
+            description: Project unique identifier
+            format: uuid
+          name: project_uuid
+          in: path
+        - description: index to the first item to return (pagination)
+          required: false
+          schema:
+            title: Offset
+            exclusiveMinimum: false
+            type: integer
+            description: index to the first item to return (pagination)
+            default: 0
+          name: offset
+          in: query
+        - description: maximum number of items to return (pagination)
+          required: false
+          schema:
+            title: Limit
+            maximum: 50
+            minimum: 1
+            type: integer
+            description: maximum number of items to return (pagination)
+            default: 20
+          name: limit
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Page[Checkpoint]'
+                required:
+                  - _meta
+                  - _links
+                  - data
+                type: object
+                properties:
+                  _meta:
+                    title: PageMetaInfoLimitOffset
+                    required:
+                      - limit
+                      - total
+                      - count
+                    type: object
+                    properties:
+                      limit:
+                        title: Limit
+                        exclusiveMinimum: false
+                        type: integer
+                      total:
+                        title: Total
+                        minimum: 0
+                        type: integer
+                      offset:
+                        title: Offset
+                        minimum: 0
+                        type: integer
+                        default: 0
+                      count:
+                        title: Count
+                        minimum: 0
+                        type: integer
+                    additionalProperties: false
+                  _links:
+                    title: PageLinks
+                    required:
+                      - self
+                      - first
+                      - last
+                    type: object
+                    properties:
+                      self:
+                        title: Self
+                        maxLength: 65536
+                        minLength: 1
+                        type: string
+                        format: uri
+                      first:
+                        title: First
+                        maxLength: 65536
+                        minLength: 1
+                        type: string
+                        format: uri
+                      prev:
+                        title: Prev
+                        maxLength: 65536
+                        minLength: 1
+                        type: string
+                        format: uri
+                      next:
+                        title: Next
+                        maxLength: 65536
+                        minLength: 1
+                        type: string
+                        format: uri
+                      last:
+                        title: Last
+                        maxLength: 65536
+                        minLength: 1
+                        type: string
+                        format: uri
+                    additionalProperties: false
+                  data:
+                    title: Data
+                    type: array
+                    items:
+                      title: Checkpoint
+                      required:
+                        - id
+                        - checksum
+                        - tag
+                        - message
+                        - parent
+                        - created_at
+                        - url
+                      type: object
+                      properties:
+                        id:
+                          title: Id
+                          exclusiveMinimum: false
+                          type: integer
+                        checksum:
+                          title: Checksum
+                          type: string
+                        tag:
+                          title: Tag
+                          type: string
+                        message:
+                          title: Message
+                          type: string
+                        parent:
+                          title: Parent
+                          exclusiveMinimum: false
+                          type: integer
+                        created_at:
+                          title: Created At
+                          type: string
+                          format: date-time
+                        url:
+                          title: Url
+                          maxLength: 2083
+                          minLength: 1
+                          type: string
+                          format: uri
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                title: HTTPValidationError
+                type: object
+                properties:
+                  detail:
+                    title: Detail
+                    type: array
+                    items:
+                      title: ValidationError
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      type: object
+                      properties:
+                        loc:
+                          title: Location
+                          type: array
+                          items:
+                            type: string
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
+    post:
+      tags:
+        - repository
+      summary: Create Checkpoint
+      operationId: simcore_service_webserver.version_control_handlers._create_checkpoint_handler
+      parameters:
+        - description: Project unique identifier
+          required: true
+          schema:
+            title: Project Uuid
+            type: string
+            description: Project unique identifier
+            format: uuid
+          name: project_uuid
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: CheckpointNew
+              required:
+                - tag
+              type: object
+              properties:
+                tag:
+                  title: Tag
+                  type: string
+                message:
+                  title: Message
+                  type: string
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[Checkpoint]'
+                type: object
+                properties:
+                  data:
+                    title: Checkpoint
+                    required:
+                      - id
+                      - checksum
+                      - tag
+                      - message
+                      - parent
+                      - created_at
+                      - url
+                    type: object
+                    properties:
+                      id:
+                        title: Id
+                        exclusiveMinimum: false
+                        type: integer
+                      checksum:
+                        title: Checksum
+                        type: string
+                      tag:
+                        title: Tag
+                        type: string
+                      message:
+                        title: Message
+                        type: string
+                      parent:
+                        title: Parent
+                        exclusiveMinimum: false
+                        type: integer
+                      created_at:
+                        title: Created At
+                        type: string
+                        format: date-time
+                      url:
+                        title: Url
+                        maxLength: 2083
+                        minLength: 1
+                        type: string
+                        format: uri
+                  error:
+                    title: Error
+                    required:
+                      - code
+                      - message
+                    type: object
+                    properties:
+                      code:
+                        title: Code
+                        type: integer
+                      message:
+                        title: Message
+                        type: string
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                title: HTTPValidationError
+                type: object
+                properties:
+                  detail:
+                    title: Detail
+                    type: array
+                    items:
+                      title: ValidationError
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      type: object
+                      properties:
+                        loc:
+                          title: Location
+                          type: array
+                          items:
+                            type: string
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
+  '/repos/projects/{project_uuid}/checkpoints/{ref_id}':
+    get:
+      tags:
+        - repository
+      summary: Get Checkpoint
+      description: Set ref_id=HEAD to return current commit
+      operationId: simcore_service_webserver.version_control_handlers._get_checkpoint_handler
+      parameters:
+        - description: 'A repository ref (commit, tag or branch)'
+          required: true
+          schema:
+            title: Ref Id
+            anyOf:
+              - type: string
+                format: uuid
+              - type: string
+            description: 'A repository ref (commit, tag or branch)'
+          name: ref_id
+          in: path
+        - description: Project unique identifier
+          required: true
+          schema:
+            title: Project Uuid
+            type: string
+            description: Project unique identifier
+            format: uuid
+          name: project_uuid
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[Checkpoint]'
+                type: object
+                properties:
+                  data:
+                    title: Checkpoint
+                    required:
+                      - id
+                      - checksum
+                      - tag
+                      - message
+                      - parent
+                      - created_at
+                      - url
+                    type: object
+                    properties:
+                      id:
+                        title: Id
+                        exclusiveMinimum: false
+                        type: integer
+                      checksum:
+                        title: Checksum
+                        type: string
+                      tag:
+                        title: Tag
+                        type: string
+                      message:
+                        title: Message
+                        type: string
+                      parent:
+                        title: Parent
+                        exclusiveMinimum: false
+                        type: integer
+                      created_at:
+                        title: Created At
+                        type: string
+                        format: date-time
+                      url:
+                        title: Url
+                        maxLength: 2083
+                        minLength: 1
+                        type: string
+                        format: uri
+                  error:
+                    title: Error
+                    required:
+                      - code
+                      - message
+                    type: object
+                    properties:
+                      code:
+                        title: Code
+                        type: integer
+                      message:
+                        title: Message
+                        type: string
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                title: HTTPValidationError
+                type: object
+                properties:
+                  detail:
+                    title: Detail
+                    type: array
+                    items:
+                      title: ValidationError
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      type: object
+                      properties:
+                        loc:
+                          title: Location
+                          type: array
+                          items:
+                            type: string
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
+    patch:
+      tags:
+        - repository
+      summary: Update Checkpoint Annotations
+      operationId: simcore_service_webserver.version_control_handlers._update_checkpoint_annotations_handler
+      parameters:
+        - description: 'A repository ref (commit, tag or branch)'
+          required: true
+          schema:
+            title: Ref Id
+            anyOf:
+              - type: string
+                format: uuid
+              - type: string
+            description: 'A repository ref (commit, tag or branch)'
+          name: ref_id
+          in: path
+        - description: Project unique identifier
+          required: true
+          schema:
+            title: Project Uuid
+            type: string
+            description: Project unique identifier
+            format: uuid
+          name: project_uuid
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: CheckpointAnnotations
+              type: object
+              properties:
+                tag:
+                  title: Tag
+                  type: string
+                message:
+                  title: Message
+                  type: string
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[Checkpoint]'
+                type: object
+                properties:
+                  data:
+                    title: Checkpoint
+                    required:
+                      - id
+                      - checksum
+                      - tag
+                      - message
+                      - parent
+                      - created_at
+                      - url
+                    type: object
+                    properties:
+                      id:
+                        title: Id
+                        exclusiveMinimum: false
+                        type: integer
+                      checksum:
+                        title: Checksum
+                        type: string
+                      tag:
+                        title: Tag
+                        type: string
+                      message:
+                        title: Message
+                        type: string
+                      parent:
+                        title: Parent
+                        exclusiveMinimum: false
+                        type: integer
+                      created_at:
+                        title: Created At
+                        type: string
+                        format: date-time
+                      url:
+                        title: Url
+                        maxLength: 2083
+                        minLength: 1
+                        type: string
+                        format: uri
+                  error:
+                    title: Error
+                    required:
+                      - code
+                      - message
+                    type: object
+                    properties:
+                      code:
+                        title: Code
+                        type: integer
+                      message:
+                        title: Message
+                        type: string
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                title: HTTPValidationError
+                type: object
+                properties:
+                  detail:
+                    title: Detail
+                    type: array
+                    items:
+                      title: ValidationError
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      type: object
+                      properties:
+                        loc:
+                          title: Location
+                          type: array
+                          items:
+                            type: string
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
+  '/repos/projects/{project_uuid}/checkpoints/{ref_id}:checkout':
+    post:
+      tags:
+        - repository
+      summary: Checkout
+      description: |-
+        Affect current working copy of the project, i.e. get_project will now return
+        the check out
+      operationId: simcore_service_webserver.version_control_handlers._checkout_handler
+      parameters:
+        - description: 'A repository ref (commit, tag or branch)'
+          required: true
+          schema:
+            title: Ref Id
+            anyOf:
+              - type: string
+                format: uuid
+              - type: string
+            description: 'A repository ref (commit, tag or branch)'
+          name: ref_id
+          in: path
+        - description: Project unique identifier
+          required: true
+          schema:
+            title: Project Uuid
+            type: string
+            description: Project unique identifier
+            format: uuid
+          name: project_uuid
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[Checkpoint]'
+                type: object
+                properties:
+                  data:
+                    title: Checkpoint
+                    required:
+                      - id
+                      - checksum
+                      - tag
+                      - message
+                      - parent
+                      - created_at
+                      - url
+                    type: object
+                    properties:
+                      id:
+                        title: Id
+                        exclusiveMinimum: false
+                        type: integer
+                      checksum:
+                        title: Checksum
+                        type: string
+                      tag:
+                        title: Tag
+                        type: string
+                      message:
+                        title: Message
+                        type: string
+                      parent:
+                        title: Parent
+                        exclusiveMinimum: false
+                        type: integer
+                      created_at:
+                        title: Created At
+                        type: string
+                        format: date-time
+                      url:
+                        title: Url
+                        maxLength: 2083
+                        minLength: 1
+                        type: string
+                        format: uri
+                  error:
+                    title: Error
+                    required:
+                      - code
+                      - message
+                    type: object
+                    properties:
+                      code:
+                        title: Code
+                        type: integer
+                      message:
+                        title: Message
+                        type: string
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                title: HTTPValidationError
+                type: object
+                properties:
+                  detail:
+                    title: Detail
+                    type: array
+                    items:
+                      title: ValidationError
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      type: object
+                      properties:
+                        loc:
+                          title: Location
+                          type: array
+                          items:
+                            type: string
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
+  '/repos/projects/{project_uuid}/checkpoints/{ref_id}/workbench/view':
+    get:
+      tags:
+        - repository
+      summary: View Project Workbench
+      description: Returns a view of the workbench for a given project's version
+      operationId: simcore_service_webserver.version_control_handlers._view_project_workbench_handler
+      parameters:
+        - description: 'A repository ref (commit, tag or branch)'
+          required: true
+          schema:
+            title: Ref Id
+            anyOf:
+              - type: string
+                format: uuid
+              - type: string
+            description: 'A repository ref (commit, tag or branch)'
+          name: ref_id
+          in: path
+        - description: Project unique identifier
+          required: true
+          schema:
+            title: Project Uuid
+            type: string
+            description: Project unique identifier
+            format: uuid
+          name: project_uuid
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[WorkbenchView]'
+                type: object
+                properties:
+                  data:
+                    title: WorkbenchView
+                    type: object
+                    properties:
+                      workbench:
+                        title: Workbench
+                        type: object
+                        additionalProperties:
+                          title: Node
+                          required:
+                            - key
+                            - version
+                            - label
+                            - inputs
+                            - outputs
+                          type: object
+                          properties:
+                            key:
+                              title: Key
+                              type: string
+                            version:
+                              title: Version
+                              pattern: \d+\.\d+\.\d+
+                              type: string
+                            label:
+                              title: Label
+                              type: string
+                            inputs:
+                              title: Inputs
+                              type: object
+                            outputs:
+                              title: Outputs
+                              type: object
+                        default: {}
+                      ui:
+                        title: Ui
+                        type: object
+                        default: {}
+                    description: A view (i.e. read-only and visual) of the project's workbench
+                  error:
+                    title: Error
+                    required:
+                      - code
+                      - message
+                    type: object
+                    properties:
+                      code:
+                        title: Code
+                        type: integer
+                      message:
+                        title: Message
+                        type: string
         '422':
           description: Validation Error
           content:
