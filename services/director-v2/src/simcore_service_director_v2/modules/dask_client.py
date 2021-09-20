@@ -119,20 +119,38 @@ class DaskClient:
         def _done_dask_callback(dask_future: Future):
             job_id = dask_future.key
             logger.debug("Dask future %s completed", job_id)
+            # TODO: upload results to DB/storage
             # remove the future from the dict to remove any handle to the future, so the worker can free the memory
             self._taskid_to_future_map.pop(job_id)
             callback()
 
         def _comp_sidecar_fct(
-            job_id: str, user_id: int, project_id: ProjectID, node_id: NodeID
-        ) -> None:
+            docker_basic_auth: Dict[str, Any],
+            service_key: str,
+            service_version: str,
+            input_data: Dict[str, Any],
+            output_data_keys: Dict[str, Any],
+            command: List[str],
+        ) -> Dict[str, Any]:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
+            from simcore_service_dask_sidecar.computational_sidecar.models import (
+                DockerBasicAuth,
+                TaskInputData,
+                TaskOutputDataSchema,
+            )
             from simcore_service_dask_sidecar.tasks import (
-                run_task_in_service,  # type: ignore
+                run_computational_sidecar,  # type: ignore
             )
 
-            run_task_in_service(job_id, user_id, project_id, node_id)
+            return run_computational_sidecar(
+                DockerBasicAuth.parse_obj(docker_basic_auth),
+                service_key,
+                service_version,
+                TaskInputData.parse_obj(input_data),
+                TaskOutputDataSchema.parse_obj(output_data_keys),
+                command,
+            ).dict()
 
         if remote_fct is None:
             remote_fct = _comp_sidecar_fct
@@ -163,12 +181,19 @@ class DaskClient:
                 cluster_id=cluster_id,
             )
             try:
+                # TODO: move the registry out of the dynamic sidecar settings!!
                 task_future = self.client.submit(
                     remote_fct,
-                    job_id,
-                    user_id,
-                    project_id,
-                    node_id,
+                    docker_basic_auth={
+                        "server_address": self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.REGISTRY.REGISTRY_URL,
+                        "username": self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.REGISTRY.REGISTRY_USER,
+                        "password": self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.REGISTRY.REGISTRY_PW,
+                    },
+                    service_key=node_image.name,
+                    service_version=node_image.tag,
+                    input_data={"input_2": 4},
+                    output_data_keys={},
+                    command=["run"],
                     key=job_id,
                     resources=dask_resources,
                     retries=0,
