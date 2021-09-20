@@ -11,8 +11,7 @@ import subprocess
 # copied out from dask
 import sys
 import time
-from collections import namedtuple
-from pathlib import Path
+from dataclasses import dataclass
 from pprint import pformat
 from typing import Any, Dict, Iterable, List
 from unittest import mock
@@ -21,6 +20,7 @@ from uuid import uuid4
 import dask
 import pytest
 import requests
+from _pytest.logging import LogCaptureFixture
 from _pytest.tmpdir import TempPathFactory
 from aiohttp.test_utils import loop_context
 from distributed import Client
@@ -84,17 +84,15 @@ def dask_client() -> Client:
         yield client
 
 
-ServiceExampleParam = namedtuple(
-    "ServiceExampleParam",
-    "service_key, service_version, command, input_data, output_data_keys, expected_output_data, expected_logs",
-)
-
-
-@pytest.fixture()
-def fake_input_file(tmp_path: Path, faker: Faker) -> Path:
-    fake_file = tmp_path / faker.file_name()
-    fake_file.write_text("This is some fake data here")
-    return fake_file
+@dataclass
+class ServiceExampleParam:
+    service_key: str
+    service_version: str
+    command: List[str]
+    input_data: Dict[str, Any]
+    output_data_keys: Dict[str, Any]
+    expected_output_data: Dict[str, Any]
+    expected_logs: List[str]
 
 
 @pytest.fixture(scope="module")
@@ -138,7 +136,7 @@ async def directory_server(
 
 
 @pytest.fixture()
-def fake_command(directory_server: List[URL]) -> List[str]:
+def ubuntu_task(directory_server: List[URL]) -> ServiceExampleParam:
     file_names = [file.path for file in directory_server]
     check_input_file_command = " && ".join(
         [
@@ -150,7 +148,7 @@ def fake_command(directory_server: List[URL]) -> List[str]:
         [f"echo $(cat ${{INPUT_FOLDER}}/{file})" for file in file_names]
     )
 
-    return [
+    command = [
         "/bin/bash",
         "-c",
         "echo User: $(id $(whoami)) && "
@@ -160,11 +158,7 @@ def fake_command(directory_server: List[URL]) -> List[str]:
         f"{echo_input_files_in_log_command} &&"
         'echo {\\"pytest_output_1\\":\\"is quite an amazing feat\\"} > ${OUTPUT_FOLDER}/outputs.json',
     ]
-
-
-@pytest.fixture()
-def fake_input_data(directory_server: List[URL]) -> Dict[str, Any]:
-    return {
+    input_data = {
         "input_1": 23,
         "input_23": "a string input",
         "the_input_43": 15.0,
@@ -174,42 +168,56 @@ def fake_input_data(directory_server: List[URL]) -> Dict[str, Any]:
             for index, file in enumerate(directory_server)
         },
     }
+    return ServiceExampleParam(
+        service_key="ubuntu",
+        service_version="latest",
+        command=command,
+        input_data=input_data,
+        output_data_keys={"pytest_output_1": {"type": str}},
+        expected_output_data={"pytest_output_1": "is quite an amazing feat"},
+        expected_logs=[
+            '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
+            "This file is named: file_1",
+            "This file is named: file_2",
+            "This file is named: file_3",
+        ],
+    )
 
 
 @pytest.mark.parametrize(
-    "service_key, service_version, command, input_data, output_data_keys, expected_output_data, expected_logs",
+    "task",
     [
-        ServiceExampleParam(
-            service_key="ubuntu",
-            service_version="latest",
-            command=pytest.lazy_fixture("fake_command"),
-            input_data=pytest.lazy_fixture("fake_input_data"),
-            output_data_keys={"pytest_output_1": {"type": str}},
-            expected_output_data={"pytest_output_1": "is quite an amazing feat"},
-            expected_logs=[
-                '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
-                "This file is named: file_1",
-                "This file is named: file_2",
-                "This file is named: file_3",
-            ],
-        ),
+        pytest.lazy_fixture("ubuntu_task"),
     ],
 )
 async def test_run_computational_sidecar_real_fct(
-    dask_subsystem_mock,
-    service_key: str,
-    service_version: str,
-    command: List[str],
-    input_data: Dict[str, Any],
-    output_data_keys: Dict[str, Any],
-    expected_output_data: Dict[str, Any],
-    expected_logs: List[str],
+    dask_subsystem_mock: None, task: ServiceExampleParam, caplog: LogCaptureFixture
 ):
+    caplog.set_level(logging.INFO)
     output_data = await _run_computational_sidecar_async(
-        service_key, service_version, input_data, output_data_keys, command
+        task.service_key,
+        task.service_version,
+        task.input_data,
+        task.output_data_keys,
+        task.command,
     )
 
-    for k, v in expected_output_data.items():
+    # check that the task produces expected logs
+    for log in task.expected_logs:
+        r = re.compile(
+            rf"\[{task.service_key}:{task.service_version} - .+\/.+\]: (.+) ({log})"
+        )
+        search_results = list(filter(r.search, caplog.messages))
+        assert (
+            len(search_results) > 0
+        ), f"Could not find {log} in worker_logs:\n {pformat(caplog.messages, width=240)}"
+    for log in task.expected_logs:
+        assert re.search(
+            rf"\[{task.service_key}:{task.service_version} - .+\/.+\]: (.+) ({log})",
+            caplog.text,
+        )
+
+    for k, v in task.expected_output_data.items():
         assert k in output_data
         if isinstance(v, re.Pattern):
             assert v.match(f"{output_data[k]}")
@@ -217,30 +225,17 @@ async def test_run_computational_sidecar_real_fct(
             assert output_data[k] == v
 
     for k, v in output_data.items():
-        assert k in expected_output_data
-        if isinstance(expected_output_data[k], re.Pattern):
-            assert expected_output_data[k].match(f"{v}")
+        assert k in task.expected_output_data
+        if isinstance(task.expected_output_data[k], re.Pattern):
+            assert task.expected_output_data[k].match(f"{v}")
         else:
-            assert v == expected_output_data[k]
+            assert v == task.expected_output_data[k]
 
 
 @pytest.mark.parametrize(
-    "service_key, service_version, command, input_data, output_data_keys, expected_output_data, expected_logs",
+    "task",
     [
-        ServiceExampleParam(
-            service_key="ubuntu",
-            service_version="latest",
-            command=pytest.lazy_fixture("fake_command"),
-            input_data=pytest.lazy_fixture("fake_input_data"),
-            output_data_keys={"pytest_output_1": {"type": str}},
-            expected_output_data={"pytest_output_1": "is quite an amazing feat"},
-            expected_logs=[
-                '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
-                "This file is named: file_1",
-                "This file is named: file_2",
-                "This file is named: file_3",
-            ],
-        ),
+        pytest.lazy_fixture("ubuntu_task"),
         # ServiceExampleParam(
         #     service_key="itisfoundation/sleeper",
         #     service_version="2.1.1",
@@ -259,22 +254,15 @@ async def test_run_computational_sidecar_real_fct(
     ],
 )
 async def test_run_computational_sidecar(
-    dask_client: Client,
-    service_key: str,
-    service_version: str,
-    command: List[str],
-    input_data: Dict[str, Any],
-    output_data_keys: Dict[str, Any],
-    expected_output_data: Dict[str, Any],
-    expected_logs: List[str],
+    dask_client: Client, task: ServiceExampleParam
 ):
     future = dask_client.submit(
         run_computational_sidecar,
-        service_key,
-        service_version,
-        input_data,
-        output_data_keys,
-        command,
+        task.service_key,
+        task.service_version,
+        task.input_data,
+        task.output_data_keys,
+        task.command,
         resources={},
     )
 
@@ -284,14 +272,14 @@ async def test_run_computational_sidecar(
 
     # check that the task produces expected logs
     worker_logs = [log for _, log in dask_client.get_worker_logs()[worker_name]]
-    for log in expected_logs:
+    for log in task.expected_logs:
         r = re.compile(rf"\[{service_key}:{service_version} - .+\/.+\]: (.+) ({log})")
         search_results = list(filter(r.search, worker_logs))
         assert (
             len(search_results) > 0
         ), f"Could not find {log} in worker_logs:\n {pformat(worker_logs, width=240)}"
 
-    for k, v in expected_output_data.items():
+    for k, v in task.expected_output_data.items():
         assert k in output_data
         if isinstance(v, re.Pattern):
             assert v.match(f"{output_data[k]}")
@@ -299,11 +287,11 @@ async def test_run_computational_sidecar(
             assert output_data[k] == v
 
     for k, v in output_data.items():
-        assert k in expected_output_data
-        if isinstance(expected_output_data[k], re.Pattern):
-            assert expected_output_data[k].match(f"{v}")
+        assert k in task.expected_output_data
+        if isinstance(task.expected_output_data[k], re.Pattern):
+            assert task.expected_output_data[k].match(f"{v}")
         else:
-            assert v == expected_output_data[k]
+            assert v == task.expected_output_data[k]
 
 
 @pytest.mark.parametrize(
