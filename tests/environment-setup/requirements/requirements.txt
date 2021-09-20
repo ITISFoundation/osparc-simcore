@@ -7,7 +7,6 @@
 aiohttp==3.7.4.post0
     # via
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/_base.in
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   pytest-aiohttp
@@ -15,14 +14,14 @@ async-timeout==3.0.1
     # via aiohttp
 attrs==20.3.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/_base.in
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   aiohttp
     #   pytest
 chardet==4.0.0
     # via aiohttp
 idna==2.10
     # via
-    #   -c requirements/../../../packages/service-library/requirements/_base.in
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   yarl
 iniconfig==1.1.1
     # via pytest
@@ -73,7 +72,7 @@ termcolor==1.1.0
     # via pytest-sugar
 toml==0.10.2
     # via pytest
-typing-extensions==3.10.0.0
+typing-extensions==3.10.0.2
     # via
     #   aiohttp
     #   pydantic

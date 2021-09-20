@@ -173,7 +173,7 @@ toml==0.10.2
     #   pylint
     #   pytest
     #   pytest-cov
-typing-extensions==3.10.0.0
+typing-extensions==3.10.0.2
     # via aiohttp
 urllib3==1.26.6
     # via

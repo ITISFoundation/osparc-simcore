@@ -57,7 +57,7 @@ six==1.16.0
     # via jsonschema
 toml==0.10.2
     # via pytest
-typing-extensions==3.10.0.0
+typing-extensions==3.10.0.2
     # via pydantic
 urllib3==1.26.6
     # via

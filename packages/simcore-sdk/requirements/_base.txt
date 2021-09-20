@@ -122,7 +122,7 @@ trafaret==2.1.0
     # via trafaret-config
 trafaret-config==2.0.2
     # via -r requirements/_base.in
-typing-extensions==3.10.0.0
+typing-extensions==3.10.0.2
     # via
     #   aiohttp
     #   pydantic

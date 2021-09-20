@@ -141,7 +141,7 @@ starlette==0.14.2
     # via fastapi
 typer==0.3.2
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
-typing-extensions==3.10.0.0
+typing-extensions==3.10.0.2
     # via
     #   fastapi-pagination
     #   pydantic
