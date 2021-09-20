@@ -8,7 +8,7 @@ astroid==2.8.0
     # via pylint
 backports.entry-points-selectable==1.1.0
     # via virtualenv
-black==21.8b0
+black==21.9b0
     # via
     #   -r requirements/../../../requirements/devenv.txt
     #   -r requirements/_tools.in

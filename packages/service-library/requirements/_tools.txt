@@ -6,7 +6,7 @@
 #
 backports.entry-points-selectable==1.1.0
     # via virtualenv
-black==21.8b0
+black==21.9b0
     # via -r requirements/../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
