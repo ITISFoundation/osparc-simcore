@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Iterator
+from typing import AsyncIterator
 
 from servicelib.archiving_utils import archive_dir
 from servicelib.pools import async_on_threadpool
@@ -46,7 +46,7 @@ async def pull_path_if_exists(path: Path) -> None:
 
 
 @asynccontextmanager
-async def _isolated_temp_zip_path(path_to_compress: Path) -> Iterator[Path]:
+async def _isolated_temp_zip_path(path_to_compress: Path) -> AsyncIterator[Path]:
     base_dir = Path(tempfile.mkdtemp())
     zip_temp_name = base_dir / f"{path_to_compress.name}.zip"
     try:
@@ -57,7 +57,7 @@ async def _isolated_temp_zip_path(path_to_compress: Path) -> Iterator[Path]:
 
 async def upload_path_if_exists(path: Path) -> None:
     """
-    Zips the path in a temporary directory and uploads to sorage
+    Zips the path in a temporary directory and uploads to storage
     """
     settings: DynamicSidecarSettings = get_settings()
     # pylint: disable=unnecessary-comprehension
