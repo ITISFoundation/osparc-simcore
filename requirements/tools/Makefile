@@ -32,8 +32,8 @@ MAKE_C := $(MAKE) --directory
 .PHONY: touch reqs info
 
 # requirements in packages and services
-_compiled-all = $(shell find $(REPODIR) -path "*/requirements/*.txt")
-_inputs-all = $(shell find $(REPODIR) -path "*/requirements/*.in")
+_compiled-all = $(shell find $(REPODIR) -path "*/requirements*.txt")
+_inputs-all = $(shell find $(REPODIR) -path "*/requirements*.in")
 
 # packages/
 _target-inputs = $(shell find ${PACKAGES_DIR} -type f -name _base.in)
@@ -68,6 +68,12 @@ touch: ## touches all package requirement inputs
 reqs: ## updates requirements of all package libraries
 	# Upgrading $(upgrade) requirements
 	@$(foreach p,${_target-inputs},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
+
+
+reqs-all: ## updates requirements of all package libraries
+	# Upgrading $(upgrade) ALL requirements
+	@$(foreach p,${_inputs-all},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
+
 
 
 IMAGE_NAME:=local/python-devkit:${PYTHON_VERSION}
