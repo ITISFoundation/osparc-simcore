@@ -124,10 +124,9 @@ def mock_data_manager(mocker: MockerFixture) -> None:
         return_value=None,
     )
 
-    want_reload_module = importlib.import_module(
-        "simcore_service_dynamic_sidecar.api.containers"
+    importlib.reload(
+        importlib.import_module("simcore_service_dynamic_sidecar.api.containers")
     )
-    importlib.reload(want_reload_module)
 
 
 @pytest.fixture
