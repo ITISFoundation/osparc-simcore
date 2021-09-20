@@ -287,17 +287,15 @@ async def save_state() -> Response:
     "/containers:pull-nodeports",
     summary="Pull input ports data",
     response_model=None,
-    status_code=status.HTTP_204_NO_CONTENT,
+    status_code=status.HTTP_200_OK,
 )  # pylint: disable=dangerous-default-value
-async def pull_input_ports(port_keys: List[str] = []) -> Response:
+async def pull_input_ports(port_keys: List[str] = []) -> int:
     mounted_volumes: MountedVolumes = get_mounted_volumes()
 
-    await nodeports.download_inputs(
+    transferred_bytes = await nodeports.download_inputs(
         mounted_volumes.disk_inputs_path, port_keys=port_keys
     )
-
-    # SEE https://github.com/tiangolo/fastapi/issues/2253
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return transferred_bytes
 
 
 @containers_router.put(

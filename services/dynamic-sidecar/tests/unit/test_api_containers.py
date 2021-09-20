@@ -108,7 +108,7 @@ def mock_nodeports(mocker: MockerFixture) -> None:
     )
     mocker.patch(
         "simcore_service_dynamic_sidecar.modules.nodeports.download_inputs",
-        return_value=None,
+        return_value=42,
     )
 
 
@@ -346,8 +346,8 @@ async def test_container_pull_input_ports(
     test_client: TestClient, mock_nodeports: None
 ) -> None:
     response = await test_client.put(f"/{api_vtag}/containers:pull-nodeports")
-    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-    assert response.text == ""
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert response.text == "42"
 
 
 async def test_container_push_output_ports(

@@ -149,7 +149,7 @@ async def _get_data_from_port(port: Port) -> Tuple[Port, ItemConcreteValue]:
     return (port, ret)
 
 
-async def download_inputs(inputs_path: Path, port_keys: List[str]) -> None:
+async def download_inputs(inputs_path: Path, port_keys: List[str]) -> int:
     logger.info("retrieving data from simcore...")
     start_time = time.perf_counter()
 
@@ -236,6 +236,8 @@ async def download_inputs(inputs_path: Path, port_keys: List[str]) -> None:
 
     elapsed_time = time.perf_counter() - start_time
     logger.info("Downloaded %s bytes in %s seconds", transfer_bytes, elapsed_time)
+
+    return transfer_bytes
 
 
 __all__ = ["dispatch_update_for_directory", "upload_outputs", "download_inputs"]
