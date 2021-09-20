@@ -192,17 +192,15 @@ services:
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    deploy: &dask-sidecar-deploy
+    deploy:
       mode: global
       endpoint_mode: dnsrr
       resources:
         reservations:
           cpus: "0.10"
           memory: "100M"
-    volumes: &sidecar-volumes
-      - input:/home/scu/input
-      - output:/home/scu/output
-      - log:/home/scu/log
+    volumes:
+      - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
       - /var/run/docker.sock:/var/run/docker.sock
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment: &sidecar-environment
@@ -234,6 +232,8 @@ services:
       SWARM_STACK_NAME: ${SWARM_STACK_NAME:-simcore}
       SIDECAR_LOGLEVEL: ${LOG_LEVEL:-WARNING}
       SIDECAR_HOST_HOSTNAME_PATH: ${SIDECAR_HOST_HOSTNAME_PATH:-/home/scu/hostname}
+      SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: ${SWARM_STACK_NAME}_computational_shared_data
+      SIDECAR_COMP_SERVICES_SHARED_FOLDER: ${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
       START_AS_MODE_CPU: ${SIDECAR_FORCE_CPU_NODE:-0}
     networks:
       - computational_services_subnet
@@ -444,10 +444,8 @@ services:
     #  start_period: 20s
 
 volumes:
-  input: {}
-  output: {}
-  log: {}
   postgres_data: {}
+  computational_shared_data: {}
 
 networks:
   default:

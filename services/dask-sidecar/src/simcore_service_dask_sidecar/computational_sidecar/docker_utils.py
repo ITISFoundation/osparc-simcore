@@ -6,11 +6,14 @@ from typing import AsyncIterator, Awaitable, List
 
 from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
+from aiodocker.volumes import DockerVolume
 from pydantic import ByteSize
-from simcore_service_sidecar.task_shared_volume import TaskSharedVolumes
 
+from ..settings import Settings
 from ..utils import create_dask_worker_logger
+from .errors import ComputationalSidecarException
 from .models import ContainerHostConfig, DockerBasicAuth, DockerContainerConfig
+from .task_shared_volume import TaskSharedVolumes
 
 logger = create_dask_worker_logger(__name__)
 
@@ -185,3 +188,24 @@ async def pull_image(
             pformat(pull_progress),
         )
     logger.info("%s:%s pulled", service_key, service_version)
+
+
+async def get_computational_shared_data_mount_point(docker_client: Docker) -> str:
+    app_settings = Settings.create_from_envs()
+    try:
+        logger.warning(
+            "getting computational shared data mount point for %s",
+            app_settings.SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME,
+        )
+        volume_attributes = await DockerVolume(
+            docker_client, app_settings.SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME
+        ).show()
+        logger.warning(
+            "found following volume attributes: %s", pformat(volume_attributes)
+        )
+        return volume_attributes["Mountpoint"]
+
+    except DockerError as err:
+        raise ComputationalSidecarException(
+            f"Error while retrieving docker volume {app_settings.SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME}"
+        ) from err
