@@ -8,34 +8,30 @@ aiohttp==3.7.4.post0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   pytest-aiohttp
-aiopg==1.2.1
-    # via
-    #   -c requirements/_packages.txt
-    #   -r requirements/_test.in
-alembic==1.7.4
-    # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_packages.txt
-    #   -r requirements/_test.in
 astroid==2.8.0
     # via pylint
 async-timeout==3.0.1
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   aiohttp
 attrs==20.2.0
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   aiohttp
     #   pytest
 certifi==2021.5.30
     # via
+    #   -c requirements/_packages.txt
     #   minio
     #   requests
 chardet==3.0.4
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   aiohttp
     #   requests
 coverage==5.5
@@ -62,33 +58,12 @@ idna==2.10
     #   -c requirements/_packages.txt
     #   requests
     #   yarl
-importlib-metadata==4.8.1
-    # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_packages.txt
-    #   alembic
-importlib-resources==5.3.0 ; python_version < "3.9"
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
-    #   -c requirements/_packages.txt
-    #   alembic
 iniconfig==1.1.1
     # via pytest
 isort==5.9.3
     # via pylint
 lazy-object-proxy==1.6.0
     # via astroid
-mako==1.1.5
-    # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_packages.txt
-    #   alembic
-markupsafe==2.0.1
-    # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_packages.txt
-    #   mako
 mccabe==0.6.1
     # via pylint
 minio==7.0.4
@@ -98,11 +73,13 @@ minio==7.0.4
 multidict==5.1.0
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   aiohttp
     #   yarl
 packaging==20.4
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   pytest
     #   pytest-sugar
 platformdirs==2.3.0
@@ -120,6 +97,7 @@ pylint==2.11.1
 pyparsing==2.4.7
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   packaging
 pytest==6.2.5
     # via
@@ -153,6 +131,7 @@ python-dotenv==0.19.0
     # via -r requirements/_test.in
 requests==2.25.1
     # via
+    #   -c requirements/_packages.txt
     #   coveralls
     #   docker
 six==1.15.0
@@ -181,24 +160,21 @@ typing-extensions==3.10.0.2
 urllib3==1.26.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_packages.txt
     #   minio
     #   requests
 websocket-client==0.59.0
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   docker
 wrapt==1.12.1
     # via astroid
 yarl==1.6.3
     # via
     #   -c requirements/_base.txt
-    #   aiohttp
-zipp==3.6.0
-    # via
-    #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
-    #   importlib-metadata
-    #   importlib-resources
+    #   aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
