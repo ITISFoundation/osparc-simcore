@@ -67,18 +67,6 @@ async def _apply_observation_cycle(
             node_uuid=scheduler_data.node_uuid,
             save_state=scheduler_data.dynamic_sidecar.can_save_state,
         )
-        return  # pragma: no cover
-
-    # if the service is not OK (for now failing) observation cycle will
-    # be skipped. This will allow for others to debug it
-    if scheduler_data.dynamic_sidecar.status.current != DynamicSidecarStatus.OK:
-        message = (
-            f"Service {scheduler_data.service_name} is failing. Skipping observation.\n"
-            f"Scheduler data\n{scheduler_data}"
-        )
-        # logging as error as this must be addressed by someone
-        logger.error(message)
-        return
 
     try:
         with timeout(

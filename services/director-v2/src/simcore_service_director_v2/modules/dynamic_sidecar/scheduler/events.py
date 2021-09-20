@@ -295,9 +295,11 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             await dynamic_sidecar_client.begin_service_destruction(
                 dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
             )
-        except httpx.HTTPError:
+        except Exception as e:  # pylint: disable=broad-except
             logger.warning(
-                "Could not begin destruction of %s", scheduler_data.service_name
+                "Could not begin destruction of %s\n%s",
+                scheduler_data.service_name,
+                str(e),
             )
 
         dynamic_sidecar_settings: DynamicSidecarSettings = (
