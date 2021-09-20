@@ -258,46 +258,55 @@ qx.Class.define("osparc.desktop.MainPage", {
         });
     },
 
-    __startSnapshot: function(studyId, snapshotId) {
+    __startSnapshot: async function(studyId, snapshotId) {
       this.__showLoadingPage(this.tr("Loading Snapshot"));
 
+      this.__loadingPage.setMessages([
+        this.tr("Closing previous snapshot...")
+      ]);
       this.__studyEditor.closeEditor();
       this.__closeStudy(studyId);
-      // TODO: wait for closed
-      // Give a 2 seconds delay
-      setTimeout(() => {
-        const params = {
-          url: {
-            "studyId": studyId,
-            "snapshotId": snapshotId
+      const store = osparc.store.Store.getInstance();
+      const currentStudy = store.getCurrentStudy();
+      while (currentStudy.isLocked()) {
+        await osparc.utils.Utils.sleep(1000);
+        store.getStudyState(studyId);
+      }
+      this.__openSnapshot(studyId, snapshotId);
+    },
+
+    __openSnapshot: function(studyId, snapshotId) {
+      const params = {
+        url: {
+          "studyId": studyId,
+          "snapshotId": snapshotId
+        }
+      };
+      osparc.data.Resources.fetch("snapshots", "checkout", params)
+        .then(snapshotResp => {
+          if (!snapshotResp) {
+            const msg = this.tr("Snapshot not found");
+            throw new Error(msg);
           }
-        };
-        osparc.data.Resources.fetch("snapshots", "checkout", params)
-          .then(snapshotResp => {
-            if (!snapshotResp) {
-              const msg = this.tr("Snapshot not found");
-              throw new Error(msg);
+          const params2 = {
+            url: {
+              "studyId": studyId
             }
-            const params2 = {
-              url: {
-                "studyId": studyId
+          };
+          osparc.data.Resources.getOne("studies", params2)
+            .then(studyData => {
+              if (!studyData) {
+                const msg = this.tr("Study not found");
+                throw new Error(msg);
               }
-            };
-            osparc.data.Resources.getOne("studies", params2)
-              .then(studyData => {
-                if (!studyData) {
-                  const msg = this.tr("Study not found");
-                  throw new Error(msg);
-                }
-                this.__loadStudy(studyData);
-              });
-          })
-          .catch(err => {
-            osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-            this.__showDashboard();
-            return;
-          });
-      }, 2000);
+              this.__loadStudy(studyData);
+            });
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          this.__showDashboard();
+          return;
+        });
     },
 
     __loadStudy: function(studyData, pageContext) {
