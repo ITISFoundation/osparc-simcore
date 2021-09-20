@@ -43,11 +43,6 @@ ENV LANG=C.UTF-8 \
 
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
-ENV SWARM_STACK_NAME="" \
-  SIDECAR_INPUT_FOLDER=/home/scu/input \
-  SIDECAR_OUTPUT_FOLDER=/home/scu/output \
-  SIDECAR_LOG_FOLDER=/home/scu/log
-
 
 EXPOSE 8080
 EXPOSE 8786
@@ -79,7 +74,6 @@ RUN pip --no-cache-dir install --upgrade \
 
 # copy dask-sidecar and dependencies
 COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/sidecar /build/services/sidecar
 COPY --chown=scu:scu services/dask-sidecar /build/services/dask-sidecar
 
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
