@@ -39,9 +39,7 @@ def error_middleware_factory(
 
     def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
         resp = create_error_response(
-            [
-                err,
-            ],
+            err,
             "Unexpected Server error",
             web.HTTPInternalServerError,
             skip_internal_error_details=_is_prod,
@@ -109,6 +107,15 @@ def error_middleware_factory(
         except web.HTTPRedirection as ex:
             logger.debug("Redirected to %s", ex)
             raise
+
+        except NotImplementedError as err:
+            error_response = create_error_response(
+                err,
+                str(err),
+                web.HTTPNotImplemented,
+                skip_internal_error_details=_is_prod,
+            )
+            raise error_response from err
 
         except Exception as err:  # pylint: disable=broad-except
             _process_and_raise_unexpected_error(request, err)

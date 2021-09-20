@@ -1,3 +1,6 @@
+#
+# SEE https://docs.min.io/docs/python-client-api-reference.html
+#
 import logging
 import re
 from datetime import timedelta
@@ -24,18 +27,18 @@ class MinioClientWrapper:
         secure: bool = False,
     ):
         self.__metadata_prefix = "x-amz-meta-"
-        self.client = None
         self.endpoint = endpoint
         self.access_key = access_key
         self.secret_key = secret_key
         self.secure = secure
         self.endpoint_url = ("https://" if secure else "http://") + endpoint
         try:
-            self.client = Minio(
+            self._minio = Minio(
                 endpoint, access_key=access_key, secret_key=secret_key, secure=secure
             )
         except MinioException:
             logging.exception("Could not create minio client")
+            raise
 
     def __remove_objects_recursively(self, bucket_name):
         to_del = [
@@ -46,7 +49,7 @@ class MinioClientWrapper:
     def create_bucket(self, bucket_name, delete_contents_if_exists=False):
         try:
             if not self.exists_bucket(bucket_name):
-                self.client.make_bucket(bucket_name)
+                self._minio.make_bucket(bucket_name)
             elif delete_contents_if_exists:
                 return self.__remove_objects_recursively(bucket_name)
 
@@ -61,7 +64,7 @@ class MinioClientWrapper:
             if self.exists_bucket(bucket_name):
                 if delete_contents:
                     self.__remove_objects_recursively(bucket_name)
-                    self.client.remove_bucket(bucket_name)
+                    self._minio.remove_bucket(bucket_name)
         except MinioException:
             logging.exception("Could not remove bucket")
             return False
@@ -69,7 +72,7 @@ class MinioClientWrapper:
 
     def exists_bucket(self, bucket_name):
         try:
-            return self.client.bucket_exists(bucket_name)
+            return self._minio.bucket_exists(bucket_name)
         except MinioException:
             logging.exception("Could not check bucket for existence")
 
@@ -77,7 +80,7 @@ class MinioClientWrapper:
 
     def list_buckets(self):
         try:
-            return self.client.list_buckets()
+            return self._minio.list_buckets()
         except MinioException:
             logging.exception("Could not list bucket")
 
@@ -101,7 +104,7 @@ class MinioClientWrapper:
             if metadata is not None:
                 for key in metadata.keys():
                     _metadata[self.__metadata_prefix + key] = metadata[key]
-            self.client.fput_object(
+            self._minio.fput_object(
                 bucket_name, object_name, filepath, metadata=_metadata
             )
         except MinioException:
@@ -111,7 +114,7 @@ class MinioClientWrapper:
 
     def download_file(self, bucket_name, object_name, filepath):
         try:
-            self.client.fget_object(bucket_name, object_name, filepath)
+            self._minio.fget_object(bucket_name, object_name, filepath)
         except MinioException:
             logging.exception("Could not download file")
             return False
@@ -119,7 +122,7 @@ class MinioClientWrapper:
 
     def get_metadata(self, bucket_name, object_name):
         try:
-            obj = self.client.stat_object(bucket_name, object_name)
+            obj = self._minio.stat_object(bucket_name, object_name)
             _metadata = obj.metadata
             metadata = {}
             for key in _metadata.keys():
@@ -136,7 +139,7 @@ class MinioClientWrapper:
         self, bucket_name: str, prefix: Optional[str] = None, recursive: bool = False
     ) -> Iterator[Object]:
         try:
-            return self.client.list_objects(
+            return self._minio.list_objects(
                 bucket_name=bucket_name, prefix=prefix, recursive=recursive
             )
         except MinioException:
@@ -147,7 +150,7 @@ class MinioClientWrapper:
     def remove_objects(self, bucket_name: str, objects: List[str]):
         try:
             delete = [DeleteObject(name, version_id=None) for name in objects]
-            iter_errors: Iterator[DeleteError] = self.client.remove_objects(
+            iter_errors: Iterator[DeleteError] = self._minio.remove_objects(
                 bucket_name, delete
             )
             for err in iter_errors:
@@ -199,7 +202,7 @@ class MinioClientWrapper:
 
     def create_presigned_put_url(self, bucket_name, object_name, dt=timedelta(days=3)):
         try:
-            return self.client.presigned_put_object(
+            return self._minio.presigned_put_object(
                 bucket_name, object_name, expires=dt
             )
 
@@ -210,7 +213,7 @@ class MinioClientWrapper:
 
     def create_presigned_get_url(self, bucket_name, object_name, dt=timedelta(days=3)):
         try:
-            return self.client.presigned_get_object(
+            return self._minio.presigned_get_object(
                 bucket_name, object_name, expires=dt
             )
 
@@ -228,7 +231,7 @@ class MinioClientWrapper:
     ):
         try:
             # ValueError for arguments
-            result: ObjectWriteResult = self.client.copy_object(
+            result: ObjectWriteResult = self._minio.copy_object(
                 bucket_name=to_bucket_name,
                 object_name=to_object_name,
                 source=CopySource(from_bucket, from_object),

@@ -2,7 +2,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-name-in-module
 
-from typing import Dict
 from unittest.mock import Mock
 
 import pytest
@@ -10,11 +9,7 @@ from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPEC
 from servicelib.aiohttp.application_setup import APP_SETUP_KEY
 from simcore_service_webserver import diagnostics_handlers
 from simcore_service_webserver.diagnostics import setup_diagnostics
-from simcore_service_webserver.rest import (
-    api_version_prefix,
-    get_openapi_specs_path,
-    load_openapi_specs,
-)
+from simcore_service_webserver.rest import api_version_prefix
 
 
 class MockApp(dict):
@@ -34,12 +29,6 @@ class MockApp(dict):
 
     def assert_none_overriden(self):
         assert not self._overriden
-
-
-@pytest.fixture
-def openapi_specs(api_version_prefix) -> Dict:
-    spec_path = get_openapi_specs_path(api_version_prefix)
-    return load_openapi_specs(spec_path)
 
 
 @pytest.fixture
