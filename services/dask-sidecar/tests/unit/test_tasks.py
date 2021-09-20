@@ -168,13 +168,13 @@ def ubuntu_task(directory_server: List[URL]) -> ServiceExampleParam:
         [f"echo $(cat ${{INPUT_FOLDER}}/{file})" for file in file_names]
     )
 
-    expected_raw_outputs = {
+    jsonable_outputs = {
         "pytest_string": "is quite an amazing feat",
         "pytest_integer": 432,
         "pytest_float": 3.2,
         "pytest_bool": False,
     }
-    bash_json_command = json.dumps(expected_raw_outputs).replace('"', '\\"')
+    echo_jsonable_outputs_command = json.dumps(jsonable_outputs).replace('"', '\\"')
 
     command = [
         "/bin/bash",
@@ -183,8 +183,9 @@ def ubuntu_task(directory_server: List[URL]) -> ServiceExampleParam:
         "(test -f ${INPUT_FOLDER}/inputs.json || (echo ${INPUT_FOLDER}/inputs.json file does not exists && exit 1)) && "
         "echo $(cat ${INPUT_FOLDER}/inputs.json) && "
         f"{check_input_file_command} && "
-        f"{echo_input_files_in_log_command} &&"
-        f"echo {bash_json_command} > ${{OUTPUT_FOLDER}}/outputs.json",
+        f"{echo_input_files_in_log_command} && "
+        f"echo {echo_jsonable_outputs_command} > ${{OUTPUT_FOLDER}}/outputs.json && "
+        "echo 'some data for the output file' > ${OUTPUT_FOLDER}/a_outputfile",
     ]
     input_data = TaskInputData.parse_obj(
         {
@@ -204,9 +205,14 @@ def ubuntu_task(directory_server: List[URL]) -> ServiceExampleParam:
         command=command,
         input_data=input_data,
         output_data_keys=TaskOutputDataSchema.parse_obj(
-            {k: {"required": True} for k in expected_raw_outputs.keys()}
+            {
+                **{k: {"required": True} for k in jsonable_outputs.keys()},
+                **{"pytest_file": {"required": True, "mapping": "a_outputfile"}},
+            }
         ),
-        expected_output_data=TaskOutputData.parse_obj(expected_raw_outputs),
+        expected_output_data=TaskOutputData.parse_obj(
+            {**jsonable_outputs, **{"pytest_file": {"url": "file://a_outputfile"}}}
+        ),
         expected_logs=[
             '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
             "This file is named: file_1",
