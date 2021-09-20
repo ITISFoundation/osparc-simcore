@@ -100,13 +100,9 @@ iniconfig==1.1.1
 isort==5.9.3
     # via pylint
 jsonschema==3.2.0
-    # via
-    #   -c requirements/_base.txt
-    #   docker-compose
+    # via docker-compose
 lazy-object-proxy==1.4.3
-    # via
-    #   -c requirements/_base.txt
-    #   astroid
+    # via astroid
 mako==1.1.4
     # via
     #   -c requirements/_base.txt
@@ -152,9 +148,7 @@ pyparsing==2.4.7
     #   -c requirements/_base.txt
     #   packaging
 pyrsistent==0.17.3
-    # via
-    #   -c requirements/_base.txt
-    #   jsonschema
+    # via jsonschema
 pytest==6.2.4
     # via
     #   -r requirements/_test.in
