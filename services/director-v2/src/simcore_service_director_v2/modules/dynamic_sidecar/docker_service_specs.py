@@ -13,10 +13,7 @@ from ...core.settings import (
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 from ...models.schemas.dynamic_services import SchedulerData, ServiceType
 from ...utils.registry import get_dynamic_sidecar_env_vars
-from .docker_service_specs_settings import (
-    inject_settings_to_create_service_params,
-    merge_settings_before_use,
-)
+from .docker_service_specs_settings import inject_settings_to_create_service_params
 from .volumes_resolver import DynamicSidecarVolumesPathsResolver
 
 log = logging.getLogger(__name__)

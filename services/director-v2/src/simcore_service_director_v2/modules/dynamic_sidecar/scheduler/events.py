@@ -32,8 +32,8 @@ from ..docker_service_specs import (
     extract_service_port_from_compose_start_spec,
     get_dynamic_proxy_spec,
     get_dynamic_sidecar_spec,
-    merge_settings_before_use,
 )
+from ..docker_service_specs_settings import merge_settings_before_use
 from ..errors import DynamicSidecarNetworkError, GenericDockerError
 from .abc import DynamicSchedulerEvent
 
