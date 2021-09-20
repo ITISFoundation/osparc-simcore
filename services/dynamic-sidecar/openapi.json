@@ -267,21 +267,6 @@
         }
       }
     },
-    "/v1/containers:save-state": {
-      "put": {
-        "tags": [
-          "containers"
-        ],
-        "summary": "Stores the state of the dynamic service",
-        "description": "When saving the state:\n- push outputs via nodeports\n- push all the extra state paths",
-        "operationId": "save_state_v1_containers_save_state_put",
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          }
-        }
-      }
-    },
     "/v1/containers:restore-state": {
       "put": {
         "tags": [
@@ -293,6 +278,101 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/v1/containers:save-state": {
+      "put": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Stores the state of the dynamic service",
+        "operationId": "save_state_v1_containers_save_state_put",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/v1/containers:pull-nodeports": {
+      "put": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Pull input ports data",
+        "operationId": "pull_input_ports_v1_containers_pull_nodeports_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Port Keys",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": []
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers:push-nodeports": {
+      "put": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Push output ports data",
+        "operationId": "push_output_ports_v1_containers_push_nodeports_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Port Keys",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": []
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
