@@ -33,12 +33,13 @@ log = logging.getLogger(__name__)
 
 def _monkey_patch_aiodocker() -> None:
     """Raises an error once the library is up to date."""
+    from distutils.version import LooseVersion
+
     from aiodocker import volumes
     from aiodocker.utils import clean_filters
     from aiodocker.volumes import DockerVolume
-    from packaging.version import parse
 
-    if parse(aiodocker.__version__) > parse("0.21.0"):
+    if LooseVersion(aiodocker.__version__) > LooseVersion("0.21.0"):
         raise RuntimeError(
             "Please check that PR https://github.com/aio-libs/aiodocker/pull/623 "
             "is not part of the current bump version. "
