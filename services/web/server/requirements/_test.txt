@@ -204,7 +204,7 @@ pyrsistent==0.18.0
     # via
     #   -c requirements/_packages.txt
     #   jsonschema
-pytest==6.2.4
+pytest==6.2.5
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp

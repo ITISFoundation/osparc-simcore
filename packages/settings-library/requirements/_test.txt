@@ -45,7 +45,7 @@ pylint==2.11.1
     # via -r requirements/_test.in
 pyparsing==2.4.7
     # via packaging
-pytest==6.2.4
+pytest==6.2.5
     # via
     #   -r requirements/_test.in
     #   pytest-cov
