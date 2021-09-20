@@ -1,3 +1,6 @@
+import json
+from contextlib import suppress
+from pathlib import Path
 from typing import Any, Dict, ItemsView, KeysView, List, Optional, Union
 
 from models_library.services import PROPERTY_KEY_RE
@@ -109,3 +112,24 @@ class TaskOutputData(BaseModel):
 
     def __iter__(self) -> Any:
         return self.__root__.__iter__()
+
+    @classmethod
+    def from_task_output(
+        cls, schema: TaskOutputDataSchema, output_folder: Path
+    ) -> "TaskOutputData":
+        data = {}
+        # try reading the outputs.json if available
+        output_data_file = output_folder / "outputs.json"
+        if output_data_file.exists():
+            with suppress(json.JSONDecodeError):
+                # in case the loading throw, then the data will be missing
+                # and we will get a validation error when reading the file in
+                data = json.loads(output_data_file.read_text())
+
+        for output_key, output_params in schema.items():
+            if isinstance(output_params, FilePortSchema):
+                file_path = output_folder / (output_params.mapping or output_key)
+                if file_path.exists():
+                    data[output_key] = {"url": f"file://{file_path.name}"}
+
+        return cls.parse_obj(data)

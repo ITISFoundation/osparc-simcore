@@ -2,7 +2,6 @@ import asyncio
 import json
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from json.decoder import JSONDecodeError
 from pathlib import Path
 from types import TracebackType
 from typing import AsyncIterator, Awaitable, List, Optional, Type
@@ -10,8 +9,8 @@ from uuid import uuid4
 
 import fsspec
 from aiodocker import Docker
+from pydantic import ValidationError
 from simcore_service_dask_sidecar.computational_sidecar.models import (
-    FilePortSchema,
     FileUrl,
     TaskInputData,
     TaskOutputData,
@@ -27,11 +26,7 @@ from .docker_utils import (
     managed_monitor_container_log_task,
     pull_image,
 )
-from .errors import (
-    ServiceBadFormattedOutputError,
-    ServiceMissingOutputError,
-    ServiceRunError,
-)
+from .errors import ServiceBadFormattedOutputError, ServiceRunError
 
 logger = create_dask_worker_logger(__name__)
 CONTAINER_WAIT_TIME_SECS = 2
@@ -77,43 +72,14 @@ class ComputationalSidecar:
     async def _retrieve_output_data(
         self, task_volumes: TaskSharedVolumes
     ) -> TaskOutputData:
-        output_data = TaskOutputData.parse_obj({})
-        for output_key, output_params in self.output_data_keys.items():
-            if isinstance(output_params, FilePortSchema):
-                file_path = task_volumes.output_folder / (
-                    output_params.mapping or output_key
-                )
-                if file_path.exists():
-                    output_data[output_key] = FileUrl(url=f"file://{file_path.name}")
-                    continue
-                # no file.. was it required?
-                if output_params.required:
-                    raise ServiceMissingOutputError(
-                        self.service_key, self.service_version, output_key
-                    )
-                # optional output, ok...
-                continue
-
-            # all other outputs should be located in a JSON file
-            output_data_file = task_volumes.output_folder / "outputs.json"
-            if not output_data_file.exists() and output_params.required:
-                raise ServiceMissingOutputError(
-                    self.service_key, self.service_version, output_key
-                )
-            # the json file is there
-            try:
-                service_output = json.loads(output_data_file.read_text())
-                output_data[output_key] = service_output.get(output_key, None)
-                if output_data[output_key] is None and output_params.required:
-                    raise ServiceMissingOutputError(
-                        self.service_key, self.service_version, output_key
-                    )
-            except JSONDecodeError as exc:
-                raise ServiceBadFormattedOutputError(
-                    self.service_key, self.service_version, output_key
-                ) from exc
-
-        return output_data
+        try:
+            return TaskOutputData.from_task_output(
+                self.output_data_keys, task_volumes.output_folder
+            )
+        except ValidationError as exc:
+            raise ServiceBadFormattedOutputError(
+                self.service_key, self.service_version
+            ) from exc
 
     async def run(self, command: List[str]) -> TaskOutputData:
         async with Docker() as docker_client, managed_task_volumes(
