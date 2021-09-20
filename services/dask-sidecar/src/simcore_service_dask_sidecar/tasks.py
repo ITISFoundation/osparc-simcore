@@ -10,6 +10,7 @@ from simcore_service_sidecar.boot_mode import BootMode
 from simcore_service_sidecar.cli import run_sidecar
 
 from .computational_sidecar.core import ComputationalSidecar
+from .computational_sidecar.models import TaskInputData
 from .meta import print_banner
 from .settings import Settings
 from .utils import create_dask_worker_logger
@@ -47,7 +48,7 @@ def _get_task_boot_mode(task: Optional[TaskState]) -> BootMode:
 async def _run_computational_sidecar_async(
     service_key: str,
     service_version: str,
-    input_data: Dict[str, Any],
+    input_data: TaskInputData,
     output_data_keys: Dict[str, Any],
     command: List[str],
 ) -> Dict[str, Any]:
@@ -70,7 +71,7 @@ async def _run_computational_sidecar_async(
 def run_computational_sidecar(
     service_key: str,
     service_version: str,
-    input_data: Dict[str, Any],
+    input_data: TaskInputData,
     output_data_keys: Dict[str, Any],
     command: List[str],
 ) -> Dict[str, Any]:
