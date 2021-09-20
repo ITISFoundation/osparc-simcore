@@ -75,7 +75,7 @@ decorator==4.4.2
     # via networkx
 dnspython==2.1.0
     # via email-validator
-docker==5.0.0
+docker==5.0.2
     # via -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_migration.in
 email-validator==1.1.2
     # via

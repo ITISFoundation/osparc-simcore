@@ -55,7 +55,7 @@ distro==1.5.0
     # via docker-compose
 dnspython==2.1.0
     # via email-validator
-docker==5.0.0
+docker==5.0.2
     # via docker-compose
 docker-compose==1.29.1
     # via

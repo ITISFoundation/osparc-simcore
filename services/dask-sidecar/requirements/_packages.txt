@@ -134,7 +134,7 @@ dnspython==2.0.0
     #   -c requirements/_base.txt
     #   -r requirements/../../../services/sidecar/requirements/_base.txt
     #   email-validator
-docker==5.0.0
+docker==5.0.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_migration.in

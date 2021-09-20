@@ -58,7 +58,7 @@ cryptography==3.4.7
     #   paramiko
 distro==1.6.0
     # via docker-compose
-docker==5.0.0
+docker==5.0.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in

@@ -66,7 +66,7 @@ coverage==5.5
     #   pytest-cov
 dnspython==2.1.0
     # via email-validator
-docker==5.0.0
+docker==5.0.2
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_migration.in

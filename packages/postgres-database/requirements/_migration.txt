@@ -12,7 +12,7 @@ charset-normalizer==2.0.4
     # via requests
 click==8.0.1
     # via -r requirements/_migration.in
-docker==5.0.0
+docker==5.0.2
     # via -r requirements/_migration.in
 idna==2.10
     # via
