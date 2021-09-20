@@ -21,6 +21,12 @@ class RetrieveDataOut(BaseModel):
 class RetrieveDataOutEnveloped(BaseModel):
     data: RetrieveDataOut
 
+    @classmethod
+    def from_transferred_bytes(
+        cls, transferred_bytes: int
+    ) -> "RetrieveDataOutEnveloped":
+        return cls(data=RetrieveDataOut(size_bytes=transferred_bytes))
+
 
 DynamicServiceCreate = ServiceDetails
 DynamicServiceOut = RunningDynamicServiceDetails

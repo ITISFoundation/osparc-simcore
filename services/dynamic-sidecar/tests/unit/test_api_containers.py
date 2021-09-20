@@ -129,6 +129,11 @@ def mock_data_manager(mocker: MockerFixture) -> None:
     reload(simcore_service_dynamic_sidecar.api.containers)  # type: ignore
 
 
+@pytest.fixture
+def mock_port_keys() -> List[str]:
+    return ["first_port", "second_port"]
+
+
 # TESTS
 
 
@@ -343,16 +348,20 @@ async def test_container_restore_state(
 
 
 async def test_container_pull_input_ports(
-    test_client: TestClient, mock_nodeports: None
+    test_client: TestClient, mock_port_keys: List[str], mock_nodeports: None
 ) -> None:
-    response = await test_client.put(f"/{api_vtag}/containers:pull-nodeports")
+    response = await test_client.put(
+        f"/{api_vtag}/containers:pull-nodeports", json=mock_port_keys
+    )
     assert response.status_code == status.HTTP_200_OK, response.text
     assert response.text == "42"
 
 
 async def test_container_push_output_ports(
-    test_client: TestClient, mock_nodeports: None
+    test_client: TestClient, mock_port_keys: List[str], mock_nodeports: None
 ) -> None:
-    response = await test_client.put(f"/{api_vtag}/containers:push-nodeports")
+    response = await test_client.put(
+        f"/{api_vtag}/containers:push-nodeports", json=mock_port_keys
+    )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""

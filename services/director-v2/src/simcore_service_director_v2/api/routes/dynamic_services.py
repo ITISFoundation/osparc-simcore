@@ -190,18 +190,23 @@ async def stop_dynamic_service(
 )
 @log_decorator(logger=logger)
 async def service_retrieve_data_on_ports(
+    node_uuid: NodeID,
     retrieve_settings: RetrieveDataIn,
     service_base_url: URL = Depends(get_service_base_url),
     services_client: ServicesClient = Depends(get_services_client),
+    scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ):
-    # the handling of client/server errors is already encapsulated in the call to request
-    resp = await services_client.request(
-        "POST",
-        f"{service_base_url}/retrieve",
-        data=retrieve_settings.json(by_alias=True),
-        timeout=httpx.Timeout(
-            5.0, read=60 * 60.0
-        ),  # this call waits for the service to download data
-    )
-    # validate and return
-    return RetrieveDataOutEnveloped.parse_obj(resp.json())
+    try:
+        return await scheduler.retrive(node_uuid)
+    except DynamicSidecarNotFoundError:
+        # the handling of client/server errors is already encapsulated in the call to request
+        resp = await services_client.request(
+            "POST",
+            f"{service_base_url}/retrieve",
+            data=retrieve_settings.json(by_alias=True),
+            timeout=httpx.Timeout(
+                5.0, read=60 * 60.0
+            ),  # this call waits for the service to download data
+        )
+        # validate and return
+        return RetrieveDataOutEnveloped.parse_obj(resp.json())

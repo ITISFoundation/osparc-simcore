@@ -1,6 +1,6 @@
 import logging
 import traceback
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import httpx
 from fastapi import FastAPI
@@ -176,6 +176,43 @@ class DynamicSidecarClient:
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
                 response = await client.put(url)
+            if response.status_code != 204:
+                message = (
+                    f"ERROR while restoring service state: "
+                    f"status={response.status_code}, body={response.text}"
+                )
+                logging.warning(message)
+                raise DynamicSchedulerException(message)
+        except httpx.HTTPError as e:
+            log_httpx_http_error(url, "PUT", traceback.format_exc())
+            raise e
+
+    async def service_pull_input_ports(  # pylint: disable=dangerous-default-value
+        self, dynamic_sidecar_endpoint: str, port_keys: List[str] = []
+    ) -> int:
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers:pull-nodeports")
+        try:
+            async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
+                response = await client.put(url, json=port_keys)
+            if response.status_code != 200:
+                message = (
+                    f"ERROR while restoring service state: "
+                    f"status={response.status_code}, body={response.text}"
+                )
+                logging.warning(message)
+                raise DynamicSchedulerException(message)
+            return int(response.text)
+        except httpx.HTTPError as e:
+            log_httpx_http_error(url, "PUT", traceback.format_exc())
+            raise e
+
+    async def service_push_output_ports(  # pylint: disable=dangerous-default-value
+        self, dynamic_sidecar_endpoint: str, port_keys: List[str] = []
+    ) -> None:
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers:push-nodeports")
+        try:
+            async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
+                response = await client.put(url, json=port_keys)
             if response.status_code != 204:
                 message = (
                     f"ERROR while restoring service state: "

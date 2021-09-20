@@ -7,6 +7,7 @@ import httpx
 import tenacity
 from fastapi import FastAPI
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
+from servicelib.utils import logged_gather
 
 from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.dynamic_services import (
@@ -205,10 +206,8 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
     Triggered when the dynamic-sidecar is responding to http requests.
     This step runs before CreateUserServices.
 
-
-
     Sets up the environment on the host required by the service.
-    - pulls data via nodeports
+    - restores service state
     """
 
     @classmethod
@@ -310,9 +309,25 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             dynamic_sidecar_client = get_dynamic_sidecar_client(app)
             dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
-            logger.info("Calling into dynamic-sidecar to save state")
-            await dynamic_sidecar_client.service_state_save(dynamic_sidecar_endpoint)
-            logger.info("State saved by dynamic-sidecar")
+            logger.info(
+                "Calling into dynamic-sidecar to save state and pushing data to nodeports"
+            )
+            try:
+                await logged_gather(
+                    dynamic_sidecar_client.service_push_output_ports(
+                        dynamic_sidecar_endpoint,
+                    ),
+                    dynamic_sidecar_client.service_state_save(
+                        dynamic_sidecar_endpoint,
+                    ),
+                )
+                logger.info("State saved by dynamic-sidecar")
+            except Exception as e:  # pylint: disable=broad-except
+                logger.warning(
+                    "Could not save service state %s\n%s",
+                    scheduler_data.service_name,
+                    str(e),
+                )
 
         # remove the 2 services
         await remove_dynamic_sidecar_stack(

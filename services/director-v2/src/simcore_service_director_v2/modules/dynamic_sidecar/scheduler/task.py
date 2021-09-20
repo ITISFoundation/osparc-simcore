@@ -16,6 +16,7 @@ from ....core.settings import (
     DynamicServicesSettings,
     DynamicSidecarSettings,
 )
+from ....models.domains.dynamic_services import RetrieveDataOutEnveloped
 from ....models.schemas.dynamic_services import (
     AsyncResourceLock,
     DynamicSidecarStatus,
@@ -248,6 +249,24 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             service_state=container_state,
             service_message=container_message,
         )
+
+    async def retrive(self, node_uuid: NodeID) -> RetrieveDataOutEnveloped:
+        """Pulls data from input ports for the service"""
+        if node_uuid not in self._inverse_search_mapping:
+            raise DynamicSidecarNotFoundError(node_uuid)
+
+        service_name = self._inverse_search_mapping[node_uuid]
+        scheduler_data: SchedulerData = self._to_observe[service_name].scheduler_data
+
+        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
+            self._app
+        )
+
+        transferred_bytes = await dynamic_sidecar_client.service_pull_input_ports(
+            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
+        )
+
+        return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
 
     async def _enqueue_observation_from_service_name(self, service_name: str) -> None:
         await self._trigger_observation_queue.put(service_name)
