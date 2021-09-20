@@ -1,4 +1,4 @@
-from typing import Dict, ItemsView, List, Optional, Union
+from typing import Any, Dict, ItemsView, KeysView, List, Optional, Union
 
 from models_library.services import PROPERTY_KEY_RE
 from pydantic import (
@@ -56,3 +56,22 @@ class TaskInputData(BaseModel):
 
     def items(self) -> ItemsView[PortKey, PortValue]:
         return self.__root__.items()
+
+
+class TaskOutputData(BaseModel):
+    __root__: Dict[PortKey, PortValue]
+
+    def __getitem__(self, k: PortKey) -> PortValue:
+        return self.__root__.__getitem__(k)
+
+    def __setitem__(self, k: PortKey, v: PortValue) -> None:
+        self.__root__.__setitem__(k, v)
+
+    def items(self) -> ItemsView[PortKey, PortValue]:
+        return self.__root__.items()
+
+    def keys(self) -> KeysView[PortKey]:
+        return self.__root__.keys()
+
+    def __iter__(self) -> Any:
+        return self.__root__.__iter__()

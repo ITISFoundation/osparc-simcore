@@ -13,6 +13,7 @@ from aiodocker import Docker
 from simcore_service_dask_sidecar.computational_sidecar.models import (
     FileUrl,
     TaskInputData,
+    TaskOutputData,
 )
 from simcore_service_sidecar.task_shared_volume import TaskSharedVolumes
 from yarl import URL
@@ -73,8 +74,8 @@ class ComputationalSidecar:
 
     async def _retrieve_output_data(
         self, task_volumes: TaskSharedVolumes
-    ) -> Dict[str, Any]:
-        output_data = {}
+    ) -> TaskOutputData:
+        output_data = TaskOutputData.parse_obj({})
         for output_key, output_params in self.output_data_keys.items():
             # path outputs are located in the outputs folder
             if output_params["type"] in [Path, Optional[Path]]:
@@ -117,7 +118,7 @@ class ComputationalSidecar:
 
         return output_data
 
-    async def run(self, command: List[str]) -> Dict[str, Any]:
+    async def run(self, command: List[str]) -> TaskOutputData:
         async with Docker() as docker_client, managed_task_volumes(
             Path(f"/tmp/{uuid4()}")
         ) as task_volumes:
