@@ -10,6 +10,10 @@ from uuid import uuid4
 
 import fsspec
 from aiodocker import Docker
+from simcore_service_dask_sidecar.computational_sidecar.models import (
+    FileUrl,
+    TaskInputData,
+)
 from simcore_service_sidecar.task_shared_volume import TaskSharedVolumes
 from yarl import URL
 
@@ -48,17 +52,17 @@ async def managed_task_volumes(base_path: Path) -> AsyncIterator[TaskSharedVolum
 class ComputationalSidecar:
     service_key: str
     service_version: str
-    input_data: Dict[str, Any]
+    input_data: TaskInputData
     output_data_keys: Dict[str, Any]
 
     async def _write_input_data(self, task_volumes: TaskSharedVolumes) -> None:
         input_data_file = task_volumes.input_folder / "inputs.json"
         input_data = {}
         for input_key, input_params in self.input_data.items():
-            if isinstance(input_params, URL):
-                openfile = fsspec.open(f"{input_params}")
-                destination_path = task_volumes.input_folder / input_params.path.strip(
-                    "/"
+            if isinstance(input_params, FileUrl):
+                openfile = fsspec.open(f"{input_params.url}")
+                destination_path = task_volumes.input_folder / (
+                    input_params.file_mapping or URL(input_params.url).path.strip("/")
                 )
                 with openfile as src, destination_path.open("wb") as dest:
                     dest.write(src.read())

@@ -29,6 +29,10 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
+from simcore_service_dask_sidecar.computational_sidecar.models import (
+    FileUrl,
+    TaskInputData,
+)
 from simcore_service_dask_sidecar.tasks import (
     _is_aborted_cb,
     _run_computational_sidecar_async,
@@ -102,7 +106,7 @@ class ServiceExampleParam:
     service_key: str
     service_version: str
     command: List[str]
-    input_data: Dict[str, Any]
+    input_data: TaskInputData
     output_data_keys: Dict[str, Any]
     expected_output_data: Dict[str, Any]
     expected_logs: List[str]
@@ -171,16 +175,18 @@ def ubuntu_task(directory_server: List[URL]) -> ServiceExampleParam:
         f"{echo_input_files_in_log_command} &&"
         'echo {\\"pytest_output_1\\":\\"is quite an amazing feat\\"} > ${OUTPUT_FOLDER}/outputs.json',
     ]
-    input_data = {
-        "input_1": 23,
-        "input_23": "a string input",
-        "the_input_43": 15.0,
-        "the_bool_input_54": False,
-        **{
-            f"some_file_input_{index+1}": file
-            for index, file in enumerate(directory_server)
-        },
-    }
+    input_data = TaskInputData.parse_obj(
+        {
+            "input_1": 23,
+            "input_23": "a string input",
+            "the_input_43": 15.0,
+            "the_bool_input_54": False,
+            **{
+                f"some_file_input_{index+1}": FileUrl(url=f"{file}")
+                for index, file in enumerate(directory_server)
+            },
+        }
+    )
     return ServiceExampleParam(
         service_key="ubuntu",
         service_version="latest",
@@ -266,7 +272,7 @@ async def test_run_computational_sidecar_real_fct(
         # ),
     ],
 )
-async def test_run_computational_sidecar(
+async def test_run_computational_sidecar_dask(
     dask_client: Client, task: ServiceExampleParam
 ):
     future = dask_client.submit(

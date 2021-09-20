@@ -1,6 +1,17 @@
-from typing import Dict, List
+from typing import Dict, ItemsView, List, Optional, Union
 
-from pydantic import BaseModel, ByteSize, Field
+from models_library.services import PROPERTY_KEY_RE
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    ByteSize,
+    Field,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
+    StrictStr,
+)
+from typing_extensions import Annotated
 
 
 class ContainerHostConfig(BaseModel):
@@ -29,3 +40,19 @@ class DockerContainerConfig(BaseModel):
     image: str = Field(..., alias="Image")
     labels: Dict[str, str] = Field(..., alias="Labels")
     host_config: ContainerHostConfig = Field(..., alias="HostConfig")
+
+
+class FileUrl(BaseModel):
+    url: AnyUrl
+    file_mapping: Optional[str] = None
+
+
+PortKey = Annotated[str, Field(regex=PROPERTY_KEY_RE)]
+PortValue = Union[StrictBool, StrictInt, StrictFloat, StrictStr, FileUrl]
+
+
+class TaskInputData(BaseModel):
+    __root__: Dict[PortKey, PortValue]
+
+    def items(self) -> ItemsView[PortKey, PortValue]:
+        return self.__root__.items()
