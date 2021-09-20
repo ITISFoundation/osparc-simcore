@@ -8,7 +8,7 @@ bokeh==2.3.2
     # via
     #   -c requirements/./_base.txt
     #   dask
-click==7.1.2
+click==8.0.1
     # via
     #   -c requirements/./_base.txt
     #   distributed
