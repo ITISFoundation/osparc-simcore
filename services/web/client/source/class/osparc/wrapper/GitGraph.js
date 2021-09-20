@@ -219,7 +219,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
     },
 
     addCommit: function(branch, commitData) {
-      this.commit(branch, commitData["createdAt"] + " - " + commitData["label"], commitData["id"]);
+      this.commit(branch, commitData["createdAt"] + " - " + commitData["tags"], commitData["id"]);
     },
 
     buildExample: function() {
@@ -237,6 +237,21 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       this.commit(it3, "x=3");
 
       this.commit(master, "Changes after iterations");
+    },
+
+    populateGraph: function(snapshots) {
+      const master = this.__gitgraph.branch("master");
+      snapshots.forEach(snapshot => {
+        const date = new Date(snapshot["created_at"]);
+        const commitData = {
+          id: snapshot["id"],
+          tags: snapshot["tags"].join(", "),
+          message: snapshot["message"],
+          createdAt: osparc.utils.Utils.formatDateAndTime(date),
+          parentUuid: snapshot["parent_uuid"]
+        };
+        this.addCommit(master, commitData);
+      });
     }
   }
 });

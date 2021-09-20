@@ -79,7 +79,9 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
         this.__snapshotsSection.remove(this.__snapshotsTable);
       }
 
-      const snapshotsTable = this.__snapshotsTable = new osparc.component.snapshots.Snapshots(this.__study);
+      const snapshotsTable = this.__snapshotsTable = new osparc.component.snapshots.Snapshots();
+      this.__study.getSnapshots()
+        .then(snapshots => snapshotsTable.populateTable(snapshots));
       snapshotsTable.addListener("cellTap", e => {
         this.__snapshotsSelected(e);
       });
@@ -113,23 +115,9 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
       gitGraphCanvas.addListenerOnce("appear", () => {
         const gitGraphWrapper = new osparc.wrapper.GitGraph();
         gitGraphWrapper.init(gitGraphCanvas, gitGraphInteract)
-          .then(gitgraph => {
-            this.__primaryStudy.getSnapshots()
-              .then(snapshots => {
-                const master = gitgraph.branch("master");
-                snapshots.forEach(snapshot => {
-                  const date = new Date(snapshot["created_at"]);
-                  const commitData = {
-                    studyUuid: snapshot["project_uuid"],
-                    label: snapshot["label"],
-                    createdAt: osparc.utils.Utils.formatDateAndTime(date),
-                    id: snapshot["id"],
-                    parentUuid: snapshot["parent_uuid"]
-                  };
-                  gitGraphWrapper.addCommit(master, commitData);
-                });
-              });
-            // gitGraphWrapper.buildExample();
+          .then(() => {
+            this.__study.getSnapshots()
+              .then(snapshots => gitGraphWrapper.populateGraph(snapshots));
           }, this);
         gitGraphWrapper.addListener("snapshotTap", e => {
           console.log("snapshot selected", e.getData());
