@@ -36,7 +36,7 @@ sqlalchemy<2.0
 #
 
 # FIXME: minio 7.1.0 does not delete objects. SEE
-minio==7.0.4
+minio==7.1.0
 
 # FIXME: auto-reload does not work
 uvicorn<0.14.0
