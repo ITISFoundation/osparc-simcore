@@ -62,7 +62,7 @@ def node_id() -> NodeID:
 
 
 @pytest.fixture()
-def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, mock.Mock]:
+def dask_subsystem_mock(mocker: MockerFixture) -> None:
     dask_client_mock = mocker.patch("distributed.Client", autospec=True)
 
     dask_distributed_worker_mock = mocker.patch(
@@ -72,9 +72,22 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, mock.Mock]:
         "simcore_service_dask_sidecar.tasks.TaskState", autospec=True
     )
     dask_task_mock.resource_restrictions = {}
-
     dask_distributed_worker_mock.return_value.tasks.get.return_value = dask_task_mock
-    return dask_client_mock
+
+    dask_tasks_logger = mocker.patch(
+        "simcore_service_dask_sidecar.tasks.log",
+        logging.getLogger(__name__),
+    )
+
+    dask_core_logger = mocker.patch(
+        "simcore_service_dask_sidecar.computational_sidecar.core.logger",
+        logging.getLogger(__name__),
+    )
+
+    dask__docker_utils_logger = mocker.patch(
+        "simcore_service_dask_sidecar.computational_sidecar.docker_utils.logger",
+        logging.getLogger(__name__),
+    )
 
 
 @pytest.fixture
