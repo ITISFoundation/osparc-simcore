@@ -272,6 +272,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         await osparc.utils.Utils.sleep(1000);
         store.getStudyState(studyId);
       }
+      this.__loadingPage.setMessages([]);
       this.__openSnapshot(studyId, snapshotId);
     },
 
