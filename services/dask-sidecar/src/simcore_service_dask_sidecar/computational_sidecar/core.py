@@ -84,7 +84,7 @@ class ComputationalSidecar:
                     output_params.mapping or output_key
                 )
                 if file_path.exists():
-                    output_data[output_key] = FileUrl(url=file_path)
+                    output_data[output_key] = FileUrl(url=f"file://{file_path.name}")
                     continue
                 # no file.. was it required?
                 if output_params.required:
