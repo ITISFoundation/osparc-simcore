@@ -395,6 +395,43 @@ paths:
         default:
           $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 
+  /projects/{project_id}/nodes/{node_id}:retrieve:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: node_id
+        in: path
+        required: true
+        schema:
+          type: string
+
+    get:
+      tags:
+        - project
+      description: Triggers service retrieve
+      operationId: get_retrieve
+      responses:
+        "200":
+          description: Returns the amount of transferred bytes when pulling data via nodeports
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: response payload
+                    properties:
+                      size_bytes:
+                        type: integer
+                        description: amount of transferred bytes
+
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
   /projects/{study_uuid}/tags/{tag_id}:
     parameters:
       - name: tag_id
@@ -716,7 +753,8 @@ components:
         created_at:
           title: Created At
           type: string
-          description: Timestamp of the time snapshot was taken from parent.Notice that
+          description:
+            Timestamp of the time snapshot was taken from parent.Notice that
             parent might change with time
           format: date-time
         parent_uuid:
