@@ -19,7 +19,7 @@ amqp==5.0.6
     # via
     #   -c requirements/_base.txt
     #   kombu
-astroid==2.7.3
+astroid==2.8.0
     # via pylint
 async-timeout==3.0.1
     # via
@@ -194,7 +194,7 @@ pycparser==2.20
     # via
     #   -c requirements/_base.txt
     #   cffi
-pylint==2.10.2
+pylint==2.11.1
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
@@ -303,6 +303,8 @@ typing-extensions==3.10.0.2
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   aiohttp
+    #   astroid
+    #   pylint
 urllib3==1.26.6
     # via
     #   -c requirements/../../../../requirements/constraints.txt

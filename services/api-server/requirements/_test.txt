@@ -10,7 +10,7 @@ alembic==1.6.5
     #   -r requirements/_test.in
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
-astroid==2.7.3
+astroid==2.8.0
     # via pylint
 attrs==20.3.0
     # via
@@ -139,7 +139,7 @@ pycparser==2.20
     # via
     #   -c requirements/_base.txt
     #   cffi
-pylint==2.10.2
+pylint==2.11.1
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
@@ -234,6 +234,11 @@ toml==0.10.2
     #   pylint
     #   pytest
     #   pytest-cov
+typing-extensions==3.10.0.2
+    # via
+    #   -c requirements/_base.txt
+    #   astroid
+    #   pylint
 urllib3==1.26.5
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt

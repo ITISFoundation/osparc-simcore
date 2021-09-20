@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-astroid==2.7.3
+astroid==2.8.0
     # via pylint
 attrs==21.2.0
     # via
@@ -56,7 +56,7 @@ py==1.10.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pylint==2.10.2
+pylint==2.11.1
     # via -r requirements/_test.in
 pyparsing==2.4.7
     # via
@@ -89,6 +89,11 @@ toml==0.10.2
     #   pylint
     #   pytest
     #   pytest-cov
+typing-extensions==3.10.0.2
+    # via
+    #   -c requirements/_base.txt
+    #   astroid
+    #   pylint
 urllib3==1.26.6
     # via
     #   -c requirements/../../../requirements/constraints.txt

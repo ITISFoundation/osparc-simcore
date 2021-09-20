@@ -9,7 +9,7 @@ aiohttp==3.7.4.post0
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   pytest-aiohttp
-astroid==2.7.3
+astroid==2.8.0
     # via pylint
 async-timeout==3.0.1
     # via
@@ -113,7 +113,7 @@ py==1.10.0
     # via pytest
 pycparser==2.20
     # via cffi
-pylint==2.10.2
+pylint==2.11.1
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
@@ -192,6 +192,8 @@ typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+    #   astroid
+    #   pylint
 urllib3==1.26.6
     # via
     #   -c requirements/../../../requirements/constraints.txt

@@ -20,7 +20,7 @@ alembic==1.6.5
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   -r requirements/_test.in
-astroid==2.7.3
+astroid==2.8.0
     # via pylint
 async-timeout==3.0.1
     # via
@@ -120,7 +120,7 @@ ptvsd==4.3.2
     # via -r requirements/_test.in
 py==1.10.0
     # via pytest
-pylint==2.10.2
+pylint==2.11.1
     # via -r requirements/_test.in
 pyparsing==2.4.7
     # via
@@ -197,6 +197,8 @@ typing-extensions==3.10.0.2
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   aiohttp
+    #   astroid
+    #   pylint
 urllib3==1.26.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
