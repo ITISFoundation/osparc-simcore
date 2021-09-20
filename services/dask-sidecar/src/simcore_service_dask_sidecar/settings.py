@@ -16,13 +16,13 @@ class Settings(BaseCustomSettings):
     SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: str
 
     SIDECAR_HOST_HOSTNAME_PATH: Path
-    SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S: int
+    SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S: Optional[int] = 5
 
-    FORCE_START_CPU_MODE: bool
-    FORCE_START_GPU_MODE: bool
+    FORCE_START_CPU_MODE: Optional[bool] = False
+    FORCE_START_GPU_MODE: Optional[bool] = False
 
-    TARGET_MPI_NODE_CPU_COUNT: int = Field(
-        ...,
+    TARGET_MPI_NODE_CPU_COUNT: Optional[int] = Field(
+        None,
         description="If a node has this amount of CPUs it will be a candidate an MPI candidate",
     )
 
