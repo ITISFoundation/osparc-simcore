@@ -215,8 +215,8 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       if (study) {
         const startButtons = this.__getStartButtons();
         const stopButton = this.__stopButton;
-        if (study.getState() && study.getState().state) {
-          const pipelineState = study.getState().state.value;
+        const pipelineState = study.getPipelineState();
+        if (pipelineState) {
           switch (pipelineState) {
             case "PENDING":
             case "PUBLISHED":
