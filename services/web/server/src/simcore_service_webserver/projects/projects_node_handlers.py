@@ -93,6 +93,17 @@ async def get_node(request: web.Request) -> web.Response:
 
 
 @login_required
+@permission_required("project.node.read")
+async def get_retrieve(request: web.Request) -> web.Response:
+    try:
+        node_uuid = request.match_info["node_id"]
+    except KeyError as err:
+        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+
+    return web.json_response(director_v2.retrieve(request.app, node_uuid))
+
+
+@login_required
 @permission_required("project.node.delete")
 async def delete_node(request: web.Request) -> web.Response:
     user_id: int = request[RQT_USERID_KEY]

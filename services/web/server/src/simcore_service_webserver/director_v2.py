@@ -8,9 +8,12 @@ from models_library.projects_pipeline import ComputationTask
 from models_library.settings.services_common import ServicesCommonSettings
 from pydantic.types import NonNegativeInt, PositiveInt
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from servicelib.logging_utils import log_decorator
 from servicelib.aiohttp.rest_responses import wrap_as_envelope
-from servicelib.aiohttp.rest_routing import iter_path_operations, map_handlers_with_operations
+from servicelib.aiohttp.rest_routing import (
+    iter_path_operations,
+    map_handlers_with_operations,
+)
+from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
 from yarl import URL
 
@@ -388,6 +391,21 @@ async def get_service_state(app: web.Application, node_uuid: str) -> Dict:
     backend_url = URL(director2_settings.endpoint) / "dynamic_services" / f"{node_uuid}"
     return await _request_director_v2(
         app, "GET", backend_url, expected_status=web.HTTPOk
+    )
+
+
+@log_decorator(logger=log)
+async def retrieve(app: web.Application, node_uuid: str) -> Dict[str, Dict[str, int]]:
+    # when triggering retrieve endpoint
+    # this will allow to sava bigger datasets from the services
+    timeout = ServicesCommonSettings().storage_service_upload_download_timeout
+
+    director2_settings: Directorv2Settings = get_settings(app)
+    backend_url = (
+        URL(director2_settings.endpoint) / "dynamic_services" / f"{node_uuid}:retrieve"
+    )
+    return await _request_director_v2(
+        app, "GET", backend_url, expected_status=web.HTTPOk, timeout=timeout
     )
 
 
