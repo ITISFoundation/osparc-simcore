@@ -139,49 +139,8 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       return gitgraph;
     },
 
-    __dotClick: function(commit) {
-      console.log("Click on dot", commit);
-    },
-
-    __dotOver: function(commit) {
-      console.log("You're over a commit", commit);
-      this.set({
-        cursor: "pointer"
-      });
-    },
-
-    __dotOut: function(commit) {
-      console.log("You just left this commit", commit);
-      this.set({
-        cursor: "auto"
-      });
-    },
-
-    __messageClick: function(commit) {
-      console.log("Click on message", commit);
-    },
-
-    commit: function(branch, msg, id) {
-      const that = this;
-      branch.commit({
-        subject: msg,
-        onClick(commit) {
-          // eslint-disable-next-line no-underscore-dangle
-          that.__dotClick(commit);
-        },
-        onMouseOver(commit) {
-          // eslint-disable-next-line no-underscore-dangle
-          that.__dotOver(commit);
-        },
-        onMouseOut(commit) {
-          // eslint-disable-next-line no-underscore-dangle
-          that.__dotOut(commit);
-        },
-        onMessageClick(commit) {
-          // eslint-disable-next-line no-underscore-dangle
-          that.__messageClick(commit);
-        }
-      });
+    commit: function(branch, commitData) {
+      branch.commit(commitData["tags"]);
 
       const widget = new qx.ui.core.Widget().set({
         opacity: 0.1,
@@ -189,15 +148,24 @@ qx.Class.define("osparc.wrapper.GitGraph", {
         minWidth: 50,
         allowGrowX: true
       });
+      const texts = [];
+      if ("message" in commitData && commitData["message"]) {
+        texts.push(commitData["message"]);
+      }
+      if ("createdAt" in commitData && commitData["createdAt"]) {
+        texts.push(commitData["createdAt"]);
+      }
+      const hintText = texts.join("<br>");
+      const hint = new osparc.ui.hint.Hint(widget, hintText);
       this.__gitGraphInteract.add(widget, {
         top: 20*this.__commits.length + 3,
         left: 0,
         right: 0
       });
       this.__commits.push({
-        id,
+        id: commitData["id"],
         branch,
-        msg,
+        msg: commitData["tags"],
         widget
       });
       const bgColor = widget.getBackgroundColor();
@@ -206,20 +174,16 @@ qx.Class.define("osparc.wrapper.GitGraph", {
           backgroundColor: "white",
           cursor: "pointer"
         });
+        hint.show();
       });
       widget.addListener("mouseout", () => {
         widget.set({
           backgroundColor: bgColor,
           cursor: "auto"
         });
+        hint.exclude();
       });
-      widget.addListener("tap", () => {
-        this.fireDataEvent("snapshotTap", id);
-      });
-    },
-
-    addCommit: function(branch, commitData) {
-      this.commit(branch, commitData["createdAt"] + " - " + commitData["tags"], commitData["id"]);
+      widget.addListener("tap", () => this.fireDataEvent("snapshotTap", commitData["id"]));
     },
 
     buildExample: function() {
@@ -250,7 +214,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
           createdAt: osparc.utils.Utils.formatDateAndTime(date),
           parentUuid: snapshot["parent_uuid"]
         };
-        this.addCommit(master, commitData);
+        this.commit(master, commitData);
       });
     }
   }
