@@ -1,8 +1,4 @@
-""" snapshots (and parametrization) app module setup
-
-    Extend project's business logic by adding two new concepts, namely
-        - project snapshots and
-        - parametrizations
+""" Version control app module
 
 """
 import logging
@@ -14,7 +10,7 @@ from servicelib.aiohttp.application_setup import (
     app_module_setup,
 )
 
-from . import snapshots_api_handlers
+from . import version_control_handlers, version_control_handlers_snapshots
 from .constants import APP_SETTINGS_KEY
 from .settings import ApplicationSettings
 
@@ -27,11 +23,11 @@ log = logging.getLogger(__name__)
     depends=["simcore_service_webserver.projects"],
     logger=log,
 )
-def setup_snapshots(app: web.Application):
+def setup_version_control(app: web.Application):
 
     settings: ApplicationSettings = app[APP_SETTINGS_KEY]
     if not settings.WEBSERVER_DEV_FEATURES_ENABLED:
         raise SkipModuleSetup(reason="Development feature")
 
-    # TODO: validate routes against OAS
-    app.add_routes(snapshots_api_handlers.routes)
+    app.add_routes(version_control_handlers.routes)
+    app.add_routes(version_control_handlers_snapshots.routes)

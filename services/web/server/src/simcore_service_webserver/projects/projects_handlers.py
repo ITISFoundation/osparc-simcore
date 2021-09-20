@@ -8,6 +8,7 @@ from typing import Any, Coroutine, Dict, List, Optional, Set
 
 from aiohttp import web
 from jsonschema import ValidationError
+from models_library.projects import ProjectID
 from models_library.projects_state import ProjectState
 from servicelib.rest_pagination_utils import PageResponseLimitOffset
 from servicelib.utils import logged_gather
@@ -273,7 +274,7 @@ async def replace_project(request: web.Request):
     """
     user_id: int = request[RQT_USERID_KEY]
     try:
-        project_uuid = request.match_info["project_id"]
+        project_uuid = ProjectID(request.match_info["project_id"])
         new_project = await request.json()
 
     except KeyError as err:
@@ -290,7 +291,7 @@ async def replace_project(request: web.Request):
         "project.update | project.workbench.node.inputs.update",
         context={
             "dbapi": db,
-            "project_id": project_uuid,
+            "project_id": f"{project_uuid}",
             "user_id": user_id,
             "new_data": new_project,
         },
@@ -301,7 +302,7 @@ async def replace_project(request: web.Request):
 
         current_project = await projects_api.get_project_for_user(
             request.app,
-            project_uuid=project_uuid,
+            project_uuid=f"{project_uuid}",
             user_id=user_id,
             include_templates=True,
             include_state=True,
@@ -311,7 +312,7 @@ async def replace_project(request: web.Request):
             await check_permission(request, "project.access_rights.update")
 
         new_project = await db.replace_user_project(
-            new_project, user_id, project_uuid, include_templates=True
+            new_project, user_id, f"{project_uuid}", include_templates=True
         )
         await director_v2.create_or_update_pipeline(request.app, user_id, project_uuid)
         # Appends state
@@ -323,7 +324,9 @@ async def replace_project(request: web.Request):
         )
 
     except ValidationError as exc:
-        raise web.HTTPBadRequest from exc
+        raise web.HTTPBadRequest(
+            reason=f"Invalid project update: {exc.message}"
+        ) from exc
 
     except ProjectInvalidRightsError as exc:
         raise web.HTTPForbidden(

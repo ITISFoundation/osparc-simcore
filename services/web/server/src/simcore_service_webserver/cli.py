@@ -41,7 +41,7 @@ def create_default_parser() -> ArgumentParser:
 
 
 def setup_parser(parser: ArgumentParser) -> ArgumentParser:
-    """ Adds all options to a parser"""
+    """Adds all options to a parser"""
     # parser.add_argument('names', metavar='NAME', nargs=argparse.ZERO_OR_MORE,
     #                help="A name of something.")
 
@@ -70,7 +70,7 @@ def create_environ(*, skip_host_environ: bool = False) -> Dict[str, str]:
     if rootdir is not None:
         environ.update(
             {
-                "OSPARC_SIMCORE_REPO_ROOTDIR": str(rootdir),
+                "OSPARC_SIMCORE_REPO_ROOTDIR": f"{rootdir}",
             }
         )
 
@@ -90,7 +90,7 @@ def create_environ(*, skip_host_environ: bool = False) -> Dict[str, str]:
 
 
 def parse(args: Optional[List], parser: ArgumentParser) -> Dict:
-    """ Parse options and returns a configuration object """
+    """Parse options and returns a configuration object"""
     if args is None:
         args = sys.argv[1:]
 

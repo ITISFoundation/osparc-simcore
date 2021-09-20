@@ -22,9 +22,10 @@ async def assert_status(
     """
     json_response = await response.json()
     data, error = unwrap_envelope(json_response)
-    assert (
-        response.status == expected_cls.status_code
-    ), f"received: ({data},{error}), \nexpected ({expected_cls.status_code}, {expected_msg})"
+    assert response.status == expected_cls.status_code, (
+        f"received {response.status}: ({data},{error})"
+        f", expected {expected_cls.status_code} : {expected_msg or ''}"
+    )
 
     if issubclass(expected_cls, HTTPError):
         do_assert_error(data, error, expected_cls, expected_msg, expected_error_code)
