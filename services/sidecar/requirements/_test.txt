@@ -33,6 +33,7 @@ attrs==20.2.0
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   aiohttp
+    #   jsonschema
     #   pytest
 certifi==2021.5.30
     # via
@@ -74,6 +75,8 @@ iniconfig==1.1.1
     # via pytest
 isort==5.9.3
     # via pylint
+jsonschema==3.2.0
+    # via -r requirements/_test.in
 lazy-object-proxy==1.4.3
     # via astroid
 mako==1.1.4
@@ -127,6 +130,8 @@ pyparsing==2.4.7
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   packaging
+pyrsistent==0.18.0
+    # via jsonschema
 pytest==6.2.5
     # via
     #   -r requirements/_test.in
@@ -174,6 +179,7 @@ six==1.15.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
+    #   jsonschema
     #   packaging
     #   python-dateutil
     #   websocket-client
