@@ -165,29 +165,32 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       // ping for some time until it is really ready
       const pingRequest = new qx.io.request.Xhr(srvUrl);
       pingRequest.addListenerOnce("success", () => {
-        // retrieveInputs
-        let urlUpdate = srvUrl + "/retrieve";
-        urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
-        const updReq = new qx.io.request.Xhr();
-        const reqData = {
-          "port_keys": []
-        };
-        updReq.set({
-          url: urlUpdate,
-          method: "POST",
-          requestData: qx.util.Serializer.toJson(reqData)
-        });
-        updReq.addListener("success", e => {
-          this.getIFrame().setSource(srvUrl);
-          this.__iFrameChanged();
-        }, this);
-        updReq.send();
+        this.__retrieveInputs(srvUrl);
       }, this);
       pingRequest.addListenerOnce("fail", () => {
         const interval = 2000;
         qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
       });
       pingRequest.send();
+    },
+
+    __retrieveInputs: function(srvUrl) {
+      let urlUpdate = srvUrl + "/retrieve";
+      urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
+      const updReq = new qx.io.request.Xhr();
+      const reqData = {
+        "port_keys": []
+      };
+      updReq.set({
+        url: urlUpdate,
+        method: "POST",
+        requestData: qx.util.Serializer.toJson(reqData)
+      });
+      updReq.addListener("success", e => {
+        this.getIFrame().setSource(srvUrl);
+        this.__iFrameChanged();
+      }, this);
+      updReq.send();
     },
 
     __iFrameChanged: function() {
