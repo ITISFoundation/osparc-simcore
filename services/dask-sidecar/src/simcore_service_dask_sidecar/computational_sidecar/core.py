@@ -27,6 +27,7 @@ from .docker_utils import (
     pull_image,
 )
 from .errors import ServiceBadFormattedOutputError, ServiceRunError
+from .models import DockerBasicAuth
 
 logger = create_dask_worker_logger(__name__)
 CONTAINER_WAIT_TIME_SECS = 2
@@ -48,6 +49,7 @@ async def managed_task_volumes(base_path: Path) -> AsyncIterator[TaskSharedVolum
 
 @dataclass
 class ComputationalSidecar:
+    docker_auth: DockerBasicAuth
     service_key: str
     service_version: str
     input_data: TaskInputData
@@ -85,9 +87,12 @@ class ComputationalSidecar:
         async with Docker() as docker_client, managed_task_volumes(
             Path(f"/tmp/{uuid4()}")
         ) as task_volumes:
-            await pull_image(docker_client, self.service_key, self.service_version)
+            await pull_image(
+                docker_client, self.docker_auth, self.service_key, self.service_version
+            )
 
             config = await create_container_config(
+                docker_registry=self.docker_auth.server_address,
                 service_key=self.service_key,
                 service_version=self.service_version,
                 command=command,
