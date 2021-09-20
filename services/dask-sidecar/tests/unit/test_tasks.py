@@ -32,6 +32,7 @@ from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.computational_sidecar.models import (
     FileUrl,
     TaskInputData,
+    TaskOutputData,
 )
 from simcore_service_dask_sidecar.tasks import (
     _is_aborted_cb,
@@ -108,7 +109,7 @@ class ServiceExampleParam:
     command: List[str]
     input_data: TaskInputData
     output_data_keys: Dict[str, Any]
-    expected_output_data: Dict[str, Any]
+    expected_output_data: TaskOutputData
     expected_logs: List[str]
 
 
@@ -193,7 +194,9 @@ def ubuntu_task(directory_server: List[URL]) -> ServiceExampleParam:
         command=command,
         input_data=input_data,
         output_data_keys={"pytest_output_1": {"type": str}},
-        expected_output_data={"pytest_output_1": "is quite an amazing feat"},
+        expected_output_data=TaskOutputData.parse_obj(
+            {"pytest_output_1": "is quite an amazing feat"}
+        ),
         expected_logs=[
             '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
             "This file is named: file_1",
@@ -245,10 +248,7 @@ async def test_run_computational_sidecar_real_fct(
 
     for k, v in output_data.items():
         assert k in task.expected_output_data
-        if isinstance(task.expected_output_data[k], re.Pattern):
-            assert task.expected_output_data[k].match(f"{v}")
-        else:
-            assert v == task.expected_output_data[k]
+        assert v == task.expected_output_data[k]
 
 
 @pytest.mark.parametrize(
@@ -309,10 +309,7 @@ async def test_run_computational_sidecar_dask(
 
     for k, v in output_data.items():
         assert k in task.expected_output_data
-        if isinstance(task.expected_output_data[k], re.Pattern):
-            assert task.expected_output_data[k].match(f"{v}")
-        else:
-            assert v == task.expected_output_data[k]
+        assert v == task.expected_output_data[k]
 
 
 @pytest.mark.parametrize(
