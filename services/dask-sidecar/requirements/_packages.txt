@@ -4,8 +4,6 @@
 #
 #    pip-compile --output-file=requirements/_packages.txt --strip-extras requirements/_packages.in
 #
-aio-pika==6.7.1
-    # via -r requirements/../../../services/sidecar/requirements/_base.txt
 aiodebug==1.1.2
     # via
     #   -c requirements/_base.txt
@@ -132,7 +130,6 @@ decorator==4.4.2
 dnspython==2.0.0
     # via
     #   -c requirements/_base.txt
-    #   -r requirements/../../../services/sidecar/requirements/_base.txt
     #   email-validator
 docker==5.0.2
     # via
@@ -142,12 +139,7 @@ docker==5.0.2
 email-validator==1.1.1
     # via
     #   -c requirements/_base.txt
-    #   -r requirements/../../../services/sidecar/requirements/_base.txt
     #   pydantic
-hiredis==1.1.0
-    # via
-    #   -r requirements/../../../services/sidecar/requirements/_base.txt
-    #   aioredis
 idna==2.10
     # via
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
@@ -224,26 +216,13 @@ psycopg2-binary==2.9.1
 pydantic==1.8.2
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-    #   -r requirements/../../../services/sidecar/requirements/_base.txt
 pyinstrument==3.4.2
-    # via
-    #   -c requirements/_base.txt
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/../../../services/sidecar/requirements/_base.txt
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 pyinstrument-cext==0.2.4
     # via
     #   -c requirements/_base.txt
@@ -262,12 +241,7 @@ pytz==2020.1
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -323,9 +297,6 @@ trafaret-config==2.0.2
 typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt
-    #   -r requirements/../../../services/sidecar/requirements/_base.txt
-    #   aiodocker
-    #   aiohttp
     #   pydantic
 ujson==4.0.2
     # via
