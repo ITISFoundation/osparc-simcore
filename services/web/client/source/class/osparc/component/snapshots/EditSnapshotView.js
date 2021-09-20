@@ -15,17 +15,13 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
+qx.Class.define("osparc.component.snapshots.EditSnapshotView", {
   extend: qx.ui.core.Widget,
 
-  construct: function(study) {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
-
-    this.set({
-      study
-    });
 
     this.__buildForm();
   },
@@ -35,27 +31,19 @@ qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
     "cancel": "qx.event.type.Event"
   },
 
-  properties: {
-    study: {
-      check: "osparc.data.model.Study",
-      init: null,
-      nullable: false
-    }
-  },
-
   members: {
     __form: null,
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "label":
+        case "tags":
           control = new qx.ui.form.TextField();
           break;
-        case "save-data":
-          control = new qx.ui.form.CheckBox().set({
-            value: false,
-            enabled: false
+        case "message":
+          control = new qx.ui.form.TextArea().set({
+            autoSize: true,
+            minimalLineHeight: 3
           });
           break;
         case "cancel-button": {
@@ -89,14 +77,11 @@ qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
       const renderer = this.__renderer = new qx.ui.form.renderer.Single(form);
       this._add(renderer);
 
-      const study = this.getStudy();
+      const tags = this.getChildControl("tags");
+      form.add(tags, "Tags", null, "tags");
 
-      const label = this.getChildControl("label");
-      form.add(label, "Label", null, "label");
-      study.getSnapshots()
-        .then(snapshots => {
-          label.setValue("V"+snapshots.length);
-        });
+      const message = this.getChildControl("message");
+      form.add(message, "Message", null, "message");
 
       // buttons
       const cancelButton = this.getChildControl("cancel-button");
@@ -105,12 +90,12 @@ qx.Class.define("osparc.component.snapshots.TakeSnapshotView", {
       form.addButton(okButton);
     },
 
-    getLabel: function() {
-      return this.__form.getItem("label").getValue();
+    getTag: function() {
+      return this.__form.getItem("tags").getValue();
     },
 
-    getSaveData: function() {
-      return this.__form.getItem("save-data").getValue();
+    getMessage: function() {
+      return this.__form.getItem("message").getValue();
     }
   }
 });
