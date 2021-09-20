@@ -1,16 +1,16 @@
-import re
-import shutil
-import tempfile
-import threading
-from collections import namedtuple
-
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-member
 # pylint:disable=protected-access
 # pylint:disable=too-many-arguments
-from os import stat
+
+
+import re
+import shutil
+import tempfile
+import threading
+from collections import namedtuple
 from pathlib import Path
 from typing import Any, Dict, Optional, Type, Union
 
