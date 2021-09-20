@@ -263,7 +263,12 @@ urllib3==1.26.6
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
 uvicorn==0.13.4
-    # via fastapi
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   fastapi
 uvloop==0.15.2
     # via uvicorn
 vine==5.0.0

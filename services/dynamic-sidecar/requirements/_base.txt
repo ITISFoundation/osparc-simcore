@@ -15,8 +15,6 @@ aiohttp==3.7.4.post0
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   aiodocker
-asgiref==3.4.0
-    # via uvicorn
 async-generator==1.10
     # via -r requirements/_base.in
 async-timeout==3.0.1
@@ -40,7 +38,7 @@ chardet==4.0.0
     # via
     #   aiohttp
     #   requests
-click==8.0.1
+click==7.1.2
     # via
     #   typer
     #   uvicorn
@@ -153,8 +151,13 @@ urllib3==1.26.6
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-uvicorn==0.15.0
-    # via -r requirements/_base.in
+uvicorn==0.13.4
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.in
 websocket-client==0.59.0
     # via
     #   docker
