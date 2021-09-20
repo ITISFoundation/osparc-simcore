@@ -22,7 +22,7 @@ certifi==2021.5.30
     #   requests
 chardet==4.0.0
     # via requests
-click==7.1.2
+click==8.0.1
     # via
     #   typer
     #   uvicorn
@@ -139,7 +139,7 @@ sniffio==1.2.0
     #   httpx
 starlette==0.14.2
     # via fastapi
-typer==0.3.2
+typer==0.4.0
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==3.10.0.2
     # via

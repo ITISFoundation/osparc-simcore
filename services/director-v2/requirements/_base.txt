@@ -246,7 +246,7 @@ tornado==6.1
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-typer==0.3.2
+typer==0.4.0
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==3.10.0.2
     # via
