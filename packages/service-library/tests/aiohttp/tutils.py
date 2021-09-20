@@ -1,6 +1,8 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-import
+# pylint: disable=no-self-use
+
 import asyncio
 import json
 
@@ -16,8 +18,7 @@ class Data:
 
 
 class Handlers:
-    @staticmethod
-    async def get_health_wrong(request: web.Request):
+    async def get_health_wrong(self, request: web.Request):
         out = {
             "name": __name__.split(".")[0],
             "version": "1.0",
@@ -26,8 +27,7 @@ class Handlers:
         }
         return out
 
-    @staticmethod
-    async def get_health(request: web.Request):
+    async def get_health(self, request: web.Request):
         out = {
             "name": __name__.split(".")[0],
             "version": "1.0",
@@ -36,33 +36,26 @@ class Handlers:
         }
         return out
 
-    @staticmethod
-    async def get_dict(request: web.Request):
+    async def get_dict(self, request: web.Request):
         return {"x": 3, "y": "3"}
 
-    @staticmethod
-    async def get_envelope(request: web.Request):
+    async def get_envelope(self, request: web.Request):
         data = {"x": 3, "y": "3"}
         return {"error": None, "data": data}
 
-    @staticmethod
-    async def get_list(request: web.Request):
+    async def get_list(self, request: web.Request):
         return [{"x": 3, "y": "3"}] * 3
 
-    @staticmethod
-    async def get_attobj(request: web.Request):
+    async def get_attobj(self, request: web.Request):
         return Data(3, "3")
 
-    @staticmethod
-    async def get_string(request: web.Request):
+    async def get_string(self, request: web.Request):
         return "foo"
 
-    @staticmethod
-    async def get_number(request: web.Request):
+    async def get_number(self, request: web.Request):
         return 3
 
-    @staticmethod
-    async def get_mixed(request: web.Request):
+    async def get_mixed(self, request: web.Request):
         data = [{"x": 3, "y": "3", "z": [Data(3, "3")] * 2}] * 3
         return data
 
