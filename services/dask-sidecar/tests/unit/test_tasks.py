@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
@@ -167,6 +168,14 @@ def ubuntu_task(directory_server: List[URL]) -> ServiceExampleParam:
         [f"echo $(cat ${{INPUT_FOLDER}}/{file})" for file in file_names]
     )
 
+    expected_raw_outputs = {
+        "pytest_string": "is quite an amazing feat",
+        "pytest_integer": 432,
+        "pytest_float": 3.2,
+        "pytest_bool": False,
+    }
+    bash_json_command = json.dumps(expected_raw_outputs).replace('"', '\\"')
+
     command = [
         "/bin/bash",
         "-c",
@@ -175,7 +184,7 @@ def ubuntu_task(directory_server: List[URL]) -> ServiceExampleParam:
         "echo $(cat ${INPUT_FOLDER}/inputs.json) && "
         f"{check_input_file_command} && "
         f"{echo_input_files_in_log_command} &&"
-        'echo {\\"pytest_output_1\\":\\"is quite an amazing feat\\"} > ${OUTPUT_FOLDER}/outputs.json',
+        f"echo {bash_json_command} > ${{OUTPUT_FOLDER}}/outputs.json",
     ]
     input_data = TaskInputData.parse_obj(
         {
@@ -195,11 +204,9 @@ def ubuntu_task(directory_server: List[URL]) -> ServiceExampleParam:
         command=command,
         input_data=input_data,
         output_data_keys=TaskOutputDataSchema.parse_obj(
-            {"pytest_output_1": {"required": True}}
+            {k: {"required": True} for k in expected_raw_outputs.keys()}
         ),
-        expected_output_data=TaskOutputData.parse_obj(
-            {"pytest_output_1": "is quite an amazing feat"}
-        ),
+        expected_output_data=TaskOutputData.parse_obj(expected_raw_outputs),
         expected_logs=[
             '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
             "This file is named: file_1",
