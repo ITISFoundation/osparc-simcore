@@ -33,6 +33,7 @@ from simcore_service_dask_sidecar.computational_sidecar.models import (
     FileUrl,
     TaskInputData,
     TaskOutputData,
+    TaskOutputDataSchema,
 )
 from simcore_service_dask_sidecar.tasks import (
     _is_aborted_cb,
@@ -108,7 +109,7 @@ class ServiceExampleParam:
     service_version: str
     command: List[str]
     input_data: TaskInputData
-    output_data_keys: Dict[str, Any]
+    output_data_keys: TaskOutputDataSchema
     expected_output_data: TaskOutputData
     expected_logs: List[str]
 
@@ -193,7 +194,9 @@ def ubuntu_task(directory_server: List[URL]) -> ServiceExampleParam:
         service_version="latest",
         command=command,
         input_data=input_data,
-        output_data_keys={"pytest_output_1": {"type": str}},
+        output_data_keys=TaskOutputDataSchema.parse_obj(
+            {"pytest_output_1": {"required": True}}
+        ),
         expected_output_data=TaskOutputData.parse_obj(
             {"pytest_output_1": "is quite an amazing feat"}
         ),

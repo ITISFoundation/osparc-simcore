@@ -5,6 +5,7 @@ from pydantic import (
     AnyUrl,
     BaseModel,
     ByteSize,
+    Extra,
     Field,
     StrictBool,
     StrictFloat,
@@ -56,6 +57,39 @@ class TaskInputData(BaseModel):
 
     def items(self) -> ItemsView[PortKey, PortValue]:
         return self.__root__.items()
+
+
+class PortSchema(BaseModel):
+    required: bool
+
+    class Config:
+        extra = Extra.forbid
+
+
+class FilePortSchema(PortSchema):
+    mapping: Optional[str] = None
+
+
+PortSchemaValue = Union[PortSchema, FilePortSchema]
+
+
+class TaskOutputDataSchema(BaseModel):
+    __root__: Dict[PortKey, PortSchemaValue]
+
+    def __getitem__(self, k: PortKey) -> PortSchemaValue:
+        return self.__root__.__getitem__(k)
+
+    def __setitem__(self, k: PortKey, v: PortSchemaValue) -> None:
+        self.__root__.__setitem__(k, v)
+
+    def items(self) -> ItemsView[PortKey, PortSchemaValue]:
+        return self.__root__.items()
+
+    def keys(self) -> KeysView[PortKey]:
+        return self.__root__.keys()
+
+    def __iter__(self) -> Any:
+        return self.__root__.__iter__()
 
 
 class TaskOutputData(BaseModel):
