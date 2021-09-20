@@ -186,19 +186,28 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __takeSnapshot: function() {
+      const editSnapshotView = new osparc.component.snapshots.EditSnapshotView();
+      const tagCtrl = editSnapshotView.getChildControl("tags");
       const study = this.getStudy();
-      const takeSnapshotView = new osparc.component.snapshots.TakeSnapshotView(study);
+      study.getSnapshots()
+        .then(snapshots => {
+          tagCtrl.setValue("V"+snapshots.length);
+        });
       const title = this.tr("Take Snapshot");
-      const win = osparc.ui.window.Window.popUpInWindow(takeSnapshotView, title, 400, 140);
-      takeSnapshotView.addListener("takeSnapshot", () => {
-        const label = takeSnapshotView.getLabel();
+      const win = osparc.ui.window.Window.popUpInWindow(editSnapshotView, title, 400, 180);
+      editSnapshotView.addListener("takeSnapshot", () => {
+        const tag = editSnapshotView.getTag();
+        const message = editSnapshotView.getMessage();
         const workbenchToolbar = this.__mainPanel.getToolbar();
         const takeSnapshotBtn = workbenchToolbar.getChildControl("take-snapshot-btn");
         takeSnapshotBtn.setFetching(true);
         const params = {
           url: {
-            "studyId": study.getUuid(),
-            "snapshot_label": label
+            "studyId": study.getUuid()
+          },
+          data: {
+            "tag": tag,
+            "message": message
           }
         };
         osparc.data.Resources.fetch("snapshots", "takeSnapshot", params)
@@ -210,7 +219,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
         win.close();
       }, this);
-      takeSnapshotView.addListener("cancel", () => {
+      editSnapshotView.addListener("cancel", () => {
         win.close();
       }, this);
     },

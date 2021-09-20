@@ -162,29 +162,38 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           get: {
             method: "GET",
-            url: statics.API + "/projects/{studyId}/snapshots"
+            url: statics.API + "/repos/projects/{studyId}/checkpoints"
           },
           getPage: {
             method: "GET",
-            url: statics.API + "/projects/{studyId}/snapshots?offset={offset}&limit={limit}"
+            url: statics.API + "/repos/projects/{studyId}/checkpoints?offset={offset}&limit={limit}"
           },
           getOne: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects/{studyId}/snapshots/{snapshotId}"
+            url: statics.API + "/repos/projects/{studyId}/checkpoints/{snapshotId}"
+          },
+          updateSnapshot: {
+            method: "PATCH",
+            url: statics.API + "/repos/projects/{studyId}/checkpoints/{snapshotId}"
+          },
+          checkout: {
+            method: "POST",
+            url: statics.API + "/repos/projects/{studyId}/checkpoints/{snapshotId}:checkout"
+          },
+          preview: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/repos/projects/{studyId}/checkpoints/{snapshotId}/workbench/view"
           },
           getParameters: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects/{studyId}/snapshots/{snapshotId}/parameters"
-          },
-          updateSnapshot: {
-            method: "PATCH",
-            url: statics.API + "/projects/{studyId}/snapshots/{snapshotId}"
+            url: statics.API + "/repos/projects/{studyId}/checkpoints/{snapshotId}/parameters"
           },
           takeSnapshot: {
             method: "POST",
-            url: statics.API + "/projects/{studyId}/snapshots?snapshot_label={snapshot_label}"
+            url: statics.API + "/repos/projects/{studyId}/checkpoints"
           }
         }
       },

@@ -43,6 +43,10 @@ qx.Class.define("osparc.utils.Utils", {
       el.style["transformOrigin"] = oString;
     },
 
+    sleep: function(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    },
+
     isDevelopmentPlatform: function() {
       return new Promise((resolve, reject) => {
         osparc.utils.LibVersions.getPlatformName()
