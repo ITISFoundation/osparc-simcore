@@ -12,7 +12,8 @@ from simcore_service_sidecar.celery_task_utils import is_gpu_node
 
 def _toggle_gpu_mock(mocker, has_gpu: bool) -> None:
     class FakeContainer:
-        async def wait(self, **kwargs):
+        @staticmethod
+        async def wait(**kwargs):
             return {"StatusCode": 0 if has_gpu else 127}
 
     containers_get = mocker.patch(

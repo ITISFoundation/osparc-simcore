@@ -45,8 +45,8 @@ def compute_this_user_cluster_access_rights(
 
 
 class ClustersRepository(BaseRepository):
+    @staticmethod
     async def _clusters_from_cluster_ids(
-        self,
         conn: sa.engine.Connection,
         cluster_ids: Set[PositiveInt],
         offset: int = 0,
