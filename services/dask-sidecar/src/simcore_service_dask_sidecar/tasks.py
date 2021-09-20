@@ -25,7 +25,6 @@ def get_settings() -> str:
 
 def _get_dask_task_state() -> Optional[TaskState]:
     worker = get_worker()
-    worker.log_event("myevent", "it sucks")
     return worker.tasks.get(worker.get_current_task())
 
 
@@ -58,7 +57,6 @@ async def _run_computational_sidecar_async(
     )
 
     task: Optional[TaskState] = _get_dask_task_state()
-
     _retry = 0
     _max_retries = 1
     _sidecar_bootmode = _get_task_boot_mode(task)
