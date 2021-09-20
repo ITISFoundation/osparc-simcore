@@ -13,7 +13,6 @@ from ..settings import Settings
 from ..utils import create_dask_worker_logger
 from .errors import ComputationalSidecarException
 from .models import ContainerHostConfig, DockerBasicAuth, DockerContainerConfig
-from .task_shared_volume import TaskSharedVolumes
 
 logger = create_dask_worker_logger(__name__)
 
@@ -23,7 +22,7 @@ async def create_container_config(
     service_key: str,
     service_version: str,
     command: List[str],
-    volumes: TaskSharedVolumes,
+    comp_volume_mount_point: str,
 ) -> DockerContainerConfig:
 
     return DockerContainerConfig(
@@ -40,9 +39,9 @@ async def create_container_config(
         Labels={},
         HostConfig=ContainerHostConfig(
             Binds=[
-                f"{volumes.input_folder}:/inputs",
-                f"{volumes.output_folder}:/outputs",
-                f"{volumes.log_folder}:/logs",
+                f"{comp_volume_mount_point}/inputs:/inputs",
+                f"{comp_volume_mount_point}/outputs:/outputs",
+                f"{comp_volume_mount_point}/logs:/logs",
             ],
             Memory=ByteSize(1024 ** 3),
             NanoCPUs=1000000000,
@@ -64,6 +63,7 @@ async def managed_container(
         try:
             if container:
                 await container.delete(remove=True, v=True, force=True)
+            logger.info("Completed run of %s", config.image)
         except DockerError:
             logger.exception(
                 "Unknown error with docker client when running container %s",
@@ -193,14 +193,14 @@ async def pull_image(
 async def get_computational_shared_data_mount_point(docker_client: Docker) -> str:
     app_settings = Settings.create_from_envs()
     try:
-        logger.warning(
+        logger.debug(
             "getting computational shared data mount point for %s",
             app_settings.SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME,
         )
         volume_attributes = await DockerVolume(
             docker_client, app_settings.SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME
         ).show()
-        logger.warning(
+        logger.debug(
             "found following volume attributes: %s", pformat(volume_attributes)
         )
         return volume_attributes["Mountpoint"]

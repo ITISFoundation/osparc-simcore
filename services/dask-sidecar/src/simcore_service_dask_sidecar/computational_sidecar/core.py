@@ -1,8 +1,10 @@
 import asyncio
 import json
+import shutil
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from pprint import pformat
 from types import TracebackType
 from typing import AsyncIterator, Awaitable, List, Optional, Type
 from uuid import uuid4
@@ -12,6 +14,7 @@ from aiodocker import Docker
 from pydantic import ValidationError
 from yarl import URL
 
+from ..settings import Settings
 from ..utils import create_dask_worker_logger
 from .docker_utils import (
     create_container_config,
@@ -44,8 +47,15 @@ async def managed_task_volumes(base_path: Path) -> AsyncIterator[TaskSharedVolum
         task_shared_volume.create()
         yield task_shared_volume
     finally:
-        if task_shared_volume:
-            task_shared_volume.delete()
+
+        def log_error(_, path, excinfo):
+            logger.warning(
+                "Failed to remove %s [reason: %s]. Should consider pruning files in host later",
+                path,
+                excinfo,
+            )
+
+        shutil.rmtree(base_path, onerror=log_error)
 
 
 @dataclass
@@ -85,22 +95,25 @@ class ComputationalSidecar:
             ) from exc
 
     async def run(self, command: List[str]) -> TaskOutputData:
+        settings = Settings.create_from_envs()
+        run_id = f"{uuid4()}"
         async with Docker() as docker_client, managed_task_volumes(
-            Path(
-                f"/{await get_computational_shared_data_mount_point(docker_client)}/{uuid4()}"
-            )
+            Path(f"{settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER}/{run_id}")
         ) as task_volumes:
             await pull_image(
                 docker_client, self.docker_auth, self.service_key, self.service_version
             )
-
+            computational_shared_data_mount_point = (
+                await get_computational_shared_data_mount_point(docker_client)
+            )
             config = await create_container_config(
                 docker_registry=self.docker_auth.server_address,
                 service_key=self.service_key,
                 service_version=self.service_version,
                 command=command,
-                volumes=task_volumes,
+                comp_volume_mount_point=f"{computational_shared_data_mount_point}/{run_id}",
             )
+            logger.debug("Container configuration: \n%s", pformat(config.dict()))
 
             # set up the inputs
             await self._write_input_data(task_volumes)
@@ -128,6 +141,12 @@ class ComputationalSidecar:
                             container_data["State"]["ExitCode"],
                             await container.log(stdout=True, stderr=True, tail=20),
                         )
+                    logger.info(
+                        "%s:%s - %s completed successfully",
+                        self.service_key,
+                        self.service_version,
+                        container.id,
+                    )
             # get the outputs
             return await self._retrieve_output_data(task_volumes)
 

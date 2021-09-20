@@ -14,6 +14,7 @@ class Settings(BaseCustomSettings):
     # sidecar config ---
 
     SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: str
+    SIDECAR_COMP_SERVICES_SHARED_FOLDER: Path
 
     SIDECAR_HOST_HOSTNAME_PATH: Path
     SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S: Optional[int] = 5
