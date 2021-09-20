@@ -41,6 +41,8 @@ qx.Class.define("osparc.wrapper.GitGraph", {
     VERSION: "1.4.0",
     URL: "https://github.com/nicoespeon/gitgraph.js/tree/master/packages/gitgraph-js",
 
+    COMMIT_SPACING: 20,
+
     getTemplateConfig: function() {
       const textColor = qx.theme.manager.Color.getInstance().resolve("text");
       return {
@@ -52,7 +54,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
           "#e01a94"
         ],
         commit: {
-          spacing: 20,
+          spacing: osparc.wrapper.GitGraph.COMMIT_SPACING,
           dot: {
             size: 3
           },
@@ -62,9 +64,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
             displayHash: false,
             color: textColor,
             font: "normal 13px Roboto"
-          },
-          shouldDisplayTooltipsInCompactMode: true,
-          tooltipHTMLFormatter: commit => commit.message
+          }
         },
         branch: {
           spacing: 20,
@@ -144,7 +144,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
 
       const widget = new qx.ui.core.Widget().set({
         opacity: 0.1,
-        height: 20,
+        height: this.self().COMMIT_SPACING,
         minWidth: 50,
         allowGrowX: true
       });
@@ -158,7 +158,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       const hintText = texts.join("<br>");
       const hint = new osparc.ui.hint.Hint(widget, hintText);
       this.__gitGraphInteract.add(widget, {
-        top: 20*this.__commits.length + 3,
+        top: this.self().COMMIT_SPACING*this.__commits.length + 3,
         left: 0,
         right: 0
       });
