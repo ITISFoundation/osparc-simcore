@@ -1,14 +1,16 @@
+import re
+import shutil
+import tempfile
+import threading
+from collections import namedtuple
+
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-member
 # pylint:disable=protected-access
 # pylint:disable=too-many-arguments
-import re
-import shutil
-import tempfile
-import threading
-from collections import namedtuple
+from os import stat
 from pathlib import Path
 from typing import Any, Dict, Optional, Type, Union
 
@@ -540,7 +542,8 @@ async def test_valid_port(
         project_id: str
         node_uuid: str
 
-        async def get(self, key):
+        @staticmethod
+        async def get(key):
             # this gets called when a node links to another node we return the get value but for files it needs to be a real one
             return (
                 another_node_file
@@ -548,12 +551,12 @@ async def test_valid_port(
                 else exp_get_value
             )
 
-        async def _node_ports_creator_cb(self, node_uuid: str):
-            return FakeNodePorts(
-                user_id=user_id, project_id=project_id, node_uuid=node_uuid
-            )
+        @classmethod
+        async def _node_ports_creator_cb(cls, node_uuid: str) -> "FakeNodePorts":
+            return cls(user_id=user_id, project_id=project_id, node_uuid=node_uuid)
 
-        async def save_to_db_cb(self, node_ports):
+        @staticmethod
+        async def save_to_db_cb(node_ports):
             return
 
     fake_node_ports = FakeNodePorts(
