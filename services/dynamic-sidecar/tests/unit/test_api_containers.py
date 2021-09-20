@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 
+import importlib
 import json
 from typing import Any, Dict, List
 
@@ -122,11 +123,11 @@ def mock_data_manager(mocker: MockerFixture) -> None:
         "simcore_service_dynamic_sidecar.modules.data_manager.pull_path_if_exists",
         return_value=None,
     )
-    from importlib import reload
 
-    import simcore_service_dynamic_sidecar
-
-    reload(simcore_service_dynamic_sidecar.api.containers)  # type: ignore
+    want_reload_module = importlib.import_module(
+        "simcore_service_dynamic_sidecar.api.containers"
+    )
+    importlib.reload(want_reload_module)
 
 
 @pytest.fixture
