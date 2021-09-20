@@ -72,14 +72,14 @@ RUN pip --no-cache-dir install --upgrade \
   wheel \
   setuptools
 
-# copy dask-sidecar and dependencies
-COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/dask-sidecar /build/services/dask-sidecar
+WORKDIR /build
 
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
+COPY  --chown=scu:scu services/dask-sidecar/requirements/_base.txt .
+COPY  --chown=scu:scu services/dask-sidecar/requirements/_packages.txt .
 RUN pip --no-cache-dir install \
-  -r /build/services/dask-sidecar/requirements/_base.txt \
-  -r /build/services/dask-sidecar/requirements/_packages.txt
+  -r _base.txt \
+  -r _packages.txt
 
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
@@ -89,8 +89,13 @@ RUN pip --no-cache-dir install \
 #
 FROM build as prod-only-deps
 
-WORKDIR /build/services/dask-sidecar
 ENV SC_BUILD_TARGET=prod-only-deps
+
+COPY --chown=scu:scu packages /build/packages
+COPY --chown=scu:scu services/dask-sidecar /build/services/dask-sidecar
+
+WORKDIR /build/services/dask-sidecar
+
 RUN pip --no-cache-dir install -r requirements/prod.txt
 
 # --------------------------Production stage -------------------
@@ -104,6 +109,7 @@ FROM base as production
 
 ENV SC_BUILD_TARGET=production \
   SC_BOOT_MODE=production
+
 ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
