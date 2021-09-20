@@ -28,7 +28,7 @@ aiohttp==3.7.4.post0
     #   -c requirements/../../../services/sidecar/requirements/_base.txt
     #   aiodocker
     #   jupyter-server-proxy
-alembic==1.6.5
+alembic==1.7.3
     # via
     #   -c requirements/../../../services/sidecar/requirements/_base.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_migration.in
@@ -118,6 +118,19 @@ idna==2.10
     #   email-validator
     #   requests
     #   yarl
+importlib-resources==5.2.2 ; python_version < "3.9"
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../services/sidecar/requirements/_base.txt
+    #   alembic
 ipython-genutils==0.2.0
     # via
     #   jupyter-server
@@ -264,15 +277,9 @@ pyrsistent==0.17.3
     # via jsonschema
 python-dateutil==2.8.1
     # via
-    #   -c requirements/../../../services/sidecar/requirements/_base.txt
-    #   alembic
     #   bokeh
     #   jupyter-client
     #   pandas
-python-editor==1.0.4
-    # via
-    #   -c requirements/../../../services/sidecar/requirements/_base.txt
-    #   alembic
 pytz==2020.1
     # via
     #   -c requirements/../../../services/sidecar/requirements/_base.txt
@@ -413,6 +420,10 @@ yarl==1.6.3
     #   aiohttp
 zict==2.0.0
     # via distributed
+zipp==3.5.0
+    # via
+    #   -c requirements/../../../services/sidecar/requirements/_base.txt
+    #   importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

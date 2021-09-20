@@ -13,7 +13,7 @@ aiohttp==3.7.4.post0
     #   pytest-aiohttp
 aioresponses==0.7.2
     # via -r requirements/_test.in
-alembic==1.6.5
+alembic==1.7.3
     # via -r requirements/_test.in
 amqp==5.0.6
     # via
@@ -120,6 +120,10 @@ idna==2.10
     #   -c requirements/_packages.txt
     #   requests
     #   yarl
+importlib-resources==5.2.2 ; python_version < "3.9"
+    # via
+    #   -c requirements/../../../../requirements/constraints.txt
+    #   alembic
 iniconfig==1.1.1
     # via pytest
 isodate==0.6.0
@@ -233,15 +237,11 @@ pytest-runner==5.3.1
 pytest-sugar==0.9.4
     # via -r requirements/_test.in
 python-dateutil==2.8.2
-    # via
-    #   alembic
-    #   faker
+    # via faker
 python-dotenv==0.19.0
     # via
     #   -r requirements/_test.in
     #   docker-compose
-python-editor==1.0.4
-    # via alembic
 pytz==2021.1
     # via
     #   -c requirements/_base.txt
@@ -332,6 +332,8 @@ yarl==1.5.1
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   aiohttp
+zipp==3.5.0
+    # via importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

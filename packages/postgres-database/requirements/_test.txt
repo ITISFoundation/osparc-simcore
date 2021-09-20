@@ -133,9 +133,7 @@ pytest-instafail==0.4.2
 pytest-runner==5.3.1
     # via -r requirements/_test.in
 python-dateutil==2.8.2
-    # via
-    #   -c requirements/_migration.txt
-    #   faker
+    # via faker
 python-dotenv==0.19.0
     # via docker-compose
 pyyaml==5.4.1
