@@ -81,7 +81,7 @@ email-validator==1.1.2
     # via
     #   fastapi
     #   pydantic
-fastapi==0.68.0
+fastapi==0.68.1
     # via -r requirements/_base.in
 graphene==2.1.8
     # via fastapi

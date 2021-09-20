@@ -30,7 +30,7 @@ email-validator==1.1.2
     # via
     #   fastapi
     #   pydantic
-fastapi==0.68.0
+fastapi==0.68.1
     # via -r requirements/_base.in
 graphene==2.1.8
     # via fastapi
@@ -144,7 +144,7 @@ urllib3==1.26.5
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-uvicorn==0.13.3
+uvicorn==0.13.4
     # via fastapi
 uvloop==0.14.0
     # via uvicorn

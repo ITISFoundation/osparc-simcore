@@ -323,7 +323,7 @@ websocket-client==0.59.0
     # via
     #   docker
     #   docker-compose
-websockets==9.1
+websockets==10.0
     # via -r requirements/_test.in
 wrapt==1.12.1
     # via astroid

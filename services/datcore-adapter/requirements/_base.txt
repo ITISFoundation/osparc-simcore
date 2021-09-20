@@ -38,7 +38,7 @@ ecdsa==0.14.1
     # via python-jose
 email-validator==1.1.3
     # via pydantic
-fastapi==0.68.0
+fastapi==0.68.1
     # via
     #   -r requirements/_base.in
     #   fastapi-pagination
@@ -152,7 +152,7 @@ urllib3==1.26.6
     #   -c requirements/../../../requirements/constraints.txt
     #   botocore
     #   requests
-uvicorn==0.14.0
+uvicorn==0.15.0
     # via -r requirements/_base.in
 uvloop==0.15.2
     # via uvicorn
@@ -160,7 +160,7 @@ watchgod==0.7
     # via uvicorn
 websocket-client==1.1.0
     # via pennsieve
-websockets==9.1
+websockets==10.0
     # via uvicorn
 wrapt==1.12.1
     # via deprecated
