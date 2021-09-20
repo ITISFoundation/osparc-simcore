@@ -51,7 +51,7 @@ billiard==3.6.4.0
     # via
     #   -c requirements/_base.txt
     #   celery
-celery==5.0.2
+celery==5.1.2
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
@@ -75,8 +75,13 @@ click==7.1.2
     #   -c requirements/_base.txt
     #   celery
     #   click-didyoumean
+    #   click-plugins
     #   click-repl
 click-didyoumean==0.0.3
+    # via
+    #   -c requirements/_base.txt
+    #   celery
+click-plugins==1.1.1
     # via
     #   -c requirements/_base.txt
     #   celery

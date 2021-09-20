@@ -54,7 +54,7 @@ chardet==3.0.4
     #   -c requirements/_base.txt
     #   aiohttp
     #   requests
-click==8.0.1
+click==7.1.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_migration.in
