@@ -3,12 +3,8 @@ from typing import List, Optional, cast
 
 from dask.distributed import get_worker
 from distributed.worker import TaskState
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
-from models_library.users import UserID
-from simcore_service_sidecar.boot_mode import BootMode
-from simcore_service_sidecar.cli import run_sidecar
 
+from .boot_mode import BootMode
 from .computational_sidecar.core import ComputationalSidecar
 from .computational_sidecar.models import (
     DockerBasicAuth,
@@ -94,35 +90,5 @@ def run_computational_sidecar(
             input_data,
             output_data_keys,
             command,
-        )
-    )
-
-
-def run_task_in_service(
-    job_id: str, user_id: UserID, project_id: ProjectID, node_id: NodeID
-) -> None:
-    """
-    To run a task, it spawns a service corresponding to `project.node_id` under `user_id` session and
-    """
-    log.debug(
-        "run_task_in_service %s", f"{job_id=}, {user_id=}, {project_id=}, {node_id=}"
-    )
-
-    task: Optional[TaskState] = _get_dask_task_state()
-
-    retry = 0
-    max_retries = 1
-    sidecar_bootmode = _get_task_boot_mode(task)
-
-    asyncio.get_event_loop().run_until_complete(
-        run_sidecar(
-            job_id,
-            str(user_id),
-            str(project_id),
-            node_id=str(node_id),
-            sidecar_mode=sidecar_bootmode,
-            is_aborted_cb=_is_aborted_cb,
-            retry=retry,
-            max_retries=max_retries,
         )
     )

@@ -10,24 +10,25 @@ from uuid import uuid4
 import fsspec
 from aiodocker import Docker
 from pydantic import ValidationError
-from simcore_service_dask_sidecar.computational_sidecar.models import (
-    FileUrl,
-    TaskInputData,
-    TaskOutputData,
-    TaskOutputDataSchema,
-)
-from simcore_service_sidecar.task_shared_volume import TaskSharedVolumes
 from yarl import URL
 
 from ..utils import create_dask_worker_logger
 from .docker_utils import (
     create_container_config,
+    get_computational_shared_data_mount_point,
     managed_container,
     managed_monitor_container_log_task,
     pull_image,
 )
 from .errors import ServiceBadFormattedOutputError, ServiceRunError
-from .models import DockerBasicAuth
+from .models import (
+    DockerBasicAuth,
+    FileUrl,
+    TaskInputData,
+    TaskOutputData,
+    TaskOutputDataSchema,
+)
+from .task_shared_volume import TaskSharedVolumes
 
 logger = create_dask_worker_logger(__name__)
 CONTAINER_WAIT_TIME_SECS = 2
@@ -85,7 +86,9 @@ class ComputationalSidecar:
 
     async def run(self, command: List[str]) -> TaskOutputData:
         async with Docker() as docker_client, managed_task_volumes(
-            Path(f"/tmp/{uuid4()}")
+            Path(
+                f"/{await get_computational_shared_data_mount_point(docker_client)}/{uuid4()}"
+            )
         ) as task_volumes:
             await pull_image(
                 docker_client, self.docker_auth, self.service_key, self.service_version

@@ -3,7 +3,6 @@ from typing import Optional
 
 from pydantic import Field, NonNegativeInt
 from settings_library.base import BaseCustomSettings
-from simcore_service_sidecar import config
 
 
 class Settings(BaseCustomSettings):
@@ -14,27 +13,16 @@ class Settings(BaseCustomSettings):
 
     # sidecar config ---
 
-    # DASK_SIDECAR_DOCKER_SERVICES_DATA: str
-    # DASK_SIDECAR_SERVICES_DATA_FOLDER: Path
+    SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: str
 
-    SIDECAR_INPUT_FOLDER: Path = config.SIDECAR_INPUT_FOLDER
-    SIDECAR_OUTPUT_FOLDER: Path = config.SIDECAR_OUTPUT_FOLDER
-    SIDECAR_LOG_FOLDER: Path = config.SIDECAR_LOG_FOLDER
+    SIDECAR_HOST_HOSTNAME_PATH: Path
+    SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S: int
 
-    SIDECAR_DOCKER_VOLUME_INPUT: str = config.SIDECAR_DOCKER_VOLUME_INPUT
-    SIDECAR_DOCKER_VOLUME_OUTPUT: str = config.SIDECAR_DOCKER_VOLUME_OUTPUT
-    SIDECAR_DOCKER_VOLUME_LOG: str = config.SIDECAR_DOCKER_VOLUME_LOG
-
-    SIDECAR_HOST_HOSTNAME_PATH: Path = config.SIDECAR_HOST_HOSTNAME_PATH
-    SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S: int = (
-        config.SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S
-    )
-
-    FORCE_START_CPU_MODE: bool = config.FORCE_START_CPU_MODE
-    FORCE_START_GPU_MODE: bool = config.FORCE_START_GPU_MODE
+    FORCE_START_CPU_MODE: bool
+    FORCE_START_GPU_MODE: bool
 
     TARGET_MPI_NODE_CPU_COUNT: int = Field(
-        config.TARGET_MPI_NODE_CPU_COUNT,
+        ...,
         description="If a node has this amount of CPUs it will be a candidate an MPI candidate",
     )
 
