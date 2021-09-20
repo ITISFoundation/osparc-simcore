@@ -18,7 +18,7 @@ charset-normalizer==2.0.4
     # via requests
 coverage==5.5
     # via pytest-cov
-docker==5.0.0
+docker==5.0.2
     # via -r requirements/_test.in
 faker==8.11.0
     # via -r requirements/_test.in
@@ -47,7 +47,7 @@ pyparsing==2.4.7
     # via packaging
 pyrsistent==0.18.0
     # via jsonschema
-pytest==6.2.4
+pytest==6.2.5
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio

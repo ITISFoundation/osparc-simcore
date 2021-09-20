@@ -8,9 +8,9 @@ aiohttp==3.7.4.post0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pytest-aiohttp
-alembic==1.6.5
+alembic==1.7.3
     # via -r requirements/_test.in
-astroid==2.7.3
+astroid==2.8.0
     # via pylint
 async-timeout==3.0.1
     # via
@@ -58,7 +58,7 @@ cryptography==3.4.7
     #   paramiko
 distro==1.6.0
     # via docker-compose
-docker==5.0.0
+docker==5.0.2
     # via
     #   -r requirements/_test.in
     #   docker-compose
@@ -92,6 +92,10 @@ idna==2.10
     #   requests
     #   rfc3986
     #   yarl
+importlib-resources==5.2.2 ; python_version < "3.9"
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   alembic
 iniconfig==1.1.1
     # via pytest
 isort==5.9.3
@@ -135,7 +139,7 @@ py==1.10.0
     # via pytest
 pycparser==2.20
     # via cffi
-pylint==2.10.2
+pylint==2.11.1
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
@@ -145,7 +149,7 @@ pyparsing==2.4.7
     #   packaging
 pyrsistent==0.18.0
     # via jsonschema
-pytest==6.2.4
+pytest==6.2.5
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -163,15 +167,11 @@ pytest-mock==3.6.1
 pytest-runner==5.3.1
     # via -r requirements/_test.in
 python-dateutil==2.8.2
-    # via
-    #   alembic
-    #   faker
+    # via faker
 python-dotenv==0.15.0
     # via
     #   -c requirements/_base.txt
     #   docker-compose
-python-editor==1.0.4
-    # via alembic
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -218,10 +218,12 @@ toml==0.10.2
     #   pylint
     #   pytest
     #   pytest-cov
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+    #   astroid
+    #   pylint
 urllib3==1.26.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -237,6 +239,8 @@ yarl==1.6.3
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+zipp==3.5.0
+    # via importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

@@ -158,9 +158,8 @@ class VersionControlRepository(BaseRepository):
             assert repo
         return repo, head_commit, project
 
-    async def _upsert_snapshot(
-        self, repo: RowProxy, project: RowProxy, conn: SAConnection
-    ):
+    @staticmethod
+    async def _upsert_snapshot(repo: RowProxy, project: RowProxy, conn: SAConnection):
         # has changes wrt previous commit
         # if exists, ui might change
         insert_stmt = pg_insert(projects_vc_snapshots).values(

@@ -32,8 +32,8 @@ MAKE_C := $(MAKE) --directory
 .PHONY: touch reqs info
 
 # requirements in packages and services
-_compiled-all = $(shell find $(REPODIR) -path "*/requirements/*.txt")
-_inputs-all = $(shell find $(REPODIR) -path "*/requirements/*.in")
+_compiled-all = $(shell find $(REPODIR) -path "*/requirements*.txt")
+_inputs-all = $(shell find $(REPODIR) -path "*/requirements*.in")
 
 # packages/
 _target-inputs = $(shell find ${PACKAGES_DIR} -type f -name _base.in)
@@ -65,9 +65,15 @@ touch: ## touches all package requirement inputs
 	# Touchs all target input requirements
 	@$(foreach p,${_target-inputs},touch $(p);)
 
-reqs: ## updates requirements of all package libraries
+reqs: ## updates test & tooling requirements
 	# Upgrading $(upgrade) requirements
 	@$(foreach p,${_target-inputs},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
+
+
+reqs-all: guard-UPGRADE_OPTION ## updates a give package repository-wise (e.g. make reqs-all upgrade=foo==1.2.3 )
+	# Upgrading $(upgrade) ALL requirements
+	@$(foreach p,${_inputs-all},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
+
 
 
 IMAGE_NAME:=local/python-devkit:${PYTHON_VERSION}
@@ -114,3 +120,8 @@ help: ## this colorful help
 	@echo ""
 	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
+
+
+.PHONY: guard-%
+guard-%:
+	@if [ "${${*}}" = "" ]; then echo "Environment variable $* not set"; exit 1; fi

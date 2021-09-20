@@ -1,6 +1,8 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-import
+# pylint: disable=no-self-use
+
 import asyncio
 import json
 

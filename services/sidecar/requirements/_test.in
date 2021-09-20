@@ -27,6 +27,7 @@ docker
 python-dotenv
 faker
 minio
+jsonschema
 
 # tools for CI
 pylint
