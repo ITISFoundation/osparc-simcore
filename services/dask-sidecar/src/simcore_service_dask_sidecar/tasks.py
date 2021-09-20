@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, List, Optional, cast
+from typing import List, Optional, cast
 
 from dask.distributed import get_worker
 from distributed.worker import TaskState
@@ -10,7 +10,11 @@ from simcore_service_sidecar.boot_mode import BootMode
 from simcore_service_sidecar.cli import run_sidecar
 
 from .computational_sidecar.core import ComputationalSidecar
-from .computational_sidecar.models import TaskInputData, TaskOutputData
+from .computational_sidecar.models import (
+    TaskInputData,
+    TaskOutputData,
+    TaskOutputDataSchema,
+)
 from .meta import print_banner
 from .settings import Settings
 from .utils import create_dask_worker_logger
@@ -49,7 +53,7 @@ async def _run_computational_sidecar_async(
     service_key: str,
     service_version: str,
     input_data: TaskInputData,
-    output_data_keys: Dict[str, Any],
+    output_data_keys: TaskOutputDataSchema,
     command: List[str],
 ) -> TaskOutputData:
     log.debug(
@@ -72,7 +76,7 @@ def run_computational_sidecar(
     service_key: str,
     service_version: str,
     input_data: TaskInputData,
-    output_data_keys: Dict[str, Any],
+    output_data_keys: TaskOutputDataSchema,
     command: List[str],
 ) -> TaskOutputData:
     return asyncio.get_event_loop().run_until_complete(

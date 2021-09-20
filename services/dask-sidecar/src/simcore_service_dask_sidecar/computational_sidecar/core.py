@@ -5,15 +5,17 @@ from dataclasses import dataclass
 from json.decoder import JSONDecodeError
 from pathlib import Path
 from types import TracebackType
-from typing import Any, AsyncIterator, Awaitable, Dict, List, Optional, Type
+from typing import AsyncIterator, Awaitable, List, Optional, Type
 from uuid import uuid4
 
 import fsspec
 from aiodocker import Docker
 from simcore_service_dask_sidecar.computational_sidecar.models import (
+    FilePortSchema,
     FileUrl,
     TaskInputData,
     TaskOutputData,
+    TaskOutputDataSchema,
 )
 from simcore_service_sidecar.task_shared_volume import TaskSharedVolumes
 from yarl import URL
@@ -54,7 +56,7 @@ class ComputationalSidecar:
     service_key: str
     service_version: str
     input_data: TaskInputData
-    output_data_keys: Dict[str, Any]
+    output_data_keys: TaskOutputDataSchema
 
     async def _write_input_data(self, task_volumes: TaskSharedVolumes) -> None:
         input_data_file = task_volumes.input_folder / "inputs.json"
@@ -77,44 +79,39 @@ class ComputationalSidecar:
     ) -> TaskOutputData:
         output_data = TaskOutputData.parse_obj({})
         for output_key, output_params in self.output_data_keys.items():
-            # path outputs are located in the outputs folder
-            if output_params["type"] in [Path, Optional[Path]]:
-                # their file names might be the key or the alternative name if it exists
-                file_path = task_volumes.output_folder / output_params.get(
-                    "name", output_key
+            if isinstance(output_params, FilePortSchema):
+                file_path = task_volumes.output_folder / (
+                    output_params.mapping or output_key
                 )
                 if file_path.exists():
-                    output_data[output_key] = file_path
+                    output_data[output_key] = FileUrl(url=file_path)
                     continue
-                # file is not present, raise if it should not be optional
-                if output_params["type"] == Path:
+                # no file.. was it required?
+                if output_params.required:
                     raise ServiceMissingOutputError(
                         self.service_key, self.service_version, output_key
                     )
-                # optional output
+                # optional output, ok...
                 continue
 
             # all other outputs should be located in a JSON file
             output_data_file = task_volumes.output_folder / "outputs.json"
-            if output_data_file.exists():
-                try:
-                    service_output = json.loads(output_data_file.read_text())
-                    output_data[output_key] = service_output.get(output_key, None)
-                    if output_data[output_key] is None:
-                        raise ServiceMissingOutputError(
-                            self.service_key, self.service_version, output_key
-                        )
-                except JSONDecodeError as exc:
-                    raise ServiceBadFormattedOutputError(
+            if not output_data_file.exists() and output_params.required:
+                raise ServiceMissingOutputError(
+                    self.service_key, self.service_version, output_key
+                )
+            # the json file is there
+            try:
+                service_output = json.loads(output_data_file.read_text())
+                output_data[output_key] = service_output.get(output_key, None)
+                if output_data[output_key] is None and output_params.required:
+                    raise ServiceMissingOutputError(
                         self.service_key, self.service_version, output_key
-                    ) from exc
-            # json file does not exist
-            # if output_params["type"] != Optional[Any]:
-            #     raise ServiceMissingOutputError(
-            #         self.service_key, self.service_version, output_key
-            #     )
-            # but the entry is optional
-            continue
+                    )
+            except JSONDecodeError as exc:
+                raise ServiceBadFormattedOutputError(
+                    self.service_key, self.service_version, output_key
+                ) from exc
 
         return output_data
 
