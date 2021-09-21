@@ -21,7 +21,7 @@ certifi==2021.5.30
     # via requests
 chardet==4.0.0
     # via aiohttp
-charset-normalizer==2.0.4
+charset-normalizer==2.0.6
     # via requests
 coverage==5.5
     # via
@@ -32,7 +32,7 @@ coveralls==3.2.0
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
-faker==8.11.0
+faker==8.13.2
     # via -r requirements/_test.in
 icdiff==2.0.4
     # via pytest-icdiff
@@ -63,7 +63,7 @@ pint==0.17
     # via -r requirements/_test.in
 platformdirs==2.3.0
     # via pylint
-pluggy==0.13.1
+pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff

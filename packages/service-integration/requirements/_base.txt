@@ -10,7 +10,7 @@ attrs==21.2.0
     #   pytest
 certifi==2021.5.30
     # via requests
-charset-normalizer==2.0.4
+charset-normalizer==2.0.6
     # via requests
 click==8.0.1
     # via -r requirements/_base.in
@@ -31,7 +31,7 @@ jsonschema==3.2.0
     # via -r requirements/_base.in
 packaging==21.0
     # via pytest
-pluggy==0.13.1
+pluggy==1.0.0
     # via pytest
 py==1.10.0
     # via pytest
@@ -64,7 +64,7 @@ urllib3==1.26.6
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-websocket-client==1.1.1
+websocket-client==1.2.1
     # via docker
 
 # The following packages are considered to be unsafe in a requirements file:
