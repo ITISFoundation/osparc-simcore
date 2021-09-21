@@ -45,14 +45,12 @@ qx.Class.define("osparc.wrapper.GitGraph", {
 
     getTemplateConfig: function() {
       const textColor = qx.theme.manager.Color.getInstance().resolve("text");
+      const masterColor = "#1486da";
+      const iterationColor = "#e01a94";
+      const colors = Array(19).fill(iterationColor);
+      colors.unshift(masterColor);
       return {
-        colors: [
-          "#1486da",
-          "#e01a94",
-          "#e01a94",
-          "#e01a94",
-          "#e01a94"
-        ],
+        colors: colors,
         commit: {
           spacing: osparc.wrapper.GitGraph.COMMIT_SPACING,
           dot: {
@@ -140,11 +138,8 @@ qx.Class.define("osparc.wrapper.GitGraph", {
     },
 
     commit: function(branch, commitData) {
-      let commitText = commitData["tags"];
-      if (commitData["message"]) {
-        commitText += ": " + commitData["message"];
-      }
-      branch.commit(commitText);
+      branch.commit(commitData["tags"]);
+      branch["lastCommit"] = commitData["id"];
 
       const widget = new qx.ui.core.Widget().set({
         opacity: 0.1,
@@ -202,18 +197,53 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       this.commit(master, "Changes after iterations");
     },
 
+    __getBranch: function(commitData) {
+      if (commitData["parents_ids"] === null) {
+        const master = this.__gitgraph.branch("master");
+        this.__branches.push(master);
+        return master;
+      }
+      const myBranch = this.__branches.find(branch => branch.lastCommit === commitData["parents_ids"][0]);
+      if (myBranch) {
+        return myBranch;
+      }
+      const myOnHoldBranch = this.__branches.find(branch => branch.waitingFor === commitData["id"]);
+      if (myOnHoldBranch) {
+        return myOnHoldBranch;
+      }
+      const newBranch = this.__gitgraph.branch("it-"+this.__branches.length);
+      this.__branches.push(newBranch);
+      return newBranch;
+    },
+
     populateGraph: function(snapshots) {
-      const master = this.__gitgraph.branch("master");
-      snapshots.reverse().forEach(snapshot => {
-        const date = new Date(snapshot["created_at"]);
+      console.log(snapshots);
+      this.__branches = [];
+      snapshots.reverse().forEach((snapshot, i) => {
+        const branch = this.__getBranch(snapshot);
+        const snapshotDate = new Date(snapshot["created_at"]);
         const commitData = {
           id: snapshot["id"],
           tags: snapshot["tags"].join(", "),
           message: snapshot["message"],
-          createdAt: osparc.utils.Utils.formatDateAndTime(date),
-          parentUuid: snapshot["parent_uuid"]
+          createdAt: osparc.utils.Utils.formatDateAndTime(snapshotDate),
+          parentsIDs: snapshot["parents_ids"]
         };
-        this.commit(master, commitData);
+        this.commit(branch, commitData);
+
+        // due to this bug https://github.com/nicoespeon/gitgraph.js/issues/270
+        // check if more branches need to be created now
+        const needBranchedNow = snapshots.filter((snapshotCheck, j) => {
+          if (j > i+1) {
+            return snapshotCheck["parents_ids"] && snapshotCheck["parents_ids"][0] === snapshot["id"];
+          }
+          return false;
+        });
+        needBranchedNow.forEach(snapshotOnHold => {
+          const branchOnHold = this.__gitgraph.branch("it-"+this.__branches.length);
+          branchOnHold["waitingFor"] = snapshotOnHold["id"];
+          this.__branches.push(branchOnHold);
+        });
       });
     }
   }
