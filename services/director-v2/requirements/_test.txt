@@ -184,9 +184,7 @@ multidict==5.1.0
 nest-asyncio==1.5.1
     # via -r requirements/_test.in
 packaging==21.0
-    # via
-    #   -c requirements/_base.txt
-    #   pytest
+    # via pytest
 pamqp==2.3.0
     # via aiormq
 paramiko==2.7.2
@@ -218,9 +216,7 @@ pylint==2.11.1
 pynacl==1.4.0
     # via paramiko
 pyparsing==2.4.7
-    # via
-    #   -c requirements/_base.txt
-    #   packaging
+    # via packaging
 pyrsistent==0.18.0
     # via jsonschema
 pytest==6.2.5
