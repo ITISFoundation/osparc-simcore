@@ -39,7 +39,7 @@ docopt==0.6.2
     #   coveralls
 execnet==1.9.0
     # via pytest-xdist
-faker==8.11.0
+faker==8.13.2
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -75,7 +75,7 @@ packaging==21.0
     #   pytest-sugar
 platformdirs==2.3.0
     # via pylint
-pluggy==0.13.1
+pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff

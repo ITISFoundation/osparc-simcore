@@ -36,7 +36,7 @@ chardet==4.0.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-charset-normalizer==2.0.4
+charset-normalizer==2.0.6
     # via
     #   -c requirements/_base.txt
     #   requests
@@ -55,7 +55,7 @@ docopt==0.6.2
     # via coveralls
 execnet==1.9.0
     # via pytest-xdist
-faker==8.11.0
+faker==8.13.2
     # via -r requirements/_test.in
 icdiff==2.0.4
     # via pytest-icdiff
@@ -73,9 +73,9 @@ iniconfig==1.1.1
     # via pytest
 isort==5.9.3
     # via pylint
-lazy-object-proxy==1.4.3
+lazy-object-proxy==1.6.0
     # via astroid
-mako==1.1.4
+mako==1.1.5
     # via
     #   -c requirements/_base.txt
     #   alembic
@@ -101,7 +101,7 @@ packaging==21.0
     #   pytest-sugar
 platformdirs==2.3.0
     # via pylint
-pluggy==0.13.1
+pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff

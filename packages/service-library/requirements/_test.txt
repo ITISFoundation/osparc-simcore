@@ -35,7 +35,7 @@ chardet==4.0.0
     # via
     #   -c requirements/_aiohttp.txt
     #   aiohttp
-charset-normalizer==2.0.4
+charset-normalizer==2.0.6
     # via requests
 coverage==5.5
     # via

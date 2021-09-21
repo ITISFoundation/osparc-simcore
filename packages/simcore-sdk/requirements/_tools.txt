@@ -10,7 +10,7 @@ black==21.9b0
     # via -r requirements/../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
-cfgv==3.3.0
+cfgv==3.3.1
     # via pre-commit
 click==8.0.1
     # via
@@ -21,7 +21,7 @@ distlib==0.3.2
     # via virtualenv
 filelock==3.0.12
     # via virtualenv
-identify==2.2.13
+identify==2.2.15
     # via pre-commit
 isort==5.9.3
     # via
@@ -42,14 +42,14 @@ platformdirs==2.3.0
     #   -c requirements/_test.txt
     #   black
     #   virtualenv
-pre-commit==2.14.0
+pre-commit==2.15.0
     # via -r requirements/../../../requirements/devenv.txt
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   pre-commit
-regex==2021.8.3
+regex==2021.8.28
     # via black
 six==1.16.0
     # via
@@ -69,9 +69,9 @@ typing-extensions==3.10.0.2
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
-virtualenv==20.7.0
+virtualenv==20.8.0
     # via pre-commit
-wheel==0.36.2
+wheel==0.37.0
     # via pip-tools
 
 # The following packages are considered to be unsafe in a requirements file:

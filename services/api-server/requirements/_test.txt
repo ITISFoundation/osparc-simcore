@@ -74,7 +74,7 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==8.11.0
+faker==8.13.2
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -107,7 +107,7 @@ isort==5.9.3
     # via pylint
 jsonschema==3.2.0
     # via docker-compose
-lazy-object-proxy==1.4.3
+lazy-object-proxy==1.6.0
     # via astroid
 mako==1.1.4
     # via
@@ -133,7 +133,7 @@ passlib==1.7.4
     # via -r requirements/_test.in
 platformdirs==2.3.0
     # via pylint
-pluggy==0.13.1
+pluggy==1.0.0
     # via pytest
 psycopg2-binary==2.9.1
     # via
@@ -153,7 +153,7 @@ pyparsing==2.4.7
     # via
     #   -c requirements/_base.txt
     #   packaging
-pyrsistent==0.17.3
+pyrsistent==0.18.0
     # via jsonschema
 pytest==6.2.5
     # via

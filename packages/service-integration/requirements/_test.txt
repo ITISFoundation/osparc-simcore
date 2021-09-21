@@ -14,7 +14,7 @@ certifi==2021.5.30
     # via
     #   -c requirements/_base.txt
     #   requests
-charset-normalizer==2.0.4
+charset-normalizer==2.0.6
     # via
     #   -c requirements/_base.txt
     #   requests
@@ -48,7 +48,7 @@ packaging==21.0
     #   pytest-sugar
 platformdirs==2.3.0
     # via pylint
-pluggy==0.13.1
+pluggy==1.0.0
     # via
     #   -c requirements/_base.txt
     #   pytest
