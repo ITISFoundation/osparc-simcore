@@ -20,7 +20,7 @@ distlib==0.3.2
     # via virtualenv
 filelock==3.0.12
     # via virtualenv
-identify==2.2.13
+identify==2.2.15
     # via pre-commit
 isort==5.9.3
     # via
@@ -68,7 +68,7 @@ typing-extensions==3.10.0.2
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
-virtualenv==20.7.2
+virtualenv==20.8.0
     # via pre-commit
 wheel==0.37.0
     # via pip-tools

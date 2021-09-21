@@ -59,7 +59,7 @@ docker==5.0.2
     #   -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
-faker==8.11.0
+faker==8.13.2
     # via -r requirements/_test.in
 icdiff==2.0.4
     # via pytest-icdiff
@@ -79,7 +79,7 @@ iniconfig==1.1.1
     # via pytest
 isort==5.9.3
     # via pylint
-lazy-object-proxy==1.4.3
+lazy-object-proxy==1.6.0
     # via astroid
 mako==1.1.4
     # via
@@ -111,7 +111,7 @@ packaging==20.4
     #   pytest-sugar
 platformdirs==2.3.0
     # via pylint
-pluggy==0.13.1
+pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff

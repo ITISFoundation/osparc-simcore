@@ -8,7 +8,7 @@ alembic==1.7.3
     # via -r requirements/_migration.in
 certifi==2021.5.30
     # via requests
-charset-normalizer==2.0.4
+charset-normalizer==2.0.6
     # via requests
 click==8.0.1
     # via -r requirements/_migration.in
@@ -22,7 +22,7 @@ importlib-resources==5.2.2 ; python_version < "3.9"
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   alembic
-mako==1.1.4
+mako==1.1.5
     # via alembic
 markupsafe==2.0.1
     # via mako

@@ -20,7 +20,7 @@ chardet==4.0.0
     #   requests
 coverage==5.5
     # via pytest-cov
-faker==8.12.1
+faker==8.13.2
     # via -r requirements/_test.in
 idna==2.10
     # via

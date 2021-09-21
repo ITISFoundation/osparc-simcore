@@ -35,7 +35,7 @@ cffi==1.14.6
     #   pynacl
 chardet==4.0.0
     # via aiohttp
-charset-normalizer==2.0.4
+charset-normalizer==2.0.6
     # via
     #   -c requirements/_migration.txt
     #   requests
@@ -46,7 +46,7 @@ coverage==5.5
     #   pytest-cov
 coveralls==3.2.0
     # via -r requirements/_test.in
-cryptography==3.4.7
+cryptography==3.4.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   paramiko
@@ -66,7 +66,7 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==8.11.0
+faker==8.13.2
     # via -r requirements/_test.in
 idna==2.10
     # via
@@ -95,7 +95,7 @@ paramiko==2.7.2
     # via docker
 platformdirs==2.3.0
     # via pylint
-pluggy==0.13.1
+pluggy==1.0.0
     # via pytest
 psycopg2-binary==2.9.1
     # via
