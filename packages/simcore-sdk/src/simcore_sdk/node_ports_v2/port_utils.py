@@ -16,32 +16,32 @@ async def get_value_from_link(
     value: PortLink,
     fileToKeyMap: Optional[Dict[str, str]],
     node_port_creator: Callable[[str], Coroutine[Any, Any, Any]],
-) -> ItemConcreteValue:
+) -> Optional[ItemConcreteValue]:
     log.debug("Getting value %s", value)
     # create a node ports for the other node
     other_nodeports = await node_port_creator(value.node_uuid)
     # get the port value through that guy
     log.debug("Received node from DB %s, now returning value", other_nodeports)
 
-    value = await other_nodeports.get(value.output)
-    if isinstance(value, Path):
-        file_name = value.name
+    other_value: Optional[ItemConcreteValue] = await other_nodeports.get(value.output)
+    if isinstance(other_value, Path):
+        file_name = other_value.name
         # move the file to the right final location
         # if a file alias is present use it
         if fileToKeyMap:
             file_name = next(iter(fileToKeyMap))
 
         file_path = data_items_utils.create_file_path(key, file_name)
-        if value == file_path:
+        if other_value == file_path:
             # this is a corner case: in case the output key of the other node has the same name as the input key
-            return value
+            return other_value
         if file_path.exists():
             file_path.unlink()
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(str(value), str(file_path))
-        value = file_path
+        shutil.move(f"{other_value}", file_path)
+        other_value = file_path
 
-    return value
+    return other_value
 
 
 async def pull_file_from_store(
