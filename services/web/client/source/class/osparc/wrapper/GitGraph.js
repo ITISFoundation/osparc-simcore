@@ -140,7 +140,11 @@ qx.Class.define("osparc.wrapper.GitGraph", {
     },
 
     commit: function(branch, commitData) {
-      branch.commit(commitData["tags"]);
+      let commitText = commitData["tags"];
+      if (commitData["message"]) {
+        commitText += ": " + commitData["message"];
+      }
+      branch.commit(commitText);
 
       const widget = new qx.ui.core.Widget().set({
         opacity: 0.1,
@@ -149,12 +153,11 @@ qx.Class.define("osparc.wrapper.GitGraph", {
         allowGrowX: true
       });
       const texts = [];
-      if ("message" in commitData && commitData["message"]) {
+      texts.push(commitData["tags"]);
+      if (commitData["message"]) {
         texts.push(commitData["message"]);
       }
-      if ("createdAt" in commitData && commitData["createdAt"]) {
-        texts.push(commitData["createdAt"]);
-      }
+      texts.push(commitData["createdAt"]);
       const hintText = texts.join("<br>");
       const hint = new osparc.ui.hint.Hint(widget, hintText);
       this.__gitGraphInteract.addAt(widget, 0);
