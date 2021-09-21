@@ -230,7 +230,7 @@ def jupyter_service(docker_registry: str, node_meta_schema: Dict) -> Dict[str, s
     )
 
 
-DY_STATIC_FILE_SERVER_VERSION = "1.0.6"
+DY_STATIC_FILE_SERVER_VERSION = "1.0.7"
 
 
 @pytest.fixture(scope="session")
