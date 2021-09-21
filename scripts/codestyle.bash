@@ -23,7 +23,7 @@ development() {
   echo "pylint"
   pylint --rcfile="$PYLINT_CONFIG" src/"$SRC_DIRECTORY_NAME" tests/
   echo "mypy"
-  make mypy
+  make --directory="$BASE_PATH_DIR" mypy
 }
 
 # invoked by ci as test (also fails on isort and black)
@@ -36,7 +36,7 @@ ci() {
   echo "pylint ..."
   pylint --rcfile="$PYLINT_CONFIG" "$BASE_PATH_DIR"/src/"$SRC_DIRECTORY_NAME" "$BASE_PATH_DIR"/tests
   echo "mypy ..."
-  make --silent mypy
+  make --silent --directory="$BASE_PATH_DIR" mypy
 }
 
 # Allows to call a function based on arguments passed to the script
