@@ -18,6 +18,7 @@
 ../../packages/service-library[fastapi]
 ../../packages/settings-library/
 ../../packages/simcore-sdk/
+../../packages/service-library/
 
 # installs current package
 .
