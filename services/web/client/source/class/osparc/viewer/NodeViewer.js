@@ -186,13 +186,13 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     __retrieveInputs: function() {
       const srvUrl = this.getServiceUrl();
       if (srvUrl) {
-        const urlUpdate = osparc.utils.Utils.computeServiceRetrieveUrl(srvUrl, this.isDynamicV2());
+        const urlRetrieve = this.isDynamicV2() ? osparc.utils.Utils.computeServiceV2RetrieveUrl(this.getStudyId(), this.getNodeId()) : osparc.utils.Utils.computeServiceRetrieveUrl(srvUrl);
         const updReq = new qx.io.request.Xhr();
         const reqData = {
           "port_keys": []
         };
         updReq.set({
-          url: urlUpdate,
+          url: urlRetrieve,
           method: "POST",
           requestData: qx.util.Serializer.toJson(reqData)
         });

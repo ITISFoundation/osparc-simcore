@@ -54,16 +54,14 @@ qx.Class.define("osparc.utils.Utils", {
       return data;
     },
 
-    computeServiceRetrieveUrl: function(srvUrl, isDynamicV2 = false) {
-      let urlRetrieve = null;
-      if (isDynamicV2) {
-        urlRetrieve = srvUrl + ":retrieve";
-        urlRetrieve = urlRetrieve.replace("/:retrieve", ":retrieve");
-      } else {
-        urlRetrieve = srvUrl + "/retrieve";
-        urlRetrieve = urlRetrieve.replace("//retrieve", "/retrieve");
-      }
-      return urlRetrieve;
+    computeServiceRetrieveUrl: function(srvUrl) {
+      const urlRetrieve = srvUrl + "/retrieve";
+      return urlRetrieve.replace("//retrieve", "/retrieve");
+    },
+
+    computeServiceV2RetrieveUrl: function(studyId, nodeId) {
+      const urlBase = window.location.protocol + "//" + window.location.host;
+      return urlBase + "/projects/" + studyId + "/nodes/" + nodeId + ":retrieve";
     },
 
     isDevelopmentPlatform: function() {

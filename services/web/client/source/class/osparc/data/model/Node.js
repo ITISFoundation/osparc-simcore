@@ -934,13 +934,13 @@ qx.Class.define("osparc.data.model.Node", {
         }
         const srvUrl = this.getServiceUrl();
         if (srvUrl) {
-          const urlUpdate = osparc.utils.Utils.computeServiceRetrieveUrl(srvUrl, this.isDynamicV2());
+          const urlRetrieve = this.isDynamicV2() ? osparc.utils.Utils.computeServiceV2RetrieveUrl(this.getStudy().getUuid(), this.getNodeId()) : osparc.utils.Utils.computeServiceRetrieveUrl(srvUrl);
           const updReq = new qx.io.request.Xhr();
           const reqData = {
             "port_keys": portKey ? [portKey] : []
           };
           updReq.set({
-            url: urlUpdate,
+            url: urlRetrieve,
             method: "POST",
             requestData: qx.util.Serializer.toJson(reqData)
           });
