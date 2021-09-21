@@ -100,7 +100,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
       });
 
       this.__snapshotsSection.addAt(snapshotsTable, 0, {
-        width: "33%"
+        width: "40%"
       });
     },
 
@@ -136,14 +136,14 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
       });
 
       this.__snapshotsSection.addAt(gitGraphLayout, 1, {
-        width: "33%"
+        width: "20%"
       });
     },
 
     __buildSnapshotPreview: function() {
       const snapshotPreview = this.__snapshotPreview = new osparc.component.workbench.WorkbenchUIPreview();
       this.__snapshotsSection.addAt(snapshotPreview, 2, {
-        width: "33%"
+        width: "40%"
       });
     },
 
