@@ -31,6 +31,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.computational_sidecar.models import (
+    DockerBasicAuth,
     FileUrl,
     TaskInputData,
     TaskOutputData,
@@ -103,6 +104,7 @@ def dask_client() -> Client:
 
 @dataclass
 class ServiceExampleParam:
+    docker_basic_auth: DockerBasicAuth
     service_key: str
     service_version: str
     command: List[str]
@@ -197,6 +199,9 @@ def ubuntu_task(directory_server: List[URL]) -> ServiceExampleParam:
         }
     )
     return ServiceExampleParam(
+        docker_basic_auth=DockerBasicAuth(
+            server_address="docker.io", username="pytest", password=""
+        ),
         service_key="ubuntu",
         service_version="latest",
         command=command,
@@ -230,6 +235,7 @@ async def test_run_computational_sidecar_real_fct(
 ):
     caplog.set_level(logging.INFO)
     output_data = await _run_computational_sidecar_async(
+        task.docker_basic_auth,
         task.service_key,
         task.service_version,
         task.input_data,
@@ -287,6 +293,7 @@ async def test_run_computational_sidecar_dask(
 ):
     future = dask_client.submit(
         run_computational_sidecar,
+        task.docker_basic_auth,
         task.service_key,
         task.service_version,
         task.input_data,
