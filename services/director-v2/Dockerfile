@@ -90,6 +90,7 @@ FROM build as prod-only-deps
 
 ENV SC_BUILD_TARGET prod-only-deps
 
+COPY --chown=scu:scu services/storage/client-sdk/python /build/services/storage/client-sdk/python
 COPY --chown=scu:scu packages /build/packages
 COPY --chown=scu:scu services/director-v2 /build/services/director-v2
 

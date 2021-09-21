@@ -50,6 +50,7 @@ services:
       - DYNAMIC_SIDECAR_MOUNT_PATH_DEV=${PWD}/services/dynamic-sidecar
     volumes:
       - ./director-v2:/devel/services/director-v2
+      - ./storage/client-sdk:/devel/services/storage/client-sdk
       - ../packages:/devel/packages
 
   static-webserver:
@@ -71,7 +72,6 @@ services:
   dask-sidecar:
     volumes: &dev-dask-sidecar-volumes
       - ./dask-sidecar:/devel/services/dask-sidecar
-      - ./sidecar:/devel/services/sidecar
       - ../packages:/devel/packages
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment:

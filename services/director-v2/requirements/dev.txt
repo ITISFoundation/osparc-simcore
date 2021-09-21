@@ -19,6 +19,7 @@
 --editable ../../packages/settings-library/
 --editable ../../packages/simcore-sdk/
 --editable ../../packages/service-library/
+--editable ../../services/storage/client-sdk/python/
 
 # installs current package
 --editable .
