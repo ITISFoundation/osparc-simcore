@@ -8,7 +8,14 @@ from pydantic import Field, PrivateAttr, validator
 
 from ..node_ports_common.exceptions import InvalidItemTypeError
 from . import port_utils
-from .links import DataItemValue, DownloadLink, FileLink, ItemConcreteValue, PortLink
+from .links import (
+    DataItemValue,
+    DownloadLink,
+    FileLink,
+    ItemConcreteLinkValue,
+    ItemConcreteValue,
+    PortLink,
+)
 
 log = logging.getLogger(__name__)
 
@@ -65,6 +72,31 @@ class Port(ServiceProperty):
         ):
             self.value = self.default_value
             self._used_default_value = True
+
+    async def get_value_link(self) -> Optional[ItemConcreteLinkValue]:
+        log.debug(
+            "getting value link %s[%s] with value %s",
+            self.key,
+            self.property_type,
+            pformat(self.value),
+        )
+
+        if isinstance(self.value, PortLink):
+            # this is a link to another node
+            return await port_utils.get_value_link_from_port_link(
+                # pylint: disable=protected-access
+                self.value,
+                self._node_ports._node_ports_creator_cb,
+            )
+        if isinstance(self.value, FileLink):
+            # this is a link from storage
+            return self.value.path
+
+        if isinstance(self.value, DownloadLink):
+            # this is a downloadable link
+            return self.value.download_link
+
+        return self.value
 
     async def get(self) -> Optional[ItemConcreteValue]:
         log.debug(
