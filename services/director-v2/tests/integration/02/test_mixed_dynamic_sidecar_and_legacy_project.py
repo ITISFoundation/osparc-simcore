@@ -382,6 +382,12 @@ async def test_legacy_and_dynamic_sidecar_run(
     - dy-static-file-server-dynamic-sidecar
     - dy-static-file-server-dynamic-sidecar-compose
     """
+    # TODO:
+    # - maybe move to a separate test?
+    # - bump version of services being tested
+    # - check workdir?
+    # - check ports in the database if they have any data when uploading
+    # - what about checking when downloading?
     director_v0_url = _get_director_v0_patched_url(services_endpoint["director"])
 
     services_to_start = []
