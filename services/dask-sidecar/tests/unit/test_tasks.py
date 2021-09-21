@@ -37,12 +37,9 @@ from simcore_service_dask_sidecar.computational_sidecar.models import (
     TaskOutputDataSchema,
 )
 from simcore_service_dask_sidecar.tasks import (
-    _is_aborted_cb,
     _run_computational_sidecar_async,
     run_computational_sidecar,
-    run_task_in_service,
 )
-from simcore_service_sidecar.boot_mode import BootMode
 from yarl import URL
 
 logger = logging.getLogger(__name__)
@@ -320,51 +317,3 @@ async def test_run_computational_sidecar_dask(
     for k, v in output_data.items():
         assert k in task.expected_output_data
         assert v == task.expected_output_data[k]
-
-
-@pytest.mark.parametrize(
-    "resource_restrictions, exp_bootmode",
-    [
-        ({}, BootMode.CPU),
-        ({"MPI": 0}, BootMode.CPU),
-        (
-            {"MPI": 1, "GPU": 2},
-            BootMode.MPI,
-        ),  # FIXME: this is currently so... but should change
-        (
-            {"MPI": 0, "GPU": 2},
-            BootMode.GPU,
-        ),  # FIXME: this is currently so... but should change
-    ],
-)
-def test_run_task_in_service(
-    loop,
-    job_id: str,
-    user_id: UserID,
-    project_id: ProjectID,
-    node_id: NodeID,
-    mocker,
-    resource_restrictions: Dict[str, Any],
-    exp_bootmode: BootMode,
-    dask_subsystem_mock: Dict[str, mock.Mock],
-):
-    run_sidecar_mock = mocker.patch(
-        "simcore_service_dask_sidecar.tasks.run_sidecar", return_value=None
-    )
-
-    dask_subsystem_mock["dask_task"].resource_restrictions = resource_restrictions
-    dask_subsystem_mock["dask_task"].retries = 1
-    dask_subsystem_mock["dask_task"].annotations = {"retries": 1}
-
-    run_task_in_service(job_id, user_id, project_id, node_id)
-
-    run_sidecar_mock.assert_called_once_with(
-        job_id,
-        str(user_id),
-        str(project_id),
-        node_id=str(node_id),
-        retry=0,
-        max_retries=1,
-        sidecar_mode=exp_bootmode,
-        is_aborted_cb=_is_aborted_cb,
-    )
