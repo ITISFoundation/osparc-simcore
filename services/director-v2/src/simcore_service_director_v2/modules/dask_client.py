@@ -199,9 +199,13 @@ class DaskClient:
                         db_manager=db_manager,
                     )
                     input_data = {}
-                    # for port in (await ports.inputs).values():
-                    #     input_data[port.key] = await port.get_link()
+                    for port in (await ports.inputs).values():
+                        input_data[port.key] = await port.get_value_link()
+                    return input_data
 
+                input_data = await _compute_input_data(
+                    self.app, user_id, project_id, node_id
+                )
                 # TODO: move the registry out of the dynamic sidecar settings!!
                 task_future = self.client.submit(
                     remote_fct,
@@ -212,7 +216,7 @@ class DaskClient:
                     },
                     service_key=node_image.name,
                     service_version=node_image.tag,
-                    input_data={"input_2": 4},
+                    input_data=input_data,
                     output_data_keys={},
                     command=["run"],
                     key=job_id,
