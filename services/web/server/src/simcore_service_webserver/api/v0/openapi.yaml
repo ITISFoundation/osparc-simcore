@@ -11871,7 +11871,7 @@ paths:
         required: true
         schema:
           type: string
-    get:
+    post:
       tags:
         - project
       description: Triggers service retrieve

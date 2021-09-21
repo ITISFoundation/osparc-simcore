@@ -395,7 +395,7 @@ paths:
         default:
           $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 
-  /projects/{project_id}/nodes/{node_id}:retrieve:
+  /projects/{project_id}/nodes/{node_id}/retrieve:
     parameters:
       - name: project_id
         in: path
@@ -408,7 +408,7 @@ paths:
         schema:
           type: string
 
-    get:
+    post:
       tags:
         - project
       description: Triggers service retrieve
