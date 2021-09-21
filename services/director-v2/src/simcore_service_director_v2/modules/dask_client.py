@@ -181,6 +181,27 @@ class DaskClient:
                 cluster_id=cluster_id,
             )
             try:
+
+                async def _compute_input_data(
+                    app: FastAPI,
+                    user_id: UserID,
+                    project_id: ProjectID,
+                    node_id: NodeID,
+                ) -> Dict[str, Any]:
+                    from simcore_sdk import node_ports_v2
+                    from simcore_sdk.node_ports_v2 import DBManager
+
+                    db_manager = DBManager(db_engine=app.state.engine)
+                    ports = await node_ports_v2.ports(
+                        user_id=user_id,
+                        project_id=f"{project_id}",
+                        node_uuid=f"{node_id}",
+                        db_manager=db_manager,
+                    )
+                    input_data = {}
+                    # for port in (await ports.inputs).values():
+                    #     input_data[port.key] = await port.get_link()
+
                 # TODO: move the registry out of the dynamic sidecar settings!!
                 task_future = self.client.submit(
                     remote_fct,
