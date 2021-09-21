@@ -18,7 +18,9 @@ aioredis==1.3.1
 aiormq==3.3.1
     # via aio-pika
 alembic==1.7.3
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 amqp==5.0.6
     # via
     #   -c requirements/_base.txt
@@ -106,6 +108,7 @@ distro==1.6.0
     # via docker-compose
 docker==5.0.2
     # via
+    #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   docker-compose
 docker-compose==1.29.1
@@ -148,6 +151,7 @@ idna==2.10
 importlib-resources==5.2.2 ; python_version < "3.9"
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   alembic
 iniconfig==1.1.1
     # via pytest
@@ -162,7 +166,9 @@ kombu==5.1.0
 lazy-object-proxy==1.6.0
     # via astroid
 mako==1.1.5
-    # via alembic
+    # via
+    #   -c requirements/_base.txt
+    #   alembic
 markupsafe==1.1.1
     # via
     #   -c requirements/_base.txt
@@ -178,7 +184,9 @@ multidict==5.1.0
 nest-asyncio==1.5.1
     # via -r requirements/_test.in
 packaging==21.0
-    # via pytest
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
 pamqp==2.3.0
     # via aiormq
 paramiko==2.7.2
@@ -210,7 +218,9 @@ pylint==2.11.1
 pynacl==1.4.0
     # via paramiko
 pyparsing==2.4.7
-    # via packaging
+    # via
+    #   -c requirements/_base.txt
+    #   packaging
 pyrsistent==0.18.0
     # via jsonschema
 pytest==6.2.5
@@ -290,7 +300,7 @@ sniffio==1.2.0
     #   asgi-lifespan
     #   httpcore
     #   httpx
-sqlalchemy==1.3.20
+sqlalchemy==1.3.24
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -327,6 +337,7 @@ wcwidth==0.2.5
     #   prompt-toolkit
 websocket-client==0.59.0
     # via
+    #   -c requirements/_base.txt
     #   docker
     #   docker-compose
 wrapt==1.12.1
@@ -338,7 +349,9 @@ yarl==1.6.3
     #   aiohttp
     #   aiormq
 zipp==3.5.0
-    # via importlib-resources
+    # via
+    #   -c requirements/_base.txt
+    #   importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

@@ -14,6 +14,7 @@
 ../../packages/postgres-database/
 ../../packages/service-library[fastapi]
 ../../packages/settings-library/
+../../packages/simcore-sdk/
 
 # installs current package
 .
