@@ -39,7 +39,7 @@ qx.Class.define("osparc.utils.Utils", {
       data["isDynamicV2"] = isDynamicV2;
       if (isDynamicV2) {
         // dynamic service
-        const srvUrl = window.location.protocol + "//" + resp["service_uuid"] + ".services." + window.location.host;
+        const srvUrl = window.location.protocol + "//" + window.location.host + "projects/" + resp["project_id"] + "/nodes/" + resp["service_uuid"] + ":retrieve";
         data["srvUrl"] = srvUrl;
       } else {
         // old implementation
