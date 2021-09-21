@@ -16,9 +16,14 @@ def mock_service_envs(mock_env_devel_environment, monkeypatch):
     monkeypatch.setenv("DASK_START_AS_SCHEDULER", "1")
 
     monkeypatch.setenv("SWARM_STACK_NAME", "simcore")
-    monkeypatch.setenv("SIDECAR_LOGLEVEL", "WARNING")
+    monkeypatch.setenv("SIDECAR_LOGLEVEL", "DEBUG")
     monkeypatch.setenv("SIDECAR_HOST_HOSTNAME_PATH", "/home/scu/hostname")
-    monkeypatch.setenv("START_AS_MODE_CPU", "0")
+    monkeypatch.setenv(
+        "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME", "simcore_computational_shared_data"
+    )
+    monkeypatch.setenv(
+        "SIDECAR_COMP_SERVICES_SHARED_FOLDER", "/home/scu/computational_shared_data"
+    )
 
 
 def test_settings(mock_service_envs, monkeypatch):
