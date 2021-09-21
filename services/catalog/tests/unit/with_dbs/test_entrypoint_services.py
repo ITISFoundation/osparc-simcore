@@ -108,7 +108,8 @@ async def director_mockup(
     monkeypatch.setattr(services, "list_services", return_list_services)
 
     class FakeDirector:
-        async def get(self, url: str):
+        @staticmethod
+        async def get(url: str):
             if url == "/services":
                 return [s.dict(by_alias=True) for s in registry_services]
             if "/service_extras/" in url:

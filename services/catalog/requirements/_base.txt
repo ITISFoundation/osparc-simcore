@@ -30,7 +30,7 @@ email-validator==1.1.2
     # via
     #   fastapi
     #   pydantic
-fastapi==0.68.0
+fastapi==0.68.1
     # via -r requirements/_base.in
 graphene==2.1.8
     # via fastapi
@@ -134,7 +134,7 @@ starlette==0.14.2
     # via fastapi
 tenacity==6.3.1
     # via -r requirements/_base.in
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.2
     # via pydantic
 ujson==4.0.2
     # via fastapi
@@ -144,8 +144,12 @@ urllib3==1.26.5
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-uvicorn==0.13.3
-    # via fastapi
+uvicorn==0.13.4
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   fastapi
 uvloop==0.14.0
     # via uvicorn
 watchgod==0.6

@@ -40,7 +40,8 @@ def client(app: FastAPI) -> TestClient:
 @pytest.fixture()
 async def director_mockup(loop, app: FastAPI):
     class FakeDirector:
-        async def get(self, url: str):
+        @staticmethod
+        async def get(url: str):
             return ""
 
     app.dependency_overrides[get_director_api] = FakeDirector

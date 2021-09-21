@@ -179,7 +179,7 @@ typer==0.4.0
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
-typing-extensions==3.10.0.0
+typing-extensions==3.10.0.2
     # via
     #   aiohttp
     #   pydantic
@@ -203,7 +203,6 @@ wrapt==1.12.1
     # via aiobotocore
 yarl==1.5.1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiohttp
 

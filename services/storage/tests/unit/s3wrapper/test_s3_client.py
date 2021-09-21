@@ -266,7 +266,7 @@ def test_list_objects(s3_client, bucket, text_files_factory):
 
     listed_objects = s3_client.list_objects(bucket)
     for s3_obj in listed_objects:
-        assert s3_obj.object_name == "level1/" or s3_obj.object_name == "level2/"
+        assert s3_obj.object_name in ("level1/", "level2/")
 
     listed_objects = s3_client.list_objects(bucket, prefix="level1")
     for s3_obj in listed_objects:
@@ -278,7 +278,4 @@ def test_list_objects(s3_client, bucket, text_files_factory):
 
     listed_objects = s3_client.list_objects(bucket, recursive=True)
     for s3_obj in listed_objects:
-        assert (
-            s3_obj.object_name == "level1/level2/1"
-            or s3_obj.object_name == "level2/level2/2"
-        )
+        assert s3_obj.object_name in ("level1/level2/1", "level2/level2/2")

@@ -357,8 +357,8 @@ class PennsieveApiClient(BaseServiceClientApi):
             ),
         )
 
+    @staticmethod
     async def upload_file(
-        self,
         api_key: str,
         api_secret: str,
         file: Path,
