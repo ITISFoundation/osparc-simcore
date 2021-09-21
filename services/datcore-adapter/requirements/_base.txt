@@ -8,8 +8,6 @@ aiofiles==0.7.0
     # via -r requirements/_base.in
 anyio==3.2.1
     # via httpcore
-asgiref==3.4.1
-    # via uvicorn
 boto3==1.17.104
     # via pennsieve
 botocore==1.20.104
@@ -38,7 +36,7 @@ ecdsa==0.14.1
     # via python-jose
 email-validator==1.1.3
     # via pydantic
-fastapi==0.68.0
+fastapi==0.68.1
     # via
     #   -r requirements/_base.in
     #   fastapi-pagination
@@ -58,7 +56,7 @@ hpack==3.0.0
     # via h2
 httpcore==0.13.6
     # via httpx
-httptools==0.2.0
+httptools==0.1.2
     # via uvicorn
 httpx==0.18.2
     # via -r requirements/_base.in
@@ -139,9 +137,9 @@ sniffio==1.2.0
     #   httpx
 starlette==0.14.2
     # via fastapi
-typer==0.3.2
+typer==0.4.0
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
-typing-extensions==3.10.0.0
+typing-extensions==3.10.0.2
     # via
     #   fastapi-pagination
     #   pydantic
@@ -152,15 +150,19 @@ urllib3==1.26.6
     #   -c requirements/../../../requirements/constraints.txt
     #   botocore
     #   requests
-uvicorn==0.14.0
-    # via -r requirements/_base.in
+uvicorn==0.13.4
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.in
 uvloop==0.15.2
     # via uvicorn
 watchgod==0.7
     # via uvicorn
 websocket-client==1.1.0
     # via pennsieve
-websockets==9.1
+websockets==8.1
     # via uvicorn
 wrapt==1.12.1
     # via deprecated

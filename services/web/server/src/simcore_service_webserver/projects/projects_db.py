@@ -372,9 +372,8 @@ class ProjectDBAPI:
                 total_number_of_projects,
             )
 
-    async def __load_user_groups(
-        self, conn: SAConnection, user_id: int
-    ) -> List[RowProxy]:
+    @staticmethod
+    async def __load_user_groups(conn: SAConnection, user_id: int) -> List[RowProxy]:
         user_groups: List[RowProxy] = []
         query = (
             select([groups])
@@ -761,7 +760,8 @@ class ProjectDBAPI:
                     break
         return project_uuid
 
-    async def _get_user_email(self, conn: SAConnection, user_id: Optional[int]) -> str:
+    @staticmethod
+    async def _get_user_email(conn: SAConnection, user_id: Optional[int]) -> str:
         if not user_id:
             return "not_a_user@unknown.com"
         email: Optional[str] = await conn.scalar(
@@ -769,9 +769,8 @@ class ProjectDBAPI:
         )
         return email or "Unknown"
 
-    async def _get_user_primary_group_gid(
-        self, conn: SAConnection, user_id: int
-    ) -> int:
+    @staticmethod
+    async def _get_user_primary_group_gid(conn: SAConnection, user_id: int) -> int:
         primary_gid: int = await conn.scalar(
             sa.select([users.c.primary_gid]).where(users.c.id == str(user_id))
         )
@@ -779,7 +778,8 @@ class ProjectDBAPI:
             raise UserNotFoundError(uid=user_id)
         return primary_gid
 
-    async def _get_tags_by_project(self, conn: SAConnection, project_id: str) -> List:
+    @staticmethod
+    async def _get_tags_by_project(conn: SAConnection, project_id: str) -> List:
         query = sa.select([study_tags.c.tag_id]).where(
             study_tags.c.study_id == project_id
         )

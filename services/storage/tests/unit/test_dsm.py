@@ -78,9 +78,7 @@ async def test_dsm_s3(dsm_mockup_db, dsm_fixture):
     bobs_biostromy_files = []
     for d in dsm_mockup_db.keys():
         md = dsm_mockup_db[d]
-        if md.user_id == bob_id and (
-            md.project_name == "biology" or md.project_name == "astronomy"
-        ):
+        if md.user_id == bob_id and (md.project_name in ("biology", "astronomy")):
             bobs_biostromy_files.append(md)
 
     assert len(data) == len(bobs_biostromy_files)

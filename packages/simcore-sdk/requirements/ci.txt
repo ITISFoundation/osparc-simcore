@@ -12,9 +12,11 @@
 
 # installs this repo's packages
 ../postgres-database/[migration]
-../service-library/
 ../pytest-simcore/
 ../models-library/
+
+# FIXME: these dependencies should be removed
+../service-library/
 ../../services/storage/client-sdk/python/ # Needed ONLY for testing
 
 

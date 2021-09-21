@@ -283,6 +283,20 @@ qx.Class.define("osparc.data.model.Study", {
       return this.self().hasSnapshots(this.getUuid());
     },
 
+    getPipelineState: function() {
+      if (this.getState() && "state" in this.getState()) {
+        return this.getState()["state"]["value"];
+      }
+      return null;
+    },
+
+    isLocked: function() {
+      if (this.getState() && "locked" in this.getState()) {
+        return this.getState()["locked"]["value"];
+      }
+      return false;
+    },
+
     __applyAccessRights: function(value) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();

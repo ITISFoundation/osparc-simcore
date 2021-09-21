@@ -10,7 +10,7 @@ anyio==3.2.1
     #   httpcore
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
-astroid==2.7.3
+astroid==2.8.0
     # via pylint
 attrs==21.2.0
     # via pytest
@@ -39,7 +39,7 @@ docopt==0.6.2
     #   coveralls
 execnet==1.9.0
     # via pytest-xdist
-faker==8.11.0
+faker==8.13.2
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -75,7 +75,7 @@ packaging==21.0
     #   pytest-sugar
 platformdirs==2.3.0
     # via pylint
-pluggy==0.13.1
+pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
@@ -83,11 +83,11 @@ py==1.10.0
     # via
     #   pytest
     #   pytest-forked
-pylint==2.10.2
+pylint==2.11.1
     # via -r requirements/_test.in
 pyparsing==2.4.7
     # via packaging
-pytest==6.2.4
+pytest==6.2.5
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -151,6 +151,11 @@ toml==0.10.2
     #   pylint
     #   pytest
     #   pytest-cov
+typing-extensions==3.10.0.2
+    # via
+    #   -c requirements/_base.txt
+    #   astroid
+    #   pylint
 urllib3==1.26.6
     # via
     #   -c requirements/../../../requirements/constraints.txt

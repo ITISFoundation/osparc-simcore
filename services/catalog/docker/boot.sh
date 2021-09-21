@@ -35,6 +35,5 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     --reload-dir services/catalog/src/simcore_service_catalog
 else
   exec uvicorn simcore_service_catalog.main:the_app \
-    --host 0.0.0.0 \
-    --reload-dir services/catalog/src/simcore_service_catalog
+    --host 0.0.0.0
 fi

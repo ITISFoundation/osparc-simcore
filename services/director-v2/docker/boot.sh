@@ -42,6 +42,5 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     --reload-dir services/director-v2/src/simcore_service_director_v2
 else
   exec uvicorn simcore_service_director_v2.main:the_app \
-    --host 0.0.0.0 \
-    --reload-dir services/director-v2/src/simcore_service_director_v2
+    --host 0.0.0.0
 fi

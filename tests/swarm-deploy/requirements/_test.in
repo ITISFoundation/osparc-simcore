@@ -10,6 +10,8 @@ alembic
 click
 coverage
 docker
+jsonschema
+minio
 pytest
 pytest-aiohttp
 pytest-cov
@@ -20,4 +22,3 @@ pytest-sugar
 python-dotenv
 pyyaml
 tenacity
-minio

@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-anyio==3.3.0
+anyio==3.3.1
     # via httpcore
 attrs==21.2.0
     # via
@@ -14,19 +14,21 @@ certifi==2021.5.30
     # via
     #   httpx
     #   requests
-charset-normalizer==2.0.4
-    # via requests
+charset-normalizer==2.0.6
+    # via
+    #   httpx
+    #   requests
 coverage==5.5
     # via pytest-cov
-docker==5.0.0
+docker==5.0.2
     # via -r requirements/_test.in
-faker==8.11.0
+faker==8.13.2
     # via -r requirements/_test.in
 h11==0.12.0
     # via httpcore
-httpcore==0.13.6
+httpcore==0.13.7
     # via httpx
-httpx==0.18.2
+httpx==0.19.0
     # via -r requirements/_test.in
 idna==3.2
     # via
@@ -39,7 +41,7 @@ jsonschema==3.2.0
     # via -r requirements/_test.in
 packaging==21.0
     # via pytest
-pluggy==0.13.1
+pluggy==1.0.0
     # via pytest
 py==1.10.0
     # via pytest
@@ -47,7 +49,7 @@ pyparsing==2.4.7
     # via packaging
 pyrsistent==0.18.0
     # via jsonschema
-pytest==6.2.4
+pytest==6.2.5
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -89,7 +91,7 @@ urllib3==1.26.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-websocket-client==1.1.1
+websocket-client==1.2.1
     # via docker
 
 # The following packages are considered to be unsafe in a requirements file:

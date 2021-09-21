@@ -6,7 +6,7 @@
 #
 certifi==2021.5.30
     # via requests
-charset-normalizer==2.0.4
+charset-normalizer==2.0.6
     # via requests
 docker==5.0.2
     # via -r requirements.in

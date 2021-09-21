@@ -57,7 +57,8 @@ class DBContextManager:
         self._db_engine: Optional[aiopg.sa.Engine] = db_engine
         self._db_engine_created: bool = False
 
-    async def _create_db_engine(self) -> aiopg.sa.Engine:
+    @staticmethod
+    async def _create_db_engine() -> aiopg.sa.Engine:
         dsn = DataSourceName(
             application_name=f"{__name__}_{id(socket.gethostname())}",
             database=config.POSTGRES_DB,

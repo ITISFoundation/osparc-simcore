@@ -15,6 +15,8 @@
 --constraint ../../../packages/postgres-database/requirements/_base.in
 --constraint ../../../packages/service-library/requirements/_base.in
 --constraint ../../../packages/simcore-sdk/requirements/_base.in
+
+# WARNING: this keeps compatibility with sidecar service requirements
 --constraint ../../../services/sidecar/requirements/_base.txt
 
 aiodocker

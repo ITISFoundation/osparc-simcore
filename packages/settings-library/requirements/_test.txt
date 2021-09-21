@@ -4,13 +4,13 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-astroid==2.7.3
+astroid==2.8.0
     # via pylint
 attrs==21.2.0
     # via pytest
 certifi==2021.5.30
     # via requests
-charset-normalizer==2.0.4
+charset-normalizer==2.0.6
     # via requests
 coverage==5.5
     # via
@@ -37,15 +37,15 @@ packaging==21.0
     #   pytest-sugar
 platformdirs==2.3.0
     # via pylint
-pluggy==0.13.1
+pluggy==1.0.0
     # via pytest
 py==1.10.0
     # via pytest
-pylint==2.10.2
+pylint==2.11.1
     # via -r requirements/_test.in
 pyparsing==2.4.7
     # via packaging
-pytest==6.2.4
+pytest==6.2.5
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -73,6 +73,11 @@ toml==0.10.2
     #   pylint
     #   pytest
     #   pytest-cov
+typing-extensions==3.10.0.2
+    # via
+    #   -c requirements/_base.txt
+    #   astroid
+    #   pylint
 urllib3==1.26.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
