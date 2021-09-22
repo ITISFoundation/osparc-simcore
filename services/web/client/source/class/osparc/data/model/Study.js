@@ -248,6 +248,24 @@ qx.Class.define("osparc.data.model.Study", {
       });
     },
 
+    getCurrentSnapshot: function(studyId) {
+      return new Promise((resolve, reject) => {
+        const params = {
+          url: {
+            "studyId": studyId
+          }
+        };
+        osparc.data.Resources.fetch("snapshots", "current", params)
+          .then(currentSnapshot => {
+            resolve(currentSnapshot);
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
+    },
+
     hasSnapshots: function(studyId) {
       return new Promise((resolve, reject) => {
         this.self().getSnapshots(studyId)
@@ -277,6 +295,10 @@ qx.Class.define("osparc.data.model.Study", {
 
     getSnapshots: function() {
       return this.self().getSnapshots(this.getUuid());
+    },
+
+    getCurrentSnapshot: function() {
+      return this.self().getCurrentSnapshot(this.getUuid());
     },
 
     hasSnapshots: function() {

@@ -45,6 +45,8 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
     __snapshotPreview: null,
     __editSnapshotBtn: null,
     __openSnapshotBtn: null,
+    __snapshots: null,
+    __currentSnapshot: null,
     __selectedSnapshotId: null,
 
     __buildLayout: function() {
@@ -78,9 +80,13 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
     },
 
     __rebuildSnapshots: function() {
-      this.__study.getSnapshots()
-        .then(snapshots => {
-          this.__snapshots = snapshots;
+      Promise.all([
+        this.__study.getSnapshots(),
+        this.__study.getCurrentSnapshot()
+      ])
+        .then(values => {
+          this.__snapshots = values[0];
+          this.__currentSnapshot = values[1];
           this.__rebuildSnapshotsTable();
           this.__rebuildSnapshotsGraph();
         });
@@ -128,7 +134,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
       gitGraphCanvas.addListenerOnce("appear", () => {
         const gitGraphWrapper = new osparc.wrapper.GitGraph();
         gitGraphWrapper.init(gitGraphCanvas, gitGraphInteract)
-          .then(() => gitGraphWrapper.populateGraph(this.__snapshots));
+          .then(() => gitGraphWrapper.populateGraph(this.__snapshots, this.__currentSnapshot));
         gitGraphWrapper.addListener("snapshotTap", e => {
           const snapshotId = e.getData();
           this.__snapshotSelected(snapshotId);

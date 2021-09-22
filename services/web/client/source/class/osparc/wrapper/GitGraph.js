@@ -137,7 +137,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       return gitgraph;
     },
 
-    commit: function(branch, commitData) {
+    commit: function(branch, commitData, isCurrent = false) {
       branch.commit(commitData["tags"]);
       branch["lastCommit"] = commitData["id"];
 
@@ -148,6 +148,9 @@ qx.Class.define("osparc.wrapper.GitGraph", {
         allowGrowX: true
       });
       const texts = [];
+      if (isCurrent) {
+        texts.push("Yeeeey");
+      }
       texts.push(commitData["tags"]);
       if (commitData["message"]) {
         texts.push(commitData["message"]);
@@ -216,8 +219,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       return newBranch;
     },
 
-    populateGraph: function(snapshots) {
-      console.log(snapshots);
+    populateGraph: function(snapshots, currentSnapshot) {
       this.__branches = [];
       snapshots.reverse().forEach((snapshot, i) => {
         const branch = this.__getBranch(snapshot);
@@ -229,7 +231,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
           createdAt: osparc.utils.Utils.formatDateAndTime(snapshotDate),
           parentsIDs: snapshot["parents_ids"]
         };
-        this.commit(branch, commitData);
+        this.commit(branch, commitData, snapshot["id"] === currentSnapshot["id"]);
 
         // due to this bug https://github.com/nicoespeon/gitgraph.js/issues/270
         // check if more branches need to be created now
