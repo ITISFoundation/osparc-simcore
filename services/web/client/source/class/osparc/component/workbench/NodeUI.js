@@ -80,6 +80,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   members: {
     __progressBar: null,
     __thumbnail: null,
+    __svgWorkbenchCanvas: null,
 
     getNodeType: function() {
       return "service";
