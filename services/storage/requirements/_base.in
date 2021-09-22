@@ -6,8 +6,11 @@
 
 --requirement ../../../packages/models-library/requirements/_base.in
 --requirement ../../../packages/postgres-database/requirements/_base.in
---requirement ../../../packages/service-library/requirements/_aiohttp.in
+
+# settings-library[aiohttp]
 --requirement ../../../packages/settings-library/requirements/_base.in
+--requirement ../../../packages/service-library/requirements/_aiohttp.in
+
 
 # server
 aiohttp
