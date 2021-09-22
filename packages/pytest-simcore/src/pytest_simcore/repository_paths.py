@@ -4,19 +4,18 @@ from pathlib import Path
 
 import pytest
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+WILDCARD = "packages/pytest-simcore/src/pytest_simcore/__init__.py"
+ROOT = Path("/")
 
 
 @pytest.fixture(scope="session")
 def osparc_simcore_root_dir(request) -> Path:
     """osparc-simcore repo root dir"""
-    WILDCARD = "packages/pytest-simcore/src/pytest_simcore/__init__.py"
-    ROOT = Path("/")
-
     test_dir = Path(request.session.fspath)  # expected test dir in simcore
 
-    root_dir = current_dir
-    for start_dir in (current_dir, test_dir):
+    root_dir = CURRENT_DIR
+    for start_dir in (CURRENT_DIR, test_dir):
         root_dir = start_dir
         while not any(root_dir.glob(WILDCARD)) and root_dir != ROOT:
             root_dir = root_dir.parent
@@ -56,10 +55,18 @@ def osparc_simcore_scripts_dir(osparc_simcore_root_dir: Path) -> Path:
     return scripts_folder
 
 
+@pytest.fixture(scope="session")
+def osparc_simcore_web_client_dir(services_dir: Path) -> Path:
+    wbc_dir = services_dir / "web/client"
+    assert wbc_dir.exists()
+    return wbc_dir
+
+
 # alias for backwards compatibility (new are longer to avoid name collisions)
 packages_directory = osparc_simcore_packages_dir
 services_dir = osparc_simcore_services_dir
-scripts_dir = osparc_simcore_scripts_dir
+script_dir = osparc_simcore_scripts_dir
+web_client_dir = osparc_simcore_web_client_dir
 
 
 @pytest.fixture(scope="session")
@@ -78,28 +85,13 @@ def services_docker_compose_file(services_dir):
 
 
 @pytest.fixture(scope="session")
-def web_client_dir(services_dir: Path) -> Path:
-    wbc_dir = services_dir / "web/client"
-    assert wbc_dir.exists()
-    return wbc_dir
-
-
-@pytest.fixture(scope="session")
 def pylintrc(osparc_simcore_root_dir: Path) -> Path:
     pylintrc = osparc_simcore_root_dir / ".pylintrc"
     assert pylintrc.exists()
     return pylintrc
 
 
-@pytest.fixture(scope="session")
-def tests_dir() -> Path:
-    tdir = (current_dir / "..").resolve()
-    assert tdir.exists()
-    assert tdir.name == "tests"
-    return tdir
-
-
-## PACKAGE and SERVICE DIRECTORY STRUCTURE
+## PACKAGE and SERVICE DIRECTORY STRUCTURE -------
 
 
 @pytest.fixture(scope="session")
