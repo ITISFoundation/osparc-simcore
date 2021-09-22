@@ -12,6 +12,12 @@ from uuid import uuid4
 import fsspec
 from aiodocker import Docker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.io import (
+    FileUrl,
+    TaskInputData,
+    TaskOutputData,
+    TaskOutputDataSchema,
+)
 from pydantic import ValidationError
 from yarl import URL
 
@@ -25,7 +31,6 @@ from .docker_utils import (
     pull_image,
 )
 from .errors import ServiceBadFormattedOutputError, ServiceRunError
-from .models import FileUrl, TaskInputData, TaskOutputData, TaskOutputDataSchema
 from .task_shared_volume import TaskSharedVolumes
 
 logger = create_dask_worker_logger(__name__)

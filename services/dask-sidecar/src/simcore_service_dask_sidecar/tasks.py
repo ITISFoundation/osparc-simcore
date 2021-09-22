@@ -3,15 +3,15 @@ from typing import List, Optional, cast
 
 from dask.distributed import get_worker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from distributed.worker import TaskState
-
-from .boot_mode import BootMode
-from .computational_sidecar.core import ComputationalSidecar
-from .computational_sidecar.models import (
+from dask_task_models_library.container_tasks.io import (
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
 )
+from distributed.worker import TaskState
+
+from .boot_mode import BootMode
+from .computational_sidecar.core import ComputationalSidecar
 from .meta import print_banner
 from .settings import Settings
 from .utils import create_dask_worker_logger

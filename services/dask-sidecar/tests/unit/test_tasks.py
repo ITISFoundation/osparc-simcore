@@ -25,18 +25,21 @@ from _pytest.monkeypatch import MonkeyPatch
 from _pytest.tmpdir import TempPathFactory
 from aiohttp.test_utils import loop_context
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.io import (
+    FileUrl,
+    TaskInputData,
+    TaskOutputData,
+    TaskOutputDataSchema,
+    create_inputs_signature,
+)
 from distributed import Client
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from pydantic import Field
+from pydantic.networks import AnyUrl
 from pytest_mock.plugin import MockerFixture
-from simcore_service_dask_sidecar.computational_sidecar.models import (
-    FileUrl,
-    TaskInputData,
-    TaskOutputData,
-    TaskOutputDataSchema,
-)
 from simcore_service_dask_sidecar.tasks import run_computational_sidecar
 from yarl import URL
 
@@ -253,6 +256,7 @@ def ubuntu_task(directory_server: List[URL]) -> ServiceExampleParam:
     ],
 )
 def test_run_computational_sidecar_real_fct(
+    loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
     dask_subsystem_mock: None,
     task: ServiceExampleParam,
