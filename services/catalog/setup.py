@@ -41,7 +41,7 @@ install_requirements = list(
     }
 )
 
-test_requirements = read_reqs(current_dir / "requirements" / "_test.txt")
+test_requirements = list(read_reqs(current_dir / "requirements" / "_test.txt"))
 
 setup(
     name="simcore-service-catalog",
