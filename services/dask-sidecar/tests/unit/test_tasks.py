@@ -14,16 +14,17 @@ import sys
 import time
 from dataclasses import dataclass
 from pprint import pformat
-from typing import Any, Dict, Iterable, List
-from unittest import mock
+from typing import Dict, Iterable, List, Optional
 from uuid import uuid4
 
 import dask
 import pytest
 import requests
 from _pytest.logging import LogCaptureFixture
+from _pytest.monkeypatch import MonkeyPatch
 from _pytest.tmpdir import TempPathFactory
 from aiohttp.test_utils import loop_context
+from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from distributed import Client
 from faker import Faker
 from models_library.projects import ProjectID
@@ -31,7 +32,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.computational_sidecar.models import (
-    DockerBasicAuth,
     FileUrl,
     TaskInputData,
     TaskOutputData,
@@ -44,6 +44,34 @@ from simcore_service_dask_sidecar.tasks import (
 from yarl import URL
 
 logger = logging.getLogger(__name__)
+
+
+@pytest.fixture
+def mock_service_envs(
+    mock_env_devel_environment: Dict[str, Optional[str]],
+    monkeypatch: MonkeyPatch,
+    mocker: MockerFixture,
+    tmp_path_factory: TempPathFactory,
+) -> None:
+
+    # Variables directly define inside Dockerfile
+    monkeypatch.setenv("SC_BOOT_MODE", "debug-ptvsd")
+
+    monkeypatch.setenv("SWARM_STACK_NAME", "simcore")
+    monkeypatch.setenv("SIDECAR_LOGLEVEL", "DEBUG")
+    monkeypatch.setenv("SIDECAR_HOST_HOSTNAME_PATH", "/home/scu/hostname")
+    monkeypatch.setenv(
+        "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME", "simcore_computational_shared_data"
+    )
+
+    shared_data_folder = tmp_path_factory.mktemp("pytest_comp_shared_data")
+    assert shared_data_folder.exists()
+    monkeypatch.setenv("SIDECAR_COMP_SERVICES_SHARED_FOLDER", f"{shared_data_folder}")
+    mocker.patch(
+        "simcore_service_dask_sidecar.computational_sidecar.core.get_computational_shared_data_mount_point",
+        return_value=shared_data_folder,
+    )
+
 
 # TODO: real db tables
 @pytest.fixture
@@ -231,7 +259,10 @@ def ubuntu_task(directory_server: List[URL]) -> ServiceExampleParam:
     ],
 )
 async def test_run_computational_sidecar_real_fct(
-    dask_subsystem_mock: None, task: ServiceExampleParam, caplog: LogCaptureFixture
+    mock_service_envs: None,
+    dask_subsystem_mock: None,
+    task: ServiceExampleParam,
+    caplog: LogCaptureFixture,
 ):
     caplog.set_level(logging.INFO)
     output_data = await _run_computational_sidecar_async(
@@ -289,7 +320,7 @@ async def test_run_computational_sidecar_real_fct(
     ],
 )
 async def test_run_computational_sidecar_dask(
-    dask_client: Client, task: ServiceExampleParam
+    mock_service_envs: None, dask_client: Client, task: ServiceExampleParam
 ):
     future = dask_client.submit(
         run_computational_sidecar,
