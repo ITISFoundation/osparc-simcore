@@ -7,12 +7,13 @@ from typing import AsyncIterator, Awaitable, List
 from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
+from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from pydantic import ByteSize
 
 from ..settings import Settings
 from ..utils import create_dask_worker_logger
 from .errors import ComputationalSidecarException
-from .models import ContainerHostConfig, DockerBasicAuth, DockerContainerConfig
+from .models import ContainerHostConfig, DockerContainerConfig
 
 logger = create_dask_worker_logger(__name__)
 

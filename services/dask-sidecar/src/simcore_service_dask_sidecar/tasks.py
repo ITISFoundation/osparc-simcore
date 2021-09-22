@@ -2,12 +2,12 @@ import asyncio
 from typing import List, Optional, cast
 
 from dask.distributed import get_worker
+from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from distributed.worker import TaskState
 
 from .boot_mode import BootMode
 from .computational_sidecar.core import ComputationalSidecar
 from .computational_sidecar.models import (
-    DockerBasicAuth,
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
