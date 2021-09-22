@@ -8,6 +8,7 @@ from uuid import uuid4
 from dask.distributed import Client, Future, fire_and_forget
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.io import (
+    FileUrl,
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
@@ -15,6 +16,7 @@ from dask_task_models_library.container_tasks.io import (
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from pydantic import AnyUrl
 from tenacity import before_sleep_log, retry, retry_if_exception_type, wait_random
 
 from ..core.errors import (
@@ -181,40 +183,51 @@ class DaskClient:
                 cluster_id_prefix=self.settings.DASK_CLUSTER_ID_PREFIX,  # type: ignore
                 cluster_id=cluster_id,
             )
-            try:
 
-                async def _compute_input_data(
-                    app: FastAPI,
-                    user_id: UserID,
-                    project_id: ProjectID,
-                    node_id: NodeID,
-                ) -> Dict[str, Any]:
-                    from simcore_sdk import node_ports_v2
-                    from simcore_sdk.node_ports_v2 import DBManager
+            async def _compute_input_data(
+                app: FastAPI,
+                user_id: UserID,
+                project_id: ProjectID,
+                node_id: NodeID,
+            ) -> TaskInputData:
+                from simcore_sdk import node_ports_v2
+                from simcore_sdk.node_ports_v2 import DBManager
 
-                    db_manager = DBManager(db_engine=app.state.engine)
-                    ports = await node_ports_v2.ports(
-                        user_id=user_id,
-                        project_id=f"{project_id}",
-                        node_uuid=f"{node_id}",
-                        db_manager=db_manager,
-                    )
-                    input_data = {}
-                    for port in (await ports.inputs).values():
-                        input_data[port.key] = await port.get_value_link()
-                    return input_data
-
-                input_data = await _compute_input_data(
-                    self.app, user_id, project_id, node_id
+                db_manager = DBManager(db_engine=app.state.engine)
+                ports = await node_ports_v2.ports(
+                    user_id=user_id,
+                    project_id=f"{project_id}",
+                    node_uuid=f"{node_id}",
+                    db_manager=db_manager,
                 )
+                input_data = {}
+                for port in (await ports.inputs).values():
+                    value_link = await port.get_value_link()
+                    if isinstance(value_link, AnyUrl):
+                        input_data[port.key] = FileUrl(
+                            url=value_link,
+                            file_mapping=(
+                                next(iter(port.file_to_key_map))
+                                if port.file_to_key_map
+                                else None
+                            ),
+                        )
+                    else:
+                        input_data[port.key] = value_link
+                return TaskInputData.parse_obj(input_data)
+
+            input_data = await _compute_input_data(
+                self.app, user_id, project_id, node_id
+            )
+            try:
                 # TODO: move the registry out of the dynamic sidecar settings!!
                 task_future = self.client.submit(
                     remote_fct,
-                    docker_basic_auth={
-                        "server_address": self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.REGISTRY.REGISTRY_URL,
-                        "username": self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.REGISTRY.REGISTRY_USER,
-                        "password": self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.REGISTRY.REGISTRY_PW,
-                    },
+                    docker_basic_auth=DockerBasicAuth(
+                        server_address=self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.REGISTRY.REGISTRY_URL,
+                        username=self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.REGISTRY.REGISTRY_USER,
+                        password=self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.REGISTRY.REGISTRY_PW,
+                    ),
                     service_key=node_image.name,
                     service_version=node_image.tag,
                     input_data=input_data,
