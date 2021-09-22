@@ -26,6 +26,9 @@ def test_copy_functions():
     assert copied_func.__doc__ == original_func.__doc__
     assert inspect.signature(original_func) == inspect.signature(copied_func)
 
+    # pylint: disable=not-callable
+    # pylint: disable=no-member
+
     assert hasattr(copied_func, "cache")
     assert callable(copied_func)
     assert original_func(1, True, z=33) == copied_func(1, True, z=33)
