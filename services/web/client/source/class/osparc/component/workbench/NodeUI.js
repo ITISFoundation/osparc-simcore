@@ -58,7 +58,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     },
 
     type: {
-      check: ["normal", "file", "parameter"],
+      check: ["normal", "file", "parameter", "iterator"],
       init: "normal",
       nullable: false,
       apply: "__applyType"
@@ -96,7 +96,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3)).set({
             margin: [3, 4]
           });
-          let nodeType = this.getNode().getMetaData().type;
+          const nodeType = this.getNode().getMetaData().type;
           const type = osparc.utils.Services.getType(nodeType);
           if (type) {
             control.add(new osparc.ui.basic.Chip(type.label, type.icon + "12"));
@@ -138,7 +138,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       chipContainer.add(nodeStatus);
     },
 
-    populateNodeLayout: function() {
+    populateNodeLayout: function(svgWorkbenchCanvas) {
       const node = this.getNode();
       node.bind("label", this, "caption", {
         onUpdate: () => {
@@ -155,6 +155,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.setType("file");
       } else if (node.isParameter()) {
         this.setType("parameter");
+      } else if (node.isIterator()) {
+        this.__svgWorkbenchCanvas = svgWorkbenchCanvas;
+        this.setType("iterator");
       }
     },
 
@@ -178,6 +181,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           break;
         case "parameter":
           this.__turnIntoParameterUI();
+          break;
+        case "iterator":
+          this.__turnIntoIteratorUI();
           break;
       }
     },
@@ -257,6 +263,20 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         label.setValue(String(newVal["value"]));
       });
       this.fireEvent("nodeMoving");
+    },
+
+    __turnIntoIteratorUI: function() {
+      const width = 150;
+      this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
+
+      if (this.__svgWorkbenchCanvas) {
+        const nShadows = 2;
+        this.shadows = [];
+        for (let i=0; i<nShadows; i++) {
+          const nodeUIShadow = this.__svgWorkbenchCanvas.drawNodeUI(width, 62, this.self().CIRCLED_RADIUS);
+          this.shadows.push(nodeUIShadow);
+        }
+      }
     },
 
     // overridden
