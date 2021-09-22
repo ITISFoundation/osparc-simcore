@@ -1,13 +1,14 @@
 import functools
 import types
+from typing import Callable
 
 
-def copy_func(f, *, rename: str = None):
+def copy_func(f):
     # SEE https://stackoverflow.com/questions/13503079/how-to-create-a-copy-of-a-python-function
     g = types.FunctionType(
         f.__code__,
         f.__globals__,
-        name=rename or f.__name__,
+        name=f.__name__,
         argdefs=f.__defaults__,
         closure=f.__closure__,
     )
