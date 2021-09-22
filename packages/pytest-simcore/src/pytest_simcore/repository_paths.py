@@ -9,7 +9,7 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 @pytest.fixture(scope="session")
 def osparc_simcore_root_dir(request) -> Path:
-    """ osparc-simcore repo root dir """
+    """osparc-simcore repo root dir"""
     WILDCARD = "packages/pytest-simcore/src/pytest_simcore/__init__.py"
     ROOT = Path("/")
 
@@ -36,39 +36,38 @@ def osparc_simcore_root_dir(request) -> Path:
 
 @pytest.fixture(scope="session")
 def osparc_simcore_services_dir(osparc_simcore_root_dir) -> Path:
-    """ Path to osparc-simcore/services folder """
+    """Path to osparc-simcore/services folder"""
     services_dir = osparc_simcore_root_dir / "services"
     assert services_dir.exists()
     return services_dir
 
 
 @pytest.fixture(scope="session")
-def env_devel_file(osparc_simcore_root_dir: Path) -> Path:
-    """ Path to osparc-simcore/.env-devel file """
-    env_devel_fpath = osparc_simcore_root_dir / ".env-devel"
-    assert env_devel_fpath.exists()
-    return env_devel_fpath
-
-
-@pytest.fixture(scope="session")
-def packages_directory(osparc_simcore_root_dir: Path) -> Path:
+def osparc_simcore_packages_dir(osparc_simcore_root_dir: Path) -> Path:
     _folder = osparc_simcore_root_dir / "packages"
     assert _folder.exists()
     return _folder
 
 
 @pytest.fixture(scope="session")
-def script_dir(osparc_simcore_root_dir: Path) -> Path:
+def osparc_simcore_scripts_dir(osparc_simcore_root_dir: Path) -> Path:
     scripts_folder = osparc_simcore_root_dir / "scripts"
     assert scripts_folder.exists()
     return scripts_folder
 
 
+# alias for backwards compatibility (new are longer to avoid name collisions)
+packages_directory = osparc_simcore_packages_dir
+services_dir = osparc_simcore_services_dir
+scripts_dir = osparc_simcore_scripts_dir
+
+
 @pytest.fixture(scope="session")
-def services_dir(osparc_simcore_root_dir: Path) -> Path:
-    services_folder = osparc_simcore_root_dir / "services"
-    assert services_folder.exists()
-    return services_folder
+def env_devel_file(osparc_simcore_root_dir: Path) -> Path:
+    """Path to osparc-simcore/.env-devel file"""
+    env_devel_fpath = osparc_simcore_root_dir / ".env-devel"
+    assert env_devel_fpath.exists()
+    return env_devel_fpath
 
 
 @pytest.fixture(scope="session")
