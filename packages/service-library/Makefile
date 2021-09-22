@@ -4,15 +4,17 @@
 include ../../scripts/common.Makefile
 
 help:	## overwrites and calls common help function
-	$(MAKE) -f ../../scripts/common.Makefile $@
+	$(MAKE) --no-print-directory --file ../../scripts/common.Makefile $@
+	@echo
 	@echo '🚨 BEWARE there are issues with brakets in names `make test[aiohttp]` will raise errors:'
 	@echo '✅` `make "test[aiohttp]"` works as intended'
-	@echo
 	@echo '👓 Please note: when INSTALLING, DEVELOPING and TESTING '
+	@echo
 	@echo 'servicelib support for aiohttp extras is not included:'
 	@echo '- `make install-dev`: common features w/o any extras'
 	@echo '- `make "install-dev[aiohttp]"`: w/ aiohttp extras'
 	@echo '- `make "install-dev[fastapi]"`: w/ fastapi extras'
+	@echo '- `make "install-dev[all]"`: w/ all extras'
 
 
 .PHONY: install-dev install-dev[aiohttp] install-dev[fastapi] install-ci install-ci[aiohttp] install-ci[fastapi]
