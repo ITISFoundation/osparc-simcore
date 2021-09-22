@@ -17,4 +17,4 @@
 --editable ../pytest-simcore/
 
 # current module
---editable ."[aiohttp,fastapi]"
+--editable ."[all]"
