@@ -232,6 +232,10 @@ qx.Class.define("osparc.data.model.Study", {
 
     getSnapshots: function(studyId) {
       return new Promise((resolve, reject) => {
+        if (!osparc.data.Permissions.getInstance().canDo("study.snapshot.read")) {
+          reject();
+          return;
+        }
         const params = {
           url: {
             "studyId": studyId
@@ -254,9 +258,8 @@ qx.Class.define("osparc.data.model.Study", {
           .then(snapshots => {
             resolve(Boolean(snapshots.length));
           })
-          .catch(err => {
-            console.error(err);
-            reject(err);
+          .catch(() => {
+            resolve(false);
           });
       });
     }

@@ -41,7 +41,9 @@ qx.Class.define("osparc.utils.Study", {
               const newUuid = osparc.utils.Utils.uuidv4();
               const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
               minStudyData["name"] = service["name"];
-              minStudyData["thumbnail"] = service["thumbnail"];
+              if (service["thumbnail"]) {
+                minStudyData["thumbnail"] = service["thumbnail"];
+              }
               minStudyData["workbench"][newUuid] = {
                 "key": service["key"],
                 "version": service["version"],
