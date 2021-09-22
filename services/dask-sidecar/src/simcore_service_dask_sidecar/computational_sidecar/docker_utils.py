@@ -12,7 +12,6 @@ from pydantic import ByteSize
 
 from ..settings import Settings
 from ..utils import create_dask_worker_logger
-from .errors import ComputationalSidecarException
 from .models import ContainerHostConfig, DockerContainerConfig
 
 logger = create_dask_worker_logger(__name__)
@@ -206,7 +205,10 @@ async def get_computational_shared_data_mount_point(docker_client: Docker) -> st
         )
         return volume_attributes["Mountpoint"]
 
-    except DockerError as err:
-        raise ComputationalSidecarException(
-            f"Error while retrieving docker volume {app_settings.SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME}"
-        ) from err
+    except DockerError:
+        logger.exception(
+            "Error while retrieving docker volume %s, returnining default %s instead",
+            app_settings.SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME,
+            app_settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER,
+        )
+        return f"{app_settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER}"
