@@ -2,12 +2,17 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from typing import Dict, Optional
+
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 from simcore_service_dask_sidecar.settings import Settings
 
 
 @pytest.fixture
-def mock_service_envs(mock_env_devel_environment, monkeypatch):
+def mock_service_envs(
+    mock_env_devel_environment: Dict[str, Optional[str]], monkeypatch: MonkeyPatch
+) -> None:
 
     # Variables directly define inside Dockerfile
     monkeypatch.setenv("SC_BOOT_MODE", "debug-ptvsd")
@@ -26,7 +31,7 @@ def mock_service_envs(mock_env_devel_environment, monkeypatch):
     )
 
 
-def test_settings(mock_service_envs, monkeypatch):
+def test_settings(mock_service_envs: None, monkeypatch: MonkeyPatch):
 
     monkeypatch.delenv("DASK_START_AS_SCHEDULER")
     settings = Settings.create_from_envs()
