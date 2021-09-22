@@ -17,10 +17,6 @@ install_requirements = read_reqs(
     here / "requirements" / "_base.in"
 )  # WEAK requirements
 
-aiohttp_requirements = read_reqs(
-    here / "requirements" / "_aiohttp.in"
-)  # WEAK requirements
-
 
 test_requirements = read_reqs(
     here / "requirements" / "_test.txt"
@@ -49,6 +45,10 @@ setup(
     include_package_data=True,
     test_suite="tests",
     tests_require=test_requirements,
-    extras_require={"test": test_requirements, "aiohttp": aiohttp_requirements},
+    extras_require={
+        "test": test_requirements,
+        "aiohttp": read_reqs(here / "requirements" / "_aiohttp.in"),
+        "fastapi": read_reqs(here / "requirements" / "_fastapi.in"),
+    },
     zip_safe=False,
 )
