@@ -3,7 +3,7 @@
 import re
 import sys
 from pathlib import Path
-from typing import List
+from typing import Set
 
 from setuptools import find_packages, setup
 
@@ -16,33 +16,29 @@ if not (sys.version_info.major == 3 and sys.version_info.minor == 8):
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
-def read_reqs(reqs_path: Path) -> List[str]:
-    return list(
-        set(
-            [
-                r
-                for r in re.findall(
-                    r"(^[^#\n-][\w\[,\]]+[-~>=<.\w]*)",
-                    reqs_path.read_text(),
-                    re.MULTILINE,
-                )
-                if isinstance(r, str)
-            ]
+def read_reqs(reqs_path: Path) -> Set[str]:
+    return {
+        r
+        for r in re.findall(
+            r"(^[^#\n-][\w\[,\]]+[-~>=<.\w]*)",
+            reqs_path.read_text(),
+            re.MULTILINE,
         )
-    )
+        if isinstance(r, str)
+    }
 
 
 readme = (current_dir / "README.md").read_text()
 version = (current_dir / "VERSION").read_text().strip()
 
-install_requirements = (
+install_requirements = list(
     read_reqs(current_dir / "requirements" / "_base.txt")
-    + read_reqs(current_dir / "requirements" / "_packages.txt")
-    + [
+    | read_reqs(current_dir / "requirements" / "_packages.txt")
+    | {
         "simcore-models-library",
         "simcore-postgres-database",
         "simcore-service-library[aiohttp]",
-    ]
+    }
 )
 
 test_requirements = read_reqs(current_dir / "requirements" / "_test.txt")
