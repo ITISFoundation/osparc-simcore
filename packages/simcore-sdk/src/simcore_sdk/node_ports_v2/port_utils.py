@@ -3,6 +3,7 @@ import shutil
 from pathlib import Path
 from typing import Any, Callable, Coroutine, Dict, Optional
 
+from pydantic import AnyUrl
 from yarl import URL
 
 from ..node_ports_common import config, data_items_utils, filemanager
@@ -66,10 +67,20 @@ async def get_value_from_link(
     return other_value
 
 
+async def get_link_from_storage(user_id: int, value: FileLink) -> Optional[AnyUrl]:
+    log.debug("getting link to file from storage %s", value)
+    link = await filemanager.get_download_link_from_s3(
+        user_id=user_id,
+        store_id=f"{value.store}",
+        s3_object=value.path,
+    )
+    return AnyUrl(f"{link}", scheme=link.scheme, host=link.host or "") if link else None
+
+
 async def pull_file_from_store(
     user_id: int, key: str, fileToKeyMap: Optional[Dict[str, str]], value: FileLink
 ) -> Path:
-    log.debug("Getting value from storage %s", value)
+    log.debug("pulling file from storage %s", value)
     # do not make any assumption about s3_path, it is a str containing stuff that can be anything depending on the store
     local_path = data_items_utils.create_folder_path(key)
     downloaded_file = await filemanager.download_file_from_s3(

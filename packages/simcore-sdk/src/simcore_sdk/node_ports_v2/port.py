@@ -89,8 +89,10 @@ class Port(ServiceProperty):
                 self._node_ports._node_ports_creator_cb,
             )
         if isinstance(self.value, FileLink):
-            # this is a link from storage
-            return self.value.path
+            # let's get the download/upload link from storage
+            return await port_utils.get_link_from_storage(
+                self._node_ports.user_id, self.value
+            )
 
         if isinstance(self.value, DownloadLink):
             # this is a downloadable link
