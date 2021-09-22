@@ -363,7 +363,7 @@
             "required": true,
             "schema": {
               "title": "User Id",
-              "exclusiveMinimum": 0.0,
+              "exclusiveMinimum": false,
               "type": "integer"
             },
             "name": "user_id",
@@ -752,7 +752,7 @@
                 "type": "integer"
               }
             ],
-            "description": "The store identifier, '0' or 0 for simcore S3, '1' or 1 for datcore"
+            "description": "The store identifier: '0' or 0 for simcore S3, '1' or 1 for datcore"
           },
           "path": {
             "title": "Path",
@@ -760,15 +760,15 @@
             "type": "string",
             "description": "The path to the file in the storage provider domain"
           },
-          "eTag": {
-            "title": "Etag",
-            "type": "string",
-            "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
-          },
           "label": {
             "title": "Label",
             "type": "string",
             "description": "The real file name"
+          },
+          "eTag": {
+            "title": "Etag",
+            "type": "string",
+            "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
           },
           "dataset": {
             "title": "Dataset",
@@ -779,7 +779,14 @@
             ]
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "I/O port type to hold a link to a file in DATCORE storage",
+        "example": {
+          "store": 1,
+          "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+          "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+          "label": "initial_WTstates"
+        }
       },
       "DownloadLink": {
         "title": "DownloadLink",
@@ -800,7 +807,8 @@
             "type": "string"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"
       },
       "HTTPValidationError": {
         "title": "HTTPValidationError",
@@ -836,8 +844,8 @@
             "title": "Released",
             "type": "object",
             "additionalProperties": {
-              "type": "string",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
             },
             "description": "Maps every route's path tag with a released version"
           }
@@ -899,8 +907,8 @@
               },
               {
                 "title": "Runhash",
-                "description": "the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
-                "type": "string"
+                "type": "string",
+                "description": "the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated"
               }
             ]
           },
@@ -948,8 +956,8 @@
               },
               {
                 "title": "Parent",
-                "description": "Parent's (group-nodes') node ID s. Used to group",
                 "type": "string",
+                "description": "Parent's (group-nodes') node ID s. Used to group",
                 "format": "uuid"
               }
             ]
@@ -1034,7 +1042,8 @@
             ]
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "I/O port type to reference to an output port of another node in the same project"
       },
       "Position": {
         "title": "Position",
@@ -1077,7 +1086,7 @@
           "ABORTED"
         ],
         "type": "string",
-        "description": "An enumeration."
+        "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state"
       },
       "SelectBox": {
         "title": "SelectBox",
@@ -1118,7 +1127,6 @@
       "ServiceInput": {
         "title": "ServiceInput",
         "required": [
-          "displayOrder",
           "label",
           "description",
           "type"
@@ -1128,7 +1136,8 @@
           "displayOrder": {
             "title": "Displayorder",
             "type": "number",
-            "description": "use this to numerically sort the properties for display"
+            "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
+            "deprecated": true
           },
           "label": {
             "title": "Label",
@@ -1305,7 +1314,7 @@
             "format": "email"
           }
         },
-        "description": "Service base schema (used for docker labels on docker images)",
+        "description": "Static metadata for a service injected in the image labels",
         "example": {
           "name": "File Picker",
           "description": "File Picker",
@@ -1346,7 +1355,6 @@
       "ServiceOutput": {
         "title": "ServiceOutput",
         "required": [
-          "displayOrder",
           "label",
           "description",
           "type"
@@ -1356,7 +1364,8 @@
           "displayOrder": {
             "title": "Displayorder",
             "type": "number",
-            "description": "use this to numerically sort the properties for display"
+            "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
+            "deprecated": true
           },
           "label": {
             "title": "Label",
@@ -1545,7 +1554,7 @@
                 "type": "integer"
               }
             ],
-            "description": "The store identifier, '0' or 0 for simcore S3, '1' or 1 for datcore"
+            "description": "The store identifier: '0' or 0 for simcore S3, '1' or 1 for datcore"
           },
           "path": {
             "title": "Path",
@@ -1553,18 +1562,30 @@
             "type": "string",
             "description": "The path to the file in the storage provider domain"
           },
+          "label": {
+            "title": "Label",
+            "type": "string",
+            "description": "The real file name"
+          },
           "eTag": {
             "title": "Etag",
             "type": "string",
             "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
           },
-          "label": {
-            "title": "Label",
+          "dataset": {
+            "title": "Dataset",
             "type": "string",
-            "description": "The real file name"
+            "deprecated": true
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "I/O port type to hold a link to a file in simcore S3 storage",
+        "example": {
+          "store": "0",
+          "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+          "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
+          "label": "input.txt"
+        }
       },
       "Structure": {
         "title": "Structure",
@@ -1604,7 +1625,7 @@
         "properties": {
           "minHeight": {
             "title": "Minheight",
-            "exclusiveMinimum": 0.0,
+            "exclusiveMinimum": false,
             "type": "integer",
             "description": "minimum Height of the textarea"
           }
