@@ -40,6 +40,10 @@ qx.Class.define("osparc.utils.Services", {
       dynamic: {
         label: "Interactive",
         icon: "@FontAwesome5Solid/mouse-pointer/"
+      },
+      iterator: {
+        label: "Iterator",
+        icon: "@FontAwesome5Solid/copy/"
       }
     },
 
