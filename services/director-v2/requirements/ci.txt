@@ -12,6 +12,7 @@
 --requirement _test.txt
 
 # installs this repo's packages
+../../packages/dask-task-models-library/
 ../../packages/models-library
 ../../packages/postgres-database
 ../../packages/pytest-simcore/
@@ -20,6 +21,7 @@
 ../../packages/simcore-sdk/
 ../../packages/service-library/
 ../../services/storage/client-sdk/python/
+
 
 # installs current package
 .

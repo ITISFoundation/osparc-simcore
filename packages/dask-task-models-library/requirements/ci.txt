@@ -12,6 +12,7 @@
 
 # installs this repo's packages
 ../pytest-simcore/
+../postgres-database/
 
 # current module
 .

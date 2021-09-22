@@ -134,9 +134,3 @@ class TaskOutputData(BaseModel):
                     data[output_key] = {"url": f"file://{file_path.name}"}
 
         return cls.parse_obj(data)
-
-
-class DockerBasicAuth(BaseModel):
-    server_address: str
-    username: str
-    password: SecretStr

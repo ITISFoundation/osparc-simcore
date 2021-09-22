@@ -12,7 +12,7 @@ install() {
 }
 
 codestyle(){
-    scripts/codestyle.bash ci simcore_service_dynamic_sidecar services/dynamic-sidecar 
+    pushd services/dynamic-sidecar; make codestyle ci simcore_service_dynamic_sidecar; popd;
 }
 
 test() {
