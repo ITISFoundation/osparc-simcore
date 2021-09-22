@@ -37,10 +37,7 @@ from simcore_service_dask_sidecar.computational_sidecar.models import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from simcore_service_dask_sidecar.tasks import (
-    _run_computational_sidecar_async,
-    run_computational_sidecar,
-)
+from simcore_service_dask_sidecar.tasks import run_computational_sidecar
 from yarl import URL
 
 logger = logging.getLogger(__name__)
@@ -69,11 +66,10 @@ def mock_service_envs(
     monkeypatch.setenv("SIDECAR_COMP_SERVICES_SHARED_FOLDER", f"{shared_data_folder}")
     mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_computational_shared_data_mount_point",
-        return_value=shared_data_folder,
+        return_value=f"{shared_data_folder}",
     )
 
 
-# TODO: real db tables
 @pytest.fixture
 def job_id() -> str:
     return "some_incredible_string"
