@@ -142,15 +142,12 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       branch["lastCommit"] = commitData["id"];
 
       const widget = new qx.ui.core.Widget().set({
-        opacity: 0.1,
+        opacity: isCurrent ? 0.3 : 0.1,
         height: this.self().COMMIT_SPACING,
         minWidth: 50,
         allowGrowX: true
       });
       const texts = [];
-      if (isCurrent) {
-        texts.push("Yeeeey");
-      }
       texts.push(commitData["tags"]);
       if (commitData["message"]) {
         texts.push(commitData["message"]);
