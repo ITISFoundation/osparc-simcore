@@ -1,6 +1,5 @@
 import functools
 import types
-from typing import Callable
 
 
 def copy_func(f):

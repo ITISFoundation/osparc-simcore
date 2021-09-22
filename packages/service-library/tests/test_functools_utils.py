@@ -1,3 +1,7 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import inspect
 from typing import Tuple, Union
 
@@ -19,10 +23,15 @@ def test_copy_functions():
 
     assert copy_func is not original_func
 
+    # pylint: disable=not-callable
+    # pylint: disable=not-member
+    assert hasattr(copied_func, "cache")
+    assert callable(copied_func)
+
     # but does and feel the same
     assert copied_func.__doc__ == original_func.__doc__
-    assert copied_func.__name__ == "original_func"
 
     assert inspect.signature(original_func) == inspect.signature(copied_func)
+
     assert original_func(1, True, z=33) == copied_func(1, True, z=33)
     assert original_func.cache == copied_func.cache
