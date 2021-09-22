@@ -149,9 +149,7 @@ def loop() -> asyncio.AbstractEventLoop:
 
 
 @pytest.fixture(scope="module")
-async def directory_server(
-    loop, tmp_path_factory: TempPathFactory
-) -> Iterable[List[URL]]:
+def directory_server(tmp_path_factory: TempPathFactory) -> Iterable[List[URL]]:
     faker = Faker()
     files = ["file_1", "file_2", "file_3"]
     base_url = URL("http://localhost:8999")
@@ -319,7 +317,7 @@ def test_run_computational_sidecar_real_fct(
         # ),
     ],
 )
-async def test_run_computational_sidecar_dask(
+def test_run_computational_sidecar_dask(
     mock_service_envs: None, dask_client: Client, task: ServiceExampleParam
 ):
     future = dask_client.submit(
