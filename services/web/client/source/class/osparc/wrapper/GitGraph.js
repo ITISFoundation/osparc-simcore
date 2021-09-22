@@ -92,6 +92,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
   members: {
     __gitGraphCanvas: null,
     __gitgraph: null,
+    __selectedCommit: null,
 
     init: function(gitGraphCanvas, gitGraphInteract) {
       return new Promise((resolve, reject) => {
@@ -183,12 +184,45 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       });
       widget.addListener("mouseout", () => {
         widget.set({
-          backgroundColor: bgColor,
           cursor: "auto"
         });
         hint.exclude();
+        if (this.__selectedCommit && this.__selectedCommit.id === commitData["id"]) {
+          widget.set({
+            backgroundColor: "white"
+          });
+        } else {
+          widget.set({
+            backgroundColor: bgColor
+          });
+        }
       });
-      widget.addListener("tap", () => this.fireDataEvent("snapshotTap", commitData["id"]));
+      widget.addListener("tap", () => {
+        this.setSelection(commitData["id"]);
+        this.fireDataEvent("snapshotTap", commitData["id"]);
+      });
+    },
+
+    resetSelection: function() {
+      this.__selectedCommit = null;
+      const bgColor = this.getBackgroundColor();
+      this.__commits.forEach(commit => {
+        commit.widget.set({
+          backgroundColor: bgColor
+        });
+      });
+    },
+
+    setSelection: function(snapshotId) {
+      this.resetSelection();
+      this.__commits.forEach(commit => {
+        if (commit.id === snapshotId) {
+          commit.widget.set({
+            backgroundColor: "white"
+          });
+          this.__selectedCommit = commit;
+        }
+      });
     },
 
     buildExample: function() {

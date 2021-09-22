@@ -42,6 +42,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
     __snapshotsSection: null,
     __snapshotsTable: null,
     __gitGraphLayout: null,
+    __gitGraphWrapper: null,
     __snapshotPreview: null,
     __editSnapshotBtn: null,
     __openSnapshotBtn: null,
@@ -119,20 +120,20 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
       const gitGraphCanvas = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
       const gitGraphInteract = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       gitGraphLayout.add(gitGraphCanvas, {
-        top: 0,
+        top: 20,
         right: 0,
         bottom: 0,
         left: 0
       });
       gitGraphLayout.add(gitGraphInteract, {
-        top: 3,
+        top: 20 + 2,
         right: 0,
         bottom: 0,
         left: 0
       });
 
       gitGraphCanvas.addListenerOnce("appear", () => {
-        const gitGraphWrapper = new osparc.wrapper.GitGraph();
+        const gitGraphWrapper = this.__gitGraphWrapper = new osparc.wrapper.GitGraph();
         gitGraphWrapper.init(gitGraphCanvas, gitGraphInteract)
           .then(() => gitGraphWrapper.populateGraph(this.__snapshots, this.__currentSnapshot));
         gitGraphWrapper.addListener("snapshotTap", e => {
@@ -225,6 +226,14 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
 
     __snapshotSelected: function(snapshotId) {
       this.__selectedSnapshotId = snapshotId;
+
+      if (this.__snapshotsTable) {
+        this.__snapshotsTable.setSelection(snapshotId);
+      }
+
+      if (this.__gitGraphWrapper) {
+        this.__gitGraphWrapper.setSelection(snapshotId);
+      }
 
       this.__loadSnapshotsPreview(snapshotId);
 

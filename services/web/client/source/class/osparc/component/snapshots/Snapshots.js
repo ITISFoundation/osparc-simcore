@@ -73,6 +73,16 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
       return model;
     },
 
+    setSelection: function(snapshotId) {
+      this.resetSelection();
+      for (let i=0; i<this.getTableModel().getRowCount(); i++) {
+        if (this.getRowData(i)["Id"] === snapshotId) {
+          this.getSelectionModel().setSelectionInterval(i, i);
+          return;
+        }
+      }
+    },
+
     populateTable: function(snapshots) {
       const columnModel = this.getTableColumnModel();
       columnModel.setDataCellRenderer(this.self().T_POS.ID.col, new qx.ui.table.cellrenderer.Number());
