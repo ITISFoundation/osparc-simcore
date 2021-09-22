@@ -68,7 +68,7 @@ class FilePortSchema(PortSchema):
     mapping: Optional[str] = None
 
 
-PortValue = Union[StrictBool, StrictInt, StrictFloat, StrictStr, FileUrl]
+PortValue = Union[StrictBool, StrictInt, StrictFloat, StrictStr, FileUrl, None]
 PortSchemaValue = Union[PortSchema, FilePortSchema]
 
 
