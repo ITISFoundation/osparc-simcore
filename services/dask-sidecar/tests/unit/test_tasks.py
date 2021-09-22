@@ -258,14 +258,14 @@ def ubuntu_task(directory_server: List[URL]) -> ServiceExampleParam:
         pytest.lazy_fixture("ubuntu_task"),
     ],
 )
-async def test_run_computational_sidecar_real_fct(
+def test_run_computational_sidecar_real_fct(
     mock_service_envs: None,
     dask_subsystem_mock: None,
     task: ServiceExampleParam,
     caplog: LogCaptureFixture,
 ):
     caplog.set_level(logging.INFO)
-    output_data = await _run_computational_sidecar_async(
+    output_data = run_computational_sidecar(
         task.docker_basic_auth,
         task.service_key,
         task.service_version,
