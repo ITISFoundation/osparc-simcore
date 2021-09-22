@@ -65,7 +65,6 @@ def osparc_simcore_web_client_dir(services_dir: Path) -> Path:
 # alias for backwards compatibility (new are longer to avoid name collisions)
 packages_directory = osparc_simcore_packages_dir
 services_dir = osparc_simcore_services_dir
-script_dir = osparc_simcore_scripts_dir
 web_client_dir = osparc_simcore_web_client_dir
 
 
@@ -91,7 +90,7 @@ def pylintrc(osparc_simcore_root_dir: Path) -> Path:
     return pylintrc
 
 
-## PACKAGE and SERVICE DIRECTORY STRUCTURE -------
+## LOCAL PACKAGE and SERVICE DIRECTORY STRUCTURE -------
 
 
 @pytest.fixture(scope="session")
@@ -104,6 +103,3 @@ def project_tests_dir(project_slug_dir: Path) -> Path:
     test_dir = project_slug_dir / "tests"
     assert test_dir.exists()
     return test_dir
-
-
-# TODO: test that all these path compositions exist
