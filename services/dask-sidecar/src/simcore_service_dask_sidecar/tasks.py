@@ -56,7 +56,7 @@ async def _run_computational_sidecar_async(
 ) -> TaskOutputData:
     log.debug(
         "run_computational_sidecar %s",
-        f"{service_key=}, {service_version=}, {input_data=}",
+        f"{docker_auth=}, {service_key=}, {service_version=}, {input_data=}, {output_data_keys=}, {command=}",
     )
 
     task: Optional[TaskState] = _get_dask_task_state()
