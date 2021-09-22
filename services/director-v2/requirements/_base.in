@@ -6,6 +6,7 @@
 # we need EXACTLY the same dask libraries in the client/scheduler/workers
 --requirement ../../../services/dask-sidecar/requirements/_dask-distributed.txt
 
+--requirement ../../../packages/dask-task-models-library/requirements/_base.in
 --requirement ../../../packages/models-library/requirements/_base.in
 --requirement ../../../packages/settings-library/requirements/_base.in
 --requirement ../../../packages/postgres-database/requirements/_base.in
@@ -13,6 +14,7 @@
 # service-library[fastapi]
 --requirement ../../../packages/service-library/requirements/_base.in
 --requirement ../../../packages/service-library/requirements/_fastapi.in
+
 
 
 # fastapi and extensions
