@@ -1,5 +1,8 @@
+""" Common utils for core/application openapi specs
+"""
+
 from types import FunctionType
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from fastapi.applications import FastAPI
 from fastapi.routing import APIRoute, APIRouter
