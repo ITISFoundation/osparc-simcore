@@ -8,6 +8,7 @@
 
 # installs base + tests + tools requirements
 --requirement _base.txt
+--requirement _packages.txt
 --requirement _test.txt
 --requirement _tools.txt
 
@@ -15,6 +16,7 @@
 --editable ../../packages/models-library
 --editable ../../packages/postgres-database
 --editable ../../packages/pytest-simcore/
+--editable ../../packages/service-library[fastapi]
 
 # installs current package
 --editable .

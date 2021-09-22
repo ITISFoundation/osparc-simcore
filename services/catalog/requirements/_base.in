@@ -4,17 +4,14 @@
 # NOTE: ALL version constraints MUST be commented
 
 --constraint ../../../requirements/constraints.txt
+--constraint ../../../packages/models-library/requirements/_base.in
+--constraint ../../../packages/postgres-database/requirements/_base.in
+--constraint ../../../packages/settings-library/requirements/_base.in
+--constraint ../../../packages/service-library/requirements/_fastapi.in
 
---requirement ../../../packages/models-library/requirements/_base.in
---requirement ../../../packages/postgres-database/requirements/_base.in
-
-pyyaml
 
 # fastapi and extensions
 fastapi[all]
-async-exit-stack ; python_version < '3.7'
-async-generator ; python_version < '3.7'
-dataclasses ; python_version < '3.7'
 
 # data models
 pydantic[dotenv]
@@ -28,3 +25,4 @@ httpx
 # other
 tenacity
 packaging
+pyyaml

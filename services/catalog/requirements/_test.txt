@@ -116,7 +116,6 @@ mccabe==0.6.1
     # via pylint
 multidict==5.1.0
     # via
-    #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
 packaging==20.9
@@ -236,9 +235,7 @@ websocket-client==0.59.0
 wrapt==1.12.1
     # via astroid
 yarl==1.6.3
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
+    # via aiohttp
 zipp==3.5.0
     # via importlib-resources
 
