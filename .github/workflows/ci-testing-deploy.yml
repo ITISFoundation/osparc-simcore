@@ -838,15 +838,15 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-service-library-${{ hashFiles('packages/service-library/requirements/ci[aiohttp].txt') }}
+          key: ${{ runner.os }}-pip-service-library-${{ hashFiles('packages/service-library/requirements/ci[all].txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-service-library-
             ${{ runner.os }}-pip-
             ${{ runner.os }}-
       - name: install
-        run: ./ci/github/unit-testing/service-library.bash install_aiohttp
+        run: ./ci/github/unit-testing/service-library.bash install_all
       - name: test
-        run: ./ci/github/unit-testing/service-library.bash test_aiohttp
+        run: ./ci/github/unit-testing/service-library.bash test_all
       - uses: codecov/codecov-action@v2.1.0
         with:
           flags: unittests #optional

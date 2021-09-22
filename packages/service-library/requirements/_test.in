@@ -8,6 +8,7 @@
 #
 --constraint _base.txt
 --constraint _aiohttp.txt
+--constraint _fastapi.txt
 
 # testing
 coverage

@@ -18,7 +18,7 @@ help:	## overwrites and calls common help function
 
 
 .PHONY: install-dev install-dev[aiohttp] install-dev[fastapi] install-ci install-ci[aiohttp] install-ci[fastapi]
-install-dev install-dev[aiohttp] install-dev[fastapi] install-ci install-ci[aiohttp] install-ci[fastapi]: _check_venv_active ## install app in development/production or CI mode
+install-dev%: _check_venv_active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
 	pip-sync requirements/$(subst install-,,$@).txt
 
@@ -26,7 +26,7 @@ install-dev install-dev[aiohttp] install-dev[fastapi] install-ci install-ci[aioh
 .PHONY: test-dev
 test-dev: ## runs unit tests in w/o extras
 	# running test-dev
-	@pytest -vv --exitfirst --failed-first --durations=10\
+	@pytest -vv --exitfirst --failed-first --durations=10 \
 	--pdb \
 	--ignore=tests/aiohttp --ignore=tests/fastapi \
 	$(CURDIR)/tests
@@ -34,42 +34,22 @@ test-dev: ## runs unit tests in w/o extras
 .PHONY: test-dev[aiohttp]
 test-dev[aiohttp]: ## runs unit common tests and aiohttp extras
 	# running test-dev[aiohttp]
-	@pytest -vv --exitfirst --failed-first --durations=10\
+	@pytest -vv --exitfirst --failed-first --durations=10 \
 	--pdb \
 	--ignore=tests/fastapi \
 	$(CURDIR)/tests
 
-.PHONY: test-dev[aiohttp]
+.PHONY: test-dev[fastapi]
 test-dev[fastapi]: ## runs unit common tests and fastapi extras
 	# running test-dev[aiohttp]
-	@pytest -vv --exitfirst --failed-first --durations=10\
+	@pytest -vv --exitfirst --failed-first --durations=10 \
 	--pdb \
 	--ignore=tests/aiohttp \
 	$(CURDIR)/tests
 
-
-.PHONY: tests
-tests: ## runs unit tests in w/o aiohttp extras
-	# running tests
-	@pytest -vv --color=yes --exitfirst --failed-first --durations=10 \
-	--cov-config=../../.coveragerc --cov=servicelib --cov-report=term-missing \
-	--ignore=tests/aiohttp --ignore=tests/fastapi \
-	$(CURDIR)/tests
-
-
-.PHONY: tests[aiohttp]
-tests[aiohttp]: ## runs unit tests and aiohttp extras
-	# running tests[aiohttp]
-	@pytest -vv --color=yes --exitfirst --failed-first --durations=10 \
-	--cov-config=../../.coveragerc --cov=servicelib --cov-report=term-missing \
-	--ignore=tests/fastapi \
-	$(CURDIR)/tests
-
-
-.PHONY: tests[fastapi]
-tests[fastapi]: ## runs unit tests and fastapi extras
-	# running tests[fastapi]
-	@pytest -vv --color=yes --exitfirst --failed-first --durations=10 \
-	--cov-config=../../.coveragerc --cov=servicelib --cov-report=term-missing \
-	--ignore=tests/aiohttp \
+.PHONY: test-dev[fastapi]
+test-dev[all]: ## runs unit tests  w/ all extras
+	# running test-dev
+	@pytest -vv --exitfirst --failed-first --durations=10 \
+	--pdb \
 	$(CURDIR)/tests

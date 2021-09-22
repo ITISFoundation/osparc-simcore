@@ -1,13 +1,14 @@
 import re
 import sys
 from pathlib import Path
+from typing import Any, List
 
 from setuptools import find_packages, setup
 
 here = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
-def read_reqs(reqs_path: Path):
+def read_reqs(reqs_path: Path) -> List[Any]:
     return re.findall(
         r"(^[^#\n-][\w\[,\]]+[-~>=<.\w]*)", reqs_path.read_text(), re.MULTILINE
     )
@@ -21,6 +22,9 @@ install_requirements = read_reqs(
 test_requirements = read_reqs(
     here / "requirements" / "_test.txt"
 )  # STRONG requirements
+
+aiohttp_requirements = read_reqs(here / "requirements" / "_aiohttp.in")
+fastapi_requirements = read_reqs(here / "requirements" / "_fastapi.in")
 
 readme = Path(here / "README.rst").read_text()
 
@@ -47,8 +51,9 @@ setup(
     tests_require=test_requirements,
     extras_require={
         "test": test_requirements,
-        "aiohttp": read_reqs(here / "requirements" / "_aiohttp.in"),
-        "fastapi": read_reqs(here / "requirements" / "_fastapi.in"),
+        "aiohttp": aiohttp_requirements,
+        "fastapi": fastapi_requirements,
+        "all": aiohttp_requirements + fastapi_requirements,
     },
     zip_safe=False,
 )
