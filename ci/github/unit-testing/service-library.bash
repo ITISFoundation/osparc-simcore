@@ -11,9 +11,9 @@ install() {
     pip list -v
 }
 
-install_aiohttp() {
+install_all() {
     bash ci/helpers/ensure_python_pip.bash
-    pushd packages/service-library; pip3 install -r requirements/ci[aiohttp].txt; popd;
+    pushd packages/service-library; pip3 install -r "requirements/ci[all].txt"; popd;
     pip list -v
 }
 
@@ -24,7 +24,7 @@ test() {
           packages/service-library/tests
 }
 
-test_aiohttp() {
+test_all() {
     pytest --cov=servicelib --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
           -v -m "not travis" packages/service-library/tests
