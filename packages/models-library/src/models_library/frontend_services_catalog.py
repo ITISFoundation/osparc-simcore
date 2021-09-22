@@ -106,6 +106,47 @@ def _create_parameter(param_type: str) -> ServiceDockerData:
     return meta
 
 
+def _create_data_iterator_number_service() -> ServiceDockerData:
+    return ServiceDockerData(
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/number",
+        version="1.0.0",
+        type=ServiceType.FRONTEND,
+        name="Number iterator",
+        description="Number iterator",
+        authors=[
+            OM,
+        ],
+        contact=OM.email,
+        inputs={
+            "linspace_start": {
+                "label": "Start",
+                "description": "Linear space Start",
+                "defaultValue": 0,
+                "type": "number",
+            },
+            "linspace_stop": {
+                "label": "Stop",
+                "description": "Linear space Stop",
+                "defaultValue": 1,
+                "type": "number",
+            },
+            "linspace_step": {
+                "label": "Step",
+                "description": "Linear space Step",
+                "defaultValue": 1,
+                "type": "number",
+            },
+        },
+        outputs={
+            "out_1": {
+                "label": "A number",
+                "description": "One number per iteration",
+                "type": "number",
+            }
+        },
+    )
+
+
 def is_frontend_service(service_key: str) -> bool:
     return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/")
 
@@ -114,7 +155,11 @@ def is_parameter_service(service_key: str) -> bool:
     return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/")
 
 
-_FACTORY_FUNCTIONS = [_create_file_picker_service, _create_node_group_service,] + [
+_FACTORY_FUNCTIONS = [
+    _create_file_picker_service,
+    _create_node_group_service,
+    _create_data_iterator_number_service,
+] + [
     functools.partial(_create_parameter, param_type=p)
     for p in ["number", "boolean", "integer"]
 ]
