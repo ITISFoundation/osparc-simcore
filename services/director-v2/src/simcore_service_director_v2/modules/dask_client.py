@@ -6,6 +6,12 @@ from typing import Any, Callable, Dict, Iterable, List, Union
 from uuid import uuid4
 
 from dask.distributed import Client, Future, fire_and_forget
+from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.io import (
+    TaskInputData,
+    TaskOutputData,
+    TaskOutputDataSchema,
+)
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -125,32 +131,27 @@ class DaskClient:
             callback()
 
         def _comp_sidecar_fct(
-            docker_basic_auth: Dict[str, Any],
+            docker_basic_auth: DockerBasicAuth,
             service_key: str,
             service_version: str,
-            input_data: Dict[str, Any],
-            output_data_keys: Dict[str, Any],
+            input_data: TaskInputData,
+            output_data_keys: TaskOutputDataSchema,
             command: List[str],
-        ) -> Dict[str, Any]:
+        ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
-            from simcore_service_dask_sidecar.computational_sidecar.models import (
-                DockerBasicAuth,
-                TaskInputData,
-                TaskOutputDataSchema,
-            )
             from simcore_service_dask_sidecar.tasks import (
                 run_computational_sidecar,  # type: ignore
             )
 
             return run_computational_sidecar(
-                DockerBasicAuth.parse_obj(docker_basic_auth),
+                docker_basic_auth,
                 service_key,
                 service_version,
-                TaskInputData.parse_obj(input_data),
-                TaskOutputDataSchema.parse_obj(output_data_keys),
+                input_data,
+                output_data_keys,
                 command,
-            ).dict()
+            )
 
         if remote_fct is None:
             remote_fct = _comp_sidecar_fct
