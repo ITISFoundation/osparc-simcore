@@ -214,6 +214,27 @@ async def _upload_file_to_link(
         return e_tag
 
 
+async def get_download_link_from_s3(
+    *,
+    user_id: int,
+    store_name: str = None,
+    store_id: str = None,
+    s3_object: str,
+) -> Optional[URL]:
+    if store_name is None and store_id is None:
+        raise exceptions.NodeportsException(msg="both store name and store id are None")
+
+    with api_client() as client:
+        api = UsersApi(client)
+
+        if store_name is not None:
+            store_id = await _get_location_id_from_location_name(
+                user_id, store_name, api
+            )
+        assert store_id  # nosec
+        return await _get_download_link(user_id, store_id, s3_object, api)
+
+
 async def download_file_from_s3(
     *,
     user_id: int,
@@ -238,19 +259,12 @@ async def download_file_from_s3(
         s3_object,
         local_folder,
     )
-    if store_name is None and store_id is None:
-        raise exceptions.NodeportsException(msg="both store name and store id are None")
 
     # get the s3 link
-    download_link = None
-    with api_client() as client:
-        api = UsersApi(client)
+    download_link = await get_download_link_from_s3(
+        user_id=user_id, store_name=store_name, store_id=store_id, s3_object=s3_object
+    )
 
-        if store_name is not None:
-            store_id = await _get_location_id_from_location_name(
-                user_id, store_name, api
-            )
-        download_link = await _get_download_link(user_id, store_id, s3_object, api)
     # the link contains the file name
     if not download_link:
         raise exceptions.S3InvalidPathError(s3_object)
