@@ -15,7 +15,6 @@ from pydantic import (
     StrictInt,
     StrictStr,
 )
-from pydantic.types import SecretStr
 from typing_extensions import Annotated
 
 
