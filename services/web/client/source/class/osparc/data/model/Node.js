@@ -939,6 +939,7 @@ qx.Class.define("osparc.data.model.Node", {
           const reqData = {
             "port_keys": portKey ? [portKey] : []
           };
+          updReq.setRequestHeader("Content-Type", "application/json");
           updReq.set({
             url: urlRetrieve,
             method: "POST",
