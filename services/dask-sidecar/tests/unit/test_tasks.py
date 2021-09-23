@@ -328,10 +328,6 @@ def test_run_computational_sidecar_real_fct(
         assert k in task.expected_output_data
         assert v == task.expected_output_data[k]
 
-    import pdb
-
-    pdb.set_trace()
-
 
 @pytest.mark.parametrize(
     "task",
