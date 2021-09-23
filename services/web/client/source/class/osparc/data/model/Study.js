@@ -210,13 +210,14 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     isOwner: function(studyData) {
-      if (studyData instanceof osparc.data.model.Study) {
-        const myEmail = osparc.auth.Data.getInstance().getEmail();
-        return studyData.getPrjOwner() === myEmail;
-      }
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const aceessRights = studyData["accessRights"];
-      return osparc.component.permissions.Study.canGroupDelete(aceessRights, myGid);
+      let accessRights = {};
+      if (studyData instanceof osparc.data.model.Study) {
+        accessRights = studyData.getAccessRights();
+      } else {
+        accessRights = studyData["accessRights"];
+      }
+      return osparc.component.permissions.Study.canGroupDelete(accessRights, myGid);
     },
 
     hasSlideshow: function(studyData) {
