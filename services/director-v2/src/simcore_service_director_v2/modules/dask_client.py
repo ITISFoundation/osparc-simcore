@@ -42,6 +42,37 @@ dask_retry_policy = dict(
 CLUSTER_RESOURCE_MOCK_USAGE: float = 1e-9
 
 
+async def _compute_input_data(
+    app: FastAPI,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+) -> TaskInputData:
+    from simcore_sdk import node_ports_v2
+    from simcore_sdk.node_ports_v2 import DBManager
+
+    db_manager = DBManager(db_engine=app.state.engine)
+    ports = await node_ports_v2.ports(
+        user_id=user_id,
+        project_id=f"{project_id}",
+        node_uuid=f"{node_id}",
+        db_manager=db_manager,
+    )
+    input_data = {}
+    for port in (await ports.inputs).values():
+        value_link = await port.get_value_link()
+        if isinstance(value_link, AnyUrl):
+            input_data[port.key] = FileUrl(
+                url=value_link,
+                file_mapping=(
+                    next(iter(port.file_to_key_map)) if port.file_to_key_map else None
+                ),
+            )
+        else:
+            input_data[port.key] = value_link
+    return TaskInputData.parse_obj(input_data)
+
+
 def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
     @retry(**dask_retry_policy)
     async def on_startup() -> None:
@@ -102,7 +133,8 @@ class DaskClient:
         retry=retry_if_exception_type((OSError, ComputationalBackendNotConnectedError)),
     )
     async def reconnect_client(self):
-        await self.client.close()
+        if self.client:
+            await self.client.close()  # type: ignore
         self.client = await Client(
             f"tcp://{self.settings.DASK_SCHEDULER_HOST}:{self.settings.DASK_SCHEDULER_PORT}",
             asynchronous=True,
@@ -183,38 +215,6 @@ class DaskClient:
                 cluster_id_prefix=self.settings.DASK_CLUSTER_ID_PREFIX,  # type: ignore
                 cluster_id=cluster_id,
             )
-
-            async def _compute_input_data(
-                app: FastAPI,
-                user_id: UserID,
-                project_id: ProjectID,
-                node_id: NodeID,
-            ) -> TaskInputData:
-                from simcore_sdk import node_ports_v2
-                from simcore_sdk.node_ports_v2 import DBManager
-
-                db_manager = DBManager(db_engine=app.state.engine)
-                ports = await node_ports_v2.ports(
-                    user_id=user_id,
-                    project_id=f"{project_id}",
-                    node_uuid=f"{node_id}",
-                    db_manager=db_manager,
-                )
-                input_data = {}
-                for port in (await ports.inputs).values():
-                    value_link = await port.get_value_link()
-                    if isinstance(value_link, AnyUrl):
-                        input_data[port.key] = FileUrl(
-                            url=value_link,
-                            file_mapping=(
-                                next(iter(port.file_to_key_map))
-                                if port.file_to_key_map
-                                else None
-                            ),
-                        )
-                    else:
-                        input_data[port.key] = value_link
-                return TaskInputData.parse_obj(input_data)
 
             input_data = await _compute_input_data(
                 self.app, user_id, project_id, node_id
