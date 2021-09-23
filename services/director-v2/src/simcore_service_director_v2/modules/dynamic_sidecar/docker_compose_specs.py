@@ -7,7 +7,6 @@ from models_library.service_settings_labels import ComposeSpecLabel, PathMapping
 from pydantic import PositiveInt
 from settings_library.docker_registry import RegistrySettings
 
-from ...core.settings import DynamicSidecarSettings
 from .docker_service_specs import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
 
 CONTAINER_NAME = "container"
@@ -99,9 +98,7 @@ async def assemble_spec(
     returns a docker-compose spec used by
     the dynamic-sidecar to start the service
     """
-    settings: DynamicSidecarSettings = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-    )
+
     docker_registry_settings: RegistrySettings = app.state.settings.DOCKER_REGISTRY
 
     container_name = container_http_entry
