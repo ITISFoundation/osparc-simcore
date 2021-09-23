@@ -91,6 +91,18 @@ async def get_upload_link_from_storage(
     return parse_obj_as(AnyUrl, f"{link}")
 
 
+async def get_upload_link_from_storage(
+    user_id: int, value: FileLink
+) -> Optional[AnyUrl]:
+    log.debug("getting link to file from storage %s", value)
+    link = await filemanager.get_upload_link_from_s3(
+        user_id=user_id,
+        store_id=f"{value.store}",
+        s3_object=value.path,
+    )
+    return AnyUrl(f"{link}", scheme=link.scheme, host=link.host or "") if link else None
+
+
 async def pull_file_from_store(
     user_id: int,
     key: str,

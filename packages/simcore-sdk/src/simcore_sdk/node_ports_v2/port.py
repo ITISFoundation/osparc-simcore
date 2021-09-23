@@ -88,6 +88,7 @@ class Port(ServiceProperty):
                 # pylint: disable=protected-access
                 self.value,
                 self._node_ports._node_ports_creator_cb,
+                download=download,
             )
         if isinstance(self.value, FileLink):
             # let's get the download/upload link from storage
