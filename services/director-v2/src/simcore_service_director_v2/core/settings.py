@@ -111,7 +111,7 @@ class DynamicSidecarTraefikSettings(BaseCustomSettings):
     def validate_log_level(cls, v) -> str:
         if v not in SUPPORTED_TRAEFIK_LOG_LEVELS:
             message = (
-                "Got log level '{v}', expected one of '{SUPPORTED_TRAEFIK_LOG_LEVELS}'"
+                f"Got log level '{v}', expected one of '{SUPPORTED_TRAEFIK_LOG_LEVELS}'"
             )
             raise ValueError(message)
         return v
