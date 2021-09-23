@@ -231,8 +231,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const win = osparc.ui.window.Window.popUpInWindow(snapshots, title, 1000, 500);
       snapshots.addListener("openSnapshot", e => {
         win.close();
-        const snapshot = e.getData();
-        this.fireDataEvent("startSnapshot", snapshot);
+        const snapshotId = e.getData();
+        this.fireDataEvent("startSnapshot", snapshotId);
       });
     },
 
