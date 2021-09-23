@@ -159,8 +159,6 @@ class DynamicSidecarSettings(BaseCustomSettings):
 
     DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings
 
-    REGISTRY: RegistrySettings
-
     @validator("DYNAMIC_SIDECAR_IMAGE", pre=True)
     @classmethod
     def strip_leading_slashes(cls, v) -> str:
@@ -297,6 +295,8 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DASK_SCHEDULER: DaskSchedulerSettings
 
     DIRECTOR_V2_TRACING: Optional[TracingSettings] = None
+
+    DOCKER_REGISTRY: RegistrySettings
 
     @validator("LOG_LEVEL", pre=True)
     @classmethod
