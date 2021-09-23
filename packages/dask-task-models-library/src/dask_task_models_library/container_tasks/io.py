@@ -1,7 +1,17 @@
 import json
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Dict, ItemsView, KeysView, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Dict,
+    ItemsView,
+    KeysView,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    ValuesView,
+)
 
 from models_library.services import PROPERTY_KEY_RE
 from pydantic import (
@@ -66,6 +76,7 @@ class PortSchema(BaseModel):
 
 class FilePortSchema(PortSchema):
     mapping: Optional[str] = None
+    url: AnyUrl
 
 
 PortValue = Union[StrictBool, StrictInt, StrictFloat, StrictStr, FileUrl, None]
@@ -113,6 +124,9 @@ class TaskOutputData(BaseModel):
     def keys(self) -> KeysView[PortKey]:
         return self.__root__.keys()
 
+    def values(self) -> ValuesView[PortValue]:
+        return self.__root__.values()
+
     def __iter__(self) -> Any:
         return self.__root__.__iter__()
 
@@ -133,6 +147,9 @@ class TaskOutputData(BaseModel):
             if isinstance(output_params, FilePortSchema):
                 file_path = output_folder / (output_params.mapping or output_key)
                 if file_path.exists():
-                    data[output_key] = {"url": f"file://{file_path.name}"}
+                    data[output_key] = {
+                        "url": f"{output_params.url}",
+                        "file_mapping": file_path.name,
+                    }
 
         return cls.parse_obj(data)
