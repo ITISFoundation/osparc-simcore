@@ -157,8 +157,8 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
                 save_state
             )
 
-        logger.debug("Service '%s' marked for removal from scheduler", service_name)
         await self._enqueue_observation_from_service_name(service_name)
+        logger.debug("Service '%s' marked for removal from scheduler", service_name)
 
     async def finish_service_removal(self, node_uuid: NodeID) -> None:
         """
