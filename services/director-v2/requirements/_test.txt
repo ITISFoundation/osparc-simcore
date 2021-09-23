@@ -23,7 +23,7 @@ amqp==5.0.6
     # via
     #   -c requirements/_base.txt
     #   kombu
-anyio==3.3.0
+anyio==3.3.1
     # via
     #   -c requirements/_base.txt
     #   httpcore
@@ -69,7 +69,7 @@ chardet==4.0.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-charset-normalizer==2.0.4
+charset-normalizer==2.0.6
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -89,7 +89,7 @@ click-plugins==1.1.1
     # via
     #   -c requirements/_base.txt
     #   celery
-click-repl==0.1.6
+click-repl==0.2.0
     # via
     #   -c requirements/_base.txt
     #   celery
@@ -132,7 +132,7 @@ h11==0.12.0
     #   httpcore
 hiredis==2.0.0
     # via aioredis
-httpcore==0.13.6
+httpcore==0.13.7
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -246,11 +246,11 @@ pytest-mock==3.6.1
     # via -r requirements/_test.in
 pytest-runner==5.3.1
     # via -r requirements/_test.in
-pytest-xdist==2.3.0
+pytest-xdist==2.4.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
-python-dotenv==0.18.0
+python-dotenv==0.19.0
     # via
     #   -c requirements/_base.txt
     #   docker-compose
