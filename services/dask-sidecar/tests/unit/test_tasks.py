@@ -30,15 +30,12 @@ from dask_task_models_library.container_tasks.io import (
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
-    create_inputs_signature,
 )
 from distributed import Client
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import Field
-from pydantic.networks import AnyUrl
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.tasks import run_computational_sidecar
 from yarl import URL
