@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import AsyncIterator, Awaitable, List, Optional, Type
+from typing import Any, AsyncIterator, Awaitable, List, Optional, Type
 from uuid import uuid4
 
 import fsspec
@@ -48,7 +48,7 @@ async def managed_task_volumes(base_path: Path) -> AsyncIterator[TaskSharedVolum
         yield task_shared_volume
     finally:
 
-        def log_error(_, path, excinfo):
+        def log_error(_: Any, path: Any, excinfo: Any) -> None:
             logger.warning(
                 "Failed to remove %s [reason: %s]. Should consider pruning files in host later",
                 path,

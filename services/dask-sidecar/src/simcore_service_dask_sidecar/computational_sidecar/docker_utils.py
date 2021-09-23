@@ -1,6 +1,7 @@
 import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime
+from pathlib import Path
 from pprint import pformat
 from typing import AsyncIterator, Awaitable, List
 
@@ -190,7 +191,7 @@ async def pull_image(
     logger.info("%s:%s pulled", service_key, service_version)
 
 
-async def get_computational_shared_data_mount_point(docker_client: Docker) -> str:
+async def get_computational_shared_data_mount_point(docker_client: Docker) -> Path:
     app_settings = Settings.create_from_envs()
     try:
         logger.debug(
@@ -203,7 +204,7 @@ async def get_computational_shared_data_mount_point(docker_client: Docker) -> st
         logger.debug(
             "found following volume attributes: %s", pformat(volume_attributes)
         )
-        return volume_attributes["Mountpoint"]
+        return Path(volume_attributes["Mountpoint"])
 
     except DockerError:
         logger.exception(
@@ -211,4 +212,4 @@ async def get_computational_shared_data_mount_point(docker_client: Docker) -> st
             app_settings.SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME,
             app_settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER,
         )
-        return f"{app_settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER}"
+        return app_settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER
