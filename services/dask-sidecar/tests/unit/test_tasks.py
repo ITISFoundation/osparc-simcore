@@ -69,7 +69,7 @@ def mock_service_envs(
     monkeypatch.setenv("SIDECAR_COMP_SERVICES_SHARED_FOLDER", f"{shared_data_folder}")
     mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_computational_shared_data_mount_point",
-        return_value=f"{shared_data_folder}",
+        return_value=shared_data_folder,
     )
 
 
