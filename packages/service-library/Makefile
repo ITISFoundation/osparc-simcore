@@ -17,8 +17,8 @@ help:	## overwrites and calls common help function
 	@echo '- `make "install-dev[all]"`: w/ all extras'
 
 
-.PHONY: install-dev "install-dev[aiohttp]" "install-dev[fastapi]" "install-dev[all]"
-.PHONY: install-ci "install-ci[aiohttp]" "install-ci[fastapi]" "install-ci[all]"
+.PHONY: "install-dev" "install-dev[aiohttp]" "install-dev[fastapi]" "install-dev[all]"
+.PHONY: "install-ci" "install-ci[aiohttp]" "install-ci[fastapi]" "install-ci[all]"
 
 install-%: _check_venv_active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
