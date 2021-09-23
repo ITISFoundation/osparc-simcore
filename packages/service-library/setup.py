@@ -33,11 +33,11 @@ if __name__ == "__main__":
 
     setup(
         name="simcore-service-library",
-        version="1.0.0",
+        version="1.1.0",
         author="Pedro Crespo (pcrespov)",
         description="Core service library for simcore (or servicelib)",
         classifiers=[
-            "Development Status :: 2 - Pre-Alpha",
+            "Development Status :: 3 - Alpha",
             "Intended Audience :: Developers",
             "License :: OSI Approved :: MIT License",
             "Natural Language :: English",
