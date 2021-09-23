@@ -6,6 +6,7 @@ import json
 # pylint: disable=unused-variable
 # pylint: disable=no-member
 import logging
+import pdb
 import re
 import subprocess
 
@@ -13,11 +14,13 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from pprint import pformat
-from typing import Dict, Iterable, List, Optional
+from typing import Callable, Dict, Iterable, List, Optional
 from uuid import uuid4
 
 import dask
+import fsspec
 import pytest
 import requests
 from _pytest.logging import LogCaptureFixture
@@ -36,6 +39,7 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.tasks import run_computational_sidecar
 from yarl import URL
@@ -145,11 +149,10 @@ def loop() -> asyncio.AbstractEventLoop:
 
 
 @pytest.fixture(scope="module")
-def directory_server(tmp_path_factory: TempPathFactory) -> Iterable[List[URL]]:
+def http_server(tmp_path_factory: TempPathFactory) -> Iterable[List[URL]]:
     faker = Faker()
     files = ["file_1", "file_2", "file_3"]
-    base_url = URL("http://localhost:8999")
-    directory_path = tmp_path_factory.mktemp("directory_server")
+    directory_path = tmp_path_factory.mktemp("http_server")
     assert directory_path.exists()
     for fn in files:
         with (directory_path / fn).open("wt") as f:
@@ -159,6 +162,7 @@ def directory_server(tmp_path_factory: TempPathFactory) -> Iterable[List[URL]]:
 
     cmd = [sys.executable, "-m", "http.server", "8999"]
 
+    base_url = URL("http://localhost:8999")
     with subprocess.Popen(cmd, cwd=directory_path) as p:
         timeout = 10
         while True:
@@ -176,9 +180,25 @@ def directory_server(tmp_path_factory: TempPathFactory) -> Iterable[List[URL]]:
         p.kill()
 
 
+@pytest.fixture(scope="module")
+def ftp_server(ftpserver: ProcessFTPServer) -> List[URL]:
+    faker = Faker()
+
+    files = ["file_1", "file_2", "file_3"]
+    ftp_server_base_url = ftpserver.get_login_data(style="url")
+    list_of_file_urls = [f"{ftp_server_base_url}/{filename}.txt" for filename in files]
+    with fsspec.open_files(list_of_file_urls, "wt") as open_files:
+        for index, fp in enumerate(open_files):
+            fp.write(f"This file is named: {files[index]}\n")
+            for s in faker.sentences():
+                fp.write(f"{s}\n")
+
+    return [URL(f) for f in list_of_file_urls]
+
+
 @pytest.fixture()
-def ubuntu_task(directory_server: List[URL]) -> ServiceExampleParam:
-    file_names = [file.path for file in directory_server]
+def ubuntu_task(http_server: List[URL], ftp_server: List[URL]) -> ServiceExampleParam:
+    file_names = [file.path for file in ftp_server]
     check_input_file_command = " && ".join(
         [
             f"(test -f ${{INPUT_FOLDER}}/{file} || (echo ${{INPUT_FOLDER}}/{file} does not exists && exit 1))"
@@ -216,7 +236,7 @@ def ubuntu_task(directory_server: List[URL]) -> ServiceExampleParam:
             "the_bool_input_54": False,
             **{
                 f"some_file_input_{index+1}": FileUrl(url=f"{file}")
-                for index, file in enumerate(directory_server)
+                for index, file in enumerate(ftp_server)
             },
         }
     )
@@ -350,3 +370,16 @@ def test_run_computational_sidecar_dask(
     for k, v in output_data.items():
         assert k in task.expected_output_data
         assert v == task.expected_output_data[k]
+
+
+def test_uploading_withfsspec(ftpserver: ProcessFTPServer):
+    ftp_server_base_url = ftpserver.get_login_data(style="url")
+    open_file = fsspec.open(
+        f"{ftp_server_base_url}/test_file.txt",
+        "wt",
+    )
+    with open_file as dst:
+        dst.write("some test")
+    uploaded_file_path = Path(ftpserver.server_home, "test_file.txt")
+    with uploaded_file_path.open() as uploaded:
+        assert uploaded.read() == "some test"
