@@ -21,12 +21,12 @@ def read_reqs(reqs_path: Path) -> Set[str]:
 
 
 # WEAK requirements (see requirements/python-dependencies.md)
-install_requirements = read_reqs(CURRENT_DIR / "requirements" / "_base.in")
-aiohttp_requirements = read_reqs(CURRENT_DIR / "requirements" / "_aiohttp.in")
-fastapi_requirements = read_reqs(CURRENT_DIR / "requirements" / "_fastapi.in")
+PROD_REQUIREMENTS = read_reqs(CURRENT_DIR / "requirements" / "_base.in")
+AIOHTTP_REQUIREMENTS = read_reqs(CURRENT_DIR / "requirements" / "_aiohttp.in")
+FASTAPI_REQUIREMENTS = read_reqs(CURRENT_DIR / "requirements" / "_fastapi.in")
 
 # STRONG requirements (see requirements/python-dependencies.md)
-test_requirements = read_reqs(CURRENT_DIR / "requirements" / "_test.txt")
+TEST_REQUIREMENTS = read_reqs(CURRENT_DIR / "requirements" / "_test.txt")
 
 
 if __name__ == "__main__":
@@ -46,19 +46,17 @@ if __name__ == "__main__":
         long_description=Path(CURRENT_DIR / "README.rst").read_text(),
         license="MIT license",
         python_requires="~=3.8",
-        install_requires=list(install_requirements),
+        install_requires=list(PROD_REQUIREMENTS),
         packages=find_packages(where="src"),
         package_dir={"": "src"},
         include_package_data=True,
         test_suite="tests",
-        tests_require=list(test_requirements),
+        tests_require=list(TEST_REQUIREMENTS),
         extras_require={
-            "test": list(test_requirements),
-            "aiohttp": list(aiohttp_requirements),
-            "fastapi": list(fastapi_requirements),
-            "all": list(
-                install_requirements | aiohttp_requirements | fastapi_requirements
-            ),
+            "test": list(TEST_REQUIREMENTS),
+            "aiohttp": list(AIOHTTP_REQUIREMENTS),
+            "fastapi": list(FASTAPI_REQUIREMENTS),
+            "all": list(AIOHTTP_REQUIREMENTS | FASTAPI_REQUIREMENTS),
         },
         zip_safe=False,
     )
