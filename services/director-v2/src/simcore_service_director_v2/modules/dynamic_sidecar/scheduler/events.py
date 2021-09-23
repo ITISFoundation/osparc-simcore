@@ -5,6 +5,7 @@ from typing import Any, Deque, Dict, List, Optional, Type
 
 import httpx
 from fastapi import FastAPI
+from settings_library.docker_registry import RegistrySettings
 
 from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.dynamic_services import (
@@ -70,6 +71,7 @@ class CreateSidecars(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+        docker_registry_settings: RegistrySettings = app.state.settings.DOCKER_REGISTRY
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
@@ -108,6 +110,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         # start dynamic-sidecar and run the proxy on the same node
         dynamic_sidecar_create_service_params = await get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
+            docker_registry_settings=docker_registry_settings,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
             dynamic_sidecar_network_id=dynamic_sidecar_network_id,
             swarm_network_id=swarm_network_id,

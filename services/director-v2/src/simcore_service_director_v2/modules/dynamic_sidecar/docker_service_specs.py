@@ -10,6 +10,7 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion
+from settings_library.docker_registry import RegistrySettings
 
 from ...api.dependencies.director_v0 import DirectorV0Client
 from ...core.settings import DynamicSidecarSettings, DynamicSidecarTraefikSettings
@@ -490,6 +491,7 @@ async def merge_settings_before_use(
 
 async def get_dynamic_sidecar_spec(
     scheduler_data: SchedulerData,
+    docker_registry_settings: RegistrySettings,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
@@ -584,7 +586,7 @@ async def get_dynamic_sidecar_spec(
                 "Env": {
                     "SIMCORE_HOST_NAME": scheduler_data.service_name,
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-                    **get_dynamic_sidecar_env_vars(dynamic_sidecar_settings.REGISTRY),
+                    **get_dynamic_sidecar_env_vars(docker_registry_settings),
                 },
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
