@@ -18,6 +18,7 @@ pytest-instafail
 pytest-lazy-fixture
 pytest-mock
 pytest-sugar
+pytest-localftpserver
 
 # fixtures
 docker
