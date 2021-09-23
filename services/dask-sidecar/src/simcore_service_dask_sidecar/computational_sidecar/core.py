@@ -79,14 +79,31 @@ class ComputationalSidecar:
                 ) as dest:
                     dest.write(src.read())
 
+                logger.info("wrote input file %s", destination_path)
+
             else:
                 input_data[input_key] = input_params
         input_data_file.write_text(json.dumps(input_data))
+
+        logger.info(
+            "wrote inputs data file in %s, containing %s",
+            input_data_file,
+            pformat(input_data),
+        )
 
     async def _retrieve_output_data(
         self, task_volumes: TaskSharedVolumes
     ) -> TaskOutputData:
         try:
+            logger.info(
+                "following files are located in output folder %s:\n%s",
+                task_volumes.output_folder,
+                pformat(list(task_volumes.output_folder.rglob("*"))),
+            )
+            logger.info(
+                "following outputs will be searched for: %s",
+                pformat(self.output_data_keys),
+            )
             output_data = TaskOutputData.from_task_output(
                 self.output_data_keys, task_volumes.output_folder
             )
@@ -100,6 +117,9 @@ class ComputationalSidecar:
                         f"{output_params.url}", "wb"
                     ) as dst:
                         dst.write(src.read())
+
+                    logger.info("retrieved output file %s", src_path)
+            logger.info("retrieved outputs data %s", pformat(output_data))
             return output_data
 
         except ValidationError as exc:
