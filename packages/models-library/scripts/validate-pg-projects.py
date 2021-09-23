@@ -16,7 +16,7 @@ class ProjectFromCsv(ProjectAtDB):
 
     access_rights: Json
     ui: Json
-    classifiers: Json
+    classifiers: str  # FIXME: this is ARRAY[sa.STRING]
     dev: Json
     quality: Json
 
@@ -63,16 +63,16 @@ def validate_csv_exported_pg_project(
             try:
                 model = ProjectFromCsv.parse_obj(row)
 
-                if verbose:
+                if verbose > 1:
                     typer.secho(f"{pid} OK", fg=typer.colors.GREEN)
-                    if verbose > 1:
+                    if verbose > 2:
                         typer.echo(model.json(indent=2))
             except ValidationError as err:
                 failed.append(pid)
-
                 typer.secho(
-                    f"Invalid project {pid}: {err}", fg=typer.colors.RED, err=True
+                    f"Invalid project {pid} (from {row['last_change_date']}", err=True
                 )
+                typer.secho(f" {err}", fg=typer.colors.RED, err=True)
 
     if failed:
         typer.secho(
