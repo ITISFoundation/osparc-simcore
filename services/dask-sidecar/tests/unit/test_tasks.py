@@ -319,7 +319,7 @@ def test_run_computational_sidecar_real_fct(
             rf"\[{task.service_key}:{task.service_version} - .+\/.+\]: (.+) ({log})",
             caplog.text,
         )
-
+    # check that the task produce the expected data, not less not more
     for k, v in task.expected_output_data.items():
         assert k in output_data
         assert output_data[k] == v
@@ -327,6 +327,11 @@ def test_run_computational_sidecar_real_fct(
     for k, v in output_data.items():
         assert k in task.expected_output_data
         assert v == task.expected_output_data[k]
+
+        # if there are file urls in the output, check they exist
+        if isinstance(v, FileUrl):
+            with fsspec.open(f"{v.url}") as fp:
+                assert fp.details.get("size") > 0
 
 
 @pytest.mark.parametrize(
@@ -379,6 +384,7 @@ def test_run_computational_sidecar_dask(
             len(search_results) > 0
         ), f"Could not find {log} in worker_logs:\n {pformat(worker_logs, width=240)}"
 
+    # check that the task produce the expected data, not less not more
     for k, v in task.expected_output_data.items():
         assert k in output_data
         assert output_data[k] == v
@@ -386,6 +392,11 @@ def test_run_computational_sidecar_dask(
     for k, v in output_data.items():
         assert k in task.expected_output_data
         assert v == task.expected_output_data[k]
+
+        # if there are file urls in the output, check they exist
+        if isinstance(v, FileUrl):
+            with fsspec.open(f"{v.url}") as fp:
+                assert fp.details.get("size") > 0
 
 
 def test_uploading_withfsspec(ftpserver: ProcessFTPServer):
