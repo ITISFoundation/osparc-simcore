@@ -69,12 +69,18 @@ idna==2.10
     #   yarl
 iniconfig==1.1.1
     # via pytest
+isodate==0.6.0
+    # via
+    #   -c requirements/_aiohttp.txt
+    #   openapi-schema-validator
 isort==5.9.3
     # via pylint
 jsonschema==3.2.0
     # via
     #   -c requirements/_aiohttp.txt
     #   docker-compose
+    #   openapi-schema-validator
+    #   openapi-spec-validator
 lazy-object-proxy==1.4.3
     # via
     #   -c requirements/_aiohttp.txt
@@ -86,6 +92,14 @@ multidict==5.1.0
     #   -c requirements/_aiohttp.txt
     #   aiohttp
     #   yarl
+openapi-schema-validator==0.1.5
+    # via
+    #   -c requirements/_aiohttp.txt
+    #   openapi-spec-validator
+openapi-spec-validator==0.3.1
+    # via
+    #   -c requirements/_aiohttp.txt
+    #   -r requirements/_test.in
 packaging==21.0
     # via
     #   pytest
@@ -141,6 +155,7 @@ pyyaml==5.4.1
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   docker-compose
+    #   openapi-spec-validator
 requests==2.26.0
     # via
     #   coveralls
@@ -151,7 +166,10 @@ six==1.16.0
     #   -c requirements/_aiohttp.txt
     #   bcrypt
     #   dockerpty
+    #   isodate
     #   jsonschema
+    #   openapi-schema-validator
+    #   openapi-spec-validator
     #   pynacl
     #   websocket-client
 termcolor==1.1.0
