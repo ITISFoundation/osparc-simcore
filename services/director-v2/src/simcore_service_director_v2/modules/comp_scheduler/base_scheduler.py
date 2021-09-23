@@ -404,13 +404,12 @@ class BaseCompScheduler(ABC):
                 raise ComputationalBackendNotConnectedError(f"{r}") from r
             if isinstance(r, Exception):
                 logger.error(
-                    "Unexpected error happened when scheduling task %s due to following error %s",
-                    r.node_id,
+                    "Unexpected error happened when scheduling task due to following error %s",
                     f"{r}",
                 )
-                await comp_tasks_repo.set_project_tasks_state(
-                    project_id, [r.node_id], RunningState.FAILED
-                )
+                # await comp_tasks_repo.set_project_tasks_state(
+                #     project_id, [r.node_id], RunningState.FAILED
+                # )
 
     def _wake_up_scheduler_now(self) -> None:
         self.wake_up_event.set()
