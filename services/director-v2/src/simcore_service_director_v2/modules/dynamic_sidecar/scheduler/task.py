@@ -3,7 +3,7 @@ import logging
 import traceback
 from asyncio import Lock, Queue, Task, sleep
 from copy import deepcopy
-from typing import Deque, Dict, Optional
+from typing import Deque, Dict, List, Optional
 from uuid import UUID
 
 import httpx
@@ -250,7 +250,9 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             service_message=container_message,
         )
 
-    async def retrive(self, node_uuid: NodeID) -> RetrieveDataOutEnveloped:
+    async def retrive(
+        self, node_uuid: NodeID, port_keys: List[str]
+    ) -> RetrieveDataOutEnveloped:
         """Pulls data from input ports for the service"""
         if node_uuid not in self._inverse_search_mapping:
             raise DynamicSidecarNotFoundError(node_uuid)
@@ -263,7 +265,8 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         )
 
         transferred_bytes = await dynamic_sidecar_client.service_pull_input_ports(
-            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
+            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
+            port_keys=port_keys,
         )
 
         return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)

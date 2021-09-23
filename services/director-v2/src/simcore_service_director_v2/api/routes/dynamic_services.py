@@ -4,7 +4,7 @@ from typing import Coroutine, List, Optional, Union, cast
 from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Request
 from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
@@ -190,16 +190,19 @@ async def stop_dynamic_service(
 )
 @log_decorator(logger=logger)
 async def service_retrieve_data_on_ports(
+    request: Request,
     node_uuid: NodeID,
     retrieve_settings: RetrieveDataIn,
-    service_base_url: URL = Depends(get_service_base_url),
-    services_client: ServicesClient = Depends(get_services_client),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
-):
+) -> RetrieveDataOutEnveloped:
     try:
-        return await scheduler.retrive(node_uuid)
+        return await scheduler.retrive(node_uuid, retrieve_settings.port_keys)
     except DynamicSidecarNotFoundError:
         # the handling of client/server errors is already encapsulated in the call to request
+        service_base_url: URL = await get_service_base_url(
+            node_uuid, get_director_v0_client(request)
+        )
+        services_client: ServicesClient = get_services_client(request)
         resp = await services_client.request(
             "POST",
             f"{service_base_url}/retrieve",

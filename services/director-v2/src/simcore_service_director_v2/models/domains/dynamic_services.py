@@ -27,6 +27,9 @@ class RetrieveDataOutEnveloped(BaseModel):
     ) -> "RetrieveDataOutEnveloped":
         return cls(data=RetrieveDataOut(size_bytes=transferred_bytes))
 
+    class Config:
+        schema_extra = {"examples": [{"data": {"size_bytes": 42}}]}
+
 
 DynamicServiceCreate = ServiceDetails
 DynamicServiceOut = RunningDynamicServiceDetails
