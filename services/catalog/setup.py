@@ -13,7 +13,7 @@ if not (sys.version_info.major == 3 and sys.version_info.minor == 8):
         % str(sys.version_info)
     )
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 def read_reqs(reqs_path: Path) -> Set[str]:
@@ -28,48 +28,48 @@ def read_reqs(reqs_path: Path) -> Set[str]:
     }
 
 
-readme = (current_dir / "README.md").read_text()
-version = (current_dir / "VERSION").read_text().strip()
-
-install_requirements = list(
-    read_reqs(current_dir / "requirements" / "_base.txt")
-    | read_reqs(current_dir / "requirements" / "_packages.txt")
+# STRONG requirements (see requirements/python-dependencies.md)
+PROD_REQUIREMENTS = list(
+    read_reqs(CURRENT_DIR / "requirements" / "_base.txt")
+    | read_reqs(CURRENT_DIR / "requirements" / "_packages.txt")
     | {
         "simcore-models-library",
         "simcore-postgres-database",
-        "simcore-service-library[aiohttp]",
+        "simcore-service-library[fastapi]",
     }
 )
 
-test_requirements = list(read_reqs(current_dir / "requirements" / "_test.txt"))
+TEST_REQUIREMENTS = list(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
-setup(
-    name="simcore-service-catalog",
-    version=version,
-    author="Pedro Crespo (pcrespov)",
-    description="Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)",
-    # Get tags from https://pypi.org/classifiers/
-    classifiers=[
-        "Development Status :: 3 - Alpha",
-        "License :: OSI Approved :: MIT License",
-        "Natural Language :: English",
-        "Programming Language :: Python :: 3.8",
-    ],
-    long_description=readme,
-    license="MIT license",
-    python_requires="~=3.8",
-    packages=find_packages(where="src"),
-    package_dir={
-        "": "src",
-    },
-    package_data={
-        "": [
-            "config/*.yaml",
+
+if __name__ == "__main__":
+    setup(
+        name="simcore-service-catalog",
+        version=(CURRENT_DIR / "VERSION").read_text().strip(),
+        author="Pedro Crespo (pcrespov)",
+        description="Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)",
+        # Get tags from https://pypi.org/classifiers/
+        classifiers=[
+            "Development Status :: 3 - Alpha",
+            "License :: OSI Approved :: MIT License",
+            "Natural Language :: English",
+            "Programming Language :: Python :: 3.8",
         ],
-    },
-    include_package_data=True,
-    # install_requires=install_requirements,
-    test_suite="tests",
-    tests_require=test_requirements,
-    extras_require={"test": test_requirements},
-)
+        long_description=(CURRENT_DIR / "README.md").read_text(),
+        license="MIT license",
+        python_requires="~=3.8",
+        packages=find_packages(where="src"),
+        package_dir={
+            "": "src",
+        },
+        package_data={
+            "": [
+                "config/*.yaml",
+            ],
+        },
+        include_package_data=True,
+        install_requires=PROD_REQUIREMENTS,
+        test_suite="tests",
+        tests_require=TEST_REQUIREMENTS,
+        extras_require={"test": TEST_REQUIREMENTS},
+    )
