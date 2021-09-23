@@ -11,8 +11,9 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from aiohttp import web
-from servicelib.observer import observe, emit
+from servicelib.observer import emit, observe
 from servicelib.utils import fire_and_forget_task, logged_gather
+from socketio import AsyncServer
 from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
 
 from ..groups_api import list_user_groups
@@ -119,12 +120,19 @@ async def on_user_logout(
 ) -> None:
     log.debug("user %s must be disconnected", user_id)
     # find the sockets related to the user
-    sio = get_socket_server(app)
+    sio: AsyncServer = get_socket_server(app)
     with managed_resource(user_id, client_session_id, app) as rt:
         # start by disconnecting this client if possible
         if client_session_id:
             if socket_id := await rt.get_socket_id():
-                await sio.disconnect(sid=socket_id)
+                try:
+                    await sio.disconnect(sid=socket_id)
+                except KeyError as exc:
+                    log.warning(
+                        "Disconnection of socket id '%s' failed. socket id could not be found: [%s]",
+                        socket_id,
+                        exc,
+                    )
             # trigger faster gc on disconnect
             await rt.user_pressed_disconnect()
 

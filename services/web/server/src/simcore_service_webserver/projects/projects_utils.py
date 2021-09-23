@@ -172,11 +172,11 @@ async def project_uses_available_services(
     }
 
     # get available services
-    available_services: Set[Tuple[str, str]] = {
+    available_services_set: Set[Tuple[str, str]] = {
         (s["key"], s["version"]) for s in available_services
     }
 
-    return needed_services.issubset(available_services)
+    return needed_services.issubset(available_services_set)
 
 
 def get_project_unavailable_services(
