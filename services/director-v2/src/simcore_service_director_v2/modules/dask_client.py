@@ -17,6 +17,9 @@ from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import AnyUrl
+from simcore_sdk import node_ports_v2
+from simcore_sdk.node_ports_v2 import DBManager
+from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 from tenacity import before_sleep_log, retry, retry_if_exception_type, wait_random
 
 from ..core.errors import (
@@ -42,21 +45,26 @@ dask_retry_policy = dict(
 CLUSTER_RESOURCE_MOCK_USAGE: float = 1e-9
 
 
+async def _create_node_ports(
+    app: FastAPI, user_id: UserID, project_id: ProjectID, node_id: NodeID
+) -> Nodeports:
+    db_manager = DBManager(db_engine=app.state.engine)
+    return await node_ports_v2.ports(
+        user_id=user_id,
+        project_id=f"{project_id}",
+        node_uuid=f"{node_id}",
+        db_manager=db_manager,
+    )
+
+
 async def _compute_input_data(
     app: FastAPI,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
 ) -> TaskInputData:
-    from simcore_sdk import node_ports_v2
-    from simcore_sdk.node_ports_v2 import DBManager
-
-    db_manager = DBManager(db_engine=app.state.engine)
-    ports = await node_ports_v2.ports(
-        user_id=user_id,
-        project_id=f"{project_id}",
-        node_uuid=f"{node_id}",
-        db_manager=db_manager,
+    ports = await _create_node_ports(
+        app=app, user_id=user_id, project_id=project_id, node_id=node_id
     )
     input_data = {}
     for port in (await ports.inputs).values():
@@ -71,6 +79,32 @@ async def _compute_input_data(
         else:
             input_data[port.key] = value_link
     return TaskInputData.parse_obj(input_data)
+
+
+async def _compute_output_data_schema(
+    app: FastAPI,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+) -> TaskOutputDataSchema:
+    ports = await _create_node_ports(
+        app=app, user_id=user_id, project_id=project_id, node_id=node_id
+    )
+    output_data_schema = {}
+    for port in (await ports.outputs).values():
+        output_data_schema[port.key] = {"required": port.default_value is None}
+        value_link = await port.get_value_link()
+        if port.property_type.startswith("data:/"):
+
+            output_data_schema[port.key].update({"mapping": None, "url": None})
+            FileUrl(
+                url=value_link,
+                file_mapping=(
+                    next(iter(port.file_to_key_map)) if port.file_to_key_map else None
+                ),
+            )
+
+    return TaskOutputDataSchema.parse_obj(output_data_schema)
 
 
 def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
@@ -220,7 +254,6 @@ class DaskClient:
                 self.app, user_id, project_id, node_id
             )
             try:
-                # TODO: move the registry out of the dynamic sidecar settings!!
                 task_future = self.client.submit(
                     remote_fct,
                     docker_basic_auth=DockerBasicAuth(
