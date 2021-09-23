@@ -93,15 +93,16 @@ async def _compute_output_data_schema(
     output_data_schema = {}
     for port in (await ports.outputs).values():
         output_data_schema[port.key] = {"required": port.default_value is None}
-        value_link = await port.get_value_link()
-        if port.property_type.startswith("data:/"):
+        value_link = await port.get_value_link(download=False)
+        if port.property_type.startswith("data:"):
 
-            output_data_schema[port.key].update({"mapping": None, "url": None})
-            FileUrl(
-                url=value_link,
-                file_mapping=(
-                    next(iter(port.file_to_key_map)) if port.file_to_key_map else None
-                ),
+            output_data_schema[port.key].update(
+                {
+                    "mapping": next(iter(port.file_to_key_map))
+                    if port.file_to_key_map
+                    else None,
+                    "url": value_link,
+                }
             )
 
     return TaskOutputDataSchema.parse_obj(output_data_schema)
@@ -253,6 +254,9 @@ class DaskClient:
             input_data = await _compute_input_data(
                 self.app, user_id, project_id, node_id
             )
+            output_data_keys = await _compute_output_data_schema(
+                self.app, user_id, project_id, node_id
+            )
             try:
                 task_future = self.client.submit(
                     remote_fct,
@@ -264,7 +268,7 @@ class DaskClient:
                     service_key=node_image.name,
                     service_version=node_image.tag,
                     input_data=input_data,
-                    output_data_keys={},
+                    output_data_keys=output_data_keys,
                     command=["run"],
                     key=job_id,
                     resources=dask_resources,
