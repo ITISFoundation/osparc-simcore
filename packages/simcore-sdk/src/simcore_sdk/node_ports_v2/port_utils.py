@@ -21,6 +21,7 @@ log = logging.getLogger(__name__)
 async def get_value_link_from_port_link(
     value: PortLink,
     node_port_creator: Callable[[str], Coroutine[Any, Any, Any]],
+    download: bool,
 ) -> Optional[ItemConcreteLinkValue]:
     log.debug("Getting value link %s", value)
     # create a node ports for the other node
@@ -29,7 +30,7 @@ async def get_value_link_from_port_link(
     log.debug("Received node from DB %s, now returning value link", other_nodeports)
 
     other_value: Optional[ItemConcreteLinkValue] = await other_nodeports.get_value_link(
-        value.output
+        value.output, download
     )
     return other_value
 
@@ -67,9 +68,23 @@ async def get_value_from_link(
     return other_value
 
 
-async def get_link_from_storage(user_id: int, value: FileLink) -> Optional[AnyUrl]:
+async def get_download_link_from_storage(
+    user_id: int, value: FileLink
+) -> Optional[AnyUrl]:
     log.debug("getting link to file from storage %s", value)
     link = await filemanager.get_download_link_from_s3(
+        user_id=user_id,
+        store_id=f"{value.store}",
+        s3_object=value.path,
+    )
+    return AnyUrl(f"{link}", scheme=link.scheme, host=link.host or "") if link else None
+
+
+async def get_upload_link_from_storage(
+    user_id: int, value: FileLink
+) -> Optional[AnyUrl]:
+    log.debug("getting link to file from storage %s", value)
+    link = await filemanager.get_upload_link_from_s3(
         user_id=user_id,
         store_id=f"{value.store}",
         s3_object=value.path,

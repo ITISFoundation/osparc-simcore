@@ -73,7 +73,9 @@ class Port(ServiceProperty):
             self.value = self.default_value
             self._used_default_value = True
 
-    async def get_value_link(self) -> Optional[ItemConcreteLinkValue]:
+    async def get_value_link(
+        self, download: bool = True
+    ) -> Optional[ItemConcreteLinkValue]:
         log.debug(
             "getting value link %s[%s] with value %s",
             self.key,
@@ -87,11 +89,18 @@ class Port(ServiceProperty):
                 # pylint: disable=protected-access
                 self.value,
                 self._node_ports._node_ports_creator_cb,
+                download=download,
             )
         if isinstance(self.value, FileLink):
             # let's get the download/upload link from storage
-            return await port_utils.get_link_from_storage(
-                self._node_ports.user_id, self.value
+            return (
+                await port_utils.get_download_link_from_storage(
+                    self._node_ports.user_id, self.value
+                )
+                if download
+                else await port_utils.get_upload_link_from_storage(
+                    self._node_ports.user_id, self.value
+                )
             )
 
         if isinstance(self.value, DownloadLink):
