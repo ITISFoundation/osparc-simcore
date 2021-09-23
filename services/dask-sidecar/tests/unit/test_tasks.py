@@ -6,7 +6,6 @@ import json
 # pylint: disable=unused-variable
 # pylint: disable=no-member
 import logging
-import pdb
 import re
 import subprocess
 
@@ -16,7 +15,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
-from typing import Callable, Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional
 from uuid import uuid4
 
 import dask
@@ -240,6 +239,9 @@ def ubuntu_task(http_server: List[URL], ftp_server: List[URL]) -> ServiceExample
             },
         }
     )
+
+    output_file_url = next(iter(ftp_server)).with_path("output_file")
+
     return ServiceExampleParam(
         docker_basic_auth=DockerBasicAuth(
             server_address="docker.io", username="pytest", password=""
@@ -251,11 +253,25 @@ def ubuntu_task(http_server: List[URL], ftp_server: List[URL]) -> ServiceExample
         output_data_keys=TaskOutputDataSchema.parse_obj(
             {
                 **{k: {"required": True} for k in jsonable_outputs.keys()},
-                **{"pytest_file": {"required": True, "mapping": "a_outputfile"}},
+                **{
+                    "pytest_file": {
+                        "required": True,
+                        "mapping": "a_outputfile",
+                        "url": f"{output_file_url}",
+                    }
+                },
             }
         ),
         expected_output_data=TaskOutputData.parse_obj(
-            {**jsonable_outputs, **{"pytest_file": {"url": "file://a_outputfile"}}}
+            {
+                **jsonable_outputs,
+                **{
+                    "pytest_file": {
+                        "url": f"{output_file_url}",
+                        "file_mapping": "a_outputfile",
+                    }
+                },
+            }
         ),
         expected_logs=[
             '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
@@ -311,6 +327,10 @@ def test_run_computational_sidecar_real_fct(
     for k, v in output_data.items():
         assert k in task.expected_output_data
         assert v == task.expected_output_data[k]
+
+    import pdb
+
+    pdb.set_trace()
 
 
 @pytest.mark.parametrize(

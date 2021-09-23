@@ -71,11 +71,12 @@ class ComputationalSidecar:
         input_data = {}
         for input_key, input_params in self.input_data.items():
             if isinstance(input_params, FileUrl):
-                openfile = fsspec.open(f"{input_params.url}")
                 destination_path = task_volumes.input_folder / (
                     input_params.file_mapping or URL(input_params.url).path.strip("/")
                 )
-                with openfile as src, destination_path.open("wb") as dest:
+                with fsspec.open(f"{input_params.url}") as src, destination_path.open(
+                    "wb"
+                ) as dest:
                     dest.write(src.read())
 
             else:
@@ -86,9 +87,21 @@ class ComputationalSidecar:
         self, task_volumes: TaskSharedVolumes
     ) -> TaskOutputData:
         try:
-            return TaskOutputData.from_task_output(
+            output_data = TaskOutputData.from_task_output(
                 self.output_data_keys, task_volumes.output_folder
             )
+            for output_params in output_data.values():
+                if isinstance(output_params, FileUrl):
+                    src_path = task_volumes.output_folder / (
+                        output_params.file_mapping
+                        or URL(output_params.url).path.strip("/")
+                    )
+                    with src_path.open("rb") as src, fsspec.open(
+                        f"{output_params.url}", "wb"
+                    ) as dst:
+                        dst.write(src.read())
+            return output_data
+
         except ValidationError as exc:
             raise ServiceBadFormattedOutputError(
                 self.service_key, self.service_version
