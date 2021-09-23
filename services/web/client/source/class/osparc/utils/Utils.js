@@ -60,7 +60,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     computeServiceV2RetrieveUrl: function(studyId, nodeId) {
-      const urlBase = window.location.protocol + "//" + window.location.host;
+      const urlBase = window.location.protocol + "//" + window.location.host + "/v0";
       return urlBase + "/projects/" + studyId + "/nodes/" + nodeId + ":retrieve";
     },
 

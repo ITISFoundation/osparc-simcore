@@ -11875,7 +11875,7 @@ paths:
       tags:
         - project
       description: Triggers service retrieve
-      operationId: get_retrieve
+      operationId: post_retrieve
       responses:
         '200':
           description: Returns the amount of transferred bytes when pulling data via nodeports

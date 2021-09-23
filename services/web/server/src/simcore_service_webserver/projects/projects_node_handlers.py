@@ -94,13 +94,17 @@ async def get_node(request: web.Request) -> web.Response:
 
 @login_required
 @permission_required("project.node.read")
-async def get_retrieve(request: web.Request) -> web.Response:
+async def post_retrieve(request: web.Request) -> web.Response:
     try:
         node_uuid = request.match_info["node_id"]
+        data = await request.json()
+        port_keys = data.get("port_keys", [])
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
 
-    return web.json_response(director_v2.retrieve(request.app, node_uuid))
+    return web.json_response(
+        await director_v2.retrieve(request.app, node_uuid, port_keys)
+    )
 
 
 @login_required
