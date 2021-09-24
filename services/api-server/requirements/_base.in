@@ -6,11 +6,8 @@
 --constraint ../../../requirements/constraints.txt
 
 # intra-repo required dependencies
-# models-library
 --requirement ../../../packages/models-library/requirements/_base.in
-# postgres-database
 --requirement ../../../packages/postgres-database/requirements/_base.in
-# simcore-sdk
 --requirement ../../../packages/simcore-sdk/requirements/_base.in
 # settings-library[fastapi]
 --requirement ../../../packages/settings-library/requirements/_base.in
