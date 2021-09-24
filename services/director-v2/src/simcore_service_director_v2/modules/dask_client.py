@@ -93,8 +93,9 @@ async def _compute_output_data_schema(
     output_data_schema = {}
     for port in (await ports.outputs).values():
         output_data_schema[port.key] = {"required": port.default_value is None}
-        value_link = await port.get_value_link(download=False)
+
         if port.property_type.startswith("data:"):
+            value_link = await port.get_upload_link()
 
             output_data_schema[port.key].update(
                 {
