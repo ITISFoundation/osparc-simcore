@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, Tuple, Type
 
 from models_library.services import PROPERTY_KEY_RE, ServiceProperty
 from pydantic import Field, PrivateAttr, validator
+from pydantic.networks import AnyUrl
 
 from ..node_ports_common.exceptions import InvalidItemTypeError
 from . import port_utils
@@ -73,9 +74,7 @@ class Port(ServiceProperty):
             self.value = self.default_value
             self._used_default_value = True
 
-    async def get_value_link(
-        self, download: bool = True
-    ) -> Optional[ItemConcreteLinkValue]:
+    async def get_value_link(self) -> Optional[ItemConcreteLinkValue]:
         log.debug(
             "getting value link %s[%s] with value %s",
             self.key,
@@ -89,18 +88,11 @@ class Port(ServiceProperty):
                 # pylint: disable=protected-access
                 self.value,
                 self._node_ports._node_ports_creator_cb,
-                download=download,
             )
         if isinstance(self.value, FileLink):
             # let's get the download/upload link from storage
-            return (
-                await port_utils.get_download_link_from_storage(
-                    self._node_ports.user_id, self.value
-                )
-                if download
-                else await port_utils.get_upload_link_from_storage(
-                    self._node_ports.user_id, self.value
-                )
+            return await port_utils.get_download_link_from_storage(
+                self._node_ports.user_id, self.value
             )
 
         if isinstance(self.value, DownloadLink):
@@ -108,6 +100,14 @@ class Port(ServiceProperty):
             return self.value.download_link
 
         return self.value
+
+    async def get_upload_link(self) -> AnyUrl:
+        return await port_utils.get_upload_link_from_storage(
+            self._node_ports.user_id,
+            self._node_ports.project_id,
+            self._node_ports.node_uuid,
+            next(iter(self.file_to_key_map)) if self.file_to_key_map else self.key,
+        )
 
     async def get(self) -> Optional[ItemConcreteValue]:
         log.debug(

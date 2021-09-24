@@ -21,7 +21,6 @@ log = logging.getLogger(__name__)
 async def get_value_link_from_port_link(
     value: PortLink,
     node_port_creator: Callable[[str], Coroutine[Any, Any, Any]],
-    download: bool,
 ) -> Optional[ItemConcreteLinkValue]:
     log.debug("Getting value link %s", value)
     # create a node ports for the other node
@@ -30,7 +29,7 @@ async def get_value_link_from_port_link(
     log.debug("Received node from DB %s, now returning value link", other_nodeports)
 
     other_value: Optional[ItemConcreteLinkValue] = await other_nodeports.get_value_link(
-        value.output, download
+        value.output
     )
     return other_value
 
@@ -81,15 +80,16 @@ async def get_download_link_from_storage(
 
 
 async def get_upload_link_from_storage(
-    user_id: int, value: FileLink
-) -> Optional[AnyUrl]:
-    log.debug("getting link to file from storage %s", value)
+    user_id: int, project_id: str, node_id: str, file_name: str
+) -> AnyUrl:
+    log.debug("getting link to file from storage for %s", file_name)
+    s3_object = data_items_utils.encode_file_id(Path(file_name), project_id, node_id)
     link = await filemanager.get_upload_link_from_s3(
         user_id=user_id,
-        store_id=f"{value.store}",
-        s3_object=value.path,
+        store_name=config.STORE,
+        s3_object=s3_object,
     )
-    return AnyUrl(f"{link}", scheme=link.scheme, host=link.host or "") if link else None
+    return AnyUrl(f"{link}", scheme=link.scheme, host=link.host or "")
 
 
 async def pull_file_from_store(

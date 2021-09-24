@@ -241,7 +241,7 @@ async def get_upload_link_from_s3(
     store_name: str = None,
     store_id: str = None,
     s3_object: str,
-) -> Optional[URL]:
+) -> URL:
     if store_name is None and store_id is None:
         raise exceptions.NodeportsException(msg="both store name and store id are None")
 
@@ -252,7 +252,7 @@ async def get_upload_link_from_s3(
             store_id = await _get_location_id_from_location_name(
                 user_id, store_name, api
             )
-        assert store_id  # nosec
+        assert store_id is not None  # nosec
         return await _get_upload_link(user_id, store_id, s3_object, api)
 
 

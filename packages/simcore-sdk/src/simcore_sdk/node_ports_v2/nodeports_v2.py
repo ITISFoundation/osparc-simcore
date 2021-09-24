@@ -53,16 +53,14 @@ class Nodeports(BaseModel):
             await self._auto_update_from_db()
         return self.internal_outputs
 
-    async def get_value_link(
-        self, item_key: str, download: bool
-    ) -> Optional[ItemConcreteLinkValue]:
+    async def get_value_link(self, item_key: str) -> Optional[ItemConcreteLinkValue]:
         try:
-            return await (await self.inputs)[item_key].get_value_link(download=download)
+            return await (await self.inputs)[item_key].get_value_link()
         except UnboundPortError:
             # not available try outputs
             pass
         # if this fails it will raise an exception
-        return await (await self.outputs)[item_key].get_value_link(download=download)
+        return await (await self.outputs)[item_key].get_value_link()
 
     async def get(self, item_key: str) -> Optional[ItemConcreteValue]:
         try:
