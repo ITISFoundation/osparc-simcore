@@ -24,6 +24,9 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 NAME = "simcore_service_dynamic_sidecar"
 VERSION = (CURRENT_DIR / "VERSION").read_text().strip()
 AUTHORS = "Andrei Neagu (GitHK), Sylvain Anderegg (sanderegg)"
+DESCRIPTION = (
+    "Implements a sidecar service to manage user's dynamic/interactive services"
+)
 
 # Hard requirements on third-parties and latest for in-repo packages
 PROD_REQUIREMENTS = tuple(
@@ -46,6 +49,7 @@ if __name__ == "__main__":
         name=NAME,
         version=VERSION,
         author=AUTHORS,
+        description=DESCRIPTION,
         packages=find_packages(where="src"),
         package_dir={
             "": "src",

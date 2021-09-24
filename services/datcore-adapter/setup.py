@@ -20,11 +20,14 @@ def read_reqs(reqs_path: Path) -> Set[str]:
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-
+NAME = "simcore-service-datcore-adapter"
 VERSION = (CURRENT_DIR / "VERSION").read_text().strip()
+AUTHORS = "Sylvain Anderegg (sanderegg)"
+DESCRIPTION = "Interfaces with datcore storage"
 README = (CURRENT_DIR / "README.md").read_text()
 
-PROD_REQUIREMENTS = list(
+
+PROD_REQUIREMENTS = tuple(
     read_reqs(CURRENT_DIR / "requirements" / "_base.txt")
     | {
         "simcore-models-library",
@@ -33,22 +36,16 @@ PROD_REQUIREMENTS = list(
     }
 )
 
-TEST_REQUIREMENTS = list(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
+TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
 if __name__ == "__main__":
     from setuptools import find_packages, setup
 
     setup(
-        name="simcore-service-datcore-adapter",
+        name=NAME,
         version=VERSION,
-        author="Sylvain Anderegg (sanderegg)",
-        description="Interfaces with datcore storage",
-        classifiers=[
-            "Development Status :: 1 - Planning",
-            "License :: OSI Approved :: MIT License",
-            "Natural Language :: English",
-            "Programming Language :: Python :: 3.8",
-        ],
+        author=AUTHORS,
+        description=DESCRIPTION,
         long_description=README,
         license="MIT license",
         python_requires="~=3.8",
