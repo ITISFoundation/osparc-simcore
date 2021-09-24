@@ -46,13 +46,13 @@ cloudpickle==1.6.0
     #   distributed
 cytoolz==0.11.0
     # via -r requirements/_base.in
-dask==2021.06.1
+dask==2021.09.1
     # via
     #   -r requirements/_base.in
     #   distributed
 defusedxml==0.7.1
     # via nbconvert
-distributed==2021.06.1
+distributed==2021.09.1
     # via dask
 dnspython==2.0.0
     # via email-validator
@@ -60,7 +60,7 @@ email-validator==1.1.1
     # via pydantic
 entrypoints==0.3
     # via nbconvert
-fsspec==2021.6.0
+fsspec==2021.9.0
     # via dask
 heapdict==1.0.1
     # via zict
@@ -77,14 +77,17 @@ ipython-genutils==0.2.0
     #   jupyter-server
     #   nbformat
     #   traitlets
-jinja2==3.0.1
+jinja2==2.11.3
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/constraints.txt
     #   bokeh
+    #   dask
+    #   distributed
     #   jupyter-server
     #   nbconvert
 jsonschema==3.2.0
@@ -140,6 +143,7 @@ packaging==20.4
     # via
     #   bleach
     #   bokeh
+    #   dask
 pandas==1.2.4
     # via
     #   -r requirements/_base.in

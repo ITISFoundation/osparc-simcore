@@ -4,6 +4,7 @@
 # TIP: Use _base.txt to create a pure-dask installation compatible with the dask-sidecar
 #
 --constraint ../../../requirements/constraints.txt
+--constraint constraints.txt
 
 # intra-repo packages CONSTRAINTS
 #   - Input-requirements on intra-repo packages are tested using latest updates
@@ -14,6 +15,7 @@
 --constraint ../../../packages/models-library/requirements/_base.in
 --constraint ../../../packages/settings-library/requirements/_base.in
 --constraint ../../../packages/service-library/requirements/_base.in
+
 
 aiodocker
 
