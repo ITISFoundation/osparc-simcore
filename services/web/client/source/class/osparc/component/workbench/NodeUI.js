@@ -164,6 +164,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       } else if (node.isIterator()) {
         this.__svgWorkbenchCanvas = svgWorkbenchCanvas;
         this.setType("iterator");
+      } else if (node.isIteratorConsumer()) {
+        this.setType("iterator-consumer");
       }
     },
 
