@@ -750,7 +750,7 @@ jobs:
 
   unit-test-service-library:
     timeout-minutes: 14 # if this timeout gets too small, then split the tests
-    name: "[unit] service-library[all]"
+    name: "[unit] service-library"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
