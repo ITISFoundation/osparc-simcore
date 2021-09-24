@@ -64,6 +64,19 @@ qx.Class.define("osparc.data.model.Workbench", {
     }
   },
 
+  statics: {
+    hasIteratorUpstream: function(workbench, node) {
+      const upstreamNodeIDs = workbench.getUpstreamNodes(node);
+      return [...upstreamNodeIDs].some(upstreamNodeID => {
+        const upstreamNode = workbench.getNode(upstreamNodeID);
+        if (upstreamNode) {
+          return upstreamNode.isIterator();
+        }
+        return false;
+      });
+    }
+  },
+
   members: {
     __workbenchInitData: null,
     __workbenchUIInitData: null,
@@ -88,6 +101,18 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     isContainer: function() {
       return false;
+    },
+
+    getUpstreamNodes: function(node, upstreamNodes = new Set()) {
+      upstreamNodes.add(node.getNodeId());
+      const links = node.getLinks();
+      for (let i=0; i<links.length; i++) {
+        const link = links[i];
+        upstreamNodes.add(link["nodeUuid"]);
+        const linkNode = this.getNode(link["nodeUuid"]);
+        this.getUpstreamNodes(linkNode, upstreamNodes);
+      }
+      return upstreamNodes;
     },
 
     isPipelineLinear: function() {
@@ -352,7 +377,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (link) {
         const connectedFPID = link["nodeUuid"];
         // check if it's used by another port
-        const links1 = requesterNode.getPropsForm().getLinks();
+        const links1 = requesterNode.getLinks();
         const matches = links1.filter(link1 => link1["nodeUuid"] === connectedFPID);
         isUsed = matches.length > 1;
 
@@ -365,7 +390,7 @@ qx.Class.define("osparc.data.model.Workbench", {
             continue;
           }
           const node = allNodes[nodeId2];
-          const links2 = node.getPropsForm() ? node.getPropsForm().getLinks() : [];
+          const links2 = node.getLinks();
           isUsed = links2.some(link2 => link2["nodeUuid"] === connectedFPID);
         }
       }
