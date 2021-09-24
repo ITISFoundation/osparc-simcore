@@ -1,0 +1,9 @@
+#
+# Dependencies for exclusive to fastapi-based services
+#
+#
+
+--constraint ../../../requirements/constraints.txt
+--constraint ./_base.in
+
+fastapi

@@ -16,6 +16,7 @@ click==8.0.1
     # via
     #   black
     #   pip-tools
+    #   typer
 distlib==0.3.2
     # via virtualenv
 filelock==3.0.12
@@ -62,6 +63,8 @@ tomli==1.2.1
     # via
     #   black
     #   pep517
+typer==0.4.0
+    # via -r requirements/_tools.in
 typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt

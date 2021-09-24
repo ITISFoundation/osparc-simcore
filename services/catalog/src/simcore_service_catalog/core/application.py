@@ -5,6 +5,7 @@ from typing import Callable, Optional
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.gzip import GZipMiddleware
+from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from starlette import status
 from starlette.exceptions import HTTPException
 
@@ -44,6 +45,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
     )
+    override_fastapi_openapi_method(app)
 
     logger.debug("App settings:%s", settings.json(indent=2))
 

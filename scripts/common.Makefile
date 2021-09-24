@@ -53,9 +53,9 @@ MAKE_C := $(MAKE) --no-print-directory --directory
 #
 
 
-.PHONY: help
+.PHONY: hel%
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
-help:
+hel%:
 	@echo "usage: make [target] ..."
 	@echo ""
 	@echo "Targets for '$(notdir $(CURDIR))':"
