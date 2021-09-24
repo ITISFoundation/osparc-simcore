@@ -225,7 +225,11 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     isIterator: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("data-iterator"));
+      return (metaData && metaData.key && metaData.key.includes("/data-iterator/"));
+    },
+
+    isIteratorConsumer: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("/iterator-consumer/"));
     },
 
     isDynamic: function(metaData) {
@@ -278,6 +282,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     isIterator: function() {
       return osparc.data.model.Node.isIterator(this.getMetaData());
+    },
+
+    isIteratorConsumer: function() {
+      return osparc.data.model.Node.isIteratorConsumer(this.getMetaData());
     },
 
     isDynamic: function() {

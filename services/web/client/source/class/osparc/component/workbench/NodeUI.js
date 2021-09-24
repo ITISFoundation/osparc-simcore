@@ -58,7 +58,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     },
 
     type: {
-      check: ["normal", "file", "parameter", "iterator"],
+      check: ["normal", "file", "parameter", "iterator", "iterator-consumer"],
       init: "normal",
       nullable: false,
       apply: "__applyType"
@@ -97,7 +97,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3)).set({
             margin: [3, 4]
           });
-          const nodeType = this.getNode().getMetaData().type;
+          let nodeType = this.getNode().getMetaData().type;
+          if (this.getNode().isIterator()) {
+            nodeType = "iterator";
+          } else if (this.getNode().isIteratorConsumer()) {
+            nodeType = "iterator-consumer";
+          }
           const type = osparc.utils.Services.getType(nodeType);
           if (type) {
             control.add(new osparc.ui.basic.Chip(type.label, type.icon + "12"));
@@ -131,7 +136,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.setThumbnail(node.getThumbnail());
       }
       const chipContainer = this.getChildControl("chips");
-      if (node.isComputational() || node.isFilePicker()) {
+      if (node.isComputational() || node.isFilePicker() || node.isIterator()) {
         this.__progressBar = this.getChildControl("progress");
       }
 
@@ -185,6 +190,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           break;
         case "iterator":
           this.__turnIntoIteratorUI();
+          break;
+        case "iterator-consumer":
+          this.__turnIntoIteratorConsumerUI();
           break;
       }
     },
@@ -278,6 +286,11 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           this.shadows.push(nodeUIShadow);
         }
       }
+    },
+
+    __turnIntoIteratorConsumerUI: function() {
+      const width = 150;
+      this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
     },
 
     // overridden

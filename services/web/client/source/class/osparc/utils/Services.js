@@ -44,6 +44,10 @@ qx.Class.define("osparc.utils.Services", {
       iterator: {
         label: "Iterator",
         icon: "@FontAwesome5Solid/copy/"
+      },
+      "iterator-consumer": {
+        label: "Probe",
+        icon: "@FontAwesome5Solid/thermometer/"
       }
     },
 
