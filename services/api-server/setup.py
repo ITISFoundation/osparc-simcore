@@ -7,6 +7,8 @@ from typing import Set
 
 from setuptools import find_packages, setup
 
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
 if not (sys.version_info.major == 3 and sys.version_info.minor == 8):
     raise RuntimeError(
         "Expected ~=3.8, got %s (Tip: did you forget to 'source .venv/bin/activate' or 'pyenv local'?)"
@@ -25,8 +27,6 @@ def read_reqs(reqs_path: Path) -> Set[str]:
         if isinstance(r, str)
     }
 
-
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 VERSION = (CURRENT_DIR / "VERSION").read_text().strip()
 

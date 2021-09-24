@@ -7,13 +7,14 @@ from typing import Set
 
 from setuptools import find_packages, setup
 
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+
 if not (sys.version_info.major == 3 and sys.version_info.minor == 8):
     raise RuntimeError(
         "Expected ~=3.8, got %s (Tip: did you forget to 'source .venv/bin/activate' or 'pyenv local'?)"
         % str(sys.version_info)
     )
-
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 def read_reqs(reqs_path: Path) -> Set[str]:
@@ -27,6 +28,8 @@ def read_reqs(reqs_path: Path) -> Set[str]:
         if isinstance(r, str)
     }
 
+
+VERSION = (CURRENT_DIR / "VERSION").read_text().strip()
 
 # STRONG requirements (see requirements/python-dependencies.md)
 PROD_REQUIREMENTS = list(
@@ -45,7 +48,7 @@ TEST_REQUIREMENTS = list(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 if __name__ == "__main__":
     setup(
         name="simcore-service-catalog",
-        version=(CURRENT_DIR / "VERSION").read_text().strip(),
+        version=VERSION,
         author="Pedro Crespo (pcrespov)",
         description="Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)",
         # Get tags from https://pypi.org/classifiers/
@@ -61,11 +64,6 @@ if __name__ == "__main__":
         packages=find_packages(where="src"),
         package_dir={
             "": "src",
-        },
-        package_data={
-            "": [
-                "config/*.yaml",
-            ],
         },
         include_package_data=True,
         install_requires=PROD_REQUIREMENTS,
