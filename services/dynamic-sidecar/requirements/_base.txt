@@ -4,6 +4,10 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
+aiodebug==1.1.2
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiodocker==0.19.1
     # via -r requirements/_base.in
 aiofiles==0.7.0
@@ -12,6 +16,8 @@ aiohttp==3.7.4.post0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   aiodocker
@@ -21,8 +27,10 @@ async-timeout==3.0.1
     # via
     #   -r requirements/_base.in
     #   aiohttp
-attrs==21.2.0
+attrs==20.3.0
     # via
+    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   aiohttp
     #   jsonschema
 bcrypt==3.2.0
@@ -46,6 +54,8 @@ cryptography==3.4.7
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   paramiko
@@ -59,6 +69,8 @@ docker-compose==1.29.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
@@ -69,22 +81,35 @@ docopt==0.6.2
 email-validator==1.1.3
     # via pydantic
 fastapi==0.68.1
-    # via -r requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    #   -r requirements/_base.in
+    #   fastapi-contrib
+fastapi-contrib==0.2.11
+    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 h11==0.12.0
     # via uvicorn
 idna==2.10
     # via
+    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   email-validator
     #   requests
     #   yarl
+jaeger-client==4.8.0
+    # via fastapi-contrib
 jsonschema==3.2.0
     # via docker-compose
 multidict==5.1.0
     # via
     #   aiohttp
     #   yarl
+opentracing==2.4.0
+    # via
+    #   fastapi-contrib
+    #   jaeger-client
 paramiko==2.7.2
     # via docker
 psycopg2-binary==2.9.1
@@ -95,12 +120,20 @@ pydantic==1.8.2
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
     #   fastapi
+pyinstrument==4.0.3
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 pynacl==1.4.0
     # via paramiko
 pyrsistent==0.18.0
@@ -111,8 +144,12 @@ pyyaml==5.4.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
     #   docker-compose
 requests==2.25.1
@@ -125,18 +162,33 @@ six==1.16.0
     #   dockerpty
     #   jsonschema
     #   pynacl
+    #   thrift
     #   websocket-client
 sqlalchemy==1.3.24
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
 starlette==0.14.2
     # via fastapi
+tenacity==8.0.1
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 texttable==1.6.3
     # via docker-compose
+threadloop==1.0.2
+    # via jaeger-client
+thrift==0.13.0
+    # via jaeger-client
+tornado==6.1
+    # via
+    #   jaeger-client
+    #   threadloop
 typer==0.4.0
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==3.10.0.2
@@ -144,10 +196,16 @@ typing-extensions==3.10.0.2
     #   aiodocker
     #   aiohttp
     #   pydantic
+ujson==4.2.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 urllib3==1.26.6
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
@@ -155,6 +213,8 @@ uvicorn==0.13.4
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
