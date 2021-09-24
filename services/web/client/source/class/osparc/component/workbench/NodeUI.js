@@ -94,7 +94,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       let control;
       switch (id) {
         case "chips": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3)).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3).set({
+            alignY: "middle"
+          })).set({
             margin: [3, 4]
           });
           let nodeType = this.getNode().getMetaData().type;
@@ -105,12 +107,15 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           }
           const type = osparc.utils.Services.getType(nodeType);
           if (type) {
-            control.add(new osparc.ui.basic.Chip(type.label, type.icon + "12"));
+            const chip = new osparc.ui.basic.Chip().set({
+              icon: type.icon + "18",
+              toolTipText: type.label
+            });
+            control.add(chip);
           }
           this.add(control, {
-            row: 1,
-            column: 0,
-            colSpan: 3
+            row: 0,
+            column: 1
           });
           break;
         }
@@ -120,7 +125,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
             margin: 4
           });
           this.add(control, {
-            row: 2,
+            row: 1,
             column: 0,
             colSpan: 3
           });
@@ -278,7 +283,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     __turnIntoIteratorUI: function() {
       const width = 150;
-      const height = 83;
+      const height = 69;
       this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
 
       if (this.__svgWorkbenchCanvas) {
