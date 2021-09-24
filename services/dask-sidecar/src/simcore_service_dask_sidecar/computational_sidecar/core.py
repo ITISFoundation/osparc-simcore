@@ -113,10 +113,25 @@ class ComputationalSidecar:
                         output_params.file_mapping
                         or URL(output_params.url).path.strip("/")
                     )
-                    with src_path.open("rb") as src, fsspec.open(
-                        f"{output_params.url}", "wb"
-                    ) as dst:
-                        dst.write(src.read())
+                    if output_params.url.scheme == "http":
+
+                        logger.info("This is a pre-signed link!!! %s", src_path)
+                        # this is a S3 pre-signed link!
+                        fs = fsspec.filesystem(
+                            "http",
+                            headers={"head_ok": "true", "give_length": "true"},
+                            asynchronous=True,
+                        )
+                        logger.info("Created filesystem: %s", fs)
+                        logger.info("filesystem: %s", pformat(fs.__dict__))
+                        await fs.put(src_path, f"{output_params.url}", method="PUT")
+                        logger.info("Put done: %s", fs)
+                    else:
+                        fsspec.open(f"{output_params.url}", "wb")
+                        with src_path.open("rb") as src, fsspec.open(
+                            f"{output_params.url}", "wb"
+                        ) as dst:
+                            dst.write(src.read())
 
                     logger.info("retrieved output file %s", src_path)
             logger.info("retrieved outputs data %s", pformat(output_data))
