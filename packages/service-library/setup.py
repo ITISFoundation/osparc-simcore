@@ -22,7 +22,6 @@ NAME = "simcore-service-library"
 VERSION = "1.1.0"
 AUTHORS = "Pedro Crespo-Valero (pcrespov)"
 DESCRIPTION = "Core service library for simcore (or servicelib)"
-README = Path(CURRENT_DIR / "README.rst").read_text()
 
 # WEAK requirements (see requirements/python-dependencies.md)
 PROD_REQUIREMENTS = read_reqs(CURRENT_DIR / "requirements" / "_base.in")
@@ -41,13 +40,11 @@ if __name__ == "__main__":
         version=VERSION,
         author=AUTHORS,
         description=DESCRIPTION,
-        long_description=README,
         license="MIT license",
         python_requires="~=3.8",
         install_requires=tuple(PROD_REQUIREMENTS),
         packages=find_packages(where="src"),
         package_dir={"": "src"},
-        include_package_data=True,
         test_suite="tests",
         tests_require=tuple(TEST_REQUIREMENTS),
         extras_require={
@@ -56,5 +53,4 @@ if __name__ == "__main__":
             "fastapi": tuple(FASTAPI_REQUIREMENTS),
             "all": tuple(AIOHTTP_REQUIREMENTS | FASTAPI_REQUIREMENTS),
         },
-        zip_safe=False,
     )
