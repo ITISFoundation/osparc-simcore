@@ -114,7 +114,9 @@ class ComputationalSidecar:
                         or URL(output_params.url).path.strip("/")
                     )
                     if output_params.url.scheme == "http":
-                        # this is a S3 pre-signed link!
+                        # NOTE: special case for http scheme when uploading. this is typically a S3 put presigned link.
+                        # Therefore, we need to use the http filesystem directly in order to call the put_file function.
+                        # writing on httpfilesystem is disabled by default.
                         fs = fsspec.filesystem(
                             "http",
                             headers={
