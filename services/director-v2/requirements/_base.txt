@@ -86,13 +86,13 @@ cloudpickle==1.6.0
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
-dask==2021.06.1
+dask==2021.09.1
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
 decorator==4.4.2
     # via networkx
-distributed==2021.06.1
+distributed==2021.09.1
     # via -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
 dnspython==2.1.0
     # via email-validator
@@ -177,6 +177,8 @@ jinja2==2.11.3
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   distributed
     #   fastapi
 kombu==5.1.0
     # via celery
@@ -186,8 +188,9 @@ locket==0.2.1
     #   partd
 mako==1.1.5
     # via alembic
-markupsafe==1.1.1
+markupsafe==2.0.1
     # via
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   jinja2
     #   mako
 msgpack==1.0.2
@@ -209,6 +212,11 @@ orjson==3.5.4
     # via
     #   -r requirements/_base.in
     #   fastapi
+packaging==20.4
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   dask
 partd==1.2.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
@@ -296,12 +304,14 @@ rfc3986==1.4.0
     # via httpx
 rx==1.6.1
     # via graphql-core
-six==1.16.0
+six==1.15.0
     # via
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   click-repl
     #   graphene
     #   graphql-core
     #   graphql-relay
+    #   packaging
     #   python-multipart
     #   tenacity
     #   thrift
