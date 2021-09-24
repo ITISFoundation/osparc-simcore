@@ -169,7 +169,7 @@ mako==1.1.5
     # via
     #   -c requirements/_base.txt
     #   alembic
-markupsafe==1.1.1
+markupsafe==2.0.1
     # via
     #   -c requirements/_base.txt
     #   mako
@@ -183,8 +183,10 @@ multidict==5.1.0
     #   yarl
 nest-asyncio==1.5.1
     # via -r requirements/_test.in
-packaging==21.0
-    # via pytest
+packaging==20.4
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
 pamqp==2.3.0
     # via aiormq
 paramiko==2.7.2
@@ -216,7 +218,9 @@ pylint==2.11.1
 pynacl==1.4.0
     # via paramiko
 pyparsing==2.4.7
-    # via packaging
+    # via
+    #   -c requirements/_base.txt
+    #   packaging
 pyrsistent==0.18.0
     # via jsonschema
 pytest==6.2.5
@@ -279,13 +283,14 @@ rfc3986==1.4.0
     # via
     #   -c requirements/_base.txt
     #   httpx
-six==1.16.0
+six==1.15.0
     # via
     #   -c requirements/_base.txt
     #   bcrypt
     #   click-repl
     #   dockerpty
     #   jsonschema
+    #   packaging
     #   pynacl
     #   python-dateutil
     #   websocket-client
