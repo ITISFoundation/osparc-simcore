@@ -114,20 +114,15 @@ class ComputationalSidecar:
                         or URL(output_params.url).path.strip("/")
                     )
                     if output_params.url.scheme == "http":
-
-                        logger.info("This is a pre-signed link!!! %s", src_path)
                         # this is a S3 pre-signed link!
                         fs = fsspec.filesystem(
                             "http",
-                            headers={"head_ok": "true", "give_length": "true"},
-                            asynchronous=True,
+                            headers={
+                                "Content-Length": f"{src_path.stat().st_size}",
+                            },
                         )
-                        logger.info("Created filesystem: %s", fs)
-                        logger.info("filesystem: %s", pformat(fs.__dict__))
-                        await fs.put(src_path, f"{output_params.url}", method="PUT")
-                        logger.info("Put done: %s", fs)
+                        fs.put_file(src_path, f"{output_params.url}", method="PUT")
                     else:
-                        fsspec.open(f"{output_params.url}", "wb")
                         with src_path.open("rb") as src, fsspec.open(
                             f"{output_params.url}", "wb"
                         ) as dst:
