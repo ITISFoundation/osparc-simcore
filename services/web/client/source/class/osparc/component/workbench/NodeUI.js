@@ -276,13 +276,14 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     __turnIntoIteratorUI: function() {
       const width = 150;
+      const height = 83;
       this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
 
       if (this.__svgWorkbenchCanvas) {
         const nShadows = 2;
         this.shadows = [];
         for (let i=0; i<nShadows; i++) {
-          const nodeUIShadow = this.__svgWorkbenchCanvas.drawNodeUI(width, 62, this.self().CIRCLED_RADIUS);
+          const nodeUIShadow = this.__svgWorkbenchCanvas.drawNodeUI(width, height, this.self().CIRCLED_RADIUS);
           this.shadows.push(nodeUIShadow);
         }
       }
