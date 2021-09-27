@@ -46,8 +46,8 @@ def json_schema_dict(common_schemas_specs_dir: Path) -> Iterable[Callable]:
 
 
 @pytest.fixture(scope="session")
-def json_faker_script(script_dir: Path) -> Path:
-    json_faker_file = script_dir / "json-schema-faker.bash"
+def json_faker_script(osparc_simcore_scripts_dir: Path) -> Path:
+    json_faker_file = osparc_simcore_scripts_dir / "json-schema-faker.bash"
     assert json_faker_file.exists()
     return json_faker_file
 

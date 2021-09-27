@@ -5,26 +5,16 @@ set -o nounset   # abort on unbound variable
 set -o pipefail  # don't hide errors within pipes
 IFS=$'\n\t'
 
-install() {
+
+# NOTE: notice that the CI uses [all]
+# TODO: add STEPS where pip-sync individual extras and test separately
+install_all() {
     bash ci/helpers/ensure_python_pip.bash
-    pushd packages/service-library; pip3 install -r requirements/ci.txt; popd;
+    pushd packages/service-library; pip3 install -r "requirements/ci[all].txt"; popd;
     pip list -v
 }
 
-install_aiohttp() {
-    bash ci/helpers/ensure_python_pip.bash
-    pushd packages/service-library; pip3 install -r requirements/ci[aiohttp].txt; popd;
-    pip list -v
-}
-
-test() {
-    pytest --cov=servicelib --durations=10 --cov-append \
-          --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-          -v -m "not travis" --ignore=packages/service-library/tests/aiohttp \
-          packages/service-library/tests
-}
-
-test_aiohttp() {
+test_all() {
     pytest --cov=servicelib --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
           -v -m "not travis" packages/service-library/tests

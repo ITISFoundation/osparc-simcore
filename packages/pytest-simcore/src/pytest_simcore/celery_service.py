@@ -41,7 +41,6 @@ def celery_service(celery_config: Dict, docker_stack: Dict) -> str:
 @tenacity.retry(**CeleryRetryPolicyUponInitialization().kwargs)
 def wait_till_celery_responsive(url: str) -> None:
     app = celery.Celery("tasks", broker=url)
-
-    status = celery.bin.celery.CeleryCommand.commands["status"]()
+    status = celery.bin.celery.celery.commands["status"]()
     status.app = status.get_app()
     status.run()  # raises celery.bin.base.Error if cannot run

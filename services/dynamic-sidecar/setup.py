@@ -1,40 +1,62 @@
-import os
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import re
+import sys
 from pathlib import Path
-
-from setuptools import find_packages, setup
-
-current_dir = Path(os.path.dirname(os.path.realpath(__file__)))
+from typing import Set
 
 
-def read_reqs(reqs_path: Path):
-    return re.findall(r"(^[^#-][\w]+[-~>=<.\w]+)", reqs_path.read_text(), re.MULTILINE)
+def read_reqs(reqs_path: Path) -> Set[str]:
+    return {
+        r
+        for r in re.findall(
+            r"(^[^#\n-][\w\[,\]]+[-~>=<.\w]*)",
+            reqs_path.read_text(),
+            re.MULTILINE,
+        )
+        if isinstance(r, str)
+    }
 
 
-# -----------------------------------------------------------------
-# Hard requirements on third-parties and latest for in-repo packages
-install_requires = read_reqs(current_dir / "requirements" / "_base.txt") + [
-    "simcore-models-library",
-    "simcore-settings-library",
-    "simcore-postgres-database",
-    "simcore-sdk",
-    "simcore-service-library",
-]
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-tests_require = read_reqs(current_dir / "requirements" / "_test.txt")
 
-current_version = (current_dir / "VERSION").read_text().strip()
-
-setup(
-    name="simcore_service_dynamic_sidecar",
-    version=current_version,
-    packages=find_packages(where="src"),
-    package_dir={
-        "": "src",
-    },
-    include_package_data=True,
-    python_requires="~=3.8",
-    install_requires=install_requires,
-    tests_require=tests_require,
-    setup_requires=["setuptools_scm"],
+NAME = "simcore_service_dynamic_sidecar"
+VERSION = (CURRENT_DIR / "VERSION").read_text().strip()
+AUTHORS = "Andrei Neagu (GitHK), Sylvain Anderegg (sanderegg)"
+DESCRIPTION = (
+    "Implements a sidecar service to manage user's dynamic/interactive services"
 )
+
+# Hard requirements on third-parties and latest for in-repo packages
+PROD_REQUIREMENTS = tuple(
+    read_reqs(CURRENT_DIR / "requirements" / "_base.txt")
+    | {
+        "simcore-models-library",
+        "simcore-postgres-database",
+        "simcore-service-library[fastapi]",
+        "simcore-settings-library",
+    }
+)
+
+TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
+
+
+if __name__ == "__main__":
+    from setuptools import find_packages, setup
+
+    setup(
+        name=NAME,
+        version=VERSION,
+        author=AUTHORS,
+        description=DESCRIPTION,
+        packages=find_packages(where="src"),
+        package_dir={
+            "": "src",
+        },
+        include_package_data=True,
+        python_requires="~=3.8",
+        PROD_REQUIREMENTS=PROD_REQUIREMENTS,
+        TEST_REQUIREMENTS=TEST_REQUIREMENTS,
+        setup_requires=["setuptools_scm"],
+    )

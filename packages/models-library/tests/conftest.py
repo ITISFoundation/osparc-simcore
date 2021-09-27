@@ -25,8 +25,8 @@ def package_dir():
 
 
 @pytest.fixture(scope="session")
-def json_diff_script(script_dir: Path) -> Path:
-    json_diff_script = script_dir / "json-schema-diff.bash"
+def json_diff_script(osparc_simcore_scripts_dir: Path) -> Path:
+    json_diff_script = osparc_simcore_scripts_dir / "json-schema-diff.bash"
     assert json_diff_script.exists()
     return json_diff_script
 
