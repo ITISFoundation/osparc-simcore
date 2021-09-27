@@ -9,6 +9,8 @@ from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
 from models_library.frontend_services_catalog import (
     is_frontend_service,
+    is_iterator_consumer_service,
+    is_iterator_service,
     is_parameter_service,
     iter_service_docker_data,
 )
@@ -52,6 +54,8 @@ def setup_frontend_services(app: FastAPI):
                 # STILL UNDER DEVELOPMENT
                 #  - Parameter services
                 or not is_parameter_service(key)
+                or not is_frontend_service(key)
+                or not is_iterator_consumer_service(key)
             )
 
         catalog = [
