@@ -18,6 +18,7 @@ import pytest
 from aiohttp.client import ClientSession
 from attr import dataclass
 from pydantic.error_wrappers import ValidationError
+from pytest_mock.plugin import MockerFixture
 from simcore_sdk.node_ports_v2 import exceptions, node_config
 from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink, PortLink
 from simcore_sdk.node_ports_v2.port import Port
@@ -128,7 +129,7 @@ def user_id_fixture() -> int:
 
 @pytest.fixture
 async def mock_download_file(
-    monkeypatch,
+    mocker: MockerFixture,
     this_node_file: Path,
     project_id: str,
     node_uuid: str,
@@ -146,10 +147,14 @@ async def mock_download_file(
         shutil.copy(this_node_file, destination_path)
         return destination_path
 
-    from simcore_sdk.node_ports_common import filemanager
+    mocker.patch(
+        "simcore_sdk.node_ports_common.filemanager.get_download_link_from_s3",
+        return_value="a fake link",
+    )
 
-    monkeypatch.setattr(
-        filemanager, "download_file_from_link", mock_download_file_from_link
+    mocker.patch(
+        "simcore_sdk.node_ports_common.filemanager.download_file_from_link",
+        side_effect=mock_download_file_from_link,
     )
 
 
