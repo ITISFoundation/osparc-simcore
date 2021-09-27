@@ -8,12 +8,12 @@ import random
 from typing import Any, Callable, Dict, Iterator, List, Tuple
 
 import pytest
+import respx
 import sqlalchemy as sa
 from aiopg.sa.engine import Engine
 from faker import Faker
 from fastapi import FastAPI
 from simcore_postgres_database.models.products import products
-from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.core.application import init_app
 from simcore_service_catalog.db.tables import (
     groups,
@@ -39,16 +39,16 @@ def client(app: FastAPI) -> TestClient:
 
 @pytest.fixture()
 async def director_mockup(loop, app: FastAPI):
-    class FakeDirector:
-        @staticmethod
-        async def get(url: str):
-            return ""
 
-    app.dependency_overrides[get_director_api] = FakeDirector
-
-    yield
-
-    app.dependency_overrides[get_director_api] = None
+    with respx.mock(
+        base_url=app.state.settings.director.base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+        respx_mock.get("/services", name="list_services").respond(
+            200, json={"data": []}
+        )
+        yield respx_mock
 
 
 # DATABASE tables fixtures -----------------------------------

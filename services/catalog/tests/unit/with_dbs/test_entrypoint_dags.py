@@ -17,14 +17,12 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-@pytest.mark.skip(reason="Failing on github actions")
 def test_read_healthcheck(director_mockup, client: TestClient):
     response = client.get("/")
     assert response.status_code == 200
     assert response.text == '":-)"'
 
 
-@pytest.mark.skip(reason="Failing on github actions")
 def test_read_meta(director_mockup, client: TestClient):
     response = client.get("/v0/meta")
     assert response.status_code == 200
@@ -33,7 +31,6 @@ def test_read_meta(director_mockup, client: TestClient):
     assert meta.name == "simcore_service_catalog"
 
 
-@pytest.mark.skip(reason="Failing on github actions")
 def test_list_dags(director_mockup, client: TestClient):
     response = client.get("/v0/dags")
     assert response.status_code == 200
@@ -47,7 +44,6 @@ def test_list_dags(director_mockup, client: TestClient):
     # TODO: assert dagout have identifiers now
 
 
-@pytest.mark.skip(reason="Failing on github actions")
 def test_standard_operations_on_resource(
     director_mockup, client: TestClient, fake_data_dag_in: Dict
 ):
