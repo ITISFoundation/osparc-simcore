@@ -17,13 +17,9 @@ from simcore_service_catalog.services.frontend_services import (
 @pytest.mark.parametrize(
     "image_metadata", iter_service_docker_data(), ids=lambda obj: obj.name
 )
-def test_create_frontend_services_metadata(image_metadata):
+def test_create_frontend_services_metadata(image_metadata: ServiceDockerData):
     assert isinstance(image_metadata, ServiceDockerData)
 
     assert is_frontend_service(image_metadata.key)
 
-    service = ServiceOut.parse_obj(image_metadata.dict(by_alias=True))
-
-    assert (
-        not image_metadata.inputs and image_metadata.outputs
-    ), "Expected a source node"
+    assert ServiceOut.parse_obj(image_metadata.dict(by_alias=True))
