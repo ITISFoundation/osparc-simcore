@@ -55,6 +55,7 @@ def setup_frontend_services(app: FastAPI):
                 #  - Parameter services
                 or not is_parameter_service(key)
                 or not is_frontend_service(key)
+                or not is_iterator_service(key)
                 or not is_iterator_consumer_service(key)
             )
 
