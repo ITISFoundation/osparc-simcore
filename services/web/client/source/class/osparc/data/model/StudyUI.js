@@ -70,7 +70,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
       let jsonObject = {};
       jsonObject["workbench"] = currentStudy ? currentStudy.getWorkbench().serializeUI() : this.getWorkbench();
       jsonObject["slideshow"] = this.getSlideshow().serialize();
-      jsonObject["currentNodeId"] = this.getCurrentNodeId();
+      jsonObject["currentNodeId"] = this.getCurrentNodeId() || "";
       jsonObject["mode"] = this.getMode();
       return jsonObject;
     }
