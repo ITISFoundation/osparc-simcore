@@ -102,14 +102,6 @@ class Port(ServiceProperty):
 
         return self.value
 
-    async def get_upload_link(self) -> AnyUrl:
-        return await port_utils.get_upload_link_from_storage(
-            self._node_ports.user_id,
-            self._node_ports.project_id,
-            self._node_ports.node_uuid,
-            next(iter(self.file_to_key_map)) if self.file_to_key_map else self.key,
-        )
-
     async def get(self) -> Optional[ItemConcreteValue]:
         log.debug(
             "getting %s[%s] with value %s",
