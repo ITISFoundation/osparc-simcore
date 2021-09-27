@@ -1,17 +1,40 @@
 """ Adds aiohttp middleware for tracing using zipkin server instrumentation.
 
 """
+import asyncio
 import logging
+import time
+from contextlib import contextmanager
 from typing import Union
 
 import aiozipkin as az
 from aiohttp import web
+from aiozipkin.tracer import Tracer
 from yarl import URL
 
 log = logging.getLogger(__name__)
 
 
 DEFAULT_JAEGER_BASE_URL = "http://jaeger:9411"
+
+
+@contextmanager
+def _timeit(what: str, minimum_expected_secs: int = 2):
+    """Small helper to time and log"""
+    try:
+        _tic = time.time()
+
+        yield
+
+        _elapsed = time.time() - _tic
+        msg = f"{what}: elapsed {_elapsed:3.2f} sec"
+        if _elapsed > minimum_expected_secs:
+            log.debug(msg)
+        else:
+            log.warning(msg)
+    except:
+        log.warning("Failed %s", what)
+        raise
 
 
 def setup_tracing(
@@ -36,10 +59,15 @@ def setup_tracing(
         zipkin_address,
     )
 
-    async def _on_startup(app: web.Application):
-        endpoint = az.create_endpoint(service_name, ipv4=host, port=port)
-        tracer = await az.create(f"{zipkin_address}", endpoint, sample_rate=1.0)
-        az.setup(app, tracer)
+    endpoint = az.create_endpoint(service_name, ipv4=host, port=port)
 
-    app.on_startup.append(_on_startup)
+    with _timeit("Created aiozipkin.tracer.Tracer"):
+        tracer: Tracer = asyncio.get_event_loop().run_until_complete(
+            az.create(f"{zipkin_address}", endpoint, sample_rate=1.0)
+        )
+
+    # WARNING: adds a middleware that should be the outermost since
+    # it expects stream responses and not flexible handler returns
+    az.setup(app, tracer)
+
     return True
