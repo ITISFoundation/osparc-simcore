@@ -48,7 +48,7 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
   },
 
   events: {
-    "editParameter": "qx.event.type.Event",
+    "ok": "qx.event.type.Event",
     "cancel": "qx.event.type.Event"
   },
 
@@ -59,8 +59,6 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
   },
 
   members: {
-    __form: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -109,7 +107,7 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
             allowGrowX: false
           });
           control.addListener("execute", () => {
-            this.fireEvent("editParameter");
+            this.fireEvent("ok");
           });
           break;
         }
@@ -117,9 +115,27 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
       return control || this.base(arguments, id);
     },
 
+    popUpInWindow: function() {
+      const form = this.__buildForm();
+      const win = osparc.ui.window.Window.popUpInWindow(this, "Edit Parameter", 250, 175);
+      this.addListener("ok", () => {
+        const node = this.getNode();
+        const label = form.getItem("label").getValue();
+        node.setLabel(label);
+        const val = form.getItem("value").getValue();
+        osparc.component.node.ParameterEditor.setParameterOutputValue(node, val);
+        win.close();
+      }, this);
+      this.addListener("cancel", () => {
+        win.close();
+      }, this);
+    },
+
     __buildForm: function() {
-      const form = this.__form = new qx.ui.form.Form();
-      const renderer = this.__renderer = new qx.ui.form.renderer.Single(form);
+      this._removeAll();
+
+      const form = new qx.ui.form.Form();
+      const renderer = new qx.ui.form.renderer.Single(form);
       this._add(renderer);
 
       const node = this.getNode();
@@ -149,20 +165,15 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
       }
       form.add(valueField, "Value", null, "value");
 
+      return form;
+    },
+
+    __addButtons: function(form) {
       // buttons
       const cancelButton = this.getChildControl("cancel-button");
       form.addButton(cancelButton);
       const okButton = this.getChildControl("ok-button");
       form.addButton(okButton);
-    },
-
-    getLabel: function() {
-      return this.__form.getItem("label").getValue();
-    },
-
-    getValue: function() {
-      const item = this.__form.getItem("value");
-      return item.getValue();
     }
   }
 });
