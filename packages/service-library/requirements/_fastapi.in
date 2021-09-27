@@ -7,3 +7,4 @@
 --constraint ./_base.in
 
 fastapi
+fastapi_contrib[jaegertracing]

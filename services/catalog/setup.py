@@ -5,16 +5,6 @@ import sys
 from pathlib import Path
 from typing import Set
 
-from setuptools import find_packages, setup
-
-if not (sys.version_info.major == 3 and sys.version_info.minor == 8):
-    raise RuntimeError(
-        "Expected ~=3.8, got %s (Tip: did you forget to 'source .venv/bin/activate' or 'pyenv local'?)"
-        % str(sys.version_info)
-    )
-
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
 
 def read_reqs(reqs_path: Path) -> Set[str]:
     return {
@@ -28,10 +18,16 @@ def read_reqs(reqs_path: Path) -> Set[str]:
     }
 
 
-# STRONG requirements (see requirements/python-dependencies.md)
-PROD_REQUIREMENTS = list(
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+NAME = "simcore-service-catalog"
+VERSION = (CURRENT_DIR / "VERSION").read_text().strip()
+AUTHORS = "Pedro Crespo-Valero (pcrespov), Sylvain Anderegg (sanderegg)"
+DESCRIPTION = "Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)"
+README = (CURRENT_DIR / "README.md").read_text()
+
+PROD_REQUIREMENTS = tuple(
     read_reqs(CURRENT_DIR / "requirements" / "_base.txt")
-    | read_reqs(CURRENT_DIR / "requirements" / "_packages.txt")
     | {
         "simcore-models-library",
         "simcore-postgres-database",
@@ -39,33 +35,23 @@ PROD_REQUIREMENTS = list(
     }
 )
 
-TEST_REQUIREMENTS = list(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
+TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
 
 if __name__ == "__main__":
+    from setuptools import find_packages, setup
+
     setup(
-        name="simcore-service-catalog",
-        version=(CURRENT_DIR / "VERSION").read_text().strip(),
-        author="Pedro Crespo (pcrespov)",
-        description="Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)",
-        # Get tags from https://pypi.org/classifiers/
-        classifiers=[
-            "Development Status :: 3 - Alpha",
-            "License :: OSI Approved :: MIT License",
-            "Natural Language :: English",
-            "Programming Language :: Python :: 3.8",
-        ],
-        long_description=(CURRENT_DIR / "README.md").read_text(),
+        name=NAME,
+        version=VERSION,
+        author=AUTHORS,
+        description=DESCRIPTION,
+        long_description=README,
         license="MIT license",
         python_requires="~=3.8",
         packages=find_packages(where="src"),
         package_dir={
             "": "src",
-        },
-        package_data={
-            "": [
-                "config/*.yaml",
-            ],
         },
         include_package_data=True,
         install_requires=PROD_REQUIREMENTS,
