@@ -74,6 +74,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     pageContext: {
       check: ["workbench", "slideshow", "fullSlideshow"],
       nullable: false,
+      event: "changePageContext",
       apply: "_applyPageContext"
     }
   },
@@ -153,6 +154,19 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               this.__workbenchView.openFirstNode();
               break;
           }
+          this.bind("pageContext", study.getUi(), "mode", {
+            converter: pageCtx => {
+              switch (pageCtx) {
+                case "workbench":
+                  return "workbench";
+                case "slideshow":
+                  return "guided";
+                case "fullSlideshow":
+                  return "app";
+              }
+              return "workbench";
+            }
+          });
 
           const workbench = study.getWorkbench();
           workbench.addListener("retrieveInputs", e => {
