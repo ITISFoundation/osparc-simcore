@@ -4,14 +4,19 @@
 """
 import json
 import logging
+from typing import Awaitable, Callable, Union
 
 from aiohttp import web
+from aiohttp.web_middlewares import _Handler, _Middleware
+from aiohttp.web_request import Request
+from aiohttp.web_response import StreamResponse
 from openapi_core.schema.exceptions import OpenAPIError
 
 from ..utils import is_production_environ
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
 from .rest_responses import (
     JSON_CONTENT_TYPE,
+    _DataType,
     create_data_response,
     create_error_response,
     is_enveloped_from_map,
@@ -32,17 +37,16 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
     return request.path.startswith(base_path)
 
 
-def error_middleware_factory(
-    api_version: str = DEFAULT_API_VERSION, log_exceptions=True
-):
-    _is_prod: bool = is_production_environ()
+def error_middleware_factory(api_version: str, log_exceptions=True) -> _Middleware:
+
+    _IS_PROD: bool = is_production_environ()
 
     def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
         resp = create_error_response(
             err,
             "Unexpected Server error",
             web.HTTPInternalServerError,
-            skip_internal_error_details=_is_prod,
+            skip_internal_error_details=_IS_PROD,
         )
 
         if log_exceptions:
@@ -59,7 +63,7 @@ def error_middleware_factory(
         raise resp
 
     @web.middleware
-    async def _middleware_handler(request: web.Request, handler):
+    async def _middleware_handler(request: web.Request, handler: _Handler):
         """
         Ensure all error raised are properly enveloped and json responses
         """
@@ -113,7 +117,7 @@ def error_middleware_factory(
                 err,
                 str(err),
                 web.HTTPNotImplemented,
-                skip_internal_error_details=_is_prod,
+                skip_internal_error_details=_IS_PROD,
             )
             raise error_response from err
 
@@ -126,9 +130,9 @@ def error_middleware_factory(
     return _middleware_handler
 
 
-def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
+def validate_middleware_factory(api_version: str) -> _Middleware:
     @web.middleware
-    async def _middleware_handler(request: web.Request, handler):
+    async def _middleware_handler(request: web.Request, handler: _Handler):
         """
         Validates requests against openapi specs and extracts body, params, etc ...
         Validate response against openapi specs
@@ -172,31 +176,43 @@ def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
     return _middleware_handler
 
 
-def envelope_middleware_factory(api_version: str = DEFAULT_API_VERSION):
+_FlexibleReturns = Union[StreamResponse, _DataType]
+_HandlerFlexible = Callable[[Request], Awaitable[_FlexibleReturns]]
+_MiddlewareFlexible = Callable[[Request, _HandlerFlexible], Awaitable[StreamResponse]]
+
+
+def envelope_middleware_factory(api_version: str) -> _MiddlewareFlexible:
+    # FIXME: This data conversion is very error-prone. Use decorators instead!
     _is_prod: bool = is_production_environ()
 
     @web.middleware
-    async def _middleware_handler(request: web.Request, handler):
+    async def _middleware_handler(
+        request: web.Request, handler: _HandlerFlexible
+    ) -> StreamResponse:
         """
         Ensures all responses are enveloped as {'data': .. , 'error', ...} in json
+        ONLY for API-requests
         """
         if not is_api_request(request, api_version):
-            return await handler(request)
-
-        resp = await handler(request)
-
-        if isinstance(resp, web.FileResponse):  # allows for files to be downloaded
+            resp = await handler(request)
+            assert isinstance(resp, StreamResponse)  # nosec
             return resp
 
-        if not isinstance(resp, web.Response):
-            response = create_data_response(
+        # WARNING: this is not a handler in the classic way
+        resp: _FlexibleReturns = await handler(request)
+
+        if isinstance(resp, web.FileResponse):
+            # WARNING: allows for files to be downloaded
+            return resp
+
+        if not isinstance(resp, StreamResponse):
+            resp = create_data_response(
                 data=resp,
                 skip_internal_error_details=_is_prod,
             )
-        else:
-            # Enforced by user. Should check it is json?
-            response = resp
-        return response
+
+        assert isinstance(resp, web.StreamResponse)  # nosec
+        return resp
 
     # adds identifier (mostly for debugging)
     _middleware_handler.__middleware_name__ = f"{__name__}.envelope_{api_version}"
