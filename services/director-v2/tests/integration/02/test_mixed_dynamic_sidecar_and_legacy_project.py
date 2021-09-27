@@ -34,6 +34,11 @@ pytest_simcore_core_services_selection = [
     "rabbit",
     "catalog",
     "director",
+    "storage",
+]
+
+pytest_simcore_ops_services_selection = [
+    "minio",
 ]
 
 HTTPX_CLIENT_TIMOUT = 10
@@ -416,18 +421,23 @@ async def test_legacy_and_dynamic_sidecar_run(
         not_all_services_running = True
 
         while not_all_services_running:
-            service_states = [
-                _get_service_state(
-                    director_v2_client=director_v2_client,
-                    director_v0_url=director_v0_url,
-                    service_uuid=dynamic_service_uuid,
-                    node_data=node_data,
+            service_states = await asyncio.gather(
+                *(
+                    _get_service_state(
+                        director_v2_client=director_v2_client,
+                        director_v0_url=director_v0_url,
+                        service_uuid=dynamic_service_uuid,
+                        node_data=node_data,
+                    )
+                    for dynamic_service_uuid, node_data in dy_static_file_server_project.workbench.items()
                 )
-                for dynamic_service_uuid, node_data in dy_static_file_server_project.workbench.items()
-            ]
-            are_services_running = [
-                x == "running" for x in await asyncio.gather(*service_states)
-            ]
+            )
+
+            # check that no service has failed
+            for service_state in service_states:
+                assert service_state != "failed"
+
+            are_services_running = [x == "running" for x in service_states]
             not_all_services_running = not all(are_services_running)
             # let the services boot
             await asyncio.sleep(1.0)
