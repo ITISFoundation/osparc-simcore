@@ -139,8 +139,8 @@ def _create_data_iterator_int_range() -> ServiceDockerData:
         },
         outputs={
             "out_1": {
-                "label": "A number",
-                "description": "One number per iteration",
+                "label": "An integer",
+                "description": "One integer per iteration",
                 "type": "integer",
             }
         },
