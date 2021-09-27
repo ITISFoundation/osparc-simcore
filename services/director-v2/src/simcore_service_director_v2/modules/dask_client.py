@@ -68,7 +68,7 @@ async def _compute_input_data(
     )
     input_data = {}
     for port in (await ports.inputs).values():
-        value_link = await port.get_value_link()
+        value_link = await port.get_value()
         if isinstance(value_link, AnyUrl):
             input_data[port.key] = FileUrl(
                 url=value_link,

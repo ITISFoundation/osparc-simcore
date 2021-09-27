@@ -55,12 +55,12 @@ class Nodeports(BaseModel):
 
     async def get_value_link(self, item_key: str) -> Optional[ItemConcreteLinkValue]:
         try:
-            return await (await self.inputs)[item_key].get_value_link()
+            return await (await self.inputs)[item_key].get_value()
         except UnboundPortError:
             # not available try outputs
             pass
         # if this fails it will raise an exception
-        return await (await self.outputs)[item_key].get_value_link()
+        return await (await self.outputs)[item_key].get_value()
 
     async def get(self, item_key: str) -> Optional[ItemConcreteValue]:
         try:
