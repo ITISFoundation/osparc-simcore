@@ -12,6 +12,7 @@ from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
 from async_timeout import timeout
 from pydantic import PositiveInt
+from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from utils import ensure_network_cleanup, patch_dynamic_service_url
@@ -124,11 +125,30 @@ async def ensure_services_stopped(
         await ensure_network_cleanup(docker_client, project_id)
 
 
+@pytest.fixture
+def mock_service_state(mocker: MockerFixture) -> None:
+    """because the monitor is disabled some functionality needs to be mocked"""
+
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.client_api.DynamicSidecarClient.service_state_save",
+        side_effect=lambda *args, **kwargs: None,
+    )
+
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.client_api.DynamicSidecarClient.service_state_restore",
+        side_effect=lambda *args, **kwargs: None,
+    )
+
+
+# TESTS
+
+
 async def test_start_status_stop(
     test_client: TestClient,
     node_uuid: str,
     start_request_data: Dict[str, Any],
     ensure_services_stopped: None,
+    mock_service_state: None,
 ):
     # starting the service
     headers = {
