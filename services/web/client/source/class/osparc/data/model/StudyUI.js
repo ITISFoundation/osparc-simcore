@@ -57,7 +57,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
     },
 
     mode: {
-      check: ["workbench", "guided-mode", "app"],
+      check: ["workbench", "guided", "app"],
       init: "workbench",
       nullable: true,
       event: "changeMode"

@@ -47,6 +47,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
     COMP_SERVICE_ICON: "@FontAwesome5Solid/cogs/",
     DYNAMIC_SERVICE_ICON: "@FontAwesome5Solid/mouse-pointer/",
     PERM_READ: "@FontAwesome5Solid/eye/14",
+    MODE_WORKBENCH: "@FontAwesome5Solid/paw/14", //project-diagram
+    MODE_GUIDED: "@FontAwesome5Solid/play/14",
+    MODE_APP: "@FontAwesome5Solid/desktop/14",
 
     filterText: function(checks, text) {
       if (text && checks.filter(label => label && label.toLowerCase().trim().includes(text)).length == 0) {
@@ -144,6 +147,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "_applyQuality"
     },
 
+    uiMode: {
+      check: ["workbench", "guided", "app"],
+      nullable: true,
+      apply: "_applyUiMode"
+    },
+
     state: {
       check: "Object",
       nullable: false,
@@ -235,7 +244,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
         icon: studyData.thumbnail || defaultThumbnail,
         state: studyData.state ? studyData.state : {},
         classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
-        quality: studyData.quality ? studyData.quality : null
+        quality: studyData.quality ? studyData.quality : null,
+        uiMode: studyData.ui && studyData.ui.mode ? studyData.ui.mode : null
       });
     },
 
@@ -272,6 +282,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _applyQuality: function(quality) {
+      throw new Error("Abstract method called!");
+    },
+
+    _applyUiMode: function(uiMode) {
       throw new Error("Abstract method called!");
     },
 
