@@ -10,8 +10,8 @@ from models_library.app_diagnostics import AppStatusCheck
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import logged_gather
 
-from . import catalog_client, db, director_v2_api, storage_api
-from ._meta import __version__, api_version, api_version_prefix, app_name
+from . import catalog_client, db, director_v2, storage_api
+from ._meta import API_VERSION, APP_NAME, __version__, api_version_prefix
 from .diagnostics_core import HealthError, assert_healthy_app
 from .login.decorators import login_required
 from .security_decorators import permission_required
@@ -32,9 +32,9 @@ async def get_app_health(request: web.Request):
         raise web.HTTPServiceUnavailable()
 
     data = {
-        "name": app_name,
+        "name": APP_NAME,
         "version": __version__,
-        "api_version": api_version,
+        "api_version": API_VERSION,
     }
     return data
 
@@ -87,8 +87,8 @@ async def get_app_status(request: web.Request):
 
     check = AppStatusCheck.parse_obj(
         {
-            "app_name": app_name,
-            "version": api_version,
+            "app_name": APP_NAME,
+            "version": API_VERSION,
             "services": {name: {"healthy": False} for name in SERVICES},
             "sessions": {"main": _get_client_session_info()},
             # hyperlinks

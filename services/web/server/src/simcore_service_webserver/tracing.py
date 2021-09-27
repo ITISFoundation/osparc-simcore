@@ -6,6 +6,8 @@ from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.tracing import schema, setup_tracing
 
+from ._meta import APP_NAME
+
 CONFIG_SECTION_NAME = "tracing"
 
 log = logging.getLogger(__name__)
