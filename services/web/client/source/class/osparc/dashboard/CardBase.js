@@ -47,7 +47,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     COMP_SERVICE_ICON: "@FontAwesome5Solid/cogs/",
     DYNAMIC_SERVICE_ICON: "@FontAwesome5Solid/mouse-pointer/",
     PERM_READ: "@FontAwesome5Solid/eye/14",
-    MODE_WORKBENCH: "@FontAwesome5Solid/ticket-alt/14",
+    MODE_WORKBENCH: "@FontAwesome5Solid/cubes/14",
     MODE_GUIDED: "@FontAwesome5Solid/play/14",
     MODE_APP: "@FontAwesome5Solid/desktop/14",
 
