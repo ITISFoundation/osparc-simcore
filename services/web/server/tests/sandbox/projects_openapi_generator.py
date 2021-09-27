@@ -18,7 +18,7 @@ from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, 
 from uuid import UUID, uuid3
 
 import simcore_service_webserver.projects.projects_handlers
-import simcore_service_webserver.projects.projects_node_handlers
+import simcore_service_webserver.projects.projects_nodes_handlers
 import simcore_service_webserver.version_control_handlers
 from fastapi import Depends, FastAPI
 from fastapi import Path as PathParam
@@ -397,7 +397,7 @@ def get_project_node(project_uuid: UUID = Depends(get_valid_project)):
 
 redefine_operation_id_in_router(
     pr_state_routes,
-    operation_id_prefix=simcore_service_webserver.projects.projects_node_handlers.__name__,
+    operation_id_prefix=simcore_service_webserver.projects.projects_nodes_handlers.__name__,
 )
 
 

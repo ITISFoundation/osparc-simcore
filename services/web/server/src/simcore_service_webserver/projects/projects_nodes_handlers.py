@@ -121,37 +121,3 @@ async def delete_node(request: web.Request) -> web.Response:
         raise web.HTTPNoContent(content_type="application/json")
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
-
-
-@login_required
-@permission_required("project.tag.*")
-async def add_tag(request: web.Request):
-    user_id: int = request[RQT_USERID_KEY]
-    db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
-
-    try:
-        tag_id, study_uuid = (
-            request.match_info["tag_id"],
-            request.match_info["study_uuid"],
-        )
-    except KeyError as err:
-        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
-
-    return await db.add_tag(
-        project_uuid=study_uuid, user_id=user_id, tag_id=int(tag_id)
-    )
-
-
-@login_required
-@permission_required("project.tag.*")
-async def remove_tag(request: web.Request):
-    user_id: int = request[RQT_USERID_KEY]
-    db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
-
-    tag_id, study_uuid = (
-        request.match_info["tag_id"],
-        request.match_info["study_uuid"],
-    )
-    return await db.remove_tag(
-        project_uuid=study_uuid, user_id=user_id, tag_id=int(tag_id)
-    )
