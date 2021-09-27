@@ -115,16 +115,16 @@ qx.Class.define("osparc.desktop.SlideShowView", {
         this.getStudy().getUi().setCurrentNodeId(nodeId);
 
         let view;
-        if (node.isContainer()) {
-          view = new osparc.component.node.GroupNodeView();
-        } else if (node.isFilePicker()) {
-          view = new osparc.component.node.FilePickerNodeView();
+        if (node.isParameter()) {
+          view = new osparc.component.node.ParameterEditor(node);
+          view.formForSlideShow();
         } else {
-          view = new osparc.component.node.NodeView();
-        }
-        if (view) {
-          if (this.__lastView) {
-            this._remove(this.__lastView);
+          if (node.isContainer()) {
+            view = new osparc.component.node.GroupNodeView();
+          } else if (node.isFilePicker()) {
+            view = new osparc.component.node.FilePickerNodeView();
+          } else {
+            view = new osparc.component.node.NodeView();
           }
           view.setNode(node);
           view.populateLayout();
@@ -133,6 +133,12 @@ qx.Class.define("osparc.desktop.SlideShowView", {
           if (this.getPageContext() === "app" && !node.isComputational()) {
             view.getHeaderLayout().exclude();
             view.getSettingsLayout().exclude();
+          }
+        }
+
+        if (view) {
+          if (this.__lastView) {
+            this._remove(this.__lastView);
           }
           this._add(view, {
             flex: 1

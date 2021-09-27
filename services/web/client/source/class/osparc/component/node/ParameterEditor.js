@@ -27,7 +27,12 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
     this.set({
       node
     });
-    this.__buildForm();
+
+    this.set({
+      appearance: "settings-groupbox",
+      maxWidth: 800,
+      alignX: "center"
+    });
   },
 
   statics: {
@@ -115,8 +120,30 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
       return control || this.base(arguments, id);
     },
 
+    formForSlideShow: function() {
+      const form = this.__buildForm();
+      const node = this.getNode();
+      form.getItem("label").addListener("changeValue", e => node.setLabel(e.getData()));
+      form.getItem("value").addListener("changeValue", e => osparc.component.node.ParameterEditor.setParameterOutputValue(node, e.getData()));
+
+      this._removeAll();
+      const renderer = new qx.ui.form.renderer.Single(form);
+
+      const settingsGroupBox = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
+      this._add(settingsGroupBox);
+      settingsGroupBox.add(renderer);
+
+      return form;
+    },
+
     popUpInWindow: function() {
       const form = this.__buildForm();
+      this.__addButtons(form);
+
+      this._removeAll();
+      const renderer = new qx.ui.form.renderer.Single(form);
+      this._add(renderer);
+
       const win = osparc.ui.window.Window.popUpInWindow(this, "Edit Parameter", 250, 175);
       this.addListener("ok", () => {
         const node = this.getNode();
@@ -132,11 +159,7 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
     },
 
     __buildForm: function() {
-      this._removeAll();
-
       const form = new qx.ui.form.Form();
-      const renderer = new qx.ui.form.renderer.Single(form);
-      this._add(renderer);
 
       const node = this.getNode();
 
