@@ -16,6 +16,9 @@ FRONTEND_SERVICE_KEY_PREFIX = "simcore/services/frontend"
 OM = Author(name="Odei Maiz", email="maiz@itis.swiss", affiliation="IT'IS")
 
 
+# FACTORY FUNCTIONS ----------------------------------------------------
+
+
 def _create_file_picker_service() -> ServiceDockerData:
     return ServiceDockerData(
         key=f"{FRONTEND_SERVICE_KEY_PREFIX}/file-picker",
@@ -106,15 +109,76 @@ def _create_parameter(param_type: str) -> ServiceDockerData:
     return meta
 
 
-def is_frontend_service(service_key: str) -> bool:
-    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/")
+def _create_data_iterator_int_range() -> ServiceDockerData:
+    return ServiceDockerData(
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/int-range",
+        version="1.0.0",
+        type=ServiceType.FRONTEND,
+        name="Integer iterator",
+        description="Integer iterator. range()",
+        authors=[
+            OM,
+        ],
+        contact=OM.email,
+        inputs={
+            "linspace_start": {
+                "label": "Start",
+                "description": "Linear space Start",
+                "defaultValue": 0,
+                "type": "integer",
+            },
+            "linspace_stop": {
+                "label": "Stop",
+                "description": "Linear space Stop",
+                "defaultValue": 1,
+                "type": "integer",
+            },
+            "linspace_step": {
+                "label": "Step",
+                "description": "Linear space Step",
+                "defaultValue": 1,
+                "type": "integer",
+            },
+        },
+        outputs={
+            "out_1": {
+                "label": "An integer",
+                "description": "One integer per iteration",
+                "type": "integer",
+            }
+        },
+    )
 
 
-def is_parameter_service(service_key: str) -> bool:
-    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/")
+def _create_iterator_consumer_probe_int() -> ServiceDockerData:
+    return ServiceDockerData(
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/iterator-consumer/probe/int",
+        version="1.0.0",
+        type=ServiceType.FRONTEND,
+        name="Probe Sensor - Integer",
+        description="Integer iterator consumer.",
+        authors=[
+            OM,
+        ],
+        contact=OM.email,
+        inputs={
+            "iterator": {
+                "label": "Iterator consumer",
+                "description": "Iterator consumer",
+                "defaultValue": 0,
+                "type": "integer",
+            }
+        },
+        outputs={},
+    )
 
 
-_FACTORY_FUNCTIONS = [_create_file_picker_service, _create_node_group_service,] + [
+_FACTORY_FUNCTIONS = [
+    _create_file_picker_service,
+    _create_node_group_service,
+    _create_data_iterator_int_range,
+    _create_iterator_consumer_probe_int,
+] + [
     functools.partial(_create_parameter, param_type=p)
     for p in ["number", "boolean", "integer"]
 ]
@@ -124,3 +188,22 @@ def iter_service_docker_data() -> Iterator[ServiceDockerData]:
     for create in _FACTORY_FUNCTIONS:
         model_instance = create()
         yield model_instance
+
+
+# VALIDATORS --------------------------------------
+
+
+def is_frontend_service(service_key: str) -> bool:
+    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/")
+
+
+def is_parameter_service(service_key: str) -> bool:
+    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/")
+
+
+def is_iterator_service(service_key: str) -> bool:
+    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/")
+
+
+def is_iterator_consumer_service(service_key: str) -> bool:
+    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/iterator-consumer/")
