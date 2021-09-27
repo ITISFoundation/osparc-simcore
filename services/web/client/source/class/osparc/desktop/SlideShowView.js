@@ -143,6 +143,8 @@ qx.Class.define("osparc.desktop.SlideShowView", {
         if (!this.__isNodeReady(node, oldCurrentNodeId)) {
           return;
         }
+      } else if (this.__lastView) {
+        this._remove(this.__lastView);
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
 
@@ -175,6 +177,8 @@ qx.Class.define("osparc.desktop.SlideShowView", {
         const nodes = study.getUi().getSlideshow().getSortedNodes();
         if (nodes.length) {
           this.nodeSelected(nodes[0].nodeId);
+        } else {
+          this.nodeSelected(null);
         }
       }
     },
