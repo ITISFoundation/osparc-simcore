@@ -33,7 +33,7 @@ GROUPID=$(stat --format=%g "$PWD")
 exec docker run --rm \
     --user "$USERID:$GROUPID" \
     --volume "$PWD:/local" \
-    openapitools/openapi-generator-cli:v4.2.3 "$@"
+    openapitools/openapi-generator-cli:v5.2.1 "$@"
 
 # Example
 #   openapi-generator-cli generate -i /local/api/specs/webserver/openapi.yaml -g python -o /local/out/sdk/webserver

@@ -1,19 +1,18 @@
 #/bin/bash
 # SAN this allows to know whether we are running in the Windows linux environment or under linux/mac
-VERSION=$(uname -a);
+VERSION=$(uname -a)
 MICROSOFT_STRING="Microsoft"
 
 if echo "$VERSION" | grep -q "$MICROSOFT_STRING"; then
-  DOCKER_COMPOSE=docker-compose
-  DOCKER=docker
-  export COMPOSE_CONVERT_WINDOWS_PATHS=1
-  export IS_WINDOWS=1
+    DOCKER_COMPOSE=docker-compose
+    DOCKER=docker
+    export COMPOSE_CONVERT_WINDOWS_PATHS=1
+    export IS_WINDOWS=1
 else
-  DOCKER_COMPOSE=docker-compose
-  DOCKER=docker
-  export IS_WINDOWS=0
+    DOCKER_COMPOSE=docker-compose
+    DOCKER=docker
+    export IS_WINDOWS=0
 fi
-
 
 #
 # TODO: Uses https://github.com/OpenAPITools tools instead of swagger-codegen.
@@ -23,20 +22,17 @@ fi
 # https://github.com/OpenAPITools/openapi-generator/releases/tag/v3.0.0
 # https://angular.schule/blog/2018-06-swagger-codegen-is-now-openapi-generator
 
-usage()
-{
+usage() {
     echo "usage: openapi_codegen [[[-i input] [-o output directory] [-g generator] [-c configuration file]] | [-h help] | [-languages] [-config-help language]]"
 }
 
-openapi_generator=openapitools/openapi-generator-cli:v4.2.1
+openapi_generator=openapitools/openapi-generator-cli:v5.2.1
 
-list_languages()
-{
+list_languages() {
     exec ${DOCKER} run --rm ${openapi_generator} list
 }
 
-print_languages_config_options()
-{
+print_languages_config_options() {
     exec ${DOCKER} run --rm ${openapi_generator} config-help -g $1
 }
 
@@ -49,34 +45,42 @@ configuration=
 # process arguments
 while [ "$1" != "" ]; do
     case $1 in
-        -i | --input )          shift
-                                input_file=$1
-                                ;;
-        -o | --outdir )         shift
-                                output_directory=$1
-                                ;;
-        -g | --generator )      shift
-                                generator=$1
-                                ;;
-        -c | --config_file )    shift
-                                configuration=$1
-                                ;;
-        -h | --help )           usage
-                                exit
-                                ;;
-        -languages )            list_languages
-                                exit
-                                ;;
-        -config-help )          shift
-                                print_languages_config_options $1
-                                exit
-                                ;;
-        * )                     usage
-                                exit 1
+    -i | --input)
+        shift
+        input_file=$1
+        ;;
+    -o | --outdir)
+        shift
+        output_directory=$1
+        ;;
+    -g | --generator)
+        shift
+        generator=$1
+        ;;
+    -c | --config_file)
+        shift
+        configuration=$1
+        ;;
+    -h | --help)
+        usage
+        exit
+        ;;
+    -languages)
+        list_languages
+        exit
+        ;;
+    -config-help)
+        shift
+        print_languages_config_options $1
+        exit
+        ;;
+    *)
+        usage
+        exit 1
+        ;;
     esac
     shift
 done
-
 
 # check arguments
 if [ -z "$input_file" ]; then
@@ -122,22 +126,20 @@ if echo "$VERSION" | grep -q "$MICROSOFT_STRING"; then
     fi
 fi
 
-
 echo "generating code..."
 if [ ! -z "$configuration" ]; then
-  ${DOCKER} run --rm -v ${input_parent_dir}:/local -v ${output_absolute_dir}:/output -v ${configuration_parent_dir}:/config ${openapi_generator} \
-    generate \
-    -i /local/${input_filename} \
-    -g ${generator} \
-    -o /output/${generator} \
-    -c /config/${configuration_filename}
+    ${DOCKER} run --rm -v ${input_parent_dir}:/local -v ${output_absolute_dir}:/output -v ${configuration_parent_dir}:/config ${openapi_generator} \
+        generate \
+        -i /local/${input_filename} \
+        -g ${generator} \
+        -o /output/${generator} \
+        -c /config/${configuration_filename}
 else
-  ${DOCKER} run --rm -v ${input_parent_dir}:/local -v ${output_absolute_dir}:/output ${openapi_generator} \
-    generate \
-    -i /local/${input_filename} \
-    -g ${generator} \
-    -o /output/${generator}
+    ${DOCKER} run --rm -v ${input_parent_dir}:/local -v ${output_absolute_dir}:/output ${openapi_generator} \
+        generate \
+        -i /local/${input_filename} \
+        -g ${generator} \
+        -o /output/${generator}
 fi
-
 
 sudo chown -R $USER:$USER ${output_absolute_dir}/${generator}
