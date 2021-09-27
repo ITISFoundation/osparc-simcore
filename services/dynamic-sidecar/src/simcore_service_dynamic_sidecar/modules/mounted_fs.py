@@ -110,7 +110,6 @@ def setup_mounted_fs() -> MountedVolumes:
 
 
 def get_mounted_volumes() -> MountedVolumes:
-    global _mounted_volumes  # pylint: disable=global-statement
     if _mounted_volumes is None:
         raise RuntimeError(
             f"{MountedVolumes.__name__} was not initialized, did not call setup"

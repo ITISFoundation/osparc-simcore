@@ -185,7 +185,6 @@ async def setup_directory_watcher() -> None:
 
 
 async def teardown_directory_watcher() -> None:
-    global _dir_watcher  # pylint: disable=global-statement
     if _dir_watcher is not None:
         await _dir_watcher.stop()
 
