@@ -12,6 +12,7 @@
 import asyncio
 import logging
 from asyncio import CancelledError
+from contextlib import suppress
 from pprint import pformat
 from typing import Dict, Set, Tuple
 
@@ -185,7 +186,7 @@ async def sync_registry_task(app: FastAPI) -> None:
     default_product: str = app.state.settings.access_rights_default_product_name
     engine: Engine = app.state.engine
 
-    while True:
+    while app.state.registry_syncer_running:
         try:
             logger.debug("Syncing services between registry and database...")
 
@@ -200,21 +201,36 @@ async def sync_registry_task(app: FastAPI) -> None:
 
         except CancelledError:
             # task is stopped
-            logger.debug("Catalog background task cancelled", exc_info=True)
+            logger.info("registry syncing task cancelled", exc_info=True)
             return
 
         except Exception:  # pylint: disable=broad-except
-            logger.exception("Error while processing services entry")
+            if not app.state.registry_syncer_running:
+                logger.warning("registry syncing task forced to stop")
+                break
+            logger.exception(
+                "Unexpected error while syncing registry entries, restarting now..."
+            )
             # wait a bit before retrying, so it does not block everything until the director is up
             await asyncio.sleep(app.state.settings.background_task_wait_after_failure)
 
 
 async def start_registry_sync_task(app: FastAPI) -> None:
+    # FIXME: added this variable to overcome the state in which the
+    # task cancelation is ignored and the exceptions enter in a loop
+    # that never stops the background task. This flag is an additional
+    # mechanism to enforce stopping the background task
+    app.state.registry_syncer_running = True
     task = asyncio.ensure_future(sync_registry_task(app))
     app.state.registry_sync_task = task
+    logger.info("registry syncing task started")
 
 
 async def stop_registry_sync_task(app: FastAPI) -> None:
     task = app.state.registry_sync_task
-    task.cancel()
-    await task
+    with suppress(CancelledError):
+        app.state.registry_syncer_running = False
+        task.cancel()
+        await task
+    app.state.registry_sync_task = None
+    logger.info("registry syncing task stopped")
