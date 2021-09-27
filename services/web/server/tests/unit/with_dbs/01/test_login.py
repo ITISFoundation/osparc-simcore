@@ -30,7 +30,8 @@ async def test_login_with_unknown_email(client: TestClient):
 
 async def test_login_with_wrong_password(client: TestClient):
     url = client.app.router["auth_login"].url_for()
-    r = await client.get(f"{url}")
+
+    r = await client.post(f"{url}")
     payload = await r.json()
 
     assert cfg.MSG_WRONG_PASSWORD not in await r.text(), str(payload)
@@ -51,7 +52,7 @@ async def test_login_with_wrong_password(client: TestClient):
 
 async def test_login_banned_user(client: TestClient):
     url = client.app.router["auth_login"].url_for()
-    r = await client.get(f"{url}")
+    r = await client.post(f"{url}")
     assert cfg.MSG_USER_BANNED not in await r.text()
 
     async with NewUser({"status": UserStatus.BANNED.name}) as user:
@@ -67,7 +68,7 @@ async def test_login_banned_user(client: TestClient):
 
 async def test_login_inactive_user(client: TestClient):
     url = client.app.router["auth_login"].url_for()
-    r = await client.get(f"{url}")
+    r = await client.post(f"{url}")
     assert cfg.MSG_ACTIVATION_REQUIRED not in await r.text()
 
     async with NewUser({"status": UserStatus.CONFIRMATION_PENDING.name}) as user:
