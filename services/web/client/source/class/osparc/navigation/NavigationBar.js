@@ -299,7 +299,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       }, this);
       splitButtonMenu.add(startSlidesBtn);
 
-      const startSlidesFullBtn = this.__startSlidesFullButton = new qx.ui.menu.Button(this.tr("Start Full Guided Mode"));
+      const startSlidesFullBtn = this.__startSlidesFullButton = new qx.ui.menu.Button(this.tr("Start App Mode"));
       startSlidesFullBtn.addListener("execute", () => {
         this.fireEvent("slidesFullStart");
       });
