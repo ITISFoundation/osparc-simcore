@@ -3,7 +3,7 @@
 ../../../scripts/openapi/openapi_codegen.sh \
   -i ../src/simcore_service_storage/api/v0/openapi.yaml \
   -o . \
-  -g python \
+  -g python-legacy \
   -c ./codegen_config.json
 
 # rm -f output.yaml
