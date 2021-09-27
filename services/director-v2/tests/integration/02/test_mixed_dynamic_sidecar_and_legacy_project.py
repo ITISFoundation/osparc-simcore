@@ -3,6 +3,7 @@
 # pylint:disable=too-many-arguments
 
 import asyncio
+import logging
 import os
 from typing import Any, Callable, Dict, Optional, Union
 from uuid import uuid4
@@ -40,6 +41,8 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = [
     "minio",
 ]
+
+logger = logging.getLogger(__name__)
 
 HTTPX_CLIENT_TIMOUT = 10
 SERVICES_ARE_READY_TIMEOUT = 10 * 60
@@ -125,10 +128,22 @@ async def dy_static_file_server_project(
 async def director_v2_client(
     minimal_configuration: None,
     loop: asyncio.BaseEventLoop,
-    mock_env: None,
     network_name: str,
     monkeypatch,
 ) -> httpx.AsyncClient:
+    # Works as below line in docker.compose.yml
+    # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
+
+    registry = os.environ.get("DOCKER_REGISTRY", "local")
+    image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
+
+    image_name = f"{registry}/dynamic-sidecar:{image_tag}"
+
+    logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", image_name)
+    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
+    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
+
     monkeypatch.setenv("SC_BOOT_MODE", "production")
     monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "true")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", network_name)
@@ -334,6 +349,8 @@ async def _port_forward_service(
         target_service = service_name.replace(
             DYNAMIC_SIDECAR_SERVICE_PREFIX, DYNAMIC_PROXY_SERVICE_PREFIX
         )
+        # The default prot for the proxy is 80
+        internal_port = 80
 
     # Finally forward the port on a random assigned port.
     result = _run_command(
