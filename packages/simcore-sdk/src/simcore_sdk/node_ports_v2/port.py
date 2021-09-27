@@ -5,7 +5,6 @@ from typing import Any, Dict, Optional, Tuple, Type
 
 from models_library.services import PROPERTY_KEY_RE, ServiceProperty
 from pydantic import Field, PrivateAttr, validator
-from pydantic.networks import AnyUrl
 
 from ..node_ports_common.exceptions import InvalidItemTypeError
 from . import port_utils
@@ -102,14 +101,6 @@ class Port(ServiceProperty):
 
         return self.value
 
-    async def get_upload_link(self) -> AnyUrl:
-        return await port_utils.get_upload_link_from_storage(
-            self._node_ports.user_id,
-            self._node_ports.project_id,
-            self._node_ports.node_uuid,
-            next(iter(self.file_to_key_map)) if self.file_to_key_map else self.key,
-        )
-
     async def get(self) -> Optional[ItemConcreteValue]:
         log.debug(
             "getting %s[%s] with value %s",
@@ -150,9 +141,13 @@ class Port(ServiceProperty):
 
         return self._py_value_converter(value)
 
-    async def set(self, new_value: ItemConcreteValue) -> None:
+    async def set(self, new_value: Optional[ItemConcreteValue]) -> None:
+        """set the value on the port using a concrete value (e.g. a path)"""
         log.debug(
-            "setting %s[%s] with value %s", self.key, self.property_type, new_value
+            "setting %s[%s] with concrete value %s",
+            self.key,
+            self.property_type,
+            new_value,
         )
         final_value: Optional[DataItemValue] = None
         if new_value is not None:
@@ -174,3 +169,9 @@ class Port(ServiceProperty):
         self.value = final_value
         self._used_default_value = False
         await self._node_ports.save_to_db_cb(self._node_ports)
+
+    async def set_value(self, new_value: Optional[ItemValue]) -> None:
+        """set the value on the port using a value (e.g. link for the file)"""
+        log.debug(
+            "setting %s[%s] with value %s", self.key, self.property_type, new_value
+        )

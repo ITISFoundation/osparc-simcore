@@ -18,7 +18,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import AnyUrl
 from simcore_sdk import node_ports_v2
-from simcore_sdk.node_ports_v2 import DBManager
+from simcore_sdk.node_ports_v2 import DBManager, port_utils
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 from tenacity import before_sleep_log, retry, retry_if_exception_type, wait_random
 
@@ -95,8 +95,14 @@ async def _compute_output_data_schema(
         output_data_schema[port.key] = {"required": port.default_value is None}
 
         if port.property_type.startswith("data:"):
-            value_link = await port.get_upload_link()
-
+            value_link = await port_utils.get_upload_link_from_storage(
+                user_id=user_id,
+                project_id=f"{project_id}",
+                node_id=f"{node_id}",
+                file_name=next(iter(port.file_to_key_map))
+                if port.file_to_key_map
+                else port.key,
+            )
             output_data_schema[port.key].update(
                 {
                     "mapping": next(iter(port.file_to_key_map))
