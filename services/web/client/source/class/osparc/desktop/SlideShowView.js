@@ -65,9 +65,9 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     },
 
     pageContext: {
-      check: ["slideshow", "fullSlideshow"],
+      check: ["guided", "app"],
       nullable: false,
-      init: "slideshow"
+      init: "guided"
     }
   },
 
@@ -130,7 +130,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
           view.populateLayout();
           view.getInputsView().exclude();
           view.getOutputsView().exclude();
-          if (this.getPageContext() === "fullSlideshow" && !node.isComputational()) {
+          if (this.getPageContext() === "app" && !node.isComputational()) {
             view.getHeaderLayout().exclude();
             view.getSettingsLayout().exclude();
           }
@@ -149,7 +149,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       this.getStartStopButtons().nodeSelectionChanged([nodeId]);
     },
 
-    startSlides: function(context = "slideshow") {
+    startSlides: function(context = "guided") {
       this.setPageContext(context);
       this.__slideShowToolbar.populateButtons(true);
       const currentNodeId = this.getStudy().getUi().getCurrentNodeId();

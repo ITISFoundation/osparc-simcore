@@ -77,7 +77,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     pageContext: {
-      check: ["dashboard", "workbench", "slideshow", "fullSlideshow"],
+      check: ["dashboard", "workbench", "guided", "app"],
       nullable: false,
       apply: "_applyPageContext"
     }
@@ -96,8 +96,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     PAGE_CONTEXT: {
       0: "dashboard",
       1: "workbench",
-      2: "slideshow",
-      3: "fullSlideshow"
+      2: "guided",
+      3: "app"
     }
   },
 
@@ -248,8 +248,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("study-title").exclude();
           break;
         case "workbench":
-        case "slideshow":
-        case "fullSlideshow":
+        case "guided":
+        case "app":
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
           this.__resetSlidesBtnsVis();
@@ -261,7 +261,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     __resetSlidesBtnsVis: function() {
       const slideshowMenuBtn = this.getChildControl("slideshow-menu-button");
       const slideshowStopBtn = this.getChildControl("slideshow-stop");
-      const slidesBtnsVisible = ["workbench", "slideshow", "fullSlideshow"].includes(this.getPageContext());
+      const slidesBtnsVisible = ["workbench", "guided", "app"].includes(this.getPageContext());
       if (slidesBtnsVisible) {
         const study = this.getStudy();
         const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
@@ -271,7 +271,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           const isOwner = osparc.data.model.Study.isOwner(study);
           this.__editSlidesButton.setEnabled(areSlidesEnabled && isOwner);
 
-          if (["slideshow", "fullSlideshow"].includes(this.getPageContext())) {
+          if (["guided", "app"].includes(this.getPageContext())) {
             slideshowMenuBtn.exclude();
             slideshowStopBtn.show();
           } else if (this.getPageContext() === "workbench") {

@@ -72,7 +72,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     pageContext: {
-      check: ["workbench", "slideshow", "fullSlideshow"],
+      check: ["workbench", "guided", "app"],
       nullable: false,
       event: "changePageContext",
       apply: "_applyPageContext"
@@ -146,27 +146,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
           const pageContext = this.getPageContext();
           switch (pageContext) {
-            case "slideshow":
-            case "fullSlideshow":
+            case "guided":
+            case "app":
               this.__slideshowView.startSlides(pageContext);
               break;
             default:
               this.__workbenchView.openFirstNode();
               break;
           }
-          this.bind("pageContext", study.getUi(), "mode", {
-            converter: pageCtx => {
-              switch (pageCtx) {
-                case "workbench":
-                  return "workbench";
-                case "slideshow":
-                  return "guided";
-                case "fullSlideshow":
-                  return "app";
-              }
-              return "workbench";
-            }
-          });
+          this.bind("pageContext", study.getUi(), "mode");
 
           const workbench = study.getWorkbench();
           workbench.addListener("retrieveInputs", e => {
@@ -399,8 +387,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__viewsStack.setSelection([this.__workbenchView]);
           this.__workbenchView.nodeSelected(this.getStudy().getUi().getCurrentNodeId());
           break;
-        case "slideshow":
-        case "fullSlideshow":
+        case "guided":
+        case "app":
           this.__viewsStack.setSelection([this.__slideshowView]);
           this.__slideshowView.startSlides(newCtxt);
           break;

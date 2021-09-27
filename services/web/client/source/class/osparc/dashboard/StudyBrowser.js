@@ -154,7 +154,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.data.Resources.fetch("studies", "getActive", params)
         .then(studyData => {
           if (studyData) {
-            this._startStudy(studyData["uuid"]);
+            this._startStudy(studyData);
           } else {
             osparc.store.Store.getInstance().setCurrentStudyId(null);
           }
@@ -287,7 +287,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       };
       osparc.data.Resources.getOne("studies", params)
         .then(studyData => {
-          this._startStudy(studyData["uuid"]);
+          this._startStudy(studyData);
         })
         .catch(() => {
           const msg = this.tr("Study unavailable or inaccessible");
@@ -408,14 +408,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.data.Resources.fetch("studies", "post", params)
         .then(studyData => {
           this._hideLoadingPage();
-          this._startStudy(studyData["uuid"]);
+          this._startStudy(studyData);
         })
         .catch(err => {
           console.error(err);
         });
     },
 
-    _startStudy: function(studyId, pageContext) {
+    _startStudy: function(studyData, pageContext) {
+      if (pageContext === undefined) {
+        pageContext = osparc.data.model.Study.getUiMode(studyData) || "workbench";
+      }
+      const studyId = studyData["uuid"];
       const data = {
         studyId,
         pageContext
@@ -689,7 +693,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getStartAsGuidedModeButton: function(studyData) {
       const startAsGuidedModeButton = new qx.ui.menu.Button(this.tr("Start Guided mode"));
       startAsGuidedModeButton.addListener("execute", () => {
-        this._startStudy(studyData["uuid"], "slideshow");
+        this._startStudy(studyData, "guided");
       }, this);
       return startAsGuidedModeButton;
     },
@@ -697,7 +701,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getStartAsAppButton: function(studyData) {
       const startAsAppButton = new qx.ui.menu.Button(this.tr("Start App mode"));
       startAsAppButton.addListener("execute", () => {
-        this._startStudy(studyData["uuid"], "fullSlideshow");
+        this._startStudy(studyData, "app");
       }, this);
       return startAsAppButton;
     },
@@ -745,7 +749,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       if (selected && selection.length === 1) {
         const studyData = this.__getStudyData(item.getUuid(), false);
-        this._startStudy(studyData["uuid"]);
+        this._startStudy(studyData);
       }
     },
 

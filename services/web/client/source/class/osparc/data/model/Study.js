@@ -280,6 +280,13 @@ qx.Class.define("osparc.data.model.Study", {
             resolve(false);
           });
       });
+    },
+
+    getUiMode: function(studyData) {
+      if ("ui" in studyData && "mode" in studyData["ui"]) {
+        return studyData["ui"]["mode"];
+      }
+      return null;
     }
   },
 
