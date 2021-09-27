@@ -13,15 +13,12 @@
 
 from __future__ import absolute_import
 
-import datetime
 import unittest
+import datetime
 
 import simcore_service_storage_sdk
-from simcore_service_storage_sdk.models.fake_enveloped import (  # noqa: E501
-    FakeEnveloped,
-)
+from simcore_service_storage_sdk.models.fake_enveloped import FakeEnveloped  # noqa: E501
 from simcore_service_storage_sdk.rest import ApiException
-
 
 class TestFakeEnveloped(unittest.TestCase):
     """FakeEnveloped unit test stubs"""
@@ -34,34 +31,25 @@ class TestFakeEnveloped(unittest.TestCase):
 
     def make_instance(self, include_optional):
         """Test FakeEnveloped
-        include_option is a boolean, when False only required
-        params are included, when True both required and
-        optional params are included"""
+            include_option is a boolean, when False only required
+            params are included, when True both required and
+            optional params are included """
         # model = simcore_service_storage_sdk.models.fake_enveloped.FakeEnveloped()  # noqa: E501
-        if include_optional:
+        if include_optional :
             return FakeEnveloped(
-                data={
-                    "path_value": "foo",
-                    "query_value": "bar",
-                    "body_value": {"key1": "value1", "key2": "value2"},
-                },
-                error=null,
+                data = {"path_value":"foo","query_value":"bar","body_value":{"key1":"value1","key2":"value2"}}, 
+                error = None
             )
-        else:
+        else :
             return FakeEnveloped(
-                data={
-                    "path_value": "foo",
-                    "query_value": "bar",
-                    "body_value": {"key1": "value1", "key2": "value2"},
-                },
-                error=null,
-            )
+                data = {"path_value":"foo","query_value":"bar","body_value":{"key1":"value1","key2":"value2"}},
+                error = None,
+        )
 
     def testFakeEnveloped(self):
         """Test FakeEnveloped"""
         inst_req_only = self.make_instance(include_optional=False)
         inst_req_and_optional = self.make_instance(include_optional=True)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

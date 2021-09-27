@@ -13,13 +13,12 @@
 
 from __future__ import absolute_import
 
-import datetime
 import unittest
+import datetime
 
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.models.health_check import HealthCheck  # noqa: E501
 from simcore_service_storage_sdk.rest import ApiException
-
 
 class TestHealthCheck(unittest.TestCase):
     """HealthCheck unit test stubs"""
@@ -32,20 +31,25 @@ class TestHealthCheck(unittest.TestCase):
 
     def make_instance(self, include_optional):
         """Test HealthCheck
-        include_option is a boolean, when False only required
-        params are included, when True both required and
-        optional params are included"""
+            include_option is a boolean, when False only required
+            params are included, when True both required and
+            optional params are included """
         # model = simcore_service_storage_sdk.models.health_check.HealthCheck()  # noqa: E501
-        if include_optional:
-            return HealthCheck(name="0", status="0", api_version="0", version="0")
-        else:
-            return HealthCheck()
+        if include_optional :
+            return HealthCheck(
+                name = '', 
+                status = '', 
+                api_version = '', 
+                version = ''
+            )
+        else :
+            return HealthCheck(
+        )
 
     def testHealthCheck(self):
         """Test HealthCheck"""
         inst_req_only = self.make_instance(include_optional=False)
         inst_req_and_optional = self.make_instance(include_optional=True)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

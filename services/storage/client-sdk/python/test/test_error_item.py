@@ -13,13 +13,12 @@
 
 from __future__ import absolute_import
 
-import datetime
 import unittest
+import datetime
 
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.models.error_item import ErrorItem  # noqa: E501
 from simcore_service_storage_sdk.rest import ApiException
-
 
 class TestErrorItem(unittest.TestCase):
     """ErrorItem unit test stubs"""
@@ -32,23 +31,27 @@ class TestErrorItem(unittest.TestCase):
 
     def make_instance(self, include_optional):
         """Test ErrorItem
-        include_option is a boolean, when False only required
-        params are included, when True both required and
-        optional params are included"""
+            include_option is a boolean, when False only required
+            params are included, when True both required and
+            optional params are included """
         # model = simcore_service_storage_sdk.models.error_item.ErrorItem()  # noqa: E501
-        if include_optional:
-            return ErrorItem(code="0", message="0", resource="0", field="0")
-        else:
+        if include_optional :
             return ErrorItem(
-                code="0",
-                message="0",
+                code = '', 
+                message = '', 
+                resource = '', 
+                field = ''
             )
+        else :
+            return ErrorItem(
+                code = '',
+                message = '',
+        )
 
     def testErrorItem(self):
         """Test ErrorItem"""
         inst_req_only = self.make_instance(include_optional=False)
         inst_req_and_optional = self.make_instance(include_optional=True)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

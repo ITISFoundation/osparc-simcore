@@ -11,10 +11,14 @@
 """
 
 
+try:
+    from inspect import getfullargspec
+except ImportError:
+    from inspect import getargspec as getfullargspec
 import pprint
 import re  # noqa: F401
-
 import six
+
 from simcore_service_storage_sdk.configuration import Configuration
 
 
@@ -33,63 +37,45 @@ class Project(object):
                             and the value is json key in definition.
     """
     openapi_types = {
-        "uuid": "str",
-        "name": "str",
-        "description": "str",
-        "prj_owner": "str",
-        "access_rights": "dict(str, object)",
-        "creation_date": "str",
-        "last_change_date": "str",
-        "thumbnail": "str",
-        "workbench": "dict(str, object)",
-        "ui": "dict(str, object)",
-        "tags": "list[int]",
-        "classifiers": "list[str]",
-        "dev": "object",
-        "state": "AnyOfobjectobject",
-        "quality": "object",
+        'uuid': 'str',
+        'name': 'str',
+        'description': 'str',
+        'prj_owner': 'str',
+        'access_rights': 'dict(str, object)',
+        'creation_date': 'str',
+        'last_change_date': 'str',
+        'thumbnail': 'str',
+        'workbench': 'dict(str, object)',
+        'ui': 'dict(str, object)',
+        'tags': 'list[int]',
+        'classifiers': 'list[str]',
+        'dev': 'object',
+        'state': 'AnyOfAnyTypeobject',
+        'quality': 'object'
     }
 
     attribute_map = {
-        "uuid": "uuid",
-        "name": "name",
-        "description": "description",
-        "prj_owner": "prjOwner",
-        "access_rights": "accessRights",
-        "creation_date": "creationDate",
-        "last_change_date": "lastChangeDate",
-        "thumbnail": "thumbnail",
-        "workbench": "workbench",
-        "ui": "ui",
-        "tags": "tags",
-        "classifiers": "classifiers",
-        "dev": "dev",
-        "state": "state",
-        "quality": "quality",
+        'uuid': 'uuid',
+        'name': 'name',
+        'description': 'description',
+        'prj_owner': 'prjOwner',
+        'access_rights': 'accessRights',
+        'creation_date': 'creationDate',
+        'last_change_date': 'lastChangeDate',
+        'thumbnail': 'thumbnail',
+        'workbench': 'workbench',
+        'ui': 'ui',
+        'tags': 'tags',
+        'classifiers': 'classifiers',
+        'dev': 'dev',
+        'state': 'state',
+        'quality': 'quality'
     }
 
-    def __init__(
-        self,
-        uuid=None,
-        name=None,
-        description=None,
-        prj_owner=None,
-        access_rights=None,
-        creation_date=None,
-        last_change_date=None,
-        thumbnail=None,
-        workbench=None,
-        ui=None,
-        tags=None,
-        classifiers=None,
-        dev=None,
-        state=None,
-        quality=None,
-        local_vars_configuration=None,
-    ):  # noqa: E501
+    def __init__(self, uuid=None, name=None, description=None, prj_owner=None, access_rights=None, creation_date=None, last_change_date=None, thumbnail=None, workbench=None, ui=None, tags=None, classifiers=None, dev=None, state=None, quality=None, local_vars_configuration=None):  # noqa: E501
         """Project - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
-            local_vars_configuration = Configuration()
+            local_vars_configuration = Configuration.get_default_copy()
         self.local_vars_configuration = local_vars_configuration
 
         self._uuid = None
@@ -149,14 +135,10 @@ class Project(object):
         project unique identifier  # noqa: E501
 
         :param uuid: The uuid of this Project.  # noqa: E501
-        :type: str
+        :type uuid: str
         """
-        if (
-            self.local_vars_configuration.client_side_validation and uuid is None
-        ):  # noqa: E501
-            raise ValueError(
-                "Invalid value for `uuid`, must not be `None`"
-            )  # noqa: E501
+        if self.local_vars_configuration.client_side_validation and uuid is None:  # noqa: E501
+            raise ValueError("Invalid value for `uuid`, must not be `None`")  # noqa: E501
 
         self._uuid = uuid
 
@@ -178,14 +160,10 @@ class Project(object):
         project name  # noqa: E501
 
         :param name: The name of this Project.  # noqa: E501
-        :type: str
+        :type name: str
         """
-        if (
-            self.local_vars_configuration.client_side_validation and name is None
-        ):  # noqa: E501
-            raise ValueError(
-                "Invalid value for `name`, must not be `None`"
-            )  # noqa: E501
+        if self.local_vars_configuration.client_side_validation and name is None:  # noqa: E501
+            raise ValueError("Invalid value for `name`, must not be `None`")  # noqa: E501
 
         self._name = name
 
@@ -207,14 +185,10 @@ class Project(object):
         longer one-line description about the project  # noqa: E501
 
         :param description: The description of this Project.  # noqa: E501
-        :type: str
+        :type description: str
         """
-        if (
-            self.local_vars_configuration.client_side_validation and description is None
-        ):  # noqa: E501
-            raise ValueError(
-                "Invalid value for `description`, must not be `None`"
-            )  # noqa: E501
+        if self.local_vars_configuration.client_side_validation and description is None:  # noqa: E501
+            raise ValueError("Invalid value for `description`, must not be `None`")  # noqa: E501
 
         self._description = description
 
@@ -236,14 +210,10 @@ class Project(object):
         user email  # noqa: E501
 
         :param prj_owner: The prj_owner of this Project.  # noqa: E501
-        :type: str
+        :type prj_owner: str
         """
-        if (
-            self.local_vars_configuration.client_side_validation and prj_owner is None
-        ):  # noqa: E501
-            raise ValueError(
-                "Invalid value for `prj_owner`, must not be `None`"
-            )  # noqa: E501
+        if self.local_vars_configuration.client_side_validation and prj_owner is None:  # noqa: E501
+            raise ValueError("Invalid value for `prj_owner`, must not be `None`")  # noqa: E501
 
         self._prj_owner = prj_owner
 
@@ -265,15 +235,10 @@ class Project(object):
         object containing the GroupID as key and read/write/execution permissions as value  # noqa: E501
 
         :param access_rights: The access_rights of this Project.  # noqa: E501
-        :type: dict(str, object)
+        :type access_rights: dict(str, object)
         """
-        if (
-            self.local_vars_configuration.client_side_validation
-            and access_rights is None
-        ):  # noqa: E501
-            raise ValueError(
-                "Invalid value for `access_rights`, must not be `None`"
-            )  # noqa: E501
+        if self.local_vars_configuration.client_side_validation and access_rights is None:  # noqa: E501
+            raise ValueError("Invalid value for `access_rights`, must not be `None`")  # noqa: E501
 
         self._access_rights = access_rights
 
@@ -295,26 +260,13 @@ class Project(object):
         project creation date  # noqa: E501
 
         :param creation_date: The creation_date of this Project.  # noqa: E501
-        :type: str
+        :type creation_date: str
         """
-        if (
-            self.local_vars_configuration.client_side_validation
-            and creation_date is None
-        ):  # noqa: E501
-            raise ValueError(
-                "Invalid value for `creation_date`, must not be `None`"
-            )  # noqa: E501
-        if (
-            self.local_vars_configuration.client_side_validation
-            and creation_date is not None
-            and not re.search(
-                r"\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z",
-                creation_date,
-            )
-        ):  # noqa: E501
-            raise ValueError(
-                r"Invalid value for `creation_date`, must be a follow pattern or equal to `/\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z/`"
-            )  # noqa: E501
+        if self.local_vars_configuration.client_side_validation and creation_date is None:  # noqa: E501
+            raise ValueError("Invalid value for `creation_date`, must not be `None`")  # noqa: E501
+        if (self.local_vars_configuration.client_side_validation and
+                creation_date is not None and not re.search(r'\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z', creation_date)):  # noqa: E501
+            raise ValueError(r"Invalid value for `creation_date`, must be a follow pattern or equal to `/\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z/`")  # noqa: E501
 
         self._creation_date = creation_date
 
@@ -336,26 +288,13 @@ class Project(object):
         last save date  # noqa: E501
 
         :param last_change_date: The last_change_date of this Project.  # noqa: E501
-        :type: str
+        :type last_change_date: str
         """
-        if (
-            self.local_vars_configuration.client_side_validation
-            and last_change_date is None
-        ):  # noqa: E501
-            raise ValueError(
-                "Invalid value for `last_change_date`, must not be `None`"
-            )  # noqa: E501
-        if (
-            self.local_vars_configuration.client_side_validation
-            and last_change_date is not None
-            and not re.search(
-                r"\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z",
-                last_change_date,
-            )
-        ):  # noqa: E501
-            raise ValueError(
-                r"Invalid value for `last_change_date`, must be a follow pattern or equal to `/\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z/`"
-            )  # noqa: E501
+        if self.local_vars_configuration.client_side_validation and last_change_date is None:  # noqa: E501
+            raise ValueError("Invalid value for `last_change_date`, must not be `None`")  # noqa: E501
+        if (self.local_vars_configuration.client_side_validation and
+                last_change_date is not None and not re.search(r'\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z', last_change_date)):  # noqa: E501
+            raise ValueError(r"Invalid value for `last_change_date`, must be a follow pattern or equal to `/\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z/`")  # noqa: E501
 
         self._last_change_date = last_change_date
 
@@ -377,30 +316,16 @@ class Project(object):
         url of the latest screenshot of the project  # noqa: E501
 
         :param thumbnail: The thumbnail of this Project.  # noqa: E501
-        :type: str
+        :type thumbnail: str
         """
-        if (
-            self.local_vars_configuration.client_side_validation and thumbnail is None
-        ):  # noqa: E501
-            raise ValueError(
-                "Invalid value for `thumbnail`, must not be `None`"
-            )  # noqa: E501
-        if (
-            self.local_vars_configuration.client_side_validation
-            and thumbnail is not None
-            and len(thumbnail) > 2083
-        ):
-            raise ValueError(
-                "Invalid value for `thumbnail`, length must be less than or equal to `2083`"
-            )  # noqa: E501
-        if (
-            self.local_vars_configuration.client_side_validation
-            and thumbnail is not None
-            and len(thumbnail) < 0
-        ):
-            raise ValueError(
-                "Invalid value for `thumbnail`, length must be greater than or equal to `0`"
-            )  # noqa: E501
+        if self.local_vars_configuration.client_side_validation and thumbnail is None:  # noqa: E501
+            raise ValueError("Invalid value for `thumbnail`, must not be `None`")  # noqa: E501
+        if (self.local_vars_configuration.client_side_validation and
+                thumbnail is not None and len(thumbnail) > 2083):
+            raise ValueError("Invalid value for `thumbnail`, length must be less than or equal to `2083`")  # noqa: E501
+        if (self.local_vars_configuration.client_side_validation and
+                thumbnail is not None and len(thumbnail) < 0):
+            raise ValueError("Invalid value for `thumbnail`, length must be greater than or equal to `0`")  # noqa: E501
 
         self._thumbnail = thumbnail
 
@@ -420,14 +345,10 @@ class Project(object):
 
 
         :param workbench: The workbench of this Project.  # noqa: E501
-        :type: dict(str, object)
+        :type workbench: dict(str, object)
         """
-        if (
-            self.local_vars_configuration.client_side_validation and workbench is None
-        ):  # noqa: E501
-            raise ValueError(
-                "Invalid value for `workbench`, must not be `None`"
-            )  # noqa: E501
+        if self.local_vars_configuration.client_side_validation and workbench is None:  # noqa: E501
+            raise ValueError("Invalid value for `workbench`, must not be `None`")  # noqa: E501
 
         self._workbench = workbench
 
@@ -447,7 +368,7 @@ class Project(object):
 
 
         :param ui: The ui of this Project.  # noqa: E501
-        :type: dict(str, object)
+        :type ui: dict(str, object)
         """
 
         self._ui = ui
@@ -468,7 +389,7 @@ class Project(object):
 
 
         :param tags: The tags of this Project.  # noqa: E501
-        :type: list[int]
+        :type tags: list[int]
         """
 
         self._tags = tags
@@ -491,7 +412,7 @@ class Project(object):
         Contains the reference to the project classifiers  # noqa: E501
 
         :param classifiers: The classifiers of this Project.  # noqa: E501
-        :type: list[str]
+        :type classifiers: list[str]
         """
 
         self._classifiers = classifiers
@@ -514,7 +435,7 @@ class Project(object):
         object used for development purposes only  # noqa: E501
 
         :param dev: The dev of this Project.  # noqa: E501
-        :type: object
+        :type dev: object
         """
 
         self._dev = dev
@@ -526,7 +447,7 @@ class Project(object):
         Project state  # noqa: E501
 
         :return: The state of this Project.  # noqa: E501
-        :rtype: AnyOfobjectobject
+        :rtype: AnyOfAnyTypeobject
         """
         return self._state
 
@@ -537,7 +458,7 @@ class Project(object):
         Project state  # noqa: E501
 
         :param state: The state of this Project.  # noqa: E501
-        :type: AnyOfobjectobject
+        :type state: AnyOfAnyTypeobject
         """
 
         self._state = state
@@ -560,34 +481,40 @@ class Project(object):
         Object containing Quality Assessment related data  # noqa: E501
 
         :param quality: The quality of this Project.  # noqa: E501
-        :type: object
+        :type quality: object
         """
 
         self._quality = quality
 
-    def to_dict(self):
+    def to_dict(self, serialize=False):
         """Returns the model properties as a dict"""
         result = {}
 
+        def convert(x):
+            if hasattr(x, "to_dict"):
+                args = getfullargspec(x.to_dict).args
+                if len(args) == 1:
+                    return x.to_dict()
+                else:
+                    return x.to_dict(serialize)
+            else:
+                return x
+
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
+            attr = self.attribute_map.get(attr, attr) if serialize else attr
             if isinstance(value, list):
-                result[attr] = list(
-                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
-                )
-            elif hasattr(value, "to_dict"):
-                result[attr] = value.to_dict()
+                result[attr] = list(map(
+                    lambda x: convert(x),
+                    value
+                ))
             elif isinstance(value, dict):
-                result[attr] = dict(
-                    map(
-                        lambda item: (item[0], item[1].to_dict())
-                        if hasattr(item[1], "to_dict")
-                        else item,
-                        value.items(),
-                    )
-                )
+                result[attr] = dict(map(
+                    lambda item: (item[0], convert(item[1])),
+                    value.items()
+                ))
             else:
-                result[attr] = value
+                result[attr] = convert(value)
 
         return result
 

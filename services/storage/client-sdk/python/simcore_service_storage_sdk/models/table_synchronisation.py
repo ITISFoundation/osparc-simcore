@@ -11,10 +11,14 @@
 """
 
 
+try:
+    from inspect import getfullargspec
+except ImportError:
+    from inspect import getargspec as getfullargspec
 import pprint
 import re  # noqa: F401
-
 import six
+
 from simcore_service_storage_sdk.configuration import Configuration
 
 
@@ -33,27 +37,21 @@ class TableSynchronisation(object):
                             and the value is json key in definition.
     """
     openapi_types = {
-        "dry_run": "bool",
-        "fire_and_forget": "bool",
-        "removed": "list[str]",
+        'dry_run': 'bool',
+        'fire_and_forget': 'bool',
+        'removed': 'list[str]'
     }
 
     attribute_map = {
-        "dry_run": "dry_run",
-        "fire_and_forget": "fire_and_forget",
-        "removed": "removed",
+        'dry_run': 'dry_run',
+        'fire_and_forget': 'fire_and_forget',
+        'removed': 'removed'
     }
 
-    def __init__(
-        self,
-        dry_run=None,
-        fire_and_forget=None,
-        removed=None,
-        local_vars_configuration=None,
-    ):  # noqa: E501
+    def __init__(self, dry_run=None, fire_and_forget=None, removed=None, local_vars_configuration=None):  # noqa: E501
         """TableSynchronisation - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
-            local_vars_configuration = Configuration()
+            local_vars_configuration = Configuration.get_default_copy()
         self.local_vars_configuration = local_vars_configuration
 
         self._dry_run = None
@@ -83,7 +81,7 @@ class TableSynchronisation(object):
 
 
         :param dry_run: The dry_run of this TableSynchronisation.  # noqa: E501
-        :type: bool
+        :type dry_run: bool
         """
 
         self._dry_run = dry_run
@@ -104,7 +102,7 @@ class TableSynchronisation(object):
 
 
         :param fire_and_forget: The fire_and_forget of this TableSynchronisation.  # noqa: E501
-        :type: bool
+        :type fire_and_forget: bool
         """
 
         self._fire_and_forget = fire_and_forget
@@ -125,40 +123,42 @@ class TableSynchronisation(object):
 
 
         :param removed: The removed of this TableSynchronisation.  # noqa: E501
-        :type: list[str]
+        :type removed: list[str]
         """
-        if (
-            self.local_vars_configuration.client_side_validation and removed is None
-        ):  # noqa: E501
-            raise ValueError(
-                "Invalid value for `removed`, must not be `None`"
-            )  # noqa: E501
+        if self.local_vars_configuration.client_side_validation and removed is None:  # noqa: E501
+            raise ValueError("Invalid value for `removed`, must not be `None`")  # noqa: E501
 
         self._removed = removed
 
-    def to_dict(self):
+    def to_dict(self, serialize=False):
         """Returns the model properties as a dict"""
         result = {}
 
+        def convert(x):
+            if hasattr(x, "to_dict"):
+                args = getfullargspec(x.to_dict).args
+                if len(args) == 1:
+                    return x.to_dict()
+                else:
+                    return x.to_dict(serialize)
+            else:
+                return x
+
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
+            attr = self.attribute_map.get(attr, attr) if serialize else attr
             if isinstance(value, list):
-                result[attr] = list(
-                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
-                )
-            elif hasattr(value, "to_dict"):
-                result[attr] = value.to_dict()
+                result[attr] = list(map(
+                    lambda x: convert(x),
+                    value
+                ))
             elif isinstance(value, dict):
-                result[attr] = dict(
-                    map(
-                        lambda item: (item[0], item[1].to_dict())
-                        if hasattr(item[1], "to_dict")
-                        else item,
-                        value.items(),
-                    )
-                )
+                result[attr] = dict(map(
+                    lambda item: (item[0], convert(item[1])),
+                    value.items()
+                ))
             else:
-                result[attr] = value
+                result[attr] = convert(value)
 
         return result
 

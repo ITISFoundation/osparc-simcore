@@ -13,13 +13,12 @@
 
 from __future__ import absolute_import
 
-import datetime
 import unittest
+import datetime
 
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.models.log_message import LogMessage  # noqa: E501
 from simcore_service_storage_sdk.rest import ApiException
-
 
 class TestLogMessage(unittest.TestCase):
     """LogMessage unit test stubs"""
@@ -32,22 +31,25 @@ class TestLogMessage(unittest.TestCase):
 
     def make_instance(self, include_optional):
         """Test LogMessage
-        include_option is a boolean, when False only required
-        params are included, when True both required and
-        optional params are included"""
+            include_option is a boolean, when False only required
+            params are included, when True both required and
+            optional params are included """
         # model = simcore_service_storage_sdk.models.log_message.LogMessage()  # noqa: E501
-        if include_optional:
-            return LogMessage(level="INFO", message="0", logger="0")
-        else:
+        if include_optional :
             return LogMessage(
-                message="0",
+                level = 'INFO', 
+                message = '', 
+                logger = ''
             )
+        else :
+            return LogMessage(
+                message = '',
+        )
 
     def testLogMessage(self):
         """Test LogMessage"""
         inst_req_only = self.make_instance(include_optional=False)
         inst_req_and_optional = self.make_instance(include_optional=True)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

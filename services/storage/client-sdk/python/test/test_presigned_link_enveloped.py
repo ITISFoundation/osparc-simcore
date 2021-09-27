@@ -13,15 +13,12 @@
 
 from __future__ import absolute_import
 
-import datetime
 import unittest
+import datetime
 
 import simcore_service_storage_sdk
-from simcore_service_storage_sdk.models.presigned_link_enveloped import (  # noqa: E501
-    PresignedLinkEnveloped,
-)
+from simcore_service_storage_sdk.models.presigned_link_enveloped import PresignedLinkEnveloped  # noqa: E501
 from simcore_service_storage_sdk.rest import ApiException
-
 
 class TestPresignedLinkEnveloped(unittest.TestCase):
     """PresignedLinkEnveloped unit test stubs"""
@@ -34,23 +31,25 @@ class TestPresignedLinkEnveloped(unittest.TestCase):
 
     def make_instance(self, include_optional):
         """Test PresignedLinkEnveloped
-        include_option is a boolean, when False only required
-        params are included, when True both required and
-        optional params are included"""
+            include_option is a boolean, when False only required
+            params are included, when True both required and
+            optional params are included """
         # model = simcore_service_storage_sdk.models.presigned_link_enveloped.PresignedLinkEnveloped()  # noqa: E501
-        if include_optional:
-            return PresignedLinkEnveloped(data={"link": "example_link"}, error=null)
-        else:
+        if include_optional :
             return PresignedLinkEnveloped(
-                data={"link": "example_link"},
-                error=null,
+                data = {"link":"example_link"}, 
+                error = None
             )
+        else :
+            return PresignedLinkEnveloped(
+                data = {"link":"example_link"},
+                error = None,
+        )
 
     def testPresignedLinkEnveloped(self):
         """Test PresignedLinkEnveloped"""
         inst_req_only = self.make_instance(include_optional=False)
         inst_req_and_optional = self.make_instance(include_optional=True)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

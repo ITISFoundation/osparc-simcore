@@ -13,15 +13,12 @@
 
 from __future__ import absolute_import
 
-import datetime
 import unittest
+import datetime
 
 import simcore_service_storage_sdk
-from simcore_service_storage_sdk.models.table_synchronisation import (  # noqa: E501
-    TableSynchronisation,
-)
+from simcore_service_storage_sdk.models.table_synchronisation import TableSynchronisation  # noqa: E501
 from simcore_service_storage_sdk.rest import ApiException
-
 
 class TestTableSynchronisation(unittest.TestCase):
     """TableSynchronisation unit test stubs"""
@@ -34,24 +31,29 @@ class TestTableSynchronisation(unittest.TestCase):
 
     def make_instance(self, include_optional):
         """Test TableSynchronisation
-        include_option is a boolean, when False only required
-        params are included, when True both required and
-        optional params are included"""
+            include_option is a boolean, when False only required
+            params are included, when True both required and
+            optional params are included """
         # model = simcore_service_storage_sdk.models.table_synchronisation.TableSynchronisation()  # noqa: E501
-        if include_optional:
+        if include_optional :
             return TableSynchronisation(
-                dry_run=True, fire_and_forget=True, removed=["0"]
+                dry_run = True, 
+                fire_and_forget = True, 
+                removed = [
+                    ''
+                    ]
             )
-        else:
+        else :
             return TableSynchronisation(
-                removed=["0"],
-            )
+                removed = [
+                    ''
+                    ],
+        )
 
     def testTableSynchronisation(self):
         """Test TableSynchronisation"""
         inst_req_only = self.make_instance(include_optional=False)
         inst_req_and_optional = self.make_instance(include_optional=True)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

@@ -13,15 +13,12 @@
 
 from __future__ import absolute_import
 
-import datetime
 import unittest
+import datetime
 
 import simcore_service_storage_sdk
-from simcore_service_storage_sdk.models.file_location_enveloped import (  # noqa: E501
-    FileLocationEnveloped,
-)
+from simcore_service_storage_sdk.models.file_location_enveloped import FileLocationEnveloped  # noqa: E501
 from simcore_service_storage_sdk.rest import ApiException
-
 
 class TestFileLocationEnveloped(unittest.TestCase):
     """FileLocationEnveloped unit test stubs"""
@@ -34,25 +31,25 @@ class TestFileLocationEnveloped(unittest.TestCase):
 
     def make_instance(self, include_optional):
         """Test FileLocationEnveloped
-        include_option is a boolean, when False only required
-        params are included, when True both required and
-        optional params are included"""
+            include_option is a boolean, when False only required
+            params are included, when True both required and
+            optional params are included """
         # model = simcore_service_storage_sdk.models.file_location_enveloped.FileLocationEnveloped()  # noqa: E501
-        if include_optional:
+        if include_optional :
             return FileLocationEnveloped(
-                data={"filename": "simcore.s3", "id": 0}, error=null
+                data = {"filename":"simcore.s3","id":0}, 
+                error = None
             )
-        else:
+        else :
             return FileLocationEnveloped(
-                data={"filename": "simcore.s3", "id": 0},
-                error=null,
-            )
+                data = {"filename":"simcore.s3","id":0},
+                error = None,
+        )
 
     def testFileLocationEnveloped(self):
         """Test FileLocationEnveloped"""
         inst_req_only = self.make_instance(include_optional=False)
         inst_req_and_optional = self.make_instance(include_optional=True)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

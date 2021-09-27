@@ -11,10 +11,14 @@
 """
 
 
+try:
+    from inspect import getfullargspec
+except ImportError:
+    from inspect import getargspec as getfullargspec
 import pprint
 import re  # noqa: F401
-
 import six
+
 from simcore_service_storage_sdk.configuration import Configuration
 
 
@@ -33,78 +37,55 @@ class FileMetaData(object):
                             and the value is json key in definition.
     """
     openapi_types = {
-        "file_uuid": "str",
-        "location_id": "str",
-        "location": "str",
-        "bucket_name": "str",
-        "object_name": "str",
-        "project_id": "str",
-        "project_name": "str",
-        "node_id": "str",
-        "node_name": "str",
-        "file_name": "str",
-        "user_id": "str",
-        "user_name": "str",
-        "file_id": "str",
-        "raw_file_path": "str",
-        "display_file_path": "str",
-        "created_at": "str",
-        "last_modified": "str",
-        "file_size": "int",
-        "parent_id": "str",
-        "entity_tag": "str",
+        'file_uuid': 'str',
+        'location_id': 'str',
+        'location': 'str',
+        'bucket_name': 'str',
+        'object_name': 'str',
+        'project_id': 'str',
+        'project_name': 'str',
+        'node_id': 'str',
+        'node_name': 'str',
+        'file_name': 'str',
+        'user_id': 'str',
+        'user_name': 'str',
+        'file_id': 'str',
+        'raw_file_path': 'str',
+        'display_file_path': 'str',
+        'created_at': 'str',
+        'last_modified': 'str',
+        'file_size': 'int',
+        'parent_id': 'str',
+        'entity_tag': 'str'
     }
 
     attribute_map = {
-        "file_uuid": "file_uuid",
-        "location_id": "location_id",
-        "location": "location",
-        "bucket_name": "bucket_name",
-        "object_name": "object_name",
-        "project_id": "project_id",
-        "project_name": "project_name",
-        "node_id": "node_id",
-        "node_name": "node_name",
-        "file_name": "file_name",
-        "user_id": "user_id",
-        "user_name": "user_name",
-        "file_id": "file_id",
-        "raw_file_path": "raw_file_path",
-        "display_file_path": "display_file_path",
-        "created_at": "created_at",
-        "last_modified": "last_modified",
-        "file_size": "file_size",
-        "parent_id": "parent_id",
-        "entity_tag": "entity_tag",
+        'file_uuid': 'file_uuid',
+        'location_id': 'location_id',
+        'location': 'location',
+        'bucket_name': 'bucket_name',
+        'object_name': 'object_name',
+        'project_id': 'project_id',
+        'project_name': 'project_name',
+        'node_id': 'node_id',
+        'node_name': 'node_name',
+        'file_name': 'file_name',
+        'user_id': 'user_id',
+        'user_name': 'user_name',
+        'file_id': 'file_id',
+        'raw_file_path': 'raw_file_path',
+        'display_file_path': 'display_file_path',
+        'created_at': 'created_at',
+        'last_modified': 'last_modified',
+        'file_size': 'file_size',
+        'parent_id': 'parent_id',
+        'entity_tag': 'entity_tag'
     }
 
-    def __init__(
-        self,
-        file_uuid=None,
-        location_id=None,
-        location=None,
-        bucket_name=None,
-        object_name=None,
-        project_id=None,
-        project_name=None,
-        node_id=None,
-        node_name=None,
-        file_name=None,
-        user_id=None,
-        user_name=None,
-        file_id=None,
-        raw_file_path=None,
-        display_file_path=None,
-        created_at=None,
-        last_modified=None,
-        file_size=None,
-        parent_id=None,
-        entity_tag=None,
-        local_vars_configuration=None,
-    ):  # noqa: E501
+    def __init__(self, file_uuid=None, location_id=None, location=None, bucket_name=None, object_name=None, project_id=None, project_name=None, node_id=None, node_name=None, file_name=None, user_id=None, user_name=None, file_id=None, raw_file_path=None, display_file_path=None, created_at=None, last_modified=None, file_size=None, parent_id=None, entity_tag=None, local_vars_configuration=None):  # noqa: E501
         """FileMetaData - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
-            local_vars_configuration = Configuration()
+            local_vars_configuration = Configuration.get_default_copy()
         self.local_vars_configuration = local_vars_configuration
 
         self._file_uuid = None
@@ -186,7 +167,7 @@ class FileMetaData(object):
 
 
         :param file_uuid: The file_uuid of this FileMetaData.  # noqa: E501
-        :type: str
+        :type file_uuid: str
         """
 
         self._file_uuid = file_uuid
@@ -207,7 +188,7 @@ class FileMetaData(object):
 
 
         :param location_id: The location_id of this FileMetaData.  # noqa: E501
-        :type: str
+        :type location_id: str
         """
 
         self._location_id = location_id
@@ -228,7 +209,7 @@ class FileMetaData(object):
 
 
         :param location: The location of this FileMetaData.  # noqa: E501
-        :type: str
+        :type location: str
         """
 
         self._location = location
@@ -249,7 +230,7 @@ class FileMetaData(object):
 
 
         :param bucket_name: The bucket_name of this FileMetaData.  # noqa: E501
-        :type: str
+        :type bucket_name: str
         """
 
         self._bucket_name = bucket_name
@@ -270,7 +251,7 @@ class FileMetaData(object):
 
 
         :param object_name: The object_name of this FileMetaData.  # noqa: E501
-        :type: str
+        :type object_name: str
         """
 
         self._object_name = object_name
@@ -291,7 +272,7 @@ class FileMetaData(object):
 
 
         :param project_id: The project_id of this FileMetaData.  # noqa: E501
-        :type: str
+        :type project_id: str
         """
 
         self._project_id = project_id
@@ -312,7 +293,7 @@ class FileMetaData(object):
 
 
         :param project_name: The project_name of this FileMetaData.  # noqa: E501
-        :type: str
+        :type project_name: str
         """
 
         self._project_name = project_name
@@ -333,7 +314,7 @@ class FileMetaData(object):
 
 
         :param node_id: The node_id of this FileMetaData.  # noqa: E501
-        :type: str
+        :type node_id: str
         """
 
         self._node_id = node_id
@@ -354,7 +335,7 @@ class FileMetaData(object):
 
 
         :param node_name: The node_name of this FileMetaData.  # noqa: E501
-        :type: str
+        :type node_name: str
         """
 
         self._node_name = node_name
@@ -375,7 +356,7 @@ class FileMetaData(object):
 
 
         :param file_name: The file_name of this FileMetaData.  # noqa: E501
-        :type: str
+        :type file_name: str
         """
 
         self._file_name = file_name
@@ -396,7 +377,7 @@ class FileMetaData(object):
 
 
         :param user_id: The user_id of this FileMetaData.  # noqa: E501
-        :type: str
+        :type user_id: str
         """
 
         self._user_id = user_id
@@ -417,7 +398,7 @@ class FileMetaData(object):
 
 
         :param user_name: The user_name of this FileMetaData.  # noqa: E501
-        :type: str
+        :type user_name: str
         """
 
         self._user_name = user_name
@@ -438,7 +419,7 @@ class FileMetaData(object):
 
 
         :param file_id: The file_id of this FileMetaData.  # noqa: E501
-        :type: str
+        :type file_id: str
         """
 
         self._file_id = file_id
@@ -459,7 +440,7 @@ class FileMetaData(object):
 
 
         :param raw_file_path: The raw_file_path of this FileMetaData.  # noqa: E501
-        :type: str
+        :type raw_file_path: str
         """
 
         self._raw_file_path = raw_file_path
@@ -480,7 +461,7 @@ class FileMetaData(object):
 
 
         :param display_file_path: The display_file_path of this FileMetaData.  # noqa: E501
-        :type: str
+        :type display_file_path: str
         """
 
         self._display_file_path = display_file_path
@@ -501,7 +482,7 @@ class FileMetaData(object):
 
 
         :param created_at: The created_at of this FileMetaData.  # noqa: E501
-        :type: str
+        :type created_at: str
         """
 
         self._created_at = created_at
@@ -522,7 +503,7 @@ class FileMetaData(object):
 
 
         :param last_modified: The last_modified of this FileMetaData.  # noqa: E501
-        :type: str
+        :type last_modified: str
         """
 
         self._last_modified = last_modified
@@ -543,7 +524,7 @@ class FileMetaData(object):
 
 
         :param file_size: The file_size of this FileMetaData.  # noqa: E501
-        :type: int
+        :type file_size: int
         """
 
         self._file_size = file_size
@@ -564,7 +545,7 @@ class FileMetaData(object):
 
 
         :param parent_id: The parent_id of this FileMetaData.  # noqa: E501
-        :type: str
+        :type parent_id: str
         """
 
         self._parent_id = parent_id
@@ -585,34 +566,40 @@ class FileMetaData(object):
 
 
         :param entity_tag: The entity_tag of this FileMetaData.  # noqa: E501
-        :type: str
+        :type entity_tag: str
         """
 
         self._entity_tag = entity_tag
 
-    def to_dict(self):
+    def to_dict(self, serialize=False):
         """Returns the model properties as a dict"""
         result = {}
 
+        def convert(x):
+            if hasattr(x, "to_dict"):
+                args = getfullargspec(x.to_dict).args
+                if len(args) == 1:
+                    return x.to_dict()
+                else:
+                    return x.to_dict(serialize)
+            else:
+                return x
+
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
+            attr = self.attribute_map.get(attr, attr) if serialize else attr
             if isinstance(value, list):
-                result[attr] = list(
-                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
-                )
-            elif hasattr(value, "to_dict"):
-                result[attr] = value.to_dict()
+                result[attr] = list(map(
+                    lambda x: convert(x),
+                    value
+                ))
             elif isinstance(value, dict):
-                result[attr] = dict(
-                    map(
-                        lambda item: (item[0], item[1].to_dict())
-                        if hasattr(item[1], "to_dict")
-                        else item,
-                        value.items(),
-                    )
-                )
+                result[attr] = dict(map(
+                    lambda item: (item[0], convert(item[1])),
+                    value.items()
+                ))
             else:
-                result[attr] = value
+                result[attr] = convert(value)
 
         return result
 

@@ -13,15 +13,12 @@
 
 from __future__ import absolute_import
 
-import datetime
 import unittest
+import datetime
 
 import simcore_service_storage_sdk
-from simcore_service_storage_sdk.models.health_check_enveloped import (  # noqa: E501
-    HealthCheckEnveloped,
-)
+from simcore_service_storage_sdk.models.health_check_enveloped import HealthCheckEnveloped  # noqa: E501
 from simcore_service_storage_sdk.rest import ApiException
-
 
 class TestHealthCheckEnveloped(unittest.TestCase):
     """HealthCheckEnveloped unit test stubs"""
@@ -34,36 +31,25 @@ class TestHealthCheckEnveloped(unittest.TestCase):
 
     def make_instance(self, include_optional):
         """Test HealthCheckEnveloped
-        include_option is a boolean, when False only required
-        params are included, when True both required and
-        optional params are included"""
+            include_option is a boolean, when False only required
+            params are included, when True both required and
+            optional params are included """
         # model = simcore_service_storage_sdk.models.health_check_enveloped.HealthCheckEnveloped()  # noqa: E501
-        if include_optional:
+        if include_optional :
             return HealthCheckEnveloped(
-                data={
-                    "name": "simcore-director-service",
-                    "status": "SERVICE_RUNNING",
-                    "api_version": "0.1.0-dev+NJuzzD9S",
-                    "version": "0.1.0-dev+N127Mfv9H",
-                },
-                error=null,
+                data = {"name":"simcore-director-service","status":"SERVICE_RUNNING","api_version":"0.1.0-dev+NJuzzD9S","version":"0.1.0-dev+N127Mfv9H"}, 
+                error = None
             )
-        else:
+        else :
             return HealthCheckEnveloped(
-                data={
-                    "name": "simcore-director-service",
-                    "status": "SERVICE_RUNNING",
-                    "api_version": "0.1.0-dev+NJuzzD9S",
-                    "version": "0.1.0-dev+N127Mfv9H",
-                },
-                error=null,
-            )
+                data = {"name":"simcore-director-service","status":"SERVICE_RUNNING","api_version":"0.1.0-dev+NJuzzD9S","version":"0.1.0-dev+N127Mfv9H"},
+                error = None,
+        )
 
     def testHealthCheckEnveloped(self):
         """Test HealthCheckEnveloped"""
         inst_req_only = self.make_instance(include_optional=False)
         inst_req_and_optional = self.make_instance(include_optional=True)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

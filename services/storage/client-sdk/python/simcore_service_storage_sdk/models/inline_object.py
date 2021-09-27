@@ -11,10 +11,14 @@
 """
 
 
+try:
+    from inspect import getfullargspec
+except ImportError:
+    from inspect import getargspec as getfullargspec
 import pprint
 import re  # noqa: F401
-
 import six
+
 from simcore_service_storage_sdk.configuration import Configuration
 
 
@@ -33,27 +37,21 @@ class InlineObject(object):
                             and the value is json key in definition.
     """
     openapi_types = {
-        "source": "Project",
-        "destination": "Project",
-        "nodes_map": "dict(str, str)",
+        'source': 'Project',
+        'destination': 'Project',
+        'nodes_map': 'dict(str, str)'
     }
 
     attribute_map = {
-        "source": "source",
-        "destination": "destination",
-        "nodes_map": "nodes_map",
+        'source': 'source',
+        'destination': 'destination',
+        'nodes_map': 'nodes_map'
     }
 
-    def __init__(
-        self,
-        source=None,
-        destination=None,
-        nodes_map=None,
-        local_vars_configuration=None,
-    ):  # noqa: E501
+    def __init__(self, source=None, destination=None, nodes_map=None, local_vars_configuration=None):  # noqa: E501
         """InlineObject - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
-            local_vars_configuration = Configuration()
+            local_vars_configuration = Configuration.get_default_copy()
         self.local_vars_configuration = local_vars_configuration
 
         self._source = None
@@ -84,7 +82,7 @@ class InlineObject(object):
 
 
         :param source: The source of this InlineObject.  # noqa: E501
-        :type: Project
+        :type source: Project
         """
 
         self._source = source
@@ -105,7 +103,7 @@ class InlineObject(object):
 
 
         :param destination: The destination of this InlineObject.  # noqa: E501
-        :type: Project
+        :type destination: Project
         """
 
         self._destination = destination
@@ -128,34 +126,40 @@ class InlineObject(object):
         maps source and destination node uuids  # noqa: E501
 
         :param nodes_map: The nodes_map of this InlineObject.  # noqa: E501
-        :type: dict(str, str)
+        :type nodes_map: dict(str, str)
         """
 
         self._nodes_map = nodes_map
 
-    def to_dict(self):
+    def to_dict(self, serialize=False):
         """Returns the model properties as a dict"""
         result = {}
 
+        def convert(x):
+            if hasattr(x, "to_dict"):
+                args = getfullargspec(x.to_dict).args
+                if len(args) == 1:
+                    return x.to_dict()
+                else:
+                    return x.to_dict(serialize)
+            else:
+                return x
+
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
+            attr = self.attribute_map.get(attr, attr) if serialize else attr
             if isinstance(value, list):
-                result[attr] = list(
-                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
-                )
-            elif hasattr(value, "to_dict"):
-                result[attr] = value.to_dict()
+                result[attr] = list(map(
+                    lambda x: convert(x),
+                    value
+                ))
             elif isinstance(value, dict):
-                result[attr] = dict(
-                    map(
-                        lambda item: (item[0], item[1].to_dict())
-                        if hasattr(item[1], "to_dict")
-                        else item,
-                        value.items(),
-                    )
-                )
+                result[attr] = dict(map(
+                    lambda item: (item[0], convert(item[1])),
+                    value.items()
+                ))
             else:
-                result[attr] = value
+                result[attr] = convert(value)
 
         return result
 

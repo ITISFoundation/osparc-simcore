@@ -13,15 +13,12 @@
 
 from __future__ import absolute_import
 
-import datetime
 import unittest
+import datetime
 
 import simcore_service_storage_sdk
-from simcore_service_storage_sdk.models.dataset_meta_data_enveloped import (  # noqa: E501
-    DatasetMetaDataEnveloped,
-)
+from simcore_service_storage_sdk.models.dataset_meta_data_enveloped import DatasetMetaDataEnveloped  # noqa: E501
 from simcore_service_storage_sdk.rest import ApiException
-
 
 class TestDatasetMetaDataEnveloped(unittest.TestCase):
     """DatasetMetaDataEnveloped unit test stubs"""
@@ -34,26 +31,25 @@ class TestDatasetMetaDataEnveloped(unittest.TestCase):
 
     def make_instance(self, include_optional):
         """Test DatasetMetaDataEnveloped
-        include_option is a boolean, when False only required
-        params are included, when True both required and
-        optional params are included"""
+            include_option is a boolean, when False only required
+            params are included, when True both required and
+            optional params are included """
         # model = simcore_service_storage_sdk.models.dataset_meta_data_enveloped.DatasetMetaDataEnveloped()  # noqa: E501
-        if include_optional:
+        if include_optional :
             return DatasetMetaDataEnveloped(
-                data={"dataset_uuid": "N:id-aaaa", "display_name": "simcore-testing"},
-                error=null,
+                data = {"dataset_uuid":"N:id-aaaa","display_name":"simcore-testing"}, 
+                error = None
             )
-        else:
+        else :
             return DatasetMetaDataEnveloped(
-                data={"dataset_uuid": "N:id-aaaa", "display_name": "simcore-testing"},
-                error=null,
-            )
+                data = {"dataset_uuid":"N:id-aaaa","display_name":"simcore-testing"},
+                error = None,
+        )
 
     def testDatasetMetaDataEnveloped(self):
         """Test DatasetMetaDataEnveloped"""
         inst_req_only = self.make_instance(include_optional=False)
         inst_req_and_optional = self.make_instance(include_optional=True)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

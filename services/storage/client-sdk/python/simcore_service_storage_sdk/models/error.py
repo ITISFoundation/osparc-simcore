@@ -11,10 +11,14 @@
 """
 
 
+try:
+    from inspect import getfullargspec
+except ImportError:
+    from inspect import getargspec as getfullargspec
 import pprint
 import re  # noqa: F401
-
 import six
+
 from simcore_service_storage_sdk.configuration import Configuration
 
 
@@ -33,19 +37,21 @@ class Error(object):
                             and the value is json key in definition.
     """
     openapi_types = {
-        "logs": "list[LogMessage]",
-        "errors": "list[ErrorItem]",
-        "status": "int",
+        'logs': 'list[LogMessage]',
+        'errors': 'list[ErrorItem]',
+        'status': 'int'
     }
 
-    attribute_map = {"logs": "logs", "errors": "errors", "status": "status"}
+    attribute_map = {
+        'logs': 'logs',
+        'errors': 'errors',
+        'status': 'status'
+    }
 
-    def __init__(
-        self, logs=None, errors=None, status=None, local_vars_configuration=None
-    ):  # noqa: E501
+    def __init__(self, logs=None, errors=None, status=None, local_vars_configuration=None):  # noqa: E501
         """Error - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
-            local_vars_configuration = Configuration()
+            local_vars_configuration = Configuration.get_default_copy()
         self.local_vars_configuration = local_vars_configuration
 
         self._logs = None
@@ -78,7 +84,7 @@ class Error(object):
         log messages  # noqa: E501
 
         :param logs: The logs of this Error.  # noqa: E501
-        :type: list[LogMessage]
+        :type logs: list[LogMessage]
         """
 
         self._logs = logs
@@ -101,7 +107,7 @@ class Error(object):
         errors metadata  # noqa: E501
 
         :param errors: The errors of this Error.  # noqa: E501
-        :type: list[ErrorItem]
+        :type errors: list[ErrorItem]
         """
 
         self._errors = errors
@@ -124,34 +130,40 @@ class Error(object):
         HTTP error code  # noqa: E501
 
         :param status: The status of this Error.  # noqa: E501
-        :type: int
+        :type status: int
         """
 
         self._status = status
 
-    def to_dict(self):
+    def to_dict(self, serialize=False):
         """Returns the model properties as a dict"""
         result = {}
 
+        def convert(x):
+            if hasattr(x, "to_dict"):
+                args = getfullargspec(x.to_dict).args
+                if len(args) == 1:
+                    return x.to_dict()
+                else:
+                    return x.to_dict(serialize)
+            else:
+                return x
+
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
+            attr = self.attribute_map.get(attr, attr) if serialize else attr
             if isinstance(value, list):
-                result[attr] = list(
-                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
-                )
-            elif hasattr(value, "to_dict"):
-                result[attr] = value.to_dict()
+                result[attr] = list(map(
+                    lambda x: convert(x),
+                    value
+                ))
             elif isinstance(value, dict):
-                result[attr] = dict(
-                    map(
-                        lambda item: (item[0], item[1].to_dict())
-                        if hasattr(item[1], "to_dict")
-                        else item,
-                        value.items(),
-                    )
-                )
+                result[attr] = dict(map(
+                    lambda item: (item[0], convert(item[1])),
+                    value.items()
+                ))
             else:
-                result[attr] = value
+                result[attr] = convert(value)
 
         return result
 

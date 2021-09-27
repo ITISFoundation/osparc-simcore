@@ -13,13 +13,12 @@
 
 from __future__ import absolute_import
 
-import datetime
 import unittest
+import datetime
 
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.models.fake import Fake  # noqa: E501
 from simcore_service_storage_sdk.rest import ApiException
-
 
 class TestFake(unittest.TestCase):
     """Fake unit test stubs"""
@@ -32,24 +31,27 @@ class TestFake(unittest.TestCase):
 
     def make_instance(self, include_optional):
         """Test Fake
-        include_option is a boolean, when False only required
-        params are included, when True both required and
-        optional params are included"""
+            include_option is a boolean, when False only required
+            params are included, when True both required and
+            optional params are included """
         # model = simcore_service_storage_sdk.models.fake.Fake()  # noqa: E501
-        if include_optional:
-            return Fake(path_value="0", query_value="0", body_value={})
-        else:
+        if include_optional :
             return Fake(
-                path_value="0",
-                query_value="0",
-                body_value={},
+                path_value = '', 
+                query_value = '', 
+                body_value = { }
             )
+        else :
+            return Fake(
+                path_value = '',
+                query_value = '',
+                body_value = { },
+        )
 
     def testFake(self):
         """Test Fake"""
         inst_req_only = self.make_instance(include_optional=False)
         inst_req_and_optional = self.make_instance(include_optional=True)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

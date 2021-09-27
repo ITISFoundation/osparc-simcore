@@ -11,10 +11,10 @@
 """
 
 
-from setuptools import find_packages, setup  # noqa: H301
+from setuptools import setup, find_packages  # noqa: H301
 
 NAME = "simcore-service-storage-sdk"
-VERSION = ""
+VERSION = "0.2.1"
 # To install the library, run the following
 #
 # python setup.py install
@@ -22,7 +22,8 @@ VERSION = ""
 # prerequisite: setuptools
 # http://pypi.python.org/pypi/setuptools
 
-REQUIRES = ["urllib3 >= 1.15", "six >= 1.10", "certifi", "python-dateutil"]
+REQUIRES = ["urllib3 >= 1.25.3", "six >= 1.10", "python-dateutil"]
+REQUIRES.append("aiohttp >= 3.0.0")
 
 setup(
     name=NAME,
@@ -30,7 +31,7 @@ setup(
     description="simcore-service-storage API",
     author="IT&#39;IS Foundation",
     author_email="support@simcore.io",
-    url="https://github.com/ITISFoundation/osparc-simcore.git#egg&#x3D;simcore_service_storage_sdk&amp;subdirectory&#x3D;services/storage/client-sdk",
+    url="https://github.com/ITISFoundation/osparc-simcore/tree/master/services/storage/client-sdk/python",
     keywords=["OpenAPI", "OpenAPI-Generator", "simcore-service-storage API"],
     install_requires=REQUIRES,
     packages=find_packages(exclude=["test", "tests"]),
@@ -38,5 +39,5 @@ setup(
     license="MIT",
     long_description="""\
     API definition for simcore-service-storage service  # noqa: E501
-    """,
+    """
 )

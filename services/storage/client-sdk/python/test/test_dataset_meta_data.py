@@ -13,15 +13,12 @@
 
 from __future__ import absolute_import
 
-import datetime
 import unittest
+import datetime
 
 import simcore_service_storage_sdk
-from simcore_service_storage_sdk.models.dataset_meta_data import (  # noqa: E501
-    DatasetMetaData,
-)
+from simcore_service_storage_sdk.models.dataset_meta_data import DatasetMetaData  # noqa: E501
 from simcore_service_storage_sdk.rest import ApiException
-
 
 class TestDatasetMetaData(unittest.TestCase):
     """DatasetMetaData unit test stubs"""
@@ -34,20 +31,23 @@ class TestDatasetMetaData(unittest.TestCase):
 
     def make_instance(self, include_optional):
         """Test DatasetMetaData
-        include_option is a boolean, when False only required
-        params are included, when True both required and
-        optional params are included"""
+            include_option is a boolean, when False only required
+            params are included, when True both required and
+            optional params are included """
         # model = simcore_service_storage_sdk.models.dataset_meta_data.DatasetMetaData()  # noqa: E501
-        if include_optional:
-            return DatasetMetaData(dataset_id="0", display_name="0")
-        else:
-            return DatasetMetaData()
+        if include_optional :
+            return DatasetMetaData(
+                dataset_id = '', 
+                display_name = ''
+            )
+        else :
+            return DatasetMetaData(
+        )
 
     def testDatasetMetaData(self):
         """Test DatasetMetaData"""
         inst_req_only = self.make_instance(include_optional=False)
         inst_req_and_optional = self.make_instance(include_optional=True)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

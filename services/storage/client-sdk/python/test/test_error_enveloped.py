@@ -13,15 +13,12 @@
 
 from __future__ import absolute_import
 
-import datetime
 import unittest
+import datetime
 
 import simcore_service_storage_sdk
-from simcore_service_storage_sdk.models.error_enveloped import (  # noqa: E501
-    ErrorEnveloped,
-)
+from simcore_service_storage_sdk.models.error_enveloped import ErrorEnveloped  # noqa: E501
 from simcore_service_storage_sdk.rest import ApiException
-
 
 class TestErrorEnveloped(unittest.TestCase):
     """ErrorEnveloped unit test stubs"""
@@ -34,80 +31,25 @@ class TestErrorEnveloped(unittest.TestCase):
 
     def make_instance(self, include_optional):
         """Test ErrorEnveloped
-        include_option is a boolean, when False only required
-        params are included, when True both required and
-        optional params are included"""
+            include_option is a boolean, when False only required
+            params are included, when True both required and
+            optional params are included """
         # model = simcore_service_storage_sdk.models.error_enveloped.ErrorEnveloped()  # noqa: E501
-        if include_optional:
+        if include_optional :
             return ErrorEnveloped(
-                data=null,
-                error={
-                    "BadRequestError": {
-                        "logs": [
-                            {
-                                "message": "Requested information is incomplete or malformed",
-                                "level": "ERROR",
-                            },
-                            {
-                                "message": "Invalid email and password",
-                                "level": "ERROR",
-                                "logger": "USER",
-                            },
-                        ],
-                        "errors": [
-                            {
-                                "code": "InvalidEmail",
-                                "message": "Email is malformed",
-                                "field": "email",
-                            },
-                            {
-                                "code": "UnsavePassword",
-                                "message": "Password is not secure",
-                                "field": "pasword",
-                            },
-                        ],
-                        "status": 400,
-                    }
-                },
+                data = None, 
+                error = {"BadRequestError":{"logs":[{"message":"Requested information is incomplete or malformed","level":"ERROR"},{"message":"Invalid email and password","level":"ERROR","logger":"USER"}],"errors":[{"code":"InvalidEmail","message":"Email is malformed","field":"email"},{"code":"UnsavePassword","message":"Password is not secure","field":"pasword"}],"status":400}}
             )
-        else:
+        else :
             return ErrorEnveloped(
-                data=null,
-                error={
-                    "BadRequestError": {
-                        "logs": [
-                            {
-                                "message": "Requested information is incomplete or malformed",
-                                "level": "ERROR",
-                            },
-                            {
-                                "message": "Invalid email and password",
-                                "level": "ERROR",
-                                "logger": "USER",
-                            },
-                        ],
-                        "errors": [
-                            {
-                                "code": "InvalidEmail",
-                                "message": "Email is malformed",
-                                "field": "email",
-                            },
-                            {
-                                "code": "UnsavePassword",
-                                "message": "Password is not secure",
-                                "field": "pasword",
-                            },
-                        ],
-                        "status": 400,
-                    }
-                },
-            )
+                data = None,
+                error = {"BadRequestError":{"logs":[{"message":"Requested information is incomplete or malformed","level":"ERROR"},{"message":"Invalid email and password","level":"ERROR","logger":"USER"}],"errors":[{"code":"InvalidEmail","message":"Email is malformed","field":"email"},{"code":"UnsavePassword","message":"Password is not secure","field":"pasword"}],"status":400}},
+        )
 
     def testErrorEnveloped(self):
         """Test ErrorEnveloped"""
         inst_req_only = self.make_instance(include_optional=False)
         inst_req_and_optional = self.make_instance(include_optional=True)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

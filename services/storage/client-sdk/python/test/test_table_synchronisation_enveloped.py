@@ -13,15 +13,12 @@
 
 from __future__ import absolute_import
 
-import datetime
 import unittest
+import datetime
 
 import simcore_service_storage_sdk
-from simcore_service_storage_sdk.models.table_synchronisation_enveloped import (  # noqa: E501
-    TableSynchronisationEnveloped,
-)
+from simcore_service_storage_sdk.models.table_synchronisation_enveloped import TableSynchronisationEnveloped  # noqa: E501
 from simcore_service_storage_sdk.rest import ApiException
-
 
 class TestTableSynchronisationEnveloped(unittest.TestCase):
     """TableSynchronisationEnveloped unit test stubs"""
@@ -34,34 +31,35 @@ class TestTableSynchronisationEnveloped(unittest.TestCase):
 
     def make_instance(self, include_optional):
         """Test TableSynchronisationEnveloped
-        include_option is a boolean, when False only required
-        params are included, when True both required and
-        optional params are included"""
+            include_option is a boolean, when False only required
+            params are included, when True both required and
+            optional params are included """
         # model = simcore_service_storage_sdk.models.table_synchronisation_enveloped.TableSynchronisationEnveloped()  # noqa: E501
-        if include_optional:
+        if include_optional :
             return TableSynchronisationEnveloped(
-                data=simcore_service_storage_sdk.models.table_synchronisation.TableSynchronisation(
-                    dry_run=True,
-                    fire_and_forget=True,
-                    removed=["0"],
-                ),
-                error=null,
+                data = simcore_service_storage_sdk.models.table_synchronisation.TableSynchronisation(
+                    dry_run = True, 
+                    fire_and_forget = True, 
+                    removed = [
+                        ''
+                        ], ), 
+                error = None
             )
-        else:
+        else :
             return TableSynchronisationEnveloped(
-                data=simcore_service_storage_sdk.models.table_synchronisation.TableSynchronisation(
-                    dry_run=True,
-                    fire_and_forget=True,
-                    removed=["0"],
-                ),
-                error=null,
-            )
+                data = simcore_service_storage_sdk.models.table_synchronisation.TableSynchronisation(
+                    dry_run = True, 
+                    fire_and_forget = True, 
+                    removed = [
+                        ''
+                        ], ),
+                error = None,
+        )
 
     def testTableSynchronisationEnveloped(self):
         """Test TableSynchronisationEnveloped"""
         inst_req_only = self.make_instance(include_optional=False)
         inst_req_and_optional = self.make_instance(include_optional=True)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

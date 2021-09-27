@@ -24,9 +24,7 @@ class TestDefaultApi(unittest.TestCase):
     """DefaultApi unit test stubs"""
 
     def setUp(self):
-        self.api = (
-            simcore_service_storage_sdk.api.default_api.DefaultApi()
-        )  # noqa: E501
+        self.api = simcore_service_storage_sdk.api.default_api.DefaultApi()  # noqa: E501
 
     def tearDown(self):
         pass
@@ -151,5 +149,5 @@ class TestDefaultApi(unittest.TestCase):
         pass
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

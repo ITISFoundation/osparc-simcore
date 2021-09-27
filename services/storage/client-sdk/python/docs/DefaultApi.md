@@ -36,6 +36,12 @@ import time
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
+# Defining the host is optional and defaults to http://localhost/v0
+# See configuration.py for a list of all supported configuration parameters.
+configuration = simcore_service_storage_sdk.Configuration(
+    host = "http://localhost/v0"
+)
+
 
 # Enter a context with an instance of the API client
 with simcore_service_storage_sdk.ApiClient() as api_client:
@@ -58,8 +64,8 @@ fake = simcore_service_storage_sdk.Fake() # Fake |  (optional)
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **action** | **str**|  | [default to &#39;echo&#39;]
- **data** | **str**|  | [optional]
- **fake** | [**Fake**](Fake.md)|  | [optional]
+ **data** | **str**|  | [optional] 
+ **fake** | [**Fake**](Fake.md)|  | [optional] 
 
 ### Return type
 
@@ -95,13 +101,19 @@ import time
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
+# Defining the host is optional and defaults to http://localhost/v0
+# See configuration.py for a list of all supported configuration parameters.
+configuration = simcore_service_storage_sdk.Configuration(
+    host = "http://localhost/v0"
+)
+
 
 # Enter a context with an instance of the API client
 with simcore_service_storage_sdk.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = simcore_service_storage_sdk.DefaultApi(api_client)
-    file_id = 'file_id_example' # str |
-user_id = 56 # int |
+    file_id = 'file_id_example' # str | 
+user_id = 56 # int | 
 inline_object1 = simcore_service_storage_sdk.InlineObject1() # InlineObject1 |  (optional)
 
     try:
@@ -116,9 +128,9 @@ inline_object1 = simcore_service_storage_sdk.InlineObject1() # InlineObject1 |  
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **file_id** | **str**|  |
- **user_id** | **int**|  |
- **inline_object1** | [**InlineObject1**](InlineObject1.md)|  | [optional]
+ **file_id** | **str**|  | 
+ **user_id** | **int**|  | 
+ **inline_object1** | [**InlineObject1**](InlineObject1.md)|  | [optional] 
 
 ### Return type
 
@@ -154,12 +166,18 @@ import time
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
+# Defining the host is optional and defaults to http://localhost/v0
+# See configuration.py for a list of all supported configuration parameters.
+configuration = simcore_service_storage_sdk.Configuration(
+    host = "http://localhost/v0"
+)
+
 
 # Enter a context with an instance of the API client
 with simcore_service_storage_sdk.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = simcore_service_storage_sdk.DefaultApi(api_client)
-    user_id = 56 # int |
+    user_id = 56 # int | 
 inline_object = simcore_service_storage_sdk.InlineObject() # InlineObject |  (optional)
 
     try:
@@ -174,8 +192,8 @@ inline_object = simcore_service_storage_sdk.InlineObject() # InlineObject |  (op
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **user_id** | **int**|  |
- **inline_object** | [**InlineObject**](InlineObject.md)|  | [optional]
+ **user_id** | **int**|  | 
+ **inline_object** | [**InlineObject**](InlineObject.md)|  | [optional] 
 
 ### Return type
 
@@ -211,14 +229,20 @@ import time
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
+# Defining the host is optional and defaults to http://localhost/v0
+# See configuration.py for a list of all supported configuration parameters.
+configuration = simcore_service_storage_sdk.Configuration(
+    host = "http://localhost/v0"
+)
+
 
 # Enter a context with an instance of the API client
 with simcore_service_storage_sdk.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = simcore_service_storage_sdk.DefaultApi(api_client)
-    file_id = 'file_id_example' # str |
-location_id = 'location_id_example' # str |
-user_id = 'user_id_example' # str |
+    file_id = 'file_id_example' # str | 
+location_id = 'location_id_example' # str | 
+user_id = 'user_id_example' # str | 
 
     try:
         # Deletes file
@@ -231,9 +255,9 @@ user_id = 'user_id_example' # str |
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **file_id** | **str**|  |
- **location_id** | **str**|  |
- **user_id** | **str**|  |
+ **file_id** | **str**|  | 
+ **location_id** | **str**|  | 
+ **user_id** | **str**|  | 
 
 ### Return type
 
@@ -269,13 +293,19 @@ import time
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
+# Defining the host is optional and defaults to http://localhost/v0
+# See configuration.py for a list of all supported configuration parameters.
+configuration = simcore_service_storage_sdk.Configuration(
+    host = "http://localhost/v0"
+)
+
 
 # Enter a context with an instance of the API client
 with simcore_service_storage_sdk.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = simcore_service_storage_sdk.DefaultApi(api_client)
-    folder_id = 'folder_id_example' # str |
-user_id = 'user_id_example' # str |
+    folder_id = 'folder_id_example' # str | 
+user_id = 'user_id_example' # str | 
 node_id = 'node_id_example' # str |  (optional)
 
     try:
@@ -289,9 +319,9 @@ node_id = 'node_id_example' # str |  (optional)
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **folder_id** | **str**|  |
- **user_id** | **str**|  |
- **node_id** | **str**|  | [optional]
+ **folder_id** | **str**|  | 
+ **user_id** | **str**|  | 
+ **node_id** | **str**|  | [optional] 
 
 ### Return type
 
@@ -326,14 +356,20 @@ import time
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
+# Defining the host is optional and defaults to http://localhost/v0
+# See configuration.py for a list of all supported configuration parameters.
+configuration = simcore_service_storage_sdk.Configuration(
+    host = "http://localhost/v0"
+)
+
 
 # Enter a context with an instance of the API client
 with simcore_service_storage_sdk.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = simcore_service_storage_sdk.DefaultApi(api_client)
-    file_id = 'file_id_example' # str |
-location_id = 'location_id_example' # str |
-user_id = 'user_id_example' # str |
+    file_id = 'file_id_example' # str | 
+location_id = 'location_id_example' # str | 
+user_id = 'user_id_example' # str | 
 
     try:
         # Gets download link for file at location
@@ -347,9 +383,9 @@ user_id = 'user_id_example' # str |
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **file_id** | **str**|  |
- **location_id** | **str**|  |
- **user_id** | **str**|  |
+ **file_id** | **str**|  | 
+ **location_id** | **str**|  | 
+ **user_id** | **str**|  | 
 
 ### Return type
 
@@ -385,13 +421,19 @@ import time
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
+# Defining the host is optional and defaults to http://localhost/v0
+# See configuration.py for a list of all supported configuration parameters.
+configuration = simcore_service_storage_sdk.Configuration(
+    host = "http://localhost/v0"
+)
+
 
 # Enter a context with an instance of the API client
 with simcore_service_storage_sdk.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = simcore_service_storage_sdk.DefaultApi(api_client)
-    location_id = 'location_id_example' # str |
-user_id = 'user_id_example' # str |
+    location_id = 'location_id_example' # str | 
+user_id = 'user_id_example' # str | 
 
     try:
         # Lists all dataset's metadata
@@ -405,8 +447,8 @@ user_id = 'user_id_example' # str |
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **location_id** | **str**|  |
- **user_id** | **str**|  |
+ **location_id** | **str**|  | 
+ **user_id** | **str**|  | 
 
 ### Return type
 
@@ -442,14 +484,20 @@ import time
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
+# Defining the host is optional and defaults to http://localhost/v0
+# See configuration.py for a list of all supported configuration parameters.
+configuration = simcore_service_storage_sdk.Configuration(
+    host = "http://localhost/v0"
+)
+
 
 # Enter a context with an instance of the API client
 with simcore_service_storage_sdk.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = simcore_service_storage_sdk.DefaultApi(api_client)
-    file_id = 'file_id_example' # str |
-location_id = 'location_id_example' # str |
-user_id = 'user_id_example' # str |
+    file_id = 'file_id_example' # str | 
+location_id = 'location_id_example' # str | 
+user_id = 'user_id_example' # str | 
 
     try:
         # Get file metadata
@@ -463,9 +511,9 @@ user_id = 'user_id_example' # str |
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **file_id** | **str**|  |
- **location_id** | **str**|  |
- **user_id** | **str**|  |
+ **file_id** | **str**|  | 
+ **location_id** | **str**|  | 
+ **user_id** | **str**|  | 
 
 ### Return type
 
@@ -501,13 +549,19 @@ import time
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
+# Defining the host is optional and defaults to http://localhost/v0
+# See configuration.py for a list of all supported configuration parameters.
+configuration = simcore_service_storage_sdk.Configuration(
+    host = "http://localhost/v0"
+)
+
 
 # Enter a context with an instance of the API client
 with simcore_service_storage_sdk.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = simcore_service_storage_sdk.DefaultApi(api_client)
-    location_id = 'location_id_example' # str |
-user_id = 'user_id_example' # str |
+    location_id = 'location_id_example' # str | 
+user_id = 'user_id_example' # str | 
 uuid_filter = 'uuid_filter_example' # str |  (optional)
 
     try:
@@ -522,9 +576,9 @@ uuid_filter = 'uuid_filter_example' # str |  (optional)
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **location_id** | **str**|  |
- **user_id** | **str**|  |
- **uuid_filter** | **str**|  | [optional]
+ **location_id** | **str**|  | 
+ **user_id** | **str**|  | 
+ **uuid_filter** | **str**|  | [optional] 
 
 ### Return type
 
@@ -560,14 +614,20 @@ import time
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
+# Defining the host is optional and defaults to http://localhost/v0
+# See configuration.py for a list of all supported configuration parameters.
+configuration = simcore_service_storage_sdk.Configuration(
+    host = "http://localhost/v0"
+)
+
 
 # Enter a context with an instance of the API client
 with simcore_service_storage_sdk.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = simcore_service_storage_sdk.DefaultApi(api_client)
-    location_id = 'location_id_example' # str |
-dataset_id = 'dataset_id_example' # str |
-user_id = 'user_id_example' # str |
+    location_id = 'location_id_example' # str | 
+dataset_id = 'dataset_id_example' # str | 
+user_id = 'user_id_example' # str | 
 
     try:
         # Get dataset metadata
@@ -581,9 +641,9 @@ user_id = 'user_id_example' # str |
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **location_id** | **str**|  |
- **dataset_id** | **str**|  |
- **user_id** | **str**|  |
+ **location_id** | **str**|  | 
+ **dataset_id** | **str**|  | 
+ **user_id** | **str**|  | 
 
 ### Return type
 
@@ -619,12 +679,18 @@ import time
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
+# Defining the host is optional and defaults to http://localhost/v0
+# See configuration.py for a list of all supported configuration parameters.
+configuration = simcore_service_storage_sdk.Configuration(
+    host = "http://localhost/v0"
+)
+
 
 # Enter a context with an instance of the API client
 with simcore_service_storage_sdk.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = simcore_service_storage_sdk.DefaultApi(api_client)
-
+    
     try:
         # checks status of self and connected services
         api_instance.get_status()
@@ -668,12 +734,18 @@ import time
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
+# Defining the host is optional and defaults to http://localhost/v0
+# See configuration.py for a list of all supported configuration parameters.
+configuration = simcore_service_storage_sdk.Configuration(
+    host = "http://localhost/v0"
+)
+
 
 # Enter a context with an instance of the API client
 with simcore_service_storage_sdk.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = simcore_service_storage_sdk.DefaultApi(api_client)
-    user_id = 'user_id_example' # str |
+    user_id = 'user_id_example' # str | 
 
     try:
         # Lists available storage locations
@@ -687,7 +759,7 @@ with simcore_service_storage_sdk.ApiClient() as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **user_id** | **str**|  |
+ **user_id** | **str**|  | 
 
 ### Return type
 
@@ -725,12 +797,18 @@ import time
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
+# Defining the host is optional and defaults to http://localhost/v0
+# See configuration.py for a list of all supported configuration parameters.
+configuration = simcore_service_storage_sdk.Configuration(
+    host = "http://localhost/v0"
+)
+
 
 # Enter a context with an instance of the API client
 with simcore_service_storage_sdk.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = simcore_service_storage_sdk.DefaultApi(api_client)
-
+    
     try:
         # Service health-check endpoint
         api_response = api_instance.health_check()
@@ -776,12 +854,18 @@ import time
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
+# Defining the host is optional and defaults to http://localhost/v0
+# See configuration.py for a list of all supported configuration parameters.
+configuration = simcore_service_storage_sdk.Configuration(
+    host = "http://localhost/v0"
+)
+
 
 # Enter a context with an instance of the API client
 with simcore_service_storage_sdk.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = simcore_service_storage_sdk.DefaultApi(api_client)
-    user_id = 56 # int |
+    user_id = 56 # int | 
 startswith = '' # str | matches starting string of the file_uuid (optional) (default to '')
 
     try:
@@ -796,7 +880,7 @@ startswith = '' # str | matches starting string of the file_uuid (optional) (def
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **user_id** | **int**|  |
+ **user_id** | **int**|  | 
  **startswith** | **str**| matches starting string of the file_uuid | [optional] [default to &#39;&#39;]
 
 ### Return type
@@ -833,12 +917,18 @@ import time
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
+# Defining the host is optional and defaults to http://localhost/v0
+# See configuration.py for a list of all supported configuration parameters.
+configuration = simcore_service_storage_sdk.Configuration(
+    host = "http://localhost/v0"
+)
+
 
 # Enter a context with an instance of the API client
 with simcore_service_storage_sdk.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = simcore_service_storage_sdk.DefaultApi(api_client)
-    location_id = 'location_id_example' # str |
+    location_id = 'location_id_example' # str | 
 dry_run = True # bool |  (optional) (default to True)
 fire_and_forget = False # bool |  (optional) (default to False)
 
@@ -854,7 +944,7 @@ fire_and_forget = False # bool |  (optional) (default to False)
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **location_id** | **str**|  |
+ **location_id** | **str**|  | 
  **dry_run** | **bool**|  | [optional] [default to True]
  **fire_and_forget** | **bool**|  | [optional] [default to False]
 
@@ -892,13 +982,19 @@ import time
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
+# Defining the host is optional and defaults to http://localhost/v0
+# See configuration.py for a list of all supported configuration parameters.
+configuration = simcore_service_storage_sdk.Configuration(
+    host = "http://localhost/v0"
+)
+
 
 # Enter a context with an instance of the API client
 with simcore_service_storage_sdk.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = simcore_service_storage_sdk.DefaultApi(api_client)
-    file_id = 'file_id_example' # str |
-location_id = 'location_id_example' # str |
+    file_id = 'file_id_example' # str | 
+location_id = 'location_id_example' # str | 
 file_meta_data = simcore_service_storage_sdk.FileMetaData() # FileMetaData |  (optional)
 
     try:
@@ -913,9 +1009,9 @@ file_meta_data = simcore_service_storage_sdk.FileMetaData() # FileMetaData |  (o
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **file_id** | **str**|  |
- **location_id** | **str**|  |
- **file_meta_data** | [**FileMetaData**](FileMetaData.md)|  | [optional]
+ **file_id** | **str**|  | 
+ **location_id** | **str**|  | 
+ **file_meta_data** | [**FileMetaData**](FileMetaData.md)|  | [optional] 
 
 ### Return type
 
@@ -951,14 +1047,20 @@ import time
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
+# Defining the host is optional and defaults to http://localhost/v0
+# See configuration.py for a list of all supported configuration parameters.
+configuration = simcore_service_storage_sdk.Configuration(
+    host = "http://localhost/v0"
+)
+
 
 # Enter a context with an instance of the API client
 with simcore_service_storage_sdk.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = simcore_service_storage_sdk.DefaultApi(api_client)
-    file_id = 'file_id_example' # str |
-location_id = 'location_id_example' # str |
-user_id = 'user_id_example' # str |
+    file_id = 'file_id_example' # str | 
+location_id = 'location_id_example' # str | 
+user_id = 'user_id_example' # str | 
 extra_location = 'extra_location_example' # str |  (optional)
 extra_source = 'extra_source_example' # str |  (optional)
 
@@ -974,11 +1076,11 @@ extra_source = 'extra_source_example' # str |  (optional)
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **file_id** | **str**|  |
- **location_id** | **str**|  |
- **user_id** | **str**|  |
- **extra_location** | **str**|  | [optional]
- **extra_source** | **str**|  | [optional]
+ **file_id** | **str**|  | 
+ **location_id** | **str**|  | 
+ **user_id** | **str**|  | 
+ **extra_location** | **str**|  | [optional] 
+ **extra_source** | **str**|  | [optional] 
 
 ### Return type
 
@@ -1000,3 +1102,4 @@ No authorization required
 **0** | Unexpected error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+

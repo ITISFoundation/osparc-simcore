@@ -11,10 +11,14 @@
 """
 
 
+try:
+    from inspect import getfullargspec
+except ImportError:
+    from inspect import getargspec as getfullargspec
 import pprint
 import re  # noqa: F401
-
 import six
+
 from simcore_service_storage_sdk.configuration import Configuration
 
 
@@ -32,16 +36,20 @@ class DatasetMetaData(object):
       attribute_map (dict): The key is attribute name
                             and the value is json key in definition.
     """
-    openapi_types = {"dataset_id": "str", "display_name": "str"}
+    openapi_types = {
+        'dataset_id': 'str',
+        'display_name': 'str'
+    }
 
-    attribute_map = {"dataset_id": "dataset_id", "display_name": "display_name"}
+    attribute_map = {
+        'dataset_id': 'dataset_id',
+        'display_name': 'display_name'
+    }
 
-    def __init__(
-        self, dataset_id=None, display_name=None, local_vars_configuration=None
-    ):  # noqa: E501
+    def __init__(self, dataset_id=None, display_name=None, local_vars_configuration=None):  # noqa: E501
         """DatasetMetaData - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
-            local_vars_configuration = Configuration()
+            local_vars_configuration = Configuration.get_default_copy()
         self.local_vars_configuration = local_vars_configuration
 
         self._dataset_id = None
@@ -69,7 +77,7 @@ class DatasetMetaData(object):
 
 
         :param dataset_id: The dataset_id of this DatasetMetaData.  # noqa: E501
-        :type: str
+        :type dataset_id: str
         """
 
         self._dataset_id = dataset_id
@@ -90,34 +98,40 @@ class DatasetMetaData(object):
 
 
         :param display_name: The display_name of this DatasetMetaData.  # noqa: E501
-        :type: str
+        :type display_name: str
         """
 
         self._display_name = display_name
 
-    def to_dict(self):
+    def to_dict(self, serialize=False):
         """Returns the model properties as a dict"""
         result = {}
 
+        def convert(x):
+            if hasattr(x, "to_dict"):
+                args = getfullargspec(x.to_dict).args
+                if len(args) == 1:
+                    return x.to_dict()
+                else:
+                    return x.to_dict(serialize)
+            else:
+                return x
+
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
+            attr = self.attribute_map.get(attr, attr) if serialize else attr
             if isinstance(value, list):
-                result[attr] = list(
-                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
-                )
-            elif hasattr(value, "to_dict"):
-                result[attr] = value.to_dict()
+                result[attr] = list(map(
+                    lambda x: convert(x),
+                    value
+                ))
             elif isinstance(value, dict):
-                result[attr] = dict(
-                    map(
-                        lambda item: (item[0], item[1].to_dict())
-                        if hasattr(item[1], "to_dict")
-                        else item,
-                        value.items(),
-                    )
-                )
+                result[attr] = dict(map(
+                    lambda item: (item[0], convert(item[1])),
+                    value.items()
+                ))
             else:
-                result[attr] = value
+                result[attr] = convert(value)
 
         return result
 

@@ -13,13 +13,12 @@
 
 from __future__ import absolute_import
 
-import datetime
 import unittest
+import datetime
 
 import simcore_service_storage_sdk
 from simcore_service_storage_sdk.models.project import Project  # noqa: E501
 from simcore_service_storage_sdk.rest import ApiException
-
 
 class TestProject(unittest.TestCase):
     """Project unit test stubs"""
@@ -38,22 +37,22 @@ class TestProject(unittest.TestCase):
         # model = simcore_service_storage_sdk.models.project.Project()  # noqa: E501
         if include_optional :
             return Project(
-                uuid = '07640335-a91f-468c-ab69-a374fa82078d',
-                name = 'Temporal Distortion Simulator',
-                description = 'Dabbling in temporal transitions ...',
-                prj_owner = '0',
-                access_rights = { },
-                creation_date = '2018-07-01T11:13:43Z',
-                last_change_date = '2018-07-01T11:13:43Z',
-                thumbnail = 'https://placeimg.com/171/96/tech/grayscale/?0.jpg',
-                workbench = { },
-                ui = { },
+                uuid = '07640335-a91f-468c-ab69-a374fa82078d', 
+                name = 'Temporal Distortion Simulator', 
+                description = 'Dabbling in temporal transitions ...', 
+                prj_owner = '', 
+                access_rights = { }, 
+                creation_date = '2018-07-01T11:13:43Z', 
+                last_change_date = '2018-07-01T11:13:43Z', 
+                thumbnail = 'https://placeimg.com/171/96/tech/grayscale/?0.jpg', 
+                workbench = { }, 
+                ui = { }, 
                 tags = [
                     56
-                    ],
-                classifiers = some:id:to:a:classifier,
-                dev = None,
-                state = null,
+                    ], 
+                classifiers = some:id:to:a:classifier, 
+                dev = None, 
+                state = None, 
                 quality = simcore_service_storage_sdk.models.quality.Quality()
             )
         else :
@@ -61,7 +60,7 @@ class TestProject(unittest.TestCase):
                 uuid = '07640335-a91f-468c-ab69-a374fa82078d',
                 name = 'Temporal Distortion Simulator',
                 description = 'Dabbling in temporal transitions ...',
-                prj_owner = '0',
+                prj_owner = '',
                 access_rights = { },
                 creation_date = '2018-07-01T11:13:43Z',
                 last_change_date = '2018-07-01T11:13:43Z',
@@ -73,7 +72,6 @@ class TestProject(unittest.TestCase):
         """Test Project"""
         inst_req_only = self.make_instance(include_optional=False)
         inst_req_and_optional = self.make_instance(include_optional=True)
-
 
 if __name__ == '__main__':
     unittest.main()

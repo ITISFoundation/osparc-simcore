@@ -17,8 +17,12 @@ import re  # noqa: F401
 
 # python 2 and python 3 compatibility library
 import six
+
 from simcore_service_storage_sdk.api_client import ApiClient
-from simcore_service_storage_sdk.exceptions import ApiTypeError, ApiValueError
+from simcore_service_storage_sdk.exceptions import (  # noqa: F401
+    ApiTypeError,
+    ApiValueError
+)
 
 
 class DefaultApi(object):
@@ -38,25 +42,32 @@ class DefaultApi(object):
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.check_action_post(action, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str action: (required)
-        :param str data:
-        :param Fake fake:
+        :param action: (required)
+        :type action: str
+        :param data:
+        :type data: str
+        :param fake:
+        :type fake: Fake
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: FakeEnveloped
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: FakeEnveloped
         """
-        kwargs["_return_http_data_only"] = True
+        kwargs['_return_http_data_only'] = True
         return self.check_action_post_with_http_info(action, **kwargs)  # noqa: E501
 
     def check_action_post_with_http_info(self, action, **kwargs):  # noqa: E501
@@ -64,63 +75,78 @@ class DefaultApi(object):
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.check_action_post_with_http_info(action, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str action: (required)
-        :param str data:
-        :param Fake fake:
+        :param action: (required)
+        :type action: str
+        :param data:
+        :type data: str
+        :param fake:
+        :type fake: Fake
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
                                        and headers
+        :type _return_http_data_only: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: tuple(FakeEnveloped, status_code(int), headers(HTTPHeaderDict))
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: tuple(FakeEnveloped, status_code(int), headers(HTTPHeaderDict))
         """
 
         local_var_params = locals()
 
-        all_params = ["action", "data", "fake"]  # noqa: E501
-        all_params.append("async_req")
-        all_params.append("_return_http_data_only")
-        all_params.append("_preload_content")
-        all_params.append("_request_timeout")
+        all_params = [
+            'action',
+            'data',
+            'fake'
+        ]
+        all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth'
+            ]
+        )
 
-        for key, val in six.iteritems(local_var_params["kwargs"]):
+        for key, val in six.iteritems(local_var_params['kwargs']):
             if key not in all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
                     " to method check_action_post" % key
                 )
             local_var_params[key] = val
-        del local_var_params["kwargs"]
+        del local_var_params['kwargs']
         # verify the required parameter 'action' is set
-        if self.api_client.client_side_validation and (
-            "action" not in local_var_params
-            or local_var_params["action"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `action` when calling `check_action_post`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('action' not in local_var_params or  # noqa: E501
+                                                        local_var_params['action'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `action` when calling `check_action_post`")  # noqa: E501
 
         collection_formats = {}
 
         path_params = {}
-        if "action" in local_var_params:
-            path_params["action"] = local_var_params["action"]  # noqa: E501
+        if 'action' in local_var_params:
+            path_params['action'] = local_var_params['action']  # noqa: E501
 
         query_params = []
-        if (
-            "data" in local_var_params and local_var_params["data"] is not None
-        ):  # noqa: E501
-            query_params.append(("data", local_var_params["data"]))  # noqa: E501
+        if 'data' in local_var_params and local_var_params['data'] is not None:  # noqa: E501
+            query_params.append(('data', local_var_params['data']))  # noqa: E501
 
         header_params = {}
 
@@ -128,143 +154,154 @@ class DefaultApi(object):
         local_var_files = {}
 
         body_params = None
-        if "fake" in local_var_params:
-            body_params = local_var_params["fake"]
+        if 'fake' in local_var_params:
+            body_params = local_var_params['fake']
         # HTTP header `Accept`
-        header_params["Accept"] = self.api_client.select_header_accept(
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
 
         # HTTP header `Content-Type`
-        header_params[
-            "Content-Type"
-        ] = self.api_client.select_header_content_type(  # noqa: E501
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Content-Type'] = self.api_client.select_header_content_type(  # noqa: E501
+            ['application/json'])  # noqa: E501
 
         # Authentication setting
         auth_settings = []  # noqa: E501
+        
+        response_types_map = {
+            200: "FakeEnveloped",
+        }
 
         return self.api_client.call_api(
-            "/check/{action}",
-            "POST",
+            '/check/{action}', 'POST',
             path_params,
             query_params,
             header_params,
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type="FakeEnveloped",  # noqa: E501
+            response_types_map=response_types_map,
             auth_settings=auth_settings,
-            async_req=local_var_params.get("async_req"),
-            _return_http_data_only=local_var_params.get(
-                "_return_http_data_only"
-            ),  # noqa: E501
-            _preload_content=local_var_params.get("_preload_content", True),
-            _request_timeout=local_var_params.get("_request_timeout"),
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats,
-        )
+            _request_auth=local_var_params.get('_request_auth'))
 
     def copy_as_soft_link(self, file_id, user_id, **kwargs):  # noqa: E501
         """Copy as soft link  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.copy_as_soft_link(file_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str file_id: (required)
-        :param int user_id: (required)
-        :param InlineObject1 inline_object1:
+        :param file_id: (required)
+        :type file_id: str
+        :param user_id: (required)
+        :type user_id: int
+        :param inline_object1:
+        :type inline_object1: InlineObject1
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: FileMetaDataEnveloped
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: FileMetaDataEnveloped
         """
-        kwargs["_return_http_data_only"] = True
-        return self.copy_as_soft_link_with_http_info(
-            file_id, user_id, **kwargs
-        )  # noqa: E501
+        kwargs['_return_http_data_only'] = True
+        return self.copy_as_soft_link_with_http_info(file_id, user_id, **kwargs)  # noqa: E501
 
-    def copy_as_soft_link_with_http_info(
-        self, file_id, user_id, **kwargs
-    ):  # noqa: E501
+    def copy_as_soft_link_with_http_info(self, file_id, user_id, **kwargs):  # noqa: E501
         """Copy as soft link  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.copy_as_soft_link_with_http_info(file_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str file_id: (required)
-        :param int user_id: (required)
-        :param InlineObject1 inline_object1:
+        :param file_id: (required)
+        :type file_id: str
+        :param user_id: (required)
+        :type user_id: int
+        :param inline_object1:
+        :type inline_object1: InlineObject1
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
                                        and headers
+        :type _return_http_data_only: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: tuple(FileMetaDataEnveloped, status_code(int), headers(HTTPHeaderDict))
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: tuple(FileMetaDataEnveloped, status_code(int), headers(HTTPHeaderDict))
         """
 
         local_var_params = locals()
 
-        all_params = ["file_id", "user_id", "inline_object1"]  # noqa: E501
-        all_params.append("async_req")
-        all_params.append("_return_http_data_only")
-        all_params.append("_preload_content")
-        all_params.append("_request_timeout")
+        all_params = [
+            'file_id',
+            'user_id',
+            'inline_object1'
+        ]
+        all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth'
+            ]
+        )
 
-        for key, val in six.iteritems(local_var_params["kwargs"]):
+        for key, val in six.iteritems(local_var_params['kwargs']):
             if key not in all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
                     " to method copy_as_soft_link" % key
                 )
             local_var_params[key] = val
-        del local_var_params["kwargs"]
+        del local_var_params['kwargs']
         # verify the required parameter 'file_id' is set
-        if self.api_client.client_side_validation and (
-            "file_id" not in local_var_params
-            or local_var_params["file_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `file_id` when calling `copy_as_soft_link`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('file_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['file_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `file_id` when calling `copy_as_soft_link`")  # noqa: E501
         # verify the required parameter 'user_id' is set
-        if self.api_client.client_side_validation and (
-            "user_id" not in local_var_params
-            or local_var_params["user_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `user_id` when calling `copy_as_soft_link`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('user_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['user_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `user_id` when calling `copy_as_soft_link`")  # noqa: E501
 
         collection_formats = {}
 
         path_params = {}
-        if "file_id" in local_var_params:
-            path_params["file_id"] = local_var_params["file_id"]  # noqa: E501
+        if 'file_id' in local_var_params:
+            path_params['file_id'] = local_var_params['file_id']  # noqa: E501
 
         query_params = []
-        if (
-            "user_id" in local_var_params and local_var_params["user_id"] is not None
-        ):  # noqa: E501
-            query_params.append(("user_id", local_var_params["user_id"]))  # noqa: E501
+        if 'user_id' in local_var_params and local_var_params['user_id'] is not None:  # noqa: E501
+            query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
 
         header_params = {}
 
@@ -272,129 +309,143 @@ class DefaultApi(object):
         local_var_files = {}
 
         body_params = None
-        if "inline_object1" in local_var_params:
-            body_params = local_var_params["inline_object1"]
+        if 'inline_object1' in local_var_params:
+            body_params = local_var_params['inline_object1']
         # HTTP header `Accept`
-        header_params["Accept"] = self.api_client.select_header_accept(
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
 
         # HTTP header `Content-Type`
-        header_params[
-            "Content-Type"
-        ] = self.api_client.select_header_content_type(  # noqa: E501
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Content-Type'] = self.api_client.select_header_content_type(  # noqa: E501
+            ['application/json'])  # noqa: E501
 
         # Authentication setting
         auth_settings = []  # noqa: E501
+        
+        response_types_map = {
+            200: "FileMetaDataEnveloped",
+        }
 
         return self.api_client.call_api(
-            "/files/{file_id}:soft-copy",
-            "POST",
+            '/files/{file_id}:soft-copy', 'POST',
             path_params,
             query_params,
             header_params,
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type="FileMetaDataEnveloped",  # noqa: E501
+            response_types_map=response_types_map,
             auth_settings=auth_settings,
-            async_req=local_var_params.get("async_req"),
-            _return_http_data_only=local_var_params.get(
-                "_return_http_data_only"
-            ),  # noqa: E501
-            _preload_content=local_var_params.get("_preload_content", True),
-            _request_timeout=local_var_params.get("_request_timeout"),
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats,
-        )
+            _request_auth=local_var_params.get('_request_auth'))
 
     def copy_folders_from_project(self, user_id, **kwargs):  # noqa: E501
         """Deep copies of all data from source to destination project in s3  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.copy_folders_from_project(user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param int user_id: (required)
-        :param InlineObject inline_object:
+        :param user_id: (required)
+        :type user_id: int
+        :param inline_object:
+        :type inline_object: InlineObject
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: Project
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: Project
         """
-        kwargs["_return_http_data_only"] = True
-        return self.copy_folders_from_project_with_http_info(
-            user_id, **kwargs
-        )  # noqa: E501
+        kwargs['_return_http_data_only'] = True
+        return self.copy_folders_from_project_with_http_info(user_id, **kwargs)  # noqa: E501
 
     def copy_folders_from_project_with_http_info(self, user_id, **kwargs):  # noqa: E501
         """Deep copies of all data from source to destination project in s3  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.copy_folders_from_project_with_http_info(user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param int user_id: (required)
-        :param InlineObject inline_object:
+        :param user_id: (required)
+        :type user_id: int
+        :param inline_object:
+        :type inline_object: InlineObject
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
                                        and headers
+        :type _return_http_data_only: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: tuple(Project, status_code(int), headers(HTTPHeaderDict))
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: tuple(Project, status_code(int), headers(HTTPHeaderDict))
         """
 
         local_var_params = locals()
 
-        all_params = ["user_id", "inline_object"]  # noqa: E501
-        all_params.append("async_req")
-        all_params.append("_return_http_data_only")
-        all_params.append("_preload_content")
-        all_params.append("_request_timeout")
+        all_params = [
+            'user_id',
+            'inline_object'
+        ]
+        all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth'
+            ]
+        )
 
-        for key, val in six.iteritems(local_var_params["kwargs"]):
+        for key, val in six.iteritems(local_var_params['kwargs']):
             if key not in all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
                     " to method copy_folders_from_project" % key
                 )
             local_var_params[key] = val
-        del local_var_params["kwargs"]
+        del local_var_params['kwargs']
         # verify the required parameter 'user_id' is set
-        if self.api_client.client_side_validation and (
-            "user_id" not in local_var_params
-            or local_var_params["user_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `user_id` when calling `copy_folders_from_project`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('user_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['user_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `user_id` when calling `copy_folders_from_project`")  # noqa: E501
 
         collection_formats = {}
 
         path_params = {}
 
         query_params = []
-        if (
-            "user_id" in local_var_params and local_var_params["user_id"] is not None
-        ):  # noqa: E501
-            query_params.append(("user_id", local_var_params["user_id"]))  # noqa: E501
+        if 'user_id' in local_var_params and local_var_params['user_id'] is not None:  # noqa: E501
+            query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
 
         header_params = {}
 
@@ -402,153 +453,160 @@ class DefaultApi(object):
         local_var_files = {}
 
         body_params = None
-        if "inline_object" in local_var_params:
-            body_params = local_var_params["inline_object"]
+        if 'inline_object' in local_var_params:
+            body_params = local_var_params['inline_object']
         # HTTP header `Accept`
-        header_params["Accept"] = self.api_client.select_header_accept(
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
 
         # HTTP header `Content-Type`
-        header_params[
-            "Content-Type"
-        ] = self.api_client.select_header_content_type(  # noqa: E501
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Content-Type'] = self.api_client.select_header_content_type(  # noqa: E501
+            ['application/json'])  # noqa: E501
 
         # Authentication setting
         auth_settings = []  # noqa: E501
+        
+        response_types_map = {
+            201: "Project",
+        }
 
         return self.api_client.call_api(
-            "/simcore-s3/folders",
-            "POST",
+            '/simcore-s3/folders', 'POST',
             path_params,
             query_params,
             header_params,
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type="Project",  # noqa: E501
+            response_types_map=response_types_map,
             auth_settings=auth_settings,
-            async_req=local_var_params.get("async_req"),
-            _return_http_data_only=local_var_params.get(
-                "_return_http_data_only"
-            ),  # noqa: E501
-            _preload_content=local_var_params.get("_preload_content", True),
-            _request_timeout=local_var_params.get("_request_timeout"),
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats,
-        )
+            _request_auth=local_var_params.get('_request_auth'))
 
     def delete_file(self, file_id, location_id, user_id, **kwargs):  # noqa: E501
         """Deletes file  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.delete_file(file_id, location_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str file_id: (required)
-        :param str location_id: (required)
-        :param str user_id: (required)
+        :param file_id: (required)
+        :type file_id: str
+        :param location_id: (required)
+        :type location_id: str
+        :param user_id: (required)
+        :type user_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: None
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: None
         """
-        kwargs["_return_http_data_only"] = True
-        return self.delete_file_with_http_info(
-            file_id, location_id, user_id, **kwargs
-        )  # noqa: E501
+        kwargs['_return_http_data_only'] = True
+        return self.delete_file_with_http_info(file_id, location_id, user_id, **kwargs)  # noqa: E501
 
-    def delete_file_with_http_info(
-        self, file_id, location_id, user_id, **kwargs
-    ):  # noqa: E501
+    def delete_file_with_http_info(self, file_id, location_id, user_id, **kwargs):  # noqa: E501
         """Deletes file  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.delete_file_with_http_info(file_id, location_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str file_id: (required)
-        :param str location_id: (required)
-        :param str user_id: (required)
+        :param file_id: (required)
+        :type file_id: str
+        :param location_id: (required)
+        :type location_id: str
+        :param user_id: (required)
+        :type user_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
                                        and headers
+        :type _return_http_data_only: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: None
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: None
         """
 
         local_var_params = locals()
 
-        all_params = ["file_id", "location_id", "user_id"]  # noqa: E501
-        all_params.append("async_req")
-        all_params.append("_return_http_data_only")
-        all_params.append("_preload_content")
-        all_params.append("_request_timeout")
+        all_params = [
+            'file_id',
+            'location_id',
+            'user_id'
+        ]
+        all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth'
+            ]
+        )
 
-        for key, val in six.iteritems(local_var_params["kwargs"]):
+        for key, val in six.iteritems(local_var_params['kwargs']):
             if key not in all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
                     " to method delete_file" % key
                 )
             local_var_params[key] = val
-        del local_var_params["kwargs"]
+        del local_var_params['kwargs']
         # verify the required parameter 'file_id' is set
-        if self.api_client.client_side_validation and (
-            "file_id" not in local_var_params
-            or local_var_params["file_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `file_id` when calling `delete_file`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('file_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['file_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `file_id` when calling `delete_file`")  # noqa: E501
         # verify the required parameter 'location_id' is set
-        if self.api_client.client_side_validation and (
-            "location_id" not in local_var_params
-            or local_var_params["location_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `location_id` when calling `delete_file`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('location_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['location_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `location_id` when calling `delete_file`")  # noqa: E501
         # verify the required parameter 'user_id' is set
-        if self.api_client.client_side_validation and (
-            "user_id" not in local_var_params
-            or local_var_params["user_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `user_id` when calling `delete_file`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('user_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['user_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `user_id` when calling `delete_file`")  # noqa: E501
 
         collection_formats = {}
 
         path_params = {}
-        if "file_id" in local_var_params:
-            path_params["fileId"] = local_var_params["file_id"]  # noqa: E501
-        if "location_id" in local_var_params:
-            path_params["location_id"] = local_var_params["location_id"]  # noqa: E501
+        if 'file_id' in local_var_params:
+            path_params['fileId'] = local_var_params['file_id']  # noqa: E501
+        if 'location_id' in local_var_params:
+            path_params['location_id'] = local_var_params['location_id']  # noqa: E501
 
         query_params = []
-        if (
-            "user_id" in local_var_params and local_var_params["user_id"] is not None
-        ):  # noqa: E501
-            query_params.append(("user_id", local_var_params["user_id"]))  # noqa: E501
+        if 'user_id' in local_var_params and local_var_params['user_id'] is not None:  # noqa: E501
+            query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
 
         header_params = {}
 
@@ -557,137 +615,147 @@ class DefaultApi(object):
 
         body_params = None
         # HTTP header `Accept`
-        header_params["Accept"] = self.api_client.select_header_accept(
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
 
         # Authentication setting
         auth_settings = []  # noqa: E501
+        
+        response_types_map = {}
 
         return self.api_client.call_api(
-            "/locations/{location_id}/files/{fileId}",
-            "DELETE",
+            '/locations/{location_id}/files/{fileId}', 'DELETE',
             path_params,
             query_params,
             header_params,
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type=None,  # noqa: E501
+            response_types_map=response_types_map,
             auth_settings=auth_settings,
-            async_req=local_var_params.get("async_req"),
-            _return_http_data_only=local_var_params.get(
-                "_return_http_data_only"
-            ),  # noqa: E501
-            _preload_content=local_var_params.get("_preload_content", True),
-            _request_timeout=local_var_params.get("_request_timeout"),
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats,
-        )
+            _request_auth=local_var_params.get('_request_auth'))
 
     def delete_folders_of_project(self, folder_id, user_id, **kwargs):  # noqa: E501
         """Deletes all objects within a node_id or within a project_id if node_id is omitted  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.delete_folders_of_project(folder_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str folder_id: (required)
-        :param str user_id: (required)
-        :param str node_id:
+        :param folder_id: (required)
+        :type folder_id: str
+        :param user_id: (required)
+        :type user_id: str
+        :param node_id:
+        :type node_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: None
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: None
         """
-        kwargs["_return_http_data_only"] = True
-        return self.delete_folders_of_project_with_http_info(
-            folder_id, user_id, **kwargs
-        )  # noqa: E501
+        kwargs['_return_http_data_only'] = True
+        return self.delete_folders_of_project_with_http_info(folder_id, user_id, **kwargs)  # noqa: E501
 
-    def delete_folders_of_project_with_http_info(
-        self, folder_id, user_id, **kwargs
-    ):  # noqa: E501
+    def delete_folders_of_project_with_http_info(self, folder_id, user_id, **kwargs):  # noqa: E501
         """Deletes all objects within a node_id or within a project_id if node_id is omitted  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.delete_folders_of_project_with_http_info(folder_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str folder_id: (required)
-        :param str user_id: (required)
-        :param str node_id:
+        :param folder_id: (required)
+        :type folder_id: str
+        :param user_id: (required)
+        :type user_id: str
+        :param node_id:
+        :type node_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
                                        and headers
+        :type _return_http_data_only: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: None
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: None
         """
 
         local_var_params = locals()
 
-        all_params = ["folder_id", "user_id", "node_id"]  # noqa: E501
-        all_params.append("async_req")
-        all_params.append("_return_http_data_only")
-        all_params.append("_preload_content")
-        all_params.append("_request_timeout")
+        all_params = [
+            'folder_id',
+            'user_id',
+            'node_id'
+        ]
+        all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth'
+            ]
+        )
 
-        for key, val in six.iteritems(local_var_params["kwargs"]):
+        for key, val in six.iteritems(local_var_params['kwargs']):
             if key not in all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
                     " to method delete_folders_of_project" % key
                 )
             local_var_params[key] = val
-        del local_var_params["kwargs"]
+        del local_var_params['kwargs']
         # verify the required parameter 'folder_id' is set
-        if self.api_client.client_side_validation and (
-            "folder_id" not in local_var_params
-            or local_var_params["folder_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `folder_id` when calling `delete_folders_of_project`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('folder_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['folder_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `folder_id` when calling `delete_folders_of_project`")  # noqa: E501
         # verify the required parameter 'user_id' is set
-        if self.api_client.client_side_validation and (
-            "user_id" not in local_var_params
-            or local_var_params["user_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `user_id` when calling `delete_folders_of_project`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('user_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['user_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `user_id` when calling `delete_folders_of_project`")  # noqa: E501
 
         collection_formats = {}
 
         path_params = {}
-        if "folder_id" in local_var_params:
-            path_params["folder_id"] = local_var_params["folder_id"]  # noqa: E501
+        if 'folder_id' in local_var_params:
+            path_params['folder_id'] = local_var_params['folder_id']  # noqa: E501
 
         query_params = []
-        if (
-            "node_id" in local_var_params and local_var_params["node_id"] is not None
-        ):  # noqa: E501
-            query_params.append(("node_id", local_var_params["node_id"]))  # noqa: E501
-        if (
-            "user_id" in local_var_params and local_var_params["user_id"] is not None
-        ):  # noqa: E501
-            query_params.append(("user_id", local_var_params["user_id"]))  # noqa: E501
+        if 'node_id' in local_var_params and local_var_params['node_id'] is not None:  # noqa: E501
+            query_params.append(('node_id', local_var_params['node_id']))  # noqa: E501
+        if 'user_id' in local_var_params and local_var_params['user_id'] is not None:  # noqa: E501
+            query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
 
         header_params = {}
 
@@ -697,137 +765,146 @@ class DefaultApi(object):
         body_params = None
         # Authentication setting
         auth_settings = []  # noqa: E501
+        
+        response_types_map = {}
 
         return self.api_client.call_api(
-            "/simcore-s3/folders/{folder_id}",
-            "DELETE",
+            '/simcore-s3/folders/{folder_id}', 'DELETE',
             path_params,
             query_params,
             header_params,
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type=None,  # noqa: E501
+            response_types_map=response_types_map,
             auth_settings=auth_settings,
-            async_req=local_var_params.get("async_req"),
-            _return_http_data_only=local_var_params.get(
-                "_return_http_data_only"
-            ),  # noqa: E501
-            _preload_content=local_var_params.get("_preload_content", True),
-            _request_timeout=local_var_params.get("_request_timeout"),
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats,
-        )
+            _request_auth=local_var_params.get('_request_auth'))
 
     def download_file(self, file_id, location_id, user_id, **kwargs):  # noqa: E501
         """Gets download link for file at location  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.download_file(file_id, location_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str file_id: (required)
-        :param str location_id: (required)
-        :param str user_id: (required)
+        :param file_id: (required)
+        :type file_id: str
+        :param location_id: (required)
+        :type location_id: str
+        :param user_id: (required)
+        :type user_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: PresignedLinkEnveloped
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: PresignedLinkEnveloped
         """
-        kwargs["_return_http_data_only"] = True
-        return self.download_file_with_http_info(
-            file_id, location_id, user_id, **kwargs
-        )  # noqa: E501
+        kwargs['_return_http_data_only'] = True
+        return self.download_file_with_http_info(file_id, location_id, user_id, **kwargs)  # noqa: E501
 
-    def download_file_with_http_info(
-        self, file_id, location_id, user_id, **kwargs
-    ):  # noqa: E501
+    def download_file_with_http_info(self, file_id, location_id, user_id, **kwargs):  # noqa: E501
         """Gets download link for file at location  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.download_file_with_http_info(file_id, location_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str file_id: (required)
-        :param str location_id: (required)
-        :param str user_id: (required)
+        :param file_id: (required)
+        :type file_id: str
+        :param location_id: (required)
+        :type location_id: str
+        :param user_id: (required)
+        :type user_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
                                        and headers
+        :type _return_http_data_only: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: tuple(PresignedLinkEnveloped, status_code(int), headers(HTTPHeaderDict))
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: tuple(PresignedLinkEnveloped, status_code(int), headers(HTTPHeaderDict))
         """
 
         local_var_params = locals()
 
-        all_params = ["file_id", "location_id", "user_id"]  # noqa: E501
-        all_params.append("async_req")
-        all_params.append("_return_http_data_only")
-        all_params.append("_preload_content")
-        all_params.append("_request_timeout")
+        all_params = [
+            'file_id',
+            'location_id',
+            'user_id'
+        ]
+        all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth'
+            ]
+        )
 
-        for key, val in six.iteritems(local_var_params["kwargs"]):
+        for key, val in six.iteritems(local_var_params['kwargs']):
             if key not in all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
                     " to method download_file" % key
                 )
             local_var_params[key] = val
-        del local_var_params["kwargs"]
+        del local_var_params['kwargs']
         # verify the required parameter 'file_id' is set
-        if self.api_client.client_side_validation and (
-            "file_id" not in local_var_params
-            or local_var_params["file_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `file_id` when calling `download_file`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('file_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['file_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `file_id` when calling `download_file`")  # noqa: E501
         # verify the required parameter 'location_id' is set
-        if self.api_client.client_side_validation and (
-            "location_id" not in local_var_params
-            or local_var_params["location_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `location_id` when calling `download_file`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('location_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['location_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `location_id` when calling `download_file`")  # noqa: E501
         # verify the required parameter 'user_id' is set
-        if self.api_client.client_side_validation and (
-            "user_id" not in local_var_params
-            or local_var_params["user_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `user_id` when calling `download_file`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('user_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['user_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `user_id` when calling `download_file`")  # noqa: E501
 
         collection_formats = {}
 
         path_params = {}
-        if "file_id" in local_var_params:
-            path_params["fileId"] = local_var_params["file_id"]  # noqa: E501
-        if "location_id" in local_var_params:
-            path_params["location_id"] = local_var_params["location_id"]  # noqa: E501
+        if 'file_id' in local_var_params:
+            path_params['fileId'] = local_var_params['file_id']  # noqa: E501
+        if 'location_id' in local_var_params:
+            path_params['location_id'] = local_var_params['location_id']  # noqa: E501
 
         query_params = []
-        if (
-            "user_id" in local_var_params and local_var_params["user_id"] is not None
-        ):  # noqa: E501
-            query_params.append(("user_id", local_var_params["user_id"]))  # noqa: E501
+        if 'user_id' in local_var_params and local_var_params['user_id'] is not None:  # noqa: E501
+            query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
 
         header_params = {}
 
@@ -836,131 +913,142 @@ class DefaultApi(object):
 
         body_params = None
         # HTTP header `Accept`
-        header_params["Accept"] = self.api_client.select_header_accept(
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
 
         # Authentication setting
         auth_settings = []  # noqa: E501
+        
+        response_types_map = {
+            200: "PresignedLinkEnveloped",
+        }
 
         return self.api_client.call_api(
-            "/locations/{location_id}/files/{fileId}",
-            "GET",
+            '/locations/{location_id}/files/{fileId}', 'GET',
             path_params,
             query_params,
             header_params,
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type="PresignedLinkEnveloped",  # noqa: E501
+            response_types_map=response_types_map,
             auth_settings=auth_settings,
-            async_req=local_var_params.get("async_req"),
-            _return_http_data_only=local_var_params.get(
-                "_return_http_data_only"
-            ),  # noqa: E501
-            _preload_content=local_var_params.get("_preload_content", True),
-            _request_timeout=local_var_params.get("_request_timeout"),
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats,
-        )
+            _request_auth=local_var_params.get('_request_auth'))
 
     def get_datasets_metadata(self, location_id, user_id, **kwargs):  # noqa: E501
         """Lists all dataset's metadata  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.get_datasets_metadata(location_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str location_id: (required)
-        :param str user_id: (required)
+        :param location_id: (required)
+        :type location_id: str
+        :param user_id: (required)
+        :type user_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: DatasetMetaDataArrayEnveloped
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: DatasetMetaDataArrayEnveloped
         """
-        kwargs["_return_http_data_only"] = True
-        return self.get_datasets_metadata_with_http_info(
-            location_id, user_id, **kwargs
-        )  # noqa: E501
+        kwargs['_return_http_data_only'] = True
+        return self.get_datasets_metadata_with_http_info(location_id, user_id, **kwargs)  # noqa: E501
 
-    def get_datasets_metadata_with_http_info(
-        self, location_id, user_id, **kwargs
-    ):  # noqa: E501
+    def get_datasets_metadata_with_http_info(self, location_id, user_id, **kwargs):  # noqa: E501
         """Lists all dataset's metadata  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.get_datasets_metadata_with_http_info(location_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str location_id: (required)
-        :param str user_id: (required)
+        :param location_id: (required)
+        :type location_id: str
+        :param user_id: (required)
+        :type user_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
                                        and headers
+        :type _return_http_data_only: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: tuple(DatasetMetaDataArrayEnveloped, status_code(int), headers(HTTPHeaderDict))
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: tuple(DatasetMetaDataArrayEnveloped, status_code(int), headers(HTTPHeaderDict))
         """
 
         local_var_params = locals()
 
-        all_params = ["location_id", "user_id"]  # noqa: E501
-        all_params.append("async_req")
-        all_params.append("_return_http_data_only")
-        all_params.append("_preload_content")
-        all_params.append("_request_timeout")
+        all_params = [
+            'location_id',
+            'user_id'
+        ]
+        all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth'
+            ]
+        )
 
-        for key, val in six.iteritems(local_var_params["kwargs"]):
+        for key, val in six.iteritems(local_var_params['kwargs']):
             if key not in all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
                     " to method get_datasets_metadata" % key
                 )
             local_var_params[key] = val
-        del local_var_params["kwargs"]
+        del local_var_params['kwargs']
         # verify the required parameter 'location_id' is set
-        if self.api_client.client_side_validation and (
-            "location_id" not in local_var_params
-            or local_var_params["location_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `location_id` when calling `get_datasets_metadata`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('location_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['location_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `location_id` when calling `get_datasets_metadata`")  # noqa: E501
         # verify the required parameter 'user_id' is set
-        if self.api_client.client_side_validation and (
-            "user_id" not in local_var_params
-            or local_var_params["user_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `user_id` when calling `get_datasets_metadata`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('user_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['user_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `user_id` when calling `get_datasets_metadata`")  # noqa: E501
 
         collection_formats = {}
 
         path_params = {}
-        if "location_id" in local_var_params:
-            path_params["location_id"] = local_var_params["location_id"]  # noqa: E501
+        if 'location_id' in local_var_params:
+            path_params['location_id'] = local_var_params['location_id']  # noqa: E501
 
         query_params = []
-        if (
-            "user_id" in local_var_params and local_var_params["user_id"] is not None
-        ):  # noqa: E501
-            query_params.append(("user_id", local_var_params["user_id"]))  # noqa: E501
+        if 'user_id' in local_var_params and local_var_params['user_id'] is not None:  # noqa: E501
+            query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
 
         header_params = {}
 
@@ -969,143 +1057,153 @@ class DefaultApi(object):
 
         body_params = None
         # HTTP header `Accept`
-        header_params["Accept"] = self.api_client.select_header_accept(
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
 
         # Authentication setting
         auth_settings = []  # noqa: E501
+        
+        response_types_map = {
+            200: "DatasetMetaDataArrayEnveloped",
+        }
 
         return self.api_client.call_api(
-            "/locations/{location_id}/datasets",
-            "GET",
+            '/locations/{location_id}/datasets', 'GET',
             path_params,
             query_params,
             header_params,
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type="DatasetMetaDataArrayEnveloped",  # noqa: E501
+            response_types_map=response_types_map,
             auth_settings=auth_settings,
-            async_req=local_var_params.get("async_req"),
-            _return_http_data_only=local_var_params.get(
-                "_return_http_data_only"
-            ),  # noqa: E501
-            _preload_content=local_var_params.get("_preload_content", True),
-            _request_timeout=local_var_params.get("_request_timeout"),
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats,
-        )
+            _request_auth=local_var_params.get('_request_auth'))
 
     def get_file_metadata(self, file_id, location_id, user_id, **kwargs):  # noqa: E501
         """Get file metadata  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.get_file_metadata(file_id, location_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str file_id: (required)
-        :param str location_id: (required)
-        :param str user_id: (required)
+        :param file_id: (required)
+        :type file_id: str
+        :param location_id: (required)
+        :type location_id: str
+        :param user_id: (required)
+        :type user_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: FileMetaDataEnveloped
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: FileMetaDataEnveloped
         """
-        kwargs["_return_http_data_only"] = True
-        return self.get_file_metadata_with_http_info(
-            file_id, location_id, user_id, **kwargs
-        )  # noqa: E501
+        kwargs['_return_http_data_only'] = True
+        return self.get_file_metadata_with_http_info(file_id, location_id, user_id, **kwargs)  # noqa: E501
 
-    def get_file_metadata_with_http_info(
-        self, file_id, location_id, user_id, **kwargs
-    ):  # noqa: E501
+    def get_file_metadata_with_http_info(self, file_id, location_id, user_id, **kwargs):  # noqa: E501
         """Get file metadata  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.get_file_metadata_with_http_info(file_id, location_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str file_id: (required)
-        :param str location_id: (required)
-        :param str user_id: (required)
+        :param file_id: (required)
+        :type file_id: str
+        :param location_id: (required)
+        :type location_id: str
+        :param user_id: (required)
+        :type user_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
                                        and headers
+        :type _return_http_data_only: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: tuple(FileMetaDataEnveloped, status_code(int), headers(HTTPHeaderDict))
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: tuple(FileMetaDataEnveloped, status_code(int), headers(HTTPHeaderDict))
         """
 
         local_var_params = locals()
 
-        all_params = ["file_id", "location_id", "user_id"]  # noqa: E501
-        all_params.append("async_req")
-        all_params.append("_return_http_data_only")
-        all_params.append("_preload_content")
-        all_params.append("_request_timeout")
+        all_params = [
+            'file_id',
+            'location_id',
+            'user_id'
+        ]
+        all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth'
+            ]
+        )
 
-        for key, val in six.iteritems(local_var_params["kwargs"]):
+        for key, val in six.iteritems(local_var_params['kwargs']):
             if key not in all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
                     " to method get_file_metadata" % key
                 )
             local_var_params[key] = val
-        del local_var_params["kwargs"]
+        del local_var_params['kwargs']
         # verify the required parameter 'file_id' is set
-        if self.api_client.client_side_validation and (
-            "file_id" not in local_var_params
-            or local_var_params["file_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `file_id` when calling `get_file_metadata`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('file_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['file_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `file_id` when calling `get_file_metadata`")  # noqa: E501
         # verify the required parameter 'location_id' is set
-        if self.api_client.client_side_validation and (
-            "location_id" not in local_var_params
-            or local_var_params["location_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `location_id` when calling `get_file_metadata`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('location_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['location_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `location_id` when calling `get_file_metadata`")  # noqa: E501
         # verify the required parameter 'user_id' is set
-        if self.api_client.client_side_validation and (
-            "user_id" not in local_var_params
-            or local_var_params["user_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `user_id` when calling `get_file_metadata`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('user_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['user_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `user_id` when calling `get_file_metadata`")  # noqa: E501
 
         collection_formats = {}
 
         path_params = {}
-        if "file_id" in local_var_params:
-            path_params["fileId"] = local_var_params["file_id"]  # noqa: E501
-        if "location_id" in local_var_params:
-            path_params["location_id"] = local_var_params["location_id"]  # noqa: E501
+        if 'file_id' in local_var_params:
+            path_params['fileId'] = local_var_params['file_id']  # noqa: E501
+        if 'location_id' in local_var_params:
+            path_params['location_id'] = local_var_params['location_id']  # noqa: E501
 
         query_params = []
-        if (
-            "user_id" in local_var_params and local_var_params["user_id"] is not None
-        ):  # noqa: E501
-            query_params.append(("user_id", local_var_params["user_id"]))  # noqa: E501
+        if 'user_id' in local_var_params and local_var_params['user_id'] is not None:  # noqa: E501
+            query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
 
         header_params = {}
 
@@ -1114,140 +1212,149 @@ class DefaultApi(object):
 
         body_params = None
         # HTTP header `Accept`
-        header_params["Accept"] = self.api_client.select_header_accept(
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
 
         # Authentication setting
         auth_settings = []  # noqa: E501
+        
+        response_types_map = {
+            200: "FileMetaDataEnveloped",
+        }
 
         return self.api_client.call_api(
-            "/locations/{location_id}/files/{fileId}/metadata",
-            "GET",
+            '/locations/{location_id}/files/{fileId}/metadata', 'GET',
             path_params,
             query_params,
             header_params,
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type="FileMetaDataEnveloped",  # noqa: E501
+            response_types_map=response_types_map,
             auth_settings=auth_settings,
-            async_req=local_var_params.get("async_req"),
-            _return_http_data_only=local_var_params.get(
-                "_return_http_data_only"
-            ),  # noqa: E501
-            _preload_content=local_var_params.get("_preload_content", True),
-            _request_timeout=local_var_params.get("_request_timeout"),
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats,
-        )
+            _request_auth=local_var_params.get('_request_auth'))
 
     def get_files_metadata(self, location_id, user_id, **kwargs):  # noqa: E501
         """Lists all file's metadata  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.get_files_metadata(location_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str location_id: (required)
-        :param str user_id: (required)
-        :param str uuid_filter:
+        :param location_id: (required)
+        :type location_id: str
+        :param user_id: (required)
+        :type user_id: str
+        :param uuid_filter:
+        :type uuid_filter: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: FileMetaDataArrayEnveloped
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: FileMetaDataArrayEnveloped
         """
-        kwargs["_return_http_data_only"] = True
-        return self.get_files_metadata_with_http_info(
-            location_id, user_id, **kwargs
-        )  # noqa: E501
+        kwargs['_return_http_data_only'] = True
+        return self.get_files_metadata_with_http_info(location_id, user_id, **kwargs)  # noqa: E501
 
-    def get_files_metadata_with_http_info(
-        self, location_id, user_id, **kwargs
-    ):  # noqa: E501
+    def get_files_metadata_with_http_info(self, location_id, user_id, **kwargs):  # noqa: E501
         """Lists all file's metadata  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.get_files_metadata_with_http_info(location_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str location_id: (required)
-        :param str user_id: (required)
-        :param str uuid_filter:
+        :param location_id: (required)
+        :type location_id: str
+        :param user_id: (required)
+        :type user_id: str
+        :param uuid_filter:
+        :type uuid_filter: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
                                        and headers
+        :type _return_http_data_only: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: tuple(FileMetaDataArrayEnveloped, status_code(int), headers(HTTPHeaderDict))
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: tuple(FileMetaDataArrayEnveloped, status_code(int), headers(HTTPHeaderDict))
         """
 
         local_var_params = locals()
 
-        all_params = ["location_id", "user_id", "uuid_filter"]  # noqa: E501
-        all_params.append("async_req")
-        all_params.append("_return_http_data_only")
-        all_params.append("_preload_content")
-        all_params.append("_request_timeout")
+        all_params = [
+            'location_id',
+            'user_id',
+            'uuid_filter'
+        ]
+        all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth'
+            ]
+        )
 
-        for key, val in six.iteritems(local_var_params["kwargs"]):
+        for key, val in six.iteritems(local_var_params['kwargs']):
             if key not in all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
                     " to method get_files_metadata" % key
                 )
             local_var_params[key] = val
-        del local_var_params["kwargs"]
+        del local_var_params['kwargs']
         # verify the required parameter 'location_id' is set
-        if self.api_client.client_side_validation and (
-            "location_id" not in local_var_params
-            or local_var_params["location_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `location_id` when calling `get_files_metadata`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('location_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['location_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `location_id` when calling `get_files_metadata`")  # noqa: E501
         # verify the required parameter 'user_id' is set
-        if self.api_client.client_side_validation and (
-            "user_id" not in local_var_params
-            or local_var_params["user_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `user_id` when calling `get_files_metadata`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('user_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['user_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `user_id` when calling `get_files_metadata`")  # noqa: E501
 
         collection_formats = {}
 
         path_params = {}
-        if "location_id" in local_var_params:
-            path_params["location_id"] = local_var_params["location_id"]  # noqa: E501
+        if 'location_id' in local_var_params:
+            path_params['location_id'] = local_var_params['location_id']  # noqa: E501
 
         query_params = []
-        if (
-            "user_id" in local_var_params and local_var_params["user_id"] is not None
-        ):  # noqa: E501
-            query_params.append(("user_id", local_var_params["user_id"]))  # noqa: E501
-        if (
-            "uuid_filter" in local_var_params
-            and local_var_params["uuid_filter"] is not None
-        ):  # noqa: E501
-            query_params.append(
-                ("uuid_filter", local_var_params["uuid_filter"])
-            )  # noqa: E501
+        if 'user_id' in local_var_params and local_var_params['user_id'] is not None:  # noqa: E501
+            query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
+        if 'uuid_filter' in local_var_params and local_var_params['uuid_filter'] is not None:  # noqa: E501
+            query_params.append(('uuid_filter', local_var_params['uuid_filter']))  # noqa: E501
 
         header_params = {}
 
@@ -1256,145 +1363,153 @@ class DefaultApi(object):
 
         body_params = None
         # HTTP header `Accept`
-        header_params["Accept"] = self.api_client.select_header_accept(
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
 
         # Authentication setting
         auth_settings = []  # noqa: E501
+        
+        response_types_map = {
+            200: "FileMetaDataArrayEnveloped",
+        }
 
         return self.api_client.call_api(
-            "/locations/{location_id}/files/metadata",
-            "GET",
+            '/locations/{location_id}/files/metadata', 'GET',
             path_params,
             query_params,
             header_params,
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type="FileMetaDataArrayEnveloped",  # noqa: E501
+            response_types_map=response_types_map,
             auth_settings=auth_settings,
-            async_req=local_var_params.get("async_req"),
-            _return_http_data_only=local_var_params.get(
-                "_return_http_data_only"
-            ),  # noqa: E501
-            _preload_content=local_var_params.get("_preload_content", True),
-            _request_timeout=local_var_params.get("_request_timeout"),
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats,
-        )
+            _request_auth=local_var_params.get('_request_auth'))
 
-    def get_files_metadata_dataset(
-        self, location_id, dataset_id, user_id, **kwargs
-    ):  # noqa: E501
+    def get_files_metadata_dataset(self, location_id, dataset_id, user_id, **kwargs):  # noqa: E501
         """Get dataset metadata  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.get_files_metadata_dataset(location_id, dataset_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str location_id: (required)
-        :param str dataset_id: (required)
-        :param str user_id: (required)
+        :param location_id: (required)
+        :type location_id: str
+        :param dataset_id: (required)
+        :type dataset_id: str
+        :param user_id: (required)
+        :type user_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: FileMetaDataArrayEnveloped
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: FileMetaDataArrayEnveloped
         """
-        kwargs["_return_http_data_only"] = True
-        return self.get_files_metadata_dataset_with_http_info(
-            location_id, dataset_id, user_id, **kwargs
-        )  # noqa: E501
+        kwargs['_return_http_data_only'] = True
+        return self.get_files_metadata_dataset_with_http_info(location_id, dataset_id, user_id, **kwargs)  # noqa: E501
 
-    def get_files_metadata_dataset_with_http_info(
-        self, location_id, dataset_id, user_id, **kwargs
-    ):  # noqa: E501
+    def get_files_metadata_dataset_with_http_info(self, location_id, dataset_id, user_id, **kwargs):  # noqa: E501
         """Get dataset metadata  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.get_files_metadata_dataset_with_http_info(location_id, dataset_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str location_id: (required)
-        :param str dataset_id: (required)
-        :param str user_id: (required)
+        :param location_id: (required)
+        :type location_id: str
+        :param dataset_id: (required)
+        :type dataset_id: str
+        :param user_id: (required)
+        :type user_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
                                        and headers
+        :type _return_http_data_only: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: tuple(FileMetaDataArrayEnveloped, status_code(int), headers(HTTPHeaderDict))
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: tuple(FileMetaDataArrayEnveloped, status_code(int), headers(HTTPHeaderDict))
         """
 
         local_var_params = locals()
 
-        all_params = ["location_id", "dataset_id", "user_id"]  # noqa: E501
-        all_params.append("async_req")
-        all_params.append("_return_http_data_only")
-        all_params.append("_preload_content")
-        all_params.append("_request_timeout")
+        all_params = [
+            'location_id',
+            'dataset_id',
+            'user_id'
+        ]
+        all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth'
+            ]
+        )
 
-        for key, val in six.iteritems(local_var_params["kwargs"]):
+        for key, val in six.iteritems(local_var_params['kwargs']):
             if key not in all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
                     " to method get_files_metadata_dataset" % key
                 )
             local_var_params[key] = val
-        del local_var_params["kwargs"]
+        del local_var_params['kwargs']
         # verify the required parameter 'location_id' is set
-        if self.api_client.client_side_validation and (
-            "location_id" not in local_var_params
-            or local_var_params["location_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `location_id` when calling `get_files_metadata_dataset`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('location_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['location_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `location_id` when calling `get_files_metadata_dataset`")  # noqa: E501
         # verify the required parameter 'dataset_id' is set
-        if self.api_client.client_side_validation and (
-            "dataset_id" not in local_var_params
-            or local_var_params["dataset_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `dataset_id` when calling `get_files_metadata_dataset`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('dataset_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['dataset_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `dataset_id` when calling `get_files_metadata_dataset`")  # noqa: E501
         # verify the required parameter 'user_id' is set
-        if self.api_client.client_side_validation and (
-            "user_id" not in local_var_params
-            or local_var_params["user_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `user_id` when calling `get_files_metadata_dataset`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('user_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['user_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `user_id` when calling `get_files_metadata_dataset`")  # noqa: E501
 
         collection_formats = {}
 
         path_params = {}
-        if "location_id" in local_var_params:
-            path_params["location_id"] = local_var_params["location_id"]  # noqa: E501
-        if "dataset_id" in local_var_params:
-            path_params["dataset_id"] = local_var_params["dataset_id"]  # noqa: E501
+        if 'location_id' in local_var_params:
+            path_params['location_id'] = local_var_params['location_id']  # noqa: E501
+        if 'dataset_id' in local_var_params:
+            path_params['dataset_id'] = local_var_params['dataset_id']  # noqa: E501
 
         query_params = []
-        if (
-            "user_id" in local_var_params and local_var_params["user_id"] is not None
-        ):  # noqa: E501
-            query_params.append(("user_id", local_var_params["user_id"]))  # noqa: E501
+        if 'user_id' in local_var_params and local_var_params['user_id'] is not None:  # noqa: E501
+            query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
 
         header_params = {}
 
@@ -1403,54 +1518,58 @@ class DefaultApi(object):
 
         body_params = None
         # HTTP header `Accept`
-        header_params["Accept"] = self.api_client.select_header_accept(
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
 
         # Authentication setting
         auth_settings = []  # noqa: E501
+        
+        response_types_map = {
+            200: "FileMetaDataArrayEnveloped",
+        }
 
         return self.api_client.call_api(
-            "/locations/{location_id}/datasets/{dataset_id}/metadata",
-            "GET",
+            '/locations/{location_id}/datasets/{dataset_id}/metadata', 'GET',
             path_params,
             query_params,
             header_params,
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type="FileMetaDataArrayEnveloped",  # noqa: E501
+            response_types_map=response_types_map,
             auth_settings=auth_settings,
-            async_req=local_var_params.get("async_req"),
-            _return_http_data_only=local_var_params.get(
-                "_return_http_data_only"
-            ),  # noqa: E501
-            _preload_content=local_var_params.get("_preload_content", True),
-            _request_timeout=local_var_params.get("_request_timeout"),
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats,
-        )
+            _request_auth=local_var_params.get('_request_auth'))
 
     def get_status(self, **kwargs):  # noqa: E501
         """checks status of self and connected services  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.get_status(async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: None
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: None
         """
-        kwargs["_return_http_data_only"] = True
+        kwargs['_return_http_data_only'] = True
         return self.get_status_with_http_info(**kwargs)  # noqa: E501
 
     def get_status_with_http_info(self, **kwargs):  # noqa: E501
@@ -1458,40 +1577,55 @@ class DefaultApi(object):
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.get_status_with_http_info(async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
                                        and headers
+        :type _return_http_data_only: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: None
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: None
         """
 
         local_var_params = locals()
 
-        all_params = []  # noqa: E501
-        all_params.append("async_req")
-        all_params.append("_return_http_data_only")
-        all_params.append("_preload_content")
-        all_params.append("_request_timeout")
+        all_params = [
+        ]
+        all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth'
+            ]
+        )
 
-        for key, val in six.iteritems(local_var_params["kwargs"]):
+        for key, val in six.iteritems(local_var_params['kwargs']):
             if key not in all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
                     " to method get_status" % key
                 )
             local_var_params[key] = val
-        del local_var_params["kwargs"]
+        del local_var_params['kwargs']
 
         collection_formats = {}
 
@@ -1507,111 +1641,124 @@ class DefaultApi(object):
         body_params = None
         # Authentication setting
         auth_settings = []  # noqa: E501
+        
+        response_types_map = {}
 
         return self.api_client.call_api(
-            "/status",
-            "GET",
+            '/status', 'GET',
             path_params,
             query_params,
             header_params,
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type=None,  # noqa: E501
+            response_types_map=response_types_map,
             auth_settings=auth_settings,
-            async_req=local_var_params.get("async_req"),
-            _return_http_data_only=local_var_params.get(
-                "_return_http_data_only"
-            ),  # noqa: E501
-            _preload_content=local_var_params.get("_preload_content", True),
-            _request_timeout=local_var_params.get("_request_timeout"),
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats,
-        )
+            _request_auth=local_var_params.get('_request_auth'))
 
     def get_storage_locations(self, user_id, **kwargs):  # noqa: E501
         """Lists available storage locations  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.get_storage_locations(user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str user_id: (required)
+        :param user_id: (required)
+        :type user_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: FileLocationArrayEnveloped
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: FileLocationArrayEnveloped
         """
-        kwargs["_return_http_data_only"] = True
-        return self.get_storage_locations_with_http_info(
-            user_id, **kwargs
-        )  # noqa: E501
+        kwargs['_return_http_data_only'] = True
+        return self.get_storage_locations_with_http_info(user_id, **kwargs)  # noqa: E501
 
     def get_storage_locations_with_http_info(self, user_id, **kwargs):  # noqa: E501
         """Lists available storage locations  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.get_storage_locations_with_http_info(user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str user_id: (required)
+        :param user_id: (required)
+        :type user_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
                                        and headers
+        :type _return_http_data_only: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: tuple(FileLocationArrayEnveloped, status_code(int), headers(HTTPHeaderDict))
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: tuple(FileLocationArrayEnveloped, status_code(int), headers(HTTPHeaderDict))
         """
 
         local_var_params = locals()
 
-        all_params = ["user_id"]  # noqa: E501
-        all_params.append("async_req")
-        all_params.append("_return_http_data_only")
-        all_params.append("_preload_content")
-        all_params.append("_request_timeout")
+        all_params = [
+            'user_id'
+        ]
+        all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth'
+            ]
+        )
 
-        for key, val in six.iteritems(local_var_params["kwargs"]):
+        for key, val in six.iteritems(local_var_params['kwargs']):
             if key not in all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
                     " to method get_storage_locations" % key
                 )
             local_var_params[key] = val
-        del local_var_params["kwargs"]
+        del local_var_params['kwargs']
         # verify the required parameter 'user_id' is set
-        if self.api_client.client_side_validation and (
-            "user_id" not in local_var_params
-            or local_var_params["user_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `user_id` when calling `get_storage_locations`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('user_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['user_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `user_id` when calling `get_storage_locations`")  # noqa: E501
 
         collection_formats = {}
 
         path_params = {}
 
         query_params = []
-        if (
-            "user_id" in local_var_params and local_var_params["user_id"] is not None
-        ):  # noqa: E501
-            query_params.append(("user_id", local_var_params["user_id"]))  # noqa: E501
+        if 'user_id' in local_var_params and local_var_params['user_id'] is not None:  # noqa: E501
+            query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
 
         header_params = {}
 
@@ -1620,32 +1767,32 @@ class DefaultApi(object):
 
         body_params = None
         # HTTP header `Accept`
-        header_params["Accept"] = self.api_client.select_header_accept(
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
 
         # Authentication setting
         auth_settings = []  # noqa: E501
+        
+        response_types_map = {
+            200: "FileLocationArrayEnveloped",
+        }
 
         return self.api_client.call_api(
-            "/locations",
-            "GET",
+            '/locations', 'GET',
             path_params,
             query_params,
             header_params,
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type="FileLocationArrayEnveloped",  # noqa: E501
+            response_types_map=response_types_map,
             auth_settings=auth_settings,
-            async_req=local_var_params.get("async_req"),
-            _return_http_data_only=local_var_params.get(
-                "_return_http_data_only"
-            ),  # noqa: E501
-            _preload_content=local_var_params.get("_preload_content", True),
-            _request_timeout=local_var_params.get("_request_timeout"),
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats,
-        )
+            _request_auth=local_var_params.get('_request_auth'))
 
     def health_check(self, **kwargs):  # noqa: E501
         """Service health-check endpoint  # noqa: E501
@@ -1653,22 +1800,26 @@ class DefaultApi(object):
         Some general information on the API and state of the service behind  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.health_check(async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: HealthCheckEnveloped
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: HealthCheckEnveloped
         """
-        kwargs["_return_http_data_only"] = True
+        kwargs['_return_http_data_only'] = True
         return self.health_check_with_http_info(**kwargs)  # noqa: E501
 
     def health_check_with_http_info(self, **kwargs):  # noqa: E501
@@ -1677,40 +1828,55 @@ class DefaultApi(object):
         Some general information on the API and state of the service behind  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.health_check_with_http_info(async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
                                        and headers
+        :type _return_http_data_only: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: tuple(HealthCheckEnveloped, status_code(int), headers(HTTPHeaderDict))
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: tuple(HealthCheckEnveloped, status_code(int), headers(HTTPHeaderDict))
         """
 
         local_var_params = locals()
 
-        all_params = []  # noqa: E501
-        all_params.append("async_req")
-        all_params.append("_return_http_data_only")
-        all_params.append("_preload_content")
-        all_params.append("_request_timeout")
+        all_params = [
+        ]
+        all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth'
+            ]
+        )
 
-        for key, val in six.iteritems(local_var_params["kwargs"]):
+        for key, val in six.iteritems(local_var_params['kwargs']):
             if key not in all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
                     " to method health_check" % key
                 )
             local_var_params[key] = val
-        del local_var_params["kwargs"]
+        del local_var_params['kwargs']
 
         collection_formats = {}
 
@@ -1725,128 +1891,138 @@ class DefaultApi(object):
 
         body_params = None
         # HTTP header `Accept`
-        header_params["Accept"] = self.api_client.select_header_accept(
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
 
         # Authentication setting
         auth_settings = []  # noqa: E501
+        
+        response_types_map = {
+            200: "HealthCheckEnveloped",
+        }
 
         return self.api_client.call_api(
-            "/",
-            "GET",
+            '/', 'GET',
             path_params,
             query_params,
             header_params,
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type="HealthCheckEnveloped",  # noqa: E501
+            response_types_map=response_types_map,
             auth_settings=auth_settings,
-            async_req=local_var_params.get("async_req"),
-            _return_http_data_only=local_var_params.get(
-                "_return_http_data_only"
-            ),  # noqa: E501
-            _preload_content=local_var_params.get("_preload_content", True),
-            _request_timeout=local_var_params.get("_request_timeout"),
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats,
-        )
+            _request_auth=local_var_params.get('_request_auth'))
 
     def search_files_starting_with(self, user_id, **kwargs):  # noqa: E501
         """Returns metadata for all files matching a pattern  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.search_files_starting_with(user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param int user_id: (required)
-        :param str startswith: matches starting string of the file_uuid
+        :param user_id: (required)
+        :type user_id: int
+        :param startswith: matches starting string of the file_uuid
+        :type startswith: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: FileMetaDataArrayEnveloped
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: FileMetaDataArrayEnveloped
         """
-        kwargs["_return_http_data_only"] = True
-        return self.search_files_starting_with_with_http_info(
-            user_id, **kwargs
-        )  # noqa: E501
+        kwargs['_return_http_data_only'] = True
+        return self.search_files_starting_with_with_http_info(user_id, **kwargs)  # noqa: E501
 
-    def search_files_starting_with_with_http_info(
-        self, user_id, **kwargs
-    ):  # noqa: E501
+    def search_files_starting_with_with_http_info(self, user_id, **kwargs):  # noqa: E501
         """Returns metadata for all files matching a pattern  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.search_files_starting_with_with_http_info(user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param int user_id: (required)
-        :param str startswith: matches starting string of the file_uuid
+        :param user_id: (required)
+        :type user_id: int
+        :param startswith: matches starting string of the file_uuid
+        :type startswith: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
                                        and headers
+        :type _return_http_data_only: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: tuple(FileMetaDataArrayEnveloped, status_code(int), headers(HTTPHeaderDict))
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: tuple(FileMetaDataArrayEnveloped, status_code(int), headers(HTTPHeaderDict))
         """
 
         local_var_params = locals()
 
-        all_params = ["user_id", "startswith"]  # noqa: E501
-        all_params.append("async_req")
-        all_params.append("_return_http_data_only")
-        all_params.append("_preload_content")
-        all_params.append("_request_timeout")
+        all_params = [
+            'user_id',
+            'startswith'
+        ]
+        all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth'
+            ]
+        )
 
-        for key, val in six.iteritems(local_var_params["kwargs"]):
+        for key, val in six.iteritems(local_var_params['kwargs']):
             if key not in all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
                     " to method search_files_starting_with" % key
                 )
             local_var_params[key] = val
-        del local_var_params["kwargs"]
+        del local_var_params['kwargs']
         # verify the required parameter 'user_id' is set
-        if self.api_client.client_side_validation and (
-            "user_id" not in local_var_params
-            or local_var_params["user_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `user_id` when calling `search_files_starting_with`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('user_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['user_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `user_id` when calling `search_files_starting_with`")  # noqa: E501
 
         collection_formats = {}
 
         path_params = {}
 
         query_params = []
-        if (
-            "user_id" in local_var_params and local_var_params["user_id"] is not None
-        ):  # noqa: E501
-            query_params.append(("user_id", local_var_params["user_id"]))  # noqa: E501
-        if (
-            "startswith" in local_var_params
-            and local_var_params["startswith"] is not None
-        ):  # noqa: E501
-            query_params.append(
-                ("startswith", local_var_params["startswith"])
-            )  # noqa: E501
+        if 'user_id' in local_var_params and local_var_params['user_id'] is not None:  # noqa: E501
+            query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
+        if 'startswith' in local_var_params and local_var_params['startswith'] is not None:  # noqa: E501
+            query_params.append(('startswith', local_var_params['startswith']))  # noqa: E501
 
         header_params = {}
 
@@ -1855,132 +2031,145 @@ class DefaultApi(object):
 
         body_params = None
         # HTTP header `Accept`
-        header_params["Accept"] = self.api_client.select_header_accept(
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
 
         # Authentication setting
         auth_settings = []  # noqa: E501
+        
+        response_types_map = {
+            200: "FileMetaDataArrayEnveloped",
+        }
 
         return self.api_client.call_api(
-            "/simcore-s3/files/metadata:search",
-            "POST",
+            '/simcore-s3/files/metadata:search', 'POST',
             path_params,
             query_params,
             header_params,
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type="FileMetaDataArrayEnveloped",  # noqa: E501
+            response_types_map=response_types_map,
             auth_settings=auth_settings,
-            async_req=local_var_params.get("async_req"),
-            _return_http_data_only=local_var_params.get(
-                "_return_http_data_only"
-            ),  # noqa: E501
-            _preload_content=local_var_params.get("_preload_content", True),
-            _request_timeout=local_var_params.get("_request_timeout"),
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats,
-        )
+            _request_auth=local_var_params.get('_request_auth'))
 
     def synchronise_meta_data_table(self, location_id, **kwargs):  # noqa: E501
         """Manually triggers the synchronisation of the file meta data table in the database  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.synchronise_meta_data_table(location_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str location_id: (required)
-        :param bool dry_run:
-        :param bool fire_and_forget:
+        :param location_id: (required)
+        :type location_id: str
+        :param dry_run:
+        :type dry_run: bool
+        :param fire_and_forget:
+        :type fire_and_forget: bool
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: TableSynchronisationEnveloped
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: TableSynchronisationEnveloped
         """
-        kwargs["_return_http_data_only"] = True
-        return self.synchronise_meta_data_table_with_http_info(
-            location_id, **kwargs
-        )  # noqa: E501
+        kwargs['_return_http_data_only'] = True
+        return self.synchronise_meta_data_table_with_http_info(location_id, **kwargs)  # noqa: E501
 
-    def synchronise_meta_data_table_with_http_info(
-        self, location_id, **kwargs
-    ):  # noqa: E501
+    def synchronise_meta_data_table_with_http_info(self, location_id, **kwargs):  # noqa: E501
         """Manually triggers the synchronisation of the file meta data table in the database  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.synchronise_meta_data_table_with_http_info(location_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str location_id: (required)
-        :param bool dry_run:
-        :param bool fire_and_forget:
+        :param location_id: (required)
+        :type location_id: str
+        :param dry_run:
+        :type dry_run: bool
+        :param fire_and_forget:
+        :type fire_and_forget: bool
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
                                        and headers
+        :type _return_http_data_only: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: tuple(TableSynchronisationEnveloped, status_code(int), headers(HTTPHeaderDict))
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: tuple(TableSynchronisationEnveloped, status_code(int), headers(HTTPHeaderDict))
         """
 
         local_var_params = locals()
 
-        all_params = ["location_id", "dry_run", "fire_and_forget"]  # noqa: E501
-        all_params.append("async_req")
-        all_params.append("_return_http_data_only")
-        all_params.append("_preload_content")
-        all_params.append("_request_timeout")
+        all_params = [
+            'location_id',
+            'dry_run',
+            'fire_and_forget'
+        ]
+        all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth'
+            ]
+        )
 
-        for key, val in six.iteritems(local_var_params["kwargs"]):
+        for key, val in six.iteritems(local_var_params['kwargs']):
             if key not in all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
                     " to method synchronise_meta_data_table" % key
                 )
             local_var_params[key] = val
-        del local_var_params["kwargs"]
+        del local_var_params['kwargs']
         # verify the required parameter 'location_id' is set
-        if self.api_client.client_side_validation and (
-            "location_id" not in local_var_params
-            or local_var_params["location_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `location_id` when calling `synchronise_meta_data_table`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('location_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['location_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `location_id` when calling `synchronise_meta_data_table`")  # noqa: E501
 
         collection_formats = {}
 
         path_params = {}
-        if "location_id" in local_var_params:
-            path_params["location_id"] = local_var_params["location_id"]  # noqa: E501
+        if 'location_id' in local_var_params:
+            path_params['location_id'] = local_var_params['location_id']  # noqa: E501
 
         query_params = []
-        if (
-            "dry_run" in local_var_params and local_var_params["dry_run"] is not None
-        ):  # noqa: E501
-            query_params.append(("dry_run", local_var_params["dry_run"]))  # noqa: E501
-        if (
-            "fire_and_forget" in local_var_params
-            and local_var_params["fire_and_forget"] is not None
-        ):  # noqa: E501
-            query_params.append(
-                ("fire_and_forget", local_var_params["fire_and_forget"])
-            )  # noqa: E501
+        if 'dry_run' in local_var_params and local_var_params['dry_run'] is not None:  # noqa: E501
+            query_params.append(('dry_run', local_var_params['dry_run']))  # noqa: E501
+        if 'fire_and_forget' in local_var_params and local_var_params['fire_and_forget'] is not None:  # noqa: E501
+            query_params.append(('fire_and_forget', local_var_params['fire_and_forget']))  # noqa: E501
 
         header_params = {}
 
@@ -1989,129 +2178,145 @@ class DefaultApi(object):
 
         body_params = None
         # HTTP header `Accept`
-        header_params["Accept"] = self.api_client.select_header_accept(
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
 
         # Authentication setting
         auth_settings = []  # noqa: E501
+        
+        response_types_map = {
+            200: "TableSynchronisationEnveloped",
+        }
 
         return self.api_client.call_api(
-            "/locations/{location_id}:sync",
-            "POST",
+            '/locations/{location_id}:sync', 'POST',
             path_params,
             query_params,
             header_params,
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type="TableSynchronisationEnveloped",  # noqa: E501
+            response_types_map=response_types_map,
             auth_settings=auth_settings,
-            async_req=local_var_params.get("async_req"),
-            _return_http_data_only=local_var_params.get(
-                "_return_http_data_only"
-            ),  # noqa: E501
-            _preload_content=local_var_params.get("_preload_content", True),
-            _request_timeout=local_var_params.get("_request_timeout"),
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats,
-        )
+            _request_auth=local_var_params.get('_request_auth'))
 
     def update_file_meta_data(self, file_id, location_id, **kwargs):  # noqa: E501
         """Update file metadata  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.update_file_meta_data(file_id, location_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str file_id: (required)
-        :param str location_id: (required)
-        :param FileMetaData file_meta_data:
+        :param file_id: (required)
+        :type file_id: str
+        :param location_id: (required)
+        :type location_id: str
+        :param file_meta_data:
+        :type file_meta_data: FileMetaData
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: FileMetaDataEnveloped
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: FileMetaDataEnveloped
         """
-        kwargs["_return_http_data_only"] = True
-        return self.update_file_meta_data_with_http_info(
-            file_id, location_id, **kwargs
-        )  # noqa: E501
+        kwargs['_return_http_data_only'] = True
+        return self.update_file_meta_data_with_http_info(file_id, location_id, **kwargs)  # noqa: E501
 
-    def update_file_meta_data_with_http_info(
-        self, file_id, location_id, **kwargs
-    ):  # noqa: E501
+    def update_file_meta_data_with_http_info(self, file_id, location_id, **kwargs):  # noqa: E501
         """Update file metadata  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.update_file_meta_data_with_http_info(file_id, location_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str file_id: (required)
-        :param str location_id: (required)
-        :param FileMetaData file_meta_data:
+        :param file_id: (required)
+        :type file_id: str
+        :param location_id: (required)
+        :type location_id: str
+        :param file_meta_data:
+        :type file_meta_data: FileMetaData
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
                                        and headers
+        :type _return_http_data_only: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: tuple(FileMetaDataEnveloped, status_code(int), headers(HTTPHeaderDict))
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: tuple(FileMetaDataEnveloped, status_code(int), headers(HTTPHeaderDict))
         """
 
         local_var_params = locals()
 
-        all_params = ["file_id", "location_id", "file_meta_data"]  # noqa: E501
-        all_params.append("async_req")
-        all_params.append("_return_http_data_only")
-        all_params.append("_preload_content")
-        all_params.append("_request_timeout")
+        all_params = [
+            'file_id',
+            'location_id',
+            'file_meta_data'
+        ]
+        all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth'
+            ]
+        )
 
-        for key, val in six.iteritems(local_var_params["kwargs"]):
+        for key, val in six.iteritems(local_var_params['kwargs']):
             if key not in all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
                     " to method update_file_meta_data" % key
                 )
             local_var_params[key] = val
-        del local_var_params["kwargs"]
+        del local_var_params['kwargs']
         # verify the required parameter 'file_id' is set
-        if self.api_client.client_side_validation and (
-            "file_id" not in local_var_params
-            or local_var_params["file_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `file_id` when calling `update_file_meta_data`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('file_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['file_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `file_id` when calling `update_file_meta_data`")  # noqa: E501
         # verify the required parameter 'location_id' is set
-        if self.api_client.client_side_validation and (
-            "location_id" not in local_var_params
-            or local_var_params["location_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `location_id` when calling `update_file_meta_data`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('location_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['location_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `location_id` when calling `update_file_meta_data`")  # noqa: E501
 
         collection_formats = {}
 
         path_params = {}
-        if "file_id" in local_var_params:
-            path_params["fileId"] = local_var_params["file_id"]  # noqa: E501
-        if "location_id" in local_var_params:
-            path_params["location_id"] = local_var_params["location_id"]  # noqa: E501
+        if 'file_id' in local_var_params:
+            path_params['fileId'] = local_var_params['file_id']  # noqa: E501
+        if 'location_id' in local_var_params:
+            path_params['location_id'] = local_var_params['location_id']  # noqa: E501
 
         query_params = []
 
@@ -2121,177 +2326,174 @@ class DefaultApi(object):
         local_var_files = {}
 
         body_params = None
-        if "file_meta_data" in local_var_params:
-            body_params = local_var_params["file_meta_data"]
+        if 'file_meta_data' in local_var_params:
+            body_params = local_var_params['file_meta_data']
         # HTTP header `Accept`
-        header_params["Accept"] = self.api_client.select_header_accept(
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
 
         # HTTP header `Content-Type`
-        header_params[
-            "Content-Type"
-        ] = self.api_client.select_header_content_type(  # noqa: E501
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Content-Type'] = self.api_client.select_header_content_type(  # noqa: E501
+            ['application/json'])  # noqa: E501
 
         # Authentication setting
         auth_settings = []  # noqa: E501
+        
+        response_types_map = {
+            200: "FileMetaDataEnveloped",
+        }
 
         return self.api_client.call_api(
-            "/locations/{location_id}/files/{fileId}/metadata",
-            "PATCH",
+            '/locations/{location_id}/files/{fileId}/metadata', 'PATCH',
             path_params,
             query_params,
             header_params,
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type="FileMetaDataEnveloped",  # noqa: E501
+            response_types_map=response_types_map,
             auth_settings=auth_settings,
-            async_req=local_var_params.get("async_req"),
-            _return_http_data_only=local_var_params.get(
-                "_return_http_data_only"
-            ),  # noqa: E501
-            _preload_content=local_var_params.get("_preload_content", True),
-            _request_timeout=local_var_params.get("_request_timeout"),
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats,
-        )
+            _request_auth=local_var_params.get('_request_auth'))
 
     def upload_file(self, file_id, location_id, user_id, **kwargs):  # noqa: E501
         """Returns upload link or performs copy operation to datcore  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.upload_file(file_id, location_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str file_id: (required)
-        :param str location_id: (required)
-        :param str user_id: (required)
-        :param str extra_location:
-        :param str extra_source:
+        :param file_id: (required)
+        :type file_id: str
+        :param location_id: (required)
+        :type location_id: str
+        :param user_id: (required)
+        :type user_id: str
+        :param extra_location:
+        :type extra_location: str
+        :param extra_source:
+        :type extra_source: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: PresignedLinkEnveloped
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: PresignedLinkEnveloped
         """
-        kwargs["_return_http_data_only"] = True
-        return self.upload_file_with_http_info(
-            file_id, location_id, user_id, **kwargs
-        )  # noqa: E501
+        kwargs['_return_http_data_only'] = True
+        return self.upload_file_with_http_info(file_id, location_id, user_id, **kwargs)  # noqa: E501
 
-    def upload_file_with_http_info(
-        self, file_id, location_id, user_id, **kwargs
-    ):  # noqa: E501
+    def upload_file_with_http_info(self, file_id, location_id, user_id, **kwargs):  # noqa: E501
         """Returns upload link or performs copy operation to datcore  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
+
         >>> thread = api.upload_file_with_http_info(file_id, location_id, user_id, async_req=True)
         >>> result = thread.get()
 
-        :param async_req bool: execute request asynchronously
-        :param str file_id: (required)
-        :param str location_id: (required)
-        :param str user_id: (required)
-        :param str extra_location:
-        :param str extra_source:
+        :param file_id: (required)
+        :type file_id: str
+        :param location_id: (required)
+        :type location_id: str
+        :param user_id: (required)
+        :type user_id: str
+        :param extra_location:
+        :type extra_location: str
+        :param extra_source:
+        :type extra_source: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
                                        and headers
+        :type _return_http_data_only: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
+        :type _preload_content: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
-        :return: tuple(PresignedLinkEnveloped, status_code(int), headers(HTTPHeaderDict))
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
+        :rtype: tuple(PresignedLinkEnveloped, status_code(int), headers(HTTPHeaderDict))
         """
 
         local_var_params = locals()
 
         all_params = [
-            "file_id",
-            "location_id",
-            "user_id",
-            "extra_location",
-            "extra_source",
-        ]  # noqa: E501
-        all_params.append("async_req")
-        all_params.append("_return_http_data_only")
-        all_params.append("_preload_content")
-        all_params.append("_request_timeout")
+            'file_id',
+            'location_id',
+            'user_id',
+            'extra_location',
+            'extra_source'
+        ]
+        all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth'
+            ]
+        )
 
-        for key, val in six.iteritems(local_var_params["kwargs"]):
+        for key, val in six.iteritems(local_var_params['kwargs']):
             if key not in all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
                     " to method upload_file" % key
                 )
             local_var_params[key] = val
-        del local_var_params["kwargs"]
+        del local_var_params['kwargs']
         # verify the required parameter 'file_id' is set
-        if self.api_client.client_side_validation and (
-            "file_id" not in local_var_params
-            or local_var_params["file_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `file_id` when calling `upload_file`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('file_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['file_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `file_id` when calling `upload_file`")  # noqa: E501
         # verify the required parameter 'location_id' is set
-        if self.api_client.client_side_validation and (
-            "location_id" not in local_var_params
-            or local_var_params["location_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `location_id` when calling `upload_file`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('location_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['location_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `location_id` when calling `upload_file`")  # noqa: E501
         # verify the required parameter 'user_id' is set
-        if self.api_client.client_side_validation and (
-            "user_id" not in local_var_params
-            or local_var_params["user_id"] is None  # noqa: E501
-        ):  # noqa: E501
-            raise ApiValueError(
-                "Missing the required parameter `user_id` when calling `upload_file`"
-            )  # noqa: E501
+        if self.api_client.client_side_validation and ('user_id' not in local_var_params or  # noqa: E501
+                                                        local_var_params['user_id'] is None):  # noqa: E501
+            raise ApiValueError("Missing the required parameter `user_id` when calling `upload_file`")  # noqa: E501
 
         collection_formats = {}
 
         path_params = {}
-        if "file_id" in local_var_params:
-            path_params["fileId"] = local_var_params["file_id"]  # noqa: E501
-        if "location_id" in local_var_params:
-            path_params["location_id"] = local_var_params["location_id"]  # noqa: E501
+        if 'file_id' in local_var_params:
+            path_params['fileId'] = local_var_params['file_id']  # noqa: E501
+        if 'location_id' in local_var_params:
+            path_params['location_id'] = local_var_params['location_id']  # noqa: E501
 
         query_params = []
-        if (
-            "user_id" in local_var_params and local_var_params["user_id"] is not None
-        ):  # noqa: E501
-            query_params.append(("user_id", local_var_params["user_id"]))  # noqa: E501
-        if (
-            "extra_location" in local_var_params
-            and local_var_params["extra_location"] is not None
-        ):  # noqa: E501
-            query_params.append(
-                ("extra_location", local_var_params["extra_location"])
-            )  # noqa: E501
-        if (
-            "extra_source" in local_var_params
-            and local_var_params["extra_source"] is not None
-        ):  # noqa: E501
-            query_params.append(
-                ("extra_source", local_var_params["extra_source"])
-            )  # noqa: E501
+        if 'user_id' in local_var_params and local_var_params['user_id'] is not None:  # noqa: E501
+            query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
+        if 'extra_location' in local_var_params and local_var_params['extra_location'] is not None:  # noqa: E501
+            query_params.append(('extra_location', local_var_params['extra_location']))  # noqa: E501
+        if 'extra_source' in local_var_params and local_var_params['extra_source'] is not None:  # noqa: E501
+            query_params.append(('extra_source', local_var_params['extra_source']))  # noqa: E501
 
         header_params = {}
 
@@ -2300,29 +2502,29 @@ class DefaultApi(object):
 
         body_params = None
         # HTTP header `Accept`
-        header_params["Accept"] = self.api_client.select_header_accept(
-            ["application/json"]
-        )  # noqa: E501
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
 
         # Authentication setting
         auth_settings = []  # noqa: E501
+        
+        response_types_map = {
+            200: "PresignedLinkEnveloped",
+        }
 
         return self.api_client.call_api(
-            "/locations/{location_id}/files/{fileId}",
-            "PUT",
+            '/locations/{location_id}/files/{fileId}', 'PUT',
             path_params,
             query_params,
             header_params,
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type="PresignedLinkEnveloped",  # noqa: E501
+            response_types_map=response_types_map,
             auth_settings=auth_settings,
-            async_req=local_var_params.get("async_req"),
-            _return_http_data_only=local_var_params.get(
-                "_return_http_data_only"
-            ),  # noqa: E501
-            _preload_content=local_var_params.get("_preload_content", True),
-            _request_timeout=local_var_params.get("_request_timeout"),
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats,
-        )
+            _request_auth=local_var_params.get('_request_auth'))

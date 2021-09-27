@@ -13,15 +13,12 @@
 
 from __future__ import absolute_import
 
-import datetime
 import unittest
+import datetime
 
 import simcore_service_storage_sdk
-from simcore_service_storage_sdk.models.presigned_link import (  # noqa: E501
-    PresignedLink,
-)
+from simcore_service_storage_sdk.models.presigned_link import PresignedLink  # noqa: E501
 from simcore_service_storage_sdk.rest import ApiException
-
 
 class TestPresignedLink(unittest.TestCase):
     """PresignedLink unit test stubs"""
@@ -34,22 +31,23 @@ class TestPresignedLink(unittest.TestCase):
 
     def make_instance(self, include_optional):
         """Test PresignedLink
-        include_option is a boolean, when False only required
-        params are included, when True both required and
-        optional params are included"""
+            include_option is a boolean, when False only required
+            params are included, when True both required and
+            optional params are included """
         # model = simcore_service_storage_sdk.models.presigned_link.PresignedLink()  # noqa: E501
-        if include_optional:
-            return PresignedLink(link="0")
-        else:
+        if include_optional :
             return PresignedLink(
-                link="0",
+                link = ''
             )
+        else :
+            return PresignedLink(
+                link = '',
+        )
 
     def testPresignedLink(self):
         """Test PresignedLink"""
         inst_req_only = self.make_instance(include_optional=False)
         inst_req_and_optional = self.make_instance(include_optional=True)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()
