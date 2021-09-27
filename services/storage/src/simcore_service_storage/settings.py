@@ -1,6 +1,8 @@
 from typing import List, Optional
 
-from pydantic import AnyHttpUrl, Field, PositiveInt, validator
+from pydantic import Field, PositiveInt, validator
+from pydantic.networks import HttpUrl
+from servicelib.aiohttp.tracing import DEFAULT_JAEGER_BASE_URL
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import LogLevel, PortInt
 from settings_library.logging_utils import MixinLoggingSettings
@@ -13,7 +15,7 @@ from .datcore_adapter.datcore_adapter_settings import DatcoreAdapterSettings
 class TracingSettings(BaseCustomSettings):
     # FIXME: upgrade to new setup
     enabled: Optional[bool] = True
-    zipkin_endpoint: AnyHttpUrl = "http://jaeger:9411"
+    zipkin_endpoint: HttpUrl = DEFAULT_JAEGER_BASE_URL  # type: ignore
 
 
 class Settings(BaseCustomSettings, MixinLoggingSettings):
