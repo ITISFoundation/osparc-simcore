@@ -351,8 +351,14 @@ async def _port_forward_service(
         return exposed_port
 
 
-async def _assert_service_is_available(exposed_port: PositiveInt) -> None:
-    service_address = f"http://172.17.0.1:{exposed_port}"
+async def _assert_service_is_available(
+    exposed_port: PositiveInt, is_legacy: bool, service_uuid: str
+) -> None:
+    service_address = (
+        f"http://172.17.0.1:{exposed_port}/x/{service_uuid}"
+        if is_legacy
+        else f"http://172.17.0.1:{exposed_port}"
+    )
     print(f"checking service @ {service_address}")
 
     async for attempt in tenacity.AsyncRetrying(
@@ -465,7 +471,11 @@ async def test_legacy_and_dynamic_sidecar_run(
             internal_port=service_data["service_port"],
         )
 
-        await _assert_service_is_available(exposed_port)
+        await _assert_service_is_available(
+            exposed_port=exposed_port,
+            is_legacy=_is_legacy(node_data),
+            service_uuid=dynamic_service_uuid,
+        )
 
     # finally stop the started services
     services_to_stop = []
