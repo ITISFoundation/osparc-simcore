@@ -70,12 +70,14 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     },
 
     __createMainViewLayout: function() {
-      [
+      const tabs = [
         [this.tr("Studies"), this.__createStudyBrowser],
-        [this.tr("Discover"), this.__createExploreBrowser],
-        // [this.tr("Services"), this.__createServiceBrowser],
-        [this.tr("Data"), this.__createDataBrowser]
-      ].forEach(tuple => {
+        [this.tr("Discover"), this.__createExploreBrowser]
+      ];
+      if (!osparc.utils.Utils.isProduct("s4l")) {
+        tabs.push([this.tr("Data"), this.__createDataBrowser]);
+      }
+      tabs.forEach(tuple => {
         const tabPage = new qx.ui.tabview.Page(tuple[0]).set({
           appearance: "dashboard-page"
         });
