@@ -23,6 +23,7 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 NAME = "simcore-service-director-v2"
 VERSION = (CURRENT_DIR / "VERSION").read_text().strip()
 AUTHORS = "Sylvain Anderegg (sanderegg), Pedro Crespo (pcrespov)"
+DESCRIPTION = "Orchestrates the pipeline of services defined by the user"
 README = (CURRENT_DIR / "README.md").read_text()
 
 PROD_REQUIREMENTS = tuple(
@@ -45,13 +46,7 @@ if __name__ == "__main__":
         name=NAME,
         version=VERSION,
         author=AUTHORS,
-        description="Orchestrates the pipeline of services defined by the user",
-        classifiers=[
-            "Development Status :: 1 - Planning",
-            "License :: OSI Approved :: MIT License",
-            "Natural Language :: English",
-            "Programming Language :: Python :: 3.8",
-        ],
+        description=DESCRIPTION,
         long_description=README,
         license="MIT license",
         python_requires="~=3.8",
