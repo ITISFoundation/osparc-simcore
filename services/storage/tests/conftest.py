@@ -321,6 +321,7 @@ def dsm_mockup_db(
         display_file_path = str(Path(project_name) / Path(node) / Path(file_name))
         created_at = str(datetime.datetime.now())
         file_size = 1234
+        entity_tag = f"{uuid.uuid4()}"
         assert s3_client.upload_file(bucket_name, object_name, _file)
 
         d = {
@@ -342,6 +343,7 @@ def dsm_mockup_db(
             "created_at": created_at,
             "last_modified": created_at,
             "file_size": file_size,
+            "entity_tag": entity_tag,
         }
 
         counter = counter + 1
