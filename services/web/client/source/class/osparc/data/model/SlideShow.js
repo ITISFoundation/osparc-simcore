@@ -84,7 +84,7 @@ qx.Class.define("osparc.data.model.SlideShow", {
       if (nodeId in slideShow) {
         const pos = slideShow[nodeId];
         for (let nodeId2 in slideShow) {
-          if (slideShow[nodeId2].position >= pos) {
+          if (slideShow[nodeId2].position > pos.position) {
             slideShow[nodeId2].position--;
           }
         }

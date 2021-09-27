@@ -73,11 +73,9 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
           btn.set({
             label: currentPos+1 + " - " + nodeLabel
           });
-          currentPos++;
         }
         btn.nodeId = nodeId;
         btn.skipNode = skipNode;
-
         this.__addEditNodeMenu(btn, currentPos);
 
         if (i === nodeIds.length-1) {
@@ -90,6 +88,10 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
           if (!study.getWorkbench().getNode(nodeId).hasOutputs()) {
             newServiceBtn.exclude();
           }
+        }
+
+        if (!skipNode) {
+          currentPos++;
         }
       });
     },

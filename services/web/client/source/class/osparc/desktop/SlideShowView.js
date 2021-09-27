@@ -137,7 +137,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
         }
 
         if (view) {
-          if (this.__lastView) {
+          if (this.__lastView && this._getChildren().includes(this.__lastView)) {
             this._remove(this.__lastView);
           }
           this._add(view, {
