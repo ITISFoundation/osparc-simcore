@@ -100,6 +100,6 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     # gzip middleware
     app.add_middleware(GZipMiddleware)
 
-    app.add_event_handler("on_startup", setup_tracing)
+    app.add_event_handler("startup", setup_tracing(app))
 
     return app
