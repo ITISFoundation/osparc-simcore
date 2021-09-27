@@ -13,8 +13,8 @@ from .links import (
     DataItemValue,
     DownloadLink,
     FileLink,
-    ItemConcreteLinkValue,
     ItemConcreteValue,
+    ItemValue,
     PortLink,
 )
 
@@ -74,7 +74,7 @@ class Port(ServiceProperty):
             self.value = self.default_value
             self._used_default_value = True
 
-    async def get_value(self) -> Optional[ItemConcreteLinkValue]:
+    async def get_value(self) -> Optional[ItemValue]:
         """returns the value of the link after resolving the port links"""
         log.debug(
             "getting value of %s[%s] containing '%s'",

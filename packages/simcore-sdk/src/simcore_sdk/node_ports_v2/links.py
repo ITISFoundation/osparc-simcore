@@ -22,6 +22,6 @@ DataItemValue = Union[
 ]
 
 ItemConcreteValue = Union[int, float, bool, str, Path]
-ItemConcreteLinkValue = Union[int, float, bool, str, AnyUrl]
+ItemValue = Union[int, float, bool, str, AnyUrl]
 
 __all__ = ["FileLink", "DownloadLink", "PortLink", "DataItemValue", "ItemConcreteValue"]

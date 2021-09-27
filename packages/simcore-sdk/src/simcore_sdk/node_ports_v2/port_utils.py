@@ -7,13 +7,7 @@ from pydantic import AnyUrl
 from yarl import URL
 
 from ..node_ports_common import config, data_items_utils, filemanager
-from .links import (
-    DownloadLink,
-    FileLink,
-    ItemConcreteLinkValue,
-    ItemConcreteValue,
-    PortLink,
-)
+from .links import DownloadLink, FileLink, ItemConcreteValue, ItemValue, PortLink
 
 log = logging.getLogger(__name__)
 
@@ -21,14 +15,14 @@ log = logging.getLogger(__name__)
 async def get_value_link_from_port_link(
     value: PortLink,
     node_port_creator: Callable[[str], Coroutine[Any, Any, Any]],
-) -> Optional[ItemConcreteLinkValue]:
+) -> Optional[ItemValue]:
     log.debug("Getting value link %s", value)
     # create a node ports for the other node
     other_nodeports = await node_port_creator(value.node_uuid)
     # get the port value through that guy
     log.debug("Received node from DB %s, now returning value link", other_nodeports)
 
-    other_value: Optional[ItemConcreteLinkValue] = await other_nodeports.get_value_link(
+    other_value: Optional[ItemValue] = await other_nodeports.get_value_link(
         value.output
     )
     return other_value
