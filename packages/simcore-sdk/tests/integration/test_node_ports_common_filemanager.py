@@ -39,6 +39,12 @@ async def test_valid_upload_download(
     assert store_id == s3_simcore_location
     assert e_tag
 
+    get_store_id, get_e_tag = await filemanager.get_file_metadata(
+        user_id=user_id, store_id=store_id, s3_object=file_id
+    )
+    assert get_store_id == store_id
+    assert get_e_tag == e_tag
+
     download_folder = Path(tmpdir) / "downloads"
     download_file_path = await filemanager.download_file_from_s3(
         user_id=user_id,
