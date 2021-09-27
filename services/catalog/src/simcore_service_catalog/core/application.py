@@ -25,6 +25,7 @@ from .events import (
     on_startup,
 )
 from .settings import AppSettings, BootModeEnum
+from .tracing import setup_tracing
 
 logger = logging.getLogger(__name__)
 
@@ -98,5 +99,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     # gzip middleware
     app.add_middleware(GZipMiddleware)
+
+    app.add_event_handler("on_startup", setup_tracing)
 
     return app
