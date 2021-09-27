@@ -154,3 +154,19 @@ async def pull_file_from_download_link(
 
 def is_file_type(port_type: str) -> bool:
     return port_type.startswith("data:")
+
+
+async def get_file_link_from_url(
+    new_value: AnyUrl, user_id: int, project_id: str, node_id: str
+) -> FileLink:
+    log.debug("url %s will now be converted to a file link", new_value)
+    s3_object = data_items_utils.encode_file_id(
+        Path(new_value.path), project_id, node_id
+    )
+    store_id, e_tag = await filemanager.get_file_metadata(
+        user_id=user_id,
+        store_id="0",
+        s3_object=s3_object,
+    )
+    log.debug("file meta data for %s found, received ETag %s", new_value, e_tag)
+    return FileLink(store=store_id, path=s3_object, e_tag=e_tag)

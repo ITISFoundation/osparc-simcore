@@ -366,3 +366,15 @@ async def entry_exists(user_id: int, store_id: str, s3_object: str) -> bool:
                 s3_object,
             )
             raise exceptions.NodeportsException(msg=str(e))
+
+
+async def get_file_metadata(
+    user_id: int, store_id: str, s3_object: str
+) -> Tuple[str, str]:
+    with api_client() as client:
+        api = UsersApi(client)
+        file_metadata_enveloped = await api.get_file_metadata(
+            s3_object, store_id, user_id
+        )
+        file_metadata = file_metadata_enveloped.data
+        return (file_metadata.location_id, file_metadata["entity_tag"])

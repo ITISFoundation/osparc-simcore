@@ -4,7 +4,7 @@ from pprint import pformat
 from typing import Any, Dict, Optional, Tuple, Type
 
 from models_library.services import PROPERTY_KEY_RE, ServiceProperty
-from pydantic import Field, PrivateAttr, validator
+from pydantic import AnyUrl, Field, PrivateAttr, validator
 
 from ..node_ports_common.exceptions import InvalidItemTypeError
 from . import port_utils
@@ -175,3 +175,19 @@ class Port(ServiceProperty):
         log.debug(
             "setting %s[%s] with value %s", self.key, self.property_type, new_value
         )
+        final_value: Optional[DataItemValue] = None
+        if port_utils.is_file_type(self.property_type) and new_value is not None:
+            if not isinstance(new_value, AnyUrl):
+                raise InvalidItemTypeError(self.property_type, f"{new_value}")
+            final_value = await port_utils.get_file_link_from_url(
+                new_value,
+                self._node_ports.user_id,
+                self._node_ports.project_id,
+                self._node_ports.node_uuid,
+            )
+        else:
+            final_value = self._py_value_converter(new_value)
+
+        self.value = final_value
+        self._used_default_value = False
+        await self._node_ports.save_to_db_cb(self._node_ports)
