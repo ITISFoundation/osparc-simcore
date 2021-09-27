@@ -4,15 +4,14 @@ import os
 
 from aiohttp import web
 
-
+# NOTE: notice that servicelib is frozen to c8669fb52659b684514fefa4f3b4599f57f276a0
 from servicelib.client_session import (  # pylint: disable=no-name-in-module
     persistent_client_session,
 )
 from servicelib.tracing import setup_tracing  # pylint: disable=no-name-in-module
-
 from simcore_service_director import config, registry_cache_task, resources
-from simcore_service_director.rest import routing
 from simcore_service_director.monitoring import setup_app_monitoring
+from simcore_service_director.rest import routing
 
 log = logging.getLogger(__name__)
 
