@@ -2,9 +2,9 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Dict
+from typing import Any, Dict
 
-import pytest
+from respx.router import MockRouter
 from simcore_service_catalog.meta import api_version
 from simcore_service_catalog.models.schemas.meta import Meta
 from starlette.testclient import TestClient
@@ -17,13 +17,13 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-def test_read_healthcheck(director_mockup, client: TestClient):
+def test_read_healthcheck(director_mockup: MockRouter, client: TestClient):
     response = client.get("/")
     assert response.status_code == 200
     assert response.text == '":-)"'
 
 
-def test_read_meta(director_mockup, client: TestClient):
+def test_read_meta(director_mockup: MockRouter, client: TestClient):
     response = client.get("/v0/meta")
     assert response.status_code == 200
     meta = Meta(**response.json())
@@ -31,7 +31,7 @@ def test_read_meta(director_mockup, client: TestClient):
     assert meta.name == "simcore_service_catalog"
 
 
-def test_list_dags(director_mockup, client: TestClient):
+def test_list_dags(director_mockup: MockRouter, client: TestClient):
     response = client.get("/v0/dags")
     assert response.status_code == 200
     assert response.json() == []
@@ -45,7 +45,7 @@ def test_list_dags(director_mockup, client: TestClient):
 
 
 def test_standard_operations_on_resource(
-    director_mockup, client: TestClient, fake_data_dag_in: Dict
+    director_mockup: MockRouter, client: TestClient, fake_data_dag_in: Dict[str, Any]
 ):
 
     response = client.post("/v0/dags", json=fake_data_dag_in)

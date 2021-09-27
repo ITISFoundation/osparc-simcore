@@ -13,6 +13,7 @@ import sqlalchemy as sa
 from aiopg.sa.engine import Engine
 from faker import Faker
 from fastapi import FastAPI
+from respx.router import MockRouter
 from simcore_postgres_database.models.products import products
 from simcore_service_catalog.core.application import init_app
 from simcore_service_catalog.db.tables import (
@@ -38,7 +39,7 @@ def client(app: FastAPI) -> TestClient:
 
 
 @pytest.fixture()
-async def director_mockup(loop, app: FastAPI):
+async def director_mockup(loop, app: FastAPI) -> MockRouter:
 
     with respx.mock(
         base_url=app.state.settings.director.base_url,
