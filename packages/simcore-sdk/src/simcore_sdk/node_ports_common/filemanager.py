@@ -10,7 +10,7 @@ from typing import Optional, Tuple, Union
 import aiofiles
 from aiohttp import ClientPayloadError, ClientSession, ClientTimeout
 from models_library.settings.services_common import ServicesCommonSettings
-from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
+from simcore_service_storage_sdk import Configuration, ApiClient, DefaultApi
 from simcore_service_storage_sdk.rest import ApiException
 from tqdm import tqdm
 from yarl import URL
@@ -58,8 +58,7 @@ class ClientSessionContextManager:
 @contextmanager
 def api_client():
     cfg = Configuration()
-    cfg.host = "http://{}/{}".format(config.STORAGE_ENDPOINT, config.STORAGE_VERSION)
-    log.debug("api connects using %s", cfg.host)
+    cfg.host = f"http://{config.STORAGE_ENDPOINT}/{config.STORAGE_VERSION}"
     client = ApiClient(cfg)
     try:
         yield client
@@ -86,14 +85,22 @@ def _handle_api_exception(store_id: Union[int, str], err: ApiException):
     raise exceptions.StorageConnectionError(store_id, error_reason)
 
 
+from simcore_service_storage_sdk.models.file_location_array_enveloped import (
+    FileLocationArrayEnveloped,
+)
+
+
 async def _get_location_id_from_location_name(
-    user_id: int, store: str, api: UsersApi
+    user_id: int, store: str, api: DefaultApi
 ) -> str:
     try:
-        resp = await api.get_storage_locations(user_id=user_id)
+        resp: FileLocationArrayEnveloped = await api.get_storage_locations(
+            user_id=user_id
+        )
+
         for location in resp.data:
-            if location["name"] == store:
-                return location["id"]
+            if location.name == store:
+                return location.id
         # location id not found
         raise exceptions.S3InvalidStore(store)
     except ApiException as err:
@@ -123,7 +130,7 @@ async def _get_link(user_id: int, store_id: str, file_id: str, apifct) -> URL:
 
 
 async def _get_download_link(
-    user_id: int, store_id: str, file_id: str, api: UsersApi
+    user_id: int, store_id: str, file_id: str, api: DefaultApi
 ) -> URL:
     try:
         return await _get_link(user_id, store_id, file_id, api.download_file)
@@ -134,7 +141,7 @@ async def _get_download_link(
 
 
 async def _get_upload_link(
-    user_id: int, store_id: str, file_id: str, api: UsersApi
+    user_id: int, store_id: str, file_id: str, api: DefaultApi
 ) -> URL:
     try:
         return await _get_link(user_id, store_id, file_id, api.upload_file)
@@ -225,7 +232,7 @@ async def get_download_link_from_s3(
         raise exceptions.NodeportsException(msg="both store name and store id are None")
 
     with api_client() as client:
-        api = UsersApi(client)
+        api = DefaultApi(client)
 
         if store_name is not None:
             store_id = await _get_location_id_from_location_name(
@@ -241,19 +248,19 @@ async def get_upload_link_from_s3(
     store_name: str = None,
     store_id: str = None,
     s3_object: str,
-) -> URL:
+) -> Tuple[str, URL]:
     if store_name is None and store_id is None:
         raise exceptions.NodeportsException(msg="both store name and store id are None")
 
     with api_client() as client:
-        api = UsersApi(client)
+        api = DefaultApi(client)
 
         if store_name is not None:
             store_id = await _get_location_id_from_location_name(
                 user_id, store_name, api
             )
         assert store_id is not None  # nosec
-        return await _get_upload_link(user_id, store_id, s3_object, api)
+        return (store_id, await _get_upload_link(user_id, store_id, s3_object, api))
 
 
 async def download_file_from_s3(
@@ -337,7 +344,8 @@ async def upload_file(
         s3_object,
         local_file_path,
     )
-    upload_link = await get_upload_link_from_s3(
+
+    store_id, upload_link = await get_upload_link_from_s3(
         user_id=user_id, store_name=store_name, store_id=store_id, s3_object=s3_object
     )
 
@@ -352,7 +360,7 @@ async def upload_file(
 async def entry_exists(user_id: int, store_id: str, s3_object: str) -> bool:
     """Returns True if metadata for s3_object is present"""
     with api_client() as client:
-        api = UsersApi(client)
+        api = DefaultApi(client)
         try:
             log.debug("Will request metadata for s3_object=%s", s3_object)
             result = await api.get_file_metadata(s3_object, store_id, user_id)
@@ -372,9 +380,9 @@ async def get_file_metadata(
     user_id: int, store_id: str, s3_object: str
 ) -> Tuple[str, str]:
     with api_client() as client:
-        api = UsersApi(client)
+        api = DefaultApi(client)
         file_metadata_enveloped = await api.get_file_metadata(
             s3_object, store_id, user_id
         )
         file_metadata = file_metadata_enveloped.data
-        return (file_metadata.location_id, file_metadata["entity_tag"])
+        return (file_metadata.location_id, file_metadata.entity_tag)

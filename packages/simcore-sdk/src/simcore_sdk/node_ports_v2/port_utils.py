@@ -78,7 +78,7 @@ async def get_upload_link_from_storage(
 ) -> AnyUrl:
     log.debug("getting link to file from storage for %s", file_name)
     s3_object = data_items_utils.encode_file_id(Path(file_name), project_id, node_id)
-    link = await filemanager.get_upload_link_from_s3(
+    _, link = await filemanager.get_upload_link_from_s3(
         user_id=user_id,
         store_name=config.STORE,
         s3_object=s3_object,
