@@ -1,8 +1,9 @@
+import asyncio
 import collections
 import logging
 from dataclasses import dataclass, field
 from pprint import pformat
-from typing import Any, Callable, Dict, Iterable, List, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from dask.distributed import Client, Future, fire_and_forget
@@ -19,6 +20,7 @@ from models_library.projects_nodes_io import NodeID
 from pydantic import AnyUrl
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager, port_utils
+from simcore_sdk.node_ports_v2.links import ItemValue
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 from tenacity import before_sleep_log, retry, retry_if_exception_type, wait_random
 
@@ -55,6 +57,51 @@ async def _create_node_ports(
         node_uuid=f"{node_id}",
         db_manager=db_manager,
     )
+
+
+def _parse_output_data(
+    app: FastAPI, job_id: str, data: TaskOutputData, loop: asyncio.AbstractEventLoop
+) -> None:
+    service_key, service_version, user_id, project_id, node_id = _parse_dask_job_id(
+        job_id
+    )
+    logger.debug(
+        "parsing output %s of dask task for %s:%s of user %s on project '%s' and node '%s'",
+        pformat(data),
+        service_key,
+        service_version,
+        user_id,
+        project_id,
+        node_id,
+    )
+
+    async def _transfer_output_data(
+        app: FastAPI,
+        user_id: UserID,
+        project_id: ProjectID,
+        node_id: NodeID,
+        data: TaskOutputData,
+    ) -> None:
+        ports = await _create_node_ports(
+            app=app, user_id=user_id, project_id=project_id, node_id=node_id
+        )
+        for port_key, port_value in data.items():
+            value_to_transfer: Optional[ItemValue] = None
+            if isinstance(port_value, FileUrl):
+                value_to_transfer = port_value.url
+            else:
+                value_to_transfer = port_value
+            await (await ports.outputs)[port_key].set_value(value_to_transfer)
+
+    future = asyncio.run_coroutine_threadsafe(
+        _transfer_output_data(app, user_id, project_id, node_id, data), loop
+    )
+    try:
+        future.result()
+    except Exception:
+        logger.error("something unexpectandly failed here", exc_info=True)
+
+    logger.debug("data transfered to database")
 
 
 async def _compute_input_data(
@@ -130,6 +177,33 @@ def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
+def _generate_dask_job_id(
+    service_key: str,
+    service_version: str,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+) -> str:
+    """creates a dask job id:
+    The job ID shall contain the user_id, project_id, node_id
+    Also, it must be unique
+    and it is shown in the Dask scheduler dashboard website
+    """
+    return f"{service_key}:{service_version}:userid_{user_id}:projectid_{project_id}:nodeid_{node_id}:uuid_{uuid4()}"
+
+
+def _parse_dask_job_id(job_id: str) -> Tuple[str, str, UserID, ProjectID, NodeID]:
+    parts = job_id.split(":")
+    assert len(parts) == 6  # nosec
+    return (
+        parts[0],
+        parts[1],
+        UserID(parts[2][len("userid_") :]),
+        ProjectID(parts[3][len("projectid_") :]),
+        NodeID(parts[4][len("nodeid_") :]),
+    )
+
+
 @dataclass
 class DaskClient:
     app: FastAPI
@@ -198,10 +272,10 @@ class DaskClient:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
 
-        def _done_dask_callback(dask_future: Future):
+        def _done_dask_callback(dask_future: Future, loop: asyncio.AbstractEventLoop):
+            # NOTE: here we are called in a separate task
             job_id = dask_future.key
-            logger.debug("Dask future %s completed", job_id)
-            # TODO: upload results to DB/storage
+            _parse_output_data(self.app, job_id, dask_future.result(), loop)
             # remove the future from the dict to remove any handle to the future, so the worker can free the memory
             self._taskid_to_future_map.pop(job_id)
             callback()
@@ -233,11 +307,13 @@ class DaskClient:
             remote_fct = _comp_sidecar_fct
 
         for node_id, node_image in tasks.items():
-            # NOTE: the job id is used to create a folder in the sidecar,
-            # so it must be a valid file name too
-            # Also, it must be unique
-            # and it is shown in the Dask scheduler dashboard website
-            job_id = f"{node_image.name}_{node_image.tag}__projectid_{project_id}__nodeid_{node_id}__{uuid4()}"
+            job_id = _generate_dask_job_id(
+                service_key=node_image.name,
+                service_version=node_image.tag,
+                user_id=user_id,
+                project_id=project_id,
+                node_id=node_id,
+            )
             dask_resources = _from_node_reqs_to_dask_resources(
                 node_image.node_requirements
             )
@@ -286,7 +362,11 @@ class DaskClient:
                 _check_valid_connection_to_scheduler(self.client)
                 # if the connection is good, then the problem is different, so we re-raise
                 raise
-            task_future.add_done_callback(_done_dask_callback)
+            import functools
+
+            task_future.add_done_callback(
+                functools.partial(_done_dask_callback, loop=asyncio.get_event_loop())
+            )
             self._taskid_to_future_map[job_id] = task_future
             fire_and_forget(
                 task_future
