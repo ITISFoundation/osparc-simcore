@@ -32,7 +32,8 @@ PLAMID_CITATIONS = split_citations(["(RRID:Addgene_44362)"])
 ORGANISM_CITATIONS = split_citations(["(MMRRC Cat# 026409-UCD, RRID:MMRRC_026409-UCD)"])
 
 # https://web.expasy.org/cellosaurus/CVCL_0033
-CELL_LINE_CITATIONS = split_citations(["(ATCC Cat# HTB-30, RRID:CVCL_0033)"])
+CELL_LINE_CITATIONS = split_citations(["(BCRJ Cat# 0226, RRID:CVCL_0033)"])
+# NOTE: before Sep 2021, RRID:CVCL_0033 -> ATCC Cat# HTB-30
 
 #
 #  WARNING: Since Sep.2021, the order of the resolved hits list returned by
