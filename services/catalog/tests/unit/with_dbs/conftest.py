@@ -10,9 +10,12 @@ from typing import Any, Callable, Dict, Iterator, List, Tuple
 import pytest
 import respx
 import sqlalchemy as sa
+from _pytest.monkeypatch import MonkeyPatch
 from aiopg.sa.engine import Engine
 from faker import Faker
 from fastapi import FastAPI
+from fastapi_contrib.conf import Settings as JaegerSettings
+from pytest_mock.plugin import MockerFixture
 from respx.router import MockRouter
 from simcore_postgres_database.models.products import products
 from simcore_service_catalog.core.application import init_app
@@ -26,7 +29,16 @@ from starlette.testclient import TestClient
 
 
 @pytest.fixture
-def app(monkeypatch, service_test_environ, postgres_db: sa.engine.Engine) -> FastAPI:
+def app(
+    monkeypatch: MonkeyPatch,
+    mocker: MockerFixture,
+    service_test_environ: None,
+    postgres_db: sa.engine.Engine,
+) -> FastAPI:
+    # monkeypatch.setenv("CONTRIB_JAEGER_HOST", "127.0.0.1")
+    # # monkeypatch.setenv("CONTRIB_JAEGER_PORT", "6831")
+    # # monkeypatch.setenv("CONTRIB_SERVICE_NAME", "pytest-catalog-test")
+    # mocker = mocker.patch("fastapi_contrib.tracing.utils.settings", JaegerSettings())  # type: ignore
     app = init_app()
     yield app
 
@@ -39,7 +51,7 @@ def client(app: FastAPI) -> TestClient:
 
 
 @pytest.fixture()
-async def director_mockup(loop, app: FastAPI) -> MockRouter:
+def director_mockup(app: FastAPI) -> MockRouter:
 
     with respx.mock(
         base_url=app.state.settings.director.base_url,

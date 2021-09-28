@@ -30,6 +30,12 @@ def test_read_meta(director_mockup: MockRouter, client: TestClient):
     assert meta.version == api_version
     assert meta.name == "simcore_service_catalog"
 
+    for i in range(40):
+        response = client.get("/v0/meta")
+    import pdb
+
+    pdb.set_trace()
+
 
 def test_list_dags(director_mockup: MockRouter, client: TestClient):
     response = client.get("/v0/dags")

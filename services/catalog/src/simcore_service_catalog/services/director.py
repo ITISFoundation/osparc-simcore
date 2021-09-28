@@ -102,7 +102,7 @@ class DirectorApi:
 
     def __init__(self, base_url: str, app: FastAPI):
         self.client = AsyncClient(
-            base_url=base_url, timeout=app.state.settings.client_request.total_timeout
+            base_url=base_url, timeout=app.state.settings.CLIENT_REQUEST.total_timeout
         )
         self.vtag = app.state.settings.director.vtag
 

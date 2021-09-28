@@ -183,7 +183,7 @@ async def _ensure_published_templates_accessible(
 
 
 async def sync_registry_task(app: FastAPI) -> None:
-    default_product: str = app.state.settings.access_rights_default_product_name
+    default_product: str = app.state.settings.ACCESS_RIGHTS_DEFAULT_PRODUCT_NAME
     engine: Engine = app.state.engine
 
     while app.state.registry_syncer_running:
@@ -197,7 +197,7 @@ async def sync_registry_task(app: FastAPI) -> None:
             # (templates are published to GUESTs, so their services must be also accessible)
             await _ensure_published_templates_accessible(engine, default_product)
 
-            await asyncio.sleep(app.state.settings.background_task_rest_time)
+            await asyncio.sleep(app.state.settings.CATALOG_BACKGROUND_TASK_REST_TIME)
 
         except CancelledError:
             # task is stopped
@@ -212,7 +212,7 @@ async def sync_registry_task(app: FastAPI) -> None:
                 "Unexpected error while syncing registry entries, restarting now..."
             )
             # wait a bit before retrying, so it does not block everything until the director is up
-            await asyncio.sleep(app.state.settings.background_task_wait_after_failure)
+            await asyncio.sleep(app.state.settings.BACKGROUND_TASK_WAIT_AFTER_FAILURE)
 
 
 async def start_registry_sync_task(app: FastAPI) -> None:

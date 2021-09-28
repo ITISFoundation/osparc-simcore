@@ -88,7 +88,7 @@ async def evaluate_default_policy(
             gid=gid,
             execute_access=True,
             write_access=(gid == owner_gid),
-            product_name=app.state.settings.access_rights_default_product_name,
+            product_name=app.state.settings.ACCESS_RIGHTS_DEFAULT_PRODUCT_NAME,
         )
         for gid in set(group_ids)
     ]
