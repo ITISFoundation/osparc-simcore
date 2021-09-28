@@ -7,7 +7,6 @@ import logging
 from typing import Awaitable, Callable, Union
 
 from aiohttp import web
-from aiohttp.web_middlewares import _Handler, _Middleware
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
 from openapi_core.schema.exceptions import OpenAPIError
@@ -25,6 +24,7 @@ from .rest_responses import (
 )
 from .rest_utils import EnvelopeFactory
 from .rest_validators import OpenApiValidator
+from .typing_extension import Handler, Middleware
 
 DEFAULT_API_VERSION = "v0"
 
@@ -37,7 +37,7 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
     return request.path.startswith(base_path)
 
 
-def error_middleware_factory(api_version: str, log_exceptions=True) -> _Middleware:
+def error_middleware_factory(api_version: str, log_exceptions=True) -> Middleware:
 
     _IS_PROD: bool = is_production_environ()
 
@@ -63,7 +63,7 @@ def error_middleware_factory(api_version: str, log_exceptions=True) -> _Middlewa
         raise resp
 
     @web.middleware
-    async def _middleware_handler(request: web.Request, handler: _Handler):
+    async def _middleware_handler(request: web.Request, handler: Handler):
         """
         Ensure all error raised are properly enveloped and json responses
         """
@@ -130,9 +130,9 @@ def error_middleware_factory(api_version: str, log_exceptions=True) -> _Middlewa
     return _middleware_handler
 
 
-def validate_middleware_factory(api_version: str) -> _Middleware:
+def validate_middleware_factory(api_version: str) -> Middleware:
     @web.middleware
-    async def _middleware_handler(request: web.Request, handler: _Handler):
+    async def _middleware_handler(request: web.Request, handler: Handler):
         """
         Validates requests against openapi specs and extracts body, params, etc ...
         Validate response against openapi specs
@@ -177,17 +177,17 @@ def validate_middleware_factory(api_version: str) -> _Middleware:
 
 
 _FlexibleReturns = Union[StreamResponse, _DataType]
-_HandlerFlexible = Callable[[Request], Awaitable[_FlexibleReturns]]
-_MiddlewareFlexible = Callable[[Request, _HandlerFlexible], Awaitable[StreamResponse]]
+HandlerFlexible = Callable[[Request], Awaitable[_FlexibleReturns]]
+MiddlewareFlexible = Callable[[Request, HandlerFlexible], Awaitable[StreamResponse]]
 
 
-def envelope_middleware_factory(api_version: str) -> _MiddlewareFlexible:
+def envelope_middleware_factory(api_version: str) -> MiddlewareFlexible:
     # FIXME: This data conversion is very error-prone. Use decorators instead!
     _is_prod: bool = is_production_environ()
 
     @web.middleware
     async def _middleware_handler(
-        request: web.Request, handler: _HandlerFlexible
+        request: web.Request, handler: HandlerFlexible
     ) -> StreamResponse:
         """
         Ensures all responses are enveloped as {'data': .. , 'error', ...} in json
