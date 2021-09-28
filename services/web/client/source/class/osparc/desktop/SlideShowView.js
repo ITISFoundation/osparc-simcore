@@ -158,12 +158,21 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     },
 
     startSlides: function(context = "guided") {
+      const study = this.getStudy();
+      const slideShow = study.getUi().getSlideshow();
+      if (context === "app" && slideShow.isEmpty()) {
+        const sortedPipeline = study.getWorkbench().getPipelineLinearSorted();
+        if (sortedPipeline) {
+          sortedPipeline.forEach((nodeId, i) => {
+            slideShow.insertNode(nodeId, i);
+          });
+        }
+      }
+      const slideShowData = slideShow.getData();
       this.setPageContext(context);
       this.__slideShowToolbar.populateButtons(true);
       const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
-      const study = this.getStudy();
-      const slideShow = study.getUi().getSlideshow().getData();
-      const isValid = Object.keys(slideShow).indexOf(currentNodeId) !== -1;
+      const isValid = Object.keys(slideShowData).indexOf(currentNodeId) !== -1;
       if (isValid && currentNodeId) {
         this.nodeSelected(currentNodeId);
       } else {
