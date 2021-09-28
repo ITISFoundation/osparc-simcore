@@ -11,7 +11,6 @@
 
 import asyncio
 import logging
-from asyncio import CancelledError
 from contextlib import suppress
 from pprint import pformat
 from typing import Dict, Set, Tuple
@@ -199,10 +198,10 @@ async def sync_registry_task(app: FastAPI) -> None:
 
             await asyncio.sleep(app.state.settings.CATALOG_BACKGROUND_TASK_REST_TIME)
 
-        except CancelledError:
+        except asyncio.CancelledError:
             # task is stopped
             logger.info("registry syncing task cancelled", exc_info=True)
-            return
+            raise
 
         except Exception:  # pylint: disable=broad-except
             if not app.state.registry_syncer_running:
@@ -228,7 +227,7 @@ async def start_registry_sync_task(app: FastAPI) -> None:
 
 async def stop_registry_sync_task(app: FastAPI) -> None:
     task = app.state.registry_sync_task
-    with suppress(CancelledError):
+    with suppress(asyncio.CancelledError):
         app.state.registry_syncer_running = False
         task.cancel()
         await task
