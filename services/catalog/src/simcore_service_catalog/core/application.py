@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.gzip import GZipMiddleware
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from servicelib.fastapi.tracing import setup_tracing
 from starlette import status
 from starlette.exceptions import HTTPException
 
@@ -25,7 +26,6 @@ from .events import (
     on_startup,
 )
 from .settings import AppSettings, BootModeEnum
-from .tracing import setup_tracing
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +57,9 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     # events
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("startup", create_start_app_handler(app))
+    app.add_event_handler(
+        "startup", setup_tracing(app, service_name="simcore_service_catalog")
+    )
 
     app.add_event_handler("shutdown", on_shutdown)
     app.add_event_handler("shutdown", create_stop_app_handler(app))
@@ -99,7 +102,5 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     # gzip middleware
     app.add_middleware(GZipMiddleware)
-
-    app.add_event_handler("startup", setup_tracing(app))
 
     return app
