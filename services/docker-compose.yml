@@ -39,6 +39,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
       - CATALOG_BACKGROUND_TASK_REST_TIME=${CATALOG_BACKGROUND_TASK_REST_TIME:-60}
       - CATALOG_DEV_FEATURES_ENABLED=${CATALOG_DEV_FEATURES_ENABLED}
+      - TRACING_THRIFT_COMPACT_ENDPOINT=${TRACING_THRIFT_COMPACT_ENDPOINT}
     networks:
       - default
 
@@ -109,6 +110,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
       - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
       - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
+      - TRACING_THRIFT_COMPACT_ENDPOINT=${TRACING_THRIFT_COMPACT_ENDPOINT}
     env_file:
       - ../.env
     volumes:
@@ -198,7 +200,7 @@ services:
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    # hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     deploy: &dask-sidecar-deploy
       mode: global
       endpoint_mode: dnsrr
@@ -263,6 +265,8 @@ services:
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     networks:
       - storage_subnet
+    environment:
+      - TRACING_THRIFT_COMPACT_ENDPOINT=${TRACING_THRIFT_COMPACT_ENDPOINT}
 
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
