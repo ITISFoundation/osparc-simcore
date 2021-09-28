@@ -1,6 +1,9 @@
 import asyncio
+from typing import Optional, Union
 
 import aiodocker
+import httpx
+import requests
 from async_timeout import timeout
 from fastapi import FastAPI
 from simcore_service_director_v2.models.schemas.constants import (
@@ -9,6 +12,7 @@ from simcore_service_director_v2.models.schemas.constants import (
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
 )
+from yarl import URL
 
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 20
 
@@ -72,3 +76,74 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> None:
                 endpoint = entry.scheduler_data.dynamic_sidecar.endpoint
                 assert endpoint == f"http://172.17.0.1:{port}"
                 break
+
+
+async def handle_307_if_required(
+    director_v2_client: httpx.AsyncClient, director_v0_url: URL, result: httpx.Response
+) -> Union[httpx.Response, requests.Response]:
+    def _debug_print(
+        result: Union[httpx.Response, requests.Response], heading_text: str
+    ) -> None:
+        print(
+            (
+                f"{heading_text}\n>>>\n{result.request.method}\n"
+                f"{result.request.url}\n{result.request.headers}\n"
+                f"<<<\n{result.status_code}\n{result.headers}\n{result.text}\n"
+            )
+        )
+
+    if result.next_request is not None:
+        _debug_print(result, "REDIRECTING[1/2] DV2")
+
+        # replace url endpoint for director-v0 in redirect
+        result.next_request.url = httpx.URL(
+            str(result.next_request.url).replace(
+                "http://director:8080", str(director_v0_url)
+            )
+        )
+
+        # when both director-v0 and director-v2 were running in containers
+        # it was possible to use httpx for GET requests as well
+        # since director-v2 is now started on the host directly,
+        # a 405 Method Not Allowed is returned
+        # using requests is workaround for the issue
+        if result.request.method == "GET":
+            redirect_result = requests.get(str(result.next_request.url))
+        else:
+            redirect_result = await director_v2_client.send(result.next_request)
+
+        _debug_print(redirect_result, "REDIRECTING[2/2] DV0")
+
+        return redirect_result
+
+    return result
+
+
+async def assert_start_service(
+    director_v2_client: httpx.AsyncClient,
+    director_v0_url: URL,
+    user_id: int,
+    project_id: str,
+    service_key: str,
+    service_version: str,
+    service_uuid: str,
+    basepath: Optional[str],
+) -> None:
+    data = dict(
+        user_id=user_id,
+        project_id=project_id,
+        service_key=service_key,
+        service_version=service_version,
+        service_uuid=service_uuid,
+        basepath=basepath,
+    )
+    headers = {
+        "x-dynamic-sidecar-request-dns": director_v2_client.base_url.host,
+        "x-dynamic-sidecar-request-scheme": director_v2_client.base_url.scheme,
+    }
+
+    result = await director_v2_client.post(
+        "/dynamic_services", json=data, headers=headers, allow_redirects=False
+    )
+    result = await handle_307_if_required(director_v2_client, director_v0_url, result)
+    assert result.status_code == 201, result.text

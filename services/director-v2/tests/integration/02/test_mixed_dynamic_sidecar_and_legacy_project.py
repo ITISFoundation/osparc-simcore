@@ -5,13 +5,12 @@
 import asyncio
 import logging
 import os
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict
 from uuid import uuid4
 
 import aiodocker
 import httpx
 import pytest
-import requests
 import sqlalchemy as sa
 import tenacity
 from asgi_lifespan import LifespanManager
@@ -26,7 +25,12 @@ from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from utils import ensure_network_cleanup, patch_dynamic_service_url
+from utils import (
+    assert_start_service,
+    ensure_network_cleanup,
+    handle_307_if_required,
+    patch_dynamic_service_url,
+)
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
@@ -201,77 +205,6 @@ async def ensure_services_stopped(
 # UTILS
 
 
-async def _handle_307_if_required(
-    director_v2_client: httpx.AsyncClient, director_v0_url: URL, result: httpx.Response
-) -> Union[httpx.Response, requests.Response]:
-    def _debug_print(
-        result: Union[httpx.Response, requests.Response], heading_text: str
-    ) -> None:
-        print(
-            (
-                f"{heading_text}\n>>>\n{result.request.method}\n"
-                f"{result.request.url}\n{result.request.headers}\n"
-                f"<<<\n{result.status_code}\n{result.headers}\n{result.text}\n"
-            )
-        )
-
-    if result.next_request is not None:
-        _debug_print(result, "REDIRECTING[1/2] DV2")
-
-        # replace url endpoint for director-v0 in redirect
-        result.next_request.url = httpx.URL(
-            str(result.next_request.url).replace(
-                "http://director:8080", str(director_v0_url)
-            )
-        )
-
-        # when both director-v0 and director-v2 were running in containers
-        # it was possible to use httpx for GET requests as well
-        # since director-v2 is now started on the host directly,
-        # a 405 Method Not Allowed is returned
-        # using requests is workaround for the issue
-        if result.request.method == "GET":
-            redirect_result = requests.get(str(result.next_request.url))
-        else:
-            redirect_result = await director_v2_client.send(result.next_request)
-
-        _debug_print(redirect_result, "REDIRECTING[2/2] DV0")
-
-        return redirect_result
-
-    return result
-
-
-async def _assert_start_service(
-    director_v2_client: httpx.AsyncClient,
-    director_v0_url: URL,
-    user_id: int,
-    project_id: str,
-    service_key: str,
-    service_version: str,
-    service_uuid: str,
-    basepath: Optional[str],
-) -> None:
-    data = dict(
-        user_id=user_id,
-        project_id=project_id,
-        service_key=service_key,
-        service_version=service_version,
-        service_uuid=service_uuid,
-        basepath=basepath,
-    )
-    headers = {
-        "x-dynamic-sidecar-request-dns": director_v2_client.base_url.host,
-        "x-dynamic-sidecar-request-scheme": director_v2_client.base_url.scheme,
-    }
-
-    result = await director_v2_client.post(
-        "/dynamic_services", json=data, headers=headers, allow_redirects=False
-    )
-    result = await _handle_307_if_required(director_v2_client, director_v0_url, result)
-    assert result.status_code == 201, result.text
-
-
 def _is_legacy(node_data: Node) -> bool:
     return node_data.label == "LEGACY"
 
@@ -285,7 +218,7 @@ async def _get_service_data(
     result = await director_v2_client.get(
         f"/dynamic_services/{service_uuid}", allow_redirects=False
     )
-    result = await _handle_307_if_required(director_v2_client, director_v0_url, result)
+    result = await handle_307_if_required(director_v2_client, director_v0_url, result)
     assert result.status_code == 200, result.text
 
     payload = result.json()
@@ -312,7 +245,7 @@ async def _assert_stop_service(
     result = await director_v2_client.delete(
         f"/dynamic_services/{service_uuid}", allow_redirects=False
     )
-    result = await _handle_307_if_required(director_v2_client, director_v0_url, result)
+    result = await handle_307_if_required(director_v2_client, director_v0_url, result)
     assert result.status_code == 204
     assert result.text == ""
 
@@ -412,10 +345,9 @@ async def test_legacy_and_dynamic_sidecar_run(
     """
     director_v0_url = _get_director_v0_patched_url(services_endpoint["director"])
 
-    services_to_start = []
-    for service_uuid, node in dy_static_file_server_project.workbench.items():
-        services_to_start.append(
-            _assert_start_service(
+    await asyncio.gather(
+        *(
+            assert_start_service(
                 director_v2_client=director_v2_client,
                 director_v0_url=director_v0_url,
                 user_id=user_db["id"],
@@ -425,8 +357,9 @@ async def test_legacy_and_dynamic_sidecar_run(
                 service_uuid=service_uuid,
                 basepath=f"/x/{service_uuid}" if _is_legacy(node) else None,
             )
+            for service_uuid, node in dy_static_file_server_project.workbench.items()
         )
-    await asyncio.gather(*services_to_start)
+    )
 
     for service_uuid, node in dy_static_file_server_project.workbench.items():
         if _is_legacy(node):
@@ -495,13 +428,13 @@ async def test_legacy_and_dynamic_sidecar_run(
         )
 
     # finally stop the started services
-    services_to_stop = []
-    for service_uuid in dy_static_file_server_project.workbench:
-        services_to_stop.append(
+    await asyncio.gather(
+        *(
             _assert_stop_service(
                 director_v2_client=director_v2_client,
                 director_v0_url=director_v0_url,
                 service_uuid=service_uuid,
             )
+            for service_uuid in dy_static_file_server_project.workbench
         )
-    await asyncio.gather(*services_to_stop)
+    )
