@@ -32,7 +32,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     });
     viewsStack.add(workbenchView);
 
-    const slideshowView = this.__slideshowView = new osparc.desktop.SlideShowView();
+    const slideshowView = this.__slideshowView = new osparc.desktop.SlideshowView();
     viewsStack.add(slideshowView);
 
     slideshowView.addListener("startPartialPipeline", e => {

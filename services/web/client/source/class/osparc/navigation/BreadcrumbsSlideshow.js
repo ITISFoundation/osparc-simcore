@@ -19,7 +19,7 @@
  *
  */
 
-qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
+qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
   extend: osparc.navigation.BreadcrumbNavigation,
 
   members: {
@@ -51,10 +51,10 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
     __createBtn: function(nodeId) {
       const btn = this._createNodeBtn(nodeId);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const slideShow = study.getUi().getSlideshow().getData();
+      const slideshow = study.getUi().getSlideshow().getData();
       const node = study.getWorkbench().getNode(nodeId);
-      if (node && nodeId in slideShow) {
-        const pos = slideShow[nodeId].position;
+      if (node && nodeId in slideshow) {
+        const pos = slideshow[nodeId].position;
         node.bind("label", btn, "label", {
           converter: val => `${pos+1}- ${val}`
         });

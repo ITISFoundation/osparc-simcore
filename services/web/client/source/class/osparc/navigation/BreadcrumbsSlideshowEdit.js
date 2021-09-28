@@ -19,7 +19,7 @@
  *
  */
 
-qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
+qx.Class.define("osparc.navigation.BreadcrumbsSlideshowEdit", {
   extend: osparc.navigation.BreadcrumbNavigation,
 
   events: {
@@ -45,7 +45,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
       newServiceBtn.leftNodeId = null;
       this._add(newServiceBtn);
 
-      const slideShow = study.getUi().getSlideshow();
+      const slideshow = study.getUi().getSlideshow();
       let currentPos = 0;
       nodeIds.forEach((nodeId, i) => {
         newServiceBtn.rightNodeId = nodeId;
@@ -63,7 +63,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
 
         const node = study.getWorkbench().getNode(nodeId);
         const nodeLabel = node.getLabel();
-        const skipNode = slideShow.getPosition(nodeId) === -1;
+        const skipNode = slideshow.getPosition(nodeId) === -1;
         if (skipNode) {
           btn.set({
             label: nodeLabel,

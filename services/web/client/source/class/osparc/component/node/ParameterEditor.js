@@ -120,7 +120,7 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
       return control || this.base(arguments, id);
     },
 
-    formForSlideShow: function() {
+    formForSlideshow: function() {
       const form = this.__buildForm();
       const node = this.getNode();
       form.getItem("label").addListener("changeValue", e => node.setLabel(e.getData()));

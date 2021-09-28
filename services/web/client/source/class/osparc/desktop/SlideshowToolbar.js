@@ -15,10 +15,11 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.SlideShowToolbar", {
+qx.Class.define("osparc.desktop.SlideshowToolbar", {
   extend: osparc.desktop.Toolbar,
 
   events: {
+    "saveSlideshow": "qx.event.type.Data",
     "addServiceBetween": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
     "showNode": "qx.event.type.Data",
@@ -64,7 +65,7 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           });
           break;
         case "breadcrumb-navigation": {
-          control = new osparc.navigation.BreadcrumbsSlideShow();
+          control = new osparc.navigation.BreadcrumbsSlideshow();
           control.addListener("nodeSelected", e => {
             this.fireDataEvent("nodeSelected", e.getData());
           }, this);
@@ -79,7 +80,7 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           });
           break;
         case "breadcrumb-navigation-edit": {
-          control = new osparc.navigation.BreadcrumbsSlideShowEdit();
+          control = new osparc.navigation.BreadcrumbsSlideshowEdit();
           [
             "addServiceBetween",
             "removeNode",

@@ -30,7 +30,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
 
     this.set({
       workbench: studyDataUI && studyDataUI.workbench ? studyDataUI.workbench : this.getWorkbench(),
-      slideshow: new osparc.data.model.SlideShow(studyDataUI && studyDataUI.slideshow ? studyDataUI.slideshow : this.getSlideshow()),
+      slideshow: new osparc.data.model.Slideshow(studyDataUI && studyDataUI.slideshow ? studyDataUI.slideshow : this.getSlideshow()),
       currentNodeId: studyDataUI && studyDataUI.currentNodeId ? studyDataUI.currentNodeId : this.initCurrentNodeId(),
       mode: studyDataUI && studyDataUI.mode ? studyDataUI.mode : this.initMode()
     });
@@ -44,7 +44,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
     },
 
     slideshow: {
-      check: "osparc.data.model.SlideShow",
+      check: "osparc.data.model.Slideshow",
       init: {},
       nullable: true
     },

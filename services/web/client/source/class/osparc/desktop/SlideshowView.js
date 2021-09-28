@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.SlideShowView", {
+qx.Class.define("osparc.desktop.SlideshowView", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -23,34 +23,34 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    const slideShowToolbar = this.__slideShowToolbar = new osparc.desktop.SlideShowToolbar();
-    slideShowToolbar.addListener("nodeSelected", e => {
+    const slideshowToolbar = this.__slideshowToolbar = new osparc.desktop.SlideshowToolbar();
+    slideshowToolbar.addListener("nodeSelected", e => {
       const nodeId = e.getData();
       this.nodeSelected(nodeId);
     }, this);
-    slideShowToolbar.addListener("addServiceBetween", e => {
+    slideshowToolbar.addListener("addServiceBetween", e => {
       const {
         leftNodeId,
         rightNodeId
       } = e.getData();
       this.__requestServiceBetween(leftNodeId, rightNodeId);
     }, this);
-    slideShowToolbar.addListener("removeNode", e => {
+    slideshowToolbar.addListener("removeNode", e => {
       const nodeId = e.getData();
       this.__removeNode(nodeId);
     }, this);
-    slideShowToolbar.addListener("showNode", e => {
+    slideshowToolbar.addListener("showNode", e => {
       const {
         nodeId,
         desiredPos
       } = e.getData();
       this.__showNode(nodeId, desiredPos);
     }, this);
-    slideShowToolbar.addListener("hideNode", e => {
+    slideshowToolbar.addListener("hideNode", e => {
       const nodeId = e.getData();
       this.__hideNode(nodeId);
     }, this);
-    this._add(slideShowToolbar);
+    this._add(slideshowToolbar);
   },
 
   events: {
@@ -73,11 +73,11 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
   members: {
     __currentNodeId: null,
-    __slideShowToolbar: null,
+    __slideshowToolbar: null,
     __lastView: null,
 
     getStartStopButtons: function() {
-      return this.__slideShowToolbar.getStartStopButtons();
+      return this.__slideshowToolbar.getStartStopButtons();
     },
 
     getSelectedNodeIDs: function() {
@@ -117,7 +117,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
         let view;
         if (node.isParameter()) {
           view = new osparc.component.node.ParameterEditor(node);
-          view.formForSlideShow();
+          view.formForSlideshow();
         } else {
           if (node.isContainer()) {
             view = new osparc.component.node.GroupNodeView();
@@ -159,20 +159,20 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
     startSlides: function(context = "guided") {
       const study = this.getStudy();
-      const slideShow = study.getUi().getSlideshow();
-      if (context === "app" && slideShow.isEmpty()) {
+      const slideshow = study.getUi().getSlideshow();
+      if (context === "app" && slideshow.isEmpty()) {
         const sortedPipeline = study.getWorkbench().getPipelineLinearSorted();
         if (sortedPipeline) {
           sortedPipeline.forEach((nodeId, i) => {
-            slideShow.insertNode(nodeId, i);
+            slideshow.insertNode(nodeId, i);
           });
         }
       }
-      const slideShowData = slideShow.getData();
+      const slideshowData = slideshow.getData();
       this.setPageContext(context);
-      this.__slideShowToolbar.populateButtons(true);
+      this.__slideshowToolbar.populateButtons(true);
       const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
-      const isValid = Object.keys(slideShowData).indexOf(currentNodeId) !== -1;
+      const isValid = Object.keys(slideshowData).indexOf(currentNodeId) !== -1;
       if (isValid && currentNodeId) {
         this.nodeSelected(currentNodeId);
       } else {
@@ -182,7 +182,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
     _applyStudy: function(study) {
       if (study) {
-        this.__slideShowToolbar.setStudy(study);
+        this.__slideshowToolbar.setStudy(study);
       }
     },
 
@@ -259,7 +259,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       } else {
         slideshow.insertNode(nodeId, 0);
       }
-      this.__slideShowToolbar.populateButtons();
+      this.__slideshowToolbar.populateButtons();
     },
 
     __removeNode: function(nodeId) {
@@ -314,21 +314,21 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       // remove node
       workbench.removeNode(nodeId);
 
-      this.__slideShowToolbar.populateButtons();
+      this.__slideshowToolbar.populateButtons();
     },
 
     __showNode: function(nodeId, desiredPos) {
       this.getStudy().getUi().getSlideshow()
         .insertNode(nodeId, desiredPos);
 
-      this.__slideShowToolbar.populateButtons();
+      this.__slideshowToolbar.populateButtons();
     },
 
     __hideNode: function(nodeId) {
       this.getStudy().getUi().getSlideshow()
         .removeNode(nodeId);
 
-      this.__slideShowToolbar.populateButtons();
+      this.__slideshowToolbar.populateButtons();
     }
   }
 });
