@@ -17,6 +17,10 @@ from yarl import URL
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 20
 
 
+def get_director_v0_patched_url(url: URL) -> URL:
+    return URL(str(url).replace("127.0.0.1", "172.17.0.1"))
+
+
 async def ensure_network_cleanup(
     docker_client: aiodocker.Docker, project_id: str
 ) -> None:

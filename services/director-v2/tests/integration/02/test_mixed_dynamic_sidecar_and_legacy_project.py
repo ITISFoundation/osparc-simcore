@@ -28,6 +28,7 @@ from simcore_service_director_v2.models.schemas.constants import (
 from utils import (
     assert_start_service,
     ensure_network_cleanup,
+    get_director_v0_patched_url,
     handle_307_if_required,
     patch_dynamic_service_url,
 )
@@ -320,10 +321,6 @@ async def _assert_service_is_available(
                 assert response.status_code == 200
 
 
-def _get_director_v0_patched_url(url: URL) -> URL:
-    return URL(str(url).replace("127.0.0.1", "172.17.0.1"))
-
-
 # TESTS
 
 
@@ -343,7 +340,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     - dy-static-file-server-dynamic-sidecar
     - dy-static-file-server-dynamic-sidecar-compose
     """
-    director_v0_url = _get_director_v0_patched_url(services_endpoint["director"])
+    director_v0_url = get_director_v0_patched_url(services_endpoint["director"])
 
     await asyncio.gather(
         *(
