@@ -183,7 +183,7 @@ async def _ensure_published_templates_accessible(
 
 
 async def sync_registry_task(app: FastAPI) -> None:
-    default_product: str = app.state.settings.ACCESS_RIGHTS_DEFAULT_PRODUCT_NAME
+    default_product: str = app.state.settings.CATALOG_ACCESS_RIGHTS_DEFAULT_PRODUCT_NAME
     engine: Engine = app.state.engine
 
     while app.state.registry_syncer_running:
@@ -221,7 +221,7 @@ async def start_registry_sync_task(app: FastAPI) -> None:
     # that never stops the background task. This flag is an additional
     # mechanism to enforce stopping the background task
     app.state.registry_syncer_running = True
-    task = asyncio.ensure_future(sync_registry_task(app))
+    task = asyncio.create_task(sync_registry_task(app))
     app.state.registry_sync_task = task
     logger.info("registry syncing task started")
 
