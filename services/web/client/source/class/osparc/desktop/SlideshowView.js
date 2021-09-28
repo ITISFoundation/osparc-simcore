@@ -24,6 +24,16 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     this._setLayout(new qx.ui.layout.VBox());
 
     const slideshowToolbar = this.__slideshowToolbar = new osparc.desktop.SlideshowToolbar();
+    slideshowToolbar.addListener("saveSlideshow", () => {
+      if (this.__currentNodeId) {
+        const slideshow = this.getStudy().getUi().getSlideshow();
+        if (!Object.keys(slideshow).includes(this.__currentNodeId)) {
+          this.__openFirstNode();
+        }
+      } else {
+        this.__openFirstNode();
+      }
+    }, this);
     slideshowToolbar.addListener("nodeSelected", e => {
       const nodeId = e.getData();
       this.nodeSelected(nodeId);

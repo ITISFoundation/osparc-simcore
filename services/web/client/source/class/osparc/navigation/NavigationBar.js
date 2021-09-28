@@ -286,7 +286,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __createSlideMenuBtn: function() {
-      const slidesMenuBtn = new qx.ui.form.MenuButton(this.tr("Guided Mode"), "@FontAwesome5Solid/caret-square-right/16").set({
+      const slidesMenuBtn = new qx.ui.form.MenuButton(this.tr("Slideshow"), "@FontAwesome5Solid/caret-square-right/16").set({
         ...this.self().BUTTON_OPTIONS,
         iconPosition: "left"
       });
@@ -307,7 +307,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
       splitButtonMenu.addSeparator();
 
-      const editSlidesBtn = this.__editSlidesButton = new qx.ui.menu.Button(this.tr("Edit Guided Mode"));
+      const editSlidesBtn = this.__editSlidesButton = new qx.ui.menu.Button(this.tr("Edit Slideshow"));
       editSlidesBtn.addListener("execute", () => {
         this.fireEvent("slidesEdit");
       }, this);
@@ -317,7 +317,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __createSlideStopBtn: function() {
-      const stopBtn = new qx.ui.form.Button(this.tr("Guided Mode"), "@FontAwesome5Solid/stop/16").set({
+      const stopBtn = new qx.ui.form.Button(this.tr("Slideshow"), "@FontAwesome5Solid/stop/16").set({
         ...this.self().BUTTON_OPTIONS
       });
       stopBtn.addListener("execute", () => {

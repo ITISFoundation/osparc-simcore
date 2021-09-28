@@ -42,7 +42,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
         if (study.isPipelineEmtpy()) {
           label.setValue(this.tr("Pipeline is empty"));
         } else {
-          label.setValue(this.tr("There are no visible nodes, enable some"));
+          label.setValue(this.tr("There are no visible nodes, enable some by editing the slideshow"));
         }
         this._add(label);
       }

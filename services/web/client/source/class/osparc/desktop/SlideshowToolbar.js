@@ -19,7 +19,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
   extend: osparc.desktop.Toolbar,
 
   events: {
-    "saveSlideshow": "qx.event.type.Data",
+    "saveSlideshow": "qx.event.type.Event",
     "addServiceBetween": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
     "showNode": "qx.event.type.Data",
@@ -51,6 +51,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
             this.getChildControl("breadcrumbs-scroll").show();
             this.getChildControl("breadcrumbs-scroll-edit").exclude();
             control.setSelection([editBtn]);
+            this.fireEvent("saveSlideshow");
           }, this);
           control.add(editBtn);
           control.add(saveBtn);
