@@ -49,7 +49,6 @@ def create_start_app_handler(app: FastAPI) -> Callable:
 
         # setup connection to pg db
         if app.state.settings.CATALOG_POSTGRES:
-            # FIXME: check postgres service is in place and ready. Hand-shake?
             await connect_to_db(app)
 
         # setup connection to director
