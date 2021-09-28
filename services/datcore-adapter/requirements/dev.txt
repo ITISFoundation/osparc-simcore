@@ -13,8 +13,9 @@
 
 # installs this repo's packages
 --editable ../../packages/models-library
---editable ../../packages/settings-library/
 --editable ../../packages/pytest-simcore
+--editable ../../packages/service-library[fastapi]
+--editable ../../packages/settings-library/
 
 # installs current package
 --editable .

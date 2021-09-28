@@ -3,10 +3,6 @@ import sys
 from pathlib import Path
 from typing import Set
 
-from setuptools import find_packages, setup
-
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
 
 def read_reqs(reqs_path: Path) -> Set[str]:
     return {
@@ -20,6 +16,13 @@ def read_reqs(reqs_path: Path) -> Set[str]:
     }
 
 
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+NAME = "simcore-service-library"
+VERSION = "1.1.0"
+AUTHORS = "Pedro Crespo-Valero (pcrespov)"
+DESCRIPTION = "Core service library for simcore (or servicelib)"
+
 # WEAK requirements (see requirements/python-dependencies.md)
 PROD_REQUIREMENTS = read_reqs(CURRENT_DIR / "requirements" / "_base.in")
 AIOHTTP_REQUIREMENTS = read_reqs(CURRENT_DIR / "requirements" / "_aiohttp.in")
@@ -30,33 +33,24 @@ TEST_REQUIREMENTS = read_reqs(CURRENT_DIR / "requirements" / "_test.txt")
 
 
 if __name__ == "__main__":
+    from setuptools import find_packages, setup
 
     setup(
-        name="simcore-service-library",
-        version="1.1.0",
-        author="Pedro Crespo (pcrespov)",
-        description="Core service library for simcore (or servicelib)",
-        classifiers=[
-            "Development Status :: 3 - Alpha",
-            "Intended Audience :: Developers",
-            "License :: OSI Approved :: MIT License",
-            "Natural Language :: English",
-            "Programming Language :: Python :: 3.8",
-        ],
-        long_description=Path(CURRENT_DIR / "README.rst").read_text(),
+        name=NAME,
+        version=VERSION,
+        author=AUTHORS,
+        description=DESCRIPTION,
         license="MIT license",
         python_requires="~=3.8",
-        install_requires=list(PROD_REQUIREMENTS),
+        install_requires=tuple(PROD_REQUIREMENTS),
         packages=find_packages(where="src"),
         package_dir={"": "src"},
-        include_package_data=True,
         test_suite="tests",
-        tests_require=list(TEST_REQUIREMENTS),
+        tests_require=tuple(TEST_REQUIREMENTS),
         extras_require={
-            "test": list(TEST_REQUIREMENTS),
-            "aiohttp": list(AIOHTTP_REQUIREMENTS),
-            "fastapi": list(FASTAPI_REQUIREMENTS),
-            "all": list(AIOHTTP_REQUIREMENTS | FASTAPI_REQUIREMENTS),
+            "test": tuple(TEST_REQUIREMENTS),
+            "aiohttp": tuple(AIOHTTP_REQUIREMENTS),
+            "fastapi": tuple(FASTAPI_REQUIREMENTS),
+            "all": tuple(AIOHTTP_REQUIREMENTS | FASTAPI_REQUIREMENTS),
         },
-        zip_safe=False,
     )

@@ -8,7 +8,6 @@
 
 # installs base + tests + tools requirements
 --requirement _base.txt
---requirement _packages.txt
 --requirement _test.txt
 --requirement _tools.txt
 

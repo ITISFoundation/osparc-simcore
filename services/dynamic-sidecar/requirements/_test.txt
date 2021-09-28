@@ -6,7 +6,7 @@
 #
 async-asgi-testclient==1.4.6
     # via -r requirements/_test.in
-attrs==21.2.0
+attrs==20.3.0
     # via
     #   -c requirements/_base.txt
     #   pytest
