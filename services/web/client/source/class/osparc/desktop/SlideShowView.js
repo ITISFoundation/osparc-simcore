@@ -317,9 +317,9 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       this.__slideShowToolbar.populateButtons();
     },
 
-    __showNode: function(nodeId) {
+    __showNode: function(nodeId, desiredPos) {
       this.getStudy().getUi().getSlideshow()
-        .insertNode(nodeId, 1);
+        .insertNode(nodeId, desiredPos);
 
       this.__slideShowToolbar.populateButtons();
     },
