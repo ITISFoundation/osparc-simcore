@@ -27,14 +27,25 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
       const btns = [];
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const currentNodeId = study.getUi().getCurrentNodeId();
-      nodesIds.forEach(nodeId => {
-        const btn = this.__createBtn(nodeId);
-        if (nodeId === currentNodeId) {
-          btn.setValue(true);
+      if (nodesIds.length) {
+        nodesIds.forEach(nodeId => {
+          const btn = this.__createBtn(nodeId);
+          if (nodeId === currentNodeId) {
+            btn.setValue(true);
+          }
+          btns.push(btn);
+        });
+        this._buttonsToBreadcrumb(btns, "arrow");
+      } else {
+        this._removeAll();
+        const label = new qx.ui.basic.Label();
+        if (study.isPipelineEmtpy()) {
+          label.setValue(this.tr("Pipeline is empty"));
+        } else {
+          label.setValue(this.tr("There are no visible nodes, enable some"));
         }
-        btns.push(btn);
-      });
-      this._buttonsToBreadcrumb(btns, "arrow");
+        this._add(label);
+      }
     },
 
     __createBtn: function(nodeId) {

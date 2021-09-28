@@ -329,6 +329,10 @@ qx.Class.define("osparc.data.model.Study", {
       return false;
     },
 
+    isPipelineEmtpy: function() {
+      return Object.keys(this.getWorkbench().getNodes()).length === 0;
+    },
+
     __applyAccessRights: function(value) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();

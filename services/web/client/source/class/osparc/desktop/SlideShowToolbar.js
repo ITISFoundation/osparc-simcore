@@ -32,11 +32,13 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
         case "edit-slideshow-buttons": {
           control = new qx.ui.container.Stack();
           const editBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/14").set({
-            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
+            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
+            toolTipText: this.tr("Edit Slideshow")
           });
           editBtn.editing = false;
           const saveBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/check/14").set({
-            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
+            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
+            toolTipText: this.tr("Save Slideshow")
           });
           saveBtn.editing = true;
           editBtn.addListener("execute", () => {
