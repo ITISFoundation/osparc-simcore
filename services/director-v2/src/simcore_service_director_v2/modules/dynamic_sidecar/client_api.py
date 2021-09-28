@@ -1,6 +1,6 @@
 import logging
 import traceback
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import httpx
 from fastapi import FastAPI
@@ -187,9 +187,10 @@ class DynamicSidecarClient:
             log_httpx_http_error(url, "PUT", traceback.format_exc())
             raise e
 
-    async def service_pull_input_ports(  # pylint: disable=dangerous-default-value
-        self, dynamic_sidecar_endpoint: str, port_keys: List[str] = []
+    async def service_pull_input_ports(
+        self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
     ) -> int:
+        port_keys = [] if port_keys is None else port_keys
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers:pull-nodeports")
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
@@ -206,9 +207,10 @@ class DynamicSidecarClient:
             log_httpx_http_error(url, "PUT", traceback.format_exc())
             raise e
 
-    async def service_push_output_ports(  # pylint: disable=dangerous-default-value
-        self, dynamic_sidecar_endpoint: str, port_keys: List[str] = []
+    async def service_push_output_ports(
+        self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
     ) -> None:
+        port_keys = [] if port_keys is None else port_keys
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers:push-nodeports")
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:

@@ -288,8 +288,9 @@ async def save_state() -> Response:
     summary="Pull input ports data",
     response_model=None,
     status_code=status.HTTP_200_OK,
-)  # pylint: disable=dangerous-default-value
-async def pull_input_ports(port_keys: List[str] = []) -> int:
+)
+async def pull_input_ports(port_keys: Optional[List[str]] = None) -> int:
+    port_keys = [] if port_keys is None else port_keys
     mounted_volumes: MountedVolumes = get_mounted_volumes()
 
     transferred_bytes = await nodeports.download_inputs(
@@ -303,8 +304,9 @@ async def pull_input_ports(port_keys: List[str] = []) -> int:
     summary="Push output ports data",
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
-)  # pylint: disable=dangerous-default-value
-async def push_output_ports(port_keys: List[str] = []) -> Response:
+)
+async def push_output_ports(port_keys: Optional[List[str]] = None) -> Response:
+    port_keys = [] if port_keys is None else port_keys
     mounted_volumes: MountedVolumes = get_mounted_volumes()
 
     await nodeports.upload_outputs(
