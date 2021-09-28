@@ -6,6 +6,7 @@ import httpx
 import requests
 from async_timeout import timeout
 from fastapi import FastAPI
+from models_library.projects import Node
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
@@ -15,6 +16,10 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
 from yarl import URL
 
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 20
+
+
+def is_legacy(node_data: Node) -> bool:
+    return node_data.label == "LEGACY"
 
 
 def get_director_v0_patched_url(url: URL) -> URL:

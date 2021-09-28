@@ -30,6 +30,7 @@ from utils import (
     ensure_network_cleanup,
     get_director_v0_patched_url,
     handle_307_if_required,
+    is_legacy,
     patch_dynamic_service_url,
 )
 from yarl import URL
@@ -206,10 +207,6 @@ async def ensure_services_stopped(
 # UTILS
 
 
-def _is_legacy(node_data: Node) -> bool:
-    return node_data.label == "LEGACY"
-
-
 async def _get_service_data(
     director_v2_client: httpx.AsyncClient,
     director_v0_url: URL,
@@ -223,7 +220,7 @@ async def _get_service_data(
     assert result.status_code == 200, result.text
 
     payload = result.json()
-    data = payload["data"] if _is_legacy(node_data) else payload
+    data = payload["data"] if is_legacy(node_data) else payload
     return data
 
 
@@ -352,14 +349,14 @@ async def test_legacy_and_dynamic_sidecar_run(
                 service_key=node.key,
                 service_version=node.version,
                 service_uuid=service_uuid,
-                basepath=f"/x/{service_uuid}" if _is_legacy(node) else None,
+                basepath=f"/x/{service_uuid}" if is_legacy(node) else None,
             )
             for service_uuid, node in dy_static_file_server_project.workbench.items()
         )
     )
 
     for service_uuid, node in dy_static_file_server_project.workbench.items():
-        if _is_legacy(node):
+        if is_legacy(node):
             continue
 
         await patch_dynamic_service_url(
@@ -414,13 +411,13 @@ async def test_legacy_and_dynamic_sidecar_run(
         )
         exposed_port = await _port_forward_service(
             service_name=service_data["service_host"],
-            is_legacy=_is_legacy(node_data),
+            is_legacy=is_legacy(node_data),
             internal_port=service_data["service_port"],
         )
 
         await _assert_service_is_available(
             exposed_port=exposed_port,
-            is_legacy=_is_legacy(node_data),
+            is_legacy=is_legacy(node_data),
             service_uuid=dynamic_service_uuid,
         )
 
