@@ -1,5 +1,5 @@
 import asyncio
-from typing import Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import aiodocker
 import httpx
@@ -16,6 +16,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
 from yarl import URL
 
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 20
+SERVICES_ARE_READY_TIMEOUT = 10 * 60
 
 
 def is_legacy(node_data: Node) -> bool:
@@ -156,3 +157,64 @@ async def assert_start_service(
     )
     result = await handle_307_if_required(director_v2_client, director_v0_url, result)
     assert result.status_code == 201, result.text
+
+
+async def get_service_data(
+    director_v2_client: httpx.AsyncClient,
+    director_v0_url: URL,
+    service_uuid: str,
+    node_data: Node,
+) -> Dict[str, Any]:
+    result = await director_v2_client.get(
+        f"/dynamic_services/{service_uuid}", allow_redirects=False
+    )
+    result = await handle_307_if_required(director_v2_client, director_v0_url, result)
+    assert result.status_code == 200, result.text
+
+    payload = result.json()
+    data = payload["data"] if is_legacy(node_data) else payload
+    return data
+
+
+async def _get_service_state(
+    director_v2_client: httpx.AsyncClient,
+    director_v0_url: URL,
+    service_uuid: str,
+    node_data: Node,
+) -> str:
+    data = await get_service_data(
+        director_v2_client, director_v0_url, service_uuid, node_data
+    )
+    print("STATUS_RESULT", node_data.label, data["service_state"])
+    return data["service_state"]
+
+
+async def assert_all_services_running(
+    director_v2_client: httpx.AsyncClient,
+    director_v0_url: URL,
+    workbench: Dict[str, Node],
+) -> None:
+    async with timeout(SERVICES_ARE_READY_TIMEOUT):
+        not_all_services_running = True
+
+        while not_all_services_running:
+            service_states = await asyncio.gather(
+                *(
+                    _get_service_state(
+                        director_v2_client=director_v2_client,
+                        director_v0_url=director_v0_url,
+                        service_uuid=dynamic_service_uuid,
+                        node_data=node_data,
+                    )
+                    for dynamic_service_uuid, node_data in workbench.items()
+                )
+            )
+
+            # check that no service has failed
+            for service_state in service_states:
+                assert service_state != "failed"
+
+            are_services_running = [x == "running" for x in service_states]
+            not_all_services_running = not all(are_services_running)
+            # let the services boot
+            await asyncio.sleep(1.0)

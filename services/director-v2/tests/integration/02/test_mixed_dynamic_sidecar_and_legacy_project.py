@@ -5,7 +5,7 @@
 import asyncio
 import logging
 import os
-from typing import Any, Callable, Dict
+from typing import Callable, Dict
 from uuid import uuid4
 
 import aiodocker
@@ -14,8 +14,7 @@ import pytest
 import sqlalchemy as sa
 import tenacity
 from asgi_lifespan import LifespanManager
-from async_timeout import timeout
-from models_library.projects import Node, ProjectAtDB
+from models_library.projects import ProjectAtDB
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from pydantic.types import PositiveInt
@@ -26,9 +25,11 @@ from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
 from utils import (
+    assert_all_services_running,
     assert_start_service,
     ensure_network_cleanup,
     get_director_v0_patched_url,
+    get_service_data,
     handle_307_if_required,
     is_legacy,
     patch_dynamic_service_url,
@@ -50,8 +51,6 @@ pytest_simcore_ops_services_selection = [
 
 logger = logging.getLogger(__name__)
 
-HTTPX_CLIENT_TIMOUT = 10
-SERVICES_ARE_READY_TIMEOUT = 10 * 60
 
 # FIXTURES
 
@@ -207,36 +206,6 @@ async def ensure_services_stopped(
 # UTILS
 
 
-async def _get_service_data(
-    director_v2_client: httpx.AsyncClient,
-    director_v0_url: URL,
-    service_uuid: str,
-    node_data: Node,
-) -> Dict[str, Any]:
-    result = await director_v2_client.get(
-        f"/dynamic_services/{service_uuid}", allow_redirects=False
-    )
-    result = await handle_307_if_required(director_v2_client, director_v0_url, result)
-    assert result.status_code == 200, result.text
-
-    payload = result.json()
-    data = payload["data"] if is_legacy(node_data) else payload
-    return data
-
-
-async def _get_service_state(
-    director_v2_client: httpx.AsyncClient,
-    director_v0_url: URL,
-    service_uuid: str,
-    node_data: Node,
-) -> str:
-    data = await _get_service_data(
-        director_v2_client, director_v0_url, service_uuid, node_data
-    )
-    print("STATUS_RESULT", node_data.label, data["service_state"])
-    return data["service_state"]
-
-
 async def _assert_stop_service(
     director_v2_client: httpx.AsyncClient, director_v0_url: URL, service_uuid: str
 ) -> None:
@@ -367,37 +336,18 @@ async def test_legacy_and_dynamic_sidecar_run(
 
     assert len(dy_static_file_server_project.workbench) == 3
 
-    async with timeout(SERVICES_ARE_READY_TIMEOUT):
-        not_all_services_running = True
-
-        while not_all_services_running:
-            service_states = await asyncio.gather(
-                *(
-                    _get_service_state(
-                        director_v2_client=director_v2_client,
-                        director_v0_url=director_v0_url,
-                        service_uuid=dynamic_service_uuid,
-                        node_data=node_data,
-                    )
-                    for dynamic_service_uuid, node_data in dy_static_file_server_project.workbench.items()
-                )
-            )
-
-            # check that no service has failed
-            for service_state in service_states:
-                assert service_state != "failed"
-
-            are_services_running = [x == "running" for x in service_states]
-            not_all_services_running = not all(are_services_running)
-            # let the services boot
-            await asyncio.sleep(1.0)
+    await assert_all_services_running(
+        director_v2_client,
+        director_v0_url,
+        workbench=dy_static_file_server_project.workbench,
+    )
 
     # query the service directly and check if it responding accordingly
     for (
         dynamic_service_uuid,
         node_data,
     ) in dy_static_file_server_project.workbench.items():
-        service_data = await _get_service_data(
+        service_data = await get_service_data(
             director_v2_client=director_v2_client,
             director_v0_url=director_v0_url,
             service_uuid=dynamic_service_uuid,
