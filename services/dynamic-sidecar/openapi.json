@@ -311,8 +311,7 @@
                 "type": "array",
                 "items": {
                   "type": "string"
-                },
-                "default": []
+                }
               }
             }
           }
@@ -354,8 +353,7 @@
                 "type": "array",
                 "items": {
                   "type": "string"
-                },
-                "default": []
+                }
               }
             }
           }
