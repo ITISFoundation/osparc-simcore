@@ -48,4 +48,4 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     CATALOG_BACKGROUND_TASK_WAIT_AFTER_FAILURE: PositiveInt = 5  # secs
     CATALOG_ACCESS_RIGHTS_DEFAULT_PRODUCT_NAME: str = "osparc"
 
-    CATALOG_TRACING: Optional[TracingSettings]
+    CATALOG_TRACING: Optional[TracingSettings] = None
