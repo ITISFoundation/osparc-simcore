@@ -3,6 +3,7 @@ services:
   api-server:
     image: ${DOCKER_REGISTRY:-itisfoundation}/api-server:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       - WEBSERVER_HOST=${WEBSERVER_HOST:-webserver}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
@@ -26,6 +27,7 @@ services:
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
       - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
@@ -43,6 +45,7 @@ services:
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       - DEFAULT_MAX_NANO_CPUS=${DEFAULT_MAX_NANO_CPUS:-0}
       - DEFAULT_MAX_MEMORY=${DEFAULT_MAX_MEMORY:-0}
@@ -91,6 +94,7 @@ services:
   director-v2:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director-v2:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       - DASK_SCHEDULER_HOST=${DASK_SCHEDULER_HOST:-dask-scheduler}
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
@@ -122,6 +126,7 @@ services:
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=8000
@@ -150,6 +155,7 @@ services:
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       - CATALOG_HOST=${CATALOG_HOST:-catalog}
       - CATALOG_PORT=${CATALOG_PORT:-8000}
@@ -192,6 +198,7 @@ services:
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     deploy: &dask-sidecar-deploy
       mode: global
       endpoint_mode: dnsrr
@@ -241,7 +248,7 @@ services:
   dask-scheduler:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: dask-scheduler
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       <<: *sidecar-environment
       DASK_START_AS_SCHEDULER: 1
@@ -253,12 +260,14 @@ services:
   datcore-adapter:
     image: ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     networks:
       - storage_subnet
 
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       - DATCORE_ADAPTER_HOST=${DATCORE_ADAPTER_HOST:-datcore-adapter}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
@@ -291,6 +300,7 @@ services:
   rabbit:
     image: itisfoundation/rabbitmq:3.8.0-management
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD}
@@ -308,6 +318,7 @@ services:
   migration:
     image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -321,6 +332,7 @@ services:
   postgres:
     image: "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f"
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -375,6 +387,7 @@ services:
   redis:
     image: "redis:5.0.9-alpine@sha256:b011c1ca7fa97ed92d6c5995e5dd752dc37fe157c1b60ce96a6e35701851dabc"
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     networks:
       - default
       - computational_services_subnet
@@ -387,6 +400,7 @@ services:
   traefik:
     image: traefik:v2.4.13
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     command:
       - "--api=true"
       - "--api.dashboard=true"
