@@ -8,17 +8,14 @@ from fastapi import FastAPI, HTTPException
 from httpx import AsyncClient, Response, codes
 from starlette import status
 
-from ..core.settings import DirectorSettings
-
 logger = logging.getLogger(__name__)
 
 
 def setup_director(app: FastAPI) -> None:
-    settings: DirectorSettings = app.state.settings.director
-
-    # init client-api
-    logger.debug("Setup director at %s...", settings.base_url)
-    app.state.director_api = DirectorApi(base_url=settings.base_url, app=app)
+    if settings := app.state.settings.CATALOG_DIRECTOR:
+        # init client-api
+        logger.debug("Setup director at %s...", settings.base_url)
+        app.state.director_api = DirectorApi(base_url=settings.base_url, app=app)
 
     # does NOT communicate with director service
 
@@ -102,9 +99,10 @@ class DirectorApi:
 
     def __init__(self, base_url: str, app: FastAPI):
         self.client = AsyncClient(
-            base_url=base_url, timeout=app.state.settings.CLIENT_REQUEST.total_timeout
+            base_url=base_url,
+            timeout=app.state.settings.CATALOG_CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
         )
-        self.vtag = app.state.settings.director.vtag
+        self.vtag = app.state.settings.CATALOG_DIRECTOR.DIRECTOR_VTAG
 
     # OPERATIONS
     # TODO: policy to retry if NetworkError/timeout?

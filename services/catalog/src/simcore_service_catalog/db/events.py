@@ -34,12 +34,12 @@ def _compose_info_on_engine(app: FastAPI) -> str:
 async def connect_to_db(app: FastAPI) -> None:
     logger.debug("Connecting db ...")
 
-    cfg: PostgresSettings = app.state.settings.postgres
+    cfg: PostgresSettings = app.state.settings.CATALOG_POSTGRES
     engine: Engine = await create_engine(
         str(cfg.dsn),
         application_name=f"{__name__}_{id(app)}",  # unique identifier per app
-        minsize=cfg.minsize,
-        maxsize=cfg.maxsize,
+        minsize=cfg.POSTGRES_MINSIZE,
+        maxsize=cfg.POSTGRES_MAXSIZE,
     )
     logger.debug("Connected to %s", engine.dsn)
     app.state.engine = engine

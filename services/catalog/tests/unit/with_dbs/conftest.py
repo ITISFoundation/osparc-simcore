@@ -14,7 +14,6 @@ from _pytest.monkeypatch import MonkeyPatch
 from aiopg.sa.engine import Engine
 from faker import Faker
 from fastapi import FastAPI
-from fastapi_contrib.conf import Settings as JaegerSettings
 from pytest_mock.plugin import MockerFixture
 from respx.router import MockRouter
 from simcore_postgres_database.models.products import products
@@ -35,10 +34,7 @@ def app(
     service_test_environ: None,
     postgres_db: sa.engine.Engine,
 ) -> FastAPI:
-    # monkeypatch.setenv("CONTRIB_JAEGER_HOST", "127.0.0.1")
-    # # monkeypatch.setenv("CONTRIB_JAEGER_PORT", "6831")
-    # # monkeypatch.setenv("CONTRIB_SERVICE_NAME", "pytest-catalog-test")
-    # mocker = mocker.patch("fastapi_contrib.tracing.utils.settings", JaegerSettings())  # type: ignore
+    monkeypatch.setenv("CATALOG_TRACING", "null")
     app = init_app()
     yield app
 
@@ -54,7 +50,7 @@ def client(app: FastAPI) -> TestClient:
 def director_mockup(app: FastAPI) -> MockRouter:
 
     with respx.mock(
-        base_url=app.state.settings.director.base_url,
+        base_url=app.state.settings.CATALOG_DIRECTOR.base_url,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
