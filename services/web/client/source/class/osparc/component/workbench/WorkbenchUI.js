@@ -402,7 +402,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       nodeUI.addListener("nodeStartedMoving", () => {
         this.getSelectedNodes().forEach(selectedNodeUI => {
           selectedNodeUI.initPos = selectedNodeUI.getNode().getPosition();
-          console.log("nodeStartedMoving", selectedNodeUI.initPos);
         });
       }, this);
 
@@ -411,7 +410,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         if ("initPos" in nodeUI) {
           const xDiff = nodeUI.getNode().getPosition().x - nodeUI.initPos.x;
           const yDiff = nodeUI.getNode().getPosition().y - nodeUI.initPos.y;
-          console.log(xDiff, yDiff);
           this.getSelectedNodes().forEach(selectedNodeUI => {
             if (nodeUI.getNodeId() !== selectedNodeUI.getNodeId()) {
               const selectedNode = selectedNodeUI.getNode();
