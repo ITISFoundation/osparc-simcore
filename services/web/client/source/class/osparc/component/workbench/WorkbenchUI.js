@@ -399,11 +399,38 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __addNodeListeners: function(nodeUI) {
+      nodeUI.addListener("nodeStartedMoving", () => {
+        this.getSelectedNodes().forEach(selectedNodeUI => {
+          selectedNodeUI.initPos = selectedNodeUI.getNode().getPosition();
+          console.log("nodeStartedMoving", selectedNodeUI.initPos);
+        });
+      }, this);
+
       nodeUI.addListener("nodeMoving", () => {
         this.__updateNodeUIPos(nodeUI);
+        if ("initPos" in nodeUI) {
+          const xDiff = nodeUI.getNode().getPosition().x - nodeUI.initPos.x;
+          const yDiff = nodeUI.getNode().getPosition().y - nodeUI.initPos.y;
+          console.log(xDiff, yDiff);
+          this.getSelectedNodes().forEach(selectedNodeUI => {
+            if (nodeUI.getNodeId() !== selectedNodeUI.getNodeId()) {
+              const selectedNode = selectedNodeUI.getNode();
+              selectedNode.setPosition({
+                x: selectedNodeUI.initPos.x + xDiff,
+                y: selectedNodeUI.initPos.y + yDiff
+              });
+              selectedNodeUI.moveTo(selectedNode.getPosition().x, selectedNode.getPosition().y);
+              this.__updateNodeUIPos(selectedNodeUI);
+            }
+          });
+        }
       }, this);
 
       nodeUI.addListener("nodeStoppedMoving", () => {
+        this.getSelectedNodes().forEach(selectedNodeUI => {
+          delete selectedNodeUI["initPos"];
+        });
+
         this.__updateWorkbenchBounds();
 
         // After moving a nodeUI, a new element with z-index 100000+ appears on the DOM tree and prevents from clicking
