@@ -139,7 +139,7 @@ SERVICES_CATALOG: Dict[Tuple[str, str], ServiceDockerData] = {
 SERVICE_TO_CALLABLES: Dict[Tuple[str, str], Callable] = {
     # ensure inputs/outputs map function signature
     (f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/int-range", "1.0.0"): _linspace,
-    SumDiffDef.info.unique_id: SumDiffDef.run_fun,
+    SumDiffDef.info.unique_id: SumDiffDef.run_with_model,
 }
 
 
