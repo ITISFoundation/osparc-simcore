@@ -28,8 +28,8 @@ from models_library.projects_nodes import (
     OutputTypes,
 )
 from models_library.projects_nodes_io import NodeID
-from models_library.services import ServiceDockerData, ServiceInputs
-from simcore_service_webserver.meta_core import PROPTYPE_2_PYTYPE, PYTYPE_2_PROPTYPE
+from models_library.services import ServiceDockerData
+from simcore_service_webserver.meta_core import PROPTYPE_2_PYTYPE
 
 
 #### HELPERS -----------
