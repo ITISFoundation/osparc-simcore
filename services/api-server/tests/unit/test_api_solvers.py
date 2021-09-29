@@ -35,7 +35,7 @@ def app(project_env_devel_environment, monkeypatch) -> FastAPI:
 @pytest.fixture
 def mocked_catalog_service_api(app: FastAPI):
     with respx.mock(
-        base_url=app.state.settings.catalog.base_url,
+        base_url=app.state.settings.API_SERVER_CATALOG.base_url,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
