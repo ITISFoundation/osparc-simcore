@@ -5,7 +5,6 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from httpx import HTTPStatusError
 from servicelib.logging_utils import config_all_loggers
-from simcore_service_storage.settings import Settings
 from starlette import status
 from starlette.exceptions import HTTPException
 
