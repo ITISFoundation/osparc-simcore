@@ -2,6 +2,7 @@ import collections.abc
 from typing import Generator, Iterator, get_origin, get_type_hints
 
 import pytest
+from models_library.services import ServiceDockerData
 from simcore_service_webserver.meta_core import SumDiffData, SumDiffDef
 
 ## HELPERS -------------------------------------------------
@@ -26,6 +27,9 @@ def distance(start: int, end: int) -> int:
 ## FIXTURES -------------------------------------------------
 
 
+## TESTS -------------------------------------------------
+
+
 @pytest.mark.parametrize(
     "func,is_iter",
     [
@@ -46,9 +50,6 @@ def test_check_iterables(func, is_iter):
         assert not return_cls or not issubclass(return_cls, collections.abc.Iterable)
 
 
-## TESTS -------------------------------------------------
-
-
 def test_it():
     print(SumDiffData.schema_json(indent=2))
 
@@ -64,3 +65,6 @@ def test_it():
     assert node1_w_results == node2_w_results
 
     assert not SumDiffDef.is_iterable()
+
+    ds_model = SumDiffDef.to_dockerdata()
+    assert isinstance(ds_model, ServiceDockerData)
