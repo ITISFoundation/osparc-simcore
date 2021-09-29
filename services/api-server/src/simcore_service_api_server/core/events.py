@@ -23,7 +23,7 @@ WELCOME_MSG = r"""
 
 def create_start_app_handler(app: FastAPI) -> Callable:
     async def on_startup() -> None:
-        if app.state.settings.postgres.enabled:
+        if app.state.settings.API_SERVER_POSTGRES:
             await connect_to_db(app)
 
         print(WELCOME_MSG, flush=True)
@@ -35,7 +35,7 @@ def create_stop_app_handler(app: FastAPI) -> Callable:
     async def on_shutdown() -> None:
         logger.info("Application stopping")
 
-        if app.state.settings.postgres.enabled:
+        if app.state.settings.API_SERVER_POSTGRES:
             try:
                 await close_db_connection(app)
 
