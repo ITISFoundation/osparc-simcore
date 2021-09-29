@@ -22,10 +22,13 @@ log = logging.getLogger(__name__)
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
-    depends=["simcore_service_webserver.projects"],
+    depends=[
+        "simcore_service_webserver.projects",
+        "simcore_service_webserver.version_control",
+    ],
     logger=log,
 )
-def setup_version_control(app: web.Application):
+def setup_meta(app: web.Application):
 
     settings: ApplicationSettings = app[APP_SETTINGS_KEY]
     if not settings.WEBSERVER_DEV_FEATURES_ENABLED:
