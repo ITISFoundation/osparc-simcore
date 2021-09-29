@@ -623,6 +623,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __openPermissions: function(studyData) {
       const permissionsView = osparc.studycard.Utils.openAccessRights(studyData);
+      permissionsView.getChildControl("study-link").show();
       permissionsView.addListener("updateAccessRights", e => {
         const updatedData = e.getData();
         this._resetStudyItem(updatedData);
