@@ -62,3 +62,5 @@ def test_it():
     node2_w_results = SumDiffData(inputs=inputs, outputs=outputs)
 
     assert node1_w_results == node2_w_results
+
+    assert not SumDiffDef.is_iterable()
