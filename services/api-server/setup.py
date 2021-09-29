@@ -33,6 +33,7 @@ PROD_REQUIREMENTS = tuple(
         "simcore-postgres-database",
         "simcore-sdk",
         "simcore-service-library[fastapi]",
+        "simcore-settings-library",
     }
 )
 
