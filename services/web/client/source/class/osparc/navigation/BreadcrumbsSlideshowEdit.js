@@ -33,6 +33,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshowEdit", {
     populateButtons: function(study) {
       this._removeAll();
 
+      // for now, only linear pipelines
       if (!study.getWorkbench().isPipelineLinear()) {
         return;
       }
@@ -78,16 +79,12 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshowEdit", {
         btn.skipNode = skipNode;
         this.__addEditNodeMenu(btn, currentPos);
 
-        if (i === nodeIds.length-1) {
-          // for now, plus buttons only at the beginning and end
-          newServiceBtn = this.__createNewServiceBtn();
-          newServiceBtn.leftNodeId = nodeId;
-          newServiceBtn.rightNodeId = null;
+        newServiceBtn = this.__createNewServiceBtn();
+        newServiceBtn.leftNodeId = nodeId;
+        newServiceBtn.rightNodeId = null;
+        // for now, plus buttons only at the beginning and end
+        if ((i === nodeIds.length-1) && study.getWorkbench().getNode(nodeId).hasOutputs()) {
           this._add(newServiceBtn);
-
-          if (!study.getWorkbench().getNode(nodeId).hasOutputs()) {
-            newServiceBtn.exclude();
-          }
         }
 
         if (!skipNode) {
