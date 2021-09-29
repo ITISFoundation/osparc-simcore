@@ -2,6 +2,7 @@ import collections.abc
 from typing import Generator, Iterator, get_origin, get_type_hints
 
 import pytest
+from models_library.frontend_services_catalog import is_iterator_service
 from models_library.services import ServiceDockerData
 from simcore_service_webserver.meta_core import SumDiffData, SumDiffDef
 
@@ -56,15 +57,17 @@ def test_it():
     node1 = SumDiffData(inputs={"x": 3, "y": 44})
 
     node1_w_results = SumDiffData.from_io(
-        *SumDiffDef.run_with_model(node1.inputs),
+        *SumDiffDef.run(node1.inputs),
     )
 
-    inputs, outputs = SumDiffDef.run(x=3, y=44)
+    inputs, outputs = SumDiffDef.run_fun(x=3, y=44)
     node2_w_results = SumDiffData(inputs=inputs, outputs=outputs)
 
     assert node1_w_results == node2_w_results
 
     assert not SumDiffDef.is_iterable()
+
+    assert SumDiffDef.is_iterable() == is_iterator_service(SumDiffDef.info.key)
 
     ds_model = SumDiffDef.to_dockerdata()
     assert isinstance(ds_model, ServiceDockerData)

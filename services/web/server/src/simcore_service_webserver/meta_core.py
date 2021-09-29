@@ -17,6 +17,11 @@ class Info(BaseModel):
     name: str
     description: Optional[str] = None
 
+    @property
+    def unique_id(self):
+        """hashable unique identifier"""
+        return (self.key, self.version)
+
 
 class BaseFuncDef:
     info: Info
