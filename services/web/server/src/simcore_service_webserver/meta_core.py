@@ -1,6 +1,6 @@
 import collections.abc
 import inspect
-from typing import Any, Callable, Optional, Type, get_origin, get_type_hints
+from typing import Any, Callable, Dict, Optional, Type, get_origin, get_type_hints
 
 from models_library.frontend_services_catalog import FRONTEND_SERVICE_KEY_PREFIX, OM
 from models_library.services import ServiceDockerData
@@ -30,14 +30,25 @@ class BaseFuncDef:
     _compute: Callable
     _compute_meta: Optional[Callable] = None
 
+    # TODO: fastapi-like approach, shall read from the signature of a function
+    #
+    #   @service(key=..., version=...)
+    #   def fun(x: int, y: str = Field(..., description="y")):
+    #       ...
+    #
+    #   then fun.__inputs__, __output__, fun.to_docker_metadata()
+    #
+
+    # run interface
     @classmethod
-    def run(cls, **kwargs):
+    def run_fun(cls, **kwargs) -> Dict[str, Any]:
         assert cls.Inputs
         assert cls._compute
         assert cls.Outputs
 
         _inputs = cls.Inputs.parse_obj(kwargs)
-        return cls.run_with_model(_inputs)
+        _outputs = cls.run_with_model(_inputs)
+        return _outputs.dict()
 
     @classmethod
     def collect_outputs(cls, returned: Any):
@@ -47,10 +58,10 @@ class BaseFuncDef:
         return cls.Outputs.parse_obj(obj)
 
     @classmethod
-    def run_with_model(cls, inputs: BaseModel):
+    def run_with_model(cls, inputs: BaseModel) -> BaseModel:
         _returned = cls._compute(**inputs.dict())
         outputs = cls.collect_outputs(_returned)
-        return inputs, outputs
+        return outputs
 
     @classmethod
     def is_iterable(cls) -> bool:
@@ -164,7 +175,10 @@ def extract_ios(fun: Callable):
     # if not issubclass(sig.return_annotation, tuple):
 
 
-# /projects/{project_uuid}/workbench:start
+# POST /projects/{project_uuid}/pipeline:resolve #???
+
+# POST /projects/{project_uuid}/pipeline:start
+# POST /projects/{project_uuid}/pipeline:stop
 
 # pre-process
 #   - any meta nodes?

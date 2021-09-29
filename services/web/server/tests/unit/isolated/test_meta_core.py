@@ -57,11 +57,12 @@ def test_it():
     node1 = SumDiffData(inputs={"x": 3, "y": 44})
 
     node1_w_results = SumDiffData.from_io(
-        *SumDiffDef.run(node1.inputs),
+        node1.inputs,
+        SumDiffDef.run_with_model(node1.inputs),
     )
 
-    inputs, outputs = SumDiffDef.run_fun(x=3, y=44)
-    node2_w_results = SumDiffData(inputs=inputs, outputs=outputs)
+    returned = SumDiffDef.run_fun(x=3, y=44)
+    node2_w_results = SumDiffData(inputs={"x": 3, "y": 44}, outputs=returned)
 
     assert node1_w_results == node2_w_results
 
