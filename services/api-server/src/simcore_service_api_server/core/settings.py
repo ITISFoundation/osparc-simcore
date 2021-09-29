@@ -97,6 +97,8 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         False, env=["API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"]
     )
 
+    API_SERVER_REMOTE_DEBUG_PORT: int = 3000
+
     @cached_property
     def debug(self) -> bool:
         """If True, debug tracebacks should be returned on errors."""
@@ -110,8 +112,3 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     @classmethod
     def _validate_loglevel(cls, value) -> str:
         return cls.validate_log_level(value)
-
-
-# FIXME:
-client_request: ClientRequestSettings
-remote_debug_port: int = 3000
