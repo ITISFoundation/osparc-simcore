@@ -1,5 +1,6 @@
+import collections.abc
 import inspect
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Optional, Type, get_origin, get_type_hints
 
 from models_library.frontend_services_catalog import FRONTEND_SERVICE_KEY_PREFIX
 from pydantic.fields import Field
@@ -19,12 +20,13 @@ class Info(BaseModel):
 class FunctionalMixin:
     Inputs: Type[BaseModel]
     Outputs: Type[BaseModel]
-    _impl: Callable
+    _compute: Callable
+    _compute_meta: Optional[Callable] = None
 
     @classmethod
     def run(cls, **kwargs):
         assert cls.Inputs
-        assert cls._impl
+        assert cls._compute
         assert cls.Outputs
 
         _inputs = cls.Inputs.parse_obj(kwargs)
@@ -39,12 +41,26 @@ class FunctionalMixin:
 
     @classmethod
     def run_with_model(cls, inputs: BaseModel):
-        _returned = cls._impl(**inputs.dict())
+        _returned = cls._compute(**inputs.dict())
         outputs = cls.collect_outputs(_returned)
         return inputs, outputs
 
+    @classmethod
+    def is_iterable(cls) -> bool:
+        return_hint = get_type_hints(cls._compute).get("return")
+        if return_cls := get_origin(return_hint):
+            return issubclass(return_cls, collections.abc.Iterable)
+        return False
 
-# Concrete Functional Services -------
+
+# Functional Services -------
+#
+# A functional service requires two classes, namely a *Def and a *Data class
+#  - The *Def class defines the info, inputs/output schema and the implementation function
+#  - Having models for i/o allows defining both single and composed constraints on the fields (e.g. x>1 and y<x)
+#     - single constraints can be reflected in the json-schema (i.e. descriptive constraints)
+#     - composed constraints are programatic only (i.e. programatic constraints)
+#
 class SumDiffDef(FunctionalMixin):
     info = Info(
         name="sum-diff",
@@ -53,7 +69,7 @@ class SumDiffDef(FunctionalMixin):
         description="Sum and different of two numbers",
     )
 
-    # NOTE: INputs/outputs should be easily parsed from signatures
+    # NOTE: Inputs/outputs should be easily parsed from signatures
     class Inputs(BaseModel):
         x: float
         y: float = 3
@@ -62,8 +78,14 @@ class SumDiffDef(FunctionalMixin):
         sum: float = Field(..., description="Sum of all inputs")
         diff: float = Field(..., description="Difference between inputs")
 
+    # NOTE: ? language that operates on fields ... (e.g. to propagate inputs to output units)
     @staticmethod
-    def _impl(x, y):
+    def _compute_meta(x, y):
+        # some meta of x and y is known, might be able to determine Outputs ?
+        raise NotImplementedError
+
+    @staticmethod
+    def _compute(x, y):
         return x + y, x - y
 
 
