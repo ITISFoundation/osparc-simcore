@@ -2,7 +2,8 @@ import collections.abc
 import inspect
 from typing import Any, Callable, Optional, Type, get_origin, get_type_hints
 
-from models_library.frontend_services_catalog import FRONTEND_SERVICE_KEY_PREFIX
+from models_library.frontend_services_catalog import FRONTEND_SERVICE_KEY_PREFIX, OM
+from models_library.services import ServiceDockerData
 from pydantic.fields import Field
 from pydantic.main import BaseModel
 
@@ -17,7 +18,8 @@ class Info(BaseModel):
     description: Optional[str] = None
 
 
-class FunctionalMixin:
+class BaseFuncDef:
+    info: Info
     Inputs: Type[BaseModel]
     Outputs: Type[BaseModel]
     _compute: Callable
@@ -52,6 +54,37 @@ class FunctionalMixin:
             return issubclass(return_cls, collections.abc.Iterable)
         return False
 
+    @classmethod
+    def to_dockerdata(cls) -> ServiceDockerData:
+        inputs = {}
+        for name, model_field in cls.Inputs.__fields__.items():
+            inputs[name] = {
+                "label": name,
+                "description": model_field.field_info.description or "",
+                "type": PYTYPE_2_PROPTYPE[model_field.type_],
+                "defaultValue": model_field.default,
+            }
+
+        outputs = {}
+        for name, model_field in cls.Outputs.__fields__.items():
+            outputs[name] = {
+                "label": name,
+                "description": model_field.field_info.description or "",
+                "type": PYTYPE_2_PROPTYPE[model_field.type_],
+            }
+
+        data = {
+            "integration-version": "1.0.0",
+            "type": "computational",
+            "authors": [
+                OM,
+            ],
+            "contact": OM.email,
+            **cls.info.dict(),
+            **{"inputs": inputs, "outputs": outputs},
+        }
+        return ServiceDockerData.parse_obj(data)
+
 
 # Functional Services -------
 #
@@ -61,7 +94,7 @@ class FunctionalMixin:
 #     - single constraints can be reflected in the json-schema (i.e. descriptive constraints)
 #     - composed constraints are programatic only (i.e. programatic constraints)
 #
-class SumDiffDef(FunctionalMixin):
+class SumDiffDef(BaseFuncDef):
     info = Info(
         name="sum-diff",
         key=f"{FRONTEND_SERVICE_KEY_PREFIX}/def/sum-diff",
@@ -79,9 +112,11 @@ class SumDiffDef(FunctionalMixin):
         diff: float = Field(..., description="Difference between inputs")
 
     # NOTE: ? language that operates on fields ... (e.g. to propagate inputs to output units)
-    @staticmethod
-    def _compute_meta(x, y):
+    @classmethod
+    def _compute_meta(cls, x, y):
         # some meta of x and y is known, might be able to determine Outputs ?
+        assert cls.Outputs  # nosec
+        # cls.Outputs =
         raise NotImplementedError
 
     @staticmethod
