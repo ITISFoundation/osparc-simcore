@@ -5,6 +5,7 @@ from typing import Dict, Optional
 from cryptography.fernet import Fernet
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.requests import Request
+from starlette.status import HTTP_503_SERVICE_UNAVAILABLE
 
 from ...core.settings import AppSettings, WebServerSettings
 from ...modules.webserver import AuthSession
@@ -18,8 +19,12 @@ def _get_app(request: Request) -> FastAPI:
 
 
 def _get_settings(request: Request) -> WebServerSettings:
-    app_settings: AppSettings = request.app.state.settings
-    return app_settings.webserver
+    s = request.app.state.settings.API_SERVER_WEBSERVER
+    if not s:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, detail="webserver disabled"
+        )
+    return s
 
 
 def _get_encrypt(request: Request) -> Optional[Fernet]:
@@ -38,7 +43,7 @@ def get_session_cookie(
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=UNAVAILBLE_MSG)
 
     # builds session cookie
-    cookie_name = settings.session_name
+    cookie_name = settings.WEBSERVER_SESSION_NAME
     cookie_data = json.dumps(
         {
             "created": int(time.time()),  # now
@@ -57,7 +62,7 @@ def get_webserver_session(
     session_cookies: Dict = Depends(get_session_cookie),
 ) -> AuthSession:
     """
-        Lifetime of AuthSession wrapper is one request because it needs different session cookies
-        Lifetime of embedded client is attached to the app lifetime
+    Lifetime of AuthSession wrapper is one request because it needs different session cookies
+    Lifetime of embedded client is attached to the app lifetime
     """
     return AuthSession.create(app, session_cookies)
