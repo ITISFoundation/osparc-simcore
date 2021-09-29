@@ -8,7 +8,7 @@ from servicelib.logging_utils import config_all_loggers
 from starlette import status
 from starlette.exceptions import HTTPException
 
-from .._meta import api_version, api_vtag
+from .._meta import API_VERSION, API_VTAG
 from ..api.errors.http_error import (
     http_error_handler,
     make_http_error_handler_for_exception,
@@ -39,8 +39,8 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         debug=settings.debug,
         title="osparc.io web API",
         description="osparc-simcore public web API specifications",
-        version=api_version,
-        openapi_url=f"/api/{api_vtag}/openapi.json",
+        version=API_VERSION,
+        openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled, see below
     )
@@ -101,7 +101,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     # api under /v*
     api_router = create_router(settings)
-    app.include_router(api_router, prefix=f"/{api_vtag}")
+    app.include_router(api_router, prefix=f"/{API_VTAG}")
 
     use_route_names_as_operation_ids(app)
     config_all_loggers()

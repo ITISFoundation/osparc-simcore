@@ -3,7 +3,7 @@ from typing import Callable
 
 from fastapi import FastAPI
 
-from .._meta import __version__, project_name
+from .._meta import PROJECT_NAME, __version__
 from ..db.events import close_db_connection, connect_to_db
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ def create_stop_app_handler(app: FastAPI) -> Callable:
                     stack_info=app.state.settings.debug,
                 )
 
-        msg = project_name + f" v{__version__} SHUT DOWN"
+        msg = PROJECT_NAME + f" v{__version__} SHUT DOWN"
         print(f"{msg:=^100}")
 
     return on_shutdown
