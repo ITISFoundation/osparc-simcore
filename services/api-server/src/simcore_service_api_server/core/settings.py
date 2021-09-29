@@ -2,7 +2,6 @@ from functools import cached_property
 from typing import Optional
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from models_library.settings.http_clients import ClientRequestSettings
 from pydantic import Field, SecretStr
 from pydantic.class_validators import validator
 from pydantic.networks import HttpUrl

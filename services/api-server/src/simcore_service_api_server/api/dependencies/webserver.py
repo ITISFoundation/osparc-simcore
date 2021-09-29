@@ -5,9 +5,8 @@ from typing import Dict, Optional
 from cryptography.fernet import Fernet
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.requests import Request
-from starlette.status import HTTP_503_SERVICE_UNAVAILABLE
 
-from ...core.settings import AppSettings, WebServerSettings
+from ...core.settings import WebServerSettings
 from ...modules.webserver import AuthSession
 from .authentication import get_active_user_email
 
