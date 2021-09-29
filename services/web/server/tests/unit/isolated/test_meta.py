@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 
-import inspect
 import itertools
 from copy import deepcopy
 from typing import Any, Callable, Dict, Iterator, List, Tuple
@@ -26,19 +25,23 @@ from models_library.projects_nodes import (
     OutputID,
     OutputTypes,
 )
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, PortLink
 from models_library.services import ServiceDockerData
-from simcore_service_webserver.meta_core import PROPTYPE_2_PYTYPE
+from simcore_service_webserver.meta_core import PROPTYPE_2_PYTYPE, SumDiffDef
+
+## HELPERS -------------------------------------------------
 
 
-#### HELPERS -------------------------------------------------------
 def _linspace(
     linspace_start: int = 0, linspace_stop: int = 1, linspace_step: int = 1
 ) -> Iterator[int]:
-    # TODO: horrible argument names
-    # TODO: auto-generate signature from meta descriptor?
     for value in range(linspace_start, linspace_stop, linspace_step):
         yield value
+
+
+def _run_linspace(inputs: Dict[str, InputTypes]) -> Iterator[Dict[str, OutputTypes]]:
+    # TODO:
+    raise NotImplementedError
 
 
 def sum_all(
@@ -63,17 +66,7 @@ def fake_input(
     return faker_func()
 
 
-def fake_iterator_node():
-    node_def: ServiceDockerData = _create_data_iterator_int_range()
-    node_def.inputs = node_def.inputs or {}
-    node_def.outputs = node_def.outputs or {}
-
-    node_run = _linspace  #
-
-    assert node_run
-
-
-def create_node(
+def create_node_model(
     node_def: ServiceDockerData,
     node_inputs: Dict[InputID, InputTypes] = None,
     outputs: List[OutputTypes] = None,
@@ -118,78 +111,80 @@ def create_node(
 
 
 def create_const_node(outputs: List[Tuple[OutputID, str, OutputTypes]]) -> Node:
+    # FIXME:
     if len(outputs) != 1:
         raise NotImplementedError(
             "WIP: only implemented const-nodes with a single output"
         )
 
     oname, otype, ovalue = outputs[0]
-    const_node = create_node(_create_constant_node_def(otype, oname), None, [ovalue])
+    node = create_node_model(
+        _create_constant_node_def(otype, oname),
+        None,
+        [
+            ovalue,
+        ],
+    )
 
-    assert const_node.outputs
-    assert oname in const_node.outputs
-    return const_node
-
-
-def create_node_def_from_callable(fun: Callable, **kwargs) -> ServiceDockerData:
-    sig = inspect.signature(fun)
-
-    # deduce inputs/outputs from signature
-    inputs = {}
-    for param in sig.parameters.values():
-        _in = {"label": param.name}
-
-        assert param.annotation != param.empty
-        _in["property_type"] = next(
-            k for k, v in PROPTYPE_2_PYTYPE.items() if issubclass(param.annotation, v)
-        )
-
-        if param.default != param.empty:
-            _in["default_value"] = param.default
-
-        inputs[param.name] = _in
+    assert node.outputs
+    assert oname in node.outputs
+    return node
 
 
 SERVICES_CATALOG: Dict[Tuple[str, str], ServiceDockerData] = {
-    (s.key, s.version): s for s in iter_service_docker_data()
+    SumDiffDef.info.unique_id: SumDiffDef.to_dockerdata(),
+    **{(s.key, s.version): s for s in iter_service_docker_data()},
 }
 
 SERVICE_TO_CALLABLES: Dict[Tuple[str, str], Callable] = {
     # ensure inputs/outputs map function signature
-    (f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/int-range", "1.0.0"): _linspace
+    (f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/int-range", "1.0.0"): _linspace,
+    SumDiffDef.info.unique_id: SumDiffDef.run_fun,
 }
 
 
-def search(g: Iterator):
-    try:
-        return next(g)
-    except StopIteration:
-        print(g, "not found")
-        raise
+def search_by_key(key_sub, container: Dict):
+    return next(s for k, s in container.items() if key_sub in k[0])
+
+
+## FIXTURES -------------------------------------------------
 
 
 @pytest.fixture
 def project_nodes(faker: Faker) -> Dict[NodeID, Node]:
     nodes = {}
 
-    nodes[faker.uuid4(cast=NodeID)] = create_node(
-        node_def=_create_data_iterator_int_range(),
-        node_inputs={"linspace_start": 0, "linstapce_stop": 10},
+    # node 0
+    n0 = faker.uuid4(cast=str)
+    nodes[n0] = node0 = create_node_model(
+        node_def=search_by_key("int-range", SERVICES_CATALOG),
+        node_inputs={"linspace_start": 0, "linspace_stop": 10},
     )
 
-    nodes[faker.uuid4(cast=NodeID)] = create_node(
-        node_def=_create_data_iterator_int_range(),
-        node_inputs={"linspace_start": 0, "linstapce_stop": 10},
-    )
+    # link
+    node0.outputs = node0.outputs or {}
+    output_name = next(iter(node0.outputs.keys()))
+    n0o0 = PortLink(nodeUUID=n0, output=output_name)
 
-    # TODO:
+    # node 1
+    n1 = faker.uuid4(cast=str)
+    nodes[n1] = node1 = create_node_model(
+        node_def=search_by_key(SumDiffDef.info.key, SERVICES_CATALOG),
+        node_inputs={"x": n0o0, "y": 10},
+    )
+    node1.input_nodes = [
+        n0,
+    ]
 
     return nodes
 
 
+## TESTS -------------------------------------------------
+
+
 def test_it(project_nodes: Dict[NodeID, Node]):
 
-    # detect iterable nodes
+    # select iterable nodes
     iterable_nodes_defs: List[ServiceDockerData] = []  # schemas of iterable nodes
     iterable_nodes: List[Node] = []  # iterable nodes
     iterable_nodes_ids: List[UUID] = []
@@ -203,6 +198,7 @@ def test_it(project_nodes: Dict[NodeID, Node]):
             iterable_nodes_ids.append(node_id)
 
     # for each iterable node create generator
+    # NOTE: override branches or keep all?
     nodes_generators = []
 
     for node, node_def in zip(iterable_nodes, iterable_nodes_defs):
@@ -234,8 +230,6 @@ def test_it(project_nodes: Dict[NodeID, Node]):
                 output_value = node_results[output_name]
                 outs.append(tuple([output_name, output_type, output_value]))
 
-            outputs_types = {n: o.property_type for n, o in node_def.outputs.items()}
-
             # create const-nodes
             const_node: Node = create_const_node(outs)
             const_nodes.append(const_node)
@@ -249,7 +243,8 @@ def test_it(project_nodes: Dict[NodeID, Node]):
 
             assert set(iterable_nodes) == set(const_nodes)
             iteration_project_nodes.update(zip(iterable_nodes_ids, const_nodes))
-            yield iteration_project_nodes
+
+            print(results, "->", iteration_project_nodes)
 
 
 @pytest.mark.skip(reason="DEV")
