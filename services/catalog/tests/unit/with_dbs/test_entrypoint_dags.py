@@ -6,7 +6,7 @@ from typing import Any, Dict
 
 import pytest
 from respx.router import MockRouter
-from simcore_service_catalog.meta import api_version
+from simcore_service_catalog.meta import API_VERSION
 from simcore_service_catalog.models.schemas.meta import Meta
 from starlette.testclient import TestClient
 
@@ -28,7 +28,7 @@ def test_read_meta(director_mockup: MockRouter, client: TestClient):
     response = client.get("/v0/meta")
     assert response.status_code == 200
     meta = Meta(**response.json())
-    assert meta.version == api_version
+    assert meta.version == API_VERSION
     assert meta.name == "simcore_service_catalog"
 
 

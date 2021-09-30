@@ -17,7 +17,7 @@ from ..api.errors.http_error import (
 from ..api.errors.validation_error import http422_error_handler
 from ..api.root import router as api_router
 from ..api.routes.health import router as health_router
-from ..meta import api_version, api_vtag, project_name, summary
+from ..meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
 from ..services.frontend_services import setup_frontend_services
 from .events import (
     create_start_app_handler,
@@ -41,10 +41,10 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     app = FastAPI(
         debug=settings.SC_BOOT_MODE
         in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
-        title=project_name,
-        description=summary,
-        version=api_version,
-        openapi_url=f"/api/{api_vtag}/openapi.json",
+        title=PROJECT_NAME,
+        description=SUMMARY,
+        version=API_VERSION,
+        openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
     )
@@ -85,7 +85,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     app.include_router(health_router)
 
     # api under /v*
-    app.include_router(api_router, prefix=f"/{api_vtag}")
+    app.include_router(api_router, prefix=f"/{API_VTAG}")
     # middleware to time requests (ONLY for development)
     if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
 

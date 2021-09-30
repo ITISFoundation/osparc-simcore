@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from servicelib.fastapi.tracing import setup_tracing
 
 from ..db.events import close_db_connection, connect_to_db
-from ..meta import __version__, project_name
+from ..meta import PROJECT_NAME, __version__
 from ..services.director import close_director, setup_director
 from ..services.remote_debug import setup_remote_debugging
 from .background_tasks import start_registry_sync_task, stop_registry_sync_task
@@ -34,7 +34,7 @@ def on_startup() -> None:
 
 
 def on_shutdown() -> None:
-    msg = project_name + f" v{__version__} SHUT DOWN"
+    msg = PROJECT_NAME + f" v{__version__} SHUT DOWN"
     print(f"{msg:=^100}", flush=True)
 
 
