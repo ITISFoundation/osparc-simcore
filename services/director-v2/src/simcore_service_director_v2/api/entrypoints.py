@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from ..meta import api_vtag
+from ..meta import API_VTAG
 from .routes import (
     computations,
     dynamic_services,
@@ -38,6 +38,6 @@ v2_router.include_router(
 api_router = APIRouter()
 api_router.include_router(meta_router)
 api_router.include_router(v0_router, prefix="/v0")
-api_router.include_router(v2_router, prefix=f"/{api_vtag}")
+api_router.include_router(v2_router, prefix=f"/{API_VTAG}")
 
 __all__ = ["api_router"]
