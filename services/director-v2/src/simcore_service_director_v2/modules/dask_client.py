@@ -5,11 +5,21 @@ import functools
 import logging
 from dataclasses import dataclass, field
 from pprint import pformat
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
-from uuid import uuid4
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import dask.distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.events import TaskStateEvent
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
@@ -36,6 +46,7 @@ from ..core.settings import DaskSchedulerSettings
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.constants import ClusterID, UserID
 from ..models.schemas.services import NodeRequirements
+from ..utils.dask import generate_dask_job_id, parse_dask_job_id
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +75,7 @@ async def _create_node_ports(
 def _parse_output_data(
     app: FastAPI, job_id: str, data: TaskOutputData, loop: asyncio.AbstractEventLoop
 ) -> None:
-    service_key, service_version, user_id, project_id, node_id = _parse_dask_job_id(
+    service_key, service_version, user_id, project_id, node_id = parse_dask_job_id(
         job_id
     )
     logger.debug(
@@ -177,33 +188,6 @@ async def _compute_output_data_schema(
     return TaskOutputDataSchema.parse_obj(output_data_schema)
 
 
-def _generate_dask_job_id(
-    service_key: str,
-    service_version: str,
-    user_id: UserID,
-    project_id: ProjectID,
-    node_id: NodeID,
-) -> str:
-    """creates a dask job id:
-    The job ID shall contain the user_id, project_id, node_id
-    Also, it must be unique
-    and it is shown in the Dask scheduler dashboard website
-    """
-    return f"{service_key}:{service_version}:userid_{user_id}:projectid_{project_id}:nodeid_{node_id}:uuid_{uuid4()}"
-
-
-def _parse_dask_job_id(job_id: str) -> Tuple[str, str, UserID, ProjectID, NodeID]:
-    parts = job_id.split(":")
-    assert len(parts) == 6  # nosec
-    return (
-        parts[0],
-        parts[1],
-        UserID(parts[2][len("userid_") :]),
-        ProjectID(parts[3][len("projectid_") :]),
-        NodeID(parts[4][len("nodeid_") :]),
-    )
-
-
 def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
     @retry(**dask_retry_policy)
     async def on_startup() -> None:
@@ -284,6 +268,7 @@ class DaskClient:
         cluster_id: ClusterID,
         tasks: Dict[NodeID, Image],
         callback: Callable[[], None],
+        task_change_handler: Callable[[Tuple[str, str]], Awaitable],
         remote_fct: Callable = None,
     ):
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
@@ -334,7 +319,7 @@ class DaskClient:
             remote_fct = _comp_sidecar_fct
 
         for node_id, node_image in tasks.items():
-            job_id = _generate_dask_job_id(
+            job_id = generate_dask_job_id(
                 service_key=node_image.name,
                 service_version=node_image.tag,
                 user_id=user_id,
@@ -368,6 +353,10 @@ class DaskClient:
                 self.app, user_id, project_id, node_id
             )
             try:
+                self.client.subscribe_topic(
+                    TaskStateEvent.topic_name(), task_change_handler
+                )
+
                 task_future = self.client.submit(
                     remote_fct,
                     docker_basic_auth=DockerBasicAuth(
