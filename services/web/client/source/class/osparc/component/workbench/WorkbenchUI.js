@@ -1100,7 +1100,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __mouseDown: function(e) {
       if (e.isMiddlePressed()) {
         this.__panning = true;
-        this.__pointerPos = this.__pointerEventToWorkbenchPos(e, false);
+        this.__pointerPos = this.__pointerEventToWorkbenchPos(e, true);
         this.set({
           cursor: "move"
         });
@@ -1110,16 +1110,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __mouseMove: function(e) {
       if (this.__panning && e.isMiddlePressed()) {
         const oldPos = this.__pointerPos;
-        const newPos = this.__pointerPos = this.__pointerEventToWorkbenchPos(e, false);
-        const delta = 3;
-        let moveX = oldPos.x > newPos.x ? delta : 0;
-        if (oldPos.x < newPos.x) {
-          moveX = -delta;
-        }
-        let moveY = (oldPos.y > newPos.y) ? delta : 0;
-        if (oldPos.y < newPos.y) {
-          moveY = -delta;
-        }
+        const newPos = this.__pointerPos = this.__pointerEventToWorkbenchPos(e, true);
+        const moveX = oldPos.x - newPos.x;
+        const moveY = oldPos.y - newPos.y;
         this._workbenchLayoutScroll.scrollToX(this._workbenchLayoutScroll.getScrollX() + moveX);
         this._workbenchLayoutScroll.scrollToY(this._workbenchLayoutScroll.getScrollY() + moveY);
       }
