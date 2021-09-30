@@ -294,10 +294,18 @@ class DaskClient:
         ):
             # NOTE: here we are called in a separate task
             job_id = dask_future.key
-            _parse_output_data(self.app, job_id, dask_future.result(), loop)
-            # remove the future from the dict to remove any handle to the future, so the worker can free the memory
-            self._taskid_to_future_map.pop(job_id)
-            callback()
+            try:
+                _parse_output_data(
+                    self.app, job_id, dask_future.result(timeout=5), loop
+                )
+            except dask.distributed.TimeoutError:
+                logger.error(
+                    "fetching result of '%s' timed-out, please check", exc_info=True
+                )
+            finally:
+                # remove the future from the dict to remove any handle to the future, so the worker can free the memory
+                self._taskid_to_future_map.pop(job_id)
+                callback()
 
         def _comp_sidecar_fct(
             docker_basic_auth: DockerBasicAuth,
