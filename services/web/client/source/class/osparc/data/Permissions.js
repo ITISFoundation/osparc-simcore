@@ -87,6 +87,7 @@ qx.Class.define("osparc.data.Permissions", {
           "study.update"
         ],
         "user": [
+          "dashboard.read",
           "studies.user.read",
           "studies.user.create",
           "studies.template.create",

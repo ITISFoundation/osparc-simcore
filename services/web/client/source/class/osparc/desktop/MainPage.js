@@ -202,7 +202,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __showDashboard: function() {
-      if (osparc.data.Permissions.getInstance().getRole() === "guest") {
+      if (!osparc.data.Permissions.getInstance().canDo("dashboard.read")) {
         // If guest fails to load study, log him out
         osparc.auth.Manager.getInstance().logout();
         return;
