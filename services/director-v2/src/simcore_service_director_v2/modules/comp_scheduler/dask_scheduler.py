@@ -51,7 +51,7 @@ class DaskScheduler(BaseCompScheduler):
     async def _task_state_change_handler(self, event: Tuple[str, str]) -> None:
         timestamp, json_message = event
         task_state_event = TaskStateEvent.parse_raw(json_message)
-        logger.warning(
+        logger.debug(
             "received task state update: [%s]: %s",
             datetime.fromtimestamp(float(timestamp)),
             task_state_event,
