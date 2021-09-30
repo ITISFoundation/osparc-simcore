@@ -367,7 +367,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
-      this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Nodes tree"), nodesTree), 0, {
+      this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Nodes"), nodesTree), 0, {
         flex: 1
       });
 
