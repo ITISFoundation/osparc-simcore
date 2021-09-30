@@ -128,6 +128,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __selectedItemId: null,
     __startHint: null,
     __dropHint: null,
+    __panning: null,
 
     _addItemsToLayout: function() {
       this.__addInputNodesLayout();
@@ -1111,10 +1112,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__panning && e.isMiddlePressed()) {
         const oldPos = this.__pointerPos;
         const newPos = this.__pointerPos = this.__pointerEventToWorkbenchPos(e, true);
-        const moveX = oldPos.x - newPos.x;
-        const moveY = oldPos.y - newPos.y;
+        const moveX = parseInt((oldPos.x-newPos.x) * this.getScale());
+        const moveY = parseInt((oldPos.y-newPos.y) * this.getScale());
         this._workbenchLayoutScroll.scrollToX(this._workbenchLayoutScroll.getScrollX() + moveX);
         this._workbenchLayoutScroll.scrollToY(this._workbenchLayoutScroll.getScrollY() + moveY);
+        this.set({
+          cursor: "move"
+        });
       }
     },
 
