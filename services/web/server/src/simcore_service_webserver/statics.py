@@ -48,7 +48,6 @@ APP_FRONTEND_CACHED_STATICS_JSON_KEY = f"{__name__}.cached_statics_json"
 # NOTE: saved as a separate item to config
 STATIC_WEBSERVER_SETTINGS_KEY = f"{__name__}.StaticWebserverModuleSettings"
 
-
 #
 # This retry policy aims to overcome the inconvenient fact that the swarm
 # orchestrator does not guaranteed the order in which services are started.
@@ -98,7 +97,7 @@ async def _assemble_cached_indexes(app: web.Application):
             # web-static server might still not be up
             async for attempt in AsyncRetrying(**RETRY_ON_STARTUP_POLICY):
                 with attempt:
-                    response = await session.get(url, reraise=True)
+                    response = await session.get(url, raise_for_status=True)
 
             body = await response.text()
 
