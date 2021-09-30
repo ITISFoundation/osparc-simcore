@@ -180,7 +180,7 @@ _FACTORY_FUNCTIONS = [
     _create_data_iterator_int_range,
     _create_iterator_consumer_probe_int,
 ] + [
-    functools.partial(_create_constant_node_def, param_type=p)
+    functools.partial(_create_constant_node_def, output_type=p)
     for p in ["number", "boolean", "integer"]
 ]
 
