@@ -29,6 +29,7 @@ from dask_task_models_library.container_tasks.io import (
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.projects_state import RunningState
 from pydantic import AnyUrl
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager, port_utils
@@ -72,12 +73,14 @@ async def _create_node_ports(
     )
 
 
-def _parse_output_data(
-    app: FastAPI, job_id: str, data: TaskOutputData, loop: asyncio.AbstractEventLoop
-) -> None:
-    service_key, service_version, user_id, project_id, node_id = parse_dask_job_id(
-        job_id
-    )
+async def _parse_output_data(app: FastAPI, job_id: str, data: TaskOutputData) -> None:
+    (
+        service_key,
+        service_version,
+        user_id,
+        project_id,
+        node_id,
+    ) = parse_dask_job_id(job_id)
     logger.debug(
         "parsing output %s of dask task for %s:%s of user %s on project '%s' and node '%s'",
         pformat(data),
@@ -88,46 +91,16 @@ def _parse_output_data(
         node_id,
     )
 
-    async def _transfer_output_data(
-        app: FastAPI,
-        user_id: UserID,
-        project_id: ProjectID,
-        node_id: NodeID,
-        data: TaskOutputData,
-    ) -> None:
-        ports = await _create_node_ports(
-            app=app, user_id=user_id, project_id=project_id, node_id=node_id
-        )
-        for port_key, port_value in data.items():
-            value_to_transfer: Optional[ItemValue] = None
-            if isinstance(port_value, FileUrl):
-                value_to_transfer = port_value.url
-            else:
-                value_to_transfer = port_value
-            await (await ports.outputs)[port_key].set_value(value_to_transfer)
-
-    future = asyncio.run_coroutine_threadsafe(
-        _transfer_output_data(app, user_id, project_id, node_id, data), loop
+    ports = await _create_node_ports(
+        app=app, user_id=user_id, project_id=project_id, node_id=node_id
     )
-    try:
-        future.result(timeout=5)
-        logger.debug("data transfered to database")
-    except concurrent.futures.TimeoutError:
-        logger.error(
-            "transferring output data of user '%s' for '%s:%s' to database timed-out, please check.",
-            user_id,
-            project_id,
-            node_id,
-            exc_info=True,
-        )
-    except concurrent.futures.CancelledError:
-        logger.warning(
-            "transferring output data of user '%s' for '%s:%s'  to database was cancelled",
-            user_id,
-            project_id,
-            node_id,
-            exc_info=True,
-        )
+    for port_key, port_value in data.items():
+        value_to_transfer: Optional[ItemValue] = None
+        if isinstance(port_value, FileUrl):
+            value_to_transfer = port_value.url
+        else:
+            value_to_transfer = port_value
+        await (await ports.outputs)[port_key].set_value(value_to_transfer)
 
 
 async def _compute_input_data(
@@ -280,12 +253,65 @@ class DaskClient:
             # NOTE: here we are called in a separate task
             job_id = dask_future.key
             try:
-                _parse_output_data(
-                    self.app, job_id, dask_future.result(timeout=5), loop
-                )
+                if dask_future.status == "error":
+                    self.client.log_event(
+                        TaskStateEvent.topic_name(),
+                        TaskStateEvent(job_id=job_id, state=RunningState.FAILED).json(),
+                    )
+                elif dask_future.cancelled():
+                    self.client.log_event(
+                        TaskStateEvent.topic_name(),
+                        TaskStateEvent(
+                            job_id=job_id, state=RunningState.ABORTED
+                        ).json(),
+                    )
+                else:
+                    # this gets the data out of the dask backend
+                    task_output_data = dask_future.result(timeout=5)
+                    try:
+                        # this callback is called in a secondary thread so we need to get back to the main
+                        # thread for database accesses or else we ge into loop issues
+                        future = asyncio.run_coroutine_threadsafe(
+                            _parse_output_data(self.app, job_id, task_output_data), loop
+                        )
+                        future.result(timeout=5)
+                        self.client.log_event(
+                            TaskStateEvent.topic_name(),
+                            TaskStateEvent(
+                                job_id=job_id, state=RunningState.SUCCESS
+                            ).json(),
+                        )
+
+                    except concurrent.futures.TimeoutError:
+                        logger.error(
+                            "parsing output data of job %s timed-out, please check.",
+                            job_id,
+                            exc_info=True,
+                        )
+                        self.client.log_event(
+                            TaskStateEvent.topic_name(),
+                            TaskStateEvent(
+                                job_id=job_id, state=RunningState.FAILED
+                            ).json(),
+                        )
+                    except concurrent.futures.CancelledError:
+                        logger.warning(
+                            "parsing output data of job %s was cancelled, please check.",
+                            job_id,
+                            exc_info=True,
+                        )
+                        self.client.log_event(
+                            TaskStateEvent.topic_name(),
+                            TaskStateEvent(
+                                job_id=job_id, state=RunningState.FAILED
+                            ).json(),
+                        )
+
             except dask.distributed.TimeoutError:
                 logger.error(
-                    "fetching result of '%s' timed-out, please check", exc_info=True
+                    "fetching result of '%s' timed-out, please check",
+                    job_id,
+                    exc_info=True,
                 )
             finally:
                 # remove the future from the dict to remove any handle to the future, so the worker can free the memory
@@ -302,8 +328,8 @@ class DaskClient:
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
-            from simcore_service_dask_sidecar.tasks import (
-                run_computational_sidecar,  # type: ignore
+            from simcore_service_dask_sidecar.tasks import (  # type: ignore
+                run_computational_sidecar,
             )
 
             return run_computational_sidecar(
