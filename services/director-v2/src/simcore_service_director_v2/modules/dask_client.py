@@ -1,12 +1,13 @@
 import asyncio
 import collections
+import concurrent.futures
 import logging
 from dataclasses import dataclass, field
 from pprint import pformat
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 from uuid import uuid4
 
-from dask.distributed import Client, Future, fire_and_forget
+import dask.distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
@@ -97,11 +98,24 @@ def _parse_output_data(
         _transfer_output_data(app, user_id, project_id, node_id, data), loop
     )
     try:
-        future.result()
-    except Exception:
-        logger.error("something unexpectandly failed here", exc_info=True)
-
-    logger.debug("data transfered to database")
+        future.result(timeout=5)
+        logger.debug("data transfered to database")
+    except concurrent.futures.TimeoutError:
+        logger.error(
+            "transferring output data of user '%s' for '%s:%s' to database timed-out, please check.",
+            user_id,
+            project_id,
+            node_id,
+            exc_info=True,
+        )
+    except concurrent.futures.CancelledError:
+        logger.warning(
+            "transferring output data of user '%s' for '%s:%s'  to database was cancelled",
+            user_id,
+            project_id,
+            node_id,
+            exc_info=True,
+        )
 
 
 async def _compute_input_data(
@@ -162,21 +176,6 @@ async def _compute_output_data_schema(
     return TaskOutputDataSchema.parse_obj(output_data_schema)
 
 
-def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
-    @retry(**dask_retry_policy)
-    async def on_startup() -> None:
-        await DaskClient.create(
-            app,
-            settings=settings,
-        )
-
-    async def on_shutdown() -> None:
-        await DaskClient.delete(app)
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
-
-
 def _generate_dask_job_id(
     service_key: str,
     service_version: str,
@@ -204,13 +203,30 @@ def _parse_dask_job_id(job_id: str) -> Tuple[str, str, UserID, ProjectID, NodeID
     )
 
 
+def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
+    @retry(**dask_retry_policy)
+    async def on_startup() -> None:
+        await DaskClient.create(
+            app,
+            settings=settings,
+        )
+
+    async def on_shutdown() -> None:
+        await DaskClient.delete(app)
+
+    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", on_shutdown)
+
+
 @dataclass
 class DaskClient:
     app: FastAPI
-    client: Client
+    client: dask.distributed.Client
     settings: DaskSchedulerSettings
 
-    _taskid_to_future_map: Dict[str, Future] = field(default_factory=dict)
+    _taskid_to_future_map: Dict[str, dask.distributed.Future] = field(
+        default_factory=dict
+    )
 
     @classmethod
     async def create(
@@ -218,7 +234,7 @@ class DaskClient:
     ) -> "DaskClient":
         app.state.dask_client = cls(
             app=app,
-            client=await Client(
+            client=await dask.distributed.Client(
                 f"tcp://{settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
                 asynchronous=True,
                 name="director-v2-client",
@@ -251,7 +267,7 @@ class DaskClient:
     async def reconnect_client(self):
         if self.client:
             await self.client.close()  # type: ignore
-        self.client = await Client(
+        self.client = await dask.distributed.Client(
             f"tcp://{self.settings.DASK_SCHEDULER_HOST}:{self.settings.DASK_SCHEDULER_PORT}",
             asynchronous=True,
             name="director-v2-client",
@@ -272,7 +288,9 @@ class DaskClient:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
 
-        def _done_dask_callback(dask_future: Future, loop: asyncio.AbstractEventLoop):
+        def _done_dask_callback(
+            dask_future: dask.distributed.Future, loop: asyncio.AbstractEventLoop
+        ):
             # NOTE: here we are called in a separate task
             job_id = dask_future.key
             _parse_output_data(self.app, job_id, dask_future.result(), loop)
@@ -368,7 +386,7 @@ class DaskClient:
                 functools.partial(_done_dask_callback, loop=asyncio.get_event_loop())
             )
             self._taskid_to_future_map[job_id] = task_future
-            fire_and_forget(
+            dask.distributed.fire_and_forget(
                 task_future
             )  # this should ensure the task will run even if the future goes out of scope
             logger.debug("Dask task %s started", task_future.key)
@@ -382,7 +400,7 @@ class DaskClient:
                 logger.debug("Dask task %s cancelled", task_future.key)
 
 
-def _check_valid_connection_to_scheduler(client: Client):
+def _check_valid_connection_to_scheduler(client: dask.distributed.Client):
     client_status = client.status
     if client_status not in "running":
         logger.error(
