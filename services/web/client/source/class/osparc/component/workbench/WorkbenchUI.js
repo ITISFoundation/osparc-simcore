@@ -67,7 +67,23 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     TOP_OFFSET: osparc.navigation.NavigationBar.HEIGHT + 46,
 
-    ZOOM_VALUES: [0.25, 0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5, 2, 3]
+    ZOOM_VALUES: [
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.7,
+      0.8,
+      0.9,
+      1,
+      1.1,
+      1.2,
+      1.3,
+      1.5,
+      2,
+      2.5,
+      3
+    ]
   },
 
   events: {
@@ -383,11 +399,36 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __addNodeListeners: function(nodeUI) {
+      nodeUI.addListener("nodeStartedMoving", () => {
+        this.getSelectedNodes().forEach(selectedNodeUI => {
+          selectedNodeUI.initPos = selectedNodeUI.getNode().getPosition();
+        });
+      }, this);
+
       nodeUI.addListener("nodeMoving", () => {
         this.__updateNodeUIPos(nodeUI);
+        if ("initPos" in nodeUI) {
+          const xDiff = nodeUI.getNode().getPosition().x - nodeUI.initPos.x;
+          const yDiff = nodeUI.getNode().getPosition().y - nodeUI.initPos.y;
+          this.getSelectedNodes().forEach(selectedNodeUI => {
+            if (nodeUI.getNodeId() !== selectedNodeUI.getNodeId()) {
+              const selectedNode = selectedNodeUI.getNode();
+              selectedNode.setPosition({
+                x: selectedNodeUI.initPos.x + xDiff,
+                y: selectedNodeUI.initPos.y + yDiff
+              });
+              selectedNodeUI.moveTo(selectedNode.getPosition().x, selectedNode.getPosition().y);
+              this.__updateNodeUIPos(selectedNodeUI);
+            }
+          });
+        }
       }, this);
 
       nodeUI.addListener("nodeStoppedMoving", () => {
+        this.getSelectedNodes().forEach(selectedNodeUI => {
+          delete selectedNodeUI["initPos"];
+        });
+
         this.__updateWorkbenchBounds();
 
         // After moving a nodeUI, a new element with z-index 100000+ appears on the DOM tree and prevents from clicking

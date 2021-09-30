@@ -13,7 +13,7 @@
 ../../packages/models-library
 ../../packages/postgres-database/
 ../../packages/simcore-sdk
-../../packages/service-library
+../../packages/service-library[fastapi]
 ../../services/storage/client-sdk/python/
 
 # installs current package
