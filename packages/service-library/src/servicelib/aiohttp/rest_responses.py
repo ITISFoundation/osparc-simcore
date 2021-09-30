@@ -1,10 +1,12 @@
 """ Utils to check, convert and compose server responses for the RESTApi
 
 """
+import inspect
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 import attr
-from aiohttp import web
+from aiohttp import web, web_exceptions
+from aiohttp.web_exceptions import HTTPException
 
 from .rest_codecs import json, jsonify
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
@@ -134,3 +136,23 @@ def create_log_response(msg: str, level: str) -> web.Response:
     msg = LogMessageType(msg, level)
     response = web.json_response(data={"data": attr.asdict(msg), "error": None})
     return response
+
+
+def get_http_exception(status_code: int) -> Optional[Type[HTTPException]]:
+
+    if status_code < 100 or 599 > status_code:
+        # https://httpstatuses.com/ there are further gaps <400
+        return None
+
+    def _pred(obj) -> bool:
+        return (
+            inspect.isclass(obj)
+            and issubclass(obj, HTTPException)
+            and getattr(obj, "status_code", 0) == status_code
+        )
+
+    found: List[Tuple[str, Any]] = inspect.getmembers(web_exceptions, _pred)
+    if found:
+        _, value = found[0]
+        return value
+    return None
