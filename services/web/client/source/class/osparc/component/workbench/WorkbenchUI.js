@@ -148,7 +148,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       });
 
       const workbenchLayoutScroll = this._workbenchLayoutScroll = new qx.ui.container.Scroll();
-      osparc.utils.Utils.setIdToWidget(workbenchLayoutScroll, "hithere");
+      osparc.utils.Utils.setIdToWidget(workbenchLayoutScroll, "WorkbenchUI-scroll");
       const workbenchLayout = this.__workbenchLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
       workbenchLayoutScroll.add(workbenchLayout);
       workbenchLayer.add(workbenchLayoutScroll, {
@@ -1097,6 +1097,43 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       };
     },
 
+    __mouseDown: function(e) {
+      if (e.isMiddlePressed()) {
+        this.__panning = true;
+        this.__pointerPos = this.__pointerEventToWorkbenchPos(e, false);
+        this.set({
+          cursor: "move"
+        });
+      }
+    },
+
+    __mouseMove: function(e) {
+      if (this.__panning && e.isMiddlePressed()) {
+        const oldPos = this.__pointerPos;
+        const newPos = this.__pointerPos = this.__pointerEventToWorkbenchPos(e, false);
+        const delta = 3;
+        let moveX = oldPos.x > newPos.x ? delta : 0;
+        if (oldPos.x < newPos.x) {
+          moveX = -delta;
+        }
+        let moveY = (oldPos.y > newPos.y) ? delta : 0;
+        if (oldPos.y < newPos.y) {
+          moveY = -delta;
+        }
+        this._workbenchLayoutScroll.scrollToX(this._workbenchLayoutScroll.getScrollX() + moveX);
+        this._workbenchLayoutScroll.scrollToY(this._workbenchLayoutScroll.getScrollY() + moveY);
+      }
+    },
+
+    __mouseUp: function() {
+      if (this.__panning) {
+        this.__panning = false;
+        this.set({
+          cursor: "auto"
+        });
+      }
+    },
+
     __mouseWheel: function(e) {
       this.__pointerPos = this.__pointerEventToWorkbenchPos(e, false);
       const zoomIn = e.getWheelDelta() < 0;
@@ -1218,6 +1255,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         domEl.addEventListener("drop", this.__drop.bind(this), false);
 
         this.addListener("mousewheel", this.__mouseWheel, this);
+        this.addListener("mousedown", this.__mouseDown, this);
+        this.addListener("mousemove", this.__mouseMove, this);
+        this.addListener("mouseup", this.__mouseUp, this);
 
         commandDel.setEnabled(true);
         commandEsc.setEnabled(true);
