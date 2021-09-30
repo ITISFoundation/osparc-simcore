@@ -55,6 +55,7 @@ async def pg_engine(app: web.Application):
             engine = await create_pg_engine(
                 dsn, minsize=pg_cfg["minsize"], maxsize=pg_cfg["maxsize"], **pool_kwargs
             )
+            assert engine  # nosec
             await raise_if_not_responsive(engine)
 
     assert engine  # nosec

@@ -20,11 +20,7 @@ from ._citations import (
 
 @pytest.mark.parametrize(
     "name,rrid",
-    TOOL_CITATIONS
-    + ANTIBODY_CITATIONS
-    + PLAMID_CITATIONS
-    + ORGANISM_CITATIONS
-    + CELL_LINE_CITATIONS,
+    TOOL_CITATIONS + ANTIBODY_CITATIONS + PLAMID_CITATIONS + ORGANISM_CITATIONS,
 )
 async def test_scicrunch_resolves_all_valid_rrids(
     name: str, rrid: str, settings: SciCrunchSettings
@@ -47,6 +43,15 @@ async def test_scicrunch_resolves_all_valid_rrids(
             assert resolved.proper_citation == f"RRID:{rrid}"
         else:
             # includes name and rrid
+
+            #
+            # NOTE: why CELL_LINE_CITATIONS are removed from test parametrization ?
+            #   Since Sep.2021, test is not repeatable since the list order returned by
+            #   https://scicrunch.org/resolver/RRID:CVCL_0033.json changes per call and
+            #   sometimes (BCRJ Cat# 0226, RRID:CVCL_0033) appears as first hit instead
+            #   of the reference in CELL_LINE_CITATIONS
+            #
+
             assert resolved.proper_citation in (
                 f"({name}, RRID:{rrid})",
                 f"({name},RRID:{rrid})",

@@ -41,7 +41,7 @@ class AuthSession:
     def create(cls, app: FastAPI, session_cookies: Dict):
         return cls(
             client=app.state.webserver_client,
-            vtag=app.state.settings.webserver.vtag,
+            vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
             session_cookies=session_cookies,
         )
 
@@ -146,7 +146,9 @@ class AuthSession:
 
 
 def _get_secret_key(settings: WebServerSettings):
-    secret_key_bytes = settings.session_secret_key.get_secret_value().encode("utf-8")
+    secret_key_bytes = settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value().encode(
+        "utf-8"
+    )
     while len(secret_key_bytes) < 32:
         secret_key_bytes += secret_key_bytes
     secret_key = secret_key_bytes[:32]
