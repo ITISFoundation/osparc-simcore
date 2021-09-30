@@ -6,11 +6,11 @@ from .base import BaseCustomSettings
 
 
 class ClientRequestSettings(BaseCustomSettings):
-    # NOTE: when updating the defaults please make sure to search for the env vars
-    # in all the project, they also need to be updated inside the service-library
+    # NOTE: These entries are used in some old services as well. These need to be updated if these
+    # variable names or defaults are changed.
     HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT: Optional[int] = Field(
         default=20,
-        description="timeout used for outgoing http requests",
+        description="timeout in seconds used for outgoing http requests",
     )
 
     HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT: Optional[int] = Field(
