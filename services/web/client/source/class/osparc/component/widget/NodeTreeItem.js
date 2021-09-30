@@ -71,7 +71,9 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
 
       // Add a NodeId
       const nodeIdWidget = new qx.ui.basic.Label();
-      this.bind("nodeId", nodeIdWidget, "value");
+      this.bind("nodeId", nodeIdWidget, "value", {
+        converter: value => value && value.substring(0, 8)
+      });
       nodeIdWidget.set({
         maxWidth: 250
       });
