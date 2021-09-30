@@ -25,7 +25,6 @@ pytest_plugins = [
     "pytest_simcore.services_api_mocks_for_aiohttp_clients",
     "pytest_simcore.simcore_storage_service",
     "pytest_simcore.tmp_path_extra",
-    "pytest_simcore.simcore_services",
 ]
 
 
