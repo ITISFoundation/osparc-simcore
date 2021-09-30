@@ -12,12 +12,15 @@ from uuid import uuid4
 import fsspec
 from aiodocker import Docker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.events import TaskStateEvent
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
 )
+from distributed.worker import get_client, get_worker
+from models_library.projects_state import RunningState
 from pydantic import ValidationError
 from yarl import URL
 
@@ -95,12 +98,12 @@ class ComputationalSidecar:
         self, task_volumes: TaskSharedVolumes
     ) -> TaskOutputData:
         try:
-            logger.info(
+            logger.debug(
                 "following files are located in output folder %s:\n%s",
                 task_volumes.output_folder,
                 pformat(list(task_volumes.output_folder.rglob("*"))),
             )
-            logger.info(
+            logger.debug(
                 "following outputs will be searched for: %s",
                 pformat(self.output_data_keys),
             )
@@ -140,6 +143,13 @@ class ComputationalSidecar:
             ) from exc
 
     async def run(self, command: List[str]) -> TaskOutputData:
+        get_client().log_event(
+            TaskStateEvent.topic_name(),
+            TaskStateEvent.from_dask_worker(
+                state=RunningState.STARTED,
+                msg=f"Prepare to run {self.service_key}:{self.service_version}",
+            ).json(),
+        )
         settings = Settings.create_from_envs()
         run_id = f"{uuid4()}"
         async with Docker() as docker_client, managed_task_volumes(
@@ -171,13 +181,19 @@ class ComputationalSidecar:
                     # run the container
                     await container.start()
                     # get the logs
-
                     # wait until the container finished, either success or fail or timeout
                     while (container_data := await container.show())["State"][
                         "Running"
                     ]:
                         await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
                     if container_data["State"]["ExitCode"] > 0:
+                        get_client().log_event(
+                            TaskStateEvent.topic_name(),
+                            TaskStateEvent.from_dask_worker(
+                                state=RunningState.FAILED,
+                                msg=f"error while running container {container.id} for {self.service_key}:{self.service_version}",
+                            ).json(),
+                        )
                         # the container had an error
                         raise ServiceRunError(
                             self.service_key,
