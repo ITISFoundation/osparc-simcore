@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 import attr
 from aiohttp import web, web_exceptions
-from aiohttp.web_exceptions import HTTPException
+from aiohttp.web_exceptions import HTTPError
 
 from .rest_codecs import json, jsonify
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
@@ -91,10 +91,10 @@ def create_data_response(
 def create_error_response(
     errors: Union[List[Exception], Exception],
     reason: Optional[str] = None,
-    http_error_cls: Type[web.HTTPError] = web.HTTPInternalServerError,
+    http_error_cls: Type[HTTPError] = web.HTTPInternalServerError,
     *,
-    skip_internal_error_details: bool = False
-) -> web.HTTPError:
+    skip_internal_error_details: bool = False,
+) -> HTTPError:
     """
     - Response body conforms OAS schema model
     - Can skip internal details when 500 status e.g. to avoid transmitting server
@@ -138,21 +138,28 @@ def create_log_response(msg: str, level: str) -> web.Response:
     return response
 
 
-def get_http_exception(status_code: int) -> Optional[Type[HTTPException]]:
+def get_http_error(status_code: int) -> Optional[Type[HTTPError]]:
+    """Returns aiohttp exception class corresponding to a 4XX or 5XX status code
 
-    if status_code < 100 or 599 > status_code:
-        # https://httpstatuses.com/ there are further gaps <400
+    NOTICE that any non-error code (i.e. 2XX, 3XX and 4XX) will return None
+    """
+    # SEE https://httpstatuses.com/
+    # Errors are exceptions with status codes in the 400s and 500s.
+    if status_code < 400 or 599 < status_code:
         return None
 
     def _pred(obj) -> bool:
         return (
             inspect.isclass(obj)
-            and issubclass(obj, HTTPException)
-            and getattr(obj, "status_code", 0) == status_code
+            and issubclass(obj, HTTPError)
+            and getattr(obj, "status_code", None) == status_code
         )
 
     found: List[Tuple[str, Any]] = inspect.getmembers(web_exceptions, _pred)
+
     if found:
+        assert len(found) == 1, f"Unexpected multiple matches {found}"  # nosec
         _, value = found[0]
+        assert issubclass(value, HTTPError)  # nosec
         return value
     return None
