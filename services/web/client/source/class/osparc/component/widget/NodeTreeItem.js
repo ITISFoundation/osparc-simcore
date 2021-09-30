@@ -69,13 +69,18 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         flex: 1
       });
 
-      if (osparc.data.Permissions.getInstance().canDo("study.nodestree.uuid.read")) {
-        // Add a NodeId
-        const nodeIdWidget = new qx.ui.basic.Label();
-        this.bind("nodeId", nodeIdWidget, "value");
-        nodeIdWidget.setMaxWidth(250);
-        this.addWidget(nodeIdWidget);
-      }
+      // Add a NodeId
+      const nodeIdWidget = new qx.ui.basic.Label();
+      this.bind("nodeId", nodeIdWidget, "value");
+      nodeIdWidget.set({
+        maxWidth: 250
+      });
+      this.addWidget(nodeIdWidget);
+      const permissions = osparc.data.Permissions.getInstance();
+      nodeIdWidget.setVisibility(permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded");
+      permissions.addListener("changeRole", () => {
+        nodeIdWidget.setVisibility(permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded");
+      });
     },
 
     _applyNodeId: function(nodeId) {
