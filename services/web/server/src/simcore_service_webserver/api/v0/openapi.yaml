@@ -1527,7 +1527,7 @@ paths:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/computation/pipeline/{project_id}:start':
     post:
-      description: Starts a pipeline of a given project
+      description: Starts a pipeline(s) of a given (meta) project
       tags:
         - service
       operationId: start_pipeline
@@ -1569,11 +1569,15 @@ paths:
                   data:
                     type: object
                     required:
-                      - pipeline_id
+                      - pipelines_ids
                     properties:
+                      pipelines_ids:
+                        type: array
+                        items:
+                          type: string
                       pipeline_id:
                         type: string
-                        example: 123e4567-e89b-12d3-a456-426655440000
+                        deprecated: true
                   error:
                     nullable: true
                     default: null
@@ -1581,7 +1585,7 @@ paths:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/computation/pipeline/{project_id}:stop':
     post:
-      description: Stops a pipeline of a given project
+      description: Stops (all) pipeline(s) of a given (meta) project
       tags:
         - service
       operationId: stop_pipeline
