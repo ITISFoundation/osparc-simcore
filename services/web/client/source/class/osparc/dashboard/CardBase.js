@@ -338,12 +338,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     _filterTags: function(tags) {
       const checks = this.getTags().map(tag => tag.name);
-      return this.self().filterText(checks, tags);
+      return this.self().filterTags(checks, tags);
     },
 
     _filterClassifiers: function(classifiers) {
       const checks = this.getClassifiers();
-      return this.self().filterText(checks, classifiers);
+      return this.self().filterClassifiers(checks, classifiers);
     },
 
     _shouldApplyFilter: function(data) {

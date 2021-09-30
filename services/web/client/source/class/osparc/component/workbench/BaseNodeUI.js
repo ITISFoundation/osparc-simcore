@@ -61,6 +61,8 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
         }
       }, this, 50);
     });
+
+    this.__nodeMoving = false;
   },
 
   properties: {
@@ -93,6 +95,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
     "edgeDragOver": "qx.event.type.Data",
     "edgeDrop": "qx.event.type.Data",
     "edgeDragEnd": "qx.event.type.Data",
+    "nodeStartedMoving": "qx.event.type.Event",
     "nodeMoving": "qx.event.type.Event",
     "nodeStoppedMoving": "qx.event.type.Event"
   },
@@ -100,6 +103,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
   members: {
     _inputLayout: null,
     _outputLayout: null,
+    __nodeMoving: null,
 
     /**
       * @abstract
@@ -232,6 +236,10 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
         return;
       }
       e.stopPropagation();
+      if (this.__nodeMoving === false) {
+        this.__nodeMoving = true;
+        this.fireEvent("nodeStartedMoving");
+      }
       this.fireEvent("nodeMoving");
     },
 
@@ -248,6 +256,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
 
       this._onMovePointerMove(e);
 
+      this.__nodeMoving = false;
       this.fireEvent("nodeStoppedMoving");
 
       // Remove drag state

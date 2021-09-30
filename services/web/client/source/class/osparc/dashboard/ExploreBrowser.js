@@ -202,8 +202,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       osparc.utils.Utils.setIdToWidget(templateStudyContainer, "templateStudiesList");
       tempStudyLayout.setContent(templateStudyContainer);
 
-      const loadingTemplatesBtn = this._loadingStudiesBtn = new osparc.dashboard.ListButtonLoadMore();
-      osparc.utils.Utils.setIdToWidget(loadingTemplatesBtn, "templatesLoading");
+      const loadingTemplatesBtn = this.__createLoadMoreTemplatesButton();
       templateStudyContainer.add(loadingTemplatesBtn);
 
       viewGridBtn.addListener("execute", () => this.__setTemplatesContainerMode("grid"));
@@ -213,6 +212,12 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       templateStudyContainer.addListener("changeMode", () => this._resetTemplatesList());
 
       return tempStudyLayout;
+    },
+
+    __createLoadMoreTemplatesButton: function(mode = "grid") {
+      const loadingTemplatesBtn = this._loadingStudiesBtn = (mode === "grid") ? new osparc.dashboard.GridButtonLoadMore() : new osparc.dashboard.ListButtonLoadMore();
+      osparc.utils.Utils.setIdToWidget(loadingTemplatesBtn, "templatesLoading");
+      return loadingTemplatesBtn;
     },
 
     __createServicesLayout: function() {
@@ -305,7 +310,18 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         tempStudyList = this.__templates;
       }
       this.__templates = tempStudyList;
+
+      // check Load More card
+      let loadMoreFetching = null;
+      let loadMoreVisibility = null;
+      const loadMoreCard = this._studiesContainer.getChildren().find(el => el === this._loadingStudiesBtn);
+      if (loadMoreCard) {
+        loadMoreFetching = loadMoreCard.getFetching();
+        loadMoreVisibility = loadMoreCard.getVisibility();
+      }
+
       this._studiesContainer.removeAll();
+
       osparc.dashboard.ResourceBrowserBase.sortStudyList(tempStudyList);
       tempStudyList.forEach(tempStudy => {
         tempStudy["resourceType"] = "template";
@@ -317,6 +333,16 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         }, this);
         this._studiesContainer.add(templateItem);
       });
+
+      if (loadMoreCard) {
+        const newLoadMoreBtn = this.__createLoadMoreTemplatesButton(this._studiesContainer.getMode());
+        newLoadMoreBtn.set({
+          fetching: loadMoreFetching,
+          visibility: loadMoreVisibility
+        });
+        this._studiesContainer.add(newLoadMoreBtn);
+      }
+
       osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
     },
 
