@@ -27,10 +27,10 @@ from simcore_service_director_v2.models.schemas.constants import (
 from utils import (
     assert_all_services_running,
     assert_start_service,
+    assert_stop_service,
     ensure_network_cleanup,
     get_director_v0_patched_url,
     get_service_data,
-    handle_307_if_required,
     is_legacy,
     patch_dynamic_service_url,
 )
@@ -206,17 +206,6 @@ async def ensure_services_stopped(
 # UTILS
 
 
-async def _assert_stop_service(
-    director_v2_client: httpx.AsyncClient, director_v0_url: URL, service_uuid: str
-) -> None:
-    result = await director_v2_client.delete(
-        f"/dynamic_services/{service_uuid}", allow_redirects=False
-    )
-    result = await handle_307_if_required(director_v2_client, director_v0_url, result)
-    assert result.status_code == 204
-    assert result.text == ""
-
-
 def _run_command(command: str) -> str:
     # using asyncio.create_subprocess_shell is slower
     # and sometimes ir randomly hangs forever
@@ -374,7 +363,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     # finally stop the started services
     await asyncio.gather(
         *(
-            _assert_stop_service(
+            assert_stop_service(
                 director_v2_client=director_v2_client,
                 director_v0_url=director_v0_url,
                 service_uuid=service_uuid,

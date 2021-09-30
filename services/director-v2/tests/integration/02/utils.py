@@ -218,3 +218,32 @@ async def assert_all_services_running(
             not_all_services_running = not all(are_services_running)
             # let the services boot
             await asyncio.sleep(1.0)
+
+
+async def assert_retrieve_service(
+    director_v2_client: httpx.AsyncClient, director_v0_url: URL, service_uuid: str
+) -> None:
+    headers = {
+        "x-dynamic-sidecar-request-dns": director_v2_client.base_url.host,
+        "x-dynamic-sidecar-request-scheme": director_v2_client.base_url.scheme,
+    }
+
+    result = await director_v2_client.post(
+        f"/dynamic_services/{service_uuid}:retrieve",
+        json=dict(port_keys=[]),
+        headers=headers,
+        allow_redirects=False,
+    )
+    result = await handle_307_if_required(director_v2_client, director_v0_url, result)
+    assert result.status_code == 200, result.text
+
+
+async def assert_stop_service(
+    director_v2_client: httpx.AsyncClient, director_v0_url: URL, service_uuid: str
+) -> None:
+    result = await director_v2_client.delete(
+        f"/dynamic_services/{service_uuid}", allow_redirects=False
+    )
+    result = await handle_307_if_required(director_v2_client, director_v0_url, result)
+    assert result.status_code == 204
+    assert result.text == ""
