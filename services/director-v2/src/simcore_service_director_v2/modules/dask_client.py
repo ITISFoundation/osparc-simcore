@@ -1,6 +1,7 @@
 import asyncio
 import collections
 import concurrent.futures
+import functools
 import logging
 from dataclasses import dataclass, field
 from pprint import pformat
@@ -380,7 +381,6 @@ class DaskClient:
                 _check_valid_connection_to_scheduler(self.client)
                 # if the connection is good, then the problem is different, so we re-raise
                 raise
-            import functools
 
             task_future.add_done_callback(
                 functools.partial(_done_dask_callback, loop=asyncio.get_event_loop())
