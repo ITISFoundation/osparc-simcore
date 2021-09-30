@@ -153,7 +153,8 @@ qx.Class.define("osparc.auth.Manager", {
         profile["groups"]["organizations"].forEach(org => orgIds.push(org["gid"]));
         osparc.auth.Data.getInstance().setOrgIds(orgIds);
       }
-      osparc.data.Permissions.getInstance().setRole(profile.role);
+      const role = profile.role.toLowerCase();
+      osparc.data.Permissions.getInstance().setRole(role);
 
       this.__fetchStartUpResources();
     },

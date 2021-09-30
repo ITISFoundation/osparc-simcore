@@ -40,7 +40,7 @@ qx.Class.define("osparc.data.Permissions", {
   type : "singleton",
 
   construct() {
-    const initPermissions = this.__getInitPermissions();
+    const initPermissions = osparc.data.Permissions.getInitPermissions();
     for (const role in initPermissions) {
       if (Object.prototype.hasOwnProperty.call(initPermissions, role)) {
         initPermissions[role].forEach(action => {
@@ -74,54 +74,9 @@ qx.Class.define("osparc.data.Permissions", {
         can: [],
         inherits: ["tester"]
       }
-    }
-  },
-
-  members: {
-    __userRole: null,
-
-    getRole() {
-      return this.__userRole;
     },
 
-    setRole(role) {
-      role = role.toLowerCase();
-      if (!this.self().ROLES[role]) {
-        return;
-      }
-      this.__userRole = role;
-    },
-
-    arePermissionsReady() {
-      return this.getRole() !== null;
-    },
-
-    getChildrenRoles(role) {
-      role = role.toLowerCase();
-      const childrenRoles = [];
-      if (!this.self().ROLES[role]) {
-        return childrenRoles;
-      }
-      if (!childrenRoles.includes(role)) {
-        childrenRoles.unshift(role);
-      }
-      const children = this.self().ROLES[role].inherits;
-      for (let i=0; i<children.length; i++) {
-        const child = children[i];
-        if (!childrenRoles.includes(child)) {
-          childrenRoles.unshift(child);
-          const moreChildren = this.getChildrenRoles(child);
-          for (let j=moreChildren.length-1; j>=0; j--) {
-            if (!childrenRoles.includes(moreChildren[j])) {
-              childrenRoles.unshift(moreChildren[j]);
-            }
-          }
-        }
-      }
-      return childrenRoles;
-    },
-
-    __getInitPermissions: function() {
+    getInitPermissions: function() {
       return {
         "anonymous": [],
         "guest": [
@@ -175,6 +130,46 @@ qx.Class.define("osparc.data.Permissions", {
         ],
         "admin": []
       };
+    }
+  },
+
+  properties: {
+    role: {
+      check: ["anonymous", "guest", "user", "tester", "admin"],
+      init: null,
+      nullable: false,
+      event: "changeRole"
+    }
+  },
+
+  members: {
+    arePermissionsReady() {
+      return this.getRole() !== null;
+    },
+
+    getChildrenRoles(role) {
+      role = role.toLowerCase();
+      const childrenRoles = [];
+      if (!this.self().ROLES[role]) {
+        return childrenRoles;
+      }
+      if (!childrenRoles.includes(role)) {
+        childrenRoles.unshift(role);
+      }
+      const children = this.self().ROLES[role].inherits;
+      for (let i=0; i<children.length; i++) {
+        const child = children[i];
+        if (!childrenRoles.includes(child)) {
+          childrenRoles.unshift(child);
+          const moreChildren = this.getChildrenRoles(child);
+          for (let j=moreChildren.length-1; j>=0; j--) {
+            if (!childrenRoles.includes(moreChildren[j])) {
+              childrenRoles.unshift(moreChildren[j]);
+            }
+          }
+        }
+      }
+      return childrenRoles;
     },
 
     __nextAction: function() {
@@ -219,8 +214,8 @@ qx.Class.define("osparc.data.Permissions", {
 
     canDo: function(action, showMsg) {
       let canDo = false;
-      if (this.__userRole) {
-        canDo = this.__canRoleDo(this.__userRole, action);
+      if (this.getRole()) {
+        canDo = this.__canRoleDo(this.getRole(), action);
       }
       if (showMsg && !canDo) {
         osparc.component.message.FlashMessenger.getInstance().logAs("Operation not permitted", "ERROR");
@@ -229,7 +224,7 @@ qx.Class.define("osparc.data.Permissions", {
     },
 
     isTester: function() {
-      return this.__userRole === "tester";
+      return this.getRole() === "tester";
     }
   }
 });
