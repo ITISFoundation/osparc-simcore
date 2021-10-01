@@ -1,3 +1,4 @@
+from abc import ABC, abstractstaticmethod
 from typing import Optional
 
 from distributed.worker import get_worker
@@ -5,10 +6,17 @@ from models_library.projects_state import RunningState
 from pydantic import BaseModel
 
 
-class TaskStateEvent(BaseModel):
+class TaskEvent(BaseModel, ABC):
     job_id: str
-    state: RunningState
     msg: Optional[str]
+
+    @abstractstaticmethod
+    def topic_name() -> str:
+        raise NotImplementedError
+
+
+class TaskStateEvent(TaskEvent):
+    state: RunningState
 
     @staticmethod
     def topic_name() -> str:
