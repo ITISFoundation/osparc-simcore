@@ -62,10 +62,6 @@ Upgrades to given revision (get ``info`` to check history)
 
 ## Database Models
 
-Entity Relationship Diagram (ERD) defined under ``simcore_postgres_database.models``:
-
-![scripts/create_erd.py-output](doc/img/postgres-database-models.svg)
-
 ## Development
 
 1. In order to create/modify/delete tables one can use sc-pg to start a clean database:

@@ -15,7 +15,7 @@ from simcore_postgres_database.models.base import metadata
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
-def create_with_sqlalchemy_schemadisplay(svg_path: Path):
+def create_with_sqlalchemy_schemadisplay(image_path: Path):
     # SEE https://github.com/sqlalchemy/sqlalchemy/wiki/SchemaDisplay
 
     from sqlalchemy_schemadisplay import create_schema_graph
@@ -29,22 +29,22 @@ def create_with_sqlalchemy_schemadisplay(svg_path: Path):
         rankdir="LR",  # From left to right (instead of top to bottom)
         concentrate=False,  # Don't try to join the relation lines together
     )
-    graph.write_svg(str(svg_path))  # write out the file
+    graph.write_svg(str(image_path.with_suffix(".svg")))
+    graph.write_png(str(image_path.with_suffix(".png")))
 
 
-def create_with_eralchemy(svg_path: Path):
+def create_with_eralchemy(image_path: Path):
     # SEE https://github.com/Alexis-benoist/eralchemy
+
     from eralchemy import render_er
 
-    render_er(metadata, str(svg_path))
+    for ext in (".png", ".svg"):
+        render_er(metadata, str(image_path.with_suffix(ext)))
 
 
 if __name__ == "__main__":
 
-    output_dir = (CURRENT_DIR / "../../doc/img").resolve()
-    output_dir.mkdir(parents=True, exist_ok=True)
-
     # FIXME: sqlalchemy_schemadisplay failes with json columns
     # create_with_sqlalchemy_schemadisplay( output_dir / "postgres-database-models.svg")
 
-    create_with_eralchemy(output_dir / "postgres-database-models.svg")
+    create_with_eralchemy(Path.cwd() / "postgres-database-models.ignore.ext")
