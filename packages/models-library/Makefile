@@ -30,3 +30,13 @@ project-jsonschema.ignore.json: ## creates project-v0.0.1.json for DEV purposes
 .PHONY: service-jsonschema.ignore.json
 node-meta-jsonschema.ignore.json: ## creates node-meta-v0.0.1.json for DEV purposes
 	python3 -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > $@
+
+
+.PHONY: auto-doc
+auto-doc:
+	# produces entity relationship Diagrams (ERD) for some data-model classes
+	@erdantic \
+	models_library.projects.Project \
+	models_library.services.ServiceDockerData  \
+	--out models-library.ignore.png \
+	--out models-library.svg
