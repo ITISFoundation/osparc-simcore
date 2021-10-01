@@ -238,7 +238,7 @@ def test_it(project_nodes: Dict[NodeID, Node]):
         nodes_generators.append(g)
 
     # generate values
-    for results in itertools.product(*nodes_generators):
+    for parameters in itertools.product(*nodes_generators):
         # Q: what if iter are infinite?
         # Q: preview & crop iterations?
 
@@ -247,7 +247,7 @@ def test_it(project_nodes: Dict[NodeID, Node]):
         iter_project_nodes = deepcopy(project_nodes)
 
         for node_results, node_def, node_id in zip(
-            results, iterable_nodes_defs, iterable_nodes_ids
+            parameters, iterable_nodes_defs, iterable_nodes_ids
         ):
 
             assert node_def.outputs
