@@ -218,6 +218,8 @@ uvicorn==0.13.4
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
+watchdog==2.1.5
+    # via -r requirements/_base.in
 websocket-client==0.59.0
     # via
     #   docker
