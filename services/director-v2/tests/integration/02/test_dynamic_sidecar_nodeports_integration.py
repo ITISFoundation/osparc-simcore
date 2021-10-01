@@ -614,6 +614,7 @@ async def _assert_retrieve_completed(
                 break
 
             if i == TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED - 1:
+                print("".join(logs))
                 assert False, "Timeout reached"
 
             print(f"Sleeping {i+1}/{TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED}")
