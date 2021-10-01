@@ -13,14 +13,13 @@ from typing import Dict, List, Optional, Tuple
 import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
-
-from servicelib.async_utils import (
+from servicelib.async_utils import (  # pylint: disable=no-name-in-module
     run_sequentially_in_context,
-)  # pylint: disable=no-name-in-module
-from servicelib.monitor_services import (
+)
+from servicelib.monitor_services import (  # pylint: disable=no-name-in-module
     service_started,
     service_stopped,
-)  # pylint: disable=no-name-in-module
+)
 
 from . import config, docker_utils, exceptions, registry_proxy
 from .config import (
@@ -549,7 +548,10 @@ async def _get_service_state(
     last_task_error_msg = (
         last_task["Status"]["Err"] if "Err" in last_task["Status"] else ""
     )
-    if task_state in ("failed"):
+    if "Err" in last_task["Status"]:
+        log.error("service %s failed with %s", service_name, last_task["Status"])
+        last_task_state = ServiceState.FAILED
+    elif task_state in ("failed"):
         # check if it failed already the max number of attempts we allow for
         if len(tasks) < config.DIRECTOR_SERVICES_RESTART_POLICY_MAX_ATTEMPTS:
             log.debug("number of tasks: %s", len(tasks))
