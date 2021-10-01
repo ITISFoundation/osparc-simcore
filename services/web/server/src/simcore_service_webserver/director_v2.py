@@ -1,5 +1,4 @@
 import logging
-from typing import Tuple
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
@@ -10,18 +9,6 @@ from servicelib.aiohttp.rest_routing import (
 
 from . import director_v2_handlers
 from .constants import APP_OPENAPI_SPECS_KEY
-from .director_v2_core import (
-    create_or_update_pipeline,
-    delete_pipeline,
-    get_computation_task,
-    get_service_state,
-    get_services,
-    is_healthy,
-    request_retrieve_dyn_service,
-    start_service,
-    stop_service,
-    stop_services,
-)
 from .director_v2_settings import CONFIG_SECTION_NAME, create_settings
 
 log = logging.getLogger(__file__)
@@ -56,18 +43,3 @@ def setup_director_v2(app: web.Application):
     )
     # FIXME:  app.router.add_routes(director_v2_handlers.routes)
     app.router.add_routes(routes)
-
-
-# API
-__all__: Tuple[str, ...] = (
-    "create_or_update_pipeline",
-    "delete_pipeline",
-    "get_computation_task",
-    "get_service_state",
-    "get_services",
-    "is_healthy",
-    "request_retrieve_dyn_service",
-    "start_service",
-    "stop_service",
-    "stop_services",
-)

@@ -8,7 +8,7 @@ from typing import Dict, List, Union
 
 from aiohttp import web
 
-from .. import director_v2
+from .. import director_v2_api
 from .._meta import api_version_prefix as vtag
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
@@ -83,7 +83,7 @@ async def get_node(request: web.Request) -> web.Response:
         )
 
         # NOTE: for legacy services a redirect to director-v0 is made
-        reply: Union[Dict, List] = await director_v2.get_service_state(
+        reply: Union[Dict, List] = await director_v2_api.get_service_state(
             app=request.app, node_uuid=node_uuid
         )
 

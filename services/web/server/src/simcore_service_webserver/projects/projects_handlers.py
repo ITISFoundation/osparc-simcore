@@ -14,7 +14,7 @@ from servicelib.rest_pagination_utils import PageResponseLimitOffset
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
-from .. import catalog, director_v2
+from .. import catalog, director_v2_api
 from .._meta import api_version_prefix as vtag
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
@@ -129,7 +129,7 @@ async def create_projects(request: web.Request):
             await clone_data_coro
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
-        await director_v2.create_or_update_pipeline(
+        await director_v2_api.create_or_update_pipeline(
             request.app, user_id, project["uuid"]
         )
 
@@ -355,7 +355,9 @@ async def replace_project(request: web.Request):
         new_project = await db.replace_user_project(
             new_project, user_id, f"{project_uuid}", include_templates=True
         )
-        await director_v2.create_or_update_pipeline(request.app, user_id, project_uuid)
+        await director_v2_api.create_or_update_pipeline(
+            request.app, user_id, project_uuid
+        )
         # Appends state
         new_project = await projects_api.add_project_states_for_user(
             user_id=user_id,

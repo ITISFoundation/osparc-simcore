@@ -32,7 +32,7 @@ from servicelib.aiohttp.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
-from .. import director_v2
+from .. import director_v2_api
 from ..resource_manager.websocket_manager import (
     PROJECT_ID_KEY,
     UserSessionID,
@@ -137,7 +137,7 @@ async def start_project_interactive_services(
         project["uuid"],
         user_id,
     )
-    running_services = await director_v2.get_services(
+    running_services = await director_v2_api.get_services(
         request.app, user_id, project["uuid"]
     )
     log.debug("Running services %s", running_services)
@@ -153,7 +153,7 @@ async def start_project_interactive_services(
     log.debug("Services to start %s", project_needed_services)
 
     start_service_tasks = [
-        director_v2.start_service(
+        director_v2_api.start_service(
             request.app,
             user_id=user_id,
             project_id=project["uuid"],
@@ -273,9 +273,9 @@ async def remove_project_interactive_services(
                 )
 
             # save the state if the user is not a guest. if we do not know we save in any case.
-            with suppress(director_v2.DirectorServiceError):
+            with suppress(director_v2_api.DirectorServiceError):
                 # here director exceptions are suppressed. in case the service is not found to preserve old behavior
-                await director_v2.stop_services(
+                await director_v2_api.stop_services(
                     app=app,
                     user_id=user_id,
                     project_id=project_uuid,
@@ -314,7 +314,7 @@ async def delete_project_from_db(
     app: web.Application, project_uuid: str, user_id: int
 ) -> None:
     db = app[APP_PROJECT_DBAPI]
-    await director_v2.delete_pipeline(app, user_id, project_uuid)
+    await director_v2_api.delete_pipeline(app, user_id, project_uuid)
     await db.delete_user_project(user_id, project_uuid)
     # requests storage to delete all project's stored data
     await delete_data_folders_of_project(app, project_uuid, user_id)
@@ -340,7 +340,7 @@ async def add_project_node(
     )
     node_uuid = service_id if service_id else str(uuid4())
     if _is_node_dynamic(service_key):
-        await director_v2.start_service(
+        await director_v2_api.start_service(
             request.app,
             project_id=project_uuid,
             user_id=user_id,
@@ -360,7 +360,7 @@ async def get_project_node(
         "getting node %s in project %s for user %s", node_id, project_uuid, user_id
     )
 
-    list_of_interactive_services = await director_v2.get_services(
+    list_of_interactive_services = await director_v2_api.get_services(
         request.app, project_id=project_uuid, user_id=user_id
     )
     # get the project if it is running
@@ -379,7 +379,7 @@ async def delete_project_node(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
     )
 
-    list_of_services = await director_v2.get_services(
+    list_of_services = await director_v2_api.get_services(
         request.app, project_id=project_uuid, user_id=user_id
     )
     # stop the service if it is running
@@ -387,7 +387,7 @@ async def delete_project_node(
         if service["service_uuid"] == node_uuid:
             log.error("deleting service=%s", service)
             # no need to save the state of the node when deleting it
-            await director_v2.stop_service(
+            await director_v2_api.stop_service(
                 request.app,
                 node_uuid,
                 save_state=False,
@@ -595,7 +595,7 @@ async def trigger_connected_service_retrieve(
 
     # call /retrieve on the nodes
     update_tasks = [
-        director_v2.request_retrieve_dyn_service(app, node, keys)
+        director_v2_api.request_retrieve_dyn_service(app, node, keys)
         for node, keys in nodes_keys_to_update.items()
     ]
     await logged_gather(*update_tasks)
@@ -791,7 +791,7 @@ async def get_project_states_for_user(
     running_state = RunningState.UNKNOWN
     lock_state, computation_task = await logged_gather(
         _get_project_lock_state(user_id, project_uuid, app),
-        director_v2.get_computation_task(app, user_id, UUID(project_uuid)),
+        director_v2_api.get_computation_task(app, user_id, UUID(project_uuid)),
     )
     if computation_task:
         # get the running state
@@ -815,7 +815,7 @@ async def add_project_states_for_user(
     if not is_template:
         lock_state, computation_task = await logged_gather(
             _get_project_lock_state(user_id, project["uuid"], app),
-            director_v2.get_computation_task(app, user_id, project["uuid"]),
+            director_v2_api.get_computation_task(app, user_id, project["uuid"]),
         )
 
         if computation_task:

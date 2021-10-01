@@ -32,8 +32,8 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pydantic import BaseSettings
 from pytest_simcore.helpers.utils_login import NewUser
-from servicelib.common_aiopg_utils import DSN
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
+from servicelib.common_aiopg_utils import DSN
 from simcore_service_webserver import rest
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_config import app_schema as app_schema
@@ -261,20 +261,20 @@ def asyncpg_storage_system_mock(mocker):
 @pytest.fixture
 async def mocked_director_v2_api(loop, mocker):
     mocks = {
-        "director_v2.get_service_state": mocker.patch(
-            "simcore_service_webserver.director_v2.get_service_state",
+        "director_v2_api.get_service_state": mocker.patch(
+            "simcore_service_webserver.director_v2_api.get_service_state",
             return_value={},
         ),
-        "director_v2.get_services": mocker.patch(
-            "simcore_service_webserver.director_v2.get_services",
+        "director_v2_api.get_services": mocker.patch(
+            "simcore_service_webserver.director_v2_api.get_services",
             return_value="",
         ),
-        "director_v2.start_service": mocker.patch(
-            "simcore_service_webserver.director_v2.start_service",
+        "director_v2_api.start_service": mocker.patch(
+            "simcore_service_webserver.director_v2_api.start_service",
             return_value="",
         ),
-        "director_v2.stop_service": mocker.patch(
-            "simcore_service_webserver.director_v2.stop_service",
+        "director_v2_api.stop_service": mocker.patch(
+            "simcore_service_webserver.director_v2_api.stop_service",
             return_value="",
         ),
     }
@@ -312,7 +312,7 @@ async def mocked_dynamic_service(loop, client, mocked_director_v2_api):
 
         services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
-        mocked_director_v2_api["director_v2.get_services"].return_value = services
+        mocked_director_v2_api["director_v2_api.get_services"].return_value = services
         return running_service_dict
 
     return create

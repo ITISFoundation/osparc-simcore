@@ -861,13 +861,13 @@ async def test_delete_project(
     # DELETE /v0/projects/{project_id}
 
     fakes = fake_services(5)
-    mocked_director_v2_api["director_v2.get_services"].return_value = fakes
+    mocked_director_v2_api["director_v2_api.get_services"].return_value = fakes
 
     await _delete_project(client, user_project, expected)
     await asyncio.sleep(2)  # let some time fly for the background tasks to run
 
     if expected == web.HTTPNoContent:
-        mocked_director_v2_api["director_v2.get_services"].assert_called_once()
+        mocked_director_v2_api["director_v2_api.get_services"].assert_called_once()
 
         expected_calls = [
             call(
@@ -877,7 +877,7 @@ async def test_delete_project(
             )
             for service in fakes
         ]
-        mocked_director_v2_api["director_v2.stop_service"].assert_has_calls(
+        mocked_director_v2_api["director_v2_api.stop_service"].assert_has_calls(
             expected_calls
         )
 
