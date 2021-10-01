@@ -316,7 +316,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             break;
           case "workbench":
             source = osparc.dashboard.CardBase.MODE_WORKBENCH;
-            toolTipText = this.tr("Workbenck mode");
+            toolTipText = this.tr("Workbench mode");
             break;
         }
         if (source) {
