@@ -21,6 +21,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import attr
 import pytest
 import tests.utils
+from simcore_service_storage.access_layer import InvalidFileIdentifier
 from simcore_service_storage.constants import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 from simcore_service_storage.dsm import DataStorageManager
 from simcore_service_storage.models import FileMetaData, FileMetaDataEx
@@ -177,6 +178,16 @@ async def test_links_s3(
             assert entity_tag is not None
             fmd.entity_tag = entity_tag.strip('"')
 
+    # test wrong user
+    assert await dsm.list_file("654654654", fmd.location, fmd.file_uuid) is None
+
+    # test wrong location
+    assert await dsm.list_file(fmd.user_id, "whatever_location", fmd.file_uuid) is None
+
+    # test wrong file uuid
+    with pytest.raises(InvalidFileIdentifier):
+        await dsm.list_file(fmd.user_id, fmd.location, "some_fake_uuid")
+    # use correctly
     file_metadata: Optional[FileMetaDataEx] = await dsm.list_file(
         fmd.user_id, fmd.location, fmd.file_uuid
     )
