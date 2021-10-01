@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import aiobotocore
 import attr
+import botocore
 import sqlalchemy as sa
 from aiobotocore.client import AioBaseClient
 from aiobotocore.session import AioSession, ClientCreatorContext
@@ -382,7 +383,7 @@ class DataStorageManager:
                         return None
                     file_metadata = to_meta_data_extended(row)
                     if file_metadata.fmd.entity_tag is None:
-                        # we need to update from S3 here
+                        # we need to update from S3 here since the database is not up-to-date
                         file_metadata = await self._update_metadata_from_storage(
                             file_metadata.fmd.file_uuid,
                             file_metadata.fmd.bucket_name,
@@ -416,32 +417,40 @@ class DataStorageManager:
     async def _update_metadata_from_storage(
         self, file_uuid: str, bucket_name: str, object_name: str
     ) -> Optional[FileMetaDataEx]:
-        async with self._create_aiobotocore_client_context() as aioboto_client:
-            result = await aioboto_client.head_object(
-                Bucket=bucket_name, Key=object_name
-            )
-            file_size = result["ContentLength"]
-            last_modified = result["LastModified"]
-            entity_tag = result["ETag"].strip('"')
+        try:
+            async with self._create_aiobotocore_client_context() as aioboto_client:
+                result = await aioboto_client.head_object(
+                    Bucket=bucket_name, Key=object_name
+                )  # type: ignore
 
-            async with self.engine.acquire() as conn:
-                result: ResultProxy = await conn.execute(
-                    file_meta_data.update()
-                    .where(file_meta_data.c.file_uuid == file_uuid)
-                    .values(
-                        file_size=file_size,
-                        last_modified=last_modified,
-                        entity_tag=entity_tag,
+                file_size = result["ContentLength"]  # type: ignore
+                last_modified = result["LastModified"]  # type: ignore
+                entity_tag = result["ETag"].strip('"')  # type: ignore
+
+                async with self.engine.acquire() as conn:
+                    result: ResultProxy = await conn.execute(
+                        file_meta_data.update()
+                        .where(file_meta_data.c.file_uuid == file_uuid)
+                        .values(
+                            file_size=file_size,
+                            last_modified=last_modified,
+                            entity_tag=entity_tag,
+                        )
+                        .returning(literal_column("*"))
                     )
-                    .returning(literal_column("*"))
-                )
-                if not result:
-                    return None
-                row: RowProxy = await result.first()
-                if not row:
-                    return None
+                    if not result:
+                        return None
+                    row: Optional[RowProxy] = await result.first()
+                    if not row:
+                        return None
 
-                return to_meta_data_extended(row)
+                    return to_meta_data_extended(row)
+        except botocore.exceptions.ClientError:
+            logger.warning(
+                "Error happened while trying to access %s", file_uuid, exc_info=True
+            )
+            # the file is not existing or some error happened
+            return None
 
     async def _metadata_file_updater(
         self,

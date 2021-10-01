@@ -155,6 +155,64 @@ def _create_file_meta_for_s3(
     return fmd
 
 
+async def _upload_file(
+    dsm: DataStorageManager, file_metadata: FileMetaData, file_path: Path
+) -> FileMetaData:
+    up_url = await dsm.upload_link(file_metadata.user_id, file_metadata.file_uuid)
+    assert file_path.exists()
+    with file_path.open("rb") as fp:
+        d = fp.read()
+        req = urllib.request.Request(up_url, data=d, method="PUT")
+        with urllib.request.urlopen(req) as _f:
+            entity_tag = _f.headers.get("ETag")
+    assert entity_tag is not None
+    file_metadata.entity_tag = entity_tag.strip('"')
+    return file_metadata
+
+
+async def test_update_metadata_from_storage(
+    postgres_service_url: str,
+    s3_client: MinioClientWrapper,
+    mock_files_factory: Callable[[int], List[str]],
+    dsm_fixture: DataStorageManager,
+):
+    tmp_file = mock_files_factory(1)[0]
+    fmd: FileMetaData = _create_file_meta_for_s3(
+        postgres_service_url, s3_client, tmp_file
+    )
+    fmd = await _upload_file(dsm_fixture, fmd, Path(tmp_file))
+
+    assert (
+        await dsm_fixture._update_metadata_from_storage(  # pylint: disable=protected-access
+            "some_fake_uuid", fmd.bucket_name, fmd.object_name
+        )
+        is None
+    )
+
+    assert (
+        await dsm_fixture._update_metadata_from_storage(  # pylint: disable=protected-access
+            fmd.file_uuid, "some_fake_bucket", fmd.object_name
+        )
+        is None
+    )
+
+    assert (
+        await dsm_fixture._update_metadata_from_storage(  # pylint: disable=protected-access
+            fmd.file_uuid, fmd.bucket_name, "some_fake_object"
+        )
+        is None
+    )
+
+    file_metadata: Optional[
+        FileMetaDataEx
+    ] = await dsm_fixture._update_metadata_from_storage(  # pylint: disable=protected-access
+        fmd.file_uuid, fmd.bucket_name, fmd.object_name
+    )
+    assert file_metadata is not None
+    assert file_metadata.fmd.file_size == Path(tmp_file).stat().st_size
+    assert file_metadata.fmd.entity_tag == fmd.entity_tag
+
+
 async def test_links_s3(
     postgres_service_url: str,
     s3_client: MinioClientWrapper,
@@ -169,14 +227,7 @@ async def test_links_s3(
 
     dsm = dsm_fixture
 
-    up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
-    with io.open(tmp_file, "rb") as fp:
-        d = fp.read()
-        req = urllib.request.Request(up_url, data=d, method="PUT")
-        with urllib.request.urlopen(req) as _f:
-            entity_tag = _f.headers.get("ETag")
-            assert entity_tag is not None
-            fmd.entity_tag = entity_tag.strip('"')
+    fmd = await _upload_file(dsm_fixture, fmd, Path(tmp_file))
 
     # test wrong user
     assert await dsm.list_file("654654654", fmd.location, fmd.file_uuid) is None
