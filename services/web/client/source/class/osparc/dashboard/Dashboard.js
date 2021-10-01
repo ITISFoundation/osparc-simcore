@@ -70,15 +70,21 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     },
 
     __createMainViewLayout: function() {
-      const tabs = [
-        [this.tr("Studies"), this.__createStudyBrowser],
-        [this.tr("Discover"), this.__createExploreBrowser]
-      ];
+      const tabs = [{
+        label: this.tr("Studies"),
+        buildLayout: this.__createStudyBrowser
+      }, {
+        label: this.tr("Discover"),
+        buildLayout: this.__createExploreBrowser
+      }];
       if (!osparc.utils.Utils.isProduct("s4l")) {
-        tabs.push([this.tr("Data"), this.__createDataBrowser]);
+        tabs.push({
+          label: this.tr("Data"),
+          buildLayout: this.__createDataBrowser}
+        );
       }
-      tabs.forEach(tuple => {
-        const tabPage = new qx.ui.tabview.Page(tuple[0]).set({
+      tabs.forEach(({label, buildLayout}) => {
+        const tabPage = new qx.ui.tabview.Page(label).set({
           appearance: "dashboard-page"
         });
         const tabButton = tabPage.getChildControl("button");
@@ -86,11 +92,11 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           font: "text-16",
           minWidth: 70
         });
-        const id = tuple[0].getMessageId().toLowerCase() + "TabBtn";
+        const id = label.getMessageId().toLowerCase() + "TabBtn";
         osparc.utils.Utils.setIdToWidget(tabButton, id);
         tabPage.setLayout(new qx.ui.layout.Grow());
 
-        const viewLayout = tuple[1].call(this);
+        const viewLayout = buildLayout.call(this);
         tabButton.addListener("execute", () => {
           if (viewLayout.resetSelection) {
             viewLayout.resetSelection();
