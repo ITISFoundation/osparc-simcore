@@ -16,14 +16,14 @@ import urllib
 import uuid
 from pathlib import Path
 from shutil import copyfile
-from typing import Any, Dict, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import attr
 import pytest
 import tests.utils
 from simcore_service_storage.constants import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 from simcore_service_storage.dsm import DataStorageManager
-from simcore_service_storage.models import FileMetaData
+from simcore_service_storage.models import FileMetaData, FileMetaDataEx
 from simcore_service_storage.s3wrapper.s3_client import MinioClientWrapper
 from tests.utils import BUCKET_NAME, USER_ID, has_datcore_tokens
 
@@ -109,7 +109,9 @@ async def test_dsm_s3(dsm_mockup_db, dsm_fixture):
     assert len(dsm_mockup_db) == new_size + len(bobs_biostromy_files)
 
 
-def _create_file_meta_for_s3(postgres_url, s3_client, tmp_file):
+def _create_file_meta_for_s3(
+    postgres_url: str, s3_client: MinioClientWrapper, tmp_file: str
+) -> FileMetaData:
 
     bucket_name = BUCKET_NAME
     s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
@@ -124,7 +126,7 @@ def _create_file_meta_for_s3(postgres_url, s3_client, tmp_file):
     file_uuid = os.path.join(str(project_id), str(node_id), str(file_name))
     display_name = os.path.join(str(project_name), str(node_name), str(file_name))
     created_at = str(datetime.datetime.now())
-    file_size = 1234
+    file_size = Path(tmp_file).stat().st_size
 
     d = {
         "object_name": os.path.join(str(project_id), str(node_id), str(file_name)),
@@ -153,11 +155,16 @@ def _create_file_meta_for_s3(postgres_url, s3_client, tmp_file):
 
 
 async def test_links_s3(
-    postgres_service_url, s3_client, mock_files_factory, dsm_fixture
+    postgres_service_url: str,
+    s3_client: MinioClientWrapper,
+    mock_files_factory: Callable[[int], List[str]],
+    dsm_fixture: DataStorageManager,
 ):
 
     tmp_file = mock_files_factory(1)[0]
-    fmd = _create_file_meta_for_s3(postgres_service_url, s3_client, tmp_file)
+    fmd: FileMetaData = _create_file_meta_for_s3(
+        postgres_service_url, s3_client, tmp_file
+    )
 
     dsm = dsm_fixture
 
@@ -167,6 +174,33 @@ async def test_links_s3(
         req = urllib.request.Request(up_url, data=d, method="PUT")
         with urllib.request.urlopen(req) as _f:
             pass
+
+    file_metadata: Optional[FileMetaDataEx] = await dsm.list_file(
+        fmd.user_id, fmd.location, fmd.file_uuid
+    )
+    excluded_fields = [
+        "project_id",
+        "project_name",
+        "node_name",
+        "user_name",
+        "display_file_path",
+        "created_at",
+        "last_modified",
+    ]
+    for field in FileMetaData.__attrs_attrs__:
+        if field.name not in excluded_fields:
+            if field.name == "location_id":
+                assert int(
+                    file_metadata.fmd.__getattribute__(field.name)
+                ) == fmd.__getattribute__(
+                    field.name
+                ), f"{field.name}: expected {fmd.__getattribute__(field.name)} vs {file_metadata.fmd.__getattribute__(field.name)}"
+            else:
+                assert file_metadata.fmd.__getattribute__(
+                    field.name
+                ) == fmd.__getattribute__(
+                    field.name
+                ), f"{field.name}: expected {fmd.__getattribute__(field.name)} vs {file_metadata.fmd.__getattribute__(field.name)}"
 
     tmp_file2 = tmp_file + ".rec"
     user_id = 0

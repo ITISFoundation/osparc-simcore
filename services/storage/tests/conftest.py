@@ -13,7 +13,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import randrange
-from typing import Any, Dict, Iterator, Tuple
+from typing import Any, Callable, Dict, Iterator, List, Tuple
 
 import dotenv
 import pytest
@@ -157,7 +157,7 @@ def postgres_service(docker_services, docker_ip):
 
 
 @pytest.fixture(scope="function")
-def postgres_service_url(postgres_service, docker_services, docker_ip):
+def postgres_service_url(postgres_service, docker_services, docker_ip) -> str:
     url = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
         user=USER,
         password=PASS,
@@ -229,8 +229,8 @@ def s3_client(minio_service: Dict[str, Any]) -> MinioClientWrapper:
 
 
 @pytest.fixture(scope="function")
-def mock_files_factory(tmpdir_factory):
-    def _create_files(count):
+def mock_files_factory(tmpdir_factory) -> Callable[[int], List[str]]:
+    def _create_files(count: int) -> List[str]:
         filepaths = []
         for _i in range(count):
             name = str(uuid.uuid4())

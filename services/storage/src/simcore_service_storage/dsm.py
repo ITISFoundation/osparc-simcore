@@ -378,7 +378,12 @@ class DataStorageManager:
                     )
                     result = await conn.execute(query)
                     row = await result.first()
-                    return to_meta_data_extended(row) if row else None
+                    if not row:
+                        return None
+                    file_metadata = to_meta_data_extended(row)
+                    # if file_meta_data.entity_tag is None:
+                    #     # we need to update from S3 here
+                    return file_metadata
                 # FIXME: returns None in both cases: file does not exist or use has no access
                 logger.debug("User %s cannot read file %s", user_id, file_uuid)
                 return None
@@ -402,6 +407,13 @@ class DataStorageManager:
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
         # api_token, api_secret = self._get_datcore_tokens(user_id)
         # await dcw.upload_file_to_id(destination_id, local_file_path)
+
+    # async def _update_metadata_from_storage(self, file_uuid: str, bucket_name: str, object_name: str)
+    #     async with self._create_aiobotocore_client_context() as aioboto_client:
+    #         result = await aioboto_client.get_object(
+    #             Bucket=bucket_name, key=object_name
+    #         )
+    #         file_size = result[""]
 
     async def _metadata_file_updater(
         self,
