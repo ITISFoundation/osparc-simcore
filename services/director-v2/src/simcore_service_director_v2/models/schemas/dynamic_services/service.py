@@ -9,7 +9,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services import DYNAMIC_SERVICE_KEY_RE, VERSION_RE
 from pydantic import BaseModel, Field
 
-from ....meta import api_vtag
+from ....meta import API_VTAG
 from ..constants import UserID
 
 
@@ -21,8 +21,8 @@ class ServiceType(Enum):
     These values are attached to the dynamic-sidecar and its relative proxy.
     """
 
-    MAIN = f"main-{api_vtag}"
-    DEPENDENCY = f"dependency-{api_vtag}"
+    MAIN = f"main-{API_VTAG}"
+    DEPENDENCY = f"dependency-{API_VTAG}"
 
 
 class CommonServiceDetails(BaseModel):

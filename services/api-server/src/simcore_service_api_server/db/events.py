@@ -5,6 +5,7 @@ from aiopg.sa import Engine, create_engine
 from fastapi import FastAPI
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
+from .._meta import PROJECT_NAME
 from ..core.settings import PostgresSettings
 
 logger = logging.getLogger(__name__)
@@ -34,12 +35,13 @@ def _compose_info_on_engine(app: FastAPI) -> str:
 async def connect_to_db(app: FastAPI) -> None:
     logger.debug("Connecting db ...")
 
-    cfg: PostgresSettings = app.state.settings.postgres
+    cfg: PostgresSettings = app.state.settings.API_SERVER_POSTGRES
     engine: Engine = await create_engine(
         str(cfg.dsn),
-        application_name=f"{__name__}_{id(app)}",  # unique identifier per app
-        minsize=cfg.minsize,
-        maxsize=cfg.maxsize,
+        application_name=cfg.POSTGRES_CLIENT_NAME
+        or f"{PROJECT_NAME}_{id(app)}",  # unique identifier per app
+        minsize=cfg.POSTGRES_MINSIZE,
+        maxsize=cfg.POSTGRES_MAXSIZE,
     )
     logger.debug("Connected to %s", engine.dsn)
     app.state.engine = engine

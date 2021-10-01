@@ -34,6 +34,11 @@ ORGANISM_CITATIONS = split_citations(["(MMRRC Cat# 026409-UCD, RRID:MMRRC_026409
 # https://web.expasy.org/cellosaurus/CVCL_0033
 CELL_LINE_CITATIONS = split_citations(["(ATCC Cat# HTB-30, RRID:CVCL_0033)"])
 
+#
+#  WARNING: Since Sep.2021, the order of the resolved hits list returned by
+#  https://scicrunch.org/resolver/RRID:CVCL_0033.json changes per call and
+#  sometimes (BCRJ Cat# 0226, RRID:CVCL_0033) appears as first hit instead
+
 # https://scicrunch.org/resources/Tools/search?q=SCR_018315&l=SCR_018315
 TOOL_CITATIONS = split_citations(
     [

@@ -64,7 +64,7 @@ class ResolverResponseBody(BaseModel):
 
 
 class ResolvedItem(BaseModel):
-    """ Result model for resolve_rrid """
+    """Result model for resolve_rrid"""
 
     description: str
     name: str
@@ -95,6 +95,15 @@ async def resolve_rrid(
     if resolved.hits.total == 0:
         return None
 
+    #  FIXME: Not sure why the same RRID can have multiple hits.
+    #  We have experience that the order of hits is not preserve and
+    #  therefore selecting the first hit is not the right way to go ...
+    #
+    #  WARNING: Since Sep.2021, hits returned by resolver does not guarantee order.
+    #  For instance, https://scicrunch.org/resolver/RRID:CVCL_0033.json changes
+    #  the order every call and the first hit flips between
+    #  '(BCRJ Cat# 0226, RRID:CVCL_0033)' and '(ATCC Cat# HTB-30, RRID:CVCL_0033)'
+    #
     hit = resolved.hits.hits[0].source
 
     if resolved.hits.total > 1:

@@ -16,7 +16,7 @@ from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from starlette.responses import RedirectResponse
 
-from ..._meta import api_vtag
+from ..._meta import API_VTAG
 from ...models.schemas.files import File
 from ...modules.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
@@ -218,7 +218,7 @@ async def files_upload_multiple_view():
         content=dedent(
             f"""
         <body>
-        <form action="/{api_vtag}/files:upload" enctype="multipart/form-data" method="post">
+        <form action="/{API_VTAG}/files:upload" enctype="multipart/form-data" method="post">
         <input name="files" type="file" multiple>
         <input type="submit">
         </form>
