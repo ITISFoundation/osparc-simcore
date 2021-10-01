@@ -186,13 +186,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           });
         })
         .catch(err => {
+          let msg = "";
           if ("status" in err && err["status"] == 423) { // Locked
-            const msg = study.getName() + this.tr(" is already opened");
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-            this.fireEvent("forceBackToDashboard");
+            msg = study.getName() + this.tr(" is already opened");
           } else {
             console.error(err);
+            msg = this.tr("Error opening study");
+            msg += "<br>" + osparc.data.Resources.getErrorMsg(err);
           }
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          this.fireEvent("forceBackToDashboard");
         });
 
       this.__workbenchView.setStudy(study);
