@@ -144,10 +144,14 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         this.__tree.setModel(newModel);
         this.__tree.setDelegate({
           createItem: () => {
-            const nodeTreeItem = new osparc.component.widget.NodeTreeItem();
+            const nodeTreeItem = new osparc.component.widget.NodeTreeItem(study);
             nodeTreeItem.addListener("openNode", e => this.__openItem(e.getData()));
             nodeTreeItem.addListener("renameNode", e => this.__openItemRenamer(e.getData()));
             nodeTreeItem.addListener("deleteNode", e => this.__deleteNode(e.getData()));
+            const readOnly = study.isReadOnly();
+            // disable rename and delete button if the study is read only
+            nodeTreeItem.getChildControl("rename-btn").setEnabled(!readOnly);
+            nodeTreeItem.getChildControl("delete-btn").setEnabled(!readOnly);
             return nodeTreeItem;
           },
           bindItem: (c, item, id) => {

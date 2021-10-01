@@ -39,9 +39,10 @@
 qx.Class.define("osparc.component.widget.NodeTreeItem", {
   extend: qx.ui.tree.VirtualTreeItem,
 
-  construct: function() {
+  construct: function(study) {
     this.base(arguments);
 
+    this.__study = study;
     this.__attachEventHandlers();
   },
 
@@ -61,6 +62,8 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
   },
 
   members: {
+    __study: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -169,8 +172,10 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
     // overridden
     addState: function(state) {
       this.base(arguments, state);
+
       if (state === "selected") {
         this.getChildControl("buttons").show();
+        this.getChildControl("delete-btn").setEnabled(false);
       }
     },
 
@@ -179,6 +184,10 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       this.base(arguments, state);
       if (state === "selected") {
         this.getChildControl("buttons").exclude();
+        const studyId = this.__study.getUuid();
+        const readOnly = this.__study.isReadOnly();
+        // disable delete button if the study is read only or if it's the study node item
+        this.getChildControl("delete-btn").setEnabled(!readOnly && studyId !== this.getNodeId());
       }
     }
   }
