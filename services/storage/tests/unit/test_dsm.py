@@ -278,6 +278,16 @@ async def test_links_s3(
             fmd.entity_tag = entity_tag.strip('"')
 >>>>>>> test runs well
 
+    # test wrong user
+    assert await dsm.list_file("654654654", fmd.location, fmd.file_uuid) is None
+
+    # test wrong location
+    assert await dsm.list_file(fmd.user_id, "whatever_location", fmd.file_uuid) is None
+
+    # test wrong file uuid
+    with pytest.raises(InvalidFileIdentifier):
+        await dsm.list_file(fmd.user_id, fmd.location, "some_fake_uuid")
+    # use correctly
     file_metadata: Optional[FileMetaDataEx] = await dsm.list_file(
         fmd.user_id, fmd.location, fmd.file_uuid
     )
