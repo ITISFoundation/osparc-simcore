@@ -107,11 +107,11 @@ class DockerContainerInspect(BaseModel):
 class ServiceRemovalData(BaseModel):
     can_remove: bool = Field(
         False,
-        description="set to True to remove to signal service removal by the appropriate event",
+        description="when True, marks the service as ready to be removed",
     )
     save_state: Optional[bool] = Field(
         None,
-        description="parameter used to signal saving of the state on the file system",
+        description="when True, saves the internal state and upload outputs of the service",
     )
 
     def mark_to_remove(self, save_state: Optional[bool]) -> None:
