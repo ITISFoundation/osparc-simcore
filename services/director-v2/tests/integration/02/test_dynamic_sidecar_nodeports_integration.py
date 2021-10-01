@@ -79,7 +79,7 @@ InputsOutputs = namedtuple("InputsOutputs", "inputs, outputs")
 
 DY_SERVICES_STATE_PATH: Path = Path("/dy-volumes/workdir_generated-data")
 TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED = 60
-SLEEP_WAIT_DYNAMIC_SERVICES_OUTPUTS_UPLOAD_FINISHED = 10
+SLEEP_WAIT_DYNAMIC_SERVICES_OUTPUTS_UPLOAD_FINISHED = 20
 
 logger = logging.getLogger(__name__)
 
