@@ -4,13 +4,12 @@ from typing import Dict
 
 import asyncpg
 from aiohttp import web
-from servicelib.common_aiopg_utils import DSN
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from servicelib.common_aiopg_utils import DSN
 
-from ..constants import INDEX_RESOURCE_NAME
+from ..constants import APP_OPENAPI_SPECS_KEY, INDEX_RESOURCE_NAME
 from ..db_config import CONFIG_SECTION_NAME as DB_SECTION
-from ..rest_config import APP_OPENAPI_SPECS_KEY
 from .cfg import APP_LOGIN_CONFIG, cfg
 from .config import assert_valid_config, create_login_internal_config
 from .routes import create_routes

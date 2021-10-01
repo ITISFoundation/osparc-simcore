@@ -7,9 +7,12 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from servicelib.aiohttp.rest_routing import iter_path_operations, map_handlers_with_operations
+from servicelib.aiohttp.rest_routing import (
+    iter_path_operations,
+    map_handlers_with_operations,
+)
 
-from ..rest_config import APP_OPENAPI_SPECS_KEY
+from ..constants import APP_OPENAPI_SPECS_KEY
 from .config import APP_DIRECTOR_API_KEY, assert_valid_config
 
 logger = logging.getLogger(__name__)
