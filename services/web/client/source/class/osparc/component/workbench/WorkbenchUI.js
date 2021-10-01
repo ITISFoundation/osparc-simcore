@@ -128,6 +128,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __selectedItemId: null,
     __startHint: null,
     __dropHint: null,
+    __panning: null,
 
     _addItemsToLayout: function() {
       this.__addInputNodesLayout();
@@ -148,7 +149,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       });
 
       const workbenchLayoutScroll = this._workbenchLayoutScroll = new qx.ui.container.Scroll();
-      osparc.utils.Utils.setIdToWidget(workbenchLayoutScroll, "hithere");
+      osparc.utils.Utils.setIdToWidget(workbenchLayoutScroll, "WorkbenchUI-scroll");
       const workbenchLayout = this.__workbenchLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
       workbenchLayoutScroll.add(workbenchLayout);
       workbenchLayer.add(workbenchLayoutScroll, {
@@ -1097,6 +1098,39 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       };
     },
 
+    __mouseDown: function(e) {
+      if (e.isMiddlePressed()) {
+        this.__panning = true;
+        this.__pointerPos = this.__pointerEventToWorkbenchPos(e, true);
+        this.set({
+          cursor: "move"
+        });
+      }
+    },
+
+    __mouseMove: function(e) {
+      if (this.__panning && e.isMiddlePressed()) {
+        const oldPos = this.__pointerPos;
+        const newPos = this.__pointerPos = this.__pointerEventToWorkbenchPos(e, true);
+        const moveX = parseInt((oldPos.x-newPos.x) * this.getScale());
+        const moveY = parseInt((oldPos.y-newPos.y) * this.getScale());
+        this._workbenchLayoutScroll.scrollToX(this._workbenchLayoutScroll.getScrollX() + moveX);
+        this._workbenchLayoutScroll.scrollToY(this._workbenchLayoutScroll.getScrollY() + moveY);
+        this.set({
+          cursor: "move"
+        });
+      }
+    },
+
+    __mouseUp: function() {
+      if (this.__panning) {
+        this.__panning = false;
+        this.set({
+          cursor: "auto"
+        });
+      }
+    },
+
     __mouseWheel: function(e) {
       this.__pointerPos = this.__pointerEventToWorkbenchPos(e, false);
       const zoomIn = e.getWheelDelta() < 0;
@@ -1218,6 +1252,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         domEl.addEventListener("drop", this.__drop.bind(this), false);
 
         this.addListener("mousewheel", this.__mouseWheel, this);
+        this.addListener("mousedown", this.__mouseDown, this);
+        this.addListener("mousemove", this.__mouseMove, this);
+        this.addListener("mouseup", this.__mouseUp, this);
 
         commandDel.setEnabled(true);
         commandEsc.setEnabled(true);
