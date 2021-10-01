@@ -28,6 +28,10 @@ from servicelib.utils import fire_and_forget_task
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql.expression import literal_column
 from tenacity import retry
+from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_exception_type, retry_if_result
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_exponential
 from yarl import URL
 
 from .access_layer import (
@@ -384,7 +388,7 @@ class DataStorageManager:
                     file_metadata = to_meta_data_extended(row)
                     if file_metadata.fmd.entity_tag is None:
                         # we need to update from S3 here since the database is not up-to-date
-                        file_metadata = await self._update_metadata_from_storage(
+                        file_metadata = await self.update_database_from_storage(
                             file_metadata.fmd.file_uuid,
                             file_metadata.fmd.bucket_name,
                             file_metadata.fmd.object_name,
@@ -414,7 +418,7 @@ class DataStorageManager:
         # api_token, api_secret = self._get_datcore_tokens(user_id)
         # await dcw.upload_file_to_id(destination_id, local_file_path)
 
-    async def _update_metadata_from_storage(
+    async def update_database_from_storage(
         self, file_uuid: str, bucket_name: str, object_name: str
     ) -> Optional[FileMetaDataEx]:
         try:
@@ -452,74 +456,20 @@ class DataStorageManager:
             # the file is not existing or some error happened
             return None
 
-    async def _metadata_file_updater(
-        self,
-        file_uuid: str,
-        bucket_name: str,
-        object_name: str,
-        file_size: int,
-        last_modified: str,
-        max_update_retries: int = 50,
+    @retry(
+        stop=stop_after_attempt(50),
+        wait=wait_exponential(),
+        retry=(
+            retry_if_exception_type() | retry_if_result(lambda result: result is None)
+        ),
+        before_sleep=before_sleep_log(logger, logging.INFO),
+    )
+    async def auto_update_database_from_storage(
+        self, file_uuid: str, bucket_name: str, object_name: str
     ):
-        """
-        Will retry max_update_retries to update the metadata on the file after an upload.
-        If it is not successfull it will exit and log an error.
-
-        Note: MinIO bucket notifications are not available with S3, that's why we have the
-        following hacky solution
-        """
-        current_iteraction = 0
-
-        async with self._create_aiobotocore_client_context() as aioboto_client:
-            current_iteraction += 1
-            continue_loop = True
-            sleep_generator = expo()
-            update_succeeded = False
-
-            while continue_loop:
-                result = await aioboto_client.list_objects_v2(
-                    Bucket=bucket_name, Prefix=object_name
-                )
-                sleep_amount = next(sleep_generator)
-                continue_loop = current_iteraction <= max_update_retries
-
-                if "Contents" not in result:
-                    logger.info("File '%s' was not found in the bucket", object_name)
-                    await asyncio.sleep(sleep_amount)
-                    continue
-
-                new_file_size = result["Contents"][0]["Size"]
-                new_last_modified = str(result["Contents"][0]["LastModified"])
-                if file_size == new_file_size or last_modified == new_last_modified:
-                    logger.info("File '%s' did not change yet", object_name)
-                    await asyncio.sleep(sleep_amount)
-                    continue
-
-                file_e_tag = result["Contents"][0]["ETag"].strip('"')
-                # finally update the data in the database and exit
-                continue_loop = False
-
-                logger.info(
-                    "Obtained this from S3: new_file_size=%s new_last_modified=%s file ETag=%s",
-                    new_file_size,
-                    new_last_modified,
-                    file_e_tag,
-                )
-
-                async with self.engine.acquire() as conn:
-                    query = (
-                        file_meta_data.update()
-                        .where(file_meta_data.c.file_uuid == file_uuid)
-                        .values(
-                            file_size=new_file_size,
-                            last_modified=new_last_modified,
-                            entity_tag=file_e_tag,
-                        )
-                    )  # primary key search is faster
-                    await conn.execute(query)
-                    update_succeeded = True
-            if not update_succeeded:
-                logger.error("Could not update file metadata for '%s'", file_uuid)
+        return await self.update_database_from_storage(
+            file_uuid, bucket_name, object_name
+        )
 
     async def upload_link(self, user_id: str, file_uuid: str):
         """
@@ -567,12 +517,10 @@ class DataStorageManager:
         # a parallel task is tarted which will update the metadata of the updated file
         # once the update has finished.
         fire_and_forget_task(
-            self._metadata_file_updater(
+            self.auto_update_database_from_storage(
                 file_uuid=file_uuid,
                 bucket_name=bucket_name,
                 object_name=object_name,
-                file_size=file_size,
-                last_modified=last_modified,
             )
         )
         return self.s3_client.create_presigned_put_url(bucket_name, object_name)

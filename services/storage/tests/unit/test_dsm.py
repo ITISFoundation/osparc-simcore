@@ -183,21 +183,21 @@ async def test_update_metadata_from_storage(
     fmd = await _upload_file(dsm_fixture, fmd, Path(tmp_file))
 
     assert (
-        await dsm_fixture._update_metadata_from_storage(  # pylint: disable=protected-access
+        await dsm_fixture.update_database_from_storage(  # pylint: disable=protected-access
             "some_fake_uuid", fmd.bucket_name, fmd.object_name
         )
         is None
     )
 
     assert (
-        await dsm_fixture._update_metadata_from_storage(  # pylint: disable=protected-access
+        await dsm_fixture.update_database_from_storage(  # pylint: disable=protected-access
             fmd.file_uuid, "some_fake_bucket", fmd.object_name
         )
         is None
     )
 
     assert (
-        await dsm_fixture._update_metadata_from_storage(  # pylint: disable=protected-access
+        await dsm_fixture.update_database_from_storage(  # pylint: disable=protected-access
             fmd.file_uuid, fmd.bucket_name, "some_fake_object"
         )
         is None
@@ -205,7 +205,7 @@ async def test_update_metadata_from_storage(
 
     file_metadata: Optional[
         FileMetaDataEx
-    ] = await dsm_fixture._update_metadata_from_storage(  # pylint: disable=protected-access
+    ] = await dsm_fixture.update_database_from_storage(  # pylint: disable=protected-access
         fmd.file_uuid, fmd.bucket_name, fmd.object_name
     )
     assert file_metadata is not None
