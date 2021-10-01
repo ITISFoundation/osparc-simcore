@@ -18,7 +18,7 @@ from simcore_postgres_database.models.projects_version_control import (
     projects_vc_snapshots,
     projects_vc_tags,
 )
-from simcore_postgres_database.utils_aiopg_orm import BaseOrm
+from simcore_postgres_database.utils_aiopg_orm import ALL_COLUMNS, BaseOrm
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .db_base_repository import BaseRepository
@@ -30,9 +30,11 @@ from .version_control_errors import (
 )
 from .version_control_models import (
     HEAD,
+    BranchProxy,
     CommitID,
     CommitLog,
     CommitProxy,
+    ProjectDict,
     RefID,
     SHA1Str,
     TagProxy,
@@ -42,6 +44,10 @@ log = logging.getLogger(__name__)
 
 
 def compute_checksum(workbench: Dict[str, Any]) -> SHA1Str:
+    #
+    # - UI is NOT accounted in the checksum
+    # - TODO: review other fields to mask?
+    #
     # FIXME: dump workbench correctly (i.e. spaces, quotes ... -indepenent)
     block_string = json.dumps(workbench, sort_keys=True).encode("utf-8")
     raw_hash = hashlib.sha1(block_string)
@@ -474,6 +480,42 @@ class VersionControlRepository(BaseRepository):
                 )
 
         return commit_id
+
+    async def force_branch(
+        self,
+        repo_id: int,
+        start_commit_id: int,
+        project: ProjectDict,
+        branch_name: str,
+    ) -> BranchProxy:
+        """Forces a new branch with an explicit working copy 'project' on 'start_commit_id'"""
+        async with self.engine.acquire() as conn:
+            async with conn.begin():
+                # upsert in snapshot table
+                snapshot_checksum = compute_checksum(project["workbench"])
+
+                # TODO: check snapshot in parent_commit_id != snapshot_checksum
+                await self._upsert_snapshot(
+                    snapshot_checksum, SimpleNamespace(**project), conn
+                )
+
+                # commit new snapshot in history
+                commit_id = await self.CommitsOrm(conn).insert(
+                    repo_id=repo_id,
+                    parent_commit_id=start_commit_id,
+                    snapshot_checksum=snapshot_checksum,
+                )
+                assert commit_id  # nosec
+
+                # create branch and set head to last commit_id
+                branch = await self.BranchesOrm(conn).insert(
+                    returning_cols=ALL_COLUMNS,
+                    repo_id=repo_id,
+                    head_commit_id=commit_id,
+                    name=branch_name,
+                )
+                assert isinstance(branch, RowProxy)  # nosec
+                return branch
 
     async def get_snapshot_content(self, repo_id: int, commit_id: int) -> Dict:
         async with self.engine.acquire() as conn:
