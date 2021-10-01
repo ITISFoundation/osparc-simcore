@@ -8,7 +8,8 @@ from pydantic import BaseModel
 if TYPE_CHECKING:
     Queue = asyncio.Queue
 else:
-
+    # issue with inheritance and typing
+    # SEE https://stackoverflow.com/a/48554601/2855718
     class FakeGenericMeta(type):
         def __getitem__(self, item):
             return self
