@@ -30,11 +30,7 @@ from sqlalchemy.sql.expression import literal_column
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type, retry_if_result
-<<<<<<< HEAD
 from tenacity.stop import stop_after_delay
-=======
-from tenacity.stop import stop_after_attempt
->>>>>>> use tenacity instead of self made retryal
 from tenacity.wait import wait_exponential
 from yarl import URL
 
@@ -528,13 +524,18 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 =======
     @retry(
         stop=stop_after_attempt(50),
+<<<<<<< HEAD
         wait=wait_exponential(),
 >>>>>>> use tenacity instead of self made retryal
+=======
+        wait=wait_exponential(multiplier=0.1, exp_base=1.2, max=2),
+>>>>>>> this should now be fixed
         retry=(
             retry_if_exception_type() | retry_if_result(lambda result: result is None)
         ),
         before_sleep=before_sleep_log(logger, logging.INFO),
     )
+<<<<<<< HEAD
 <<<<<<< HEAD
     async def auto_update_database_from_storage_task(
         self, file_uuid: str, bucket_name: str, object_name: str
@@ -543,6 +544,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
             file_uuid, bucket_name, object_name, silence_exception=True
 =======
     async def auto_update_database_from_storage(
+=======
+    async def auto_update_database_from_storage_task(
+>>>>>>> this should now be fixed
         self, file_uuid: str, bucket_name: str, object_name: str
     ):
         return await self.update_database_from_storage(
@@ -597,10 +601,14 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         # once the update has finished.
         fire_and_forget_task(
 <<<<<<< HEAD
+<<<<<<< HEAD
             self.auto_update_database_from_storage_task(
 =======
             self.auto_update_database_from_storage(
 >>>>>>> use tenacity instead of self made retryal
+=======
+            self.auto_update_database_from_storage_task(
+>>>>>>> this should now be fixed
                 file_uuid=file_uuid,
                 bucket_name=bucket_name,
                 object_name=object_name,
