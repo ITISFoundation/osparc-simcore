@@ -8,7 +8,7 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from distributed.worker import TaskState
+from distributed.worker import TaskState, get_client, get_worker
 
 from .boot_mode import BootMode
 from .computational_sidecar.core import ComputationalSidecar
