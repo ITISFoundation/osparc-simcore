@@ -250,7 +250,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             service_message=container_message,
         )
 
-    async def retrieve(
+    async def retrieve_service_inputs(
         self, node_uuid: NodeID, port_keys: List[str]
     ) -> RetrieveDataOutEnveloped:
         """Pulls data from input ports for the service"""

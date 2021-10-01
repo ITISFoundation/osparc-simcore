@@ -196,7 +196,9 @@ async def service_retrieve_data_on_ports(
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> RetrieveDataOutEnveloped:
     try:
-        return await scheduler.retrieve(node_uuid, retrieve_settings.port_keys)
+        return await scheduler.retrieve_service_inputs(
+            node_uuid, retrieve_settings.port_keys
+        )
     except DynamicSidecarNotFoundError:
         # the handling of client/server errors is already encapsulated in the call to request
         service_base_url: URL = await get_service_base_url(
