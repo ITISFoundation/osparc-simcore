@@ -11,7 +11,7 @@
 # service-library[fastapi]
 --requirement ../../../packages/service-library/requirements/_base.in
 --requirement ../../../packages/service-library/requirements/_fastapi.in
---requirement ../../packages/simcore-sdk/requirements/_base.in
+--requirement ../../../packages/simcore-sdk/requirements/_base.in
 
 
 fastapi
