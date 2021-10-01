@@ -156,10 +156,10 @@ class DynamicSidecarClient:
             raise e
 
     async def service_state_save(self, dynamic_sidecar_endpoint: str) -> None:
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers:save-state")
+        url = get_url(dynamic_sidecar_endpoint, "/v1containers/node-state:save")
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
-                response = await client.put(url)
+                response = await client.post(url)
             if response.status_code != 204:
                 message = (
                     f"ERROR while saving service state: "
@@ -172,10 +172,10 @@ class DynamicSidecarClient:
             raise e
 
     async def service_state_restore(self, dynamic_sidecar_endpoint: str) -> None:
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers:restore-state")
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/node-state:restore")
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
-                response = await client.put(url)
+                response = await client.post(url)
             if response.status_code != 204:
                 message = (
                     f"ERROR while restoring service state: "
@@ -191,10 +191,10 @@ class DynamicSidecarClient:
         self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
     ) -> int:
         port_keys = [] if port_keys is None else port_keys
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers:pull-nodeports")
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/node-ports:pull")
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
-                response = await client.put(url, json=port_keys)
+                response = await client.post(url, json=port_keys)
             if response.status_code != 200:
                 message = (
                     f"ERROR while restoring service state: "
@@ -211,10 +211,10 @@ class DynamicSidecarClient:
         self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
     ) -> None:
         port_keys = [] if port_keys is None else port_keys
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers:push-nodeports")
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/node-ports:push")
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
-                response = await client.put(url, json=port_keys)
+                response = await client.post(url, json=port_keys)
             if response.status_code != 204:
                 message = (
                     f"ERROR while restoring service state: "
