@@ -3,7 +3,7 @@ from typing import Any, Callable, Coroutine
 
 from fastapi import FastAPI
 
-from .._meta import __version__, api_vtag
+from .._meta import API_VTAG, __version__
 from ..api import main_router
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
@@ -51,7 +51,7 @@ def assemble_application() -> FastAPI:
 
     application = FastAPI(
         debug=dynamic_sidecar_settings.DEBUG,
-        openapi_url=f"/api/{api_vtag}/openapi.json",
+        openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
     )
 
