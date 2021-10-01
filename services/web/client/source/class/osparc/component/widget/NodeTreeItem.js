@@ -81,7 +81,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
             toolTipText: this.tr("openNode"),
             icon: "@FontAwesome5Solid/edit/9"
           });
-          osparc.utils.Utils.setIdToWidget(control, "openNodeBtn");
+          osparc.utils.Utils.setIdToWidget(control, "openServiceBtn");
           control.addListener("execute", () => this.fireDataEvent("openNode", this.getNodeId()));
           part.add(control);
           break;
