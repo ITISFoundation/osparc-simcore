@@ -13,7 +13,7 @@ from ..api.errors.http_error import (
     make_http_error_handler_for_exception,
 )
 from ..api.errors.validation_error import http422_error_handler
-from ..meta import api_version, api_vtag, project_name, summary
+from ..meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
 from ..modules import (
     celery,
     comp_scheduler,
@@ -42,10 +42,10 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     app = FastAPI(
         debug=settings.SC_BOOT_MODE
         in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
-        title=project_name,
-        description=summary,
-        version=api_version,
-        openapi_url=f"/api/{api_vtag}/openapi.json",
+        title=PROJECT_NAME,
+        description=SUMMARY,
+        version=API_VERSION,
+        openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
     )

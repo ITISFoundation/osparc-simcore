@@ -20,7 +20,7 @@ from settings_library.docker_registry import RegistrySettings
 from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
 
-from ..meta import api_vtag
+from ..meta import API_VTAG
 from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE, ClusterID
 
 MINS = 60
@@ -281,7 +281,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
 
     NODE_SCHEMA_LOCATION: str = Field(
-        f"{API_ROOT}/{api_vtag}/schemas/node-meta-v0.0.1.json",
+        f"{API_ROOT}/{API_VTAG}/schemas/node-meta-v0.0.1.json",
         description="used when in devel mode vs release mode",
     )
 
