@@ -8,7 +8,7 @@ aiodebug==1.1.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-aiodocker==0.21.0
+aiodocker==0.19.1
     # via -r requirements/_base.in
 aiofiles==0.7.0
     # via -r requirements/_base.in
@@ -37,20 +37,20 @@ bcrypt==3.2.0
     # via paramiko
 certifi==2021.5.30
     # via requests
-cffi==1.14.6
+cffi==1.14.5
     # via
     #   bcrypt
     #   cryptography
     #   pynacl
 chardet==4.0.0
-    # via aiohttp
-charset-normalizer==2.0.6
-    # via requests
+    # via
+    #   aiohttp
+    #   requests
 click==7.1.2
     # via
     #   typer
     #   uvicorn
-cryptography==3.4.8
+cryptography==3.4.7
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -59,7 +59,7 @@ cryptography==3.4.8
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   paramiko
-distro==1.6.0
+distro==1.5.0
     # via docker-compose
 dnspython==2.1.0
     # via email-validator
@@ -138,7 +138,7 @@ pynacl==1.4.0
     # via paramiko
 pyrsistent==0.18.0
     # via jsonschema
-python-dotenv==0.19.0
+python-dotenv==0.18.0
     # via docker-compose
 pyyaml==5.4.1
     # via
@@ -152,7 +152,7 @@ pyyaml==5.4.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
     #   docker-compose
-requests==2.26.0
+requests==2.25.1
     # via
     #   docker
     #   docker-compose
@@ -179,11 +179,11 @@ tenacity==8.0.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-texttable==1.6.4
+texttable==1.6.3
     # via docker-compose
 threadloop==1.0.2
     # via jaeger-client
-thrift==0.15.0
+thrift==0.13.0
     # via jaeger-client
 tornado==6.1
     # via
@@ -200,7 +200,7 @@ ujson==4.2.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-urllib3==1.26.7
+urllib3==1.26.6
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -218,8 +218,6 @@ uvicorn==0.13.4
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-watchdog==2.1.5
-    # via -r requirements/_base.in
 websocket-client==0.59.0
     # via
     #   docker
