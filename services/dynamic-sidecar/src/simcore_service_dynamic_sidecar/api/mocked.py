@@ -1,5 +1,5 @@
 """
-All the functions is this module are mocked out 
+All the functions is this module are mocked out
 because they are called by the frontend.
 Avoids raising errors in the service.
 """
@@ -21,13 +21,13 @@ async def ignored_push_post() -> str:
 
 @mocked_router.get("/retrieve")
 async def ignored_port_data_load() -> str:
-    logger.warning("ignoring call GET /retrive from frontend")
+    logger.warning("ignoring call GET /retrieve from frontend")
     return ""
 
 
 @mocked_router.post("/retrieve")
 async def ignored_port_data_save() -> str:
-    logger.warning("ignoring call POST /retrive from frontend")
+    logger.warning("ignoring call POST /retrieve from frontend")
     return ""
 
 
