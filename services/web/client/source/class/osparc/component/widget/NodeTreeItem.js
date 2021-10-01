@@ -39,6 +39,12 @@
 qx.Class.define("osparc.component.widget.NodeTreeItem", {
   extend: qx.ui.tree.VirtualTreeItem,
 
+  construct: function() {
+    this.base(arguments);
+
+    this.__attachEventHandlers();
+  },
+
   properties: {
     nodeId : {
       check : "String",
@@ -62,6 +68,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(0).set({
             alignY: "middle"
           }));
+          control.exclude();
           this.addWidget(control);
           break;
         }
@@ -71,6 +78,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
             toolTipText: this.tr("openNode"),
             icon: "@FontAwesome5Solid/edit/9"
           });
+          osparc.utils.Utils.setIdToWidget(control, "openNodeBtn");
           control.addListener("execute", () => this.fireDataEvent("openNode", this.getNodeId()));
           part.add(control);
           break;
@@ -147,6 +155,15 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       } else {
         osparc.utils.Utils.setIdToWidget(this, "nodeTreeItem_" + nodeId);
       }
+    },
+
+    __attachEventHandlers: function() {
+      this.addListener("mouseover", () => this.getChildControl("buttons").show());
+      this.addListener("mouseout", () => {
+        if (!this.hasState("selected")) {
+          this.getChildControl("buttons").exclude();
+        }
+      });
     }
   }
 });

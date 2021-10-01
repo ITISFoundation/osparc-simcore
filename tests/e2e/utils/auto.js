@@ -302,7 +302,7 @@ async function openNode(page, pos) {
   const nodeWidgetId = children[pos];
   const childId = '[osparc-test-id="' + nodeWidgetId + '"]';
   await utils.waitAndClick(page, childId);
-  await utils.waitAndClick(page, '[osparc-test-id="openServiceBtn"]');
+  await utils.waitAndClick(page, '[osparc-test-id="openNodeBtn"]');
 
   const nodeId = nodeWidgetId.replace("nodeTreeItem_", "");
   return nodeId;
