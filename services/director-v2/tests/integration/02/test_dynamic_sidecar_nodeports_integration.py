@@ -80,7 +80,7 @@ InputsOutputs = namedtuple("InputsOutputs", "inputs, outputs")
 
 DY_SERVICES_STATE_PATH: Path = Path("/dy-volumes/workdir_generated-data")
 TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED = 60
-TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED = 60
+TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED = 20
 
 logger = logging.getLogger(__name__)
 
@@ -579,12 +579,12 @@ LINE_PARTS_TO_MATCH = [
 def _is_matching_line_in_logs(logs: List[str]) -> bool:
     for line in logs:
         if LINE_PARTS_TO_MATCH[0][1] in line:
-            line_parts = line.strip().split(" ")
+            print("".join(logs))
 
+            line_parts = line.strip().split(" ")
             for position, value in LINE_PARTS_TO_MATCH:
                 assert line_parts[position] == value
 
-            print(logs)
             return True
     return False
 
@@ -602,6 +602,8 @@ async def _assert_retrieve_completed(
 
     container_id = await _container_id_via_services(service_uuid)
 
+    # look at dynamic-sidecar's logs to be sure when nodeports
+    # have been uploaded
     async with aiodocker.Docker() as docker_client:
         container: DockerContainer = await docker_client.containers.get(container_id)
 
