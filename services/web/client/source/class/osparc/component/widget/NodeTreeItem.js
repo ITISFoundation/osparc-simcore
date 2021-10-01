@@ -164,6 +164,22 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
           this.getChildControl("buttons").exclude();
         }
       });
+    },
+
+    // overridden
+    addState: function(state) {
+      this.base(arguments, state);
+      if (state === "selected") {
+        this.getChildControl("buttons").show();
+      }
+    },
+
+    // overridden
+    removeState: function(state) {
+      this.base(arguments, state);
+      if (state === "selected") {
+        this.getChildControl("buttons").exclude();
+      }
     }
   }
 });
