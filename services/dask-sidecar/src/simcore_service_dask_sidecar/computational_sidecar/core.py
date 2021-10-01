@@ -19,11 +19,12 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from distributed.worker import get_client, get_worker
+from distributed.worker import get_client
 from models_library.projects_state import RunningState
 from pydantic import ValidationError
 from yarl import URL
 
+from ..dask_utils import publish_event
 from ..settings import Settings
 from ..utils import create_dask_worker_logger
 from .docker_utils import (
@@ -143,13 +144,8 @@ class ComputationalSidecar:
             ) from exc
 
     async def run(self, command: List[str]) -> TaskOutputData:
-        get_client().log_event(
-            TaskStateEvent.topic_name(),
-            TaskStateEvent.from_dask_worker(
-                state=RunningState.STARTED,
-                msg=f"Prepare to run {self.service_key}:{self.service_version}",
-            ).json(),
-        )
+        publish_event(TaskStateEvent.from_dask_worker(state=RunningState.STARTED))
+
         settings = Settings.create_from_envs()
         run_id = f"{uuid4()}"
         async with Docker() as docker_client, managed_task_volumes(
@@ -187,13 +183,13 @@ class ComputationalSidecar:
                     ]:
                         await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
                     if container_data["State"]["ExitCode"] > 0:
-                        get_client().log_event(
-                            TaskStateEvent.topic_name(),
+                        publish_event(
                             TaskStateEvent.from_dask_worker(
                                 state=RunningState.FAILED,
                                 msg=f"error while running container {container.id} for {self.service_key}:{self.service_version}",
-                            ).json(),
+                            )
                         )
+
                         # the container had an error
                         raise ServiceRunError(
                             self.service_key,
