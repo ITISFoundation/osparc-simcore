@@ -227,6 +227,7 @@ async def test_links_s3(
 
     dsm = dsm_fixture
 
+<<<<<<< HEAD
     fmd = await _upload_file(dsm_fixture, fmd, Path(tmp_file))
 
     # test wrong user
@@ -266,10 +267,21 @@ async def test_links_s3(
                 ) == fmd.__getattribute__(
                     field.name
                 ), f"{field.name}: expected {fmd.__getattribute__(field.name)} vs {file_metadata.fmd.__getattribute__(field.name)}"
+=======
+    up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
+    with io.open(tmp_file, "rb") as fp:
+        d = fp.read()
+        req = urllib.request.Request(up_url, data=d, method="PUT")
+        with urllib.request.urlopen(req) as _f:
+            entity_tag = _f.headers.get("ETag")
+            assert entity_tag is not None
+            fmd.entity_tag = entity_tag.strip('"')
+>>>>>>> test runs well
 
     file_metadata: Optional[FileMetaDataEx] = await dsm.list_file(
         fmd.user_id, fmd.location, fmd.file_uuid
     )
+    assert file_metadata is not None
     excluded_fields = [
         "project_id",
         "project_name",
