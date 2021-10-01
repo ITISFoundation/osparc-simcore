@@ -200,7 +200,9 @@ async def service_retrieve_data_on_ports(
             node_uuid, retrieve_settings.port_keys
         )
     except DynamicSidecarNotFoundError:
-        # the handling of client/server errors is already encapsulated in the call to request
+        # in case of legacy service, no forwarding will be used
+        # makes request to director-v0 and sends back reply
+
         service_base_url: URL = await get_service_base_url(
             node_uuid, get_director_v0_client(request)
         )
