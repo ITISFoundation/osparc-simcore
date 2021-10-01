@@ -61,7 +61,7 @@ from .models import (
 )
 from .s3wrapper.s3_client import MinioClientWrapper
 from .settings import Settings
-from .utils import download_to_file_or_raise, expo
+from .utils import download_to_file_or_raise
 
 logger = logging.getLogger(__name__)
 
@@ -458,13 +458,13 @@ class DataStorageManager:
 
     @retry(
         stop=stop_after_attempt(50),
-        wait=wait_exponential(),
+        wait=wait_exponential(multiplier=0.1, exp_base=1.2, max=2),
         retry=(
             retry_if_exception_type() | retry_if_result(lambda result: result is None)
         ),
         before_sleep=before_sleep_log(logger, logging.INFO),
     )
-    async def auto_update_database_from_storage(
+    async def auto_update_database_from_storage_task(
         self, file_uuid: str, bucket_name: str, object_name: str
     ):
         return await self.update_database_from_storage(
@@ -517,7 +517,7 @@ class DataStorageManager:
         # a parallel task is tarted which will update the metadata of the updated file
         # once the update has finished.
         fire_and_forget_task(
-            self.auto_update_database_from_storage(
+            self.auto_update_database_from_storage_task(
                 file_uuid=file_uuid,
                 bucket_name=bucket_name,
                 object_name=object_name,

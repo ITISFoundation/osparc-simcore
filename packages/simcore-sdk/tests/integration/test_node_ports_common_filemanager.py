@@ -40,9 +40,6 @@ async def test_valid_upload_download(
     assert store_id == s3_simcore_location
     assert e_tag
 
-    # we need to leave some time for storage to get the entity tags correctly
-    await asyncio.sleep(3)
-
     get_store_id, get_e_tag = await filemanager.get_file_metadata(
         user_id=user_id, store_id=store_id, s3_object=file_id
     )
