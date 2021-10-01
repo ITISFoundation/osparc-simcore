@@ -48,7 +48,11 @@ async def push(
 ):
     if file_or_folder.is_file():
         return await _push_file(
-            user_id, project_id, node_uuid, file_or_folder, rename_to
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
+            file_path=file_or_folder,
+            rename_to=rename_to,
         )
     # we have a folder, so we create a compressed file
     with TemporaryDirectory() as tmp_dir_name:
@@ -66,7 +70,12 @@ async def push(
         return await _push_file(user_id, project_id, node_uuid, archive_file_path, None)
 
 
-async def _pull_file(user_id: int, project_id: str, node_uuid: str, file_path: Path):
+async def _pull_file(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    file_path: Path,
+):
     s3_object = _create_s3_object(project_id, node_uuid, file_path)
     log.info("pulling data from %s to %s...", s3_object, file_path)
     downloaded_file = await filemanager.download_file_from_s3(

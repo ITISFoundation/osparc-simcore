@@ -62,7 +62,8 @@ async def get_value_from_link(
 
 
 async def get_download_link_from_storage(
-    user_id: int, value: FileLink
+    user_id: int,
+    value: FileLink,
 ) -> Optional[AnyUrl]:
     log.debug("getting link to file from storage %s", value)
     link = await filemanager.get_download_link_from_s3(
@@ -74,7 +75,10 @@ async def get_download_link_from_storage(
 
 
 async def get_upload_link_from_storage(
-    user_id: int, project_id: str, node_id: str, file_name: str
+    user_id: int,
+    project_id: str,
+    node_id: str,
+    file_name: str,
 ) -> AnyUrl:
     log.debug("getting link to file from storage for %s", file_name)
     s3_object = data_items_utils.encode_file_id(Path(file_name), project_id, node_id)
@@ -87,7 +91,10 @@ async def get_upload_link_from_storage(
 
 
 async def pull_file_from_store(
-    user_id: int, key: str, fileToKeyMap: Optional[Dict[str, str]], value: FileLink
+    user_id: int,
+    key: str,
+    fileToKeyMap: Optional[Dict[str, str]],
+    value: FileLink,
 ) -> Path:
     log.debug("pulling file from storage %s", value)
     # do not make any assumption about s3_path, it is a str containing stuff that can be anything depending on the store
@@ -111,7 +118,10 @@ async def pull_file_from_store(
 
 
 async def push_file_to_store(
-    file: Path, user_id: int, project_id: str, node_id: str
+    file: Path,
+    user_id: int,
+    project_id: str,
+    node_id: str,
 ) -> FileLink:
     log.debug("file path %s will be uploaded to s3", file)
     s3_object = data_items_utils.encode_file_id(file, project_id, node_id)
@@ -126,7 +136,9 @@ async def push_file_to_store(
 
 
 async def pull_file_from_download_link(
-    key: str, fileToKeyMap: Optional[Dict[str, str]], value: DownloadLink
+    key: str,
+    fileToKeyMap: Optional[Dict[str, str]],
+    value: DownloadLink,
 ) -> Path:
     log.debug(
         "Getting value from download link [%s] with label %s",
@@ -157,7 +169,10 @@ def is_file_type(port_type: str) -> bool:
 
 
 async def get_file_link_from_url(
-    new_value: AnyUrl, user_id: int, project_id: str, node_id: str
+    new_value: AnyUrl,
+    user_id: int,
+    project_id: str,
+    node_id: str,
 ) -> FileLink:
     log.debug("url %s will now be converted to a file link", new_value)
     s3_object = data_items_utils.encode_file_id(

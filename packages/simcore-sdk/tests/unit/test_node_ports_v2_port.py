@@ -138,8 +138,8 @@ async def mock_download_file(
     async def mock_download_file_from_link(
         download_link: URL,
         local_folder: Path,
-        session: Optional[ClientSession] = None,
         file_name: Optional[str] = None,
+        client_session: Optional[ClientSession] = None,
     ) -> Path:
         assert str(local_folder).startswith(str(download_file_folder))
         destination_path = local_folder / this_node_file.name
@@ -558,14 +558,20 @@ async def test_valid_port(
 
         @classmethod
         async def _node_ports_creator_cb(cls, node_uuid: str) -> "FakeNodePorts":
-            return cls(user_id=user_id, project_id=project_id, node_uuid=node_uuid)
+            return cls(
+                user_id=user_id,
+                project_id=project_id,
+                node_uuid=node_uuid,
+            )
 
         @staticmethod
         async def save_to_db_cb(node_ports):
             return
 
     fake_node_ports = FakeNodePorts(
-        user_id=user_id, project_id=project_id, node_uuid=node_uuid
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
     )
     port = Port(**port_cfg)
     port._node_ports = fake_node_ports

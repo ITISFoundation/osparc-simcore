@@ -13,7 +13,6 @@ services:
       - DEBUG=true
     volumes:
       - ./api-server:/devel/services/api-server
-      - ./storage/client-sdk:/devel/services/storage/client-sdk
       - ../packages:/devel/packages
 
   catalog:
@@ -51,7 +50,6 @@ services:
       - DYNAMIC_SIDECAR_MOUNT_PATH_DEV=${PWD}/services/dynamic-sidecar
     volumes:
       - ./director-v2:/devel/services/director-v2
-      - ./storage/client-sdk:/devel/services/storage/client-sdk
       - ../packages:/devel/packages
 
   static-webserver:
