@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
 
-import asyncio
 import filecmp
 from pathlib import Path
 from typing import Callable

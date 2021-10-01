@@ -48,7 +48,11 @@ async def push(
 ):
     if file_or_folder.is_file():
         return await _push_file(
-            user_id, project_id, node_uuid, file_or_folder, rename_to
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
+            file_path=file_or_folder,
+            rename_to=rename_to,
         )
     # we have a folder, so we create a compressed file
     with TemporaryDirectory() as tmp_dir_name:
