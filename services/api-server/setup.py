@@ -33,6 +33,7 @@ PROD_REQUIREMENTS = tuple(
         "simcore-postgres-database",
         "simcore-sdk",
         "simcore-service-library[fastapi]",
+        "simcore-settings-library",
     }
 )
 
@@ -63,4 +64,9 @@ if __name__ == "__main__":
         test_suite="tests",
         tests_require=TEST_REQUIREMENTS,
         extras_require={"test": TEST_REQUIREMENTS},
+        entry_points={
+            "console_scripts": [
+                "simcore-service-api-server = simcore_service_api_server.cli:main",
+            ],
+        },
     )

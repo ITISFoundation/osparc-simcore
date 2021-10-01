@@ -13,7 +13,7 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import pytest
 import yaml
@@ -27,7 +27,7 @@ from .helpers.utils_docker import get_ip, run_docker_compose_config, save_docker
 
 
 @pytest.fixture(scope="session")
-def testing_environ_vars(env_devel_file: Path) -> Dict[str, str]:
+def testing_environ_vars(env_devel_file: Path) -> Dict[str, Union[str, None]]:
     """
     Loads and extends .env-devel returning
     all environment variables key=value
