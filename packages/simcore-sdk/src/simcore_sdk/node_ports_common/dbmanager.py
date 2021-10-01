@@ -16,7 +16,7 @@ from simcore_postgres_database.models.comp_tasks import comp_tasks
 from sqlalchemy import and_
 
 from . import config
-from .exceptions import NodeNotFound
+from .exceptions import NodeNotFound, NodeportsException
 
 log = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ async def _get_node_from_db(
 @tenacity.retry(**PostgresRetryPolicyUponInitialization().kwargs)
 async def wait_till_postgres_responsive(dsn: DataSourceName) -> None:
     if not is_postgres_responsive(dsn):
-        raise Exception(f"Could not reach Postgres on {dsn.to_uri()}")
+        raise NodeportsException(f"Could not reach Postgres on {dsn.to_uri()}")
 
 
 class DBContextManager:
