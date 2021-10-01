@@ -173,11 +173,14 @@ async def test_links_s3(
         d = fp.read()
         req = urllib.request.Request(up_url, data=d, method="PUT")
         with urllib.request.urlopen(req) as _f:
-            pass
+            entity_tag = _f.headers.get("ETag")
+            assert entity_tag is not None
+            fmd.entity_tag = entity_tag.strip('"')
 
     file_metadata: Optional[FileMetaDataEx] = await dsm.list_file(
         fmd.user_id, fmd.location, fmd.file_uuid
     )
+    assert file_metadata is not None
     excluded_fields = [
         "project_id",
         "project_name",

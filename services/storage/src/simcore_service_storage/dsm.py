@@ -20,7 +20,7 @@ from aiobotocore.client import AioBaseClient
 from aiobotocore.session import AioSession, ClientCreatorContext
 from aiohttp import web
 from aiopg.sa import Engine
-from aiopg.sa.result import RowProxy
+from aiopg.sa.result import ResultProxy, RowProxy
 from servicelib.aiohttp.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
@@ -381,8 +381,13 @@ class DataStorageManager:
                     if not row:
                         return None
                     file_metadata = to_meta_data_extended(row)
-                    # if file_meta_data.entity_tag is None:
-                    #     # we need to update from S3 here
+                    if file_metadata.fmd.entity_tag is None:
+                        # we need to update from S3 here
+                        file_metadata = await self._update_metadata_from_storage(
+                            file_metadata.fmd.file_uuid,
+                            file_metadata.fmd.bucket_name,
+                            file_metadata.fmd.object_name,
+                        )
                     return file_metadata
                 # FIXME: returns None in both cases: file does not exist or use has no access
                 logger.debug("User %s cannot read file %s", user_id, file_uuid)
@@ -408,12 +413,35 @@ class DataStorageManager:
         # api_token, api_secret = self._get_datcore_tokens(user_id)
         # await dcw.upload_file_to_id(destination_id, local_file_path)
 
-    # async def _update_metadata_from_storage(self, file_uuid: str, bucket_name: str, object_name: str)
-    #     async with self._create_aiobotocore_client_context() as aioboto_client:
-    #         result = await aioboto_client.get_object(
-    #             Bucket=bucket_name, key=object_name
-    #         )
-    #         file_size = result[""]
+    async def _update_metadata_from_storage(
+        self, file_uuid: str, bucket_name: str, object_name: str
+    ) -> Optional[FileMetaDataEx]:
+        async with self._create_aiobotocore_client_context() as aioboto_client:
+            result = await aioboto_client.head_object(
+                Bucket=bucket_name, Key=object_name
+            )
+            file_size = result["ContentLength"]
+            last_modified = result["LastModified"]
+            entity_tag = result["ETag"].strip('"')
+
+            async with self.engine.acquire() as conn:
+                result: ResultProxy = await conn.execute(
+                    file_meta_data.update()
+                    .where(file_meta_data.c.file_uuid == file_uuid)
+                    .values(
+                        file_size=file_size,
+                        last_modified=last_modified,
+                        entity_tag=entity_tag,
+                    )
+                    .returning(literal_column("*"))
+                )
+                if not result:
+                    return None
+                row: RowProxy = await result.first()
+                if not row:
+                    return None
+
+                return to_meta_data_extended(row)
 
     async def _metadata_file_updater(
         self,
