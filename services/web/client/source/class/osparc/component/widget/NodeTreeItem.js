@@ -81,7 +81,6 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
             toolTipText: this.tr("openNode"),
             icon: "@FontAwesome5Solid/edit/9"
           });
-          osparc.utils.Utils.setIdToWidget(control, "openServiceBtn");
           control.addListener("execute", () => this.fireDataEvent("openNode", this.getNodeId()));
           part.add(control);
           break;
@@ -158,6 +157,8 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       } else {
         osparc.utils.Utils.setIdToWidget(this, "nodeTreeItem_" + nodeId);
       }
+      const opnBtn = this.getChildControl("open-btn");
+      osparc.utils.Utils.setIdToWidget(opnBtn, "openNodeBtn_"+this.getNodeId());
     },
 
     __attachEventHandlers: function() {
