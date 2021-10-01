@@ -32,16 +32,18 @@ from simcore_service_webserver.meta_core import PROPTYPE_2_PYTYPE, SumDiffDef
 ## HELPERS -------------------------------------------------
 
 
-def _linspace(
+def _linspace_func(
     linspace_start: int = 0, linspace_stop: int = 1, linspace_step: int = 1
 ) -> Iterator[int]:
     for value in range(linspace_start, linspace_stop, linspace_step):
         yield value
 
 
-def _run_linspace(inputs: Dict[str, InputTypes]) -> Iterator[Dict[str, OutputTypes]]:
-    # TODO:
-    raise NotImplementedError
+def linspace_generator(**kwargs) -> Iterator[Dict[str, OutputTypes]]:
+    # maps generator with iterable outputs. can have non-iterable outputs
+    # as well
+    for value in _linspace_func(**kwargs):
+        yield {"out_1": value}
 
 
 def sum_all(
@@ -87,15 +89,19 @@ def create_node_model(
     outputs = outputs or []
     node_outputs: Dict[OutputID, OutputTypes] = {}
 
-    for output_index, (output_name, output_meta) in enumerate(node_def.outputs.items()):
-        value = outputs[output_index]
-        try:
-            python_type = PROPTYPE_2_PYTYPE[output_meta.property_type]
-            node_outputs[output_name] = python_type(value)
-        except KeyError:
-            # it is a link or glob?
-            pass
-            # node_outputs[output_name] = ...
+    if outputs:
+        # setting outputs
+        for output_index, (output_name, output_meta) in enumerate(
+            node_def.outputs.items()
+        ):
+            value = outputs[output_index]
+            try:
+                python_type = PROPTYPE_2_PYTYPE[output_meta.property_type]
+                node_outputs[output_name] = python_type(value)
+            except KeyError:
+                # it is a link or glob?
+                pass
+                # node_outputs[output_name] = ...
 
     # create (w/ validation)
     node_model: Node = Node(
@@ -138,7 +144,10 @@ SERVICES_CATALOG: Dict[Tuple[str, str], ServiceDockerData] = {
 
 SERVICE_TO_CALLABLES: Dict[Tuple[str, str], Callable] = {
     # ensure inputs/outputs map function signature
-    (f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/int-range", "1.0.0"): _linspace,
+    (
+        f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/int-range",
+        "1.0.0",
+    ): linspace_generator,
     SumDiffDef.info.unique_id: SumDiffDef.run_with_model,
 }
 
@@ -154,27 +163,45 @@ def search_by_key(key_sub, container: Dict):
 def project_nodes(faker: Faker) -> Dict[NodeID, Node]:
     nodes = {}
 
-    # node 0
-    n0 = faker.uuid4(cast=str)
-    nodes[n0] = node0 = create_node_model(
-        node_def=search_by_key("int-range", SERVICES_CATALOG),
-        node_inputs={"linspace_start": 0, "linspace_stop": 10},
+    # # node 0
+    n0 = faker.uuid4()
+    # nodes[n0] = node0 = create_node_model(
+    #     node_def=search_by_key("int-range", SERVICES_CATALOG),
+    #     node_inputs={"linspace_start": 0, "linspace_stop": 10},
+    # )
+
+    # # link
+    # node0.outputs = node0.outputs or {}
+    # output_name = next(iter(node0.outputs.keys()))
+    # n0o0 = PortLink(nodeUUID=n0, output=output_name)
+
+    # # node 1
+    n1 = faker.uuid4()
+    # nodes[n1] = node1 = create_node_model(
+    #     node_def=search_by_key(SumDiffDef.info.key, SERVICES_CATALOG),
+    #     node_inputs={"x": n0o0, "y": 10},
+    # )
+    # node1.input_nodes = [
+    #     n0,
+    # ]
+
+    nodes[n0] = node0 = Node.parse_obj(
+        {
+            "key": "simcore/services/frontend/data-iterator/int-range",
+            "version": "1.0.0",
+            "label": "iter",
+            "inputs": {"linspace_start": 0, "linspace_stop": 10, "linspace_step": 1},
+        }
     )
 
-    # link
-    node0.outputs = node0.outputs or {}
-    output_name = next(iter(node0.outputs.keys()))
-    n0o0 = PortLink(nodeUUID=n0, output=output_name)
-
-    # node 1
-    n1 = faker.uuid4(cast=str)
-    nodes[n1] = node1 = create_node_model(
-        node_def=search_by_key(SumDiffDef.info.key, SERVICES_CATALOG),
-        node_inputs={"x": n0o0, "y": 10},
+    nodes[n1] = Node.parse_obj(
+        {
+            "key": "simcore/services/frontend/def/sum_diff",
+            "version": "1.0.0",
+            "label": "sum_diff",
+            "inputs": {"x": PortLink(nodeUuid=n0, output="out_1"), "y": 10},
+        }
     )
-    node1.input_nodes = [
-        n0,
-    ]
 
     return nodes
 
@@ -215,36 +242,57 @@ def test_it(project_nodes: Dict[NodeID, Node]):
         # Q: what if iter are infinite?
         # Q: preview & crop iterations?
 
-        const_nodes: List[Node] = []
         node_results: Dict[OutputID, OutputTypes]
 
-        # pack as const-nodes
-        for node_results, node_def in zip(results, iterable_nodes_defs):
+        iter_project_nodes = deepcopy(project_nodes)
+
+        for node_results, node_def, node_id in zip(
+            results, iterable_nodes_defs, iterable_nodes_ids
+        ):
 
             assert node_def.outputs
-            assert len(node_def.outputs) == len(node_results)
+            assert 1 <= len(node_results) <= len(node_def.outputs)
 
-            outs = []
-            for output_name in node_def.outputs:
-                output_type = node_def.outputs[output_name].property_type
-                output_value = node_results[output_name]
-                outs.append(tuple([output_name, output_type, output_value]))
+            # override outputs of corresponding iter
+            iter_node = iter_project_nodes[node_id]
+            iter_node.outputs = iter_node.outputs or {}
+            for output_key, output_value in node_results.items():
+                iter_node.outputs[output_key] = output_value
 
-            # create const-nodes
-            const_node: Node = create_const_node(outs)
-            const_nodes.append(const_node)
+        print(node_results, "->")
+        for nid in iter_project_nodes:
+            print(nid)
+            print(iter_project_nodes[nid].json(indent=2))
 
-            # replace iterable nodes by const-nodes
-            iteration_project_nodes = {
-                k: deepcopy(v)
-                for k, v in project_nodes.items()
-                if k not in iterable_nodes_ids
-            }
+        # pack as const-nodes
+        # const_nodes: List[Node] = []
 
-            assert set(iterable_nodes) == set(const_nodes)
-            iteration_project_nodes.update(zip(iterable_nodes_ids, const_nodes))
+        # for node_results, node_def in zip(results, iterable_nodes_defs):
 
-            print(results, "->", iteration_project_nodes)
+        #     assert node_def.outputs
+        #     assert len(node_def.outputs) == len(node_results)
+
+        #     outs = []
+        #     for output_name in node_def.outputs:
+        #         output_type = node_def.outputs[output_name].property_type
+        #         output_value = node_results[output_name]
+        #         outs.append(tuple([output_name, output_type, output_value]))
+
+        #     # create const-nodes
+        #     const_node: Node = create_const_node(outs)
+        #     const_nodes.append(const_node)
+
+        #     # replace iterable nodes by const-nodes
+        #     iteration_project_nodes = {
+        #         k: deepcopy(v)
+        #         for k, v in project_nodes.items()
+        #         if k not in iterable_nodes_ids
+        #     }
+
+        #     assert set(iterable_nodes) == set(const_nodes)
+        #     iteration_project_nodes.update(zip(iterable_nodes_ids, const_nodes))
+
+        #     print(results, "->", iteration_project_nodes)
 
 
 @pytest.mark.skip(reason="DEV")

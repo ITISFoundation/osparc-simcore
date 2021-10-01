@@ -113,7 +113,7 @@ class BaseFuncDef:
 class SumDiffDef(BaseFuncDef):
     info = Info(
         name="sum-diff",
-        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/def/sum-diff",
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/def/sum_diff",
         version="1.0.0",
         description="Sum and different of two numbers",
     )
