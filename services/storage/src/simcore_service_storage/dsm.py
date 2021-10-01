@@ -30,7 +30,11 @@ from sqlalchemy.sql.expression import literal_column
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type, retry_if_result
+<<<<<<< HEAD
 from tenacity.stop import stop_after_delay
+=======
+from tenacity.stop import stop_after_attempt
+>>>>>>> use tenacity instead of self made retryal
 from tenacity.wait import wait_exponential
 from yarl import URL
 
@@ -389,10 +393,14 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                     if file_metadata.fmd.entity_tag is None:
                         # we need to update from S3 here since the database is not up-to-date
 <<<<<<< HEAD
+<<<<<<< HEAD
                         file_metadata = await self.update_database_from_storage(
 =======
                         file_metadata = await self._update_metadata_from_storage(
 >>>>>>> auto update the database on need
+=======
+                        file_metadata = await self.update_database_from_storage(
+>>>>>>> use tenacity instead of self made retryal
                             file_metadata.fmd.file_uuid,
                             file_metadata.fmd.bucket_name,
                             file_metadata.fmd.object_name,
@@ -423,9 +431,13 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         # await dcw.upload_file_to_id(destination_id, local_file_path)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     async def update_database_from_storage(
 =======
     async def _update_metadata_from_storage(
+=======
+    async def update_database_from_storage(
+>>>>>>> use tenacity instead of self made retryal
         self, file_uuid: str, bucket_name: str, object_name: str
     ) -> Optional[FileMetaDataEx]:
         try:
@@ -463,6 +475,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
             # the file is not existing or some error happened
             return None
 
+<<<<<<< HEAD
     async def _metadata_file_updater(
 >>>>>>> auto update the database on need
         self,
@@ -512,16 +525,29 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     @retry(
         stop=stop_after_delay(3600),
         wait=wait_exponential(multiplier=0.1, exp_base=1.2, max=30),
+=======
+    @retry(
+        stop=stop_after_attempt(50),
+        wait=wait_exponential(),
+>>>>>>> use tenacity instead of self made retryal
         retry=(
             retry_if_exception_type() | retry_if_result(lambda result: result is None)
         ),
         before_sleep=before_sleep_log(logger, logging.INFO),
     )
+<<<<<<< HEAD
     async def auto_update_database_from_storage_task(
         self, file_uuid: str, bucket_name: str, object_name: str
     ):
         return await self.update_database_from_storage(
             file_uuid, bucket_name, object_name, silence_exception=True
+=======
+    async def auto_update_database_from_storage(
+        self, file_uuid: str, bucket_name: str, object_name: str
+    ):
+        return await self.update_database_from_storage(
+            file_uuid, bucket_name, object_name
+>>>>>>> use tenacity instead of self made retryal
         )
 
     async def upload_link(self, user_id: str, file_uuid: str):
@@ -570,7 +596,11 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         # a parallel task is tarted which will update the metadata of the updated file
         # once the update has finished.
         fire_and_forget_task(
+<<<<<<< HEAD
             self.auto_update_database_from_storage_task(
+=======
+            self.auto_update_database_from_storage(
+>>>>>>> use tenacity instead of self made retryal
                 file_uuid=file_uuid,
                 bucket_name=bucket_name,
                 object_name=object_name,
