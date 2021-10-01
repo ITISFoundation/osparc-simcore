@@ -1572,13 +1572,14 @@ paths:
                     required:
                       - pipelines_ids
                     properties:
-                      pipelines_ids:
-                        type: array
-                        items:
-                          type: string
                       pipeline_id:
                         type: string
-                        deprecated: true
+                        description: ID for created pipeline (=project identifier)
+                      ref_ids:
+                        type: array
+                        items:
+                          type: integer
+                        description: Checkpoints IDs for created pipeline
                   error:
                     nullable: true
                     default: null
