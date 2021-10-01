@@ -267,6 +267,33 @@ async def test_links_s3(
                     field.name
                 ), f"{field.name}: expected {fmd.__getattribute__(field.name)} vs {file_metadata.fmd.__getattribute__(field.name)}"
 
+    file_metadata: Optional[FileMetaDataEx] = await dsm.list_file(
+        fmd.user_id, fmd.location, fmd.file_uuid
+    )
+    excluded_fields = [
+        "project_id",
+        "project_name",
+        "node_name",
+        "user_name",
+        "display_file_path",
+        "created_at",
+        "last_modified",
+    ]
+    for field in FileMetaData.__attrs_attrs__:
+        if field.name not in excluded_fields:
+            if field.name == "location_id":
+                assert int(
+                    file_metadata.fmd.__getattribute__(field.name)
+                ) == fmd.__getattribute__(
+                    field.name
+                ), f"{field.name}: expected {fmd.__getattribute__(field.name)} vs {file_metadata.fmd.__getattribute__(field.name)}"
+            else:
+                assert file_metadata.fmd.__getattribute__(
+                    field.name
+                ) == fmd.__getattribute__(
+                    field.name
+                ), f"{field.name}: expected {fmd.__getattribute__(field.name)} vs {file_metadata.fmd.__getattribute__(field.name)}"
+
     tmp_file2 = tmp_file + ".rec"
     user_id = 0
     down_url = await dsm.download_link_s3(fmd.file_uuid, user_id)
