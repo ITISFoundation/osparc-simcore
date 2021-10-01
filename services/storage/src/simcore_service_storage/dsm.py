@@ -388,7 +388,11 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                     file_metadata = to_meta_data_extended(row)
                     if file_metadata.fmd.entity_tag is None:
                         # we need to update from S3 here since the database is not up-to-date
+<<<<<<< HEAD
                         file_metadata = await self.update_database_from_storage(
+=======
+                        file_metadata = await self._update_metadata_from_storage(
+>>>>>>> auto update the database on need
                             file_metadata.fmd.file_uuid,
                             file_metadata.fmd.bucket_name,
                             file_metadata.fmd.object_name,
@@ -418,7 +422,49 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         # api_token, api_secret = self._get_datcore_tokens(user_id)
         # await dcw.upload_file_to_id(destination_id, local_file_path)
 
+<<<<<<< HEAD
     async def update_database_from_storage(
+=======
+    async def _update_metadata_from_storage(
+        self, file_uuid: str, bucket_name: str, object_name: str
+    ) -> Optional[FileMetaDataEx]:
+        try:
+            async with self._create_aiobotocore_client_context() as aioboto_client:
+                result = await aioboto_client.head_object(
+                    Bucket=bucket_name, Key=object_name
+                )  # type: ignore
+
+                file_size = result["ContentLength"]  # type: ignore
+                last_modified = result["LastModified"]  # type: ignore
+                entity_tag = result["ETag"].strip('"')  # type: ignore
+
+                async with self.engine.acquire() as conn:
+                    result: ResultProxy = await conn.execute(
+                        file_meta_data.update()
+                        .where(file_meta_data.c.file_uuid == file_uuid)
+                        .values(
+                            file_size=file_size,
+                            last_modified=last_modified,
+                            entity_tag=entity_tag,
+                        )
+                        .returning(literal_column("*"))
+                    )
+                    if not result:
+                        return None
+                    row: Optional[RowProxy] = await result.first()
+                    if not row:
+                        return None
+
+                    return to_meta_data_extended(row)
+        except botocore.exceptions.ClientError:
+            logger.warning(
+                "Error happened while trying to access %s", file_uuid, exc_info=True
+            )
+            # the file is not existing or some error happened
+            return None
+
+    async def _metadata_file_updater(
+>>>>>>> auto update the database on need
         self,
         file_uuid: str,
         bucket_name: str,

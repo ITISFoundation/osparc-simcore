@@ -183,21 +183,33 @@ async def test_update_metadata_from_storage(
     fmd = await _upload_file(dsm_fixture, fmd, Path(tmp_file))
 
     assert (
+<<<<<<< HEAD
         await dsm_fixture.update_database_from_storage(  # pylint: disable=protected-access
+=======
+        await dsm_fixture._update_metadata_from_storage(  # pylint: disable=protected-access
+>>>>>>> auto update the database on need
             "some_fake_uuid", fmd.bucket_name, fmd.object_name
         )
         is None
     )
 
     assert (
+<<<<<<< HEAD
         await dsm_fixture.update_database_from_storage(  # pylint: disable=protected-access
+=======
+        await dsm_fixture._update_metadata_from_storage(  # pylint: disable=protected-access
+>>>>>>> auto update the database on need
             fmd.file_uuid, "some_fake_bucket", fmd.object_name
         )
         is None
     )
 
     assert (
+<<<<<<< HEAD
         await dsm_fixture.update_database_from_storage(  # pylint: disable=protected-access
+=======
+        await dsm_fixture._update_metadata_from_storage(  # pylint: disable=protected-access
+>>>>>>> auto update the database on need
             fmd.file_uuid, fmd.bucket_name, "some_fake_object"
         )
         is None
@@ -205,7 +217,11 @@ async def test_update_metadata_from_storage(
 
     file_metadata: Optional[
         FileMetaDataEx
+<<<<<<< HEAD
     ] = await dsm_fixture.update_database_from_storage(  # pylint: disable=protected-access
+=======
+    ] = await dsm_fixture._update_metadata_from_storage(  # pylint: disable=protected-access
+>>>>>>> auto update the database on need
         fmd.file_uuid, fmd.bucket_name, fmd.object_name
     )
     assert file_metadata is not None
@@ -227,6 +243,7 @@ async def test_links_s3(
 
     dsm = dsm_fixture
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     fmd = await _upload_file(dsm_fixture, fmd, Path(tmp_file))
 
@@ -277,6 +294,9 @@ async def test_links_s3(
             assert entity_tag is not None
             fmd.entity_tag = entity_tag.strip('"')
 >>>>>>> test runs well
+=======
+    fmd = await _upload_file(dsm_fixture, fmd, Path(tmp_file))
+>>>>>>> auto update the database on need
 
     # test wrong user
     assert await dsm.list_file("654654654", fmd.location, fmd.file_uuid) is None
