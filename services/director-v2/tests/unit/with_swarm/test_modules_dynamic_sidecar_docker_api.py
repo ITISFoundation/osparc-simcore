@@ -419,7 +419,7 @@ async def test_dynamic_sidecar_get_dynamic_sidecar_sate_fail_to_schedule(
 
     dynamic_sidecar_state = await docker_api.get_dynamic_sidecar_state(service_id)
     assert dynamic_sidecar_state == (
-        ServiceState.PENDING,
+        ServiceState.FAILED,
         "no suitable node (insufficient resources on 1 node)",
     )
 
