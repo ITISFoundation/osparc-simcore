@@ -10,7 +10,7 @@ from asyncio import BaseEventLoop
 from collections import namedtuple
 from itertools import tee
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, Iterator, Set, Tuple, cast
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Set, Tuple, cast
 from uuid import uuid4
 
 import aiodocker
@@ -18,6 +18,7 @@ import aiopg.sa
 import httpx
 import pytest
 import sqlalchemy as sa
+from aiodocker.containers import DockerContainer
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.projects import Node, ProjectAtDB, Workbench
@@ -79,7 +80,7 @@ InputsOutputs = namedtuple("InputsOutputs", "inputs, outputs")
 
 DY_SERVICES_STATE_PATH: Path = Path("/dy-volumes/workdir_generated-data")
 TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED = 60
-SLEEP_WAIT_DYNAMIC_SERVICES_OUTPUTS_UPLOAD_FINISHED = 20
+TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED = 60
 
 logger = logging.getLogger(__name__)
 
@@ -567,6 +568,58 @@ def _path_hashes(path_to_hash: Path) -> Set[Tuple[str, str]]:
     }
 
 
+LINE_PARTS_TO_MATCH = [
+    (0, "INFO:simcore_service_dynamic_sidecar.modules.nodeports:Uploaded"),
+    (2, "bytes"),
+    (3, "in"),
+    (5, "seconds"),
+]
+
+
+def _is_matching_line_in_logs(logs: List[str]) -> bool:
+    for line in logs:
+        if LINE_PARTS_TO_MATCH[0][1] in line:
+            line_parts = line.strip().split(" ")
+
+            for position, value in LINE_PARTS_TO_MATCH:
+                assert line_parts[position] == value
+
+            print(logs)
+            return True
+    return False
+
+
+async def _assert_retrieve_completed(
+    director_v2_client: httpx.AsyncClient,
+    director_v0_url: URL,
+    service_uuid: str,
+) -> None:
+    await assert_retrieve_service(
+        director_v2_client=director_v2_client,
+        director_v0_url=director_v0_url,
+        service_uuid=service_uuid,
+    )
+
+    container_id = await _container_id_via_services(service_uuid)
+
+    async with aiodocker.Docker() as docker_client:
+        container: DockerContainer = await docker_client.containers.get(container_id)
+
+        for i in range(TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED):
+            logs = await container.log(stdout=True, stderr=True)
+
+            if _is_matching_line_in_logs(logs):
+                break
+
+            if i == TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED - 1:
+                assert False, "Timeout reached"
+
+            print(f"Sleeping {i+1}/{TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED}")
+            await asyncio.sleep(1)
+
+        print(f"Nodeports outputs upload finish detected for {service_uuid}")
+
+
 # TESTS
 
 
@@ -674,22 +727,17 @@ async def test_nodeports_integration(
     # Since there is no webserver monitoring postgres notifications
     # trigger the call manually
 
-    # Since there is no reliable way to check if the mirrored to the output
-    # ports was uploaded; waiting is simpler
-
-    await assert_retrieve_service(
+    await _assert_retrieve_completed(
         director_v2_client=director_v2_client,
         director_v0_url=director_v0_url,
         service_uuid=services_node_uuids.dy,
     )
-    await asyncio.sleep(SLEEP_WAIT_DYNAMIC_SERVICES_OUTPUTS_UPLOAD_FINISHED)
 
-    await assert_retrieve_service(
+    await _assert_retrieve_completed(
         director_v2_client=director_v2_client,
         director_v0_url=director_v0_url,
         service_uuid=services_node_uuids.dy_compose_spec,
     )
-    await asyncio.sleep(SLEEP_WAIT_DYNAMIC_SERVICES_OUTPUTS_UPLOAD_FINISHED)
 
     # STEP 3
     # pull data via nodeports
