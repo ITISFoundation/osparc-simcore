@@ -37,9 +37,9 @@
  */
 
 qx.Class.define("osparc.component.widget.NodeTreeItem", {
-  extend : qx.ui.tree.VirtualTreeItem,
+  extend: qx.ui.tree.VirtualTreeItem,
 
-  properties : {
+  properties: {
     nodeId : {
       check : "String",
       event: "changeNodeId",
@@ -48,7 +48,72 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
     }
   },
 
-  members : {
+  events: {
+    "openNode": "qx.event.type.Data",
+    "renameNode": "qx.event.type.Data",
+    "deleteNode": "qx.event.type.Data"
+  },
+
+  members: {
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "buttons": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(0).set({
+            alignY: "middle"
+          }));
+          this.addWidget(control);
+          break;
+        }
+        case "open-btn": {
+          const part = this.getChildControl("buttons");
+          control = new qx.ui.form.Button().set({
+            toolTipText: this.tr("openNode"),
+            icon: "@FontAwesome5Solid/edit/9"
+          });
+          control.addListener("execute", () => this.fireDataEvent("openNode", this.getNodeId()));
+          part.add(control);
+          break;
+        }
+        case "rename-btn": {
+          const part = this.getChildControl("buttons");
+          control = new qx.ui.form.Button().set({
+            toolTipText: this.tr("renameNode"),
+            icon: "@FontAwesome5Solid/i-cursor/9"
+          });
+          control.addListener("execute", () => this.fireDataEvent("renameNode", this.getNodeId()));
+          part.add(control);
+          break;
+        }
+        case "delete-btn": {
+          const part = this.getChildControl("buttons");
+          control = new qx.ui.form.Button().set({
+            toolTipText: this.tr("deleteNode"),
+            icon: "@FontAwesome5Solid/trash/9"
+          });
+          control.addListener("execute", () => this.fireDataEvent("deleteNode", this.getNodeId()));
+          part.add(control);
+          break;
+        }
+        case "node-id": {
+          control = new qx.ui.basic.Label().set({
+            maxWidth: 250
+          });
+          this.bind("nodeId", control, "value", {
+            converter: value => value && value.substring(0, 8)
+          });
+          const permissions = osparc.data.Permissions.getInstance();
+          control.setVisibility(permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded");
+          permissions.addListener("changeRole", () => {
+            control.setVisibility(permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded");
+          });
+          this.addWidget(control);
+        }
+      }
+
+      return control || this.base(arguments, id);
+    },
+
     _addWidgets: function() {
       // Here's our indentation and tree-lines
       this.addSpacer();
@@ -69,20 +134,10 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         flex: 1
       });
 
-      // Add a NodeId
-      const nodeIdWidget = new qx.ui.basic.Label();
-      this.bind("nodeId", nodeIdWidget, "value", {
-        converter: value => value && value.substring(0, 8)
-      });
-      nodeIdWidget.set({
-        maxWidth: 250
-      });
-      this.addWidget(nodeIdWidget);
-      const permissions = osparc.data.Permissions.getInstance();
-      nodeIdWidget.setVisibility(permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded");
-      permissions.addListener("changeRole", () => {
-        nodeIdWidget.setVisibility(permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded");
-      });
+      this.getChildControl("open-btn");
+      this.getChildControl("rename-btn");
+      this.getChildControl("delete-btn");
+      this.getChildControl("node-id");
     },
 
     _applyNodeId: function(nodeId) {
