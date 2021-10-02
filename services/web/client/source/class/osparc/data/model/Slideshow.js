@@ -19,16 +19,16 @@
  *
  */
 
-qx.Class.define("osparc.data.model.SlideShow", {
+qx.Class.define("osparc.data.model.Slideshow", {
   extend: qx.core.Object,
 
   /**
-   * @param slideShowData {Object} Object containing the serialized Slide Show Data
+   * @param slideshowData {Object} Object containing the serialized Slide Show Data
    */
-  construct: function(slideShowData) {
+  construct: function(slideshowData) {
     this.base(arguments);
 
-    this.setData(slideShowData);
+    this.setData(slideshowData);
   },
 
   properties: {
@@ -44,10 +44,10 @@ qx.Class.define("osparc.data.model.SlideShow", {
   },
 
   statics: {
-    getSortedNodes: function(slideShow) {
+    getSortedNodes: function(slideshow) {
       const nodes = [];
-      for (let nodeId in slideShow) {
-        const node = slideShow[nodeId];
+      for (let nodeId in slideshow) {
+        const node = slideshow[nodeId];
         nodes.push({
           ...node,
           nodeId
@@ -68,35 +68,35 @@ qx.Class.define("osparc.data.model.SlideShow", {
     },
 
     insertNode: function(nodeId, pos) {
-      const slideShow = this.getData();
-      for (let nodeId2 in slideShow) {
-        if (slideShow[nodeId2].position >= pos) {
-          slideShow[nodeId2].position++;
+      const slideshow = this.getData();
+      for (let nodeId2 in slideshow) {
+        if (slideshow[nodeId2].position >= pos) {
+          slideshow[nodeId2].position++;
         }
       }
-      slideShow[nodeId] = {
+      slideshow[nodeId] = {
         position: pos
       };
     },
 
     removeNode: function(nodeId) {
-      const slideShow = this.getData();
-      if (nodeId in slideShow) {
-        const pos = slideShow[nodeId];
-        for (let nodeId2 in slideShow) {
-          if (slideShow[nodeId2].position >= pos) {
-            slideShow[nodeId2].position--;
+      const slideshow = this.getData();
+      if (nodeId in slideshow) {
+        const pos = slideshow[nodeId];
+        for (let nodeId2 in slideshow) {
+          if (slideshow[nodeId2].position > pos.position) {
+            slideshow[nodeId2].position--;
           }
         }
 
-        delete slideShow[nodeId];
+        delete slideshow[nodeId];
       }
     },
 
     getPosition: function(nodeId) {
-      const slideShow = this.getData();
-      if (nodeId in slideShow) {
-        return slideShow[nodeId].position;
+      const slideshow = this.getData();
+      if (nodeId in slideshow) {
+        return slideshow[nodeId].position;
       }
       return -1;
     },
