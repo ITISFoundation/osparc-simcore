@@ -274,7 +274,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       osparc.utils.Study.createStudyFromTemplate(templateData)
         .then(studyId => {
           this._hideLoadingPage();
-          this.__startStudy(studyId);
+          this.__startStudy(studyId, templateData);
         })
         .catch(err => {
           this._hideLoadingPage();
@@ -283,13 +283,20 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         });
     },
 
-    __startStudy: function(studyId) {
+    __startStudy: function(studyId, templateData) {
       if (!this.__checkLoggedIn()) {
         return;
       }
 
+      const defaultContext = "workbench";
+      let pageContext = defaultContext;
+      if (templateData !== undefined) {
+        pageContext = osparc.data.model.Study.getUiMode(templateData) || defaultContext;
+      }
+
       const data = {
-        studyId: studyId
+        studyId,
+        pageContext
       };
       this.fireDataEvent("startStudy", data);
     },

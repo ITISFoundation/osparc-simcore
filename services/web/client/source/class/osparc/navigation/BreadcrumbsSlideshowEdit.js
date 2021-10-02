@@ -19,7 +19,7 @@
  *
  */
 
-qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
+qx.Class.define("osparc.navigation.BreadcrumbsSlideshowEdit", {
   extend: osparc.navigation.BreadcrumbNavigation,
 
   events: {
@@ -33,6 +33,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
     populateButtons: function(study) {
       this._removeAll();
 
+      // for now, only linear pipelines
       if (!study.getWorkbench().isPipelineLinear()) {
         return;
       }
@@ -45,7 +46,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
       newServiceBtn.leftNodeId = null;
       this._add(newServiceBtn);
 
-      const slideShow = study.getUi().getSlideshow();
+      const slideshow = study.getUi().getSlideshow();
       let currentPos = 0;
       nodeIds.forEach((nodeId, i) => {
         newServiceBtn.rightNodeId = nodeId;
@@ -63,7 +64,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
 
         const node = study.getWorkbench().getNode(nodeId);
         const nodeLabel = node.getLabel();
-        const skipNode = slideShow.getPosition(nodeId) === -1;
+        const skipNode = slideshow.getPosition(nodeId) === -1;
         if (skipNode) {
           btn.set({
             label: nodeLabel,
@@ -73,23 +74,21 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShowEdit", {
           btn.set({
             label: currentPos+1 + " - " + nodeLabel
           });
-          currentPos++;
         }
         btn.nodeId = nodeId;
         btn.skipNode = skipNode;
-
         this.__addEditNodeMenu(btn, currentPos);
 
-        if (i === nodeIds.length-1) {
-          // for now, plus buttons only at the beginning and end
-          newServiceBtn = this.__createNewServiceBtn();
-          newServiceBtn.leftNodeId = nodeId;
-          newServiceBtn.rightNodeId = null;
+        newServiceBtn = this.__createNewServiceBtn();
+        newServiceBtn.leftNodeId = nodeId;
+        newServiceBtn.rightNodeId = null;
+        // for now, plus buttons only at the beginning and end
+        if ((i === nodeIds.length-1) && study.getWorkbench().getNode(nodeId).hasOutputs()) {
           this._add(newServiceBtn);
+        }
 
-          if (!study.getWorkbench().getNode(nodeId).hasOutputs()) {
-            newServiceBtn.exclude();
-          }
+        if (!skipNode) {
+          currentPos++;
         }
       });
     },
