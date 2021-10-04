@@ -5,7 +5,7 @@
 import itertools
 import logging
 from copy import deepcopy
-from typing import Any, Dict, Generator, Iterator, List, Tuple
+from typing import Dict, Generator, Iterator, List, Tuple
 from uuid import UUID
 
 from aiohttp import web
@@ -21,12 +21,13 @@ from .version_control_models import CommitID
 
 log = logging.getLogger(__file__)
 
+
 NodesDict = Dict[NodeID, Node]
 NodeOutputsDict = Dict[OutputID, OutputTypes]
 Parameters = List[NodeOutputsDict]
 
 
-def build_project_iterations(project_nodes: NodesDict):
+def _build_project_iterations(project_nodes: NodesDict):
 
     # select iterable nodes
     iterable_nodes_defs: List[ServiceDockerData] = []  # schemas of iterable nodes
@@ -83,7 +84,7 @@ def build_project_iterations(project_nodes: NodesDict):
     return list(zip(parameters_iterations, project_nodes_iterations))
 
 
-def extract_parameters(project_nodes: NodesDict) -> Parameters:
+def _extract_parameters(project_nodes: NodesDict) -> Parameters:
     # TODO: iter nodes, if iter, read&save outputs
     # - order?  = order( project_nodes.keys() )
     raise NotImplementedError
@@ -91,7 +92,7 @@ def extract_parameters(project_nodes: NodesDict) -> Parameters:
 
 async def get_or_create_runnable_projects(
     request: web.Request,
-    project_uuid: UUID,
+    project_uuid: ProjectID,
 ) -> Tuple[List[ProjectID], List[CommitID]]:
     """
     Returns ids and refid of projects that can run
@@ -102,22 +103,25 @@ async def get_or_create_runnable_projects(
     # FIXME: what happens if not
 
     vc_repo = VersionControlRepository(request)
-
     assert vc_repo.user_id  # nosec
 
+    # retrieves project
+    project = await get_project_for_user(
+        request.app,
+        project_uuid=str(project_uuid),
+        user_id=vc_repo.user_id,
+        include_state=False,
+        include_templates=False,
+    )
+    assert project["uuid"] == str(project_uuid)  # nosec
+
+    project_nodes: Dict[NodeID, Node] = project["workbench"]
+
+    # init returns
     runnable_project_vc_commits: List[CommitID] = []
     runnable_project_ids: List[ProjectID] = [
         project_uuid,
     ]
-
-    project: Dict[str, Any] = await get_project_for_user(
-        request.app,
-        str(project_uuid),
-        user_id=vc_repo.user_id,
-        include_templates=False,
-        include_state=False,
-    )
-    project_nodes: Dict[NodeID, Node] = project["workbench"]
 
     # auto-commit
     repo_id = await vc_repo.get_repo_id(project_uuid)
@@ -127,18 +131,18 @@ async def get_or_create_runnable_projects(
     main_commit_id = await vc_repo.commit(repo_id, message=f"auto:main/{project_uuid}")
     runnable_project_vc_commits.append(main_commit_id)
 
-    # standard project
+    # std-project
     is_meta_project = any(
         is_iterator_service(node.key) for node in project_nodes.values()
     )
     if not is_meta_project:
         return runnable_project_ids, runnable_project_vc_commits
 
-    # meta project: resolve project iterations
+    # meta-project: resolve project iterations
     runnable_project_ids = []
     runnable_project_vc_commits = []
 
-    iterations = build_project_iterations(project_nodes)
+    iterations = _build_project_iterations(project_nodes)
     log.debug(
         "Project %s with %s parameters, produced %s variants",
         project_uuid,
@@ -155,18 +159,53 @@ async def get_or_create_runnable_projects(
             project_uuid,
             parameters,
         )
-
         project["workbench"] = project_nodes_iteration
 
-        # hot-commit on branch
-        raise NotImplementedError("WIP: force-branch")
-        commit_id = await vc_repo.commit(repo_id, message=f"auto/iter/{project_uuid}")
-        runnable_project_vc_commits.append(commit_id)
+        # FIXME: raises if commit or branch already exists
+        branch = await vc_repo.force_branch(
+            repo_id, start_commit_id=main_commit_id, project=project, branch_name=""
+        )
+
+        # TODO: inject projects in
+        raise NotImplementedError("WIP:")
+
+        runnable_project_vc_commits.append(branch.parent_commit_id)
 
     return runnable_project_ids, runnable_project_vc_commits
 
 
 async def get_runnable_projects_ids(
-    request: web.Request, project_uuid: UUID
+    request: web.Request,
+    project_uuid: ProjectID,
 ) -> List[ProjectID]:
-    raise NotImplementedError
+
+    vc_repo = VersionControlRepository(request)
+    assert vc_repo.user_id  # nosec
+
+    project = await get_project_for_user(
+        request.app,
+        project_uuid=str(project_uuid),
+        user_id=vc_repo.user_id,
+        include_state=False,
+        include_templates=False,
+    )
+    assert project["uuid"] == str(project_uuid)  # nosec
+
+    project_nodes: Dict[NodeID, Node] = project["workbench"]
+
+    # init returns
+    runnable_project_ids: List[ProjectID] = []
+
+    # std-project
+    is_meta_project = any(
+        is_iterator_service(node.key) for node in project_nodes.values()
+    )
+    if not is_meta_project:
+        runnable_project_ids.append(project_uuid)
+        return runnable_project_ids
+
+    # meta-project
+    # TODO: find branches of current head that represents iterations
+    raise NotImplementedError()
+
+    return runnable_project_ids
