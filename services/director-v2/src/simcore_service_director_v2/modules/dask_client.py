@@ -5,17 +5,7 @@ import functools
 import logging
 from dataclasses import dataclass, field
 from pprint import pformat
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import Any, Awaitable, Callable, Dict, Iterable, List, Tuple, Union
 
 import dask.distributed
 import distributed
@@ -26,7 +16,6 @@ from dask_task_models_library.container_tasks.events import (
     TaskStateEvent,
 )
 from dask_task_models_library.container_tasks.io import (
-    FileUrl,
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
@@ -35,11 +24,6 @@ from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
-from pydantic import AnyUrl
-from simcore_sdk import node_ports_v2
-from simcore_sdk.node_ports_v2 import DBManager, port_utils
-from simcore_sdk.node_ports_v2.links import ItemValue
-from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
@@ -55,7 +39,12 @@ from ..core.settings import DaskSchedulerSettings
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.constants import ClusterID, UserID
 from ..models.schemas.services import NodeRequirements
-from ..utils.dask import generate_dask_job_id, parse_dask_job_id
+from ..utils.dask import (
+    compute_input_data,
+    compute_output_data_schema,
+    generate_dask_job_id,
+    parse_output_data,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -67,106 +56,6 @@ dask_retry_policy = dict(
 )
 
 CLUSTER_RESOURCE_MOCK_USAGE: float = 1e-9
-
-
-async def _create_node_ports(
-    app: FastAPI, user_id: UserID, project_id: ProjectID, node_id: NodeID
-) -> Nodeports:
-    db_manager = DBManager(db_engine=app.state.engine)
-    return await node_ports_v2.ports(
-        user_id=user_id,
-        project_id=f"{project_id}",
-        node_uuid=f"{node_id}",
-        db_manager=db_manager,
-    )
-
-
-async def _parse_output_data(app: FastAPI, job_id: str, data: TaskOutputData) -> None:
-    (
-        service_key,
-        service_version,
-        user_id,
-        project_id,
-        node_id,
-    ) = parse_dask_job_id(job_id)
-    logger.debug(
-        "parsing output %s of dask task for %s:%s of user %s on project '%s' and node '%s'",
-        pformat(data),
-        service_key,
-        service_version,
-        user_id,
-        project_id,
-        node_id,
-    )
-
-    ports = await _create_node_ports(
-        app=app, user_id=user_id, project_id=project_id, node_id=node_id
-    )
-    for port_key, port_value in data.items():
-        value_to_transfer: Optional[ItemValue] = None
-        if isinstance(port_value, FileUrl):
-            value_to_transfer = port_value.url
-        else:
-            value_to_transfer = port_value
-        await (await ports.outputs)[port_key].set_value(value_to_transfer)
-
-
-async def _compute_input_data(
-    app: FastAPI,
-    user_id: UserID,
-    project_id: ProjectID,
-    node_id: NodeID,
-) -> TaskInputData:
-    ports = await _create_node_ports(
-        app=app, user_id=user_id, project_id=project_id, node_id=node_id
-    )
-    input_data = {}
-    for port in (await ports.inputs).values():
-        value_link = await port.get_value()
-        if isinstance(value_link, AnyUrl):
-            input_data[port.key] = FileUrl(
-                url=value_link,
-                file_mapping=(
-                    next(iter(port.file_to_key_map)) if port.file_to_key_map else None
-                ),
-            )
-        else:
-            input_data[port.key] = value_link
-    return TaskInputData.parse_obj(input_data)
-
-
-async def _compute_output_data_schema(
-    app: FastAPI,
-    user_id: UserID,
-    project_id: ProjectID,
-    node_id: NodeID,
-) -> TaskOutputDataSchema:
-    ports = await _create_node_ports(
-        app=app, user_id=user_id, project_id=project_id, node_id=node_id
-    )
-    output_data_schema = {}
-    for port in (await ports.outputs).values():
-        output_data_schema[port.key] = {"required": port.default_value is None}
-
-        if port.property_type.startswith("data:"):
-            value_link = await port_utils.get_upload_link_from_storage(
-                user_id=user_id,
-                project_id=f"{project_id}",
-                node_id=f"{node_id}",
-                file_name=next(iter(port.file_to_key_map))
-                if port.file_to_key_map
-                else port.key,
-            )
-            output_data_schema[port.key].update(
-                {
-                    "mapping": next(iter(port.file_to_key_map))
-                    if port.file_to_key_map
-                    else None,
-                    "url": value_link,
-                }
-            )
-
-    return TaskOutputDataSchema.parse_obj(output_data_schema)
 
 
 def _done_dask_callback(
@@ -195,7 +84,7 @@ def _done_dask_callback(
                 # this callback is called in a secondary thread so we need to get back to the main
                 # thread for database accesses or else we ge into loop issues
                 future = asyncio.run_coroutine_threadsafe(
-                    _parse_output_data(app, job_id, task_output_data), loop
+                    parse_output_data(app, job_id, task_output_data), loop
                 )
                 future.result(timeout=5)
                 dask_pub.put(
@@ -408,10 +297,10 @@ class DaskClient:
                 cluster_id=cluster_id,
             )
 
-            input_data = await _compute_input_data(
+            input_data = await compute_input_data(
                 self.app, user_id, project_id, node_id
             )
-            output_data_keys = await _compute_output_data_schema(
+            output_data_keys = await compute_output_data_schema(
                 self.app, user_id, project_id, node_id
             )
             try:
