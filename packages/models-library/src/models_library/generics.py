@@ -1,4 +1,5 @@
 from typing import (
+    Any,
     Dict,
     Generic,
     ItemsView,
@@ -41,3 +42,11 @@ class DictBaseModel(GenericModel, Generic[DictKey, DictValue]):
 
     def __len__(self) -> int:
         return self.__root__.__len__()
+
+
+DataT = TypeVar("DataT")
+
+
+class DataEnveloped(GenericModel, Generic[DataT]):
+    data: Optional[DataT]
+    error: Optional[Any]
