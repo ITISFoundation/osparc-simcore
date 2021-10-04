@@ -13,7 +13,7 @@ from models_library.services import ServiceKeyVersion
 from starlette import status
 from starlette.datastructures import URL
 
-from ...core.settings import DynamicServicesSettings
+from ...core.settings import DynamicServicesSettings, DynamicSidecarSettings
 from ...models.domains.dynamic_services import (
     DynamicServiceCreate,
     DynamicServiceOut,
@@ -207,13 +207,22 @@ async def service_retrieve_data_on_ports(
             node_uuid, get_director_v0_client(request)
         )
         services_client: ServicesClient = get_services_client(request)
-        resp = await services_client.request(
+
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            request.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
+        timeout = httpx.Timeout(
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+        )
+
+        # this call waits for the service to download data
+        response = await services_client.request(
             "POST",
             f"{service_base_url}/retrieve",
             data=retrieve_settings.json(by_alias=True),
-            timeout=httpx.Timeout(
-                5.0, read=60 * 60.0
-            ),  # this call waits for the service to download data
+            timeout=timeout,
         )
+
         # validate and return
-        return RetrieveDataOutEnveloped.parse_obj(resp.json())
+        return RetrieveDataOutEnveloped.parse_obj(response.json())
