@@ -57,8 +57,6 @@ _CONTAINER_STATE_TO_SERVICE_STATE: Dict[str, ServiceState] = {
 
 def extract_task_state(task_status: Dict[str, str]) -> Tuple[ServiceState, str]:
     last_task_error_msg = task_status["Err"] if "Err" in task_status else ""
-    if "Err" in task_status:
-        return (ServiceState.FAILED, task_status["Err"])
 
     task_state = _TASK_STATE_TO_SERVICE_STATE[task_status["State"]]
     return (task_state, last_task_error_msg)

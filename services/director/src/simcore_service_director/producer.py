@@ -548,10 +548,7 @@ async def _get_service_state(
     last_task_error_msg = (
         last_task["Status"]["Err"] if "Err" in last_task["Status"] else ""
     )
-    if "Err" in last_task["Status"]:
-        log.error("service %s failed with %s", service_name, last_task["Status"])
-        last_task_state = ServiceState.FAILED
-    elif task_state in ("failed"):
+    if task_state in ("failed"):
         # check if it failed already the max number of attempts we allow for
         if len(tasks) < config.DIRECTOR_SERVICES_RESTART_POLICY_MAX_ATTEMPTS:
             log.debug("number of tasks: %s", len(tasks))
