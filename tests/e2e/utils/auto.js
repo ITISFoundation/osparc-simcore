@@ -299,12 +299,13 @@ async function openNode(page, pos) {
     console.log("Node tree items not found");
     return null;
   }
+
   const nodeWidgetId = children[pos];
   const childId = '[osparc-test-id="' + nodeWidgetId + '"]';
-  await utils.waitAndClick(page, childId);
-  await utils.waitAndClick(page, '[osparc-test-id="openServiceBtn"]');
-
   const nodeId = nodeWidgetId.replace("nodeTreeItem_", "");
+  await utils.waitAndClick(page, childId);
+  await utils.waitAndClick(page, '[osparc-test-id="openNodeBtn_' + nodeId + '"]');
+
   return nodeId;
 }
 
