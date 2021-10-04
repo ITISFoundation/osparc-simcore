@@ -321,7 +321,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DASK_SCHEDULER: DaskSchedulerSettings
 
-    DOCKER_REGISTRY: RegistrySettings
+    DOCKER_REGISTRY_SETTINGS: RegistrySettings
 
     @validator("LOG_LEVEL", pre=True)
     @classmethod
