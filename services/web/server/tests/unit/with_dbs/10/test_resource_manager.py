@@ -15,6 +15,7 @@ import pytest
 import socketio
 import socketio.exceptions
 import sqlalchemy as sa
+import tenacity
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioredis import Redis
@@ -35,7 +36,7 @@ from simcore_service_webserver.projects.projects_api import (
 from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
 from simcore_service_webserver.resource_manager import config, garbage_collector
 from simcore_service_webserver.resource_manager.module_setup import (
-    setup_garbage_collector,
+    setup_resource_manager,
 )
 from simcore_service_webserver.resource_manager.registry import (
     RedisResourceRegistry,
@@ -49,7 +50,6 @@ from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_
 from simcore_service_webserver.socketio.module_setup import setup_socketio
 from simcore_service_webserver.users import setup_users
 from simcore_service_webserver.users_api import delete_user
-from tenacity import after_log, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 logger = logging.getLogger(__name__)
 
@@ -58,10 +58,10 @@ API_VERSION = "v0"
 GARBAGE_COLLECTOR_INTERVAL = 1
 SERVICE_DELETION_DELAY = 1
 CHECK_BACKGROUND_RETRY_POLICY = dict(
-    stop=stop_after_attempt(2),
-    wait=wait_fixed(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL),
-    retry=retry_if_exception_type(AssertionError),
-    after=after_log(logger, logging.INFO),
+    stop=tenacity.stop_after_attempt(2),
+    wait=tenacity.wait_fixed(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL),
+    retry=tenacity.retry_if_exception_type(AssertionError),
+    after=tenacity.after_log(logger, logging.INFO),
     reraise=True,
 )
 

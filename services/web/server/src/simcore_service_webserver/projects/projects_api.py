@@ -314,7 +314,7 @@ async def delete_project_from_db(
     app: web.Application, project_uuid: str, user_id: int
 ) -> None:
     db = app[APP_PROJECT_DBAPI]
-    await director_v2_api.delete_pipeline(app, user_id, project_uuid)
+    await director_v2_api.delete_pipeline(app, user_id, UUID(project_uuid))
     await db.delete_user_project(user_id, project_uuid)
     # requests storage to delete all project's stored data
     await delete_data_folders_of_project(app, project_uuid, user_id)

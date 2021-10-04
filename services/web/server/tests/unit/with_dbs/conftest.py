@@ -14,7 +14,6 @@ import os
 import sys
 import textwrap
 from copy import deepcopy
-from importlib import reload
 from pathlib import Path
 from typing import Callable, Dict, Iterator, List
 from unittest.mock import patch
@@ -260,29 +259,32 @@ def asyncpg_storage_system_mock(mocker):
 
 @pytest.fixture
 async def mocked_director_v2_api(loop, mocker):
-    mocks = {
-        "director_v2_api.get_service_state": mocker.patch(
-            "simcore_service_webserver.director_v2_api.get_service_state",
-            return_value={},
-        ),
-        "director_v2_api.get_services": mocker.patch(
-            "simcore_service_webserver.director_v2_api.get_services",
-            return_value="",
-        ),
-        "director_v2_api.start_service": mocker.patch(
-            "simcore_service_webserver.director_v2_api.start_service",
-            return_value="",
-        ),
-        "director_v2_api.stop_service": mocker.patch(
-            "simcore_service_webserver.director_v2_api.stop_service",
-            return_value="",
-        ),
-    }
+    mock = {}
+
+    #
+    # NOTE: depending on the test, function might have to be patched
+    #  via the director_v2_api or director_v2_core modules
+    #
+    for func_name in (
+        "get_service_state",
+        "get_services",
+        "start_service",
+        "stop_service",
+    ):
+        for mod_name in ("director_v2_api", "director_v2_core"):
+            name = f"{mod_name}.{func_name}"
+            mock[name] = mocker.patch(
+                f"simcore_service_webserver.{name}",
+                return_value={},
+            )
+
+    # FIXME:
+    from importlib import reload
 
     reload(simcore_service_webserver.projects.projects_api)
     reload(simcore_service_webserver.projects.projects_handlers)
 
-    return mocks
+    return mock
 
 
 @pytest.fixture

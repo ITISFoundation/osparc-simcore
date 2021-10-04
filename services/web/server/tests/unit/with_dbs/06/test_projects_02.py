@@ -177,7 +177,7 @@ async def catalog_subsystem_mock(
     services_in_project = []
 
     def creator(projects: Optional[Union[List[Dict], Dict]] = None) -> None:
-        for proj in projects:
+        for proj in projects or []:
             services_in_project.extend(
                 [
                     {"key": s["key"], "version": s["version"]}
@@ -232,7 +232,7 @@ async def _list_projects(
         url = url.with_query(**query_parameters)
 
     resp = await client.get(url)
-    data, errors = await assert_status(resp, expected)
+    data, _ = await assert_status(resp, expected)
     return data
 
 
@@ -256,7 +256,7 @@ async def _assert_get_same_project(
 
 async def _new_project(
     client,
-    expected_response: web.HTTPException,
+    expected_response: Type[web.HTTPException],
     logged_user: Dict[str, str],
     primary_group: Dict[str, str],
     *,
@@ -643,7 +643,7 @@ async def test_close_project(
                 project_id=user_project["uuid"],
             ),
         ]
-        mocked_director_v2_api["director_v2_api.get_services"].assert_has_calls(calls)
+        mocked_director_v2_api["director_v2_core.get_services"].assert_has_calls(calls)
 
         calls = [
             call(
