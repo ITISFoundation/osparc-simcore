@@ -20,7 +20,11 @@ from typing import (
 import dask.distributed
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from dask_task_models_library.container_tasks.events import TaskStateEvent
+from dask_task_models_library.container_tasks.events import (
+    TaskLogEvent,
+    TaskProgressEvent,
+    TaskStateEvent,
+)
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
@@ -171,19 +175,17 @@ def _done_dask_callback(
     task_to_future_map: Dict[str, dask.distributed.Future],
     user_callback: Callable[[], None],
     loop: asyncio.AbstractEventLoop,
-    dask_client: distributed.Client,
 ):
     # NOTE: here we are called in a separate task
     job_id = dask_future.key
     try:
+        dask_pub = distributed.Pub(TaskStateEvent.topic_name())
         if dask_future.status == "error":
-            dask_client.log_event(
-                TaskStateEvent.topic_name(),
-                TaskStateEvent(job_id=job_id, state=RunningState.FAILED).json(),
+            dask_pub.put(
+                TaskStateEvent(job_id=job_id, state=RunningState.FAILED).json()
             )
         elif dask_future.cancelled():
-            dask_client.log_event(
-                TaskStateEvent.topic_name(),
+            dask_pub.put(
                 TaskStateEvent(job_id=job_id, state=RunningState.ABORTED).json(),
             )
         else:
@@ -196,8 +198,7 @@ def _done_dask_callback(
                     _parse_output_data(app, job_id, task_output_data), loop
                 )
                 future.result(timeout=5)
-                dask_client.log_event(
-                    TaskStateEvent.topic_name(),
+                dask_pub.put(
                     TaskStateEvent(job_id=job_id, state=RunningState.SUCCESS).json(),
                 )
 
@@ -207,8 +208,7 @@ def _done_dask_callback(
                     job_id,
                     exc_info=True,
                 )
-                dask_client.log_event(
-                    TaskStateEvent.topic_name(),
+                dask_pub.put(
                     TaskStateEvent(job_id=job_id, state=RunningState.FAILED).json(),
                 )
             except concurrent.futures.CancelledError:
@@ -217,8 +217,7 @@ def _done_dask_callback(
                     job_id,
                     exc_info=True,
                 )
-                dask_client.log_event(
-                    TaskStateEvent.topic_name(),
+                dask_pub.put(
                     TaskStateEvent(job_id=job_id, state=RunningState.FAILED).json(),
                 )
 
@@ -258,6 +257,7 @@ class DaskClient:
     _taskid_to_future_map: Dict[str, dask.distributed.Future] = field(
         default_factory=dict
     )
+    _subscribed_tasks: List[asyncio.Task] = field(default_factory=list)
 
     @classmethod
     async def create(
@@ -306,6 +306,40 @@ class DaskClient:
 
         _check_valid_connection_to_scheduler(self.client)
         logger.info("Connection to Dask-scheduler completed, reconnection successful!")
+
+    def register_handlers(
+        self,
+        task_change_handler: Callable[[str], Awaitable[None]],
+        task_progress_handler: Callable[[str], Awaitable[None]],
+        task_log_handler: Callable[[str], Awaitable[None]],
+    ) -> None:
+        async def _dask_sub_handler(
+            dask_sub_topic_name: str, handler: Callable[[str], Awaitable[None]]
+        ):
+            dask_sub = distributed.Sub(dask_sub_topic_name)
+            async for event in dask_sub:
+                await handler(event)
+
+        for dask_sub, handler in [
+            (
+                TaskStateEvent.topic_name(),
+                task_change_handler,
+            ),
+            (
+                TaskProgressEvent.topic_name(),
+                task_progress_handler,
+            ),
+            (
+                TaskLogEvent.topic_name(),
+                task_log_handler,
+            ),
+        ]:
+            self._subscribed_tasks.append(
+                asyncio.create_task(
+                    _dask_sub_handler(dask_sub, handler),
+                    name=f"{dask_sub}_subscriber_to_handler",
+                )
+            )
 
     async def send_computation_tasks(
         self,
@@ -408,7 +442,6 @@ class DaskClient:
                         task_to_future_map=self._taskid_to_future_map,
                         user_callback=callback,
                         loop=asyncio.get_event_loop(),
-                        dask_client=self.client,
                     )
                 )
 
