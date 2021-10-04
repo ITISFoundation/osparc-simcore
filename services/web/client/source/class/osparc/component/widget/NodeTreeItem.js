@@ -78,6 +78,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         case "open-btn": {
           const part = this.getChildControl("buttons");
           control = new qx.ui.form.Button().set({
+            backgroundColor: "transparent",
             toolTipText: this.tr("openNode"),
             icon: "@FontAwesome5Solid/edit/9"
           });
@@ -88,6 +89,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         case "rename-btn": {
           const part = this.getChildControl("buttons");
           control = new qx.ui.form.Button().set({
+            backgroundColor: "transparent",
             toolTipText: this.tr("renameNode"),
             icon: "@FontAwesome5Solid/i-cursor/9"
           });
@@ -98,6 +100,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         case "delete-btn": {
           const part = this.getChildControl("buttons");
           control = new qx.ui.form.Button().set({
+            backgroundColor: "transparent",
             toolTipText: this.tr("deleteNode"),
             icon: "@FontAwesome5Solid/trash/9"
           });
