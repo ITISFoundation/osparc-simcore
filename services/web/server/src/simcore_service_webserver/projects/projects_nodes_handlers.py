@@ -9,15 +9,19 @@ from typing import Dict, List, Union
 from aiohttp import web
 
 from .. import director_v2
+from .._meta import api_version_prefix as vtag
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
 from . import projects_api
-from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import ProjectNotFoundError
 
 log = logging.getLogger(__name__)
 
 
+routes = web.RouteTableDef()
+
+
+@routes.post(f"/{vtag}/projects/{{project_uuid}}/nodes")
 @login_required
 @permission_required("project.node.create")
 async def create_node(request: web.Request) -> web.Response:
@@ -55,6 +59,7 @@ async def create_node(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
+@routes.get(f"/{vtag}/projects/{{project_uuid}}/nodes/{{node_uuid}}")
 @login_required
 @permission_required("project.node.read")
 async def get_node(request: web.Request) -> web.Response:
@@ -92,6 +97,7 @@ async def get_node(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
+@routes.delete(f"/{vtag}/projects/{{project_uuid}}/nodes/{{node_uuid}}")
 @login_required
 @permission_required("project.node.delete")
 async def delete_node(request: web.Request) -> web.Response:
