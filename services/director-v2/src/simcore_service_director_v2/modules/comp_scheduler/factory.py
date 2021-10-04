@@ -2,6 +2,7 @@ import logging
 from typing import List, cast
 
 from fastapi import FastAPI
+from simcore_service_director_v2.modules.rabbitmq import RabbitMQClient
 
 from ...core.errors import ConfigurationError
 from ...models.domains.comp_runs import CompRunsAtDB
@@ -62,6 +63,7 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
     return DaskScheduler(
         settings=app.state.settings.DASK_SCHEDULER,
         dask_client=DaskClient.instance(app),
+        rabbitmq_client=RabbitMQClient.instance(app),
         db_engine=db_engine,
         default_cluster_id=app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
         scheduled_pipelines={

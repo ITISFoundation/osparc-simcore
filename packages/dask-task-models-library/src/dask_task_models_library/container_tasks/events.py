@@ -75,22 +75,22 @@ class TaskProgressEvent(TaskEvent):
 
 
 class TaskLogEvent(TaskEvent):
-    logs: List[str]
+    log: str
 
     @staticmethod
     def topic_name() -> str:
         return "task_logs"
 
     @classmethod
-    def from_dask_worker(cls, logs: List[str]) -> "TaskLogEvent":
-        return cls(job_id=get_worker().get_current_task(), logs=logs)
+    def from_dask_worker(cls, log: str) -> "TaskLogEvent":
+        return cls(job_id=get_worker().get_current_task(), log=log)
 
     class Config(TaskEvent.Config):
         schema_extra = {
             "examples": [
                 {
                     "job_id": "simcore/services/comp/sleeper:1.1.0:projectid_ec7e595a-63ee-46a1-a04a-901b11b649f8:nodeid_39467d89-b659-4914-9359-c40b1b6d1d6d:uuid_5ee5c655-450d-4711-a3ec-32ffe16bc580",
-                    "logs": ["some logs", "some other logs"],
+                    "log": "some logs",
                 },
             ]
         }

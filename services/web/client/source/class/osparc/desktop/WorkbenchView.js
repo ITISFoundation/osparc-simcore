@@ -570,8 +570,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             // Filtering out logs from other studies
             return;
           }
-          const nodeId = data["Node"];
-          const messages = data["Messages"];
+          const nodeId = data["node_id"];
+          const messages = data["messages"];
           this.getLogger().infos(nodeId, messages);
           const nodeLogger = this.__getNodeLogger(nodeId);
           if (nodeLogger) {
@@ -586,8 +586,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (!socket.slotExists(slotName2)) {
         socket.on(slotName2, function(data) {
           const d = JSON.parse(data);
-          const nodeId = d["Node"];
-          const progress = Number.parseFloat(d["Progress"]).toFixed(4);
+          const nodeId = d["node_id"];
+          const progress = Number.parseFloat(d["progress"]).toFixed(4);
           const workbench = this.getStudy().getWorkbench();
           const node = workbench.getNode(nodeId);
           if (node) {
@@ -603,7 +603,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (!socket.slotExists(slotName3)) {
         socket.on(slotName3, data => {
           const d = JSON.parse(data);
-          const nodeId = d["Node"];
+          const nodeId = d["node_id"];
           const nodeData = d["data"];
           const workbench = this.getStudy().getWorkbench();
           const node = workbench.getNode(nodeId);

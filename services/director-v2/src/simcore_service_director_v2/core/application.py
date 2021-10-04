@@ -22,6 +22,7 @@ from ..modules import (
     director_v0,
     dynamic_services,
     dynamic_sidecar,
+    rabbitmq,
     remote_debug,
 )
 from ..utils.logging_utils import config_all_loggers
@@ -76,6 +77,9 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     if settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_CLIENT_ENABLED:
         dask_client.setup(app, settings.DASK_SCHEDULER)
+
+    if settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_SCHEDULER_ENABLED:
+        rabbitmq.setup(app)
 
     if (
         settings.CELERY_SCHEDULER.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED
