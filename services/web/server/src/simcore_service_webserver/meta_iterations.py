@@ -93,6 +93,11 @@ async def get_or_create_runnable_projects(
     request: web.Request,
     project_uuid: UUID,
 ) -> Tuple[List[ProjectID], List[CommitID]]:
+    """
+    Returns ids and refid of projects that can run
+    If project_uuid is a std-project, then it returns itself
+    If project_uuid is a meta-project, then it returns iterations
+    """
 
     # FIXME: what happens if not
 
@@ -100,8 +105,8 @@ async def get_or_create_runnable_projects(
 
     assert vc_repo.user_id  # nosec
 
-    project_vc_commits: List[CommitID] = []
-    project_ids: List[ProjectID] = [
+    runnable_project_vc_commits: List[CommitID] = []
+    runnable_project_ids: List[ProjectID] = [
         project_uuid,
     ]
 
@@ -120,16 +125,19 @@ async def get_or_create_runnable_projects(
         repo_id = await vc_repo.init_repo(project_uuid)
 
     main_commit_id = await vc_repo.commit(repo_id, message=f"auto:main/{project_uuid}")
-    project_vc_commits.append(main_commit_id)
+    runnable_project_vc_commits.append(main_commit_id)
 
     # standard project
     is_meta_project = any(
         is_iterator_service(node.key) for node in project_nodes.values()
     )
     if not is_meta_project:
-        return project_ids, project_vc_commits
+        return runnable_project_ids, runnable_project_vc_commits
 
     # meta project: resolve project iterations
+    runnable_project_ids = []
+    runnable_project_vc_commits = []
+
     iterations = build_project_iterations(project_nodes)
     log.debug(
         "Project %s with %s parameters, produced %s variants",
@@ -151,12 +159,11 @@ async def get_or_create_runnable_projects(
         project["workbench"] = project_nodes_iteration
 
         # hot-commit on branch
-
+        raise NotImplementedError("WIP: force-branch")
         commit_id = await vc_repo.commit(repo_id, message=f"auto/iter/{project_uuid}")
+        runnable_project_vc_commits.append(commit_id)
 
-        project_vc_commits.append(commit_id)
-
-    return project_ids, project_vc_commits
+    return runnable_project_ids, runnable_project_vc_commits
 
 
 async def get_runnable_projects_ids(
