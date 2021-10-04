@@ -35,7 +35,10 @@ from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
-from tenacity import before_sleep_log, retry, retry_if_exception_type, wait_random
+from tenacity import retry
+from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_exception_type
+from tenacity.wait import wait_random
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,

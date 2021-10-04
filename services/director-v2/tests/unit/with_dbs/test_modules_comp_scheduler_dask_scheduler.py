@@ -7,7 +7,7 @@
 
 
 import asyncio
-from typing import Any, Callable, Dict, Iterator, List
+from typing import Any, Callable, Dict, Iterator, List, cast
 from unittest.mock import call
 
 import aiopg
@@ -34,6 +34,9 @@ from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.models.schemas.constants import UserID
 from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
     BaseCompScheduler,
+)
+from simcore_service_director_v2.modules.comp_scheduler.dask_scheduler import (
+    DaskScheduler,
 )
 from starlette.testclient import TestClient
 
@@ -291,6 +294,9 @@ async def test_proper_pipeline_is_scheduled(
                 cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
                 tasks={k: v},
                 callback=scheduler._wake_up_scheduler_now,
+                task_change_handler=cast(
+                    DaskScheduler, scheduler
+                )._task_state_change_handler,
             )
             for k, v in {
                 f"{sleeper_tasks[1].node_id}": sleeper_tasks[1].image,
@@ -345,6 +351,7 @@ async def test_proper_pipeline_is_scheduled(
             f"{sleeper_tasks[2].node_id}": sleeper_tasks[2].image,
         },
         callback=scheduler._wake_up_scheduler_now,
+        task_change_handler=cast(DaskScheduler, scheduler)._task_state_change_handler,
     )
     mocked_dask_client.reset_mock()
 
