@@ -12,6 +12,7 @@
 
    Authors:
      * Tobias Oetiker (oetiker)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
@@ -43,6 +44,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
     this.base(arguments);
 
     this.__study = study;
+    this.__setNotHoveredStyle();
     this.__attachEventHandlers();
   },
 
@@ -164,12 +166,30 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       osparc.utils.Utils.setIdToWidget(opnBtn, "openNodeBtn_"+this.getNodeId());
     },
 
+    __setHoveredStyle: function() {
+      this.getContentElement().setStyles({
+        "border-radius": "4px",
+        "border": "1px solid " + qx.theme.manager.Color.getInstance().resolve("background-selected")
+      });
+    },
+
+    __setNotHoveredStyle: function() {
+      this.getContentElement().setStyles({
+        "border-radius": "4px",
+        "border": "1px solid transparent"
+      });
+    },
+
     __attachEventHandlers: function() {
-      this.addListener("mouseover", () => this.getChildControl("buttons").show());
+      this.addListener("mouseover", () => {
+        this.getChildControl("buttons").show();
+        this.__setHoveredStyle();
+      });
       this.addListener("mouseout", () => {
         if (!this.hasState("selected")) {
           this.getChildControl("buttons").exclude();
         }
+        this.__setNotHoveredStyle();
       });
     },
 
