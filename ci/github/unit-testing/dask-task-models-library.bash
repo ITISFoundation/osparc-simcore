@@ -16,7 +16,7 @@ install() {
 test() {
   pytest --cov=dask_task_models_library --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-    -v packages/dask-task-models-library/tests/unit
+    -v packages/dask-task-models-library/tests
 }
 
 # Check if the function exists (bash specific)
