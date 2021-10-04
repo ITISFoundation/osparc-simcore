@@ -2,6 +2,7 @@
 # Specifies third-party dependencies for 'dask-task-models-library'
 #
 --constraint ../../../requirements/constraints.txt
+--requirement ../../../packages/models-library/requirements/_base.in
 
 pydantic[email]
 

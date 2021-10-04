@@ -17,9 +17,9 @@ install_requirements = read_reqs(
     here / "requirements" / "_base.in"
 )  # WEAK requirements
 
-test_requirements = read_reqs(
-    here / "requirements" / "_test.txt"
-)  # STRONG requirements
+test_requirements = read_reqs(here / "requirements" / "_test.txt") + [
+    "simcore-models-library",
+]  # STRONG requirements
 
 readme = Path(here / "README.md").read_text()
 
