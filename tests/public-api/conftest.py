@@ -38,7 +38,7 @@ def testing_environ_vars(testing_environ_vars: Dict[str, str]) -> Dict[str, str]
 
 @pytest.fixture(scope="module")
 def core_services_selection(simcore_docker_compose: Dict) -> List[str]:
-    """ Selection of services from the simcore stack """
+    """Selection of services from the simcore stack"""
     ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection fixture
     all_core_services = list(simcore_docker_compose["services"].keys())
     return all_core_services
@@ -46,7 +46,7 @@ def core_services_selection(simcore_docker_compose: Dict) -> List[str]:
 
 @pytest.fixture(scope="module")
 def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
-    """ Selection of services from the ops stack """
+    """Selection of services from the ops stack"""
     ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection fixture
     all_ops_services = list(ops_docker_compose["services"].keys())
     return all_ops_services
@@ -205,7 +205,7 @@ def services_registry(
     print(
         f"Catalog should take {wait_for_catalog_to_detect} secs to detect new services ...",
     )
-    time.sleep(wait_for_catalog_to_detect)
+    time.sleep(wait_for_catalog_to_detect + 1)
 
     return {
         "sleeper_service": {
