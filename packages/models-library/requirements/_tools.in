@@ -4,5 +4,4 @@
 
 --requirement ../../../requirements/devenv.txt
 
-erdantic
 typer
