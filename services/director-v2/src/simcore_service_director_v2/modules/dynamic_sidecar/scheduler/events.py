@@ -296,7 +296,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             )
         except Exception as e:  # pylint: disable=broad-except
             logger.warning(
-                "Could not begin destruction of %s\n%s",
+                "Could not contact dynamic-sidecar to begin destruction of %s\n%s",
                 scheduler_data.service_name,
                 str(e),
             )
@@ -324,7 +324,10 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 logger.info("State saved by dynamic-sidecar")
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(
-                    "Could not save service state %s\n%s",
+                    (
+                        "Could not contact dynamic-sidecar to save service "
+                        "state and upload outputs %s\n%s"
+                    ),
                     scheduler_data.service_name,
                     str(e),
                 )
