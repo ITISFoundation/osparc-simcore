@@ -32,20 +32,22 @@ from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver import catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.director import setup_director
+from simcore_service_webserver.director.module_setup import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
-from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.login.module_setup import setup_login
 from simcore_service_webserver.products import setup_products
-from simcore_service_webserver.projects import setup_projects
+from simcore_service_webserver.projects.module_setup import setup_projects
 from simcore_service_webserver.projects.projects_handlers import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
-from simcore_service_webserver.resource_manager import setup_resource_manager
+from simcore_service_webserver.resource_manager.module_setup import (
+    setup_resource_manager,
+)
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
+from simcore_service_webserver.socketio.module_setup import setup_socketio
 from simcore_service_webserver.tags import setup_tags
 from simcore_service_webserver.utils import now_str, to_datetime
 from socketio.exceptions import ConnectionError as SocketConnectionError
@@ -175,7 +177,7 @@ async def catalog_subsystem_mock(
     services_in_project = []
 
     def creator(projects: Optional[Union[List[Dict], Dict]] = None) -> None:
-        for proj in projects:
+        for proj in projects or []:
             services_in_project.extend(
                 [
                     {"key": s["key"], "version": s["version"]}
@@ -230,7 +232,7 @@ async def _list_projects(
         url = url.with_query(**query_parameters)
 
     resp = await client.get(url)
-    data, errors = await assert_status(resp, expected)
+    data, _ = await assert_status(resp, expected)
     return data
 
 
@@ -254,7 +256,7 @@ async def _assert_get_same_project(
 
 async def _new_project(
     client,
-    expected_response: web.HTTPException,
+    expected_response: Type[web.HTTPException],
     logged_user: Dict[str, str],
     primary_group: Dict[str, str],
     *,
@@ -546,11 +548,6 @@ async def test_share_project(
         )
 
 
-@pytest.fixture()
-def ensure_run_in_sequence_context_is_empty():
-    async_utils.sequential_jobs_contexts = {}
-
-
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -595,7 +592,7 @@ async def test_open_project(
                     request_dns=request_dns,
                 )
             )
-        mocked_director_v2_api["director_v2.start_service"].assert_has_calls(calls)
+        mocked_director_v2_api["director_v2_api.start_service"].assert_has_calls(calls)
 
 
 @pytest.mark.parametrize(*standard_role_response())
@@ -611,7 +608,7 @@ async def test_close_project(
     # POST /v0/projects/{project_id}:close
     fakes = fake_services(5)
     assert len(fakes) == 5
-    mocked_director_v2_api["director_v2.get_services"].return_value = fakes
+    mocked_director_v2_api["director_v2_core.get_services"].return_value = fakes
 
     # open project
     client_id = client_session_id_factory()
@@ -619,10 +616,10 @@ async def test_close_project(
     resp = await client.post(url, json=client_id)
 
     if resp.status == web.HTTPOk.status_code:
-        mocked_director_v2_api["director_v2.get_services"].assert_any_call(
+        mocked_director_v2_api["director_v2_api.get_services"].assert_any_call(
             client.server.app, logged_user["id"], user_project["uuid"]
         )
-        mocked_director_v2_api["director_v2.get_services"].reset_mock()
+        mocked_director_v2_api["director_v2_core.get_services"].reset_mock()
 
     # close project
     url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
@@ -641,7 +638,7 @@ async def test_close_project(
                 project_id=user_project["uuid"],
             ),
         ]
-        mocked_director_v2_api["director_v2.get_services"].assert_has_calls(calls)
+        mocked_director_v2_api["director_v2_core.get_services"].assert_has_calls(calls)
 
         calls = [
             call(
@@ -651,7 +648,7 @@ async def test_close_project(
             )
             for service in fakes
         ]
-        mocked_director_v2_api["director_v2.stop_service"].assert_has_calls(calls)
+        mocked_director_v2_api["director_v2_core.stop_service"].assert_has_calls(calls)
 
 
 @pytest.mark.parametrize(
@@ -767,34 +764,34 @@ async def test_project_node_lifetime(
     data, errors = await assert_status(resp, create_exp)
     node_id = "wrong_node_id"
     if resp.status == web.HTTPCreated.status_code:
-        mocked_director_v2_api["director_v2.start_service"].assert_called_once()
+        mocked_director_v2_api["director_v2_api.start_service"].assert_called_once()
         assert "node_id" in data
         node_id = data["node_id"]
     else:
-        mocked_director_v2_api["director_v2.start_service"].assert_not_called()
+        mocked_director_v2_api["director_v2_api.start_service"].assert_not_called()
 
     # create a new NOT dynamic node...
-    mocked_director_v2_api["director_v2.start_service"].reset_mock()
+    mocked_director_v2_api["director_v2_api.start_service"].reset_mock()
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {"service_key": "some/notdynamic/key", "service_version": "1.3.4"}
     resp = await client.post(url, json=body)
     data, errors = await assert_status(resp, create_exp)
     node_id_2 = "wrong_node_id"
     if resp.status == web.HTTPCreated.status_code:
-        mocked_director_v2_api["director_v2.start_service"].assert_not_called()
+        mocked_director_v2_api["director_v2_api.start_service"].assert_not_called()
         assert "node_id" in data
         node_id_2 = data["node_id"]
     else:
-        mocked_director_v2_api["director_v2.start_service"].assert_not_called()
+        mocked_director_v2_api["director_v2_api.start_service"].assert_not_called()
 
     # get the node state
-    mocked_director_v2_api["director_v2.get_services"].return_value = [
+    mocked_director_v2_api["director_v2_api.get_services"].return_value = [
         {"service_uuid": node_id, "service_state": "running"}
     ]
     url = client.app.router["get_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
-    mocked_director_v2_api["director_v2.get_service_state"].return_value = {
+    mocked_director_v2_api["director_v2_api.get_service_state"].return_value = {
         "service_state": "running"
     }
     resp = await client.get(url)
@@ -804,12 +801,12 @@ async def test_project_node_lifetime(
         assert data["service_state"] == "running"
 
     # get the NOT dynamic node state
-    mocked_director_v2_api["director_v2.get_services"].return_value = []
+    mocked_director_v2_api["director_v2_api.get_services"].return_value = []
 
     url = client.app.router["get_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id_2
     )
-    mocked_director_v2_api["director_v2.get_service_state"].return_value = {
+    mocked_director_v2_api["director_v2_api.get_service_state"].return_value = {
         "service_state": "idle"
     }
     resp = await client.get(url)
@@ -819,7 +816,7 @@ async def test_project_node_lifetime(
         assert data["service_state"] == "idle"
 
     # delete the node
-    mocked_director_v2_api["director_v2.get_services"].return_value = [
+    mocked_director_v2_api["director_v2_api.get_services"].return_value = [
         {"service_uuid": node_id}
     ]
     url = client.app.router["delete_node"].url_for(
@@ -828,14 +825,14 @@ async def test_project_node_lifetime(
     resp = await client.delete(url)
     data, errors = await assert_status(resp, deletion_exp)
     if resp.status == web.HTTPNoContent.status_code:
-        mocked_director_v2_api["director_v2.stop_service"].assert_called_once()
+        mocked_director_v2_api["director_v2_api.stop_service"].assert_called_once()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
     else:
-        mocked_director_v2_api["director_v2.stop_service"].assert_not_called()
+        mocked_director_v2_api["director_v2_api.stop_service"].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
 
     # delete the NOT dynamic node
-    mocked_director_v2_api["director_v2.stop_service"].reset_mock()
+    mocked_director_v2_api["director_v2_api.stop_service"].reset_mock()
     mock_storage_api_delete_data_folders_of_project_node.reset_mock()
     # mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id}])
     url = client.app.router["delete_node"].url_for(
@@ -844,10 +841,10 @@ async def test_project_node_lifetime(
     resp = await client.delete(url)
     data, errors = await assert_status(resp, deletion_exp)
     if resp.status == web.HTTPNoContent.status_code:
-        mocked_director_v2_api["director_v2.stop_service"].assert_not_called()
+        mocked_director_v2_api["director_v2_api.stop_service"].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
     else:
-        mocked_director_v2_api["director_v2.stop_service"].assert_not_called()
+        mocked_director_v2_api["director_v2_api.stop_service"].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
 
 

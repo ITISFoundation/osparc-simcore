@@ -1,6 +1,7 @@
 """ Storage subsystem's API: responsible of communication with storage service
 
 """
+import asyncio
 import logging
 from pprint import pformat
 from typing import Any, Dict, Tuple
@@ -108,7 +109,7 @@ async def is_healthy(app: web.Application) -> bool:
             timeout=ClientTimeout(total=2, connect=1),
         )
         return True
-    except (ClientError, TimeoutError) as err:
+    except (ClientError, asyncio.TimeoutError) as err:
         # ClientResponseError, ClientConnectionError, ClientPayloadError, InValidURL
         log.debug("Storage is NOT healthy: %s", err)
         return False

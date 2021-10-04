@@ -26,30 +26,32 @@ from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
 )
+from simcore_service_webserver.application import (
+    setup_director,
+    setup_director_v2,
+    setup_exporter,
+    setup_login,
+    setup_products,
+    setup_projects,
+    setup_resource_manager,
+    setup_rest,
+    setup_security,
+    setup_session,
+    setup_socketio,
+    setup_storage,
+    setup_users,
+)
 from simcore_service_webserver.catalog import setup_catalog
 from simcore_service_webserver.constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects
-from simcore_service_webserver.director import setup_director
-from simcore_service_webserver.director_v2 import setup_director_v2
-from simcore_service_webserver.exporter import setup_exporter
 from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum
 from simcore_service_webserver.exporter.file_downloader import ParallelDownloader
-from simcore_service_webserver.login import setup_login
-from simcore_service_webserver.products import setup_products
-from simcore_service_webserver.projects import setup_projects
-from simcore_service_webserver.resource_manager import setup_resource_manager
-from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.scicrunch.submodule_setup import (
     setup_scicrunch_submodule,
 )
-from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
-from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio import setup_socketio
-from simcore_service_webserver.storage import setup_storage
 from simcore_service_webserver.storage_handlers import get_file_download_url
-from simcore_service_webserver.users import setup_users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from yarl import URL
 

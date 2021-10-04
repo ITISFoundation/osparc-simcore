@@ -14,6 +14,7 @@ BuiltinTypes = Union[StrictBool, StrictInt, StrictFloat, str]
 # SEE https://pydantic-docs.helpmanual.io/usage/models/#orm-mode-aka-arbitrary-class-instances
 
 CommitProxy = RowProxy
+BranchProxy = RowProxy
 TagProxy = RowProxy
 CommitLog = Tuple[CommitProxy, List[TagProxy]]
 
@@ -22,7 +23,9 @@ ProjectDict = Dict
 
 HEAD = f"{__file__}/ref/HEAD"
 
-RefID = Union[int, str]
+CommitID = int
+BranchID = int
+RefID = Union[CommitID, str]
 
 
 class Checkpoint(BaseModel):

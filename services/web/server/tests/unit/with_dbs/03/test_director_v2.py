@@ -13,7 +13,7 @@ from aioresponses import aioresponses
 from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
 from pytest_simcore.helpers.utils_assert import assert_status
-from simcore_service_webserver import director_v2
+from simcore_service_webserver import director_v2_api
 from simcore_service_webserver.db_models import UserRole
 
 
@@ -105,7 +105,7 @@ async def test_stop_pipeline(
 
 
 async def test_create_pipeline(client, user_id: PositiveInt, project_id: UUID):
-    task_out = await director_v2.create_or_update_pipeline(
+    task_out = await director_v2_api.create_or_update_pipeline(
         client.app, user_id, project_id
     )
 
@@ -117,12 +117,14 @@ async def test_get_computation_task(
     user_id: PositiveInt,
     project_id: UUID,
 ):
-    task_out = await director_v2.get_computation_task(client.app, user_id, project_id)
+    task_out = await director_v2_api.get_computation_task(
+        client.app, user_id, project_id
+    )
 
     assert task_out.state == RunningState.NOT_STARTED
 
 
 async def test_delete_pipeline(client, user_id: PositiveInt, project_id: UUID):
-    project_running_state = await director_v2.delete_pipeline(
+    project_running_state = await director_v2_api.delete_pipeline(
         client.app, user_id, project_id
     )
