@@ -6,7 +6,7 @@ import itertools
 import logging
 from copy import deepcopy
 from typing import Dict, Generator, Iterator, List, Tuple
-from uuid import UUID
+from uuid import UUID, uuid3
 
 from aiohttp import web
 from models_library.frontend_services_catalog import is_iterator_service
@@ -24,10 +24,12 @@ log = logging.getLogger(__file__)
 
 NodesDict = Dict[NodeID, Node]
 NodeOutputsDict = Dict[OutputID, OutputTypes]
-Parameters = List[NodeOutputsDict]
+Parameters = Tuple[NodeOutputsDict]
+
+ParametersNodesPair = Tuple[Tuple[NodeOutputsDict], NodesDict]
 
 
-def _build_project_iterations(project_nodes: NodesDict):
+def _build_project_iterations(project_nodes: NodesDict) -> List[ParametersNodesPair]:
 
     # select iterable nodes
     iterable_nodes_defs: List[ServiceDockerData] = []  # schemas of iterable nodes
@@ -128,7 +130,11 @@ async def get_or_create_runnable_projects(
     if repo_id is None:
         repo_id = await vc_repo.init_repo(project_uuid)
 
-    main_commit_id = await vc_repo.commit(repo_id, message=f"auto:main/{project_uuid}")
+    main_commit_id = await vc_repo.commit(
+        repo_id,
+        tag=f"auto:main/{project_uuid}",
+        message="auto-commit at get_or_create_runnable_projects",
+    )
     runnable_project_vc_commits.append(main_commit_id)
 
     # std-project
@@ -153,13 +159,20 @@ async def get_or_create_runnable_projects(
     # Each iteration generates a set of 'parameters'
     #  - parameters are set in the corresponding outputs of the meta-nodes
     #
-    for parameters, project_nodes_iteration in iterations:
+    parameters: Parameters
+    project_nodes_iteration: NodesDict
+
+    for iteration_index, (parameters, project_nodes_iteration) in enumerate(iterations):
         log.debug(
             "Creating snapshot of project %s with parameters=%s",
             project_uuid,
             parameters,
         )
         project["workbench"] = project_nodes_iteration
+
+        new_project_uuid = uuid3(project_uuid, f"{main_commit_id}/{iteration_index}")
+
+        # TODO:
 
         # FIXME: raises if commit or branch already exists
         branch = await vc_repo.force_branch(
@@ -169,6 +182,7 @@ async def get_or_create_runnable_projects(
         # TODO: inject projects in
         raise NotImplementedError("WIP:")
 
+        runnable_project_ids.append(new_project_uuid)
         runnable_project_vc_commits.append(branch.parent_commit_id)
 
     return runnable_project_ids, runnable_project_vc_commits
@@ -209,3 +223,12 @@ async def get_runnable_projects_ids(
     raise NotImplementedError()
 
     return runnable_project_ids
+
+
+def extract_parameters(
+    vc_repo: VersionControlRepository, project_uuid: ProjectID, commit_id: CommitID
+) -> Parameters:
+    # TODO: get snapshot
+    #
+
+    raise NotImplementedError()
