@@ -283,7 +283,9 @@ async def mocked_director_v2_api(loop, mocker):
 
 
 @pytest.fixture
-async def mocked_dynamic_service(loop, client, mocked_director_v2_api):
+def create_dynamic_service_mock(
+    loop, client: TestClient, mocked_director_v2_api: Dict
+) -> Callable:
     services = []
 
     async def create(user_id, project_id) -> Dict:
@@ -310,6 +312,7 @@ async def mocked_dynamic_service(loop, client, mocked_director_v2_api):
         services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
         mocked_director_v2_api["director_v2_api.get_services"].return_value = services
+        mocked_director_v2_api["director_v2_core.get_services"].return_value = services
         return running_service_dict
 
     return create

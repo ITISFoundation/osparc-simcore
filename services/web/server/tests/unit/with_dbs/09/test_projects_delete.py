@@ -93,15 +93,15 @@ async def test_delete_multiple_opened_project_forbidden(
     logged_user,
     user_project,
     mocked_director_v2_api,
-    mocked_dynamic_service,
+    create_dynamic_service_mock,
     socketio_client_factory: Callable,
     client_session_id_factory: Callable,
     user_role,
     expected_ok,
     expected_forbidden,
 ):
-    # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
-    service = await mocked_dynamic_service(logged_user["id"], user_project["uuid"])
+    # service in project = await create_dynamic_service_mock(logged_user["id"], empty_user_project["uuid"])
+    service = await create_dynamic_service_mock(logged_user["id"], user_project["uuid"])
 
     # open project in tab1
     client_session_id1 = client_session_id_factory()
