@@ -1,18 +1,9 @@
 import json
 from contextlib import suppress
 from pathlib import Path
-from typing import (
-    Any,
-    Dict,
-    ItemsView,
-    KeysView,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-    ValuesView,
-)
+from typing import Optional, Union
 
+from models_library.generics import DictBaseModel
 from models_library.services import PROPERTY_KEY_RE
 from pydantic import (
     AnyUrl,
@@ -23,48 +14,8 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     StrictStr,
-    create_model,
 )
-from pydantic.fields import FieldInfo
 from typing_extensions import Annotated
-
-
-class TaskBaseModel(BaseModel):
-    class Config:
-        extra = Extra.forbid
-
-
-class DynamicTaskInputData(TaskBaseModel):
-    ...
-
-
-class DynamicTaskOutputData(TaskBaseModel):
-    ...
-
-
-InputTypes = Union[
-    Type[StrictBool], Type[StrictInt], Type[StrictFloat], Type[StrictStr], Type[AnyUrl]
-]
-
-
-class FileUrl(BaseModel):
-    url: AnyUrl
-    file_mapping: Optional[str] = None
-
-
-PortKey = Annotated[str, Field(regex=PROPERTY_KEY_RE)]
-
-
-def create_inputs_signature(
-    name: str,
-    input_data: Dict[
-        PortKey,
-        Tuple[InputTypes, FieldInfo],
-    ],
-) -> Type[DynamicTaskInputData]:
-    return create_model(
-        name, **input_data, __module__=__name__, __base__=DynamicTaskInputData
-    )
 
 
 class PortSchema(BaseModel):
@@ -72,64 +23,98 @@ class PortSchema(BaseModel):
 
     class Config:
         extra = Extra.forbid
+        schema_extra = {
+            "examples": [
+                {
+                    "required": True,
+                },
+                {
+                    "required": False,
+                },
+            ]
+        }
 
 
 class FilePortSchema(PortSchema):
     mapping: Optional[str] = None
     url: AnyUrl
 
+    class Config(PortSchema.Config):
+        schema_extra = {
+            "examples": [
+                {
+                    "required": True,
+                    "mapping": "some_filename.txt",
+                    "url": "ftp://some_file_url",
+                },
+                {
+                    "required": False,
+                    "url": "ftp://some_file_url",
+                },
+            ]
+        }
 
-PortValue = Union[StrictBool, StrictInt, StrictFloat, StrictStr, FileUrl, None]
+
+class FileUrl(BaseModel):
+    url: AnyUrl
+    file_mapping: Optional[str] = None
+
+    class Config:
+        extra = Extra.forbid
+        schema_extra = {
+            "examples": [
+                {
+                    "url": "s3://some_file_url",
+                },
+                {"url": "s3://some_file_url", "file_mapping": "some_file_name.txt"},
+            ]
+        }
+
+
+PortKey = Annotated[str, Field(regex=PROPERTY_KEY_RE)]
+PortValue = Union[StrictBool, StrictInt, StrictFloat, StrictStr, FileUrl]
 PortSchemaValue = Union[PortSchema, FilePortSchema]
 
 
-class TaskInputData(BaseModel):
-    __root__: Dict[PortKey, PortValue]
-
-    def items(self) -> ItemsView[PortKey, PortValue]:
-        return self.__root__.items()
-
-
-class TaskOutputDataSchema(BaseModel):
-    __root__: Dict[PortKey, PortSchemaValue]
-
-    def __getitem__(self, k: PortKey) -> PortSchemaValue:
-        return self.__root__.__getitem__(k)
-
-    def __setitem__(self, k: PortKey, v: PortSchemaValue) -> None:
-        self.__root__.__setitem__(k, v)
-
-    def items(self) -> ItemsView[PortKey, PortSchemaValue]:
-        return self.__root__.items()
-
-    def keys(self) -> KeysView[PortKey]:
-        return self.__root__.keys()
-
-    def __iter__(self) -> Any:
-        return self.__root__.__iter__()
+class TaskInputData(DictBaseModel[PortKey, PortValue]):
+    class Config(DictBaseModel.Config):
+        schema_extra = {
+            "examples": [
+                {
+                    "boolean_input": False,
+                    "int_input": -45,
+                    "float_input": 4564.45,
+                    "string_input": "nobody thinks like a string",
+                    "file_input": {"url": "s3://some_file_url"},
+                },
+            ]
+        }
 
 
-class TaskOutputData(BaseModel):
-    __root__: Dict[PortKey, PortValue]
+class TaskOutputDataSchema(DictBaseModel[PortKey, PortSchemaValue]):
+    class Config(DictBaseModel.Config):
+        schema_extra = {
+            "examples": [
+                {
+                    "boolean_output": {"required": False},
+                    "int_output": {"required": True},
+                    "float_output": {"required": True},
+                    "string_output": {"required": False},
+                    "file_output": {
+                        "required": True,
+                        "url": "s3://some_file_url",
+                        "mapping": "the_output_filename",
+                    },
+                    "optional_file_output": {
+                        "required": False,
+                        "url": "s3://some_file_url",
+                    },
+                },
+            ]
+        }
 
-    def __getitem__(self, k: PortKey) -> PortValue:
-        return self.__root__.__getitem__(k)
 
-    def __setitem__(self, k: PortKey, v: PortValue) -> None:
-        self.__root__.__setitem__(k, v)
-
-    def items(self) -> ItemsView[PortKey, PortValue]:
-        return self.__root__.items()
-
-    def keys(self) -> KeysView[PortKey]:
-        return self.__root__.keys()
-
-    def values(self) -> ValuesView[PortValue]:
-        return self.__root__.values()
-
-    def __iter__(self) -> Any:
-        return self.__root__.__iter__()
-
+class TaskOutputData(DictBaseModel[PortKey, PortValue]):
     @classmethod
     def from_task_output(
         cls, schema: TaskOutputDataSchema, output_folder: Path
@@ -151,5 +136,27 @@ class TaskOutputData(BaseModel):
                         "url": f"{output_params.url}",
                         "file_mapping": file_path.name,
                     }
+                elif output_params.required:
+                    raise ValueError(
+                        f"Could not locate '{file_path}' in {output_folder}"
+                    )
+            else:
+                if output_key not in data and output_params.required:
+                    raise ValueError(
+                        f"Could not locate '{output_key}' in {output_data_file}"
+                    )
 
         return cls.parse_obj(data)
+
+    class Config(DictBaseModel.Config):
+        schema_extra = {
+            "examples": [
+                {
+                    "boolean_output": False,
+                    "int_output": -45,
+                    "float_output": 4564.45,
+                    "string_output": "nobody thinks like a string",
+                    "file_output": {"url": "s3://some_file_url"},
+                },
+            ]
+        }
