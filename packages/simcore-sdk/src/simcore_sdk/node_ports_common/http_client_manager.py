@@ -1,11 +1,12 @@
 import warnings
 from functools import wraps
 from json import JSONDecodeError
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List
 from urllib.parse import quote
 
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
+from models_library.generics import DataEnveloped
 from models_library.users import UserID
 from pydantic.main import BaseModel
 from pydantic.networks import AnyUrl
@@ -61,23 +62,13 @@ class FileLocationsArray(BaseModel):
         return self.__root__[item]
 
 
-class FileLocationsArrayEnveloped(BaseModel):
-    data: Optional[FileLocationsArray]
-    error: Any
-
-
 class PresignedLink(BaseModel):
     link: AnyUrl
 
 
-class PresignedLinkEnveloped(BaseModel):
-    data: Optional[PresignedLink]
-    error: Any
-
-
-class FileMetadataEnveloped(BaseModel):
-    data: Optional[Dict[str, Any]]
-    error: Any
+FileLocationsArrayEnveloped = DataEnveloped[FileLocationsArray]
+PresignedLinkEnveloped = DataEnveloped[PresignedLink]
+FileMetadataEnveloped = DataEnveloped[Dict[str, Any]]
 
 
 def handle_client_exception(handler: Callable):
