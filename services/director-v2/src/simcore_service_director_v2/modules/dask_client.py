@@ -131,7 +131,9 @@ def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
         )
 
     async def on_shutdown() -> None:
-        await DaskClient.delete(app)
+        if app.state.dask_client:
+            await app.state.dask_client.delete()
+            del app.state.dask_client  # type: ignore
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
@@ -171,14 +173,11 @@ class DaskClient:
             )
         return app.state.dask_client
 
-    @classmethod
-    async def delete(cls, app: FastAPI) -> None:
-        if not hasattr(app.state, "dask_client"):
-            raise ConfigurationError(
-                "Dask client is not available. Please check the configuration."
-            )
+    async def delete(self, app: FastAPI) -> None:
+        for task in self._subscribed_tasks:
+            task.cancel()
+
         await app.state.dask_client.client.close()
-        del app.state.dask_client  # type: ignore
 
     @retry(
         **dask_retry_policy,

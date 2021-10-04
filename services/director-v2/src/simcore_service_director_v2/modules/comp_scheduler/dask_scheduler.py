@@ -1,3 +1,4 @@
+import json
 import logging
 from dataclasses import dataclass
 from typing import Callable, Dict, List
@@ -17,6 +18,7 @@ from ...modules.dask_client import DaskClient
 from ...utils.dask import parse_dask_job_id
 from ...utils.scheduler import get_repository
 from ..db.repositories.comp_tasks import CompTasksRepository
+from ..rabbitmq import RabbitMQClient
 from .base_scheduler import BaseCompScheduler
 
 logger = logging.getLogger(__name__)
@@ -26,6 +28,7 @@ logger = logging.getLogger(__name__)
 class DaskScheduler(BaseCompScheduler):
     settings: DaskSchedulerSettings
     dask_client: DaskClient
+    rabbitmq_client: RabbitMQClient
 
     def __post_init__(self):
         self.dask_client.register_handlers(
@@ -75,10 +78,30 @@ class DaskScheduler(BaseCompScheduler):
 
     async def _task_progress_change_handler(self, event: str) -> None:
         # FIXME: this must go to the rabbitMQ, and also maybe only construct to save time?
-        task_state_event = TaskProgressEvent.parse_raw(event)
-        logger.debug("received task progress update: %s", task_state_event)
+        task_progress_event = TaskProgressEvent.parse_raw(event)
+        logger.debug("received task progress update: %s", task_progress_event)
+        *_, user_id, project_id, node_id = parse_dask_job_id(task_progress_event.job_id)
+        message = {
+            "user_id": user_id,
+            "project_id": project_id,
+            "node_id": node_id,
+            "progress": task_progress_event.progress,
+        }
+        await self.rabbitmq_client.publish_message(
+            task_progress_event.topic_name(), json.dumps(message)
+        )
 
     async def _task_log_change_handler(self, event: str) -> None:
         # FIXME: this must go to the rabbitMQ, and also maybe only construct to save time?
-        task_state_event = TaskLogEvent.parse_raw(event)
-        logger.debug("received task log update: %s", task_state_event)
+        task_log_event = TaskLogEvent.parse_raw(event)
+        logger.debug("received task log update: %s", task_log_event)
+        *_, user_id, project_id, node_id = parse_dask_job_id(task_log_event.job_id)
+        message = {
+            "user_id": user_id,
+            "project_id": project_id,
+            "node_id": node_id,
+            "messages": task_log_event.log,
+        }
+        await self.rabbitmq_client.publish_message(
+            task_log_event.topic_name(), json.dumps(message)
+        )

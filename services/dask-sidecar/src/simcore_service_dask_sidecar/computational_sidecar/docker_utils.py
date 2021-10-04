@@ -172,7 +172,7 @@ async def publish_logs(
             TaskProgressEvent.from_dask_worker(progress=float(message)),
         )
     else:
-        publish_event(logs_pub, TaskLogEvent.from_dask_worker(logs=[message]))
+        publish_event(logs_pub, TaskLogEvent.from_dask_worker(log=message))
 
 
 async def monitor_container_logs(

@@ -24,6 +24,7 @@ class RabbitSettings(BaseCustomSettings):
     # channels
     RABBIT_CHANNELS: Dict[str, str] = {
         "log": "comp.backend.channels.log",
+        "progress": "comp.backend.channels.progress",
         "instrumentation": "comp.backend.channels.instrumentation",
     }
 

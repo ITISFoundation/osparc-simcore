@@ -49,19 +49,20 @@ async def parse_rabbit_message_data(app: web.Application, data: Dict) -> None:
     # get common data
     user_id = data["user_id"]
     project_id = data["project_id"]
-    node_id = data["Node"]
+    node_id = data["node_id"]
 
     try:
         messages = {}
         if data["Channel"] == "Progress":
             # update corresponding project, node, progress value
             project = await projects_api.update_project_node_progress(
-                app, user_id, project_id, node_id, progress=data["Progress"]
+                app, user_id, project_id, node_id, progress=data["progress"]
             )
-            messages["nodeUpdated"] = {
-                "Node": node_id,
-                "data": project["workbench"][node_id],
-            }
+            if project:
+                messages["nodeUpdated"] = {
+                    "node_id": node_id,
+                    "data": project["workbench"][node_id],
+                }
         elif data["Channel"] == "Log":
             messages["logger"] = data
         if messages:
@@ -157,7 +158,7 @@ async def subscribe(app: web.Application) -> None:
 
 @retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
 async def wait_till_rabbitmq_responsive(url: str) -> bool:
-    """Check if something responds to ``url`` """
+    """Check if something responds to ``url``"""
     connection = await aio_pika.connect(url)
     await connection.close()
     return True
