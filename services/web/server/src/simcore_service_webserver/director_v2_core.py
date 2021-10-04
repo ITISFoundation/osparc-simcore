@@ -1,8 +1,10 @@
+import asyncio
 import logging
 from typing import Any, Dict, List, Optional, Type, Union
 from uuid import UUID
 
-from aiohttp import ClientError, ClientTimeout, web
+import aiohttp
+from aiohttp import ClientTimeout, web
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.settings.services_common import ServicesCommonSettings
@@ -21,7 +23,8 @@ SERVICE_RETRIEVE_HTTP_TIMEOUT = ClientTimeout(
     total=60 * 60, connect=None, sock_connect=5  # type:ignore
 )
 
-DataDict = Dict[str, Any]
+DataType = Dict[str, Any]
+DataBody = Union[DataType, List[DataType]]
 
 # base/ERRORS ------------------------------------------------
 
@@ -44,22 +47,25 @@ async def _request_director_v2(
     url: URL,
     expected_status: Type[web.HTTPSuccessful] = web.HTTPOk,
     headers: Optional[Dict[str, str]] = None,
-    data: Optional[bytes] = None,
+    data: Optional[Any] = None,
     **kwargs,
-) -> DataDict:
+) -> DataBody:
+
     session = get_client_session(app)
     try:
         async with session.request(
             method, url, headers=headers, json=data, **kwargs
         ) as response:
-            # sometimes director-v0 (via redirects) replies
-            # in plain text
             payload: Union[Dict, str] = (
                 await response.json()
                 if response.content_type == "application/json"
                 else await response.text()
             )
 
+            # NOTE:
+            # sometimes director-v0 (via redirects)
+            # replies in plain text and this is considered an error
+            #
             if response.status != expected_status.status_code or isinstance(
                 payload, str
             ):
@@ -68,13 +74,14 @@ async def _request_director_v2(
             assert isinstance(payload, dict)  # nosec
             return payload
 
-    except TimeoutError as err:
+    # TODO: enrich with https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
+    except asyncio.TimeoutError as err:
         raise DirectorServiceError(
             web.HTTPServiceUnavailable.status_code,
             reason=f"request to director-v2 timed-out: {err}",
         ) from err
 
-    except ClientError as err:
+    except aiohttp.ClientError as err:
         raise DirectorServiceError(
             web.HTTPServiceUnavailable.status_code,
             reason=f"request to director-v2 service unexpected error {err}",
@@ -96,8 +103,8 @@ async def is_healthy(app: web.Application) -> bool:
             timeout=SERVICE_HEALTH_CHECK_TIMEOUT,
         )
         return True
-    except (ClientError, TimeoutError) as err:
-        # ClientResponseError, ClientConnectionError, ClientPayloadError, InValidURL
+    except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+        # SEE https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
         log.warning("Director is NOT healthy: %s", err)
         return False
 
@@ -105,16 +112,17 @@ async def is_healthy(app: web.Application) -> bool:
 @log_decorator(logger=log)
 async def create_or_update_pipeline(
     app: web.Application, user_id: PositiveInt, project_id: UUID
-) -> Optional[DataDict]:
-    director2_settings: Directorv2Settings = get_settings(app)
+) -> Optional[DataType]:
+    settings: Directorv2Settings = get_settings(app)
 
-    backend_url = URL(f"{director2_settings.endpoint}/computations")
+    backend_url = URL(f"{settings.endpoint}/computations")
     body = {"user_id": user_id, "project_id": f"{project_id}"}
     # request to director-v2
     try:
         computation_task_out = await _request_director_v2(
             app, "POST", backend_url, expected_status=web.HTTPCreated, data=body
         )
+        assert isinstance(computation_task_out, dict)  # nosec
         return computation_task_out
 
     except DirectorServiceError as exc:
@@ -126,11 +134,11 @@ async def get_computation_task(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> Optional[ComputationTask]:
 
-    director2_settings: Directorv2Settings = get_settings(app)
+    settings: Directorv2Settings = get_settings(app)
 
-    backend_url = URL(
-        f"{director2_settings.endpoint}/computations/{project_id}"
-    ).update_query(user_id=user_id)
+    backend_url = URL(f"{settings.endpoint}/computations/{project_id}").update_query(
+        user_id=user_id
+    )
 
     # request to director-v2
     try:
@@ -150,9 +158,9 @@ async def get_computation_task(
 async def delete_pipeline(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> None:
-    director2_settings: Directorv2Settings = get_settings(app)
+    settings: Directorv2Settings = get_settings(app)
 
-    backend_url = URL(f"{director2_settings.endpoint}/computations/{project_id}")
+    backend_url = URL(f"{settings.endpoint}/computations/{project_id}")
     body = {"user_id": user_id, "force": True}
 
     # request to director-v2
@@ -165,10 +173,8 @@ async def delete_pipeline(
 async def request_retrieve_dyn_service(
     app: web.Application, service_uuid: str, port_keys: List[str]
 ) -> None:
-    director2_settings: Directorv2Settings = get_settings(app)
-    backend_url = URL(
-        f"{director2_settings.endpoint}/dynamic_services/{service_uuid}:retrieve"
-    )
+    settings: Directorv2Settings = get_settings(app)
+    backend_url = URL(f"{settings.endpoint}/dynamic_services/{service_uuid}:retrieve")
     body = {"port_keys": port_keys}
 
     try:
@@ -195,7 +201,7 @@ async def start_service(
     service_uuid: str,
     request_dns: str,
     request_scheme: str,
-) -> Optional[Dict]:
+) -> DataType:
     """
     Requests to start a service:
     - legacy services request is redirected to `director-v0`
@@ -215,10 +221,10 @@ async def start_service(
         "X-Dynamic-Sidecar-Request-Scheme": request_scheme,
     }
 
-    director2_settings: Directorv2Settings = get_settings(app)
-    backend_url = URL(director2_settings.endpoint) / "dynamic_services"
+    settings: Directorv2Settings = get_settings(app)
+    backend_url = URL(settings.endpoint) / "dynamic_services"
 
-    return await _request_director_v2(
+    started_service = await _request_director_v2(
         app,
         "POST",
         backend_url,
@@ -227,25 +233,31 @@ async def start_service(
         expected_status=web.HTTPCreated,
     )
 
+    assert isinstance(started_service, dict)  # nosec
+    return started_service
+
 
 @log_decorator(logger=log)
 async def get_services(
     app: web.Application,
     user_id: Optional[PositiveInt] = None,
     project_id: Optional[str] = None,
-) -> List[DataDict]:
+) -> List[DataType]:
     params = {}
     if user_id:
         params["user_id"] = user_id
     if project_id:
         params["project_id"] = project_id
 
-    director2_settings: Directorv2Settings = get_settings(app)
-    backend_url = URL(director2_settings.endpoint) / "dynamic_services"
+    settings: Directorv2Settings = get_settings(app)
+    backend_url = URL(settings.endpoint) / "dynamic_services"
 
-    return await _request_director_v2(
+    services = await _request_director_v2(
         app, "GET", backend_url, params=params, expected_status=web.HTTPOk
     )
+
+    assert isinstance(services, list)  # nosec
+    return services
 
 
 @log_decorator(logger=log)
@@ -257,13 +269,13 @@ async def stop_service(
     # this will allow to sava bigger datasets from the services
     timeout = ServicesCommonSettings().webserver_director_stop_service_timeout
 
-    director2_settings: Directorv2Settings = get_settings(app)
+    settings: Directorv2Settings = get_settings(app)
     backend_url = (
-        URL(director2_settings.endpoint) / "dynamic_services" / f"{service_uuid}"
+        URL(settings.endpoint) / "dynamic_services" / f"{service_uuid}"
     ).update_query(
         save_state="true" if save_state else "false",
     )
-    return await _request_director_v2(
+    await _request_director_v2(
         app, "DELETE", backend_url, expected_status=web.HTTPNoContent, timeout=timeout
     )
 
@@ -271,18 +283,20 @@ async def stop_service(
 @log_decorator(logger=log)
 async def list_running_dynamic_services(
     app: web.Application, user_id: PositiveInt, project_id: ProjectID
-) -> List[Dict[str, str]]:
+) -> List[DataType]:
     """
     Retruns the running dynamic services from director-v0 and director-v2
     """
-    director2_settings: Directorv2Settings = get_settings(app)
-    backend_url = (URL(director2_settings.endpoint) / "dynamic_services").update_query(
-        user_id=user_id, project_id=project_id
-    )
+    settings: Directorv2Settings = get_settings(app)
+    url = URL(settings.endpoint) / "dynamic_services"
+    backend_url = url.with_query(user_id=str(user_id), project_id=str(project_id))
 
-    return await _request_director_v2(
+    services = await _request_director_v2(
         app, "GET", backend_url, expected_status=web.HTTPOk
     )
+
+    assert isinstance(services, list)  # nosec
+    return services
 
 
 @log_decorator(logger=log)
@@ -307,9 +321,12 @@ async def stop_services(
 
 
 @log_decorator(logger=log)
-async def get_service_state(app: web.Application, node_uuid: str) -> Dict:
-    director2_settings: Directorv2Settings = get_settings(app)
-    backend_url = URL(director2_settings.endpoint) / "dynamic_services" / f"{node_uuid}"
-    return await _request_director_v2(
+async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
+    settings: Directorv2Settings = get_settings(app)
+    backend_url = URL(settings.endpoint) / "dynamic_services" / f"{node_uuid}"
+    service_state = await _request_director_v2(
         app, "GET", backend_url, expected_status=web.HTTPOk
     )
+
+    assert isinstance(service_state, dict)  # nosec
+    return service_state

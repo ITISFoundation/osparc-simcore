@@ -1,11 +1,11 @@
 """ director v2 susystem configuration
 """
 
-from typing import Optional
+from functools import cached_property
 
 from aiohttp import ClientSession, web
 from models_library.basic_types import PortInt, VersionTag
-from pydantic import AnyHttpUrl, BaseSettings, Field, validator
+from pydantic import AnyHttpUrl, BaseSettings, Field
 from servicelib.aiohttp.application_keys import APP_CLIENT_SESSION_KEY
 
 SERVICE_NAME = "director-v2"
@@ -20,22 +20,19 @@ class Directorv2Settings(BaseSettings):
         "v2", alias="version", description="Director-v2 service API's version tag"
     )
 
-    endpoint: Optional[AnyHttpUrl] = None
+    @cached_property
+    def endpoint(self) -> str:
+        return AnyHttpUrl.build(
+            scheme="http",
+            host=self.host,
+            port=f"{self.port}",
+            path=f"/{self.vtag}",
+        )
 
-    @validator("endpoint", pre=True)
-    @classmethod
-    def auto_fill_endpoint(cls, v, values):
-        if v is None:
-            return AnyHttpUrl.build(
-                scheme="http",
-                host=values["host"],
-                port=f"{values['port']}",
-                path=f"/{values['vtag']}",
-            )
-        return v
-
-    class Config:
+    class Config(BaseSettings.Config):
+        # TODO: This will not be necessary when refactored with BaseCustomSettings
         env_prefix = "DIRECTOR_V2_"
+        keep_untouched = (cached_property,)
 
 
 def create_settings(app: web.Application) -> Directorv2Settings:
