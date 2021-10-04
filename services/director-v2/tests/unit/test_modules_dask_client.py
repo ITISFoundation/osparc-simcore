@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
+# pylint:disable=too-many-arguments
 
 import random
 from typing import Any, Dict, List, Tuple
