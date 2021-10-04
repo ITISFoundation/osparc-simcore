@@ -3,6 +3,7 @@ import logging
 import traceback
 from asyncio import Lock, Queue, Task, sleep
 from copy import deepcopy
+from dataclasses import dataclass, field
 from typing import Deque, Dict, List, Optional
 from uuid import UUID
 
@@ -93,17 +94,17 @@ async def _apply_observation_cycle(
         )
 
 
-class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
-    def __init__(self, app: FastAPI):
-        self._app: FastAPI = app
-        self._lock: Lock = Lock()
+@dataclass
+class DynamicSidecarsScheduler:
+    app: FastAPI
 
-        self._to_observe: Dict[str, LockWithSchedulerData] = {}
-        self._keep_running: bool = False
-        self._inverse_search_mapping: Dict[UUID, str] = {}
-        self._scheduler_task: Optional[Task] = None
-        self._trigger_observation_queue_task: Optional[Task] = None
-        self._trigger_observation_queue: Queue = Queue()
+    _lock: Lock = field(default_factory=Lock)
+    _to_observe: Dict[str, LockWithSchedulerData] = field(default_factory=dict)
+    _keep_running: bool = False
+    _inverse_search_mapping: Dict[UUID, str] = field(default_factory=dict)
+    _scheduler_task: Optional[Task] = None
+    _trigger_observation_queue_task: Optional[Task] = None
+    _trigger_observation_queue: Queue = field(default_factory=Queue)
 
     async def add_service(self, scheduler_data: SchedulerData) -> None:
         """Invoked before the service is started
@@ -211,7 +212,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             )
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self._app
+            self.app
         )
 
         try:
@@ -261,7 +262,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         scheduler_data: SchedulerData = self._to_observe[service_name].scheduler_data
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self._app
+            self.app
         )
 
         transferred_bytes = await dynamic_sidecar_client.service_pull_input_ports(
@@ -283,7 +284,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             ]
             scheduler_data: SchedulerData = lock_with_scheduler_data.scheduler_data
             try:
-                await _apply_observation_cycle(self._app, self, scheduler_data)
+                await _apply_observation_cycle(self.app, self, scheduler_data)
             except asyncio.CancelledError:  # pylint: disable=try-except-raise
                 raise  # pragma: no cover
             except Exception:  # pylint: disable=broad-except
@@ -319,11 +320,11 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
     async def _run_scheduler_task(self) -> None:
         settings: DynamicServicesSchedulerSettings = (
-            self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
+            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
 
         while self._keep_running:
-            logger.debug("Observing dynamic-sidecars")
+            logger.debug("Observing dynamic-sidecars %s", self._to_observe)
 
             try:
                 # prevent access to self._to_observe
@@ -340,7 +341,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
     async def _discover_running_services(self) -> None:
         """discover all services which were started before and add them to the scheduler"""
         dynamic_sidecar_settings: DynamicSidecarSettings = (
-            self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
         services_to_observe: Deque[
             ServiceLabelsStoredData

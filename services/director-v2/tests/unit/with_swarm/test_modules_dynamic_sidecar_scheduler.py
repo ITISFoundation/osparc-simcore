@@ -335,7 +335,7 @@ async def test_scheduler_health_timing_out(
     await scheduler.add_service(scheduler_data)
     await ensure_scheduler_runs_once()
 
-    assert scheduler_data.dynamic_sidecar.is_available == False
+    assert scheduler_data.dynamic_sidecar.is_available is False
 
 
 async def test_adding_service_two_times(
