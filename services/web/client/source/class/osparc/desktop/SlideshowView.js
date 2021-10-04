@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.SlideShowView", {
+qx.Class.define("osparc.desktop.SlideshowView", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -23,34 +23,44 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    const slideShowToolbar = this.__slideShowToolbar = new osparc.desktop.SlideShowToolbar();
-    slideShowToolbar.addListener("nodeSelected", e => {
+    const slideshowToolbar = this.__slideshowToolbar = new osparc.desktop.SlideshowToolbar();
+    slideshowToolbar.addListener("saveSlideshow", () => {
+      if (this.__currentNodeId) {
+        const slideshow = this.getStudy().getUi().getSlideshow();
+        if (!Object.keys(slideshow).includes(this.__currentNodeId)) {
+          this.__openFirstNode();
+        }
+      } else {
+        this.__openFirstNode();
+      }
+    }, this);
+    slideshowToolbar.addListener("nodeSelected", e => {
       const nodeId = e.getData();
       this.nodeSelected(nodeId);
     }, this);
-    slideShowToolbar.addListener("addServiceBetween", e => {
+    slideshowToolbar.addListener("addServiceBetween", e => {
       const {
         leftNodeId,
         rightNodeId
       } = e.getData();
       this.__requestServiceBetween(leftNodeId, rightNodeId);
     }, this);
-    slideShowToolbar.addListener("removeNode", e => {
+    slideshowToolbar.addListener("removeNode", e => {
       const nodeId = e.getData();
       this.__removeNode(nodeId);
     }, this);
-    slideShowToolbar.addListener("showNode", e => {
+    slideshowToolbar.addListener("showNode", e => {
       const {
         nodeId,
         desiredPos
       } = e.getData();
       this.__showNode(nodeId, desiredPos);
     }, this);
-    slideShowToolbar.addListener("hideNode", e => {
+    slideshowToolbar.addListener("hideNode", e => {
       const nodeId = e.getData();
       this.__hideNode(nodeId);
     }, this);
-    this._add(slideShowToolbar);
+    this._add(slideshowToolbar);
   },
 
   events: {
@@ -65,19 +75,19 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     },
 
     pageContext: {
-      check: ["slideshow", "fullSlideshow"],
+      check: ["guided", "app"],
       nullable: false,
-      init: "slideshow"
+      init: "guided"
     }
   },
 
   members: {
     __currentNodeId: null,
-    __slideShowToolbar: null,
+    __slideshowToolbar: null,
     __lastView: null,
 
     getStartStopButtons: function() {
-      return this.__slideShowToolbar.getStartStopButtons();
+      return this.__slideshowToolbar.getStartStopButtons();
     },
 
     getSelectedNodeIDs: function() {
@@ -115,24 +125,30 @@ qx.Class.define("osparc.desktop.SlideShowView", {
         this.getStudy().getUi().setCurrentNodeId(nodeId);
 
         let view;
-        if (node.isContainer()) {
-          view = new osparc.component.node.GroupNodeView();
-        } else if (node.isFilePicker()) {
-          view = new osparc.component.node.FilePickerNodeView();
+        if (node.isParameter()) {
+          view = new osparc.component.node.ParameterEditor(node);
+          view.formForSlideshow();
         } else {
-          view = new osparc.component.node.NodeView();
-        }
-        if (view) {
-          if (this.__lastView) {
-            this._remove(this.__lastView);
+          if (node.isContainer()) {
+            view = new osparc.component.node.GroupNodeView();
+          } else if (node.isFilePicker()) {
+            view = new osparc.component.node.FilePickerNodeView();
+          } else {
+            view = new osparc.component.node.NodeView();
           }
           view.setNode(node);
           view.populateLayout();
           view.getInputsView().exclude();
           view.getOutputsView().exclude();
-          if (this.getPageContext() === "fullSlideshow" && !node.isComputational()) {
+          if (this.getPageContext() === "app" && !node.isComputational()) {
             view.getHeaderLayout().exclude();
             view.getSettingsLayout().exclude();
+          }
+        }
+
+        if (view) {
+          if (this.__lastView && this._getChildren().includes(this.__lastView)) {
+            this._remove(this.__lastView);
           }
           this._add(view, {
             flex: 1
@@ -143,19 +159,30 @@ qx.Class.define("osparc.desktop.SlideShowView", {
         if (!this.__isNodeReady(node, oldCurrentNodeId)) {
           return;
         }
+      } else if (this.__lastView) {
+        this._remove(this.__lastView);
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
 
       this.getStartStopButtons().nodeSelectionChanged([nodeId]);
     },
 
-    startSlides: function(context = "slideshow") {
-      this.setPageContext(context);
-      this.__slideShowToolbar.populateButtons(true);
-      const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
+    startSlides: function(context = "guided") {
       const study = this.getStudy();
-      const slideShow = study.getUi().getSlideshow().getData();
-      const isValid = Object.keys(slideShow).indexOf(currentNodeId) !== -1;
+      const slideshow = study.getUi().getSlideshow();
+      if (context === "app" && slideshow.isEmpty()) {
+        const sortedPipeline = study.getWorkbench().getPipelineLinearSorted();
+        if (sortedPipeline) {
+          sortedPipeline.forEach((nodeId, i) => {
+            slideshow.insertNode(nodeId, i);
+          });
+        }
+      }
+      const slideshowData = slideshow.getData();
+      this.setPageContext(context);
+      this.__slideshowToolbar.populateButtons(true);
+      const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
+      const isValid = Object.keys(slideshowData).indexOf(currentNodeId) !== -1;
       if (isValid && currentNodeId) {
         this.nodeSelected(currentNodeId);
       } else {
@@ -165,7 +192,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
     _applyStudy: function(study) {
       if (study) {
-        this.__slideShowToolbar.setStudy(study);
+        this.__slideshowToolbar.setStudy(study);
       }
     },
 
@@ -175,6 +202,8 @@ qx.Class.define("osparc.desktop.SlideShowView", {
         const nodes = study.getUi().getSlideshow().getSortedNodes();
         if (nodes.length) {
           this.nodeSelected(nodes[0].nodeId);
+        } else {
+          this.nodeSelected(null);
         }
       }
     },
@@ -240,7 +269,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       } else {
         slideshow.insertNode(nodeId, 0);
       }
-      this.__slideShowToolbar.populateButtons();
+      this.__slideshowToolbar.populateButtons();
     },
 
     __removeNode: function(nodeId) {
@@ -295,21 +324,21 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       // remove node
       workbench.removeNode(nodeId);
 
-      this.__slideShowToolbar.populateButtons();
+      this.__slideshowToolbar.populateButtons();
     },
 
-    __showNode: function(nodeId) {
+    __showNode: function(nodeId, desiredPos) {
       this.getStudy().getUi().getSlideshow()
-        .insertNode(nodeId, 1);
+        .insertNode(nodeId, desiredPos);
 
-      this.__slideShowToolbar.populateButtons();
+      this.__slideshowToolbar.populateButtons();
     },
 
     __hideNode: function(nodeId) {
       this.getStudy().getUi().getSlideshow()
         .removeNode(nodeId);
 
-      this.__slideShowToolbar.populateButtons();
+      this.__slideshowToolbar.populateButtons();
     }
   }
 });

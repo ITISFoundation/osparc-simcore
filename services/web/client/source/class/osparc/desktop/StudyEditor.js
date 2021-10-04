@@ -32,7 +32,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     });
     viewsStack.add(workbenchView);
 
-    const slideshowView = this.__slideshowView = new osparc.desktop.SlideShowView();
+    const slideshowView = this.__slideshowView = new osparc.desktop.SlideshowView();
     viewsStack.add(slideshowView);
 
     slideshowView.addListener("startPartialPipeline", e => {
@@ -72,8 +72,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     pageContext: {
-      check: ["workbench", "slideshow", "fullSlideshow"],
+      check: ["workbench", "guided", "app"],
       nullable: false,
+      event: "changePageContext",
       apply: "_applyPageContext"
     }
   },
@@ -145,14 +146,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
           const pageContext = this.getPageContext();
           switch (pageContext) {
-            case "slideshow":
-            case "fullSlideshow":
+            case "guided":
+            case "app":
               this.__slideshowView.startSlides(pageContext);
               break;
             default:
               this.__workbenchView.openFirstNode();
               break;
           }
+          this.bind("pageContext", study.getUi(), "mode");
 
           const workbench = study.getWorkbench();
           workbench.addListener("retrieveInputs", e => {
@@ -214,7 +216,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       const study = this.getStudy();
       const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(study);
-      const title = this.tr("Edit Slides");
+      const title = this.tr("Edit Slideshow");
       const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 600, 500).set({
         modal: false,
         clickAwayClose: false
@@ -388,8 +390,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__viewsStack.setSelection([this.__workbenchView]);
           this.__workbenchView.nodeSelected(this.getStudy().getUi().getCurrentNodeId());
           break;
-        case "slideshow":
-        case "fullSlideshow":
+        case "guided":
+        case "app":
           this.__viewsStack.setSelection([this.__slideshowView]);
           this.__slideshowView.startSlides(newCtxt);
           break;

@@ -280,6 +280,13 @@ qx.Class.define("osparc.data.model.Study", {
             resolve(false);
           });
       });
+    },
+
+    getUiMode: function(studyData) {
+      if ("ui" in studyData && "mode" in studyData["ui"]) {
+        return studyData["ui"]["mode"];
+      }
+      return null;
     }
   },
 
@@ -320,6 +327,10 @@ qx.Class.define("osparc.data.model.Study", {
         return this.getState()["locked"]["value"];
       }
       return false;
+    },
+
+    isPipelineEmtpy: function() {
+      return Object.keys(this.getWorkbench().getNodes()).length === 0;
     },
 
     __applyAccessRights: function(value) {

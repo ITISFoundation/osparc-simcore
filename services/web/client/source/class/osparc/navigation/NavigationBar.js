@@ -63,8 +63,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
   events: {
     "dashboardPressed": "qx.event.type.Event",
-    "slidesStart": "qx.event.type.Event",
-    "slidesFullStart": "qx.event.type.Event",
+    "slidesGuidedStart": "qx.event.type.Event",
+    "slidesAppStart": "qx.event.type.Event",
     "slidesStop": "qx.event.type.Event",
     "slidesEdit": "qx.event.type.Event"
   },
@@ -77,7 +77,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     pageContext: {
-      check: ["dashboard", "workbench", "slideshow", "fullSlideshow"],
+      check: ["dashboard", "workbench", "guided", "app"],
       nullable: false,
       apply: "_applyPageContext"
     }
@@ -96,15 +96,15 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     PAGE_CONTEXT: {
       0: "dashboard",
       1: "workbench",
-      2: "slideshow",
-      3: "fullSlideshow"
+      2: "guided",
+      3: "app"
     }
   },
 
   members: {
     __serverStatics: null,
     __startSlidesButton: null,
-    __startSlidesFullButton: null,
+    __startAppButton: null,
     __EditSlidesButton: null,
 
     buildLayout: function() {
@@ -248,8 +248,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("study-title").exclude();
           break;
         case "workbench":
-        case "slideshow":
-        case "fullSlideshow":
+        case "guided":
+        case "app":
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
           this.__resetSlidesBtnsVis();
@@ -261,17 +261,17 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     __resetSlidesBtnsVis: function() {
       const slideshowMenuBtn = this.getChildControl("slideshow-menu-button");
       const slideshowStopBtn = this.getChildControl("slideshow-stop");
-      const slidesBtnsVisible = ["workbench", "slideshow", "fullSlideshow"].includes(this.getPageContext());
+      const slidesBtnsVisible = ["workbench", "guided", "app"].includes(this.getPageContext());
       if (slidesBtnsVisible) {
         const study = this.getStudy();
         const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
         if (areSlidesEnabled) {
           this.__startSlidesButton.setEnabled(study.hasSlideshow());
-          this.__startSlidesFullButton.setEnabled(study.getWorkbench().isPipelineLinear());
+          this.__startAppButton.setEnabled(study.getWorkbench().isPipelineLinear());
           const isOwner = osparc.data.model.Study.isOwner(study);
           this.__editSlidesButton.setEnabled(areSlidesEnabled && isOwner);
 
-          if (["slideshow", "fullSlideshow"].includes(this.getPageContext())) {
+          if (["guided", "app"].includes(this.getPageContext())) {
             slideshowMenuBtn.exclude();
             slideshowStopBtn.show();
           } else if (this.getPageContext() === "workbench") {
@@ -286,28 +286,28 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __createSlideMenuBtn: function() {
-      const slidesMenuBtn = new qx.ui.form.MenuButton(this.tr("Guided Mode"), "@FontAwesome5Solid/caret-square-right/16").set({
+      const slidesMenuBtn = new qx.ui.form.MenuButton(this.tr("Slideshow"), "@FontAwesome5Solid/caret-square-right/16").set({
         ...this.self().BUTTON_OPTIONS,
         iconPosition: "left"
       });
       const splitButtonMenu = new qx.ui.menu.Menu();
       slidesMenuBtn.setMenu(splitButtonMenu);
 
-      const startSlidesBtn = this.__startSlidesButton = new qx.ui.menu.Button(this.tr("Start Guided Mode"));
-      startSlidesBtn.addListener("execute", () => {
-        this.fireEvent("slidesStart");
+      const startGuidedBtn = this.__startSlidesButton = new qx.ui.menu.Button(this.tr("Start Guided Mode"));
+      startGuidedBtn.addListener("execute", () => {
+        this.fireEvent("slidesGuidedStart");
       }, this);
-      splitButtonMenu.add(startSlidesBtn);
+      splitButtonMenu.add(startGuidedBtn);
 
-      const startSlidesFullBtn = this.__startSlidesFullButton = new qx.ui.menu.Button(this.tr("Start Full Guided Mode"));
-      startSlidesFullBtn.addListener("execute", () => {
-        this.fireEvent("slidesFullStart");
+      const startAppBtn = this.__startAppButton = new qx.ui.menu.Button(this.tr("Start App Mode"));
+      startAppBtn.addListener("execute", () => {
+        this.fireEvent("slidesAppStart");
       });
-      splitButtonMenu.add(startSlidesFullBtn);
+      splitButtonMenu.add(startAppBtn);
 
       splitButtonMenu.addSeparator();
 
-      const editSlidesBtn = this.__editSlidesButton = new qx.ui.menu.Button(this.tr("Edit Guided Mode"));
+      const editSlidesBtn = this.__editSlidesButton = new qx.ui.menu.Button(this.tr("Edit Slideshow"));
       editSlidesBtn.addListener("execute", () => {
         this.fireEvent("slidesEdit");
       }, this);
@@ -317,7 +317,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __createSlideStopBtn: function() {
-      const stopBtn = new qx.ui.form.Button(this.tr("Guided Mode"), "@FontAwesome5Solid/stop/16").set({
+      const stopBtn = new qx.ui.form.Button(this.tr("Slideshow"), "@FontAwesome5Solid/stop/16").set({
         ...this.self().BUTTON_OPTIONS
       });
       stopBtn.addListener("execute", () => {
@@ -515,6 +515,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         study.bind("name", this.getChildControl("study-title"), "value");
         study.bind("readOnly", this.getChildControl("read-only-icon"), "visibility", {
           converter: value => value ? "visible" : "excluded"
+        });
+        study.getWorkbench().addListener("pipelineChanged", () => {
+          this.__resetSlidesBtnsVis();
         });
         study.getUi().getSlideshow().addListener("changeSlideshow", () => {
           this.__resetSlidesBtnsVis();

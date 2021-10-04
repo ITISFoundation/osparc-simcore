@@ -48,7 +48,12 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "tsr-mode-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          this._mainLayout.addAt(control, osparc.dashboard.GridButtonBase.POS.TSR_MODE);
+          break;
         case "tsr-rating": {
+          const tsrModeLayout = this.getChildControl("tsr-mode-layout");
           const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
             toolTipText: this.tr("Ten Simple Rules")
           });
@@ -56,7 +61,15 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           tsrLayout.add(tsrLabel);
           control = new osparc.ui.basic.StarsRating();
           tsrLayout.add(control);
-          this._mainLayout.addAt(tsrLayout, osparc.dashboard.GridButtonBase.POS.TSR);
+          tsrModeLayout.add(tsrLayout, {
+            flex: 1
+          });
+          break;
+        }
+        case "ui-mode": {
+          const tsrModeLayout = this.getChildControl("tsr-mode-layout");
+          control = new qx.ui.basic.Image();
+          tsrModeLayout.add(control);
           break;
         }
         case "tags":
@@ -284,6 +297,34 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           this.__openQualityEditor();
         }, this);
         tsrRating.addListener("pointerdown", e => e.stopPropagation());
+      }
+    },
+
+    _applyUiMode: function(uiMode) {
+      if (uiMode) {
+        let source = null;
+        let toolTipText = null;
+        switch (uiMode) {
+          case "guided":
+          default:
+            source = osparc.dashboard.CardBase.MODE_GUIDED;
+            toolTipText = this.tr("Guided mode");
+            break;
+          case "app":
+            source = osparc.dashboard.CardBase.MODE_APP;
+            toolTipText = this.tr("App mode");
+            break;
+          case "workbench":
+            source = osparc.dashboard.CardBase.MODE_WORKBENCH;
+            toolTipText = this.tr("Workbench mode");
+            break;
+        }
+        if (source) {
+          this.getChildControl("ui-mode").set({
+            source,
+            toolTipText
+          });
+        }
       }
     },
 

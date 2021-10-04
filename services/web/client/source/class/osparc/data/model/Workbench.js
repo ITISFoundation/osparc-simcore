@@ -92,25 +92,27 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     isPipelineLinear: function() {
       const nodes = this.getNodes(true);
-      const nodeIds = [];
       const inputNodeIds = [];
+      const nodesWithoutInputs = [];
       for (const nodeId in nodes) {
         const node = nodes[nodeId];
-        nodeIds.push(node.getNodeId());
-        inputNodeIds.push(...node.getInputNodes());
+        const inputNodes = node.getInputNodes();
+        if (inputNodes.length === 0) {
+          nodesWithoutInputs.push(nodeId);
+        } else if (inputNodes.length > 1) {
+          return false;
+        } else {
+          inputNodeIds.push(...inputNodes);
+        }
       }
+      // if duplicates exist, it means that there is a branching
       const duplicateExists = new Set(inputNodeIds).size !== inputNodeIds.length;
       if (duplicateExists) {
         return false;
       }
-      inputNodeIds.forEach(inputNodeId => {
-        const index = nodeIds.indexOf(inputNodeId);
-        if (index > -1) {
-          nodeIds.splice(index, 1);
-        }
-      });
 
-      return nodeIds.length < 2;
+      // Make sure there are no more than one upstreams nodes
+      return nodesWithoutInputs.length < 2;
     },
 
     getPipelineLinearSorted: function() {
@@ -250,6 +252,12 @@ qx.Class.define("osparc.data.model.Workbench", {
       nodeRight.setInputConnected(true);
     },
 
+    __createNode: function(study, key, version, uuid) {
+      const node = new osparc.data.model.Node(study, key, version, uuid);
+      node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
+      return node;
+    },
+
     createNode: function(key, version, uuid, parent) {
       const existingNode = this.getNode(uuid);
       if (existingNode) {
@@ -259,7 +267,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         return null;
       }
 
-      const node = new osparc.data.model.Node(this.getStudy(), key, version, uuid);
+      const node = this.__createNode(this.getStudy(), key, version, uuid);
       this.addNode(node, parent);
 
       this.__initNodeSignals(node);
@@ -556,7 +564,7 @@ qx.Class.define("osparc.data.model.Workbench", {
             continue;
           }
         }
-        const node = new osparc.data.model.Node(this.getStudy(), nodeData.key, nodeData.version, nodeId);
+        const node = this.__createNode(this.getStudy(), nodeData.key, nodeData.version, nodeId);
         this.__initNodeSignals(node);
         let parentNode = null;
         if (nodeData.parent) {
