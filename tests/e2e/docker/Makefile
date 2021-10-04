@@ -1,7 +1,7 @@
 DOCKER_REGISTRY ?= itisfoundation
 DOCKER_IMAGE_NAME ?= puppeteer
 # $(puppeteer-version)-$(our-version)
-DOCKER_IMAGE_TAG ?= 14-2
+DOCKER_IMAGE_TAG ?= 14-3
 
 # version control
 VCS_URL          := $(shell git config --get remote.origin.url)
