@@ -35,7 +35,7 @@ def mocked_env(monkeypatch: MonkeyPatch) -> Iterator[Dict[str, str]]:
 
 
 @pytest.fixture
-def docker_registry_settings(mocked_end: Dict[str, str]) -> RegistrySettings:
+def docker_registry_settings(mocked_env: Dict[str, str]) -> RegistrySettings:
     return RegistrySettings.create_from_envs()
 
 
