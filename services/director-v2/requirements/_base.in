@@ -16,28 +16,13 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
-
-# fastapi and extensions
-fastapi[all]
-
-# data models
-pydantic[dotenv]
-
-# database
-aiopg[sa]
-
-# docker daemon
+aio-pika
 aiodocker
-
-# DAGs
-networkx
-
-# celery
+aiopg[sa]
 celery[redis]
-
-# other
-tenacity
-orjson
-
-# clients
+fastapi[all]
 httpx
+networkx
+orjson
+pydantic[dotenv]
+tenacity
