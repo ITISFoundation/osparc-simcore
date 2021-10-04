@@ -1,7 +1,6 @@
 import logging
 from dataclasses import dataclass
-from datetime import datetime
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, List
 
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
