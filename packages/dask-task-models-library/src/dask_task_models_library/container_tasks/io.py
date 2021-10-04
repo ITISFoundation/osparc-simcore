@@ -72,7 +72,7 @@ class FileUrl(BaseModel):
 
 
 PortKey = Annotated[str, Field(regex=PROPERTY_KEY_RE)]
-PortValue = Union[StrictBool, StrictInt, StrictFloat, StrictStr, FileUrl]
+PortValue = Union[StrictBool, StrictInt, StrictFloat, StrictStr, FileUrl, None]
 PortSchemaValue = Union[PortSchema, FilePortSchema]
 
 
