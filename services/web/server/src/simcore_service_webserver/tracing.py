@@ -1,4 +1,5 @@
 import logging
+from typing import Tuple
 
 from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
@@ -18,3 +19,6 @@ def setup_app_tracing(app: web.Application):
     return setup_tracing(
         app, "simcore_service_webserver", host, port, config["tracing"]
     )
+
+
+__all__: Tuple[str, ...] = ("schema", "setup_app_tracing")
