@@ -42,10 +42,6 @@ log = logging.getLogger(__name__)
 
 
 def compute_checksum(workbench: Dict[str, Any]) -> SHA1Str:
-    #
-    # - UI is NOT accounted in the checksum
-    # - TODO: review other fields to mask?
-    #
     # FIXME: dump workbench correctly (i.e. spaces, quotes ... -indepenent)
     block_string = json.dumps(workbench, sort_keys=True).encode("utf-8")
     raw_hash = hashlib.sha1(block_string)
