@@ -66,7 +66,7 @@ async def _apply_observation_cycle(
         )
         await scheduler.mark_service_for_removal(
             node_uuid=scheduler_data.node_uuid,
-            save_state=scheduler_data.dynamic_sidecar.can_save_state,
+            can_save=scheduler_data.dynamic_sidecar.can_save_state,
         )
 
     try:
@@ -141,7 +141,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             logger.debug("Added service '%s' to observe", scheduler_data.service_name)
 
     async def mark_service_for_removal(
-        self, node_uuid: NodeID, save_state: Optional[bool]
+        self, node_uuid: NodeID, can_save: Optional[bool]
     ) -> None:
         """Marks service for removal, causing RemoveMarkedService to trigger"""
         async with self._lock:
@@ -154,7 +154,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
             current: LockWithSchedulerData = self._to_observe[service_name]
             current.scheduler_data.dynamic_sidecar.service_removal_state.mark_to_remove(
-                save_state
+                can_save
             )
 
         await self._enqueue_observation_from_service_name(service_name)

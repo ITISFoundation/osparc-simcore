@@ -163,18 +163,18 @@ async def get_dynamic_sidecar_status(
 )
 async def stop_dynamic_service(
     node_uuid: NodeID,
-    save_state: Optional[bool] = True,
+    can_save: Optional[bool] = True,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> Union[NoContentResponse, RedirectResponse]:
     try:
-        await scheduler.mark_service_for_removal(node_uuid, save_state)
+        await scheduler.mark_service_for_removal(node_uuid, can_save)
     except DynamicSidecarNotFoundError:
         # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0
         redirection_url = director_v0_client.client.base_url.copy_with(
             path=f"/v0/running_interactive_services/{node_uuid}",
-            params={"save_state": bool(save_state)},
+            params={"can_save": bool(can_save)},
         )
 
         return RedirectResponse(str(redirection_url))

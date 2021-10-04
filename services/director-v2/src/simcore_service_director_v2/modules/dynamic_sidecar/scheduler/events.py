@@ -305,7 +305,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
 
-        if scheduler_data.dynamic_sidecar.service_removal_state.save_state:
+        if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
             dynamic_sidecar_client = get_dynamic_sidecar_client(app)
             dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 

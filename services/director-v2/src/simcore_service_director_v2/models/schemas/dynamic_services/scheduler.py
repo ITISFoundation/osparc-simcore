@@ -109,14 +109,14 @@ class ServiceRemovalState(BaseModel):
         False,
         description="when True, marks the service as ready to be removed",
     )
-    save_state: Optional[bool] = Field(
+    can_save: Optional[bool] = Field(
         None,
         description="when True, saves the internal state and upload outputs of the service",
     )
 
-    def mark_to_remove(self, save_state: Optional[bool]) -> None:
+    def mark_to_remove(self, can_save: Optional[bool]) -> None:
         self.can_remove = True
-        self.save_state = save_state
+        self.can_save = can_save
 
     def mark_removed(self) -> None:
         self.can_remove = False

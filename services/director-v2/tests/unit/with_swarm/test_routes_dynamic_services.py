@@ -199,7 +199,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
     )
 
     # MOCKING remove_service
-    def remove_service(node_uuid: NodeID, save_state: Optional[bool]) -> None:
+    def remove_service(node_uuid: NodeID, can_save: Optional[bool]) -> None:
         if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
             raise DynamicSidecarNotFoundError(node_uuid)
 
@@ -372,7 +372,7 @@ async def test_get_service_status(
     ],
 )
 @pytest.mark.parametrize(
-    "save_state, exp_save_state", [(None, True), (True, True), (False, False)]
+    "can_save, exp_save_state", [(None, True), (True, True), (False, False)]
 )
 async def test_delete_service(
     mocked_director_v0_service_api: MockRouter,
@@ -381,12 +381,12 @@ async def test_delete_service(
     service: Dict[str, Any],
     exp_status_code: int,
     is_legacy: bool,
-    save_state: Optional[bool],
+    can_save: Optional[bool],
     exp_save_state: bool,
 ):
     url = URL(f"/v2/dynamic_services/{service['node_uuid']}")
-    if save_state is not None:
-        url = url.copy_with(params={"save_state": save_state})
+    if can_save is not None:
+        url = url.copy_with(params={"can_save": can_save})
 
     response = client.delete(str(url), allow_redirects=False)
     assert (
@@ -401,7 +401,7 @@ async def test_delete_service(
             redirect_url.path
             == f"/v0/running_interactive_services/{service['node_uuid']}"
         )
-        assert redirect_url.params == QueryParams(save_state=exp_save_state)
+        assert redirect_url.params == QueryParams(can_save=exp_save_state)
 
 
 @pytest.mark.parametrize(
