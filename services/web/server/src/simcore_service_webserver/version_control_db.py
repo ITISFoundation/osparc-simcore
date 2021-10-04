@@ -18,7 +18,7 @@ from simcore_postgres_database.models.projects_version_control import (
     projects_vc_snapshots,
     projects_vc_tags,
 )
-from simcore_postgres_database.utils_aiopg_orm import BaseOrm
+from simcore_postgres_database.utils_aiopg_orm import ALL_COLUMNS, BaseOrm
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .db_base_repository import BaseRepository
@@ -30,9 +30,11 @@ from .version_control_errors import (
 )
 from .version_control_models import (
     HEAD,
+    BranchProxy,
     CommitID,
     CommitLog,
     CommitProxy,
+    ProjectDict,
     RefID,
     SHA1Str,
     TagProxy,
@@ -42,6 +44,10 @@ log = logging.getLogger(__name__)
 
 
 def compute_checksum(workbench: Dict[str, Any]) -> SHA1Str:
+    #
+    # - UI is NOT accounted in the checksum
+    # - TODO: review other fields to mask?
+    #
     # FIXME: dump workbench correctly (i.e. spaces, quotes ... -indepenent)
     block_string = json.dumps(workbench, sort_keys=True).encode("utf-8")
     raw_hash = hashlib.sha1(block_string)
