@@ -18,6 +18,7 @@ from typing import (
 )
 
 import dask.distributed
+import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.events import TaskStateEvent
 from dask_task_models_library.container_tasks.io import (
@@ -164,6 +165,75 @@ async def _compute_output_data_schema(
     return TaskOutputDataSchema.parse_obj(output_data_schema)
 
 
+def _done_dask_callback(
+    dask_future: dask.distributed.Future,
+    app: FastAPI,
+    task_to_future_map: Dict[str, dask.distributed.Future],
+    user_callback: Callable[[], None],
+    loop: asyncio.AbstractEventLoop,
+    dask_client: distributed.Client,
+):
+    # NOTE: here we are called in a separate task
+    job_id = dask_future.key
+    try:
+        if dask_future.status == "error":
+            dask_client.log_event(
+                TaskStateEvent.topic_name(),
+                TaskStateEvent(job_id=job_id, state=RunningState.FAILED).json(),
+            )
+        elif dask_future.cancelled():
+            dask_client.log_event(
+                TaskStateEvent.topic_name(),
+                TaskStateEvent(job_id=job_id, state=RunningState.ABORTED).json(),
+            )
+        else:
+            # this gets the data out of the dask backend
+            task_output_data = dask_future.result(timeout=5)
+            try:
+                # this callback is called in a secondary thread so we need to get back to the main
+                # thread for database accesses or else we ge into loop issues
+                future = asyncio.run_coroutine_threadsafe(
+                    _parse_output_data(app, job_id, task_output_data), loop
+                )
+                future.result(timeout=5)
+                dask_client.log_event(
+                    TaskStateEvent.topic_name(),
+                    TaskStateEvent(job_id=job_id, state=RunningState.SUCCESS).json(),
+                )
+
+            except concurrent.futures.TimeoutError:
+                logger.error(
+                    "parsing output data of job %s timed-out, please check.",
+                    job_id,
+                    exc_info=True,
+                )
+                dask_client.log_event(
+                    TaskStateEvent.topic_name(),
+                    TaskStateEvent(job_id=job_id, state=RunningState.FAILED).json(),
+                )
+            except concurrent.futures.CancelledError:
+                logger.warning(
+                    "parsing output data of job %s was cancelled, please check.",
+                    job_id,
+                    exc_info=True,
+                )
+                dask_client.log_event(
+                    TaskStateEvent.topic_name(),
+                    TaskStateEvent(job_id=job_id, state=RunningState.FAILED).json(),
+                )
+
+    except dask.distributed.TimeoutError:
+        logger.error(
+            "fetching result of '%s' timed-out, please check",
+            job_id,
+            exc_info=True,
+        )
+    finally:
+        # remove the future from the dict to remove any handle to the future, so the worker can free the memory
+        task_to_future_map.pop(job_id)
+        user_callback()
+
+
 def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
     @retry(**dask_retry_policy)
     async def on_startup() -> None:
@@ -249,77 +319,6 @@ class DaskClient:
     ):
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
-
-        def _done_dask_callback(
-            dask_future: dask.distributed.Future, loop: asyncio.AbstractEventLoop
-        ):
-            # NOTE: here we are called in a separate task
-            job_id = dask_future.key
-            try:
-                if dask_future.status == "error":
-                    self.client.log_event(
-                        TaskStateEvent.topic_name(),
-                        TaskStateEvent(job_id=job_id, state=RunningState.FAILED).json(),
-                    )
-                elif dask_future.cancelled():
-                    self.client.log_event(
-                        TaskStateEvent.topic_name(),
-                        TaskStateEvent(
-                            job_id=job_id, state=RunningState.ABORTED
-                        ).json(),
-                    )
-                else:
-                    # this gets the data out of the dask backend
-                    task_output_data = dask_future.result(timeout=5)
-                    try:
-                        # this callback is called in a secondary thread so we need to get back to the main
-                        # thread for database accesses or else we ge into loop issues
-                        future = asyncio.run_coroutine_threadsafe(
-                            _parse_output_data(self.app, job_id, task_output_data), loop
-                        )
-                        future.result(timeout=5)
-                        self.client.log_event(
-                            TaskStateEvent.topic_name(),
-                            TaskStateEvent(
-                                job_id=job_id, state=RunningState.SUCCESS
-                            ).json(),
-                        )
-
-                    except concurrent.futures.TimeoutError:
-                        logger.error(
-                            "parsing output data of job %s timed-out, please check.",
-                            job_id,
-                            exc_info=True,
-                        )
-                        self.client.log_event(
-                            TaskStateEvent.topic_name(),
-                            TaskStateEvent(
-                                job_id=job_id, state=RunningState.FAILED
-                            ).json(),
-                        )
-                    except concurrent.futures.CancelledError:
-                        logger.warning(
-                            "parsing output data of job %s was cancelled, please check.",
-                            job_id,
-                            exc_info=True,
-                        )
-                        self.client.log_event(
-                            TaskStateEvent.topic_name(),
-                            TaskStateEvent(
-                                job_id=job_id, state=RunningState.FAILED
-                            ).json(),
-                        )
-
-            except dask.distributed.TimeoutError:
-                logger.error(
-                    "fetching result of '%s' timed-out, please check",
-                    job_id,
-                    exc_info=True,
-                )
-            finally:
-                # remove the future from the dict to remove any handle to the future, so the worker can free the memory
-                self._taskid_to_future_map.pop(job_id)
-                callback()
 
         def _comp_sidecar_fct(
             docker_auth: DockerBasicAuth,
@@ -409,8 +408,16 @@ class DaskClient:
                 raise
 
             task_future.add_done_callback(
-                functools.partial(_done_dask_callback, loop=asyncio.get_event_loop())
+                functools.partial(
+                    _done_dask_callback,
+                    app=self.app,
+                    task_to_future_map=self._taskid_to_future_map,
+                    user_callback=callback,
+                    loop=asyncio.get_event_loop(),
+                    dask_client=self.client,
+                )
             )
+
             self._taskid_to_future_map[job_id] = task_future
             dask.distributed.fire_and_forget(
                 task_future
