@@ -274,7 +274,7 @@
         ],
         "summary": "Restores the state of the dynamic service",
         "description": "When restoring the state:\n- pull inputs via nodeports\n- pull all the extra state paths",
-        "operationId": "restore_state_v1_containers_node_state_restore_post",
+        "operationId": "restore_state_v1_containers_state_restore_post",
         "responses": {
           "204": {
             "description": "Successful Response"
@@ -288,7 +288,7 @@
           "containers"
         ],
         "summary": "Stores the state of the dynamic service",
-        "operationId": "save_state_v1_containers_node_state_save_post",
+        "operationId": "save_state_v1_containers_state_save_post",
         "responses": {
           "204": {
             "description": "Successful Response"
@@ -302,7 +302,7 @@
           "containers"
         ],
         "summary": "Pull input ports data",
-        "operationId": "pull_input_ports_v1_containers_node_ports_pull_post",
+        "operationId": "pull_input_ports_v1_containers_ports_pull_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -344,7 +344,7 @@
           "containers"
         ],
         "summary": "Push output ports data",
-        "operationId": "push_output_ports_v1_containers_node_ports_push_post",
+        "operationId": "push_output_ports_v1_containers_ports_push_post",
         "requestBody": {
           "content": {
             "application/json": {
