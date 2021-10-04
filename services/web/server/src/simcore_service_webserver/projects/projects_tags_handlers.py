@@ -1,4 +1,4 @@
-""" Handlers for CRUD operations on /projects/{*}/nodes/{*}
+""" Handlers for CRUD operations on /projects/{*}/tags/{*}
 
 """
 
