@@ -8,7 +8,11 @@ from pydantic import BaseModel
 if TYPE_CHECKING:
     Queue = asyncio.Queue
 else:
-    # issue with inheritance and typing
+    # This is a bit of hack, but makes mypy happy.
+    # The issue is with asyncio.Queue which does not inherit from
+    # `typing.Generic`, but typeshed stubs for it says that it does.
+    # As a result there is no `__getitem__` inherited from
+    # typing.GenericMeta at runtime.
     # SEE https://stackoverflow.com/a/48554601/2855718
     class FakeGenericMeta(type):
         def __getitem__(self, item):
