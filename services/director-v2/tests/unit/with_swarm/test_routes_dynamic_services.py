@@ -143,7 +143,7 @@ async def mock_retrieve_features(
             )
 
             respx_mock.post(
-                f"{scheduler_data_from_http_request.dynamic_sidecar.endpoint}/v1/containers/node-ports:pull",
+                f"{scheduler_data_from_http_request.dynamic_sidecar.endpoint}/v1/containers/ports:pull",
                 name="service_pull_input_ports",
             ).respond(json=42)
 

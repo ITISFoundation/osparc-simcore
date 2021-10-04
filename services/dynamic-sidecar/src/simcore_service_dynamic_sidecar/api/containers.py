@@ -237,7 +237,7 @@ async def inspect_container(
 
 
 @containers_router.post(
-    "/containers/node-state:restore",
+    "/containers/state:restore",
     summary="Restores the state of the dynamic service",
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
@@ -263,7 +263,7 @@ async def restore_state() -> Response:
 
 
 @containers_router.post(
-    "/containers/node-state:save",
+    "/containers/state:save",
     summary="Stores the state of the dynamic service",
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
@@ -284,7 +284,7 @@ async def save_state() -> Response:
 
 
 @containers_router.post(
-    "/containers/node-ports:pull",
+    "/containers/ports:pull",
     summary="Pull input ports data",
     response_model=None,
     status_code=status.HTTP_200_OK,
@@ -300,7 +300,7 @@ async def pull_input_ports(port_keys: Optional[List[str]] = None) -> int:
 
 
 @containers_router.post(
-    "/containers/node-ports:push",
+    "/containers/ports:push",
     summary="Push output ports data",
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,

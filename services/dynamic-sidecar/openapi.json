@@ -267,7 +267,7 @@
         }
       }
     },
-    "/v1/containers/node-state:restore": {
+    "/v1/containers/state:restore": {
       "post": {
         "tags": [
           "containers"
@@ -282,7 +282,7 @@
         }
       }
     },
-    "/v1/containers/node-state:save": {
+    "/v1/containers/state:save": {
       "post": {
         "tags": [
           "containers"
@@ -296,7 +296,7 @@
         }
       }
     },
-    "/v1/containers/node-ports:pull": {
+    "/v1/containers/ports:pull": {
       "post": {
         "tags": [
           "containers"
@@ -338,7 +338,7 @@
         }
       }
     },
-    "/v1/containers/node-ports:push": {
+    "/v1/containers/ports:push": {
       "post": {
         "tags": [
           "containers"

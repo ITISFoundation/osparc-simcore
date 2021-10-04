@@ -156,7 +156,7 @@ class DynamicSidecarClient:
             raise e
 
     async def service_save_state(self, dynamic_sidecar_endpoint: str) -> None:
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/node-state:save")
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/state:save")
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
                 response = await client.post(url)
@@ -172,7 +172,7 @@ class DynamicSidecarClient:
             raise e
 
     async def service_restore_state(self, dynamic_sidecar_endpoint: str) -> None:
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/node-state:restore")
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/state:restore")
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
                 response = await client.post(url)
@@ -191,7 +191,7 @@ class DynamicSidecarClient:
         self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
     ) -> int:
         port_keys = [] if port_keys is None else port_keys
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/node-ports:pull")
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports:pull")
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
                 response = await client.post(url, json=port_keys)
@@ -211,7 +211,7 @@ class DynamicSidecarClient:
         self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
     ) -> None:
         port_keys = [] if port_keys is None else port_keys
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/node-ports:push")
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports:push")
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
                 response = await client.post(url, json=port_keys)
