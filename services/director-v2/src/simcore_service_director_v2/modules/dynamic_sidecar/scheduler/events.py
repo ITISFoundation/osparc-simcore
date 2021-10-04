@@ -72,7 +72,7 @@ class CreateSidecars(DynamicSchedulerEvent):
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
         docker_registry_settings: RegistrySettings = (
-            app.state.settings.DOCKER_REGISTRY_SETTINGS
+            app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
         )
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR

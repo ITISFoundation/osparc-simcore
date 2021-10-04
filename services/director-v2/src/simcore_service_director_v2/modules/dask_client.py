@@ -388,9 +388,9 @@ class DaskClient:
                 task_future = self.client.submit(
                     remote_fct,
                     docker_auth=DockerBasicAuth(
-                        server_address=self.app.state.settings.DOCKER_REGISTRY_SETTINGS.REGISTRY_URL,
-                        username=self.app.state.settings.DOCKER_REGISTRY_SETTINGS.REGISTRY_USER,
-                        password=self.app.state.settings.DOCKER_REGISTRY_SETTINGS.REGISTRY_PW,
+                        server_address=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_URL,
+                        username=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_USER,
+                        password=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_PW,
                     ),
                     service_key=node_image.name,
                     service_version=node_image.tag,
@@ -401,28 +401,27 @@ class DaskClient:
                     resources=dask_resources,
                     retries=0,
                 )
+                task_future.add_done_callback(
+                    functools.partial(
+                        _done_dask_callback,
+                        app=self.app,
+                        task_to_future_map=self._taskid_to_future_map,
+                        user_callback=callback,
+                        loop=asyncio.get_event_loop(),
+                        dask_client=self.client,
+                    )
+                )
+
+                self._taskid_to_future_map[job_id] = task_future
+                dask.distributed.fire_and_forget(
+                    task_future
+                )  # this should ensure the task will run even if the future goes out of scope
+                logger.debug("Dask task %s started", task_future.key)
             except Exception:
                 # Dask raises a base Exception here in case of connection error, this will raise a more precise one
                 _check_valid_connection_to_scheduler(self.client)
                 # if the connection is good, then the problem is different, so we re-raise
                 raise
-
-            task_future.add_done_callback(
-                functools.partial(
-                    _done_dask_callback,
-                    app=self.app,
-                    task_to_future_map=self._taskid_to_future_map,
-                    user_callback=callback,
-                    loop=asyncio.get_event_loop(),
-                    dask_client=self.client,
-                )
-            )
-
-            self._taskid_to_future_map[job_id] = task_future
-            dask.distributed.fire_and_forget(
-                task_future
-            )  # this should ensure the task will run even if the future goes out of scope
-            logger.debug("Dask task %s started", task_future.key)
 
     async def abort_computation_tasks(self, task_ids: List[str]) -> None:
 
