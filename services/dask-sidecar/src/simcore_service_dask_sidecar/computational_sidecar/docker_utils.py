@@ -11,8 +11,14 @@ from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.events import (
+    TaskLogEvent,
+    TaskProgressEvent,
+)
+from distributed.pubsub import Pub
 from pydantic import ByteSize
 
+from ..dask_utils import publish_event
 from ..settings import Settings
 from ..utils import create_dask_worker_logger
 from .models import ContainerHostConfig, DockerContainerConfig
@@ -141,8 +147,40 @@ async def parse_line(line: str) -> Tuple[LogType, str, str]:
     return (log_type, timestamp, log)
 
 
+async def publish_logs(
+    service_key: str,
+    service_version: str,
+    container: DockerContainer,
+    container_name: str,
+    progress_pub: Pub,
+    logs_pub: Pub,
+    log_type: LogType,
+    message: str,
+):
+    logger.info(
+        "[%s:%s - %s%s -%s]: %s",
+        service_key,
+        service_version,
+        container.id,
+        container_name,
+        log_type,
+        message,
+    )
+    if log_type == LogType.PROGRESS:
+        publish_event(
+            progress_pub,
+            TaskProgressEvent.from_dask_worker(progress=float(message)),
+        )
+    else:
+        publish_event(logs_pub, TaskLogEvent.from_dask_worker(logs=[message]))
+
+
 async def monitor_container_logs(
-    container: DockerContainer, service_key: str, service_version: str
+    container: DockerContainer,
+    service_key: str,
+    service_version: str,
+    progress_pub: Pub,
+    logs_pub: Pub,
 ) -> None:
     try:
         container_info = await container.show()
@@ -159,15 +197,17 @@ async def monitor_container_logs(
             stdout=True, stderr=True, follow=True, timestamps=True
         ):
             log_type, latest_log_timestamp, message = await parse_line(log_line)
-            logger.info(
-                "[%s:%s - %s%s - %s]: %s",
-                service_key,
-                service_version,
-                container.id,
-                container_name,
-                log_type,
-                message,
+            await publish_logs(
+                service_key=service_key,
+                service_version=service_version,
+                container=container,
+                container_name=container_name,
+                progress_pub=progress_pub,
+                logs_pub=logs_pub,
+                log_type=log_type,
+                message=message,
             )
+
         # NOTE: The log stream may be interrupted before all the logs are gathered!
         # therefore it is needed to get the remaining logs
         missing_logs = await container.log(
@@ -178,15 +218,17 @@ async def monitor_container_logs(
         )
         for log_line in missing_logs:
             log_type, latest_log_timestamp, message = await parse_line(log_line)
-            logger.info(
-                "[%s:%s - %s%s -%s]: %s",
-                service_key,
-                service_version,
-                container.id,
-                container_name,
-                log_type,
-                message,
+            await publish_logs(
+                service_key=service_key,
+                service_version=service_version,
+                container=container,
+                container_name=container_name,
+                progress_pub=progress_pub,
+                logs_pub=logs_pub,
+                log_type=log_type,
+                message=message,
             )
+
         logger.info(
             "Finished parsing information of task [%s:%s - %s%s]",
             service_key,
@@ -206,12 +248,18 @@ async def monitor_container_logs(
 
 @asynccontextmanager
 async def managed_monitor_container_log_task(
-    container: DockerContainer, service_key: str, service_version: str
+    container: DockerContainer,
+    service_key: str,
+    service_version: str,
+    progress_pub: Pub,
+    logs_pub: Pub,
 ) -> AsyncIterator[Awaitable[None]]:
     monitoring_task = None
     try:
         monitoring_task = asyncio.create_task(
-            monitor_container_logs(container, service_key, service_version),
+            monitor_container_logs(
+                container, service_key, service_version, progress_pub, logs_pub
+            ),
             name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
         )
         yield monitoring_task
