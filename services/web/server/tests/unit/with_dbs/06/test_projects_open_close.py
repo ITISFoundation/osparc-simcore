@@ -548,11 +548,6 @@ async def test_share_project(
         )
 
 
-@pytest.fixture()
-def ensure_run_in_sequence_context_is_empty():
-    async_utils.sequential_jobs_contexts = {}
-
-
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -613,7 +608,7 @@ async def test_close_project(
     # POST /v0/projects/{project_id}:close
     fakes = fake_services(5)
     assert len(fakes) == 5
-    mocked_director_v2_api["director_v2_api.get_services"].return_value = fakes
+    mocked_director_v2_api["director_v2_core.get_services"].return_value = fakes
 
     # open project
     client_id = client_session_id_factory()
@@ -624,7 +619,7 @@ async def test_close_project(
         mocked_director_v2_api["director_v2_api.get_services"].assert_any_call(
             client.server.app, logged_user["id"], user_project["uuid"]
         )
-        mocked_director_v2_api["director_v2_api.get_services"].reset_mock()
+        mocked_director_v2_api["director_v2_core.get_services"].reset_mock()
 
     # close project
     url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
@@ -653,7 +648,7 @@ async def test_close_project(
             )
             for service in fakes
         ]
-        mocked_director_v2_api["director_v2_api.stop_service"].assert_has_calls(calls)
+        mocked_director_v2_api["director_v2_core.stop_service"].assert_has_calls(calls)
 
 
 @pytest.mark.parametrize(
