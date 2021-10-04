@@ -3,6 +3,7 @@
 #
 --constraint ../../../requirements/constraints.txt
 --requirement ../../../packages/models-library/requirements/_base.in
+--requirement ../../../services/dask-sidecar/requirements/_dask-distributed.txt
 
 pydantic[email]
 
