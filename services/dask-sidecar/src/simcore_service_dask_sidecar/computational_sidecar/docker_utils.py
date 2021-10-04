@@ -1,9 +1,11 @@
 import asyncio
+import re
 from contextlib import asynccontextmanager
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from pprint import pformat
-from typing import AsyncIterator, Awaitable, List
+from typing import AsyncIterator, Awaitable, List, Tuple
 
 from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
@@ -90,6 +92,55 @@ def to_datetime(docker_timestamp: str) -> datetime:
     )
 
 
+class LogType(Enum):
+    LOG = 1
+    PROGRESS = 2
+    INSTRUMENTATION = 3
+
+
+DOCKER_LOG_REGEXP = re.compile(
+    r"^([0-9]+-[0-9]+-[0-9]+T[0-9]+:[0-9]+:[0-9]+.[0-9]+.) (.+)$"
+)
+PROGRESS_REGEXP = re.compile(
+    r"\[?progress[\]:]?\s*([0-1]?\.\d+|\d+(%)|\d+\s*(percent)|(\d+\/\d+))"
+)
+DEFAULT_TIME_STAMP = "2000-01-01T00:00:00.000000000Z"
+
+
+async def parse_line(line: str) -> Tuple[LogType, str, str]:
+    match = re.search(DOCKER_LOG_REGEXP, line)
+    if not match:
+        # default return as log
+        return (LogType.LOG, DEFAULT_TIME_STAMP, f"[task] {line}")
+
+    log_type = LogType.LOG
+    timestamp = match.group(1)
+    log = match.group(2).lower()
+    # now look for progress
+    match = re.search(PROGRESS_REGEXP, log)
+    if match:
+        try:
+            # can be anything from "23 percent", 23%, 23/234, 0.0-1.0
+            progress = match.group(1)
+            log_type = LogType.PROGRESS
+            if match.group(2):
+                # this is of the 23% kind
+                log = f"{float(progress.rstrip('%').strip()) / 100.0}"
+            elif match.group(3):
+                # this is of the 23 percent kind
+                log = f"{float(progress.rstrip('percent').strip()) / 100.0}"
+            elif match.group(4):
+                # this is of the 23/123 kind
+                nums = progress.strip().split("/")
+                log = f"{float(nums[0]) / float(nums[1])}"
+            else:
+                # this is of the 0.0-1.0 kind
+                log = progress.strip()
+        except ValueError:
+            logger.exception("Could not extract progress from log line %s", line)
+    return (log_type, timestamp, log)
+
+
 async def monitor_container_logs(
     container: DockerContainer, service_key: str, service_version: str
 ) -> None:
@@ -103,19 +154,20 @@ async def monitor_container_logs(
             container.id,
             container_name,
         )
-        latest_log_timestamp = "2000-01-01T00:00:00.000000000Z"
+        latest_log_timestamp = DEFAULT_TIME_STAMP
         async for log_line in container.log(
             stdout=True, stderr=True, follow=True, timestamps=True
         ):
+            log_type, latest_log_timestamp, message = await parse_line(log_line)
             logger.info(
-                "[%s:%s - %s%s]: %s",
+                "[%s:%s - %s%s - %s]: %s",
                 service_key,
                 service_version,
                 container.id,
                 container_name,
-                log_line,
+                log_type,
+                message,
             )
-            latest_log_timestamp = log_line.split(" ")[0]
         # NOTE: The log stream may be interrupted before all the logs are gathered!
         # therefore it is needed to get the remaining logs
         missing_logs = await container.log(
@@ -125,13 +177,15 @@ async def monitor_container_logs(
             since=to_datetime(latest_log_timestamp).strftime("%s"),
         )
         for log_line in missing_logs:
+            log_type, latest_log_timestamp, message = await parse_line(log_line)
             logger.info(
-                "[%s:%s - %s%s]: %s",
+                "[%s:%s - %s%s -%s]: %s",
                 service_key,
                 service_version,
                 container.id,
                 container_name,
-                log_line,
+                log_type,
+                message,
             )
         logger.info(
             "Finished parsing information of task [%s:%s - %s%s]",
