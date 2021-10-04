@@ -352,13 +352,10 @@ async def _assert_port_values(
         .get()
     )
 
-    assert (
-        sleeper_out_2
-        == dy_integer_intput
-        == dy_integer_output
-        == dy_compose_spec_integer_intput
-        == dy_compose_spec_integer_output
-    )
+    assert sleeper_out_2 == dy_integer_intput
+    assert sleeper_out_2 == dy_integer_output
+    assert sleeper_out_2 == dy_compose_spec_integer_intput
+    assert sleeper_out_2 == dy_compose_spec_integer_output
 
     # files
 
@@ -385,14 +382,10 @@ async def _assert_port_values(
         mapped[services_node_uuids.dy_compose_spec].outputs["file_output"]
     )
 
-    file_integer_values = {
-        sleeper_out_1,
-        dy_file_input,
-        dy_file_output,
-        dy_compose_spec_file_input,
-        dy_compose_spec_file_output,
-    }
-    assert len(file_integer_values) == 1
+    assert sleeper_out_1 == dy_file_input
+    assert sleeper_out_1 == dy_file_output
+    assert sleeper_out_1 == dy_compose_spec_file_input
+    assert sleeper_out_1 == dy_compose_spec_file_output
 
 
 def _patch_postgres_address(director_v2_client: httpx.AsyncClient) -> None:
