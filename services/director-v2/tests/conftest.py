@@ -109,11 +109,9 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
     registry = os.environ.get("DOCKER_REGISTRY", "local")
     image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
 
-    image_name = f"{registry}/dynamic-sidecar:{image_tag}"
-
-    logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
-    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", image_name)
-
+    monkeypatch.setenv(
+        "DYNAMIC_SIDECAR_IMAGE", f"{registry}/dynamic-sidecar:{image_tag}"
+    )
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
