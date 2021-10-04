@@ -15,10 +15,11 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.SlideShowToolbar", {
+qx.Class.define("osparc.desktop.SlideshowToolbar", {
   extend: osparc.desktop.Toolbar,
 
   events: {
+    "saveSlideshow": "qx.event.type.Event",
     "addServiceBetween": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
     "showNode": "qx.event.type.Data",
@@ -32,11 +33,13 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
         case "edit-slideshow-buttons": {
           control = new qx.ui.container.Stack();
           const editBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/14").set({
-            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
+            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
+            toolTipText: this.tr("Edit Slideshow")
           });
           editBtn.editing = false;
           const saveBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/check/14").set({
-            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
+            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
+            toolTipText: this.tr("Save Slideshow")
           });
           saveBtn.editing = true;
           editBtn.addListener("execute", () => {
@@ -48,6 +51,7 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
             this.getChildControl("breadcrumbs-scroll").show();
             this.getChildControl("breadcrumbs-scroll-edit").exclude();
             control.setSelection([editBtn]);
+            this.fireEvent("saveSlideshow");
           }, this);
           control.add(editBtn);
           control.add(saveBtn);
@@ -62,7 +66,7 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           });
           break;
         case "breadcrumb-navigation": {
-          control = new osparc.navigation.BreadcrumbsSlideShow();
+          control = new osparc.navigation.BreadcrumbsSlideshow();
           control.addListener("nodeSelected", e => {
             this.fireDataEvent("nodeSelected", e.getData());
           }, this);
@@ -77,7 +81,7 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           });
           break;
         case "breadcrumb-navigation-edit": {
-          control = new osparc.navigation.BreadcrumbsSlideShowEdit();
+          control = new osparc.navigation.BreadcrumbsSlideshowEdit();
           [
             "addServiceBetween",
             "removeNode",

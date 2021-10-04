@@ -1379,7 +1379,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (!this.isPropertyInitialized("study") || this.__startHint === null) {
         return;
       }
-      const isEmptyWorkspace = Object.keys(this.__getWorkbench().getNodes()).length === 0;
+      const isEmptyWorkspace = this.getStudy().isPipelineEmtpy();
       this.__startHint.setVisibility(isEmptyWorkspace ? "visible" : "excluded");
       if (isEmptyWorkspace) {
         const hintBounds = this.__startHint.getBounds() || this.__startHint.getSizeHint();

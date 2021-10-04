@@ -101,6 +101,13 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           this._addAt(tsrLayout, osparc.dashboard.ListButtonBase.POS.TSR);
           break;
         }
+        case "ui-mode":
+          control = new qx.ui.basic.Image().set({
+            minWidth: 20,
+            alignY: "middle"
+          });
+          this._addAt(control, osparc.dashboard.ListButtonBase.POS.UI_MODE);
+          break;
         case "menu-selection-stack":
           control = new qx.ui.container.Stack().set({
             minWidth: this.self().MENU_BTN_WIDTH,
@@ -262,6 +269,28 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           this.__openQualityEditor();
         }, this);
         tsrRating.addListener("pointerdown", e => e.stopPropagation());
+      }
+    },
+
+    _applyUiMode: function(uiMode) {
+      if (uiMode) {
+        let source = null;
+        switch (uiMode) {
+          case "guided":
+          default:
+            source = osparc.dashboard.CardBase.MODE_GUIDED;
+            break;
+          case "app":
+            source = osparc.dashboard.CardBase.MODE_APP;
+            break;
+          case "workbench":
+            source = osparc.dashboard.CardBase.MODE_WORKBENCH;
+            break;
+        }
+        if (source) {
+          const uiModeIcon = this.getChildControl("ui-mode");
+          uiModeIcon.setSource(source);
+        }
       }
     },
 
