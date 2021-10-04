@@ -10,10 +10,10 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer="Andrei Neagu <neagu@itis.swiss>"
 
-RUN set -eux; \
-  apt-get update; \
-  apt-get install -y gosu; \
-  rm -rf /var/lib/apt/lists/*; \
+RUN set -eux && \
+  apt-get update && \
+  apt-get install -y gosu && \
+  rm -rf /var/lib/apt/lists/* && \
   # verify that the binary works
   gosu nobody true
 

@@ -13,10 +13,10 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=sanderegg
 
-RUN set -eux; \
-  apt-get update; \
-  apt-get install -y --no-install-recommends gosu; \
-  rm -rf /var/lib/apt/lists/*; \
+RUN set -eux && \
+  apt-get update && \
+  apt-get install -y gosu && \
+  rm -rf /var/lib/apt/lists/* && \
   # verify that the binary works
   gosu nobody true
 
