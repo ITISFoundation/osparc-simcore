@@ -95,7 +95,9 @@ async def assemble_spec(
     the dynamic-sidecar to start the service
     """
 
-    docker_registry_settings: RegistrySettings = app.state.settings.DOCKER_REGISTRY
+    docker_registry_settings: RegistrySettings = (
+        app.state.settings.DOCKER_REGISTRY_SETTINGS
+    )
 
     container_name = container_http_entry
     service_spec = compose_spec
