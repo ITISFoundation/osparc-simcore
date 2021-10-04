@@ -88,8 +88,8 @@ def temp_dir(tmpdir: Path) -> Path:
 
 
 @pytest.fixture
-def random_tmp_dir_generatod(temp_dir: Path) -> Callable:
-    def generator(is_file: True) -> Path:
+def random_tmp_dir_generatod(temp_dir: Path) -> Callable[[bool], Path]:
+    def generator(is_file: bool) -> Path:
         random_dir_path = temp_dir / f"{uuid4()}"
         random_dir_path.mkdir(parents=True, exist_ok=True)
         if is_file:
