@@ -275,10 +275,14 @@ class CreateUserServices(DynamicSchedulerEvent):
 
 class RemoveUserCreatedServices(DynamicSchedulerEvent):
     """
-    Triggered if the service is marked for remova.
-    The state of the service will be stored.
+    Triggered when the service is marked for removal.
+    The state of the service will be stored. If dynamic-sidecar
+        is not reachable a warning is logged.
+    The outputs of the service wil be pushed. If dynamic-sidecar
+        is not reachable a warning is logged.
     The dynamic-sidcar together with spawned containers
     and dedicated network will be removed.
+    The scheduler will no longer track the service.
     """
 
     @classmethod
