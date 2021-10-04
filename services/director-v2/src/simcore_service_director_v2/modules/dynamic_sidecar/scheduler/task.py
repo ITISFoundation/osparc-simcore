@@ -153,7 +153,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
                 return
 
             current: LockWithSchedulerData = self._to_observe[service_name]
-            current.scheduler_data.dynamic_sidecar.service_removal_data.mark_to_remove(
+            current.scheduler_data.dynamic_sidecar.service_removal_state.mark_to_remove(
                 save_state
             )
 

@@ -104,7 +104,7 @@ class DockerContainerInspect(BaseModel):
         )
 
 
-class ServiceRemovalData(BaseModel):
+class ServiceRemovalState(BaseModel):
     can_remove: bool = Field(
         False,
         description="when True, marks the service as ready to be removed",
@@ -177,8 +177,8 @@ class DynamicSidecar(BaseModel):
         ),
     )
 
-    service_removal_data: ServiceRemovalData = Field(
-        default_factory=ServiceRemovalData,
+    service_removal_state: ServiceRemovalState = Field(
+        default_factory=ServiceRemovalState,
         description=(
             "stores information used during service removal "
             "from the dynamic-sidecar scheduler"

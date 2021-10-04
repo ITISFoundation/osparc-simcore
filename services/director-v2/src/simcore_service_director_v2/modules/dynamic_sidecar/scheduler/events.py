@@ -283,7 +283,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
 
     @classmethod
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
-        return scheduler_data.dynamic_sidecar.service_removal_data.can_remove
+        return scheduler_data.dynamic_sidecar.service_removal_state.can_remove
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
@@ -305,7 +305,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
 
-        if scheduler_data.dynamic_sidecar.service_removal_data.save_state:
+        if scheduler_data.dynamic_sidecar.service_removal_state.save_state:
             dynamic_sidecar_client = get_dynamic_sidecar_client(app)
             dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
@@ -360,7 +360,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             scheduler_data.node_uuid
         )
 
-        scheduler_data.dynamic_sidecar.service_removal_data.mark_removed()
+        scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
 
 
 # register all handlers defined in this module here

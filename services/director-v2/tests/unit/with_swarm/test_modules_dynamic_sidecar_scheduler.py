@@ -394,6 +394,7 @@ async def test_get_stack_status(
     await ensure_scheduler_runs_once()
 
     await scheduler.add_service(scheduler_data)
+    await ensure_scheduler_runs_once()
 
     stack_status = await scheduler.get_stack_status(scheduler_data.node_uuid)
     assert stack_status == RunningDynamicServiceDetails.from_scheduler_data(
