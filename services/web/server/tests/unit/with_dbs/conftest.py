@@ -275,14 +275,9 @@ async def mocked_director_v2_api(loop, mocker):
             name = f"{mod_name}.{func_name}"
             mock[name] = mocker.patch(
                 f"simcore_service_webserver.{name}",
+                autospec=True,
                 return_value={},
             )
-
-    # FIXME:
-    from importlib import reload
-
-    reload(simcore_service_webserver.projects.projects_api)
-    reload(simcore_service_webserver.projects.projects_handlers)
 
     return mock
 
