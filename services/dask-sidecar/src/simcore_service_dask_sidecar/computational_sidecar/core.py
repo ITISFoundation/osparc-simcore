@@ -19,7 +19,6 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from distributed.worker import get_client
 from models_library.projects_state import RunningState
 from pydantic import ValidationError
 from yarl import URL
