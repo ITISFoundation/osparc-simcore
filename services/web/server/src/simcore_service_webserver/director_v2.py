@@ -9,6 +9,7 @@ from servicelib.aiohttp.rest_routing import (
 )
 
 from . import director_v2_handlers
+from .constants import APP_OPENAPI_SPECS_KEY
 from .director_v2_core import (
     create_or_update_pipeline,
     delete_pipeline,
@@ -22,7 +23,6 @@ from .director_v2_core import (
     stop_services,
 )
 from .director_v2_settings import CONFIG_SECTION_NAME, create_settings
-from .rest_config import APP_OPENAPI_SPECS_KEY
 
 log = logging.getLogger(__file__)
 
