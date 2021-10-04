@@ -3,7 +3,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable, Dict, List, Tuple
 
-from dask_task_models_library.container_tasks.events import TaskStateEvent
+from dask_task_models_library.container_tasks.events import (
+    TaskLogEvent,
+    TaskProgressEvent,
+    TaskStateEvent,
+)
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 
@@ -23,6 +27,13 @@ logger = logging.getLogger(__name__)
 class DaskScheduler(BaseCompScheduler):
     settings: DaskSchedulerSettings
     dask_client: DaskClient
+
+    def __post_init__(self):
+        self.dask_client.register_handlers(
+            task_change_handler=self._task_state_change_handler,
+            task_progress_handler=self._task_progress_change_handler,
+            task_log_handler=self._task_log_change_handler,
+        )
 
     async def _start_tasks(
         self,
@@ -48,12 +59,10 @@ class DaskScheduler(BaseCompScheduler):
     async def _reconnect_backend(self) -> None:
         await self.dask_client.reconnect_client()
 
-    async def _task_state_change_handler(self, event: Tuple[str, str]) -> None:
-        timestamp, json_message = event
-        task_state_event = TaskStateEvent.parse_raw(json_message)
+    async def _task_state_change_handler(self, event: str) -> None:
+        task_state_event = TaskStateEvent.parse_raw(event)
         logger.debug(
-            "received task state update: [%s]: %s",
-            datetime.fromtimestamp(float(timestamp)),
+            "received task state update: %s",
             task_state_event,
         )
         *_, project_id, node_id = parse_dask_job_id(task_state_event.job_id)
@@ -64,3 +73,13 @@ class DaskScheduler(BaseCompScheduler):
         await comp_tasks_repo.set_project_tasks_state(
             project_id, [node_id], task_state_event.state
         )
+
+    async def _task_progress_change_handler(self, event: str) -> None:
+        # FIXME: this must go to the rabbitMQ, and also maybe only construct to save time?
+        task_state_event = TaskProgressEvent.parse_raw(event)
+        logger.debug("received task progress update: %s", task_state_event)
+
+    async def _task_log_change_handler(self, event: str) -> None:
+        # FIXME: this must go to the rabbitMQ, and also maybe only construct to save time?
+        task_state_event = TaskLogEvent.parse_raw(event)
+        logger.debug("received task log update: %s", task_state_event)
