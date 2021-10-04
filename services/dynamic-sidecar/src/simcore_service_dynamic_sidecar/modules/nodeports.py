@@ -8,6 +8,7 @@ import zipfile
 from pathlib import Path
 from typing import Any, List, Optional, Set, Tuple, cast
 
+from pydantic import ByteSize
 from servicelib.archiving_utils import PrunableFolder, archive_dir, unarchive_dir
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.pools import async_on_threadpool
@@ -149,7 +150,7 @@ async def _get_data_from_port(port: Port) -> Tuple[Port, ItemConcreteValue]:
     return (port, ret)
 
 
-async def download_inputs(inputs_path: Path, port_keys: List[str]) -> int:
+async def download_inputs(inputs_path: Path, port_keys: List[str]) -> ByteSize:
     logger.info("retrieving data from simcore...")
     start_time = time.perf_counter()
 
@@ -233,10 +234,15 @@ async def download_inputs(inputs_path: Path, port_keys: List[str]) -> int:
             data = {**current_data, **data}
         data_file.write_text(json.dumps(data))
 
+    transferred = ByteSize(transfer_bytes)
     elapsed_time = time.perf_counter() - start_time
-    logger.info("Downloaded %s bytes in %s seconds", transfer_bytes, elapsed_time)
+    logger.info(
+        "Downloaded %s in %s seconds",
+        transferred.human_readable(decimal=True),
+        elapsed_time,
+    )
 
-    return transfer_bytes
+    return transferred
 
 
 __all__ = ["dispatch_update_for_directory", "upload_outputs", "download_inputs"]

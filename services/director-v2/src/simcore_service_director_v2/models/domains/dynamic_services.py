@@ -1,7 +1,7 @@
 from typing import List
 
 from models_library.services import PropertyName
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ByteSize, Field
 
 from ..schemas.dynamic_services import RunningDynamicServiceDetails, ServiceDetails
 
@@ -13,7 +13,7 @@ class RetrieveDataIn(BaseModel):
 
 
 class RetrieveDataOut(BaseModel):
-    size_bytes: int = Field(
+    size_bytes: ByteSize = Field(
         ..., description="The amount of data transferred by the retrieve call"
     )
 
