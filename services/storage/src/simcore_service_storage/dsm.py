@@ -116,7 +116,7 @@ class DatCoreApiToken:
 
 
 @attr.s(auto_attribs=True)
-class DataStorageManager:
+class DataStorageManager:  # pylint: disable=too-many-public-methods
     """Data storage manager
 
     The dsm has access to the database for all meta data and to the actual backend. For now this
@@ -509,7 +509,7 @@ class DataStorageManager:
 
                 return fmd.file_size, fmd.last_modified
 
-        file_size, last_modified = await _init_metadata()
+        await _init_metadata()
 
         bucket_name = self.simcore_bucket_name
         object_name = file_uuid

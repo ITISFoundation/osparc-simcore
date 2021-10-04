@@ -1,4 +1,4 @@
-from abc import ABC, abstractstaticmethod
+from abc import ABC, abstractmethod
 from typing import Optional
 
 from distributed.worker import get_worker
@@ -10,7 +10,8 @@ class TaskEvent(BaseModel, ABC):
     job_id: str
     msg: Optional[str]
 
-    @abstractstaticmethod
+    @staticmethod
+    @abstractmethod
     def topic_name() -> str:
         raise NotImplementedError
 
