@@ -2,7 +2,7 @@ import asyncio
 import json
 import shutil
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
@@ -12,13 +12,18 @@ from uuid import uuid4
 import fsspec
 from aiodocker import Docker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from dask_task_models_library.container_tasks.events import TaskStateEvent
+from dask_task_models_library.container_tasks.events import (
+    TaskLogEvent,
+    TaskProgressEvent,
+    TaskStateEvent,
+)
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
 )
+from distributed import Pub
 from models_library.projects_state import RunningState
 from pydantic import ValidationError
 from yarl import URL
@@ -68,6 +73,15 @@ class ComputationalSidecar:
     service_version: str
     input_data: TaskInputData
     output_data_keys: TaskOutputDataSchema
+    _state_pub: Pub = field(init=False)
+    _progress_pub: Pub = field(init=False)
+    _logs_pub: Pub = field(init=False)
+
+    def __post_init__(self):
+        # NOTE: this must be created after the task is started to ensure we do have a dask worker
+        self._state_pub = Pub(name=TaskStateEvent.topic_name())
+        self._progress_pub = Pub(name=TaskProgressEvent.topic_name())
+        self._logs_pub = Pub(name=TaskLogEvent.topic_name())
 
     async def _write_input_data(self, task_volumes: TaskSharedVolumes) -> None:
         input_data_file = task_volumes.input_folder / "inputs.json"
@@ -143,7 +157,9 @@ class ComputationalSidecar:
             ) from exc
 
     async def run(self, command: List[str]) -> TaskOutputData:
-        publish_event(TaskStateEvent.from_dask_worker(state=RunningState.STARTED))
+        publish_event(
+            self._state_pub, TaskStateEvent.from_dask_worker(state=RunningState.STARTED)
+        )
 
         settings = Settings.create_from_envs()
         run_id = f"{uuid4()}"
@@ -171,7 +187,11 @@ class ComputationalSidecar:
             # run the image
             async with managed_container(docker_client, config) as container:
                 async with managed_monitor_container_log_task(
-                    container, self.service_key, self.service_version
+                    container=container,
+                    service_key=self.service_key,
+                    service_version=self.service_version,
+                    progress_pub=self._progress_pub,
+                    logs_pub=self._logs_pub,
                 ):
                     # run the container
                     await container.start()
@@ -183,10 +203,11 @@ class ComputationalSidecar:
                         await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
                     if container_data["State"]["ExitCode"] > 0:
                         publish_event(
+                            self._state_pub,
                             TaskStateEvent.from_dask_worker(
                                 state=RunningState.FAILED,
                                 msg=f"error while running container {container.id} for {self.service_key}:{self.service_version}",
-                            )
+                            ),
                         )
 
                         # the container had an error
