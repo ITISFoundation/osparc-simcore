@@ -16,11 +16,11 @@ from .security_decorators import permission_required
 log = logging.getLogger(__file__)
 
 
-routes = web.RouteTableDef()
+# from ._meta import api_version_prefix as VTAG
+# TODO: routes = web.RouteTableDef()
 
 
-# TODO: replace by @routes.post(f"/{vtag}/projects/{{project_uuid}}/workbench:start")
-@routes.post(f"/{vtag}/computation/pipeline/{{project_uuid}}:start")
+# TODO: @routes.post(f"/{VTAG}/computation/pipeline/{{project_id}}:start")
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
@@ -66,8 +66,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
         )
 
 
-# TODO: replace by @routes.post(f"/{vtag}/projects/{{project_uuid}}/workbench:start")
-@routes.post(f"/{vtag}/computation/pipeline/{{project_uuid}}:stop")
+# TODO: @routes.post(f"/{VTAG}/computation/pipeline/{{project_id}}:stop")
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")

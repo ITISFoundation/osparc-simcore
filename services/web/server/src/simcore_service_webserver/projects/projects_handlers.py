@@ -15,7 +15,7 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from .. import catalog, director_v2_api
-from .._meta import api_version_prefix as vtag
+from .._meta import api_version_prefix as VTAG
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
@@ -48,7 +48,7 @@ log = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-@routes.post(f"/{vtag}/projects")
+@routes.post(f"/{VTAG}/projects")
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
@@ -152,7 +152,7 @@ async def create_projects(request: web.Request):
         raise web.HTTPCreated(text=json.dumps(project), content_type="application/json")
 
 
-@routes.get(f"/{vtag}/projects")
+@routes.get(f"/{VTAG}/projects")
 @login_required
 @permission_required("project.read")
 async def list_projects(request: web.Request):
@@ -211,7 +211,7 @@ async def list_projects(request: web.Request):
     ).dict(**RESPONSE_MODEL_POLICY)
 
 
-@routes.get(f"/{vtag}/projects/{{project_uuid}}")
+@routes.get(f"/{VTAG}/projects/{{project_uuid}}")
 @login_required
 @permission_required("project.read")
 async def get_project(request: web.Request):
@@ -260,7 +260,7 @@ async def get_project(request: web.Request):
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
-@routes.get(f"/{vtag}/projects/active")
+@routes.get(f"/{VTAG}/projects/active")
 @login_required
 @permission_required("project.read")
 async def get_active_project(request: web.Request) -> web.Response:
@@ -294,7 +294,7 @@ async def get_active_project(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(reason="Project not found") from exc
 
 
-@routes.put(f"/{vtag}/projects/{{project_uuid}}")
+@routes.put(f"/{VTAG}/projects/{{project_uuid}}")
 @login_required
 @permission_required("project.update")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
@@ -382,7 +382,7 @@ async def replace_project(request: web.Request):
     return {"data": new_project}
 
 
-@routes.delete(f"/{vtag}/projects/{{project_uuid}}")
+@routes.delete(f"/{VTAG}/projects/{{project_uuid}}")
 @login_required
 @permission_required("project.delete")
 async def delete_project(request: web.Request):
@@ -437,7 +437,7 @@ class HTTPLocked(web.HTTPClientError):
     status_code = 423
 
 
-@routes.post(f"/{vtag}/projects/{{project_uuid}}:open")
+@routes.post(f"/{VTAG}/projects/{{project_uuid}}:open")
 @login_required
 @permission_required("project.open")
 async def open_project(request: web.Request) -> web.Response:
@@ -486,7 +486,7 @@ async def open_project(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
-@routes.post(f"/{vtag}/projects/{{project_uuid}}:close")
+@routes.post(f"/{VTAG}/projects/{{project_uuid}}:close")
 @login_required
 @permission_required("project.close")
 async def close_project(request: web.Request) -> web.Response:
@@ -517,7 +517,7 @@ async def close_project(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
-@routes.get(f"/{vtag}/projects/{{project_uuid}}/state")
+@routes.get(f"/{VTAG}/projects/{{project_uuid}}/state")
 @login_required
 @permission_required("project.read")
 async def state_project(request: web.Request) -> web.Response:
