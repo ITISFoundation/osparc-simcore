@@ -319,7 +319,7 @@ class DaskClient:
                 callback()
 
         def _comp_sidecar_fct(
-            docker_basic_auth: DockerBasicAuth,
+            docker_auth: DockerBasicAuth,
             service_key: str,
             service_version: str,
             input_data: TaskInputData,
@@ -333,7 +333,7 @@ class DaskClient:
             )
 
             return run_computational_sidecar(
-                docker_basic_auth,
+                docker_auth,
                 service_key,
                 service_version,
                 input_data,
@@ -385,7 +385,7 @@ class DaskClient:
 
                 task_future = self.client.submit(
                     remote_fct,
-                    docker_basic_auth=DockerBasicAuth(
+                    docker_auth=DockerBasicAuth(
                         server_address=self.app.state.settings.DOCKER_REGISTRY.REGISTRY_URL,
                         username=self.app.state.settings.DOCKER_REGISTRY.REGISTRY_USER,
                         password=self.app.state.settings.DOCKER_REGISTRY.REGISTRY_PW,
