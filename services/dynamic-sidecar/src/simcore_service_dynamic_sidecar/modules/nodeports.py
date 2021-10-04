@@ -216,7 +216,6 @@ async def download_inputs(inputs_path: Path, port_keys: List[str]) -> int:
                 else:
                     logger.info("moving %s", downloaded_file)
                     dest_path = dest_path / Path(downloaded_file).name
-                    # TODO: run this on threadpool
                     await async_on_threadpool(
                         # pylint: disable=cell-var-from-loop
                         lambda: shutil.move(str(downloaded_file), dest_path)
