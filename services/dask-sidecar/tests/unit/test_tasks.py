@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from typing import Dict, Iterable, List, Optional
+from unittest.mock import call
 from uuid import uuid4
 
 import dask
@@ -27,6 +28,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from _pytest.tmpdir import TempPathFactory
 from aiohttp.test_utils import loop_context
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.events import TaskStateEvent
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
@@ -37,6 +39,7 @@ from distributed import Client
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
@@ -94,9 +97,11 @@ def node_id() -> NodeID:
 
 
 @pytest.fixture()
-def dask_subsystem_mock(mocker: MockerFixture) -> None:
+def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, MockerFixture]:
+    # mock dask client
     dask_client_mock = mocker.patch("distributed.Client", autospec=True)
 
+    # mock tasks get worker and state
     dask_distributed_worker_mock = mocker.patch(
         "simcore_service_dask_sidecar.tasks.get_worker", autospec=True
     )
@@ -106,6 +111,7 @@ def dask_subsystem_mock(mocker: MockerFixture) -> None:
     dask_task_mock.resource_restrictions = {}
     dask_distributed_worker_mock.return_value.tasks.get.return_value = dask_task_mock
 
+    # mock dask loggers
     dask_tasks_logger = mocker.patch(
         "simcore_service_dask_sidecar.tasks.log",
         logging.getLogger(__name__),
@@ -120,6 +126,26 @@ def dask_subsystem_mock(mocker: MockerFixture) -> None:
         "simcore_service_dask_sidecar.computational_sidecar.docker_utils.logger",
         logging.getLogger(__name__),
     )
+
+    # mock dask event worker
+    dask_distributed_worker_events_mock = mocker.patch(
+        "dask_task_models_library.container_tasks.events.get_worker", autospec=True
+    )
+    dask_distributed_worker_events_mock.return_value.get_current_task.return_value = (
+        "pytest_jobid"
+    )
+    # mock dask event publishing
+    dask_utils_publish_event_mock = mocker.patch(
+        "simcore_service_dask_sidecar.computational_sidecar.core.publish_event",
+        autospec=True,
+        return_value=None,
+    )
+
+    return {
+        "dask_client": dask_client_mock,
+        "dask_task_state": dask_task_mock,
+        "dask_event_publish": dask_utils_publish_event_mock,
+    }
 
 
 @pytest.fixture
@@ -291,7 +317,7 @@ def ubuntu_task(http_server: List[URL], ftp_server: List[URL]) -> ServiceExample
 def test_run_computational_sidecar_real_fct(
     loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
-    dask_subsystem_mock: None,
+    dask_subsystem_mock: Dict[str, MockerFixture],
     task: ServiceExampleParam,
     caplog: LogCaptureFixture,
 ):
@@ -303,6 +329,9 @@ def test_run_computational_sidecar_real_fct(
         task.input_data,
         task.output_data_keys,
         task.command,
+    )
+    dask_subsystem_mock["dask_event_publish"].assert_has_calls(
+        [call(TaskStateEvent.from_dask_worker(state=RunningState.STARTED))]
     )
 
     # check that the task produces expected logs
