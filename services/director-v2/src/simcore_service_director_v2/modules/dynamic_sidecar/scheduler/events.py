@@ -317,7 +317,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                     dynamic_sidecar_client.service_push_output_ports(
                         dynamic_sidecar_endpoint,
                     ),
-                    dynamic_sidecar_client.service_state_save(
+                    dynamic_sidecar_client.service_save_state(
                         dynamic_sidecar_endpoint,
                     ),
                 )

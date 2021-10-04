@@ -130,7 +130,7 @@ def mock_service_state(mocker: MockerFixture) -> None:
     """because the monitor is disabled some functionality needs to be mocked"""
 
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.client_api.DynamicSidecarClient.service_state_save",
+        "simcore_service_director_v2.modules.dynamic_sidecar.client_api.DynamicSidecarClient.service_save_state",
         side_effect=lambda *args, **kwargs: None,
     )
 
