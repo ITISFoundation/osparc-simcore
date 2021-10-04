@@ -32,12 +32,12 @@ async def _setup_config_and_pgpool(app: web.Application):
     db_cfg: Dict = app[APP_CONFIG_KEY][DB_SECTION]["postgres"]
 
     # db
-    pool = await asyncpg.create_pool(
+    pool: asyncpg.pool.Pool = await asyncpg.create_pool(
         dsn=DSN.format(**db_cfg) + f"?application_name={__name__}_{id(app)}",
         min_size=db_cfg["minsize"],
         max_size=db_cfg["maxsize"],
         loop=asyncio.get_event_loop(),
-    )
+    )  # type: ignore
 
     storage = AsyncpgStorage(pool)  # NOTE: this key belongs to cfg, not settings!
 

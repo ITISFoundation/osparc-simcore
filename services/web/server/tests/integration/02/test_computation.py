@@ -26,7 +26,7 @@ from simcore_postgres_database.webserver_models import (
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director_v2 import setup_director_v2
-from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.login.module_setup import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest

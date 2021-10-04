@@ -35,7 +35,7 @@ from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.exporter import setup_exporter
 from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum
 from simcore_service_webserver.exporter.file_downloader import ParallelDownloader
-from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.login.module_setup import setup_login
 from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.resource_manager import setup_resource_manager

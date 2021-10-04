@@ -34,7 +34,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
-from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.login.module_setup import setup_login
 from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.projects.projects_handlers import (
