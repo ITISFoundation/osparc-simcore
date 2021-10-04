@@ -19,8 +19,6 @@ click==8.0.1
     #   typer
 distlib==0.3.2
     # via virtualenv
-erdantic==0.2.1
-    # via -r requirements/_tools.in
 filelock==3.0.12
     # via virtualenv
 identify==2.2.15
@@ -46,13 +44,6 @@ platformdirs==2.3.0
     #   virtualenv
 pre-commit==2.15.0
     # via -r requirements/../../../requirements/devenv.txt
-pydantic==1.8.2
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
-    #   erdantic
-pygraphviz==1.7
-    # via erdantic
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -73,16 +64,12 @@ tomli==1.2.1
     #   black
     #   pep517
 typer==0.4.0
-    # via
-    #   -r requirements/_tools.in
-    #   erdantic
+    # via -r requirements/_tools.in
 typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
-    #   erdantic
-    #   pydantic
 virtualenv==20.8.0
     # via pre-commit
 wheel==0.37.0
