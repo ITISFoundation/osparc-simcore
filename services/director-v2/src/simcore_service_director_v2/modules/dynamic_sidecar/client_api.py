@@ -171,7 +171,7 @@ class DynamicSidecarClient:
             log_httpx_http_error(url, "PUT", traceback.format_exc())
             raise e
 
-    async def service_state_restore(self, dynamic_sidecar_endpoint: str) -> None:
+    async def service_restore_state(self, dynamic_sidecar_endpoint: str) -> None:
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers/node-state:restore")
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:

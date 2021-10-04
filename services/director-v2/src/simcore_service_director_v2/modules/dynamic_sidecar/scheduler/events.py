@@ -224,7 +224,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
         logger.info("Calling into dynamic-sidecar to restore state")
-        await dynamic_sidecar_client.service_state_restore(dynamic_sidecar_endpoint)
+        await dynamic_sidecar_client.service_restore_state(dynamic_sidecar_endpoint)
         logger.info("State restored by dynamic-sidecar")
 
         scheduler_data.dynamic_sidecar.service_environment_prepared = True

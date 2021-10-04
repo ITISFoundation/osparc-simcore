@@ -135,7 +135,7 @@ def mock_service_state(mocker: MockerFixture) -> None:
     )
 
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.client_api.DynamicSidecarClient.service_state_restore",
+        "simcore_service_director_v2.modules.dynamic_sidecar.client_api.DynamicSidecarClient.service_restore_state",
         side_effect=lambda *args, **kwargs: None,
     )
 
