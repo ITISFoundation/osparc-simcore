@@ -296,7 +296,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DIRECTOR_V2_TRACING: Optional[TracingSettings] = None
 
-    DOCKER_REGISTRY_SETTINGS: RegistrySettings
+    DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings
 
     @validator("LOG_LEVEL", pre=True)
     @classmethod

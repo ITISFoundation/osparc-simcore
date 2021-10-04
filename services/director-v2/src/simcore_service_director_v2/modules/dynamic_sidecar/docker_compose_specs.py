@@ -96,7 +96,7 @@ async def assemble_spec(
     """
 
     docker_registry_settings: RegistrySettings = (
-        app.state.settings.DOCKER_REGISTRY_SETTINGS
+        app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
     )
 
     container_name = container_http_entry
