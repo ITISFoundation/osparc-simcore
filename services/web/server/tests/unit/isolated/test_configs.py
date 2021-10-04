@@ -7,9 +7,11 @@ import importlib
 import inspect
 import unittest.mock as mock
 from pathlib import Path
-from typing import Dict, List
+from types import FunctionType, ModuleType
+from typing import Dict, List, Optional, Set
 
 import pytest
+import trafaret
 from pytest_simcore.helpers.utils_environs import eval_service_environ
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.application_setup import is_setup_function
@@ -27,7 +29,7 @@ config_yaml_filenames = [str(name) for name in resources.listdir("config")]
 
 
 @pytest.fixture(scope="session")
-def app_config_schema():
+def app_config_schema() -> trafaret.Dict:
     return create_schema()
 
 
@@ -57,49 +59,48 @@ def service_webserver_environ(
 
 
 @pytest.fixture(scope="session")
-def app_submodules_with_setup_funs(package_dir) -> List:
+def app_submodules_with_setup_funs(package_dir: Path) -> Set[ModuleType]:
     """
     subsystem = all modules in package with a setup function
     """
 
-    def is_py_module(path: Path) -> bool:
+    EXCLUDE = ("data", "templates")
+
+    def validate(path: Path) -> bool:
         return not path.name.startswith((".", "__")) and (
-            path.suffix == ".py" or any(path.glob("__init__.py"))
+            all(name not in str(path) for name in EXCLUDE)
         )
 
-    modules = []
-    for path in package_dir.iterdir():
-        if is_py_module(path):
-            name = path.name.replace(path.suffix, "")
+    modules = set()
+    for path in package_dir.rglob("*.py"):
+        if validate(path):
+            name = ".".join(path.relative_to(package_dir).parts).replace(".py", "")
             module = importlib.import_module("." + name, package_dir.name)
+            # NOTE: application import ALL
             if module.__name__ != "simcore_service_webserver.application":
+                if "director" in name:
+                    print(name)
                 if any(inspect.getmembers(module, is_setup_function)):
-                    modules.append(module)
+                    modules.add(module)
 
     assert modules, "Expected subsystem setup modules"
     return modules
 
 
 @pytest.fixture(scope="session")
-def app_subsystems(app_submodules_with_setup_funs) -> List[Dict]:
-    metadata = []
+def app_subsystems(app_submodules_with_setup_funs: Set[ModuleType]) -> List[Dict]:
+    metadata = {}
     for module in app_submodules_with_setup_funs:
         setup_members = inspect.getmembers(module, is_setup_function)
-        if setup_members:
-            # finds setup for module
-            module_name = module.__name__.replace(".__init__", "")
-            setup_fun = None
-            for name, fun in setup_members:
-                if fun.metadata()["module_name"] == module_name:
-                    setup_fun = fun
-                    break
+        assert (
+            setup_members
+        ), f"None of {[s[0] for s in setup_members]} are setup funs for {module.__name__}"
 
-            assert (
-                setup_fun
-            ), f"None of {setup_members} are setup funs for {module_name}"
-            metadata.append(setup_fun.metadata())
+        setup_fun_name, setup_fun = setup_members[0]
+        module_name = setup_fun.metadata()["module_name"]
+        metadata[module_name] = setup_fun.metadata()
 
-    return metadata
+    return list(metadata.values())
 
 
 # TESTS ----------------------------------------------------------------------
@@ -124,33 +125,26 @@ def test_correctness_under_environ(configfile, service_webserver_environ):
 def test_setup_per_app_subsystem(app_submodules_with_setup_funs):
     for module in app_submodules_with_setup_funs:
         setup_members = inspect.getmembers(module, is_setup_function)
-        if setup_members:
-            # finds setup for module
-            module_name = module.__name__.replace(".__init__", "")
-            setup_fun = None
-            for name, fun in setup_members:
-                if fun.metadata()["module_name"] == module_name:
-                    setup_fun = fun
-                    break
-
-            assert (
-                setup_fun
-            ), f"None of {setup_members} are setup funs for {module_name}"
+        assert (
+            setup_members
+        ), f"None of {setup_members} are setup funs for {module.__name__}"
 
 
-def test_schema_sections(app_config_schema, app_subsystems):
+def test_schema_sections(app_config_schema: trafaret.Dict, app_subsystems: List[Dict]):
     """
     CONVENTION:
         Every section in the config-file (except for 'version' and 'main')
         is named after an application's subsystem
     """
-    section_names = [metadata["config_section"] for metadata in app_subsystems] + [
+    expected_sections = [metadata["config_section"] for metadata in app_subsystems] + [
         "version",
         "main",
     ]
+    assert sorted(expected_sections) == sorted(set(expected_sections)), "no repetitions"
 
-    for section in app_config_schema.keys:
-        assert section.name in section_names, "Check application config schema!"
+    sections_in_schema = [section.name for section in app_config_schema.keys]
+
+    assert sorted(sections_in_schema) == sorted(expected_sections)
 
 
 @pytest.mark.parametrize("configfile", config_yaml_filenames)
