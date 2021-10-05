@@ -13,8 +13,9 @@ BuiltinTypes = Union[StrictBool, StrictInt, StrictFloat, str]
 # alias for readability
 # SEE https://pydantic-docs.helpmanual.io/usage/models/#orm-mode-aka-arbitrary-class-instances
 
-CommitProxy = RowProxy
 BranchProxy = RowProxy
+CommitProxy = RowProxy
+RepoProxy = RowProxy
 TagProxy = RowProxy
 CommitLog = Tuple[CommitProxy, List[TagProxy]]
 

@@ -3,27 +3,20 @@
 """
 
 import itertools
+import json
 import logging
 import re
 from copy import deepcopy
-from typing import Any, Dict, Generator, Iterator, List, Optional, Tuple
-from uuid import UUID, uuid3
+from typing import Any, Dict, Generator, Iterator, List, Tuple
 
 from aiohttp import web
-from models_library.basic_regex import UUID_RE
+from models_library.basic_types import MD5Str
 from models_library.frontend_services_catalog import is_iterator_service
+from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
 from models_library.services import ServiceDockerData
 
 from .meta_funcs import SERVICE_CATALOG, SERVICE_TO_CALLABLES
-from .meta_models import (
-    IterationInfo,
-    NodeOutputsDict,
-    NodesDict,
-    Parameters,
-    ProjectID,
-    RunnableProjectInfo,
-)
 from .projects.projects_api import get_project_for_user
 from .version_control_db import VersionControlRepository
 from .version_control_models import CommitID
@@ -31,7 +24,19 @@ from .version_control_models import CommitID
 log = logging.getLogger(__file__)
 
 
+NodesDict = Dict[NodeID, Node]
+NodeOutputsDict = Dict[OutputID, OutputTypes]
+Parameters = Tuple[NodeOutputsDict]
 _ParametersNodesPair = Tuple[Parameters, NodesDict]
+
+
+def _compute_checksum(parameters: Parameters) -> MD5Str:
+    # TODO: move to utils
+    import hashlib
+
+    block_string = json.dumps(parameters, sort_keys=True).encode("utf-8")
+    raw_hash = hashlib.sha1(block_string)
+    return raw_hash.hexdigest()
 
 
 def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodesPair]:
@@ -39,7 +44,7 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodes
     # select iterable nodes
     iterable_nodes_defs: List[ServiceDockerData] = []  # schemas of iterable nodes
     iterable_nodes: List[Node] = []  # iterable nodes
-    iterable_nodes_ids: List[UUID] = []
+    iterable_nodes_ids: List[NodeID] = []
 
     for node_id, node in project_nodes.items():
         if is_iterator_service(node.key):
@@ -106,15 +111,17 @@ def extract_parameters(
 
 
 def compose_iteration_tag_name(
-    repo_commit_id, iter_index, total_count, parameters_hash
+    repo_commit_id, iter_index, total_count, parameters_checksum
 ) -> str:
     """Composes unique tag name for iter_index-th iteration of repo_commit_id out of total_count"""
-    return f"iteration:{repo_commit_id}/{iter_index}/{total_count}/{parameters_hash}"
+    return (
+        f"iteration:{repo_commit_id}/{iter_index}/{total_count}/{parameters_checksum}"
+    )
 
 
 def parse_iteration_tag_name(name: str) -> Dict[str, Any]:
     if m := re.match(
-        r"^iteration:(?P<repo_commit_id>\d+)/(?P<iter_index>\d+)/(?P<total_count>-*\d+)/(?P<parameters_hash>.*)$",
+        r"^iteration:(?P<repo_commit_id>\d+)/(?P<iter_index>\d+)/(?P<total_count>-*\d+)/(?P<parameters_checksum>.*)$",
         name,
     ):
         return m.groupdict()
@@ -148,6 +155,7 @@ async def get_or_create_runnable_projects(
         include_templates=False,
     )
     assert project["uuid"] == str(project_uuid)  # nosec
+    assert project == await vc_repo.get_project(project_uuid)
 
     project_nodes: Dict[NodeID, Node] = {
         nid: Node.parse_obj(n) for nid, n in project["workbench"].items()
@@ -206,24 +214,22 @@ async def get_or_create_runnable_projects(
 
         project["workbench"].update(updated_nodes)
 
-        project["uuid"] = wcopy_project_id = compose_wcopy_project_id(
-            repo_project_uuid=project_uuid, commit_id=main_commit_id
-        )
-
+        # tag to identify this iteration
         branch_name = tag_name = compose_iteration_tag_name(
-            main_commit_id, iter_index, total_count
+            main_commit_id, iter_index, total_count, _compute_checksum(parameters)
         )
 
-        commit_id = await vc_repo.force_branch(
+        commit_id = await vc_repo.force_branch_and_wcopy(
             repo_id,
             start_commit_id=main_commit_id,
             project=project,
             branch_name=branch_name,
-            tags=[
-                tag_name,
-                compose_wcopy_project_tag_name(wcopy_project_id),
-            ],
+            tag_name=tag_name,
+            tag_message=json.dumps(parameters),
         )
+
+        wcopy_project_id = await vc_repo.get_wcopy_project_id(repo_id, commit_id)
+        assert project["uuid"] == wcopy_project_id  # nosec
 
         runnable_project_ids.append(wcopy_project_id)
         runnable_project_vc_commits.append(commit_id)

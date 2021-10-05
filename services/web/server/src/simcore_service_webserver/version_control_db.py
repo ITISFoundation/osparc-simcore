@@ -1,5 +1,3 @@
-import hashlib
-import json
 import logging
 from types import SimpleNamespace
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -8,7 +6,7 @@ from uuid import UUID
 import sqlalchemy as sa
 from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
-from models_library.projects import ProjectID
+from models_library.projects import Project, ProjectID
 from projects.test_projects_version_control import ProjectsOrm
 from pydantic.types import NonNegativeInt, PositiveInt
 from simcore_postgres_database.models.projects import projects
@@ -20,7 +18,7 @@ from simcore_postgres_database.models.projects_version_control import (
     projects_vc_snapshots,
     projects_vc_tags,
 )
-from simcore_postgres_database.utils_aiopg_orm import ALL_COLUMNS, BaseOrm
+from simcore_postgres_database.utils_aiopg_orm import BaseOrm
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .db_base_repository import BaseRepository
@@ -32,14 +30,19 @@ from .version_control_errors import (
 )
 from .version_control_models import (
     HEAD,
-    BranchProxy,
     CommitID,
     CommitLog,
     CommitProxy,
     ProjectDict,
+    ProjectProxy,
     RefID,
     SHA1Str,
     TagProxy,
+)
+from .version_control_tags import (
+    compose_wcopy_project_id,
+    compose_wcopy_project_tag_name,
+    parse_wcopy_project_tag_name,
 )
 
 log = logging.getLogger(__name__)
@@ -49,7 +52,10 @@ def compute_checksum(workbench: Dict[str, Any]) -> SHA1Str:
     #
     # - UI is NOT accounted in the checksum
     # - TODO: review other fields to mask?
-    #
+    # TODO: move to utils
+    import hashlib
+    import json
+
     # FIXME: dump workbench correctly (i.e. spaces, quotes ... -indepenent)
     block_string = json.dumps(workbench, sort_keys=True).encode("utf-8")
     raw_hash = hashlib.sha1(block_string)
@@ -145,36 +151,6 @@ class VersionControlRepository(BaseRepository):
                 await self.CommitsOrm(conn).set_filter(id=branch.head_commit_id).fetch()
             )
             return commit
-
-    async def _fetch_project_wcopy(
-        self, repo_id: int, commit_id: int, conn: SAConnection
-    ) -> ProjectID:
-        # defaults to current
-        repo = (
-            await self.ReposOrm(conn)
-            .set_filter(id=repo_id)
-            .fetch("id project_uuid project_checksum modified")
-        )
-        assert repo  #  nosec
-
-        project_wcopy_id = repo.project_uuid
-
-        # search tags for runnable-project for commit_id
-        tags = (
-            await self.TagsOrm(conn)
-            .set_filter(commit_id=commit_id, hidden=True)
-            .fetch_all("id name message")
-        )
-        if tags:
-            try:
-                # parse tag
-                # TODO: define separately to achieve consistency between format/parse operations
-                wc_tag = next(t for t in tags if t.name.startswith("wc:"))
-                project_wcopy_id = ProjectID(wc_tag.replace("wc:", ""))
-            except (StopIteration, ValueError):
-                pass
-
-        return project_wcopy_id
 
     async def _update_state(self, repo_id: int, conn: SAConnection):
 
@@ -513,34 +489,72 @@ class VersionControlRepository(BaseRepository):
 
         return commit_id
 
-    async def force_branch(
+    # NOT EXPOSED TO RestAPI ----------
+
+    async def _fetch_wcopy_project_ids(
+        self, repo_id: int, commit_id: int, conn: SAConnection
+    ) -> ProjectID:
+        # get wcopy for start_commit_id and update with 'project'
+        repo = await self.ReposOrm(conn).set_filter(id=repo_id).fetch("project_uuid")
+        assert repo  # nosec
+        wcopy_project_id = repo.project_uuid
+
+        start_commit_tags = (
+            await self.TagsOrm(conn).set_filter(commit_id=commit_id).fetch_all("name")
+        )
+        for tag in start_commit_tags:
+            if wcp_tag := parse_wcopy_project_tag_name(tag.name):
+                wcopy_project_id = wcp_tag["wcopy_project_id"]
+                break
+
+        return wcopy_project_id
+
+    async def get_wcopy_project_id(self, repo_id: int, commit_id: int) -> ProjectID:
+        async with self.engine.acquire() as conn:
+            return await self._fetch_wcopy_project_ids(repo_id, commit_id, conn)
+
+    async def get_wcopy_project(self, repo_id: int, commit_id: int) -> ProjectDict:
+        async with self.engine.acquire() as conn:
+            project_id = await self._fetch_wcopy_project_ids(repo_id, commit_id, conn)
+            project = await self.ProjectsOrm(conn).set_filter(uuid=project_id).fetch()
+            assert project  # nosec
+            return dict(project.items())
+
+    async def get_project(self, project_id: ProjectID) -> ProjectDict:
+        async with self.engine.acquire() as conn:
+            project = await self.ProjectsOrm(conn).set_filter(uuid=project_id).fetch()
+            assert project  # nosec
+            return dict(project.items())
+
+    async def force_branch_and_wcopy(
         self,
         repo_id: int,
         start_commit_id: int,
         project: ProjectDict,
         branch_name: str,
-        tags: List[str],
+        tag_name: str,
+        tag_message: str,
     ) -> CommitID:
         """Forces a new branch with an explicit working copy 'project' on 'start_commit_id'
 
         For internal operation
         """
         IS_INTERNAL_OPERATION = True
-        assert tags, "force_branch must be tagged"
 
         async with self.engine.acquire() as conn:
+            # existance check prevents errors later
+            if tag := await self.TagsOrm(conn).set_filter(name=tag_name).fetch():
+                return tag.commit_id
 
-            for name in tags:
-                # FIXME: ask commit_id of all tags at the same time and make sure they are the same
-                if tag := await self.TagsOrm(conn).set_filter(name=name).fetch():
-                    return tag.commit_id
+            # get wcopy for start_commit_id and update with 'project'
+            repo = (
+                await self.ReposOrm(conn).set_filter(id=repo_id).fetch("project_uuid")
+            )
+            assert repo  # nosec
 
             async with conn.begin():
-                # creates runnable version in project
-                # raises ?? if same uuid
-                await self.ProjectsOrm(conn).insert(**project)
 
-                # upsert in snapshot table
+                # take snapshot of forced project
                 snapshot_checksum = compute_checksum(project["workbench"])
 
                 # TODO: check snapshot in parent_commit_id != snapshot_checksum
@@ -552,10 +566,19 @@ class VersionControlRepository(BaseRepository):
                 commit_id = await self.CommitsOrm(conn).insert(
                     repo_id=repo_id,
                     parent_commit_id=start_commit_id,
-                    message="forced branch",
                     snapshot_checksum=snapshot_checksum,
                 )
                 assert commit_id  # nosec
+                assert isinstance(commit_id, int)  # nosec
+
+                # creates unique identifier for variant
+                project["uuid"] = compose_wcopy_project_id(repo.project_uuid, commit_id)
+                # FIXME: File-picker takes project uuid. replace!
+                project["hidden"] = True
+
+                # creates runnable version in project
+                # raises ?? if same uuid
+                await self.ProjectsOrm(conn).insert(**project)
 
                 # create branch and set head to last commit_id
                 branch = await self.BranchesOrm(conn).insert(
@@ -566,11 +589,12 @@ class VersionControlRepository(BaseRepository):
                 )
                 assert isinstance(branch, RowProxy)  # nosec
 
-                for tag in tags:
+                for tag in [tag_name, compose_wcopy_project_tag_name(project["uuid"])]:
                     await self.TagsOrm(conn).insert(
                         repo_id=repo_id,
                         commit_id=commit_id,
                         name=tag,
+                        message=tag_message if tag == tag_name else None,
                         hidden=IS_INTERNAL_OPERATION,
                     )
 
