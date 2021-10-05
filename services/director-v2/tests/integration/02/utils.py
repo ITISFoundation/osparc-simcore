@@ -235,7 +235,12 @@ async def assert_retrieve_service(
         allow_redirects=False,
     )
     result = await handle_307_if_required(director_v2_client, director_v0_url, result)
+
     assert result.status_code == 200, result.text
+    json_result = result.json()
+    size_bytes = json_result["data"]["size_bytes"]
+    assert size_bytes > 0
+    assert type(size_bytes) == int
 
 
 async def assert_stop_service(
