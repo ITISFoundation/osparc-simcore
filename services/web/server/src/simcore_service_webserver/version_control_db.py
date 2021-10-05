@@ -487,8 +487,12 @@ class VersionControlRepository(BaseRepository):
         start_commit_id: int,
         project: ProjectDict,
         branch_name: str,
+        *,
+        tags: Optional[List[str]] = None,
     ) -> BranchProxy:
         """Forces a new branch with an explicit working copy 'project' on 'start_commit_id'"""
+        tags = tags or []
+
         async with self.engine.acquire() as conn:
             async with conn.begin():
                 # upsert in snapshot table
@@ -515,6 +519,11 @@ class VersionControlRepository(BaseRepository):
                     name=branch_name,
                 )
                 assert isinstance(branch, RowProxy)  # nosec
+
+                if tags:
+                    # TODO: if they exists, it means that the iteratio is already there!
+                    raise NotImplementedError(f"WIP: create tags in {commit_id}")
+
                 return branch
 
     async def get_snapshot_content(self, repo_id: int, commit_id: int) -> Dict:

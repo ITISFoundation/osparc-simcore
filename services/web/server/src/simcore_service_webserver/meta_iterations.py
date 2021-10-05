@@ -13,11 +13,12 @@ from models_library.frontend_services_catalog import is_iterator_service
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
 from models_library.services import ServiceDockerData
+from pydantic.types import NonNegativeInt, PositiveInt
 
 from .meta_funcs import SERVICE_CATALOG, SERVICE_TO_CALLABLES
 from .projects.projects_api import get_project_for_user
 from .version_control_db import VersionControlRepository
-from .version_control_models import CommitID
+from .version_control_models import BranchID, CommitID
 
 log = logging.getLogger(__file__)
 
@@ -49,46 +50,80 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[ParametersNodesP
     nodes_generators = []
 
     for node, node_def in zip(iterable_nodes, iterable_nodes_defs):
-        assert node.inputs
-        assert node_def.inputs
+        assert node.inputs  # nosec
+        assert node_def.inputs  # nosec
 
         node_call = SERVICE_TO_CALLABLES[(node.key, node.version)]
         g: Generator[NodeOutputsDict, None, None] = node_call(
             **{name: node.inputs[name] for name in node_def.inputs}
         )
-        assert isinstance(g, Iterator)
+        assert isinstance(g, Iterator)  # nosec
         nodes_generators.append(g)
 
-    project_nodes_iterations: List[NodesDict] = []
-    parameters_iterations: List[Tuple[NodeOutputsDict]] = []
+    updated_nodes_per_iter: List[NodesDict] = []
+    parameters_per_iter: List[Tuple[NodeOutputsDict]] = []
 
     for parameters in itertools.product(*nodes_generators):
         # Q: what if iter are infinite?
         # Q: preview & crop iterations?
 
         node_results: NodeOutputsDict
-        ith_project_nodes: NodesDict = deepcopy(project_nodes)
+        updated_nodes: NodesDict = {}
 
         for node_results, node_def, node_id in zip(
             parameters, iterable_nodes_defs, iterable_nodes_ids
         ):
-            assert node_def.outputs
-            assert 1 <= len(node_results) <= len(node_def.outputs)
+            assert node_def.outputs  # nosec
+            assert 1 <= len(node_results) <= len(node_def.outputs)  # nosec
 
-            # override outputs of corresponding iter
-            ith_node = ith_project_nodes[node_id]
-            ith_node.outputs = ith_node.outputs or {}
-            for output_key, output_value in node_results.items():
-                ith_node.outputs[output_key] = output_value
+            # override outputs with the parametrization results
+            _node = updated_nodes[node_id] = deepcopy(project_nodes[node_id])
+            _node.outputs = _node.outputs or {}
+            _node.outputs.update(node_results)
 
-        project_nodes_iterations.append(ith_project_nodes)
+        updated_nodes_per_iter.append(updated_nodes)
 
-    return list(zip(parameters_iterations, project_nodes_iterations))
+    return list(zip(parameters_per_iter, updated_nodes_per_iter))
 
 
-def _extract_parameters(project_nodes: NodesDict) -> Parameters:
+def _compute_parameters_hash(parameters: Parameters) -> str:
+    raise NotImplementedError
+
+
+def extract_parameters(
+    vc_repo: VersionControlRepository, project_uuid: ProjectID, commit_id: CommitID
+) -> Parameters:
+    # TODO: get snapshot
+
     # TODO: iter nodes, if iter, read&save outputs
     # - order?  = order( project_nodes.keys() )
+
+    raise NotImplementedError()
+
+
+# TODO: compositions produce unique identifiers for features that
+# will allow easily finding items and avoiding reduncancy
+def compose_iteration_branch_name(
+    main_commit: CommitID, iter_index: NonNegativeInt
+) -> str:
+    return f"iter:{main_commit}/{iter_index}"
+
+
+def compose_iteration_tag_name(
+    main_project: ProjectID, parameters: Parameters, iter_index: NonNegativeInt
+) -> str:
+    raise NotImplementedError
+
+
+def compose_runnable_project_id(
+    main_project: ProjectID, main_commit: CommitID, parameters: Parameters
+) -> UUID:
+    return uuid3(main_project, f"{main_commit}/{_compute_parameters_hash(parameters)}")
+
+
+def compose_runnable_project_tag_name(
+    main_project: ProjectID, runnable_project: ProjectID
+) -> str:
     raise NotImplementedError
 
 
@@ -160,23 +195,31 @@ async def get_or_create_runnable_projects(
     #  - parameters are set in the corresponding outputs of the meta-nodes
     #
     parameters: Parameters
-    project_nodes_iteration: NodesDict
+    updated_nodes: NodesDict
 
-    for iteration_index, (parameters, project_nodes_iteration) in enumerate(iterations):
+    for iter_index, (parameters, updated_nodes) in enumerate(iterations):
         log.debug(
             "Creating snapshot of project %s with parameters=%s",
             project_uuid,
             parameters,
         )
-        project["workbench"] = project_nodes_iteration
+        project["workbench"].update(updated_nodes)
 
-        new_project_uuid = uuid3(project_uuid, f"{main_commit_id}/{iteration_index}")
-
+        runnable_project_id = compose_runnable_project_id(
+            project_uuid, main_commit_id, parameters
+        )
         # TODO:
 
         # FIXME: raises if commit or branch already exists
         branch = await vc_repo.force_branch(
-            repo_id, start_commit_id=main_commit_id, project=project, branch_name=""
+            repo_id,
+            start_commit_id=main_commit_id,
+            project=project,
+            branch_name=compose_iteration_branch_name(main_commit_id, iter_index),
+            tags=[
+                compose_iteration_tag_name(project_uuid, parameters, iter_index),
+                compose_runnable_project_tag_name(project_uuid, runnable_project_id),
+            ],
         )
 
         # TODO: inject projects in
@@ -220,15 +263,9 @@ async def get_runnable_projects_ids(
 
     # meta-project
     # TODO: find branches of current head that represents iterations
+    # tags: - one to identify it as iteration with given parameters
+    #       - one to associate runnable project uuid
+
     raise NotImplementedError()
 
     return runnable_project_ids
-
-
-def extract_parameters(
-    vc_repo: VersionControlRepository, project_uuid: ProjectID, commit_id: CommitID
-) -> Parameters:
-    # TODO: get snapshot
-    #
-
-    raise NotImplementedError()
