@@ -3,6 +3,7 @@ from typing import List, Tuple
 
 import pytest
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
+    DEFAULT_TIME_STAMP,
     LogType,
     create_container_config,
     parse_line,
@@ -91,14 +92,26 @@ def test_to_datetime(docker_time: str, expected_datetime: datetime):
     [
         (
             "2021-10-05T09:53:48.873236400Z hello from the logs",
-            (LogType.LOG, "2021-10-05T09:53:48.873236400Z", "hello from the logs"),
+            (
+                LogType.LOG,
+                "2021-10-05T09:53:48.873236400Z",
+                "[task] hello from the logs",
+            ),
+        ),
+        (
+            "This is not an expected docker log",
+            (
+                LogType.LOG,
+                DEFAULT_TIME_STAMP,
+                "[task] This is not an expected docker log",
+            ),
         ),
         (
             "2021-10-05T09:53:48.873236400Z [progress] this is some whatever progress without number",
             (
                 LogType.LOG,
                 "2021-10-05T09:53:48.873236400Z",
-                "[progress] this is some whatever progress without number",
+                "[task] [progress] this is some whatever progress without number",
             ),
         ),
         (
@@ -119,36 +132,51 @@ def test_to_datetime(docker_time: str, expected_datetime: datetime):
         ),
         (
             "2021-10-05T09:53:48.873236400Z [progress] 44/150",
-            LogType.PROGRESS,
-            str(44.0 / 150.0),
+            (
+                LogType.PROGRESS,
+                "2021-10-05T09:53:48.873236400Z",
+                f"{(44.0 / 150.0):.2f}",
+            ),
         ),
         (
             "2021-10-05T09:53:48.873236400Z Progress: this is some progress",
-            LogType.LOG,
-            "[task] Progress: this is some progress",
+            (
+                LogType.LOG,
+                "2021-10-05T09:53:48.873236400Z",
+                "[task] Progress: this is some progress",
+            ),
         ),
-        ("2021-10-05T09:53:48.873236400Z progress: 34%", LogType.PROGRESS, "0.34"),
-        ("2021-10-05T09:53:48.873236400Z PROGRESS: .34", LogType.PROGRESS, ".34"),
-        ("2021-10-05T09:53:48.873236400Z progress: 0.44", LogType.PROGRESS, "0.44"),
+        (
+            "2021-10-05T09:53:48.873236400Z progress: 34%",
+            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.34"),
+        ),
+        (
+            "2021-10-05T09:53:48.873236400Z PROGRESS: .34",
+            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.34"),
+        ),
+        (
+            "2021-10-05T09:53:48.873236400Z progress: 0.44",
+            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.44"),
+        ),
         (
             "2021-10-05T09:53:48.873236400Z progress: 44 percent done",
-            LogType.PROGRESS,
-            "0.44",
+            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.44"),
         ),
         (
             "2021-10-05T09:53:48.873236400Z progress: 44/150",
-            LogType.PROGRESS,
-            str(44.0 / 150.0),
+            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", f"{(44.0/150.0):.2f}"),
         ),
         (
             "2021-10-05T09:53:48.873236400Z any kind of message even with progress inside",
-            LogType.LOG,
-            "[task] any kind of message even with progress inside",
+            (
+                LogType.LOG,
+                "2021-10-05T09:53:48.873236400Z",
+                "[task] any kind of message even with progress inside",
+            ),
         ),
         (
             "2021-10-05T09:53:48.873236400Z [PROGRESS]1.000000\n",
-            LogType.PROGRESS,
-            "1.000000",
+            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "1.00"),
         ),
     ],
 )
