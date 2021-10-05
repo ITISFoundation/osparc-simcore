@@ -81,6 +81,7 @@ InputsOutputs = namedtuple("InputsOutputs", "inputs, outputs")
 DY_SERVICES_STATE_PATH: Path = Path("/dy-volumes/workdir_generated-data")
 TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED = 60
 TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED = 60
+POSSIBLE_ISSUE_WORKAROUND = 10
 
 logger = logging.getLogger(__name__)
 
@@ -299,9 +300,21 @@ async def _get_mapped_nodeports_values(
 ) -> Dict[str, InputsOutputs]:
     result: Dict[str, InputsOutputs] = {}
 
-    # sleeping a bit to make sure data is uploaded correctly
-    # and is available in nodeports.
-    await asyncio.sleep(10)
+    # TODO: SAN please have a look into the following.
+    # Up until this point, data was correctly uploaded
+    # via nodeports by the two dynamic-sidecars
+    # The logs for both dynamic-sidecars are fetched and
+    # the "Uploaded bytes X in Y seconds" is present
+    # in the logs.
+    #
+    # If trying to fetch the data from the nodeports in here
+    # without sleeping, _assert_port_values will fail
+    # either on one of the integer values or on the files
+    # Values for at least one of those ports will be None.
+
+    # removing the below sleep will make the test fail in the CI
+    # with this sleep interval it works
+    await asyncio.sleep(POSSIBLE_ISSUE_WORKAROUND)
 
     for node_uuid in workbench:
         PORTS: Nodeports = await node_ports_v2.ports(
@@ -322,6 +335,10 @@ async def _get_mapped_nodeports_values(
         )
 
     return result
+
+
+def _print_values_to_assert(**kwargs) -> None:
+    print("Values to assert", ", ".join(f"{k}={v}" for k, v in kwargs.items()))
 
 
 async def _assert_port_values(
@@ -356,6 +373,14 @@ async def _assert_port_values(
         .get()
     )
 
+    _print_values_to_assert(
+        sleeper_out_2=sleeper_out_2,
+        dy_integer_intput=dy_integer_intput,
+        dy_integer_output=dy_integer_output,
+        dy_compose_spec_integer_intput=dy_compose_spec_integer_intput,
+        dy_compose_spec_integer_output=dy_compose_spec_integer_output,
+    )
+
     assert sleeper_out_2 == dy_integer_intput
     assert sleeper_out_2 == dy_integer_output
     assert sleeper_out_2 == dy_compose_spec_integer_intput
@@ -384,6 +409,14 @@ async def _assert_port_values(
     )
     dy_compose_spec_file_output = await _int_value_port(
         mapped[services_node_uuids.dy_compose_spec].outputs["file_output"]
+    )
+
+    _print_values_to_assert(
+        sleeper_out_1=sleeper_out_1,
+        dy_file_input=dy_file_input,
+        dy_file_output=dy_file_output,
+        dy_compose_spec_file_input=dy_compose_spec_file_input,
+        dy_compose_spec_file_output=dy_compose_spec_file_output,
     )
 
     assert sleeper_out_1 == dy_file_input
