@@ -59,6 +59,7 @@ certifi==2021.5.30
     # via
     #   -c requirements/_base.txt
     #   httpx
+    #   minio
     #   requests
 cffi==1.14.6
     # via
@@ -169,6 +170,10 @@ markupsafe==1.1.1
     #   mako
 mccabe==0.6.1
     # via pylint
+minio==7.0.4
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 multidict==5.1.0
     # via
     #   -c requirements/_base.txt
@@ -314,6 +319,7 @@ urllib3==1.26.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   minio
     #   requests
 vine==5.0.0
     # via
