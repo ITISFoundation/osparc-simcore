@@ -8,6 +8,8 @@ from uuid import UUID
 import sqlalchemy as sa
 from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
+from models_library.projects import ProjectID
+from projects.test_projects_version_control import ProjectsOrm
 from pydantic.types import NonNegativeInt, PositiveInt
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_version_control import (
@@ -135,7 +137,7 @@ class VersionControlRepository(BaseRepository):
             )
             return branch
 
-    async def _get_head_commit(
+    async def _get_HEAD_commit(
         self, repo_id: int, conn: SAConnection
     ) -> Optional[RowProxy]:
         if branch := await self._get_head_branch(repo_id, conn):
@@ -144,9 +146,39 @@ class VersionControlRepository(BaseRepository):
             )
             return commit
 
+    async def _fetch_project_wcopy(
+        self, repo_id: int, commit_id: int, conn: SAConnection
+    ) -> ProjectID:
+        # defaults to current
+        repo = (
+            await self.ReposOrm(conn)
+            .set_filter(id=repo_id)
+            .fetch("id project_uuid project_checksum modified")
+        )
+        assert repo  #  nosec
+
+        project_wcopy_id = repo.project_uuid
+
+        # search tags for runnable-project for commit_id
+        tags = (
+            await self.TagsOrm(conn)
+            .set_filter(commit_id=commit_id, hidden=True)
+            .fetch_all("id name message")
+        )
+        if tags:
+            try:
+                # parse tag
+                # TODO: define separately to achieve consistency between format/parse operations
+                wc_tag = next(t for t in tags if t.name.startswith("wc:"))
+                project_wcopy_id = ProjectID(wc_tag.replace("wc:", ""))
+            except (StopIteration, ValueError):
+                pass
+
+        return project_wcopy_id
+
     async def _update_state(self, repo_id: int, conn: SAConnection):
 
-        head_commit: Optional[RowProxy] = await self._get_head_commit(repo_id, conn)
+        head_commit: Optional[RowProxy] = await self._get_HEAD_commit(repo_id, conn)
 
         # current repo
         repo_orm = self.ReposOrm(conn).set_filter(id=repo_id)
@@ -392,7 +424,7 @@ class VersionControlRepository(BaseRepository):
             commit_id = None
             if repo:
                 if ref_id == HEAD:
-                    commit = await self._get_head_commit(repo.id, conn)
+                    commit = await self._get_HEAD_commit(repo.id, conn)
                     if commit:
                         commit_id = commit.id
                 elif isinstance(ref_id, CommitID):
@@ -487,14 +519,27 @@ class VersionControlRepository(BaseRepository):
         start_commit_id: int,
         project: ProjectDict,
         branch_name: str,
-        *,
-        tags: Optional[List[str]] = None,
-    ) -> BranchProxy:
-        """Forces a new branch with an explicit working copy 'project' on 'start_commit_id'"""
-        tags = tags or []
+        tags: List[str],
+    ) -> CommitID:
+        """Forces a new branch with an explicit working copy 'project' on 'start_commit_id'
+
+        For internal operation
+        """
+        IS_INTERNAL_OPERATION = True
+        assert tags, "force_branch must be tagged"
 
         async with self.engine.acquire() as conn:
+
+            for name in tags:
+                # FIXME: ask commit_id of all tags at the same time and make sure they are the same
+                if tag := await self.TagsOrm(conn).set_filter(name=name).fetch():
+                    return tag.commit_id
+
             async with conn.begin():
+                # creates runnable version in project
+                # raises ?? if same uuid
+                await self.ProjectsOrm(conn).insert(**project)
+
                 # upsert in snapshot table
                 snapshot_checksum = compute_checksum(project["workbench"])
 
@@ -507,24 +552,29 @@ class VersionControlRepository(BaseRepository):
                 commit_id = await self.CommitsOrm(conn).insert(
                     repo_id=repo_id,
                     parent_commit_id=start_commit_id,
+                    message="forced branch",
                     snapshot_checksum=snapshot_checksum,
                 )
                 assert commit_id  # nosec
 
                 # create branch and set head to last commit_id
                 branch = await self.BranchesOrm(conn).insert(
-                    returning_cols=ALL_COLUMNS,
+                    returning_cols="id head_commit_id",
                     repo_id=repo_id,
                     head_commit_id=commit_id,
                     name=branch_name,
                 )
                 assert isinstance(branch, RowProxy)  # nosec
 
-                if tags:
-                    # TODO: if they exists, it means that the iteratio is already there!
-                    raise NotImplementedError(f"WIP: create tags in {commit_id}")
+                for tag in tags:
+                    await self.TagsOrm(conn).insert(
+                        repo_id=repo_id,
+                        commit_id=commit_id,
+                        name=tag,
+                        hidden=IS_INTERNAL_OPERATION,
+                    )
 
-                return branch
+                return branch.head_commit_id
 
     async def get_snapshot_content(self, repo_id: int, commit_id: int) -> Dict:
         async with self.engine.acquire() as conn:
