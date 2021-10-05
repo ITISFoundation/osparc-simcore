@@ -25,17 +25,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   construct: function() {
     this.base(arguments, "horizontal");
 
-    const sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
-      minWidth: 0,
-      width: Math.min(parseInt(window.innerWidth * 0.25), 350)
-    });
-    osparc.utils.Utils.addBorder(sidePanel, 2, "right");
-    const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
-      minWidth: 0
-    });
-    scroll.add(sidePanel);
-
-    this.add(scroll, 0); // flex 0
+    this.getChildControl("side-panel-0");
 
     const mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
     this.add(mainPanel, 1); // flex 1
@@ -56,15 +46,61 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   members: {
-    __sidePanel: null,
-    __scrollContainer: null,
+    __nodesTree: null,
+    __loggerView: null,
     __mainPanel: null,
     __workbenchUI: null,
     __nodeView: null,
     __groupNodeView: null,
-    __nodesTree: null,
-    __loggerView: null,
     __currentNodeId: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "container-scroll-0":
+          control = new qx.ui.container.Scroll().set({
+            minWidth: 0
+          });
+          this.add(control, 0); // flex 0
+          break;
+        case "side-panel-0": {
+          control = new osparc.desktop.SidePanel().set({
+            minWidth: 0,
+            width: Math.min(parseInt(window.innerWidth * 0.2), 350)
+          });
+          osparc.utils.Utils.addBorder(control, 2, "right");
+          const scroll = this.getChildControl("container-scroll-0");
+          scroll.add(control);
+          break;
+        }
+        case "nodes-tree": {
+          control = new osparc.component.widget.NodesTree();
+          const panelView = this.__createPanelView(this.tr("Nodes"), control);
+          const sidePanel = this.getChildControl("side-panel-0");
+          sidePanel.add(panelView, {
+            flex: 1
+          });
+          break;
+        }
+        case "logger-view": {
+          control = new osparc.component.widget.logger.LoggerView();
+          const panelView = this.__createPanelView(this.tr("Logger"), control);
+          osparc.utils.Utils.setIdToWidget(panelView.getTitleLabel(), "studyLoggerTitleLabel");
+          if (!osparc.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
+            panelView.setCollapsed(true);
+          }
+          const sidePanel = this.getChildControl("side-panel-0");
+          sidePanel.add(panelView, {
+            flex: 1
+          });
+        }
+      }
+      return control || this.base(arguments, id);
+    },
+
+    __createPanelView: function(caption, widget) {
+      return new osparc.desktop.PanelView(caption, widget);
+    },
 
     _applyStudy: function(study) {
       if (study) {
@@ -308,12 +344,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.getBlocker().setStyles({
         display: maximize ? "none" : "block"
       });
-      this.__scrollContainer.setVisibility(maximize ? "excluded" : "visible");
+      this.getChildControl("container-scroll-0").setVisibility(maximize ? "excluded" : "visible");
     },
 
     __attachEventHandlers: function() {
       const blocker = this.getBlocker();
-      blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
+      blocker.addListener("tap", this.getChildControl("side-panel-0").toggleCollapsed.bind(this.getChildControl("side-panel-0")));
 
       const splitter = this.getChildControl("splitter");
       splitter.setWidth(1);
@@ -340,29 +376,19 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __initViews: function() {
       const study = this.getStudy();
 
-      const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree();
+      this.getChildControl("side-panel-0").removeAll();
+
+      const nodesTree = this.__nodesTree = this.getChildControl("nodes-tree");
       nodesTree.setStudy(study);
       nodesTree.addListener("removeNode", e => {
         if (this.getStudy().isReadOnly()) {
           return;
         }
-
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
-      this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Nodes"), nodesTree), 0, {
-        flex: 1
-      });
 
-      const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView();
-      const loggerPanel = new osparc.desktop.PanelView(this.tr("Logger"), loggerView);
-      osparc.utils.Utils.setIdToWidget(loggerPanel.getTitleLabel(), "studyLoggerTitleLabel");
-      this.__sidePanel.addOrReplaceAt(loggerPanel, 2, {
-        flex: 1
-      });
-      if (!osparc.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
-        loggerPanel.setCollapsed(true);
-      }
+      this.__loggerView = this.getChildControl("logger-view");
 
       const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI(study.getWorkbench());
       workbenchUI.setStudy(study);
@@ -612,7 +638,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __checkMaximizeable: function() {
-      this.__scrollContainer.setVisibility("visible");
+      this.getChildControl("container-scroll-0").setVisibility("visible");
       this.__nodeView._maximizeIFrame(false); // eslint-disable-line no-underscore-dangle
       const node = this.getStudy().getWorkbench().getNode(this.__currentNodeId);
       if (node && node.getIFrame() && (node.getInputNodes().length === 0)) {
