@@ -238,6 +238,8 @@ async def assert_retrieve_service(
 
     assert result.status_code == 200, result.text
     json_result = result.json()
+    print(f"{service_uuid}:retrieve result ", json_result)
+
     size_bytes = json_result["data"]["size_bytes"]
     assert size_bytes > 0
     assert type(size_bytes) == int
