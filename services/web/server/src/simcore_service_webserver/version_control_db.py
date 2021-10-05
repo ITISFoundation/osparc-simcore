@@ -6,8 +6,7 @@ from uuid import UUID
 import sqlalchemy as sa
 from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
-from models_library.projects import Project, ProjectID
-from projects.test_projects_version_control import ProjectsOrm
+from models_library.projects import ProjectID
 from pydantic.types import NonNegativeInt, PositiveInt
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_version_control import (
@@ -36,6 +35,7 @@ from .version_control_models import (
     ProjectDict,
     ProjectProxy,
     RefID,
+    RepoProxy,
     SHA1Str,
     TagProxy,
 )
@@ -53,6 +53,8 @@ def compute_checksum(workbench: Dict[str, Any]) -> SHA1Str:
     # - UI is NOT accounted in the checksum
     # - TODO: review other fields to mask?
     # TODO: move to utils
+    # - Add options with include/exclude fields (e.g. to avoid status)
+    #
     import hashlib
     import json
 
@@ -145,16 +147,36 @@ class VersionControlRepository(BaseRepository):
 
     async def _get_HEAD_commit(
         self, repo_id: int, conn: SAConnection
-    ) -> Optional[RowProxy]:
+    ) -> Optional[CommitProxy]:
         if branch := await self._get_head_branch(repo_id, conn):
             commit = (
                 await self.CommitsOrm(conn).set_filter(id=branch.head_commit_id).fetch()
             )
             return commit
 
-    async def _update_state(self, repo_id: int, conn: SAConnection):
+    async def _fetch_wcopy_project_id(
+        self, repo_id: int, commit_id: int, conn: SAConnection
+    ) -> ProjectID:
+        # get wcopy for start_commit_id and update with 'project'
+        repo = await self.ReposOrm(conn).set_filter(id=repo_id).fetch("project_uuid")
+        assert repo  # nosec
+        wcopy_project_id = repo.project_uuid
 
-        head_commit: Optional[RowProxy] = await self._get_HEAD_commit(repo_id, conn)
+        found = (
+            await self.TagsOrm(conn).set_filter(commit_id=commit_id).fetch_all("name")
+        )
+        for tag in found:
+            if wcp_tag := parse_wcopy_project_tag_name(tag.name):
+                wcopy_project_id = wcp_tag["wcopy_project_id"]
+                break
+
+        return wcopy_project_id
+
+    async def _update_state(
+        self, repo_id: int, conn: SAConnection
+    ) -> Tuple[RepoProxy, Optional[CommitProxy], ProjectProxy]:
+
+        head_commit: Optional[CommitProxy] = await self._get_HEAD_commit(repo_id, conn)
 
         # current repo
         repo_orm = self.ReposOrm(conn).set_filter(id=repo_id)
@@ -162,11 +184,15 @@ class VersionControlRepository(BaseRepository):
         repo = await repo_orm.fetch(returning_cols)
         assert repo  #  nosec
 
-        # fetch project
-        project_orm = self.ProjectsOrm(conn).set_filter(uuid=repo.project_uuid)
+        # fetch working copy
+        wcopy_project_id = await self._fetch_wcopy_project_id(
+            repo_id, head_commit.id if head_commit else -1, conn
+        )
+        project_orm = self.ProjectsOrm(conn).set_filter(uuid=wcopy_project_id)
         project = await project_orm.fetch("last_change_date workbench ui")
         assert project  # nosec
 
+        # uses checksum cached in repo table to avoid re-computing checksum
         checksum: Optional[SHA1Str] = repo.project_checksum
         if not checksum or (checksum and repo.modified < project.last_change_date):
             checksum = compute_checksum(project.workbench)
@@ -279,7 +305,7 @@ class VersionControlRepository(BaseRepository):
                 commit_id = head_commit.id
 
             async with conn.begin():
-                # take a snapshot if needed
+                # take a snapshot if changes
                 if repo.project_checksum != previous_checksum:
                     await self._upsert_snapshot(repo.project_checksum, project, conn)
 
@@ -489,33 +515,33 @@ class VersionControlRepository(BaseRepository):
 
         return commit_id
 
-    # NOT EXPOSED TO RestAPI ----------
+    async def get_snapshot_content(self, repo_id: int, commit_id: int) -> Dict:
+        async with self.engine.acquire() as conn:
+            if (
+                commit := await self.CommitsOrm(conn)
+                .set_filter(repo_id=repo_id, id=commit_id)
+                .fetch("snapshot_checksum")
+            ):
+                if (
+                    snapshot := await self.SnapshotsOrm(conn)
+                    .set_filter(checksum=commit.snapshot_checksum)
+                    .fetch("content")
+                ):
+                    return snapshot.content
 
-    async def _fetch_wcopy_project_ids(
-        self, repo_id: int, commit_id: int, conn: SAConnection
-    ) -> ProjectID:
-        # get wcopy for start_commit_id and update with 'project'
-        repo = await self.ReposOrm(conn).set_filter(id=repo_id).fetch("project_uuid")
-        assert repo  # nosec
-        wcopy_project_id = repo.project_uuid
+        raise NotFoundError(name="snapshot for commit", value=(repo_id, commit_id))
 
-        start_commit_tags = (
-            await self.TagsOrm(conn).set_filter(commit_id=commit_id).fetch_all("name")
-        )
-        for tag in start_commit_tags:
-            if wcp_tag := parse_wcopy_project_tag_name(tag.name):
-                wcopy_project_id = wcp_tag["wcopy_project_id"]
-                break
 
-        return wcopy_project_id
+class VersionControlRepositoryInternalAPI(VersionControlRepository):
+    """This part is NOT exposed to restAPI"""
 
     async def get_wcopy_project_id(self, repo_id: int, commit_id: int) -> ProjectID:
         async with self.engine.acquire() as conn:
-            return await self._fetch_wcopy_project_ids(repo_id, commit_id, conn)
+            return await self._fetch_wcopy_project_id(repo_id, commit_id, conn)
 
     async def get_wcopy_project(self, repo_id: int, commit_id: int) -> ProjectDict:
         async with self.engine.acquire() as conn:
-            project_id = await self._fetch_wcopy_project_ids(repo_id, commit_id, conn)
+            project_id = await self._fetch_wcopy_project_id(repo_id, commit_id, conn)
             project = await self.ProjectsOrm(conn).set_filter(uuid=project_id).fetch()
             assert project  # nosec
             return dict(project.items())
@@ -599,19 +625,3 @@ class VersionControlRepository(BaseRepository):
                     )
 
                 return branch.head_commit_id
-
-    async def get_snapshot_content(self, repo_id: int, commit_id: int) -> Dict:
-        async with self.engine.acquire() as conn:
-            if (
-                commit := await self.CommitsOrm(conn)
-                .set_filter(repo_id=repo_id, id=commit_id)
-                .fetch("snapshot_checksum")
-            ):
-                if (
-                    snapshot := await self.SnapshotsOrm(conn)
-                    .set_filter(checksum=commit.snapshot_checksum)
-                    .fetch("content")
-                ):
-                    return snapshot.content
-
-        raise NotFoundError(name="snapshot for commit", value=(repo_id, commit_id))

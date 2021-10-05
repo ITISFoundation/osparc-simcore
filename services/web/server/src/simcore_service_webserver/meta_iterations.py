@@ -18,7 +18,7 @@ from models_library.services import ServiceDockerData
 
 from .meta_funcs import SERVICE_CATALOG, SERVICE_TO_CALLABLES
 from .projects.projects_api import get_project_for_user
-from .version_control_db import VersionControlRepository
+from .version_control_db import VersionControlRepositoryInternalAPI
 from .version_control_models import CommitID
 
 log = logging.getLogger(__file__)
@@ -97,7 +97,9 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodes
 
 
 def extract_parameters(
-    vc_repo: VersionControlRepository, project_uuid: ProjectID, commit_id: CommitID
+    vc_repo: VersionControlRepositoryInternalAPI,
+    project_uuid: ProjectID,
+    commit_id: CommitID,
 ) -> Parameters:
     # TODO: get snapshot
 
@@ -143,7 +145,7 @@ async def get_or_create_runnable_projects(
 
     # FIXME: what happens if not
 
-    vc_repo = VersionControlRepository(request)
+    vc_repo = VersionControlRepositoryInternalAPI(request)
     assert vc_repo.user_id  # nosec
 
     # retrieves project
@@ -242,7 +244,7 @@ async def get_runnable_projects_ids(
     project_uuid: ProjectID,
 ) -> List[ProjectID]:
 
-    vc_repo = VersionControlRepository(request)
+    vc_repo = VersionControlRepositoryInternalAPI(request)
     assert vc_repo.user_id  # nosec
 
     project = await get_project_for_user(
