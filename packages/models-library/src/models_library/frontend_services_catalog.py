@@ -97,8 +97,8 @@ def _create_constant_node_def(
         contact=OM.email,
         inputs={},
         outputs={
-            output_name: {
-                "label": LABEL,
+            "out_1": {
+                "label": output_name,
                 "description": DESCRIPTION,
                 "type": output_type,
             }
@@ -148,29 +148,6 @@ def _create_data_iterator_int_range() -> ServiceDockerData:
                 "type": "integer",
             }
         },
-    )
-
-
-def _create_iterator_consumer_probe_int() -> ServiceDockerData:
-    return ServiceDockerData(
-        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/iterator-consumer/probe/int",
-        version="1.0.0",
-        type=ServiceType.FRONTEND,
-        name="Probe Sensor - Integer",
-        description="Integer iterator consumer.",
-        authors=[
-            OM,
-        ],
-        contact=OM.email,
-        inputs={
-            "iterator": {
-                "label": "Iterator consumer",
-                "description": "Iterator consumer",
-                "defaultValue": 0,
-                "type": "integer",
-            }
-        },
-        outputs={},
     )
 
 
