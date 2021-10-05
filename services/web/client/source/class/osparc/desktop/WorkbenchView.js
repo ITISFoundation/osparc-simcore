@@ -73,27 +73,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           scroll.add(control);
           break;
         }
-        case "nodes-tree": {
-          control = new osparc.component.widget.NodesTree();
-          const panelView = this.__createPanelView(this.tr("Nodes"), control);
-          const sidePanel = this.getChildControl("side-panel-0");
-          sidePanel.add(panelView, {
-            flex: 1
-          });
-          break;
-        }
-        case "logger-view": {
-          control = new osparc.component.widget.logger.LoggerView();
-          const panelView = this.__createPanelView(this.tr("Logger"), control);
-          osparc.utils.Utils.setIdToWidget(panelView.getTitleLabel(), "studyLoggerTitleLabel");
-          if (!osparc.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
-            panelView.setCollapsed(true);
-          }
-          const sidePanel = this.getChildControl("side-panel-0");
-          sidePanel.add(panelView, {
-            flex: 1
-          });
-        }
       }
       return control || this.base(arguments, id);
     },
@@ -376,9 +355,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __initViews: function() {
       const study = this.getStudy();
 
-      this.getChildControl("side-panel-0").removeAll();
+      const sidePanel = this.getChildControl("side-panel-0");
+      sidePanel.removeAll();
 
-      const nodesTree = this.__nodesTree = this.getChildControl("nodes-tree");
+      const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree();
       nodesTree.setStudy(study);
       nodesTree.addListener("removeNode", e => {
         if (this.getStudy().isReadOnly()) {
@@ -387,8 +367,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
+      const nodesTreeInPanelView = this.__createPanelView(this.tr("Nodes"), nodesTree);
+      sidePanel.add(nodesTreeInPanelView, {
+        flex: 1
+      });
 
-      this.__loggerView = this.getChildControl("logger-view");
+      const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView();
+      const loggerInPanelView = this.__createPanelView(this.tr("Logger"), loggerView);
+      osparc.utils.Utils.setIdToWidget(loggerInPanelView.getTitleLabel(), "studyLoggerTitleLabel");
+      if (!osparc.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
+        loggerInPanelView.setCollapsed(true);
+      }
+      sidePanel.add(loggerInPanelView, {
+        flex: 1
+      });
 
       const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI(study.getWorkbench());
       workbenchUI.setStudy(study);
