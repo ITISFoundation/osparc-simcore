@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Optional
 
 from distributed.worker import get_worker
 from models_library.projects_state import RunningState

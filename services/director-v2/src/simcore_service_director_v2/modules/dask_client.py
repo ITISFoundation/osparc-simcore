@@ -5,7 +5,7 @@ import functools
 import logging
 from dataclasses import dataclass, field
 from pprint import pformat
-from typing import Any, Awaitable, Callable, Dict, Iterable, List, Tuple, Union
+from typing import Any, Awaitable, Callable, Dict, Iterable, List, Union
 
 import dask.distributed
 import distributed
