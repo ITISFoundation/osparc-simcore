@@ -20,9 +20,9 @@ click==7.1.2
     #   -c requirements/_test.txt
     #   black
     #   pip-tools
-distlib==0.3.3
+distlib==0.3.2
     # via virtualenv
-filelock==3.1.0
+filelock==3.0.12
     # via virtualenv
 identify==2.2.15
     # via pre-commit
@@ -38,9 +38,9 @@ pathspec==0.9.0
     # via black
 pep517==0.11.0
     # via pip-tools
-pip-tools==6.3.0
+pip-tools==6.2.0
     # via -r requirements/../../../requirements/devenv.txt
-platformdirs==2.4.0
+platformdirs==2.3.0
     # via
     #   -c requirements/_test.txt
     #   black
@@ -54,7 +54,7 @@ pyyaml==5.4.1
     #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
-regex==2021.9.24
+regex==2021.8.28
     # via black
 six==1.16.0
     # via
@@ -74,7 +74,7 @@ typing-extensions==3.10.0.2
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
-virtualenv==20.8.1
+virtualenv==20.8.0
     # via pre-commit
 watchdog==2.1.5
     # via -r requirements/_tools.in
