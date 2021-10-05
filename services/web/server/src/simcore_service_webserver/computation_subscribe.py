@@ -45,7 +45,7 @@ async def parse_rabbit_message_data(app: web.Application, data: Dict) -> None:
                     "node_id": node_id,
                     "data": project["workbench"][node_id],
                 }
-        elif data["channel"] == "log":
+        elif data["channel"] == "logger":
             messages["logger"] = data
         if messages:
             await post_messages(app, user_id, messages)
