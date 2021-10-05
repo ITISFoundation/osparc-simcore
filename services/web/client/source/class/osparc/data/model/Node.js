@@ -967,7 +967,11 @@ qx.Class.define("osparc.data.model.Node", {
                 this.getPropsForm().retrievedPortData(portKey, false);
               }
               console.error(failure, error);
-              this.getLogger().error(this.getNodeId(), "Failed retrieving inputs");
+              const msgData = {
+                nodeId: this.getNodeId(),
+                msg: "Failed retrieving inputs"
+              };
+              this.fireDataEvent("showInLogger", msgData);
             }, this);
           });
           updReq.send();
