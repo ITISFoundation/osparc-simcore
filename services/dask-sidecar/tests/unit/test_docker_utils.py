@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import List, Tuple
 
 import pytest
+from simcore_service_dask_sidecar.boot_mode import BootMode
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     DEFAULT_TIME_STAMP,
     LogType,
@@ -41,12 +42,14 @@ def comp_volume_mount_point() -> str:
     return "/some/fake/entrypoint"
 
 
+@pytest.mark.parametrize("boot_mode", [boot for boot in BootMode])
 async def test_create_container_config(
     docker_registry: str,
     service_key: str,
     service_version: str,
     command: List[str],
     comp_volume_mount_point: str,
+    boot_mode: BootMode,
 ):
 
     container_config = await create_container_config(
@@ -55,6 +58,7 @@ async def test_create_container_config(
         service_version,
         command,
         comp_volume_mount_point,
+        boot_mode,
     )
 
     assert container_config.dict(by_alias=True) == (
@@ -63,6 +67,7 @@ async def test_create_container_config(
                 "INPUT_FOLDER=/inputs",
                 "OUTPUT_FOLDER=/outputs",
                 "LOG_FOLDER=/logs",
+                f"SC_COMP_SERVICES_SCHEDULED_AS={boot_mode.value}",
             ],
             "Cmd": command,
             "Image": f"{docker_registry}/{service_key}:{service_version}",

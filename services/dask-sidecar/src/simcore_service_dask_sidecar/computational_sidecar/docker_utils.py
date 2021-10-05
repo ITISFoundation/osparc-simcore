@@ -18,6 +18,7 @@ from dask_task_models_library.container_tasks.events import (
 from distributed.pubsub import Pub
 from pydantic import ByteSize
 
+from ..boot_mode import BootMode
 from ..dask_utils import create_dask_worker_logger, publish_event
 from ..settings import Settings
 from .models import ContainerHostConfig, DockerContainerConfig
@@ -31,16 +32,20 @@ async def create_container_config(
     service_version: str,
     command: List[str],
     comp_volume_mount_point: str,
+    boot_mode: BootMode,
 ) -> DockerContainerConfig:
 
     return DockerContainerConfig(
         Env=[
-            f"{name.upper()}_FOLDER=/{name}s"
-            for name in [
-                "input",
-                "output",
-                "log",
-            ]
+            *[
+                f"{name.upper()}_FOLDER=/{name}s"
+                for name in [
+                    "input",
+                    "output",
+                    "log",
+                ]
+            ],
+            f"SC_COMP_SERVICES_SCHEDULED_AS={boot_mode.value}",
         ],
         Cmd=command,
         Image=f"{docker_registry}/{service_key}:{service_version}",
