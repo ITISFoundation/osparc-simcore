@@ -87,16 +87,16 @@ def _create_rabbit_message(
     message_name: str, node_uuid: str, user_id: str, project_id: str, param: Any
 ) -> Dict:
     message = {
-        "Channel": message_name.title(),
-        "Node": node_uuid,
+        "channel": message_name.title(),
+        "node_id": node_uuid,
         "user_id": user_id,
         "project_id": project_id,
     }
 
     if message_name == "log":
-        message["Messages"] = param
+        message["messages"] = param
     if message_name == "progress":
-        message["Progress"] = param
+        message["progress"] = param
     return message
 
 
