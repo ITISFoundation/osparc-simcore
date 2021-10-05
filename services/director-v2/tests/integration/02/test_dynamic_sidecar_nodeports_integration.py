@@ -299,6 +299,10 @@ async def _get_mapped_nodeports_values(
 ) -> Dict[str, InputsOutputs]:
     result: Dict[str, InputsOutputs] = {}
 
+    # sleeping a bit to make sure data is uploaded correctly
+    # and is available in nodeports.
+    await asyncio.sleep(10)
+
     for node_uuid in workbench:
         PORTS: Nodeports = await node_ports_v2.ports(
             user_id=user_id,
