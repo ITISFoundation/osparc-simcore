@@ -1,7 +1,8 @@
 import hashlib
 import json
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from types import SimpleNamespace
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -29,6 +30,7 @@ from .version_control_errors import (
 )
 from .version_control_models import (
     HEAD,
+    CommitID,
     CommitLog,
     CommitProxy,
     RefID,
@@ -154,16 +156,21 @@ class VersionControlRepository(BaseRepository):
         checksum: Optional[SHA1Str] = repo.project_checksum
         if not checksum or (checksum and repo.modified < project.last_change_date):
             checksum = compute_checksum(project.workbench)
+
             repo = await repo_orm.update(returning_cols, project_checksum=checksum)
             assert repo
         return repo, head_commit, project
 
     @staticmethod
-    async def _upsert_snapshot(repo: RowProxy, project: RowProxy, conn: SAConnection):
+    async def _upsert_snapshot(
+        project_checksum: str,
+        project: Union[RowProxy, SimpleNamespace],
+        conn: SAConnection,
+    ):
         # has changes wrt previous commit
-        # if exists, ui might change
+        assert project_checksum  # nosec
         insert_stmt = pg_insert(projects_vc_snapshots).values(
-            checksum=repo.project_checksum,
+            checksum=project_checksum,
             content={"workbench": project.workbench, "ui": project.ui},
         )
         upsert_snapshot = insert_stmt.on_conflict_do_update(
@@ -240,7 +247,7 @@ class VersionControlRepository(BaseRepository):
         async with self.engine.acquire() as conn:
             # FIXME: get head commit in one execution
 
-            # get head commit
+            # get head branch
             branch = await self._get_head_branch(repo_id, conn)
             if not branch:
                 raise NotImplementedError("Detached heads still not implemented")
@@ -260,7 +267,7 @@ class VersionControlRepository(BaseRepository):
             async with conn.begin():
                 # take a snapshot if needed
                 if repo.project_checksum != previous_checksum:
-                    await self._upsert_snapshot(repo, project, conn)
+                    await self._upsert_snapshot(repo.project_checksum, project, conn)
 
                     # commit new snapshot in history
                     commit_id = await self.CommitsOrm(conn).insert(
@@ -271,7 +278,7 @@ class VersionControlRepository(BaseRepository):
                     )
                     assert commit_id  # nosec
 
-                    # updates head/branch
+                    # updates head/branch to this commit
                     await self.BranchesOrm(conn).set_filter(id=branch.id).update(
                         head_commit_id=commit_id
                     )
@@ -340,7 +347,7 @@ class VersionControlRepository(BaseRepository):
     async def update_annotations(
         self,
         repo_id: int,
-        commit_id: int,
+        commit_id: CommitID,
         message: Optional[str] = None,
         tag_name: Optional[str] = None,
     ):
@@ -365,7 +372,7 @@ class VersionControlRepository(BaseRepository):
 
     async def as_repo_and_commit_ids(
         self, project_uuid: UUID, ref_id: RefID
-    ) -> Tuple[int, int]:
+    ) -> Tuple[int, CommitID]:
         """Translates (project-uuid, ref-id) to (repo-id, commit-id)
 
         :return: tuple with repo and commit identifiers
@@ -382,7 +389,7 @@ class VersionControlRepository(BaseRepository):
                     commit = await self._get_head_commit(repo.id, conn)
                     if commit:
                         commit_id = commit.id
-                elif isinstance(ref_id, int):
+                elif isinstance(ref_id, CommitID):
                     commit_id = ref_id
                 else:
                     assert isinstance(ref_id, str)  # nosec

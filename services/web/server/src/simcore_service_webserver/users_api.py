@@ -18,7 +18,7 @@ from simcore_service_webserver.login.cfg import get_storage
 from sqlalchemy import and_, literal_column
 
 from .db_models import GroupType, groups, tokens, user_to_groups, users
-from .groups_api import convert_groups_db_to_schema
+from .groups_utils import convert_groups_db_to_schema
 from .login.storage import AsyncpgStorage
 from .security_api import clean_auth_policy_cache
 from .users_exceptions import UserNotFoundError

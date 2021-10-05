@@ -12,4 +12,3 @@
 
 """
 # TODO: move here all studies_access.py
-from .module_setup import setup_studies_dispatcher

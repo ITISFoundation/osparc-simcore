@@ -15,7 +15,7 @@ from models_library.projects import AccessRights, Project
 from models_library.projects_nodes_io import BaseFileLink, NodeID
 from models_library.utils.nodes import compute_node_hash, project_node_io_payload_cb
 
-from ...director_v2 import create_or_update_pipeline
+from ...director_v2_api import create_or_update_pipeline
 from ...projects.projects_api import delete_project, get_project_for_user
 from ...projects.projects_db import APP_PROJECT_DBAPI
 from ...projects.projects_exceptions import ProjectsException

@@ -10,7 +10,7 @@ from aioredlock import Aioredlock
 from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
 
-from .. import director_v2, users_exceptions
+from .. import director_v2_api, users_exceptions
 from ..db_models import GroupType
 from ..director.director_exceptions import DirectorException, ServiceNotFoundError
 from ..groups_api import get_group_from_gid
@@ -375,7 +375,7 @@ async def _remove_single_orphaned_service(
         )
         logger.info(message)
         try:
-            await director_v2.stop_service(app, service_uuid, save_state=False)
+            await director_v2_api.stop_service(app, service_uuid, save_state=False)
         except (ServiceNotFoundError, DirectorException) as err:
             logger.warning("Error while stopping service: %s", err)
         return
@@ -414,7 +414,7 @@ async def _remove_single_orphaned_service(
             user_id = int(interactive_service.get("user_id", 0))
 
             save_state = not await is_user_guest(app, user_id) if user_id else True
-            await director_v2.stop_service(app, service_uuid, save_state)
+            await director_v2_api.stop_service(app, service_uuid, save_state)
         except (ServiceNotFoundError, DirectorException) as err:
             logger.warning("Error while stopping service: %s", err)
 
@@ -446,8 +446,8 @@ async def remove_orphaned_services(
 
     running_interactive_services: List[Dict[str, Any]] = []
     try:
-        running_interactive_services = await director_v2.get_services(app)
-    except director_v2.DirectorServiceError:
+        running_interactive_services = await director_v2_api.get_services(app)
+    except director_v2_api.DirectorServiceError:
         logger.debug(("Could not fetch running_interactive_services"))
 
     logger.info(
