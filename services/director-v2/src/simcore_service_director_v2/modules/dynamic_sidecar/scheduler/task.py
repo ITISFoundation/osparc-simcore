@@ -324,7 +324,7 @@ class DynamicSidecarsScheduler:
         )
 
         while self._keep_running:
-            logger.debug("Observing dynamic-sidecars %s", self._to_observe)
+            logger.debug("Observing dynamic-sidecars %s", self._to_observe.keys())
 
             try:
                 # prevent access to self._to_observe
