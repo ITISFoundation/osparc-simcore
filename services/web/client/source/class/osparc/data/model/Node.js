@@ -955,25 +955,21 @@ qx.Class.define("osparc.data.model.Node", {
               this.getPropsForm().retrievedPortData(portKey, true, sizeBytes);
             }
           }, this);
-          updReq.addListener("fail", e => {
-            const {
-              error
-            } = e.getTarget().getResponse();
-            if (portKey) {
-              this.getPropsForm().retrievedPortData(portKey, false);
-            }
-            console.error("fail", error);
-          }, this);
-          updReq.addListener("error", e => {
-            const {
-              error
-            } = e.getTarget().getResponse();
-            if (portKey) {
-              this.getPropsForm().retrievedPortData(portKey, false);
-            }
-            console.error("error", error);
-          }, this);
-          updReq.send();
+          [
+            "fail",
+            "error"
+          ].forEach(failure => {
+            updReq.addListener(failure, e => {
+              const {
+                error
+              } = e.getTarget().getResponse();
+              if (portKey) {
+                this.getPropsForm().retrievedPortData(portKey, false);
+              }
+              console.error(failure, error);
+              this.getLogger().error(this.getNodeId(), "Failed retrieving inputs");
+            }, this);
+          });
 
           if (portKey) {
             this.getPropsForm().retrievingPortData(portKey);
