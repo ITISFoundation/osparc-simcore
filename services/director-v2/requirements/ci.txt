@@ -17,7 +17,7 @@
 ../../packages/pytest-simcore/
 ../../packages/service-library[fastapi]
 ../../packages/settings-library/
-../../packages/simcore-sdk
+../../packages/simcore-sdk  # Needed ONLY for testing
 ../../services/storage/client-sdk/python/ # Needed ONLY for testing
 
 # installs current package

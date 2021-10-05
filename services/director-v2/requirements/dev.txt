@@ -17,8 +17,8 @@
 --editable ../../packages/pytest-simcore/
 --editable ../../packages/service-library[fastapi]
 --editable ../../packages/settings-library/
---editable ../../packages/simcore-sdk
---editable ../../services/storage/client-sdk/python/ # Needed ONLY for testing
+--editable ../../packages/simcore-sdk # Needed ONLY for testing
+--editable ../../services/storage/client-sdk/python/  # Needed ONLY for testing
 
 # installs current package
 --editable .
