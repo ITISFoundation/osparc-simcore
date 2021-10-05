@@ -225,7 +225,7 @@ def ftp_server(ftpserver: ProcessFTPServer) -> List[URL]:
 
 
 @pytest.fixture()
-def ubuntu_task(http_server: List[URL], ftp_server: List[URL]) -> ServiceExampleParam:
+def ubuntu_task(ftp_server: List[URL]) -> ServiceExampleParam:
     file_names = [file.path for file in ftp_server]
     check_input_file_command = " && ".join(
         [
