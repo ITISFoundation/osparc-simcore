@@ -156,7 +156,7 @@ async def test_healthy_app(client, api_version_prefix):
     assert not error
 
     assert data["name"] == "simcore_service_webserver"
-    assert data["version"] == simcore_service_webserver.__version__
+    assert data["version"] == simcore_service_webserver._meta.__version__
 
 
 async def test_unhealthy_app_with_slow_callbacks(client, api_version_prefix):

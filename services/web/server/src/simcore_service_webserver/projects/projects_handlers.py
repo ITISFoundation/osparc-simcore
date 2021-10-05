@@ -14,7 +14,8 @@ from servicelib.rest_pagination_utils import PageResponseLimitOffset
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
-from .. import catalog, director_v2
+from .. import catalog, director_v2_api
+from .._meta import api_version_prefix as vtag
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
@@ -44,7 +45,10 @@ OVERRIDABLE_DOCUMENT_KEYS = [
 
 log = logging.getLogger(__name__)
 
+routes = web.RouteTableDef()
 
+
+@routes.post(f"/{vtag}/projects")
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
@@ -125,7 +129,7 @@ async def create_projects(request: web.Request):
             await clone_data_coro
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
-        await director_v2.create_or_update_pipeline(
+        await director_v2_api.create_or_update_pipeline(
             request.app, user_id, project["uuid"]
         )
 
@@ -148,6 +152,7 @@ async def create_projects(request: web.Request):
         raise web.HTTPCreated(text=json.dumps(project), content_type="application/json")
 
 
+@routes.get(f"/{vtag}/projects")
 @login_required
 @permission_required("project.read")
 async def list_projects(request: web.Request):
@@ -206,6 +211,7 @@ async def list_projects(request: web.Request):
     ).dict(**RESPONSE_MODEL_POLICY)
 
 
+@routes.get(f"/{vtag}/projects/{{project_uuid}}")
 @login_required
 @permission_required("project.read")
 async def get_project(request: web.Request):
@@ -254,6 +260,41 @@ async def get_project(request: web.Request):
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
+@routes.get(f"/{vtag}/projects/active")
+@login_required
+@permission_required("project.read")
+async def get_active_project(request: web.Request) -> web.Response:
+    user_id: int = request[RQT_USERID_KEY]
+
+    try:
+        client_session_id = request.query["client_session_id"]
+
+    except KeyError as err:
+        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+
+    try:
+        project = None
+        user_active_projects = []
+        with managed_resource(user_id, client_session_id, request.app) as rt:
+            # get user's projects
+            user_active_projects = await rt.find(PROJECT_ID_KEY)
+        if user_active_projects:
+
+            project = await projects_api.get_project_for_user(
+                request.app,
+                project_uuid=user_active_projects[0],
+                user_id=user_id,
+                include_templates=True,
+                include_state=True,
+            )
+
+        return web.json_response({"data": project})
+
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason="Project not found") from exc
+
+
+@routes.put(f"/{vtag}/projects/{{project_uuid}}")
 @login_required
 @permission_required("project.update")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
@@ -314,7 +355,9 @@ async def replace_project(request: web.Request):
         new_project = await db.replace_user_project(
             new_project, user_id, f"{project_uuid}", include_templates=True
         )
-        await director_v2.create_or_update_pipeline(request.app, user_id, project_uuid)
+        await director_v2_api.create_or_update_pipeline(
+            request.app, user_id, project_uuid
+        )
         # Appends state
         new_project = await projects_api.add_project_states_for_user(
             user_id=user_id,
@@ -339,6 +382,7 @@ async def replace_project(request: web.Request):
     return {"data": new_project}
 
 
+@routes.delete(f"/{vtag}/projects/{{project_uuid}}")
 @login_required
 @permission_required("project.delete")
 async def delete_project(request: web.Request):
@@ -393,6 +437,7 @@ class HTTPLocked(web.HTTPClientError):
     status_code = 423
 
 
+@routes.post(f"/{vtag}/projects/{{project_uuid}}:open")
 @login_required
 @permission_required("project.open")
 async def open_project(request: web.Request) -> web.Response:
@@ -441,6 +486,7 @@ async def open_project(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
+@routes.post(f"/{vtag}/projects/{{project_uuid}}:close")
 @login_required
 @permission_required("project.close")
 async def close_project(request: web.Request) -> web.Response:
@@ -471,6 +517,7 @@ async def close_project(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
+@routes.get(f"/{vtag}/projects/{{project_uuid}}/state")
 @login_required
 @permission_required("project.read")
 async def state_project(request: web.Request) -> web.Response:
@@ -491,36 +538,3 @@ async def state_project(request: web.Request) -> web.Response:
     )
     project_state = ProjectState(**validated_project["state"])
     return web.json_response({"data": project_state.dict()})
-
-
-@login_required
-@permission_required("project.read")
-async def get_active_project(request: web.Request) -> web.Response:
-    user_id: int = request[RQT_USERID_KEY]
-
-    try:
-        client_session_id = request.query["client_session_id"]
-
-    except KeyError as err:
-        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
-
-    try:
-        project = None
-        user_active_projects = []
-        with managed_resource(user_id, client_session_id, request.app) as rt:
-            # get user's projects
-            user_active_projects = await rt.find(PROJECT_ID_KEY)
-        if user_active_projects:
-
-            project = await projects_api.get_project_for_user(
-                request.app,
-                project_uuid=user_active_projects[0],
-                user_id=user_id,
-                include_templates=True,
-                include_state=True,
-            )
-
-        return web.json_response({"data": project})
-
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason="Project not found") from exc

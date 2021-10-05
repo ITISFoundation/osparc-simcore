@@ -92,7 +92,7 @@ async def test_add_new_project_from_model_instance(
     assert viewer.dict() == view
 
     mock_func = mocker.patch(
-        "simcore_service_webserver.director_v2.create_or_update_pipeline",
+        "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
         return_value=None,
     )
 
