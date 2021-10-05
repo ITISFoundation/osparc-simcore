@@ -1,12 +1,10 @@
 import asyncio
 import json
-import shutil
-from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import Any, AsyncIterator, Awaitable, List, Optional, Type
+from typing import Awaitable, List, Optional, Type
 from uuid import uuid4
 
 import fsspec
@@ -45,27 +43,6 @@ logger = create_dask_worker_logger(__name__)
 CONTAINER_WAIT_TIME_SECS = 2
 
 
-@asynccontextmanager
-async def managed_task_volumes(base_path: Path) -> AsyncIterator[TaskSharedVolumes]:
-    task_shared_volume = None
-    try:
-        task_shared_volume = TaskSharedVolumes(
-            base_path / "inputs", base_path / "outputs", base_path / "logs"
-        )
-        task_shared_volume.create()
-        yield task_shared_volume
-    finally:
-
-        def log_error(_: Any, path: Any, excinfo: Any) -> None:
-            logger.warning(
-                "Failed to remove %s [reason: %s]. Should consider pruning files in host later",
-                path,
-                excinfo,
-            )
-
-        shutil.rmtree(base_path, onerror=log_error)
-
-
 @dataclass
 class ComputationalSidecar:
     docker_auth: DockerBasicAuth
@@ -84,11 +61,11 @@ class ComputationalSidecar:
         self._logs_pub = Pub(name=TaskLogEvent.topic_name())
 
     async def _write_input_data(self, task_volumes: TaskSharedVolumes) -> None:
-        input_data_file = task_volumes.input_folder / "inputs.json"
+        input_data_file = task_volumes.inputs_folder / "inputs.json"
         input_data = {}
         for input_key, input_params in self.input_data.items():
             if isinstance(input_params, FileUrl):
-                destination_path = task_volumes.input_folder / (
+                destination_path = task_volumes.inputs_folder / (
                     input_params.file_mapping or URL(input_params.url).path.strip("/")
                 )
                 with fsspec.open(f"{input_params.url}") as src, destination_path.open(
@@ -114,19 +91,19 @@ class ComputationalSidecar:
         try:
             logger.debug(
                 "following files are located in output folder %s:\n%s",
-                task_volumes.output_folder,
-                pformat(list(task_volumes.output_folder.rglob("*"))),
+                task_volumes.outputs_folder,
+                pformat(list(task_volumes.outputs_folder.rglob("*"))),
             )
             logger.debug(
                 "following outputs will be searched for: %s",
                 pformat(self.output_data_keys),
             )
             output_data = TaskOutputData.from_task_output(
-                self.output_data_keys, task_volumes.output_folder
+                self.output_data_keys, task_volumes.outputs_folder
             )
             for output_params in output_data.values():
                 if isinstance(output_params, FileUrl):
-                    src_path = task_volumes.output_folder / (
+                    src_path = task_volumes.outputs_folder / (
                         output_params.file_mapping
                         or URL(output_params.url).path.strip("/")
                     )
@@ -163,7 +140,7 @@ class ComputationalSidecar:
 
         settings = Settings.create_from_envs()
         run_id = f"{uuid4()}"
-        async with Docker() as docker_client, managed_task_volumes(
+        async with Docker() as docker_client, TaskSharedVolumes(
             Path(f"{settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER}/{run_id}")
         ) as task_volumes:
             await pull_image(
