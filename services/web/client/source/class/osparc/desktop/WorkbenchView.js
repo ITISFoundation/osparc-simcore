@@ -96,13 +96,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree();
       nodesTree.setStudy(study);
-      nodesTree.addListener("removeNode", e => {
-        if (this.getStudy().isReadOnly()) {
-          return;
-        }
-        const nodeId = e.getData();
-        this.__removeNode(nodeId);
-      }, this);
       const nodesTreeInPanelView = this.__createPanelView(this.tr("Nodes"), nodesTree);
       sidePanel.add(nodesTreeInPanelView, {
         flex: 1
@@ -120,14 +113,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI();
       workbenchUI.setStudy(study);
-      workbenchUI.addListener("removeNode", e => {
-        const nodeId = e.getData();
-        this.__removeNode(nodeId);
-      }, this);
-      workbenchUI.addListener("removeEdge", e => {
-        const edgeId = e.getData();
-        this.__removeEdge(edgeId);
-      }, this);
 
       this.__nodeView = new osparc.component.node.NodeView().set({
         minHeight: 200
@@ -139,19 +124,40 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __connectEvents: function() {
-      const workbench = this.getStudy().getWorkbench();
-      workbench.addListener("pipelineChanged", this.__workbenchChanged, this);
-
-      workbench.addListener("showInLogger", ev => {
-        const data = ev.getData();
-        const nodeId = data.nodeId;
-        const msg = data.msg;
-        this.getLogger().info(nodeId, msg);
+      const nodesTree = this.__nodesTree;
+      nodesTree.addListener("removeNode", e => {
+        if (this.getStudy().isReadOnly()) {
+          return;
+        }
+        const nodeId = e.getData();
+        this.__removeNode(nodeId);
       }, this);
+      nodesTree.addListener("changeSelectedNode", e => {
+        const node = this.__workbenchUI.getNodeUI(e.getData());
+        if (node && node.classname.includes("NodeUI")) {
+          node.setActive(true);
+        }
+      });
+      nodesTree.addListener("exportNode", e => {
+        const nodeId = e.getData();
+        this.__exportMacro(nodeId);
+      });
 
       const workbenchUI = this.__workbenchUI;
+      workbenchUI.addListener("removeNode", e => {
+        const nodeId = e.getData();
+        this.__removeNode(nodeId);
+      }, this);
+      workbenchUI.addListener("removeEdge", e => {
+        const edgeId = e.getData();
+        this.__removeEdge(edgeId);
+      }, this);
+      workbenchUI.addListener("changeSelectedNode", e => {
+        const nodeId = e.getData();
+        this.__nodesTree.nodeSelected(nodeId);
+      });
+
       const workbenchToolbar = this.__mainPanel.getToolbar();
-      const nodesTree = this.__nodesTree;
       [
         nodesTree,
         workbenchToolbar,
@@ -169,21 +175,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         workbenchToolbar.addListener("showSnapshots", this.__showSnapshots, this);
       }
 
-      nodesTree.addListener("changeSelectedNode", e => {
-        const node = workbenchUI.getNodeUI(e.getData());
-        if (node && node.classname.includes("NodeUI")) {
-          node.setActive(true);
-        }
-      });
-      nodesTree.addListener("exportNode", e => {
-        const nodeId = e.getData();
-        this.__exportMacro(nodeId);
-      });
+      const workbench = this.getStudy().getWorkbench();
+      workbench.addListener("pipelineChanged", this.__workbenchChanged, this);
 
-      workbenchUI.addListener("changeSelectedNode", e => {
-        const nodeId = e.getData();
-        nodesTree.nodeSelected(nodeId);
-      });
+      workbench.addListener("showInLogger", ev => {
+        const data = ev.getData();
+        const nodeId = data.nodeId;
+        const msg = data.msg;
+        this.getLogger().info(nodeId, msg);
+      }, this);
     },
 
     __attachSocketEventHandlers: function() {
