@@ -267,8 +267,7 @@ async def _count_services_in_stack(
 
 def _inject_impossible_resources(dynamic_sidecar_service_spec: Dict[str, Any]) -> None:
     dynamic_sidecar_service_spec["task_template"]["Resources"] = {
-        "Limits": {"NanoCPUs": MAX_INT64, "MemoryBytes": MAX_INT64},
-        "Reservations": {"NanoCPUs": MAX_INT64, "MemoryBytes": MAX_INT64},
+        "Reservations": {"NanoCPUs": MAX_INT64, "MemoryBytes": MAX_INT64}
     }
 
 
