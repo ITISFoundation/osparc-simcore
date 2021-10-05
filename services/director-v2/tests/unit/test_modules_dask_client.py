@@ -166,11 +166,11 @@ def _image_to_req_params() -> List[Tuple[Image, Dict[str, Any]]]:
 @pytest.fixture()
 def mock_node_ports(mocker: MockerFixture):
     mocker.patch(
-        "simcore_service_director_v2.modules.dask_client._compute_input_data",
+        "simcore_service_director_v2.modules.dask_client.compute_input_data",
         return_value=TaskInputData.parse_obj({}),
     )
     mocker.patch(
-        "simcore_service_director_v2.modules.dask_client._compute_output_data_schema",
+        "simcore_service_director_v2.modules.dask_client.compute_output_data_schema",
         return_value=TaskOutputDataSchema.parse_obj({}),
     )
 
@@ -194,7 +194,6 @@ async def test_send_computation_task(
     )
     fake_task = {node_id: image}
     mocked_done_callback_fct = mocker.Mock()
-    mocked_task_change_handler_fct = mocker.Mock()
 
     # NOTE: We pass another fct so it can run in our localy created dask cluster
     def fake_sidecar_fct(
@@ -221,7 +220,6 @@ async def test_send_computation_task(
         cluster_id=cluster_id,
         tasks=fake_task,
         callback=mocked_done_callback_fct,
-        task_change_handler=mocked_task_change_handler_fct,
         remote_fct=fake_sidecar_fct,
     )
     assert (
@@ -260,7 +258,6 @@ async def test_abort_send_computation_task(
     )
     fake_task = {node_id: image}
     mocked_done_callback_fct = mocker.Mock()
-    mocked_task_change_handler_fct = mocker.Mock()
 
     # NOTE: We pass another fct so it can run in our localy created dask cluster
     def fake_sidecar_fct(
@@ -286,7 +283,6 @@ async def test_abort_send_computation_task(
         cluster_id=cluster_id,
         tasks=fake_task,
         callback=mocked_done_callback_fct,
-        task_change_handler=mocked_task_change_handler_fct,
         remote_fct=fake_sidecar_fct,
     )
     assert (
@@ -325,7 +321,6 @@ async def test_invalid_cluster_send_computation_task(
     )
     fake_task = {node_id: image}
     mocked_done_callback_fct = mocker.Mock()
-    mocked_task_change_handler_fct = mocker.Mock()
 
     with pytest.raises(MissingComputationalResourcesError):
         await dask_client.send_computation_tasks(
@@ -334,7 +329,6 @@ async def test_invalid_cluster_send_computation_task(
             cluster_id=random.randint(cluster_id + 1, 100),
             tasks=fake_task,
             callback=mocked_done_callback_fct,
-            task_change_handler=mocked_task_change_handler_fct,
             remote_fct=None,
         )
     assert (
@@ -376,7 +370,6 @@ async def test_too_many_resource_send_computation_task(
 
     fake_task = {node_id: image}
     mocked_done_callback_fct = mocker.Mock()
-    mocked_task_change_handler_fct = mocker.Mock()
 
     # let's have a big number of CPUs
     with pytest.raises(InsuficientComputationalResourcesError):
@@ -386,7 +379,6 @@ async def test_too_many_resource_send_computation_task(
             cluster_id=cluster_id,
             tasks=fake_task,
             callback=mocked_done_callback_fct,
-            task_change_handler=mocked_task_change_handler_fct,
             remote_fct=None,
         )
     assert (
@@ -427,7 +419,6 @@ async def test_disconnected_backend_send_computation_task(
 
     fake_task = {node_id: image}
     mocked_done_callback_fct = mocker.Mock()
-    mocked_task_change_handler_fct = mocker.Mock()
 
     # DISCONNECT THE CLUSTER
     await dask_spec_local_cluster.close()
@@ -439,7 +430,6 @@ async def test_disconnected_backend_send_computation_task(
             cluster_id=cluster_id,
             tasks=fake_task,
             callback=mocked_done_callback_fct,
-            task_change_handler=mocked_task_change_handler_fct,
             remote_fct=None,
         )
     assert (

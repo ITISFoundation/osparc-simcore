@@ -18,6 +18,7 @@ from fastapi.applications import FastAPI
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
+from pytest_mock.plugin import MockerFixture
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import comp_tasks
@@ -44,11 +45,20 @@ pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
+@pytest.fixture()
+def mocked_rabbit_mq_client(mocker: MockerFixture):
+    mocker.patch(
+        "simcore_service_director_v2.core.application.rabbitmq.RabbitMQClient",
+        autospec=True,
+    )
+
+
 @pytest.fixture
 def minimal_dask_scheduler_config(
     mock_env: None,
     postgres_host_config: Dict[str, str],
     monkeypatch: MonkeyPatch,
+    mocked_rabbit_mq_client: None,
 ) -> None:
     """set a minimal configuration for testing the dask connection only"""
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
@@ -294,9 +304,6 @@ async def test_proper_pipeline_is_scheduled(
                 cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
                 tasks={k: v},
                 callback=scheduler._wake_up_scheduler_now,
-                task_change_handler=cast(
-                    DaskScheduler, scheduler
-                )._task_state_change_handler,
             )
             for k, v in {
                 f"{sleeper_tasks[1].node_id}": sleeper_tasks[1].image,
