@@ -52,7 +52,6 @@ class DaskScheduler(BaseCompScheduler):
             cluster_id=cluster_id,
             tasks=scheduled_tasks,
             callback=callback,
-            task_change_handler=self._task_state_change_handler,
         )
 
     async def _stop_tasks(self, tasks: List[CompTaskAtDB]) -> None:
@@ -83,8 +82,8 @@ class DaskScheduler(BaseCompScheduler):
         *_, user_id, project_id, node_id = parse_dask_job_id(task_progress_event.job_id)
         message = {
             "user_id": user_id,
-            "project_id": project_id,
-            "node_id": node_id,
+            "project_id": f"{project_id}",
+            "node_id": f"{node_id}",
             "progress": task_progress_event.progress,
             "channel": "progress",
         }
@@ -99,8 +98,8 @@ class DaskScheduler(BaseCompScheduler):
         *_, user_id, project_id, node_id = parse_dask_job_id(task_log_event.job_id)
         message = {
             "user_id": user_id,
-            "project_id": project_id,
-            "node_id": node_id,
+            "project_id": f"{project_id}",
+            "node_id": f"{node_id}",
             "messages": [task_log_event.log],
             "channel": "logger",
         }

@@ -205,7 +205,9 @@ class DaskClient:
             dask_sub_topic_name: str, handler: Callable[[str], Awaitable[None]]
         ):
             dask_sub = distributed.Sub(dask_sub_topic_name)
+
             async for event in dask_sub:
+                logger.error("received event %s", event)
                 await handler(event)
 
         for dask_sub, handler in [
@@ -236,7 +238,6 @@ class DaskClient:
         cluster_id: ClusterID,
         tasks: Dict[NodeID, Image],
         callback: Callable[[], None],
-        task_change_handler: Callable[[Tuple[str, str]], Awaitable],
         remote_fct: Callable = None,
     ):
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
@@ -303,10 +304,6 @@ class DaskClient:
                 self.app, user_id, project_id, node_id
             )
             try:
-                self.client.subscribe_topic(
-                    TaskStateEvent.topic_name(), task_change_handler
-                )
-
                 task_future = self.client.submit(
                     remote_fct,
                     docker_auth=DockerBasicAuth(
