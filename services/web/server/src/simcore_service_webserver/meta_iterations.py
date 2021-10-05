@@ -4,33 +4,37 @@
 
 import itertools
 import logging
+import re
 from copy import deepcopy
-from typing import Dict, Generator, Iterator, List, Tuple
+from typing import Any, Dict, Generator, Iterator, List, Optional, Tuple
 from uuid import UUID, uuid3
 
 from aiohttp import web
+from models_library.basic_regex import UUID_RE
 from models_library.frontend_services_catalog import is_iterator_service
-from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
 from models_library.services import ServiceDockerData
-from pydantic.types import NonNegativeInt, PositiveInt
 
 from .meta_funcs import SERVICE_CATALOG, SERVICE_TO_CALLABLES
+from .meta_models import (
+    IterationInfo,
+    NodeOutputsDict,
+    NodesDict,
+    Parameters,
+    ProjectID,
+    RunnableProjectInfo,
+)
 from .projects.projects_api import get_project_for_user
 from .version_control_db import VersionControlRepository
-from .version_control_models import BranchID, CommitID
+from .version_control_models import CommitID
 
 log = logging.getLogger(__file__)
 
 
-NodesDict = Dict[NodeID, Node]
-NodeOutputsDict = Dict[OutputID, OutputTypes]
-Parameters = Tuple[NodeOutputsDict]
-
-ParametersNodesPair = Tuple[Tuple[NodeOutputsDict], NodesDict]
+_ParametersNodesPair = Tuple[Parameters, NodesDict]
 
 
-def _build_project_iterations(project_nodes: NodesDict) -> List[ParametersNodesPair]:
+def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodesPair]:
 
     # select iterable nodes
     iterable_nodes_defs: List[ServiceDockerData] = []  # schemas of iterable nodes
@@ -81,13 +85,10 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[ParametersNodesP
             _node.outputs = _node.outputs or {}
             _node.outputs.update(node_results)
 
+        parameters_per_iter.append(parameters)
         updated_nodes_per_iter.append(updated_nodes)
 
     return list(zip(parameters_per_iter, updated_nodes_per_iter))
-
-
-def _compute_parameters_hash(parameters: Parameters) -> str:
-    raise NotImplementedError
 
 
 def extract_parameters(
@@ -101,30 +102,26 @@ def extract_parameters(
     raise NotImplementedError()
 
 
-# TODO: compositions produce unique identifiers for features that
-# will allow easily finding items and avoiding reduncancy
-def compose_iteration_branch_name(
-    main_commit: CommitID, iter_index: NonNegativeInt
-) -> str:
-    return f"iter:{main_commit}/{iter_index}"
+# TAGGING iterations -----
 
 
 def compose_iteration_tag_name(
-    main_project: ProjectID, parameters: Parameters, iter_index: NonNegativeInt
+    repo_commit_id, iter_index, total_count, parameters_hash
 ) -> str:
-    raise NotImplementedError
+    """Composes unique tag name for iter_index-th iteration of repo_commit_id out of total_count"""
+    return f"iteration:{repo_commit_id}/{iter_index}/{total_count}/{parameters_hash}"
 
 
-def compose_runnable_project_id(
-    main_project: ProjectID, main_commit: CommitID, parameters: Parameters
-) -> UUID:
-    return uuid3(main_project, f"{main_commit}/{_compute_parameters_hash(parameters)}")
+def parse_iteration_tag_name(name: str) -> Dict[str, Any]:
+    if m := re.match(
+        r"^iteration:(?P<repo_commit_id>\d+)/(?P<iter_index>\d+)/(?P<total_count>-*\d+)/(?P<parameters_hash>.*)$",
+        name,
+    ):
+        return m.groupdict()
+    return {}
 
 
-def compose_runnable_project_tag_name(
-    main_project: ProjectID, runnable_project: ProjectID
-) -> str:
-    raise NotImplementedError
+# GET/CREATE iterations -----------
 
 
 async def get_or_create_runnable_projects(
@@ -152,7 +149,9 @@ async def get_or_create_runnable_projects(
     )
     assert project["uuid"] == str(project_uuid)  # nosec
 
-    project_nodes: Dict[NodeID, Node] = project["workbench"]
+    project_nodes: Dict[NodeID, Node] = {
+        nid: Node.parse_obj(n) for nid, n in project["workbench"].items()
+    }
 
     # init returns
     runnable_project_vc_commits: List[CommitID] = []
@@ -196,6 +195,7 @@ async def get_or_create_runnable_projects(
     #
     parameters: Parameters
     updated_nodes: NodesDict
+    total_count = len(iterations)
 
     for iter_index, (parameters, updated_nodes) in enumerate(iterations):
         log.debug(
@@ -203,30 +203,30 @@ async def get_or_create_runnable_projects(
             project_uuid,
             parameters,
         )
+
         project["workbench"].update(updated_nodes)
 
-        runnable_project_id = compose_runnable_project_id(
-            project_uuid, main_commit_id, parameters
+        project["uuid"] = wcopy_project_id = compose_wcopy_project_id(
+            repo_project_uuid=project_uuid, commit_id=main_commit_id
         )
-        # TODO:
 
-        # FIXME: raises if commit or branch already exists
-        branch = await vc_repo.force_branch(
+        branch_name = tag_name = compose_iteration_tag_name(
+            main_commit_id, iter_index, total_count
+        )
+
+        commit_id = await vc_repo.force_branch(
             repo_id,
             start_commit_id=main_commit_id,
             project=project,
-            branch_name=compose_iteration_branch_name(main_commit_id, iter_index),
+            branch_name=branch_name,
             tags=[
-                compose_iteration_tag_name(project_uuid, parameters, iter_index),
-                compose_runnable_project_tag_name(project_uuid, runnable_project_id),
+                tag_name,
+                compose_wcopy_project_tag_name(wcopy_project_id),
             ],
         )
 
-        # TODO: inject projects in
-        raise NotImplementedError("WIP:")
-
-        runnable_project_ids.append(new_project_uuid)
-        runnable_project_vc_commits.append(branch.parent_commit_id)
+        runnable_project_ids.append(wcopy_project_id)
+        runnable_project_vc_commits.append(commit_id)
 
     return runnable_project_ids, runnable_project_vc_commits
 
