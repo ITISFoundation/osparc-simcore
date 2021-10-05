@@ -28,7 +28,7 @@ rabbitmq_retry_policy = dict(
 def setup(app: FastAPI) -> None:
     @retry(**rabbitmq_retry_policy)
     async def on_startup() -> None:
-        await RabbitMQClient.create(app)
+        app.state.rabbitmq_client = await RabbitMQClient.create(app)
 
     async def on_shutdown() -> None:
         if app.state.rabbitmq_client:
@@ -60,11 +60,7 @@ class RabbitMQClient:
                 settings.RABBIT_CHANNELS[exchange_name], aio_pika.ExchangeType.FANOUT
             )
 
-        app.state.rabbitmq_client = cls(
-            app=app, connection=connection, channel=channel, exchanges=exchanges
-        )
-
-        return cls.instance(app)
+        return cls(app=app, connection=connection, channel=channel, exchanges=exchanges)
 
     @classmethod
     def instance(cls, app: FastAPI) -> "RabbitMQClient":

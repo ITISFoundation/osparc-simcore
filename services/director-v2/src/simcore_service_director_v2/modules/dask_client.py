@@ -173,11 +173,11 @@ class DaskClient:
             )
         return app.state.dask_client
 
-    async def delete(self, app: FastAPI) -> None:
+    async def delete(self) -> None:
         for task in self._subscribed_tasks:
             task.cancel()
 
-        await app.state.dask_client.client.close()
+        await self.app.state.dask_client.client.close()
 
     @retry(
         **dask_retry_policy,
