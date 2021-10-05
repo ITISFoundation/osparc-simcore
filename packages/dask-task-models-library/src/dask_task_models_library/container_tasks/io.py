@@ -1,7 +1,7 @@
 import json
 from contextlib import suppress
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Dict, Optional, Union, cast
 
 from models_library.generics import DictBaseModel
 from models_library.services import PROPERTY_KEY_RE
@@ -23,7 +23,7 @@ class PortSchema(BaseModel):
 
     class Config:
         extra = Extra.forbid
-        schema_extra = {
+        schema_extra: Dict[str, Any] = {
             "examples": [
                 {
                     "required": True,
@@ -43,9 +43,9 @@ class FilePortSchema(PortSchema):
         schema_extra = {
             "examples": [
                 {
-                    "required": True,
                     "mapping": "some_filename.txt",
                     "url": "ftp://some_file_url",
+                    "required": True,
                 },
                 {
                     "required": False,
@@ -146,7 +146,8 @@ class TaskOutputData(DictBaseModel[PortKey, PortValue]):
                         f"Could not locate '{output_key}' in {output_data_file}"
                     )
 
-        return cls.parse_obj(data)
+        # NOTE: this cast is necessary to make mypy happy
+        return cast(TaskOutputData, cls.parse_obj(data))
 
     class Config(DictBaseModel.Config):
         schema_extra = {
