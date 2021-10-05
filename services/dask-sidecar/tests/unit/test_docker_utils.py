@@ -4,7 +4,7 @@
 # pylint: disable=no-member
 
 from datetime import datetime
-from typing import List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import pytest
 from simcore_service_dask_sidecar.boot_mode import BootMode
@@ -42,7 +42,10 @@ def comp_volume_mount_point() -> str:
     return "/some/fake/entrypoint"
 
 
-@pytest.mark.parametrize("boot_mode", [boot for boot in BootMode])
+@pytest.mark.parametrize(
+    "task_max_resources", [{}, {"CPU": 12, "RAM": 2 ** 9}, {"GPU": 4, "RAM": 1 ** 6}]
+)
+@pytest.mark.parametrize("boot_mode", list(BootMode))
 async def test_create_container_config(
     docker_registry: str,
     service_key: str,
@@ -50,6 +53,7 @@ async def test_create_container_config(
     command: List[str],
     comp_volume_mount_point: str,
     boot_mode: BootMode,
+    task_max_resources: Dict[str, Any],
 ):
 
     container_config = await create_container_config(
@@ -59,8 +63,8 @@ async def test_create_container_config(
         command,
         comp_volume_mount_point,
         boot_mode,
+        task_max_resources,
     )
-
     assert container_config.dict(by_alias=True) == (
         {
             "Env": [
@@ -79,8 +83,8 @@ async def test_create_container_config(
                     f"{comp_volume_mount_point}/logs:/logs",
                 ],
                 "Init": True,
-                "Memory": 1073741824,
-                "NanoCPUs": 1000000000,
+                "Memory": task_max_resources.get("RAM", 1024 ** 3),
+                "NanoCPUs": task_max_resources.get("CPU", 1) * 1e9,
             },
         }
     )
