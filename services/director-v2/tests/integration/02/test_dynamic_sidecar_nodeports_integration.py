@@ -540,7 +540,7 @@ def _assert_same_set(*sets_to_compare: Set[Any]) -> None:
         assert first == second
 
 
-def _file_hashes_in_path(path_to_hash: Path) -> Set[Tuple[Path, str]]:
+def _get_file_hashes_in_path(path_to_hash: Path) -> Set[Tuple[Path, str]]:
     def _hash_path(path: Path):
         sha256_hash = hashlib.sha256()
         with open(path, "rb") as f:
@@ -815,13 +815,13 @@ async def test_nodeports_integration(
     # STEP 7
 
     _assert_same_set(
-        _file_hashes_in_path(dy_path_container_before),
-        _file_hashes_in_path(dy_path_data_manager_before),
-        _file_hashes_in_path(dy_path_container_after),
+        _get_file_hashes_in_path(dy_path_container_before),
+        _get_file_hashes_in_path(dy_path_data_manager_before),
+        _get_file_hashes_in_path(dy_path_container_after),
     )
 
     _assert_same_set(
-        _file_hashes_in_path(dy_compose_spec_path_container_before),
-        _file_hashes_in_path(dy_compose_spec_path_data_manager_before),
-        _file_hashes_in_path(dy_compose_spec_path_container_after),
+        _get_file_hashes_in_path(dy_compose_spec_path_container_before),
+        _get_file_hashes_in_path(dy_compose_spec_path_data_manager_before),
+        _get_file_hashes_in_path(dy_compose_spec_path_container_after),
     )

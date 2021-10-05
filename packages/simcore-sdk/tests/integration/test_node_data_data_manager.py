@@ -34,7 +34,7 @@ def _remove_file_or_folder(file_or_folder: Path) -> None:
         assert file_or_folder.exists() is True
 
 
-def _file_hashes_in_path(path_to_hash: Path) -> Set[Tuple[Path, str]]:
+def _get_file_hashes_in_path(path_to_hash: Path) -> Set[Tuple[Path, str]]:
     def _hash_path(path: Path):
         sha256_hash = hashlib.sha256()
         with open(path, "rb") as f:
@@ -141,7 +141,7 @@ async def test_valid_upload_download(
         file_or_folder=content_path,
     )
 
-    uploaded_hashes = _file_hashes_in_path(content_path)
+    uploaded_hashes = _get_file_hashes_in_path(content_path)
 
     _remove_file_or_folder(content_path)
 
@@ -152,7 +152,7 @@ async def test_valid_upload_download(
         file_or_folder=content_path,
     )
 
-    downloaded_hashes = _file_hashes_in_path(content_path)
+    downloaded_hashes = _get_file_hashes_in_path(content_path)
 
     assert uploaded_hashes == downloaded_hashes
 
@@ -182,7 +182,7 @@ async def test_valid_upload_download_saved_to(
         file_or_folder=content_path,
     )
 
-    uploaded_hashes = _file_hashes_in_path(content_path)
+    uploaded_hashes = _get_file_hashes_in_path(content_path)
 
     _remove_file_or_folder(content_path)
 
@@ -196,6 +196,6 @@ async def test_valid_upload_download_saved_to(
         save_to=new_destination,
     )
 
-    downloaded_hashes = _file_hashes_in_path(new_destination)
+    downloaded_hashes = _get_file_hashes_in_path(new_destination)
 
     assert uploaded_hashes == downloaded_hashes
