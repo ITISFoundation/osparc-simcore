@@ -12,6 +12,7 @@ from models_library.settings.services_common import ServicesCommonSettings
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
+from tenacity import AsyncRetrying, before_log, stop_after_attempt, wait_exponential
 from yarl import URL
 
 from .director_v2_settings import Directorv2Settings, get_client_session, get_settings
@@ -327,9 +328,19 @@ async def stop_services(
 async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
     settings: Directorv2Settings = get_settings(app)
     backend_url = URL(settings.endpoint) / "dynamic_services" / f"{node_uuid}"
-    service_state = await _request_director_v2(
-        app, "GET", backend_url, expected_status=web.HTTPOk
-    )
+
+    # sometimes the director-v2 cannot be reached causing the service to fail
+    # retrying 3 times before giving up for good
+    async for attempt in AsyncRetrying(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(),
+        before=before_log(log, logging.WARNING),
+        reraise=True,
+    ):
+        with attempt:
+            service_state = await _request_director_v2(
+                app, "GET", backend_url, expected_status=web.HTTPOk
+            )
 
     assert isinstance(service_state, dict)  # nosec
     return service_state
