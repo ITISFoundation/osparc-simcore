@@ -28,7 +28,11 @@ from _pytest.monkeypatch import MonkeyPatch
 from _pytest.tmpdir import TempPathFactory
 from aiohttp.test_utils import loop_context
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from dask_task_models_library.container_tasks.events import TaskStateEvent
+from dask_task_models_library.container_tasks.events import (
+    TaskLogEvent,
+    TaskProgressEvent,
+    TaskStateEvent,
+)
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
@@ -136,9 +140,8 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, MockerFixture]:
     )
     # mock dask event publishing
     dask_utils_publish_event_mock = mocker.patch(
-        "simcore_service_dask_sidecar.computational_sidecar.core.publish_event",
+        "simcore_service_dask_sidecar.computational_sidecar.core.Pub",
         autospec=True,
-        return_value=None,
     )
 
     return {
@@ -330,22 +333,23 @@ def test_run_computational_sidecar_real_fct(
         task.output_data_keys,
         task.command,
     )
-    dask_subsystem_mock["dask_event_publish"].assert_has_calls(
-        [call(TaskStateEvent.from_dask_worker(state=RunningState.STARTED))]
-    )
+    for event in [TaskProgressEvent, TaskStateEvent, TaskLogEvent]:
+        dask_subsystem_mock["dask_event_publish"].assert_any_call(
+            name=event.topic_name()
+        )
 
     # check that the task produces expected logs
     for log in task.expected_logs:
         r = re.compile(
-            rf"\[{task.service_key}:{task.service_version} - .+\/.+\]: (.+) ({log})"
+            rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: ({log})"
         )
         search_results = list(filter(r.search, caplog.messages))
         assert (
             len(search_results) > 0
-        ), f"Could not find {log} in worker_logs:\n {pformat(caplog.messages, width=240)}"
+        ), f"Could not find '{log}' in worker_logs:\n {pformat(caplog.messages, width=240)}"
     for log in task.expected_logs:
         assert re.search(
-            rf"\[{task.service_key}:{task.service_version} - .+\/.+\]: (.+) ({log})",
+            rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: ({log})",
             caplog.text,
         )
     # check that the task produce the expected data, not less not more
