@@ -48,8 +48,7 @@ def _monkey_patch_aiodocker() -> None:
         )
 
     # pylint: disable=protected-access
-    # pylint: disable=redefined-builtin
-    async def list(self, *, filters=None):
+    async def _custom_volumes_list(self, *, filters=None):
         """
         Return a list of volumes
 
@@ -67,12 +66,12 @@ def _monkey_patch_aiodocker() -> None:
         data = await self.docker._query_json("volumes", params=params)
         return data
 
-    async def get(self, id):
+    async def _custom_volumes_get(self, id):  # pylint: disable=redefined-builtin
         data = await self.docker._query_json("volumes/{id}".format(id=id), method="GET")
         return DockerVolume(self.docker, data["Name"])
 
-    volumes.DockerVolumes.list = list
-    setattr(volumes.DockerVolumes, "get", get)
+    setattr(volumes.DockerVolumes, "list", _custom_volumes_list)
+    setattr(volumes.DockerVolumes, "get", _custom_volumes_get)
 
 
 _monkey_patch_aiodocker()
