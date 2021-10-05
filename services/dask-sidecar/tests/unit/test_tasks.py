@@ -341,7 +341,7 @@ def test_run_computational_sidecar_real_fct(
     # check that the task produces expected logs
     for log in task.expected_logs:
         r = re.compile(
-            rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: ({log})"
+            rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: (.+) ({log})"
         )
         search_results = list(filter(r.search, caplog.messages))
         assert (
@@ -349,7 +349,7 @@ def test_run_computational_sidecar_real_fct(
         ), f"Could not find '{log}' in worker_logs:\n {pformat(caplog.messages, width=240)}"
     for log in task.expected_logs:
         assert re.search(
-            rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: ({log})",
+            rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: (.+) ({log})",
             caplog.text,
         )
     # check that the task produce the expected data, not less not more
@@ -410,7 +410,7 @@ def test_run_computational_sidecar_dask(
     worker_logs = [log for _, log in dask_client.get_worker_logs()[worker_name]]
     for log in task.expected_logs:
         r = re.compile(
-            rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: ({log})"
+            rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: (.+) ({log})"
         )
         search_results = list(filter(r.search, worker_logs))
         assert (
