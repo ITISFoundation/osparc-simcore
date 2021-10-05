@@ -1018,7 +1018,7 @@ qx.Class.define("osparc.data.model.Node", {
           break;
         }
         case "pending": {
-          if (data["service_message"]){
+          if (data["service_message"]) {
             const msg = "Pending: " + data["service_message"];
             const msgData = {
               nodeId: this.getNodeId(),
