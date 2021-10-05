@@ -84,7 +84,7 @@ async def managed_container(
             raise
 
 
-DOCKER_TIMESTAMP_LENGTH = len("2020-10-09T12:28:14.7710")
+DOCKER_TIMESTAMP_LENGTH = len("2020-10-09T12:28:14.771034")
 
 
 def to_datetime(docker_timestamp: str) -> datetime:
