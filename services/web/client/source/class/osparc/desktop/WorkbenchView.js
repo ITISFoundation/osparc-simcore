@@ -25,10 +25,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   construct: function() {
     this.base(arguments, "horizontal");
 
-    this.getChildControl("side-panel-0");
-
-    const mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
-    this.add(mainPanel, 1); // flex 1
+    this.getChildControl("side-panel");
+    this.__mainPanel = this.getChildControl("main-panel");
 
     this.__attachEventHandlers();
   },
@@ -63,7 +61,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           });
           this.add(control, 0); // flex 0
           break;
-        case "side-panel-0": {
+        case "side-panel": {
           control = new osparc.desktop.SidePanel().set({
             minWidth: 0,
             width: Math.min(parseInt(window.innerWidth * 0.2), 350)
@@ -73,12 +71,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           scroll.add(control);
           break;
         }
+        case "main-panel":
+          control = new osparc.desktop.MainPanel();
+          this.add(control, 1); // flex 1
+          break;
       }
       return control || this.base(arguments, id);
-    },
-
-    __createPanelView: function(caption, widget) {
-      return new osparc.desktop.PanelView(caption, widget);
     },
 
     _applyStudy: function(study) {
@@ -88,6 +86,172 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__attachSocketEventHandlers();
       }
       this.__mainPanel.getToolbar().setStudy(study);
+    },
+
+    __initViews: function() {
+      const study = this.getStudy();
+
+      const sidePanel = this.getChildControl("side-panel");
+      sidePanel.removeAll();
+
+      const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree();
+      nodesTree.setStudy(study);
+      nodesTree.addListener("removeNode", e => {
+        if (this.getStudy().isReadOnly()) {
+          return;
+        }
+        const nodeId = e.getData();
+        this.__removeNode(nodeId);
+      }, this);
+      const nodesTreeInPanelView = this.__createPanelView(this.tr("Nodes"), nodesTree);
+      sidePanel.add(nodesTreeInPanelView, {
+        flex: 1
+      });
+
+      const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView();
+      const loggerInPanelView = this.__createPanelView(this.tr("Logger"), loggerView);
+      osparc.utils.Utils.setIdToWidget(loggerInPanelView.getTitleLabel(), "studyLoggerTitleLabel");
+      if (!osparc.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
+        loggerInPanelView.setCollapsed(true);
+      }
+      sidePanel.add(loggerInPanelView, {
+        flex: 1
+      });
+
+      const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI();
+      workbenchUI.setStudy(study);
+      workbenchUI.addListener("removeNode", e => {
+        const nodeId = e.getData();
+        this.__removeNode(nodeId);
+      }, this);
+      workbenchUI.addListener("removeEdge", e => {
+        const edgeId = e.getData();
+        this.__removeEdge(edgeId);
+      }, this);
+
+      this.__nodeView = new osparc.component.node.NodeView().set({
+        minHeight: 200
+      });
+
+      this.__groupNodeView = new osparc.component.node.GroupNodeView().set({
+        minHeight: 200
+      });
+    },
+
+    __connectEvents: function() {
+      const workbench = this.getStudy().getWorkbench();
+      workbench.addListener("pipelineChanged", this.__workbenchChanged, this);
+
+      workbench.addListener("showInLogger", ev => {
+        const data = ev.getData();
+        const nodeId = data.nodeId;
+        const msg = data.msg;
+        this.getLogger().info(nodeId, msg);
+      }, this);
+
+      const workbenchUI = this.__workbenchUI;
+      const workbenchToolbar = this.__mainPanel.getToolbar();
+      const nodesTree = this.__nodesTree;
+      [
+        nodesTree,
+        workbenchToolbar,
+        workbenchUI
+      ].forEach(widget => {
+        widget.addListener("nodeSelected", e => {
+          const nodeId = e.getData();
+          this.nodeSelected(nodeId);
+        }, this);
+      });
+      if (!workbenchToolbar.hasListener("takeSnapshot")) {
+        workbenchToolbar.addListener("takeSnapshot", this.__takeSnapshot, this);
+      }
+      if (!workbenchToolbar.hasListener("showSnapshots")) {
+        workbenchToolbar.addListener("showSnapshots", this.__showSnapshots, this);
+      }
+
+      nodesTree.addListener("changeSelectedNode", e => {
+        const node = workbenchUI.getNodeUI(e.getData());
+        if (node && node.classname.includes("NodeUI")) {
+          node.setActive(true);
+        }
+      });
+      nodesTree.addListener("exportNode", e => {
+        const nodeId = e.getData();
+        this.__exportMacro(nodeId);
+      });
+
+      workbenchUI.addListener("changeSelectedNode", e => {
+        const nodeId = e.getData();
+        nodesTree.nodeSelected(nodeId);
+      });
+    },
+
+    __attachSocketEventHandlers: function() {
+      // Listen to socket
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      // callback for incoming logs
+      const slotName = "logger";
+      if (!socket.slotExists(slotName)) {
+        socket.on(slotName, function(jsonString) {
+          const data = JSON.parse(jsonString);
+          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
+            // Filtering out logs from other studies
+            return;
+          }
+          const nodeId = data["Node"];
+          const messages = data["Messages"];
+          this.getLogger().infos(nodeId, messages);
+          const nodeLogger = this.__getNodeLogger(nodeId);
+          if (nodeLogger) {
+            nodeLogger.infos(nodeId, messages);
+          }
+        }, this);
+      }
+      socket.emit(slotName);
+
+      // callback for incoming progress
+      const slotName2 = "progress";
+      if (!socket.slotExists(slotName2)) {
+        socket.on(slotName2, function(data) {
+          const d = JSON.parse(data);
+          const nodeId = d["Node"];
+          const progress = Number.parseFloat(d["Progress"]).toFixed(4);
+          const workbench = this.getStudy().getWorkbench();
+          const node = workbench.getNode(nodeId);
+          if (node) {
+            node.getStatus().setProgress(progress);
+          } else if (osparc.data.Permissions.getInstance().isTester()) {
+            console.log("Ignored ws 'progress' msg", d);
+          }
+        }, this);
+      }
+
+      // callback for node updates
+      const slotName3 = "nodeUpdated";
+      if (!socket.slotExists(slotName3)) {
+        socket.on(slotName3, data => {
+          const d = JSON.parse(data);
+          const nodeId = d["Node"];
+          const nodeData = d["data"];
+          const workbench = this.getStudy().getWorkbench();
+          const node = workbench.getNode(nodeId);
+          if (node && nodeData) {
+            node.setOutputData(nodeData.outputs);
+            if ("progress" in nodeData) {
+              const progress = Number.parseInt(nodeData["progress"]);
+              node.getStatus().setProgress(progress);
+            }
+            node.populateStates(nodeData);
+          } else if (osparc.data.Permissions.getInstance().isTester()) {
+            console.log("Ignored ws 'nodeUpdated' msg", d);
+          }
+        }, this);
+      }
+    },
+
+    __createPanelView: function(caption, widget) {
+      return new osparc.desktop.PanelView(caption, widget);
     },
 
     getStartStopButtons: function() {
@@ -328,7 +492,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __attachEventHandlers: function() {
       const blocker = this.getBlocker();
-      blocker.addListener("tap", this.getChildControl("side-panel-0").toggleCollapsed.bind(this.getChildControl("side-panel-0")));
+      blocker.addListener("tap", this.getChildControl("side-panel").toggleCollapsed.bind(this.getChildControl("side-panel")));
 
       const splitter = this.getChildControl("splitter");
       splitter.setWidth(1);
@@ -350,56 +514,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       controlsBar.addListener("showSettings", this.__showSettings, this);
       controlsBar.addListener("groupSelection", this.__groupSelection, this);
       controlsBar.addListener("ungroupSelection", this.__ungroupSelection, this);
-    },
-
-    __initViews: function() {
-      const study = this.getStudy();
-
-      const sidePanel = this.getChildControl("side-panel-0");
-      sidePanel.removeAll();
-
-      const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree();
-      nodesTree.setStudy(study);
-      nodesTree.addListener("removeNode", e => {
-        if (this.getStudy().isReadOnly()) {
-          return;
-        }
-        const nodeId = e.getData();
-        this.__removeNode(nodeId);
-      }, this);
-      const nodesTreeInPanelView = this.__createPanelView(this.tr("Nodes"), nodesTree);
-      sidePanel.add(nodesTreeInPanelView, {
-        flex: 1
-      });
-
-      const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView();
-      const loggerInPanelView = this.__createPanelView(this.tr("Logger"), loggerView);
-      osparc.utils.Utils.setIdToWidget(loggerInPanelView.getTitleLabel(), "studyLoggerTitleLabel");
-      if (!osparc.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
-        loggerInPanelView.setCollapsed(true);
-      }
-      sidePanel.add(loggerInPanelView, {
-        flex: 1
-      });
-
-      const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI(study.getWorkbench());
-      workbenchUI.setStudy(study);
-      workbenchUI.addListener("removeNode", e => {
-        const nodeId = e.getData();
-        this.__removeNode(nodeId);
-      }, this);
-      workbenchUI.addListener("removeEdge", e => {
-        const edgeId = e.getData();
-        this.__removeEdge(edgeId);
-      }, this);
-
-      this.__nodeView = new osparc.component.node.NodeView().set({
-        minHeight: 200
-      });
-
-      this.__groupNodeView = new osparc.component.node.GroupNodeView().set({
-        minHeight: 200
-      });
     },
 
 
@@ -486,54 +600,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__nodesTree.nodeSelected(this.__currentNodeId);
     },
 
-    __connectEvents: function() {
-      const workbench = this.getStudy().getWorkbench();
-      workbench.addListener("pipelineChanged", this.__workbenchChanged, this);
-
-      workbench.addListener("showInLogger", ev => {
-        const data = ev.getData();
-        const nodeId = data.nodeId;
-        const msg = data.msg;
-        this.getLogger().info(nodeId, msg);
-      }, this);
-
-      const workbenchUI = this.__workbenchUI;
-      const workbenchToolbar = this.__mainPanel.getToolbar();
-      const nodesTree = this.__nodesTree;
-      [
-        nodesTree,
-        workbenchToolbar,
-        workbenchUI
-      ].forEach(widget => {
-        widget.addListener("nodeSelected", e => {
-          const nodeId = e.getData();
-          this.nodeSelected(nodeId);
-        }, this);
-      });
-      if (!workbenchToolbar.hasListener("takeSnapshot")) {
-        workbenchToolbar.addListener("takeSnapshot", this.__takeSnapshot, this);
-      }
-      if (!workbenchToolbar.hasListener("showSnapshots")) {
-        workbenchToolbar.addListener("showSnapshots", this.__showSnapshots, this);
-      }
-
-      nodesTree.addListener("changeSelectedNode", e => {
-        const node = workbenchUI.getNodeUI(e.getData());
-        if (node && node.classname.includes("NodeUI")) {
-          node.setActive(true);
-        }
-      });
-      nodesTree.addListener("exportNode", e => {
-        const nodeId = e.getData();
-        this.__exportMacro(nodeId);
-      });
-
-      workbenchUI.addListener("changeSelectedNode", e => {
-        const nodeId = e.getData();
-        nodesTree.nodeSelected(nodeId);
-      });
-    },
-
     __exportMacro: function(nodeId) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.export", true)) {
         return;
@@ -561,70 +627,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
         exportDAGView.addListener("finished", () => {
           window.close();
-        }, this);
-      }
-    },
-
-    __attachSocketEventHandlers: function() {
-      // Listen to socket
-      const socket = osparc.wrapper.WebSocket.getInstance();
-
-      // callback for incoming logs
-      const slotName = "logger";
-      if (!socket.slotExists(slotName)) {
-        socket.on(slotName, function(jsonString) {
-          const data = JSON.parse(jsonString);
-          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
-            // Filtering out logs from other studies
-            return;
-          }
-          const nodeId = data["Node"];
-          const messages = data["Messages"];
-          this.getLogger().infos(nodeId, messages);
-          const nodeLogger = this.__getNodeLogger(nodeId);
-          if (nodeLogger) {
-            nodeLogger.infos(nodeId, messages);
-          }
-        }, this);
-      }
-      socket.emit(slotName);
-
-      // callback for incoming progress
-      const slotName2 = "progress";
-      if (!socket.slotExists(slotName2)) {
-        socket.on(slotName2, function(data) {
-          const d = JSON.parse(data);
-          const nodeId = d["Node"];
-          const progress = Number.parseFloat(d["Progress"]).toFixed(4);
-          const workbench = this.getStudy().getWorkbench();
-          const node = workbench.getNode(nodeId);
-          if (node) {
-            node.getStatus().setProgress(progress);
-          } else if (osparc.data.Permissions.getInstance().isTester()) {
-            console.log("Ignored ws 'progress' msg", d);
-          }
-        }, this);
-      }
-
-      // callback for node updates
-      const slotName3 = "nodeUpdated";
-      if (!socket.slotExists(slotName3)) {
-        socket.on(slotName3, data => {
-          const d = JSON.parse(data);
-          const nodeId = d["Node"];
-          const nodeData = d["data"];
-          const workbench = this.getStudy().getWorkbench();
-          const node = workbench.getNode(nodeId);
-          if (node && nodeData) {
-            node.setOutputData(nodeData.outputs);
-            if ("progress" in nodeData) {
-              const progress = Number.parseInt(nodeData["progress"]);
-              node.getStatus().setProgress(progress);
-            }
-            node.populateStates(nodeData);
-          } else if (osparc.data.Permissions.getInstance().isTester()) {
-            console.log("Ignored ws 'nodeUpdated' msg", d);
-          }
         }, this);
       }
     },
