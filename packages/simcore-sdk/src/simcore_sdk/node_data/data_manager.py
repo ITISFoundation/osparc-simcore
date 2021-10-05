@@ -83,8 +83,7 @@ async def _pull_file(
         local_folder=destination_path.parent,
     )
     if downloaded_file != destination_path:
-        if destination_path.exists():
-            destination_path.unlink()
+        destination_path.unlink(missing_ok=True)
         move(f"{downloaded_file}", destination_path)
     log.info("%s successfuly pulled", destination_path)
 
