@@ -88,7 +88,7 @@ def temp_dir(tmpdir: Path) -> Path:
 
 
 @pytest.fixture
-def random_tmp_dir_generatod(temp_dir: Path) -> Callable[[bool], Path]:
+def random_tmp_dir_generator(temp_dir: Path) -> Callable[[bool], Path]:
     def generator(is_file: bool) -> Path:
         random_dir_path = temp_dir / f"{uuid4()}"
         random_dir_path.mkdir(parents=True, exist_ok=True)
@@ -173,7 +173,7 @@ async def test_valid_upload_download_saved_to(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    random_tmp_dir_generatod: Callable,
+    random_tmp_dir_generator: Callable,
 ):
     await data_manager.push(
         user_id=user_id,
@@ -186,7 +186,7 @@ async def test_valid_upload_download_saved_to(
 
     _remove_file_or_folder(content_path)
 
-    new_destination = random_tmp_dir_generatod(is_file=content_path.is_file())
+    new_destination = random_tmp_dir_generator(is_file=content_path.is_file())
 
     await data_manager.pull(
         user_id=user_id,
