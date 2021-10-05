@@ -1,32 +1,25 @@
-import asyncio
-import json
-
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=no-member
+
+import asyncio
+import json
 import logging
 import re
-import subprocess
 
 # copied out from dask
-import sys
-import time
 from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, Iterable, List, Optional
-from unittest.mock import call
+from typing import Dict, List, Optional
 from uuid import uuid4
 
-import dask
 import fsspec
 import pytest
-import requests
 from _pytest.logging import LogCaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
 from _pytest.tmpdir import TempPathFactory
-from aiohttp.test_utils import loop_context
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
@@ -40,10 +33,8 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputDataSchema,
 )
 from distributed import Client
-from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
@@ -107,29 +98,25 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, MockerFixture]:
 
     # mock tasks get worker and state
     dask_distributed_worker_mock = mocker.patch(
-        "simcore_service_dask_sidecar.tasks.get_worker", autospec=True
+        "simcore_service_dask_sidecar.dask_utils.get_worker", autospec=True
     )
     dask_task_mock = mocker.patch(
-        "simcore_service_dask_sidecar.tasks.TaskState", autospec=True
+        "simcore_service_dask_sidecar.dask_utils.TaskState", autospec=True
     )
     dask_task_mock.resource_restrictions = {}
     dask_distributed_worker_mock.return_value.tasks.get.return_value = dask_task_mock
 
     # mock dask loggers
-    dask_tasks_logger = mocker.patch(
+    for logger in [
         "simcore_service_dask_sidecar.tasks.log",
-        logging.getLogger(__name__),
-    )
-
-    dask_core_logger = mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.logger",
-        logging.getLogger(__name__),
-    )
-
-    dask__docker_utils_logger = mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.docker_utils.logger",
-        logging.getLogger(__name__),
-    )
+    ]:
+
+        mocker.patch(
+            logger,
+            logging.getLogger(__name__),
+        )
 
     # mock dask event worker
     dask_distributed_worker_events_mock = mocker.patch(
@@ -151,13 +138,6 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, MockerFixture]:
     }
 
 
-@pytest.fixture
-def dask_client() -> Client:
-    print(pformat(dask.config.get("distributed")))
-    with Client(nanny=False) as client:
-        yield client
-
-
 @dataclass
 class ServiceExampleParam:
     docker_basic_auth: DockerBasicAuth
@@ -168,60 +148,6 @@ class ServiceExampleParam:
     output_data_keys: TaskOutputDataSchema
     expected_output_data: TaskOutputData
     expected_logs: List[str]
-
-
-@pytest.fixture(scope="module")
-def loop() -> asyncio.AbstractEventLoop:
-    with loop_context() as loop:
-        yield loop
-
-
-@pytest.fixture(scope="module")
-def http_server(tmp_path_factory: TempPathFactory) -> Iterable[List[URL]]:
-    faker = Faker()
-    files = ["file_1", "file_2", "file_3"]
-    directory_path = tmp_path_factory.mktemp("http_server")
-    assert directory_path.exists()
-    for fn in files:
-        with (directory_path / fn).open("wt") as f:
-            f.write(f"This file is named: {fn}\n")
-            for s in faker.sentences():
-                f.write(f"{s}\n")
-
-    cmd = [sys.executable, "-m", "http.server", "8999"]
-
-    base_url = URL("http://localhost:8999")
-    with subprocess.Popen(cmd, cwd=directory_path) as p:
-        timeout = 10
-        while True:
-            try:
-                requests.get(f"{base_url}")
-                break
-            except requests.exceptions.ConnectionError as e:
-                time.sleep(0.1)
-                timeout -= 0.1
-                if timeout < 0:
-                    raise RuntimeError("Server did not appear") from e
-        # the server must be up
-        yield [base_url.with_path(f) for f in files]
-        # cleanup now, sometimes it hangs
-        p.kill()
-
-
-@pytest.fixture(scope="module")
-def ftp_server(ftpserver: ProcessFTPServer) -> List[URL]:
-    faker = Faker()
-
-    files = ["file_1", "file_2", "file_3"]
-    ftp_server_base_url = ftpserver.get_login_data(style="url")
-    list_of_file_urls = [f"{ftp_server_base_url}/{filename}.txt" for filename in files]
-    with fsspec.open_files(list_of_file_urls, "wt") as open_files:
-        for index, fp in enumerate(open_files):
-            fp.write(f"This file is named: {files[index]}\n")
-            for s in faker.sentences():
-                fp.write(f"{s}\n")
-
-    return [URL(f) for f in list_of_file_urls]
 
 
 @pytest.fixture()
@@ -371,21 +297,6 @@ def test_run_computational_sidecar_real_fct(
     "task",
     [
         pytest.lazy_fixture("ubuntu_task"),
-        # ServiceExampleParam(
-        #     service_key="itisfoundation/sleeper",
-        #     service_version="2.1.1",
-        #     command=[],
-        #     input_data={"input_2": 2, "input_4": 1},
-        #     output_data_keys={
-        #         "output_1": {"type": Path, "name": "single_number.txt"},
-        #         "output_2": {"type": int},
-        #     },
-        #     expected_output_data={
-        #         "output_1": re.compile(r".+/single_number.txt"),
-        #         "output_2": re.compile(r"\d"),
-        #     },
-        #     expected_logs=["Remaining sleep time"],
-        # ),
     ],
 )
 def test_run_computational_sidecar_dask(
