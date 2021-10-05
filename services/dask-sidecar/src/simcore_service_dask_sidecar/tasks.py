@@ -45,13 +45,14 @@ async def _run_computational_sidecar_async(
     ):
         _retry = 0
         _max_retries = 1
-        _sidecar_bootmode = get_current_task_boot_mode()
+        sidecar_bootmode = get_current_task_boot_mode()
         async with ComputationalSidecar(
             service_key=service_key,
             service_version=service_version,
             input_data=input_data,
             output_data_keys=output_data_keys,
             docker_auth=docker_auth,
+            boot_mode=sidecar_bootmode,
         ) as sidecar:
             output_data = await sidecar.run(command=command)
         return output_data

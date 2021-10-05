@@ -24,6 +24,7 @@ from dask_task_models_library.container_tasks.io import (
 from distributed import Pub
 from models_library.projects_state import RunningState
 from pydantic import ValidationError
+from simcore_service_dask_sidecar.boot_mode import BootMode
 from yarl import URL
 
 from ..dask_utils import create_dask_worker_logger, publish_event
@@ -49,6 +50,7 @@ class ComputationalSidecar:
     service_version: str
     input_data: TaskInputData
     output_data_keys: TaskOutputDataSchema
+    boot_mode: BootMode
     _state_pub: Pub = field(init=False)
     _progress_pub: Pub = field(init=False)
     _logs_pub: Pub = field(init=False)
@@ -154,6 +156,7 @@ class ComputationalSidecar:
                 service_version=self.service_version,
                 command=command,
                 comp_volume_mount_point=f"{computational_shared_data_mount_point}/{run_id}",
+                boot_mode=self.boot_mode,
             )
             logger.debug("Container configuration: \n%s", pformat(config.dict()))
 
