@@ -1,3 +1,8 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=no-member
+
 from datetime import datetime
 from typing import List, Tuple
 
@@ -8,9 +13,6 @@ from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     create_container_config,
     parse_line,
     to_datetime,
-)
-from simcore_service_dask_sidecar.computational_sidecar.models import (
-    DockerContainerConfig,
 )
 
 

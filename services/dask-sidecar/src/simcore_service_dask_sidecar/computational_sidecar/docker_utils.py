@@ -18,9 +18,8 @@ from dask_task_models_library.container_tasks.events import (
 from distributed.pubsub import Pub
 from pydantic import ByteSize
 
-from ..dask_utils import publish_event
+from ..dask_utils import create_dask_worker_logger, publish_event
 from ..settings import Settings
-from ..utils import create_dask_worker_logger
 from .models import ContainerHostConfig, DockerContainerConfig
 
 logger = create_dask_worker_logger(__name__)
@@ -156,7 +155,7 @@ async def publish_logs(
     logs_pub: Pub,
     log_type: LogType,
     message: str,
-):
+) -> None:
     logger.info(
         "[%s:%s - %s%s - %s]: %s",
         service_key,

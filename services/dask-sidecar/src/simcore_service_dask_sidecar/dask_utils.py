@@ -1,4 +1,7 @@
-from typing import Optional
+import asyncio
+import logging
+from contextlib import asynccontextmanager
+from typing import AsyncIterator, Awaitable, Optional
 
 from dask_task_models_library.container_tasks.events import TaskEvent
 from distributed import Pub
@@ -10,6 +13,13 @@ from .boot_mode import BootMode
 def _get_current_task_state() -> Optional[TaskState]:
     worker = get_worker()
     return worker.tasks.get(worker.get_current_task())
+
+
+def create_dask_worker_logger(name: str) -> logging.Logger:
+    return logging.getLogger(f"distributed.worker.{name}")
+
+
+logger = create_dask_worker_logger(__name__)
 
 
 def publish_event(dask_pub: Pub, event: TaskEvent) -> None:
@@ -30,3 +40,35 @@ def get_current_task_boot_mode() -> BootMode:
         if task.resource_restrictions.get("GPU", 0) > 0:
             return BootMode.GPU
     return BootMode.CPU
+
+
+@asynccontextmanager
+async def MonitorTaskAbortion(task_name: str) -> AsyncIterator[Awaitable[None]]:
+    async def cancel_task(task_name: str) -> None:
+        tasks = asyncio.all_tasks()
+        logger.debug("running tasks: %s", tasks)
+        for task in tasks:
+            if task.get_name() == task_name:
+                logger.info("canceling task %s....................", task)
+                task.cancel()
+                break
+
+    async def perdiodicaly_check_if_aborted(task_name: str) -> None:
+        try:
+            while await asyncio.sleep(5, result=True):
+                if is_current_task_aborted():
+                    logger.info("Task was aborted. Cancelling fct [%s]...", task_name)
+                    asyncio.get_event_loop().call_soon(cancel_task, task_name)
+        except asyncio.CancelledError:
+            pass
+
+    periodically_checking_task = None
+    try:
+        periodically_checking_task = asyncio.create_task(
+            perdiodicaly_check_if_aborted(task_name)
+        )
+
+        yield periodically_checking_task
+    finally:
+        if periodically_checking_task:
+            periodically_checking_task.cancel()

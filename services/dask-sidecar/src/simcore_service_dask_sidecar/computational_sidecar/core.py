@@ -26,9 +26,8 @@ from models_library.projects_state import RunningState
 from pydantic import ValidationError
 from yarl import URL
 
-from ..dask_utils import publish_event
+from ..dask_utils import create_dask_worker_logger, publish_event
 from ..settings import Settings
-from ..utils import create_dask_worker_logger
 from .docker_utils import (
     create_container_config,
     get_computational_shared_data_mount_point,
@@ -54,7 +53,7 @@ class ComputationalSidecar:
     _progress_pub: Pub = field(init=False)
     _logs_pub: Pub = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # NOTE: this must be created after the task is started to ensure we do have a dask worker
         self._state_pub = Pub(name=TaskStateEvent.topic_name())
         self._progress_pub = Pub(name=TaskProgressEvent.topic_name())
