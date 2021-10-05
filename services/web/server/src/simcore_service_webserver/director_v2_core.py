@@ -338,7 +338,7 @@ async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
 @log_decorator(logger=log)
 async def retrieve(
     app: web.Application, node_uuid: str, port_keys: List[str]
-) -> Dict[str, Dict[str, int]]:
+) -> DataBody:
     # when triggering retrieve endpoint
     # this will allow to sava bigger datasets from the services
     timeout = ServicesCommonSettings().storage_service_upload_download_timeout
