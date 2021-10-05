@@ -3,7 +3,7 @@ import functools
 import json
 import logging
 from pprint import pformat
-from typing import Awaitable, Callable, Dict
+from typing import AsyncIterator, Awaitable, Callable, Dict
 
 import aio_pika
 from aiohttp import web
@@ -76,7 +76,7 @@ async def instrumentation_message_handler(
     await message.ack()
 
 
-async def subscribe(app: web.Application) -> None:
+async def rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     # TODO: catch and deal with missing connections:
     # e.g. CRITICAL:pika.adapters.base_connection:Could not get addresses to use: [Errno -2] Name or service not known (rabbit)
     # This exception is catch and pika persists ... WARNING:pika.connection:Could not connect, 5 attempts l
@@ -109,6 +109,7 @@ async def subscribe(app: web.Application) -> None:
         )
         # Binding the queue to the exchange
         await queue.bind(exchange)
+        # pass the handler
         await queue.consume(
             functools.partial(handler, app=app),
             exclusive=True,
@@ -127,6 +128,11 @@ async def subscribe(app: web.Application) -> None:
         no_ack=False,
     )
     log.info("Connected to rabbitMQ exchanges")
+
+    yield
+
+    # cleanup
+    await connection.close()
 
 
 @retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
