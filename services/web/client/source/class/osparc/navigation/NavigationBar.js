@@ -63,6 +63,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
   events: {
     "dashboardPressed": "qx.event.type.Event",
+    "infoButtonPressed": "qx.event.type.Event",
     "slidesGuidedStart": "qx.event.type.Event",
     "slidesAppStart": "qx.event.type.Event",
     "slidesStop": "qx.event.type.Event",
@@ -110,23 +111,12 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     buildLayout: function() {
       this.getChildControl("logo");
 
-      this._add(new qx.ui.core.Spacer(20));
+      this._add(new qx.ui.core.Spacer(30));
 
       this.getChildControl("dashboard-button");
       this.getChildControl("dashboard-label");
 
-      this._add(new qx.ui.core.Spacer(20));
-
-      this.getChildControl("slideshow-menu-button").set({
-        visibility: "excluded"
-      });
-      this.getChildControl("slideshow-stop").set({
-        visibility: "excluded"
-      });
-
-      this._add(new qx.ui.core.Spacer(20));
-
-      this.getChildControl("read-only-icon");
+      this._add(new qx.ui.core.Spacer(30));
 
       const studyTitle = this.getChildControl("study-title");
       studyTitle.addListener("editValue", evt => {
@@ -146,6 +136,17 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             });
         }
       }, this);
+
+      this.getChildControl("read-only-icon");
+      this._add(new qx.ui.core.Spacer(15));
+      this.getChildControl("study-info-btn");
+      this._add(new qx.ui.core.Spacer(15));
+      this.getChildControl("slideshow-menu-button").set({
+        visibility: "excluded"
+      });
+      this.getChildControl("slideshow-stop").set({
+        visibility: "excluded"
+      });
 
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
@@ -185,12 +186,31 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           this._add(control);
           break;
+        case "study-title":
+          control = new osparc.ui.form.EditLabel().set({
+            visibility: "excluded",
+            labelFont: "title-14",
+            inputFont: "text-14",
+            editable: osparc.data.Permissions.getInstance().canDo("study.update")
+          });
+          this._add(control);
+          break;
         case "read-only-icon":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/eye/22").set({
             visibility: "excluded",
             paddingRight: 10,
             toolTipText: "Read Only"
           });
+          this._add(control);
+          break;
+        case "study-info-btn":
+          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/info-circle/16").set({
+            ...this.self().BUTTON_OPTIONS,
+            visibility: "excluded"
+          });
+          control.addListener("execute", () => {
+            this.fireEvent("infoButtonPressed");
+          }, this);
           this._add(control);
           break;
         case "slideshow-menu-button":
@@ -201,20 +221,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           control = this.__createSlideStopBtn();
           this._add(control);
           break;
-        case "study-title":
-          control = new osparc.ui.form.EditLabel().set({
-            visibility: "excluded",
-            labelFont: "title-14",
-            inputFont: "text-14",
-            editable: osparc.data.Permissions.getInstance().canDo("study.update")
-          });
-          this._add(control);
-          break;
-        case "tasks-button": {
+        case "tasks-button":
           control = new osparc.component.task.TasksButton();
           this._add(control);
           break;
-        }
         case "manual":
           control = this.__createManualMenuBtn();
           control.set(this.self().BUTTON_OPTIONS);
@@ -243,17 +253,19 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "dashboard":
           this.getChildControl("dashboard-label").show();
           this.getChildControl("dashboard-button").exclude();
-          this.getChildControl("read-only-icon").exclude();
-          this.__resetSlidesBtnsVis();
           this.getChildControl("study-title").exclude();
+          this.getChildControl("read-only-icon").exclude();
+          this.getChildControl("study-info-btn").exclude();
+          this.__resetSlidesBtnsVis();
           break;
         case "workbench":
         case "guided":
         case "app":
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
-          this.__resetSlidesBtnsVis();
           this.getChildControl("study-title").show();
+          this.getChildControl("study-info-btn").show();
+          this.__resetSlidesBtnsVis();
           break;
       }
     },

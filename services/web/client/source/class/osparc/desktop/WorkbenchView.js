@@ -63,7 +63,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __nodeView: null,
     __groupNodeView: null,
     __nodesTree: null,
-    __extraView: null,
     __loggerView: null,
     __currentNodeId: null,
 
@@ -352,15 +351,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__removeNode(nodeId);
       }, this);
       this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Nodes"), nodesTree), 0, {
-        flex: 1
-      });
-
-      const extraView = this.__extraView = new osparc.studycard.Medium(study);
-      this.__sidePanel.addListener("panelResized", e => {
-        const bounds = e.getData();
-        extraView.checkResize(bounds);
-      }, this);
-      this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Study information"), extraView), 1, {
         flex: 1
       });
 
