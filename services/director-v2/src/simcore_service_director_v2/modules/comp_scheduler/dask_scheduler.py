@@ -86,6 +86,7 @@ class DaskScheduler(BaseCompScheduler):
             "project_id": project_id,
             "node_id": node_id,
             "progress": task_progress_event.progress,
+            "channel": "progress",
         }
         await self.rabbitmq_client.publish_message(
             task_progress_event.topic_name(), json.dumps(message)
@@ -100,7 +101,8 @@ class DaskScheduler(BaseCompScheduler):
             "user_id": user_id,
             "project_id": project_id,
             "node_id": node_id,
-            "messages": task_log_event.log,
+            "messages": [task_log_event.log],
+            "channel": "logger",
         }
         await self.rabbitmq_client.publish_message(
             task_log_event.topic_name(), json.dumps(message)
