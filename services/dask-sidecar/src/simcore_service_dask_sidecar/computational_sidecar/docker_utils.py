@@ -121,7 +121,7 @@ async def parse_line(line: str) -> Tuple[LogType, str, str]:
 
     log_type = LogType.LOG
     timestamp = match.group(1)
-    log = match.group(2)
+    log = f"[task] {match.group(2)}"
     # now look for progress
     match = re.search(PROGRESS_REGEXP, log.lower())
     if match:
@@ -131,17 +131,17 @@ async def parse_line(line: str) -> Tuple[LogType, str, str]:
             log_type = LogType.PROGRESS
             if match.group(2):
                 # this is of the 23% kind
-                log = f"{float(progress.rstrip('%').strip()) / 100.0}"
+                log = f"{float(progress.rstrip('%').strip()) / 100.0:.2f}"
             elif match.group(3):
                 # this is of the 23 percent kind
-                log = f"{float(progress.rstrip('percent').strip()) / 100.0}"
+                log = f"{float(progress.rstrip('percent').strip()) / 100.0:.2f}"
             elif match.group(4):
                 # this is of the 23/123 kind
                 nums = progress.strip().split("/")
-                log = f"{float(nums[0]) / float(nums[1])}"
+                log = f"{float(nums[0]) / float(nums[1]):.2f}"
             else:
                 # this is of the 0.0-1.0 kind
-                log = progress.strip()
+                log = f"{float(progress.strip()):.2f}"
         except ValueError:
             logger.exception("Could not extract progress from log line %s", line)
     return (log_type, timestamp, log)
