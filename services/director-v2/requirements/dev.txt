@@ -18,7 +18,7 @@
 --editable ../../packages/service-library[fastapi]
 --editable ../../packages/settings-library/
 --editable ../../packages/simcore-sdk
---editable ../../services/storage/client-sdk/python/
+--editable ../../services/storage/client-sdk/python/ # Needed ONLY for testing
 
 # installs current package
 --editable .
