@@ -2,6 +2,7 @@ import asyncio
 from pprint import pformat
 from typing import List
 
+import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.io import (
     TaskInputData,
@@ -10,15 +11,19 @@ from dask_task_models_library.container_tasks.io import (
 )
 
 from .computational_sidecar.core import ComputationalSidecar
-from .dask_utils import get_current_task_boot_mode
+from .dask_utils import (
+    MonitorTaskAbortion,
+    create_dask_worker_logger,
+    get_current_task_boot_mode,
+)
 from .meta import print_banner
 from .settings import Settings
-from .utils import create_dask_worker_logger
 
 log = create_dask_worker_logger(__name__)
 
 
-def dask_setup(_worker):
+def dask_setup(_worker: distributed.Worker) -> None:
+    """This is a special function recognized by the dask worker when starting with flag --preload"""
     log.info("Settings: %s", pformat(Settings.create_from_envs().dict()))
     print_banner()
 
@@ -35,19 +40,21 @@ async def _run_computational_sidecar_async(
         "run_computational_sidecar %s",
         f"{docker_auth=}, {service_key=}, {service_version=}, {input_data=}, {output_data_keys=}, {command=}",
     )
-
-    _retry = 0
-    _max_retries = 1
-    _sidecar_bootmode = get_current_task_boot_mode()
-    async with ComputationalSidecar(
-        service_key=service_key,
-        service_version=service_version,
-        input_data=input_data,
-        output_data_keys=output_data_keys,
-        docker_auth=docker_auth,
-    ) as sidecar:
-        output_data = await sidecar.run(command=command)
-    return output_data
+    async with MonitorTaskAbortion(
+        task_name=asyncio.current_task().get_name(),
+    ):
+        _retry = 0
+        _max_retries = 1
+        _sidecar_bootmode = get_current_task_boot_mode()
+        async with ComputationalSidecar(
+            service_key=service_key,
+            service_version=service_version,
+            input_data=input_data,
+            output_data_keys=output_data_keys,
+            docker_auth=docker_auth,
+        ) as sidecar:
+            output_data = await sidecar.run(command=command)
+        return output_data
 
 
 def run_computational_sidecar(

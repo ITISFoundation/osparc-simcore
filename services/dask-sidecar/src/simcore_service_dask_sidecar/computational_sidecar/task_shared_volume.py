@@ -4,7 +4,7 @@ from pathlib import Path
 from types import TracebackType
 from typing import Any, Optional, Type
 
-from ..utils import create_dask_worker_logger
+from ..dask_utils import create_dask_worker_logger
 
 logger = create_dask_worker_logger(__name__)
 
@@ -58,5 +58,5 @@ class TaskSharedVolumes:
         exc_type: Optional[Type[BaseException]],
         exc: Optional[BaseException],
         tb: Optional[TracebackType],
-    ):
+    ) -> None:
         self.cleanup()
