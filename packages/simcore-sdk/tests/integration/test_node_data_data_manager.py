@@ -34,7 +34,7 @@ def _remove_file_or_folder(file_or_folder: Path) -> None:
         assert file_or_folder.exists() is True
 
 
-def _path_hashes(path_to_hash: Path) -> Set[Tuple[str, str]]:
+def _file_hashes_in_path(path_to_hash: Path) -> Set[Tuple[Path, str]]:
     def _hash_path(path: Path):
         sha256_hash = hashlib.sha256()
         with open(path, "rb") as f:
@@ -43,14 +43,14 @@ def _path_hashes(path_to_hash: Path) -> Set[Tuple[str, str]]:
                 sha256_hash.update(byte_block)
         return sha256_hash.hexdigest()
 
-    def _path_from_root(root_path: Path, full_path: Path) -> str:
-        return str(full_path).replace(str(root_path), "")
+    def _relative_path(root_path: Path, full_path: Path) -> Path:
+        return full_path.relative_to(root_path)
 
     if path_to_hash.is_file():
-        return {(_path_from_root(path_to_hash, path_to_hash), _hash_path(path_to_hash))}
+        return {(_relative_path(path_to_hash, path_to_hash), _hash_path(path_to_hash))}
 
     return {
-        (_path_from_root(path_to_hash, path), _hash_path(path))
+        (_relative_path(path_to_hash, path), _hash_path(path))
         for path in path_to_hash.rglob("*")
     }
 
@@ -141,7 +141,7 @@ async def test_valid_upload_download(
         file_or_folder=content_path,
     )
 
-    uploaded_hashes = _path_hashes(content_path)
+    uploaded_hashes = _file_hashes_in_path(content_path)
 
     _remove_file_or_folder(content_path)
 
@@ -152,7 +152,7 @@ async def test_valid_upload_download(
         file_or_folder=content_path,
     )
 
-    downloaded_hashes = _path_hashes(content_path)
+    downloaded_hashes = _file_hashes_in_path(content_path)
 
     assert uploaded_hashes == downloaded_hashes
 
@@ -182,7 +182,7 @@ async def test_valid_upload_download_saved_to(
         file_or_folder=content_path,
     )
 
-    uploaded_hashes = _path_hashes(content_path)
+    uploaded_hashes = _file_hashes_in_path(content_path)
 
     _remove_file_or_folder(content_path)
 
@@ -196,6 +196,6 @@ async def test_valid_upload_download_saved_to(
         save_to=new_destination,
     )
 
-    downloaded_hashes = _path_hashes(new_destination)
+    downloaded_hashes = _file_hashes_in_path(new_destination)
 
     assert uploaded_hashes == downloaded_hashes
