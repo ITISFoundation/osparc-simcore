@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 from fastapi import FastAPI
+from starlette import status
 
 from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.dynamic_services import SchedulerData
@@ -81,7 +82,7 @@ class DynamicSidecarClient:
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:
                 response = await client.get(url=url)
-            if response.status_code != 200:
+            if response.status_code != status.HTTP_200_OK:
                 message = (
                     f"error during request status={response.status_code}, "
                     f"body={response.text}"
@@ -101,7 +102,7 @@ class DynamicSidecarClient:
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:
                 response = await client.get(url=url, params=dict(only_status=True))
-            if response.status_code != 200:
+            if response.status_code != status.HTTP_200_OK:
                 logging.warning(
                     "error during request status=%s, body=%s",
                     response.status_code,
@@ -122,7 +123,7 @@ class DynamicSidecarClient:
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:
                 response = await client.post(url, data=compose_spec)
-            if response.status_code != 202:
+            if response.status_code != status.HTTP_202_ACCEPTED:
                 message = (
                     f"ERROR during service creation request: "
                     f"status={response.status_code}, body={response.text}"
@@ -142,7 +143,7 @@ class DynamicSidecarClient:
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:
                 response = await client.post(url)
-            if response.status_code != 200:
+            if response.status_code != status.HTTP_200_OK:
                 message = (
                     f"ERROR during service destruction request: "
                     f"status={response.status_code}, body={response.text}"
@@ -160,7 +161,7 @@ class DynamicSidecarClient:
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
                 response = await client.post(url)
-            if response.status_code != 204:
+            if response.status_code != status.HTTP_204_NO_CONTENT:
                 message = (
                     f"ERROR while saving service state: "
                     f"status={response.status_code}, body={response.text}"
@@ -176,7 +177,7 @@ class DynamicSidecarClient:
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
                 response = await client.post(url)
-            if response.status_code != 204:
+            if response.status_code != status.HTTP_204_NO_CONTENT:
                 message = (
                     f"ERROR while restoring service state: "
                     f"status={response.status_code}, body={response.text}"
@@ -195,7 +196,7 @@ class DynamicSidecarClient:
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
                 response = await client.post(url, json=port_keys)
-            if response.status_code != 200:
+            if response.status_code != status.HTTP_200_OK:
                 message = (
                     f"ERROR while restoring service state: "
                     f"status={response.status_code}, body={response.text}"
@@ -215,7 +216,7 @@ class DynamicSidecarClient:
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
                 response = await client.post(url, json=port_keys)
-            if response.status_code != 204:
+            if response.status_code != status.HTTP_204_NO_CONTENT:
                 message = (
                     f"ERROR while restoring service state: "
                     f"status={response.status_code}, body={response.text}"
