@@ -519,7 +519,12 @@ async def _wait_for_dy_services_to_fully_stop(
     )
 
     for i in range(TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED):
-        print(f"Sleeping for {i+1}/{TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED} seconds")
+        print(
+            (
+                f"Sleeping for {i+1}/{TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED} "
+                "seconds while waiting for removal of all dynamic-sidecars"
+            )
+        )
         await asyncio.sleep(1)
         if len(to_observe) == 0:
             break
@@ -613,7 +618,7 @@ async def _assert_retrieve_completed(
             print(
                 (
                     f"Sleeping {i+1}/{TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED} "
-                    f"while waiting for logs from {service_uuid}"
+                    f"before searching logs from {service_uuid} again"
                 )
             )
             await asyncio.sleep(1)
