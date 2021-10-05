@@ -354,9 +354,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __updatePipelineAndRetrieve: function(node, portKey = null) {
       this.updateStudyDocument(false)
         .then(() => {
-          this.__getStudyLogger().debug(null, "Retrieveing inputs");
           if (node) {
+            this.__getStudyLogger().debug(node.getNodeId(), "Retrieving inputs");
             node.retrieveInputs(portKey);
+          } else {
+            this.__getStudyLogger().debug(null, "Retrieving inputs");
           }
         });
       this.__getStudyLogger().debug(null, "Updating pipeline");
