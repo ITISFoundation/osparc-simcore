@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, Awaitable, Optional
+from typing import Any, AsyncIterator, Awaitable, Dict, Optional
 
 from dask_task_models_library.container_tasks.events import TaskEvent
 from distributed import Pub
@@ -40,6 +40,13 @@ def get_current_task_boot_mode() -> BootMode:
         if task.resource_restrictions.get("GPU", 0) > 0:
             return BootMode.GPU
     return BootMode.CPU
+
+
+def get_current_task_resources() -> Dict[str, Any]:
+    if task := _get_current_task_state():
+        if task_resources := task.resource_restrictions:
+            return task_resources
+    return {}
 
 
 @asynccontextmanager

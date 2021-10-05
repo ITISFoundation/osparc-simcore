@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from pprint import pformat
-from typing import AsyncIterator, Awaitable, List, Tuple
+from typing import Any, AsyncIterator, Awaitable, Dict, List, Tuple
 
 from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
@@ -33,6 +33,7 @@ async def create_container_config(
     command: List[str],
     comp_volume_mount_point: str,
     boot_mode: BootMode,
+    task_max_resources: Dict[str, Any],
 ) -> DockerContainerConfig:
 
     return DockerContainerConfig(
@@ -56,8 +57,8 @@ async def create_container_config(
                 f"{comp_volume_mount_point}/outputs:/outputs",
                 f"{comp_volume_mount_point}/logs:/logs",
             ],
-            Memory=ByteSize(1024 ** 3),
-            NanoCPUs=1000000000,
+            Memory=ByteSize(task_max_resources.get("RAM", 1024 ** 3)),
+            NanoCPUs=int(task_max_resources.get("CPU", 1) * 1e9),
         ),
     )
 

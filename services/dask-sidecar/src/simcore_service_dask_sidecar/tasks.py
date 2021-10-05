@@ -15,6 +15,7 @@ from .dask_utils import (
     MonitorTaskAbortion,
     create_dask_worker_logger,
     get_current_task_boot_mode,
+    get_current_task_resources,
 )
 from .meta import print_banner
 from .settings import Settings
@@ -46,6 +47,7 @@ async def _run_computational_sidecar_async(
         _retry = 0
         _max_retries = 1
         sidecar_bootmode = get_current_task_boot_mode()
+        task_max_resources = get_current_task_resources()
         async with ComputationalSidecar(
             service_key=service_key,
             service_version=service_version,
@@ -53,6 +55,7 @@ async def _run_computational_sidecar_async(
             output_data_keys=output_data_keys,
             docker_auth=docker_auth,
             boot_mode=sidecar_bootmode,
+            task_max_resources=task_max_resources,
         ) as sidecar:
             output_data = await sidecar.run(command=command)
         return output_data

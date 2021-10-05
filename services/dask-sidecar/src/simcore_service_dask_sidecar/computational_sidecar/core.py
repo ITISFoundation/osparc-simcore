@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import Awaitable, List, Optional, Type
+from typing import Any, Awaitable, Dict, List, Optional, Type
 from uuid import uuid4
 
 import fsspec
@@ -44,13 +44,14 @@ CONTAINER_WAIT_TIME_SECS = 2
 
 
 @dataclass
-class ComputationalSidecar:
+class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     docker_auth: DockerBasicAuth
     service_key: str
     service_version: str
     input_data: TaskInputData
     output_data_keys: TaskOutputDataSchema
     boot_mode: BootMode
+    task_max_resources: Dict[str, Any]
     _state_pub: Pub = field(init=False)
     _progress_pub: Pub = field(init=False)
     _logs_pub: Pub = field(init=False)
@@ -157,6 +158,7 @@ class ComputationalSidecar:
                 command=command,
                 comp_volume_mount_point=f"{computational_shared_data_mount_point}/{run_id}",
                 boot_mode=self.boot_mode,
+                task_max_resources=self.task_max_resources,
             )
             logger.debug("Container configuration: \n%s", pformat(config.dict()))
 
