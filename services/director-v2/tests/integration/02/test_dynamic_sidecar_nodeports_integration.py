@@ -610,7 +610,12 @@ async def _assert_retrieve_completed(
                 print("".join(logs))
                 assert False, "Timeout reached"
 
-            print(f"Sleeping {i+1}/{TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED}")
+            print(
+                (
+                    f"Sleeping {i+1}/{TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED} "
+                    f"while waiting for logs from {service_uuid}"
+                )
+            )
             await asyncio.sleep(1)
 
         print(f"Nodeports outputs upload finish detected for {service_uuid}")
