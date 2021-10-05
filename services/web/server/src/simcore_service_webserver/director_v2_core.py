@@ -333,3 +333,21 @@ async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
 
     assert isinstance(service_state, dict)  # nosec
     return service_state
+
+
+@log_decorator(logger=log)
+async def retrieve(
+    app: web.Application, node_uuid: str, port_keys: List[str]
+) -> Dict[str, Dict[str, int]]:
+    # when triggering retrieve endpoint
+    # this will allow to sava bigger datasets from the services
+    timeout = ServicesCommonSettings().storage_service_upload_download_timeout
+
+    director2_settings: Directorv2Settings = get_settings(app)
+    backend_url = (
+        URL(director2_settings.endpoint) / "dynamic_services" / f"{node_uuid}:retrieve"
+    )
+    body = dict(port_keys=port_keys)
+    return await _request_director_v2(
+        app, "POST", backend_url, expected_status=web.HTTPOk, data=body, timeout=timeout
+    )
