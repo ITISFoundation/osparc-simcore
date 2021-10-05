@@ -7,26 +7,26 @@ from distributed.worker import TaskState, get_worker
 from .boot_mode import BootMode
 
 
-def publish_event(dask_pub: Pub, event: TaskEvent) -> None:
-    dask_pub.put(event.json())
-
-
-def get_task_state() -> Optional[TaskState]:
+def _get_current_task_state() -> Optional[TaskState]:
     worker = get_worker()
     return worker.tasks.get(worker.get_current_task())
 
 
-def is_task_aborted() -> bool:
-    task: Optional[TaskState] = get_task_state()
+def publish_event(dask_pub: Pub, event: TaskEvent) -> None:
+    dask_pub.put(event.json())
+
+
+def is_current_task_aborted() -> bool:
+    task: Optional[TaskState] = _get_current_task_state()
     # the task was removed from the list of tasks this worker should work on, meaning it is aborted
     return task is None
 
 
-def get_task_boot_mode(task: Optional[TaskState]) -> BootMode:
-    if not task or not task.resource_restrictions:
-        return BootMode.CPU
-    if task.resource_restrictions.get("MPI", 0) > 0:
-        return BootMode.MPI
-    if task.resource_restrictions.get("GPU", 0) > 0:
-        return BootMode.GPU
+def get_current_task_boot_mode() -> BootMode:
+    task: Optional[TaskState] = _get_current_task_state()
+    if task and task.resource_restrictions:
+        if task.resource_restrictions.get("MPI", 0) > 0:
+            return BootMode.MPI
+        if task.resource_restrictions.get("GPU", 0) > 0:
+            return BootMode.GPU
     return BootMode.CPU
