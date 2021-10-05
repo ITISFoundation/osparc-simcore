@@ -206,6 +206,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "study-info-btn":
           control = new qx.ui.form.Button(null, "@FontAwesome5Solid/info-circle/16").set({
             ...this.self().BUTTON_OPTIONS,
+            backgroundColor: "transparent",
             visibility: "excluded"
           });
           control.addListener("execute", () => {
