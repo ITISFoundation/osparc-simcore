@@ -121,9 +121,9 @@ async def parse_line(line: str) -> Tuple[LogType, str, str]:
 
     log_type = LogType.LOG
     timestamp = match.group(1)
-    log = match.group(2).lower()
+    log = match.group(2)
     # now look for progress
-    match = re.search(PROGRESS_REGEXP, log)
+    match = re.search(PROGRESS_REGEXP, log.lower())
     if match:
         try:
             # can be anything from "23 percent", 23%, 23/234, 0.0-1.0
@@ -158,12 +158,12 @@ async def publish_logs(
     message: str,
 ):
     logger.info(
-        "[%s:%s - %s%s -%s]: %s",
+        "[%s:%s - %s%s - %s]: %s",
         service_key,
         service_version,
         container.id,
         container_name,
-        log_type,
+        log_type.name,
         message,
     )
     if log_type == LogType.PROGRESS:
