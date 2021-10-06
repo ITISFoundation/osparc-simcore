@@ -52,7 +52,7 @@ async def ensure_network_cleanup(
                 assert "not found" in str_error
 
 
-async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> None:
+async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
     """
     Normally director-v2 talks via docker-netwoks with the dynamic-sidecar.
     Since the director-v2 was started outside docker and is not
@@ -81,6 +81,7 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> None:
 
     # patch the endppoint inside the scheduler
     scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
+    endpoint: Optional[str] = None
     async with scheduler._lock:  # pylint: disable=protected-access
         for entry in scheduler._to_observe.values():  # pylint: disable=protected-access
             if entry.scheduler_data.service_name == service_name:
@@ -90,6 +91,9 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> None:
                 endpoint = entry.scheduler_data.dynamic_sidecar.endpoint
                 assert endpoint == f"http://172.17.0.1:{port}"
                 break
+
+    assert endpoint is not None
+    return endpoint
 
 
 async def handle_307_if_required(

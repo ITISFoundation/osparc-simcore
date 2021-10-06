@@ -49,6 +49,7 @@ from starlette.testclient import TestClient
 from utils import (
     assert_all_services_running,
     assert_retrieve_service,
+    assert_services_reply_200,
     assert_start_service,
     assert_stop_service,
     ensure_network_cleanup,
@@ -300,22 +301,6 @@ async def _get_mapped_nodeports_values(
 ) -> Dict[str, InputsOutputs]:
     result: Dict[str, InputsOutputs] = {}
 
-    # TODO: SAN please have a look into the following.
-    # Up until this point, data was correctly uploaded
-    # via nodeports by the two dynamic-sidecars
-    # The logs for both dynamic-sidecars are fetched and
-    # the "Uploaded bytes X in Y seconds" is present
-    # in the logs.
-    #
-    # If trying to fetch the data from the nodeports in here
-    # without sleeping, _assert_port_values will fail
-    # either on one of the integer values or on the files
-    # Values for at least one of those ports will be None.
-
-    # removing the below sleep will make the test fail in the CI
-    # note that on development machines it works without it
-    await asyncio.sleep(POSSIBLE_ISSUE_WORKAROUND)
-
     for node_uuid in workbench:
         PORTS: Nodeports = await node_ports_v2.ports(
             user_id=user_id,
@@ -517,7 +502,7 @@ async def _wait_for_dynamic_services_to_be_running(
     user_id: int,
     workbench_dynamic_services: Dict[str, Node],
     current_study: ProjectAtDB,
-) -> None:
+) -> Dict[str, str]:
     # start dynamic services
     await asyncio.gather(
         *(
@@ -535,16 +520,27 @@ async def _wait_for_dynamic_services_to_be_running(
         )
     )
 
+    dynamic_services_urls: Dict[str, str] = {}
+
     for service_uuid in workbench_dynamic_services:
-        await patch_dynamic_service_url(
+        dynamic_service_url = await patch_dynamic_service_url(
             # pylint: disable=protected-access
             app=director_v2_client._transport.app,
             node_uuid=service_uuid,
         )
+        dynamic_services_urls[service_uuid] = dynamic_service_url
 
     await assert_all_services_running(
         director_v2_client, director_v0_url, workbench=workbench_dynamic_services
     )
+
+    await assert_services_reply_200(
+        director_v2_client=director_v2_client,
+        director_v0_url=director_v0_url,
+        workbench=workbench_dynamic_services,
+    )
+
+    return dynamic_services_urls
 
 
 async def _wait_for_dy_services_to_fully_stop(
@@ -663,6 +659,28 @@ async def _assert_retrieve_completed(
         print(f"Nodeports outputs upload finish detected for {service_uuid}")
 
 
+async def _print_dynamic_sidecars_containers_logs(
+    dynamic_services_urls: Dict[str, str]
+) -> None:
+    for node_uuid, url in dynamic_services_urls.items():
+        print(f"Containers logs for service {node_uuid} @ {url}")
+        async with httpx.AsyncClient(base_url=f"{url}/v1") as client:
+            containers_inspect_response = await client.get("/containers")
+            assert (
+                containers_inspect_response.status_code == status.HTTP_200_OK
+            ), containers_inspect_response.text
+            containers_inspect = containers_inspect_response.json()
+            print("Containers:", containers_inspect.keys())
+
+            for container_name in containers_inspect.keys():
+                container_logs_response = await client.get(
+                    f"/containers/{container_name}/logs"
+                )
+                assert container_logs_response.status_code == status.HTTP_200_OK
+                logs = "".join(container_logs_response.json())
+                print(f"Container {container_name} logs:\n{logs}")
+
+
 # TESTS
 
 
@@ -713,7 +731,9 @@ async def test_nodeports_integration(
 
     _patch_postgres_address(director_v2_client)
 
-    await _wait_for_dynamic_services_to_be_running(
+    dynamic_services_urls: Dict[
+        str, str
+    ] = await _wait_for_dynamic_services_to_be_running(
         director_v2_client=director_v2_client,
         director_v0_url=director_v0_url,
         user_id=user_db["id"],
@@ -769,6 +789,9 @@ async def test_nodeports_integration(
 
     # Since there is no webserver monitoring postgres notifications
     # trigger the call manually
+
+    # dump logs from all the container started by each dynamic-sidecar
+    await _print_dynamic_sidecars_containers_logs(dynamic_services_urls)
 
     await _assert_retrieve_completed(
         director_v2_client=director_v2_client,
