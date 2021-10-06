@@ -67,7 +67,7 @@ async def persistent_client_session(app: web.Application):
         )
 
     await session.close()
-    log.info("Session is actually closed? %s", session.closed)
+    assert session.closed  # nosec
 
 
 # FIXME: if get_client_session upon startup fails and session is NOT closed. Implement some kind of gracefull shutdonw https://docs.aiohttp.org/en/latest/client_advanced.html#graceful-shutdown

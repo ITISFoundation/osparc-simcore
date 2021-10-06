@@ -14,6 +14,7 @@ class _UuidEncoder(json.JSONEncoder):
 
 
 def json_dumps(obj: Any, **kwargs):
+    """json.dumps with UUID encoder"""
     return json.dumps(obj, cls=_UuidEncoder, **kwargs)
 
 
