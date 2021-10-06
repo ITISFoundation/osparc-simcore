@@ -225,7 +225,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           if (nodeUI.classname.includes("NodeUI")) {
             nodeUI.setActive(true);
           }
-          this.__populateSecondPanel(nodeUI.getNode());
+          const node = nodeUI.getNode();
+          this.__populateSecondPanel(node);
+          this.__evalIframeButton(node);
         }
       });
       nodesTree.addListener("exportNode", e => {
@@ -245,6 +247,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       workbenchUI.addListener("changeSelectedNode", e => {
         const nodeId = e.getData();
         this.__nodesTree.nodeSelected(nodeId);
+        const workbench = this.getStudy().getWorkbench();
+        const node = workbench.getNode(nodeId);
+        this.__populateSecondPanel(node);
+        this.__evalIframeButton(node);
       });
 
       const workbenchToolbar = this.__workbenchPanel.getToolbar();
@@ -401,19 +407,25 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
       */
 
+      this.__evalIframeButton(node);
+      const tabViewMain = this.getChildControl("main-panel-tabs");
+      if (node && node.getIFrame()) {
+        tabViewMain.setSelection([this.__iFramePage]);
+        this.__addIFrame(node);
+      } else {
+        tabViewMain.setSelection([this.__workbenchPanelPage]);
+      }
+    },
+
+    __evalIframeButton: function(node) {
       if (node && node.getIFrame()) {
         this.__iFramePage.getChildControl("button").set({
           enabled: true
         });
-        const tabViewMain = this.getChildControl("main-panel-tabs");
-        tabViewMain.setSelection([this.__iFramePage]);
-        this.__addIFrame(node);
       } else {
         this.__iFramePage.getChildControl("button").set({
           enabled: false
         });
-        const tabViewMain = this.getChildControl("main-panel-tabs");
-        tabViewMain.setSelection([this.__workbenchPanelPage]);
       }
     },
 
