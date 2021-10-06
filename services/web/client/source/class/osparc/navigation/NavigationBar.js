@@ -117,7 +117,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
       this._add(new qx.ui.core.Spacer(30));
 
-      this.getChildControl("study-options");
+      this.getChildControl("study-options-menu");
       this.getChildControl("read-only-icon");
 
       this._add(new qx.ui.core.Spacer(), {
@@ -155,7 +155,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           this._add(control);
           break;
-        case "study-options":
+        case "study-options-menu":
           control = new osparc.navigation.StudyMenu();
           [
             "infoButtonPressed",
@@ -210,7 +210,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "dashboard":
           this.getChildControl("dashboard-label").show();
           this.getChildControl("dashboard-button").exclude();
-          this.getChildControl("study-options").exclude();
+          this.getChildControl("study-options-menu").exclude();
           this.getChildControl("read-only-icon").exclude();
           break;
         case "workbench":
@@ -218,9 +218,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "app":
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
-          this.getChildControl("study-options").show();
-          this.getChildControl("study-options").evalSlidesButtons(newCtxt);
-          this.getChildControl("study-options").evalSnapshotsButtons();
+          this.getChildControl("study-options-menu").show();
+          this.getChildControl("study-options-menu").evalSlidesButtons(newCtxt);
+          this.getChildControl("study-options-menu").evalSnapshotsButtons();
           break;
       }
     },
@@ -414,7 +414,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         study.bind("readOnly", this.getChildControl("read-only-icon"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
-        this.getChildControl("study-options").setStudy(study);
+        this.getChildControl("study-options-menu").setStudy(study);
       }
     }
   }

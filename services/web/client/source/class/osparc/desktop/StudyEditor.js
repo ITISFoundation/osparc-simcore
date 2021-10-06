@@ -57,6 +57,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
   events: {
     "forceBackToDashboard": "qx.event.type.Event",
+    "snapshotTaken": "qx.event.type.Event",
     "startSnapshot": "qx.event.type.Data"
   },
 
@@ -411,7 +412,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
         };
         osparc.data.Resources.fetch("snapshots", "takeSnapshot", params)
-          .then(data => console.log("Snapshot taken"))
+          .then(data => this.fireEvent("snapshotTaken"))
           .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
 
         win.close();
