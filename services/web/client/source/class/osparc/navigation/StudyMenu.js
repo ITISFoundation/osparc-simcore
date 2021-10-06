@@ -79,17 +79,13 @@ qx.Class.define("osparc.navigation.StudyMenu", {
 
     _applyStudy: function(study) {
       if (study) {
-        study.getWorkbench().addListener("pipelineChanged", () => {
-          this.__evalButtonsVisibiilty();
-        });
-        study.getUi().getSlideshow().addListener("changeSlideshow", () => {
-          this.__evalButtonsVisibiilty();
-        });
-        this.__evalButtonsVisibiilty();
+        study.getWorkbench().addListener("pipelineChanged", () => this.evalButtonsVisibiilty());
+        study.getUi().getSlideshow().addListener("changeSlideshow", () => this.evalButtonsVisibiilty());
+        this.evalButtonsVisibiilty();
       }
     },
 
-    __evalButtonsVisibiilty: function(editorContext) {
+    evalButtonsVisibiilty: function(editorContext) {
       const slidesBtnsVisible = ["workbench", "guided", "app"].includes(editorContext);
       if (slidesBtnsVisible) {
         const study = this.getStudy();
@@ -100,9 +96,9 @@ qx.Class.define("osparc.navigation.StudyMenu", {
           const isOwner = osparc.data.model.Study.isOwner(study);
           this.__editSlidesButton.setEnabled(areSlidesEnabled && isOwner);
 
-          if (["guided", "app"].includes(this.getPageContext())) {
+          if (["guided", "app"].includes(editorContext)) {
             this.__stopSlidesButton.setEnabled(true);
-          } else if (this.getPageContext() === "workbench") {
+          } else if (editorContext === "workbench") {
             this.__stopSlidesButton.setEnabled(false);
           }
         }

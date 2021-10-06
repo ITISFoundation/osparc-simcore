@@ -155,7 +155,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "study-options":
           control = new osparc.navigation.StudyMenu();
-          this.bind("study", control, "study");
           this._add(control);
           break;
         case "read-only-icon":
@@ -401,6 +400,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         study.bind("readOnly", this.getChildControl("read-only-icon"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
+        this.getChildControl("study-options").setStudy(study);
       }
     }
   }
