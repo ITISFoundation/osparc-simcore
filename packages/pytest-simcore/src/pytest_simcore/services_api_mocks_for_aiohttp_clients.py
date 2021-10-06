@@ -58,6 +58,7 @@ FULL_PROJECT_NODE_STATES: Dict[str, Dict[str, Any]] = {
 
 @pytest.fixture
 def aioresponses_mocker() -> AioResponsesMock:
+    # TODO: deprecate this and use aioreponses_mocker instead
     """Generick aioresponses mock
 
     SEE https://github.com/pnuckowski/aioresponses
@@ -68,7 +69,7 @@ def aioresponses_mocker() -> AioResponsesMock:
             aioresponses_mocker.get("https://foo.io")
 
             async with aiohttp.ClientSession() as session:
-                async with session.get("https://foo.aio") as response:
+                async with session.get("https://foo.io") as response:
                     assert response.status == 200
     """
     with AioResponsesMock(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
