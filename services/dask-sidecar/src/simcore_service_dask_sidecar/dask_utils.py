@@ -28,6 +28,7 @@ def publish_event(dask_pub: Pub, event: TaskEvent) -> None:
 
 def is_current_task_aborted() -> bool:
     task: Optional[TaskState] = _get_current_task_state()
+    logger.debug("found following TaskState: %s", task)
     # the task was removed from the list of tasks this worker should work on, meaning it is aborted
     return task is None
 
@@ -62,8 +63,11 @@ async def MonitorTaskAbortion(task_name: str) -> AsyncIterator[Awaitable[None]]:
 
     async def perdiodicaly_check_if_aborted(task_name: str) -> None:
         try:
-            logger.debug("starting task to check for task cancellation")
+            logger.debug(
+                "starting task to check for task cancellation for task '%s'", task_name
+            )
             while await asyncio.sleep(5, result=True):
+                logger.debug("checking if task should be cancelled")
                 if is_current_task_aborted():
                     logger.info("Task was aborted. Cancelling fct [%s]...", task_name)
                     asyncio.get_event_loop().call_soon(cancel_task, task_name)
