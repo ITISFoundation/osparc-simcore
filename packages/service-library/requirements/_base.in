@@ -9,4 +9,3 @@ pydantic
 pyinstrument
 pyyaml
 tenacity
-ujson

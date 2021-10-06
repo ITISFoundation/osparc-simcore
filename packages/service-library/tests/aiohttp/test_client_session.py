@@ -3,33 +3,18 @@
 # pylint: disable=unused-variable
 
 import json
-from copy import deepcopy
 from typing import Any, Callable, Dict, Iterator
-from uuid import uuid4
 
 import pytest
 from aiohttp import web
 from aiohttp.client import ClientSession
 from aiohttp.test_utils import TestServer
-from faker import Faker
 from servicelib.aiohttp.application_keys import APP_CLIENT_SESSION_KEY
 from servicelib.aiohttp.client_session import (
     get_client_session,
     persistent_client_session,
 )
 from servicelib.json_serialization import json_dumps
-
-
-@pytest.fixture
-def fake_data(faker: Faker) -> Dict[str, Any]:
-    data = {
-        "uuid": uuid4(),
-        "int": faker.pyint(),
-        "float": faker.pyfloat(),
-        "str": faker.pystr(),
-    }
-    data["object"] = deepcopy(data)
-    return data
 
 
 @pytest.fixture
@@ -65,14 +50,14 @@ async def test_get_always_the_same_client_session():
 
 
 async def test_app_client_session_json_serialize(
-    server: TestServer, fake_data: Dict[str, Any]
+    server: TestServer, fake_data_dict: Dict[str, Any]
 ):
     session = get_client_session(server.app)
 
-    resp = await session.post(server.make_url("/echo"), json=fake_data)
+    resp = await session.post(server.make_url("/echo"), json=fake_data_dict)
     assert resp.status == 200
 
     got = await resp.json()
 
-    expected = json.loads(json_dumps(fake_data))
+    expected = json.loads(json_dumps(fake_data_dict))
     assert got == expected

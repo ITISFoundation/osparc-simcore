@@ -113,8 +113,9 @@ def creation_cb(url, **kwargs) -> CallbackResult:
 
     return CallbackResult(
         status=201,
+        # NOTE: aioresponses uses json.dump which does NOT encode serialization of UUIDs
         payload={
-            "id": kwargs["json"]["project_id"],
+            "id": str(kwargs["json"]["project_id"]),
             "state": state,
             "pipeline_details": {
                 "adjacency_list": pipeline,
