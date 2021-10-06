@@ -62,6 +62,7 @@ async def MonitorTaskAbortion(task_name: str) -> AsyncIterator[Awaitable[None]]:
 
     async def perdiodicaly_check_if_aborted(task_name: str) -> None:
         try:
+            logger.debug("starting task to check for task cancellation")
             while await asyncio.sleep(5, result=True):
                 if is_current_task_aborted():
                     logger.info("Task was aborted. Cancelling fct [%s]...", task_name)
