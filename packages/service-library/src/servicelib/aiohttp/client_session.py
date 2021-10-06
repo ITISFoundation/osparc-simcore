@@ -8,12 +8,13 @@ from typing import Any, MutableMapping
 
 from aiohttp import ClientSession, ClientTimeout, web
 
-from .application_keys import APP_CLIENT_SESSION_KEY
+from ..json_serialization import json_dumps
 from ..utils import (
     get_http_client_request_aiohttp_connect_timeout,
     get_http_client_request_aiohttp_sock_connect_timeout,
     get_http_client_request_total_timeout,
 )
+from .application_keys import APP_CLIENT_SESSION_KEY
 
 log = logging.getLogger(__name__)
 
@@ -33,8 +34,13 @@ def get_client_session(app: MutableMapping[str, Any]) -> ClientSession:
             total=get_http_client_request_total_timeout(),
             connect=get_http_client_request_aiohttp_connect_timeout(),
             sock_connect=get_http_client_request_aiohttp_sock_connect_timeout(),
+        )  # type: ignore
+
+        app[APP_CLIENT_SESSION_KEY] = session = ClientSession(
+            timeout=timeout_settings,
+            # NOTE: ujson is faster and ships with among others encoders for uuids
+            json_serialize=json_dumps,
         )
-        app[APP_CLIENT_SESSION_KEY] = session = ClientSession(timeout=timeout_settings)
     return session
 
 
