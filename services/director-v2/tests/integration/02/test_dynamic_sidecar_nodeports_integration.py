@@ -134,8 +134,8 @@ def fake_dy_workbench(
                 found = True
                 break
 
-        # please not that if chances to the services
-        assert found is True, f"Not key={key}, version={version} service found!"
+        # please note that if chances to the services
+        assert found is True, f"Note key={key}, version={version} service found!"
 
     _assert_version(sleeper_service)
     _assert_version(dy_static_file_server_dynamic_sidecar_service)
