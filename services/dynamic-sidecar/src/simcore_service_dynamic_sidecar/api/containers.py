@@ -202,8 +202,6 @@ async def get_container_logs(
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> Union[str, Dict[str, Any]]:
     """Returns the logs of a given container if found"""
-    # TODO: remove from here and dump directly into the logs of this service
-    # do this in PR#1887
     _raise_if_container_is_missing(id, shared_store.container_names)
 
     async with docker_client() as docker:
