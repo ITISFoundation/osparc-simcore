@@ -31,10 +31,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     this.__attachEventHandlers();
   },
 
-  events: {
-    "startSnapshot": "qx.event.type.Data"
-  },
-
   properties: {
     study: {
       check: "osparc.data.model.Study",
@@ -344,57 +340,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       nodesSlidesTree.addListener("finished", () => {
         win.close();
-      });
-    },
-
-    __takeSnapshot: function() {
-      const editSnapshotView = new osparc.component.snapshots.EditSnapshotView();
-      const tagCtrl = editSnapshotView.getChildControl("tags");
-      const study = this.getStudy();
-      study.getSnapshots()
-        .then(snapshots => {
-          tagCtrl.setValue("V"+snapshots.length);
-        });
-      const title = this.tr("Take Snapshot");
-      const win = osparc.ui.window.Window.popUpInWindow(editSnapshotView, title, 400, 180);
-      editSnapshotView.addListener("takeSnapshot", () => {
-        const tag = editSnapshotView.getTag();
-        const message = editSnapshotView.getMessage();
-        const workbenchToolbar = this.__mainPanel.getToolbar();
-        const takeSnapshotBtn = workbenchToolbar.getChildControl("take-snapshot-btn");
-        takeSnapshotBtn.setFetching(true);
-        const params = {
-          url: {
-            "studyId": study.getUuid()
-          },
-          data: {
-            "tag": tag,
-            "message": message
-          }
-        };
-        osparc.data.Resources.fetch("snapshots", "takeSnapshot", params)
-          .then(data => {
-            workbenchToolbar.evalSnapshotsBtn();
-          })
-          .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"))
-          .finally(takeSnapshotBtn.setFetching(false));
-
-        win.close();
-      }, this);
-      editSnapshotView.addListener("cancel", () => {
-        win.close();
-      }, this);
-    },
-
-    __showSnapshots: function() {
-      const study = this.getStudy();
-      const snapshots = new osparc.component.snapshots.SnapshotsView(study);
-      const title = this.tr("Snapshots");
-      const win = osparc.ui.window.Window.popUpInWindow(snapshots, title, 1000, 500);
-      snapshots.addListener("openSnapshot", e => {
-        win.close();
-        const snapshotId = e.getData();
-        this.fireDataEvent("startSnapshot", snapshotId);
       });
     },
 

@@ -26,10 +26,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     const viewsStack = this.__viewsStack = new qx.ui.container.Stack();
 
     const workbenchView = this.__workbenchView = new osparc.desktop.WorkbenchView();
-    workbenchView.addListener("startSnapshot", e => {
-      this.getStudy().removeIFrames();
-      this.fireDataEvent("startSnapshot", e.getData());
-    });
     viewsStack.add(workbenchView);
 
     const slideshowView = this.__slideshowView = new osparc.desktop.SlideshowView();
@@ -405,9 +401,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       editSnapshotView.addListener("takeSnapshot", () => {
         const tag = editSnapshotView.getTag();
         const message = editSnapshotView.getMessage();
-        const workbenchToolbar = this.__mainPanel.getToolbar();
-        const takeSnapshotBtn = workbenchToolbar.getChildControl("take-snapshot-btn");
-        takeSnapshotBtn.setFetching(true);
         const params = {
           url: {
             "studyId": study.getUuid()
@@ -418,17 +411,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
         };
         osparc.data.Resources.fetch("snapshots", "takeSnapshot", params)
-          .then(data => {
-            workbenchToolbar.evalSnapshotsButtons();
-          })
-          .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"))
-          .finally(takeSnapshotBtn.setFetching(false));
+          .then(data => console.log("Snapshot taken"))
+          .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
 
         win.close();
       }, this);
-      editSnapshotView.addListener("cancel", () => {
-        win.close();
-      }, this);
+      editSnapshotView.addListener("cancel", () => win.close(), this);
     },
 
     showSnapshots: function() {

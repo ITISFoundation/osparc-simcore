@@ -163,7 +163,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             "slidesEdit",
             "takeSnapshot",
             "showSnapshots"
-          ].forEach(signalName => this.fireEvent(signalName));
+          ].forEach(signalName => {
+            control.addListener(signalName, () => this.fireEvent(signalName));
+          });
           this._add(control);
           break;
         case "read-only-icon":
