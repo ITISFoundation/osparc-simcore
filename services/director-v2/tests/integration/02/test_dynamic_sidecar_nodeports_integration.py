@@ -10,6 +10,7 @@ from asyncio import BaseEventLoop
 from collections import namedtuple
 from itertools import tee
 from pathlib import Path
+from pprint import pformat
 from typing import Any, Callable, Dict, Iterable, Iterator, List, Set, Tuple, cast
 from uuid import uuid4
 
@@ -625,6 +626,46 @@ def _is_matching_line_in_logs(logs: List[str]) -> bool:
     return False
 
 
+async def _print_dynamic_sidecars_containers_logs_and_get_containers(
+    dynamic_services_urls: Dict[str, str]
+) -> List[str]:
+    containers_names: List[str] = []
+    for node_uuid, url in dynamic_services_urls.items():
+        print(f"Containers logs for service {node_uuid} @ {url}")
+        async with httpx.AsyncClient(base_url=f"{url}/v1") as client:
+            containers_inspect_response = await client.get("/containers")
+            assert (
+                containers_inspect_response.status_code == status.HTTP_200_OK
+            ), containers_inspect_response.text
+            containers_inspect = containers_inspect_response.json()
+
+            # pylint: disable=unnecessary-comprehension
+            containers_names = [x for x in containers_inspect]
+            print("Containers:", containers_names)
+            for container_name in containers_names:
+                print(f"Fetching logs for {container_name}")
+                container_logs_response = await client.get(
+                    f"/containers/{container_name}/logs"
+                )
+                assert container_logs_response.status_code == status.HTTP_200_OK
+                logs = "".join(container_logs_response.json())
+                print(f"Container {container_name} logs:\n{logs}")
+    return containers_names
+
+
+async def _print_container_inspect(container_id: str) -> None:
+    async with aiodocker.Docker() as docker_client:
+        container = await docker_client.containers.get(container_id)
+        container_inspect = await container.show()
+        print(f"Container {container_id} inspect:\n{pformat(container_inspect)}")
+
+
+async def _print_all_docker_volumes() -> None:
+    async with aiodocker.Docker() as docker_client:
+        docker_volumes = await docker_client.volumes.list()
+        print(f"Detected volumes:\n{pformat(docker_volumes)}")
+
+
 async def _assert_retrieve_completed(
     director_v2_client: httpx.AsyncClient,
     director_v0_url: URL,
@@ -650,9 +691,31 @@ async def _assert_retrieve_completed(
             if _is_matching_line_in_logs(logs):
                 break
 
-            if i == TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED - 1:
+            if True:  # i == TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED - 1:
+                print("=" * 20)
+                print(f"Dumping information for service_uuid={service_uuid}")
+                print("=" * 20)
+
                 print("".join(logs))
-                await _print_dynamic_sidecars_containers_logs(dynamic_services_urls)
+
+                containers_names = (
+                    await _print_dynamic_sidecars_containers_logs_and_get_containers(
+                        dynamic_services_urls
+                    )
+                )
+
+                # inspect dynamic-sidecar container
+                await _print_container_inspect(container_id=container_id)
+                # inspect spawned container
+                for container_name in containers_names:
+                    await _print_container_inspect(container_id=container_name)
+
+                await _print_all_docker_volumes()
+
+                print("=" * 20)
+
+                # docker inspect the containers
+                # docker inspect the services
                 assert False, "Timeout reached"
 
             print(
@@ -664,31 +727,6 @@ async def _assert_retrieve_completed(
             await asyncio.sleep(1)
 
         print(f"Nodeports outputs upload finish detected for {service_uuid}")
-
-
-async def _print_dynamic_sidecars_containers_logs(
-    dynamic_services_urls: Dict[str, str]
-) -> None:
-    for node_uuid, url in dynamic_services_urls.items():
-        print(f"Containers logs for service {node_uuid} @ {url}")
-        async with httpx.AsyncClient(base_url=f"{url}/v1") as client:
-            containers_inspect_response = await client.get("/containers")
-            assert (
-                containers_inspect_response.status_code == status.HTTP_200_OK
-            ), containers_inspect_response.text
-            containers_inspect = containers_inspect_response.json()
-
-            containers_names = containers_inspect.keys()
-            print("Containers:", containers_names)
-
-            for container_name in containers_names:
-                print(f"Fetching logs for {container_name}")
-                container_logs_response = await client.get(
-                    f"/containers/{container_name}/logs"
-                )
-                assert container_logs_response.status_code == status.HTTP_200_OK
-                logs = "".join(container_logs_response.json())
-                print(f"Container {container_name} logs:\n{logs}")
 
 
 # TESTS
@@ -801,7 +839,9 @@ async def test_nodeports_integration(
     # trigger the call manually
 
     # dump logs form started containers before retrieve
-    await _print_dynamic_sidecars_containers_logs(dynamic_services_urls)
+    await _print_dynamic_sidecars_containers_logs_and_get_containers(
+        dynamic_services_urls
+    )
 
     await _assert_retrieve_completed(
         director_v2_client=director_v2_client,
