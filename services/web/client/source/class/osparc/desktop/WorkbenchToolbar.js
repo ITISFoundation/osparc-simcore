@@ -24,11 +24,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
     this.__attachEventHandlers();
   },
 
-  events: {
-    "takeSnapshot": "qx.event.type.Event",
-    "showSnapshots": "qx.event.type.Event"
-  },
-
   members: {
     __navNodes: null,
 

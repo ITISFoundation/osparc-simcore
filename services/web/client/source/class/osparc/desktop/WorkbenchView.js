@@ -164,12 +164,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.nodeSelected(nodeId);
         }, this);
       });
-      if (!workbenchToolbar.hasListener("takeSnapshot")) {
-        workbenchToolbar.addListener("takeSnapshot", this.__takeSnapshot, this);
-      }
-      if (!workbenchToolbar.hasListener("showSnapshots")) {
-        workbenchToolbar.addListener("showSnapshots", this.__showSnapshots, this);
-      }
 
       const workbench = this.getStudy().getWorkbench();
       workbench.addListener("pipelineChanged", this.__workbenchChanged, this);

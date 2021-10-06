@@ -67,7 +67,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     "slidesGuidedStart": "qx.event.type.Event",
     "slidesAppStart": "qx.event.type.Event",
     "slidesStop": "qx.event.type.Event",
-    "slidesEdit": "qx.event.type.Event"
+    "slidesEdit": "qx.event.type.Event",
+    "takeSnapshot": "qx.event.type.Event",
+    "showSnapshots": "qx.event.type.Event"
   },
 
   properties: {
