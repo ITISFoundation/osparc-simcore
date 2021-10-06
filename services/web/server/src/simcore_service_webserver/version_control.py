@@ -14,6 +14,7 @@ from servicelib.aiohttp.application_setup import (
 
 from . import version_control_handlers
 from .constants import APP_SETTINGS_KEY
+from .meta_projects import projects_redirection_middleware
 from .settings import ApplicationSettings
 
 log = logging.getLogger(__name__)
@@ -35,3 +36,4 @@ def setup_meta(app: web.Application):
         raise SkipModuleSetup(reason="Development feature")
 
     app.add_routes(version_control_handlers.routes)
+    app.middlewares.append(projects_redirection_middleware)
