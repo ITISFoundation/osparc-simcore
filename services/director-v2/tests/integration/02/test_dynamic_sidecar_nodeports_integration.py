@@ -693,7 +693,6 @@ async def _assert_retrieve_completed(
                 break
 
             if i == TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED - 1:
-
                 print(SEPARATOR)
                 print(f"Dumping information for service_uuid={service_uuid}")
                 print(SEPARATOR)
