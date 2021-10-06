@@ -95,6 +95,7 @@ qx.Class.define("osparc.navigation.StudyMenu", {
       if (study) {
         study.getWorkbench().addListener("pipelineChanged", () => this.evalSlidesButtons());
         study.getUi().getSlideshow().addListener("changeSlideshow", () => this.evalSlidesButtons());
+        study.getUi().addListener("changeMode", () => this.evalSlidesButtons());
         this.evalSlidesButtons();
 
         study.getWorkbench().addListener("nNodesChanged", () => this.evalSnapshotsButtons());
@@ -102,26 +103,16 @@ qx.Class.define("osparc.navigation.StudyMenu", {
       }
     },
 
-    evalSlidesButtons: function(editorContext) {
-      console.log("evalSlidesButtons", editorContext);
-      const slidesBtnsVisible = ["workbench", "guided", "app"].includes(editorContext);
-      if (slidesBtnsVisible) {
-        const study = this.getStudy();
+    evalSlidesButtons: function() {
+      const study = this.getStudy();
+      if (study) {
+        const editorContext = this.getStudy().getUi().getMode();
         const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
-        if (areSlidesEnabled) {
-          this.__startSlidesButton.setEnabled(study.hasSlideshow());
-          this.__startAppButton.setEnabled(study.getWorkbench().isPipelineLinear());
-          const isOwner = osparc.data.model.Study.isOwner(study);
-          this.__editSlidesButton.setEnabled(areSlidesEnabled && isOwner);
-
-          if (["guided", "app"].includes(editorContext)) {
-            this.__stopSlidesButton.setEnabled(true);
-          } else if (editorContext === "workbench") {
-            this.__stopSlidesButton.setEnabled(false);
-          }
-        }
-      } else {
-        this.__stopSlidesButton.setEnabled(false);
+        const isOwner = osparc.data.model.Study.isOwner(study);
+        this.__editSlidesButton.setEnabled(editorContext === "workbench" && areSlidesEnabled && isOwner);
+        this.__startSlidesButton.setEnabled(editorContext !== "guided" && study.hasSlideshow());
+        this.__startAppButton.setEnabled(editorContext !== "app" && study.getWorkbench().isPipelineLinear());
+        this.__stopSlidesButton.setEnabled(["guided", "app"].includes(editorContext));
       }
     },
 

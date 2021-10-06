@@ -219,8 +219,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
           this.getChildControl("study-options-menu").show();
-          this.getChildControl("study-options-menu").evalSlidesButtons(newCtxt);
-          this.getChildControl("study-options-menu").evalSnapshotsButtons();
           break;
       }
     },
