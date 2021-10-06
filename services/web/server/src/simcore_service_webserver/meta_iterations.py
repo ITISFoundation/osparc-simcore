@@ -274,7 +274,4 @@ async def get_runnable_projects_ids(
     # TODO: find branches of current head that represents iterations
     # tags: - one to identify it as iteration with given parameters
     #       - one to associate runnable project uuid
-
     raise NotImplementedError()
-
-    return runnable_project_ids
