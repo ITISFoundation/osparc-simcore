@@ -134,8 +134,13 @@ def fake_dy_workbench(
                 found = True
                 break
 
-        # please note that if chances to the services
-        assert found is True, f"Note key={key}, version={version} service found!"
+        # when updating the services, this check will fail
+        # bump versions in the mocks if no breaking changes
+        # have been made
+        error_message = (
+            f"Did not find service: key={key}, version={version}! in {file_as_dict}"
+        )
+        assert found is True, error_message
 
     _assert_version(sleeper_service)
     _assert_version(dy_static_file_server_dynamic_sidecar_service)
