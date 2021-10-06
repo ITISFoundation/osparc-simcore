@@ -104,10 +104,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
   members: {
     __serverStatics: null,
-    __startSlidesButton: null,
-    __startAppButton: null,
-    __editSlidesButton: null,
-    __stopSlidesButton: null,
 
     buildLayout: function() {
       this.getChildControl("logo");
@@ -138,20 +134,17 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "logo": {
+        case "logo":
           control = osparc.component.widget.LogoOnOff.getInstance();
           this._add(control);
           break;
-        }
         case "dashboard-button":
           control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/16").set({
             ...this.self().BUTTON_OPTIONS,
             font: "title-14"
           });
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
-          control.addListener("execute", () => {
-            this.fireEvent("dashboardPressed");
-          }, this);
+          control.addListener("execute", () => this.fireEvent("dashboardPressed"), this);
           this._add(control);
           break;
         case "dashboard-label":
@@ -161,8 +154,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this._add(control);
           break;
         case "study-options":
-          control = this.__createStudyMenuBtn();
-          control.set(this.self().BUTTON_OPTIONS);
+          control = new osparc.navigation.StudyMenu();
+          this.bind("study", control, "study");
           this._add(control);
           break;
         case "read-only-icon":
@@ -207,7 +200,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("dashboard-button").exclude();
           this.getChildControl("study-options").exclude();
           this.getChildControl("read-only-icon").exclude();
-          this.__resetSlidesBtnsVis();
           break;
         case "workbench":
         case "guided":
@@ -215,63 +207,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
           this.getChildControl("study-options").show();
-          this.__resetSlidesBtnsVis();
+          this.getChildControl("study-options").evalButtonsVisibiilty(newCtxt);
           break;
-      }
-    },
-
-    __createStudyMenuBtn: function() {
-      const studyMenuButton = new qx.ui.form.MenuButton(this.tr("Study options")).set({
-        ...this.self().BUTTON_OPTIONS
-      });
-
-      const studyButtonMenu = new qx.ui.menu.Menu();
-      studyMenuButton.setMenu(studyButtonMenu);
-
-      const studyInfoButton = new qx.ui.menu.Button(this.tr("More Information"));
-      studyInfoButton.addListener("execute", () => this.fireEvent("infoButtonPressed"), this);
-      studyButtonMenu.add(studyInfoButton);
-
-      studyButtonMenu.addSeparator();
-
-      const editSlidesBtn = this.__editSlidesButton = new qx.ui.menu.Button(this.tr("Edit Slideshow"));
-      editSlidesBtn.addListener("execute", () => this.fireEvent("slidesEdit"), this);
-      studyButtonMenu.add(editSlidesBtn);
-
-      const startGuidedBtn = this.__startSlidesButton = new qx.ui.menu.Button(this.tr("Start Guided Mode"));
-      startGuidedBtn.addListener("execute", () => this.fireEvent("slidesGuidedStart"), this);
-      studyButtonMenu.add(startGuidedBtn);
-
-      const startAppBtn = this.__startAppButton = new qx.ui.menu.Button(this.tr("Start App Mode"));
-      startAppBtn.addListener("execute", () => this.fireEvent("slidesAppStart"), this);
-      studyButtonMenu.add(startAppBtn);
-
-      const stopSlidesBtn = this.__stopSlidesButton = new qx.ui.menu.Button(this.tr("Stop Slideshow"));
-      stopSlidesBtn.addListener("execute", () => this.fireEvent("slidesStop"), this);
-      studyButtonMenu.add(stopSlidesBtn);
-
-      return studyMenuButton;
-    },
-
-    __resetSlidesBtnsVis: function() {
-      const slidesBtnsVisible = ["workbench", "guided", "app"].includes(this.getPageContext());
-      if (slidesBtnsVisible) {
-        const study = this.getStudy();
-        const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
-        if (areSlidesEnabled) {
-          this.__startSlidesButton.setEnabled(study.hasSlideshow());
-          this.__startAppButton.setEnabled(study.getWorkbench().isPipelineLinear());
-          const isOwner = osparc.data.model.Study.isOwner(study);
-          this.__editSlidesButton.setEnabled(areSlidesEnabled && isOwner);
-
-          if (["guided", "app"].includes(this.getPageContext())) {
-            this.__stopSlidesButton.setEnabled(true);
-          } else if (this.getPageContext() === "workbench") {
-            this.__stopSlidesButton.setEnabled(false);
-          }
-        }
-      } else {
-        this.__stopSlidesButton.setEnabled(false);
       }
     },
 
@@ -464,13 +401,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         study.bind("readOnly", this.getChildControl("read-only-icon"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
-        study.getWorkbench().addListener("pipelineChanged", () => {
-          this.__resetSlidesBtnsVis();
-        });
-        study.getUi().getSlideshow().addListener("changeSlideshow", () => {
-          this.__resetSlidesBtnsVis();
-        });
-        this.__resetSlidesBtnsVis();
       }
     }
   }
