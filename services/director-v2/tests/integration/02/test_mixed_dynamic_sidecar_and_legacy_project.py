@@ -12,20 +12,15 @@ import aiodocker
 import httpx
 import pytest
 import sqlalchemy as sa
-import tenacity
 from asgi_lifespan import LifespanManager
 from models_library.projects import ProjectAtDB
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
-from pydantic.types import PositiveInt
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.models.schemas.constants import (
-    DYNAMIC_PROXY_SERVICE_PREFIX,
-    DYNAMIC_SIDECAR_SERVICE_PREFIX,
-)
 from utils import (
     assert_all_services_running,
+    assert_service_is_available,
     assert_start_service,
     assert_stop_service,
     ensure_network_cleanup,
@@ -33,6 +28,7 @@ from utils import (
     get_service_data,
     is_legacy,
     patch_dynamic_service_url,
+    port_forward_service,
 )
 from yarl import URL
 
@@ -206,76 +202,6 @@ async def ensure_services_stopped(
 # UTILS
 
 
-def _run_command(command: str) -> str:
-    # using asyncio.create_subprocess_shell is slower
-    # and sometimes ir randomly hangs forever
-
-    print(f"Running: '{command}'")
-    command_result = os.popen(command).read()
-    print(command_result)
-    return command_result
-
-
-async def _port_forward_service(
-    service_name: str, is_legacy: bool, internal_port: PositiveInt
-) -> PositiveInt:
-    """Updates the service configuration and makes it so it can be used"""
-    # By updating the service spec the container will be recreated.
-    # It works in this case, since we do not care about the internal
-    # state of the application
-    target_service = service_name
-
-    if is_legacy:
-        # Legacy services are started --endpoint-mode dnsrr, it needs to
-        # be changed to vip otherwise the port forward will not work
-        result = _run_command(
-            f"docker service update {service_name} --endpoint-mode=vip"
-        )
-        assert "verify: Service converged" in result
-    else:
-        # For a non legacy service, the service_name points to the dynamic-sidecar,
-        # but traffic is handeled by the proxy,
-        target_service = service_name.replace(
-            DYNAMIC_SIDECAR_SERVICE_PREFIX, DYNAMIC_PROXY_SERVICE_PREFIX
-        )
-        # The default prot for the proxy is 80
-        internal_port = 80
-
-    # Finally forward the port on a random assigned port.
-    result = _run_command(
-        f"docker service update {target_service} --publish-add :{internal_port}"
-    )
-    assert "verify: Service converged" in result
-
-    # inspect service and fetch the port
-    async with aiodocker.Docker() as docker_client:
-        service_details = await docker_client.services.inspect(target_service)
-        ports = service_details["Endpoint"]["Ports"]
-
-        assert len(ports) == 1, service_details
-        exposed_port = ports[0]["PublishedPort"]
-        return exposed_port
-
-
-async def _assert_service_is_available(
-    exposed_port: PositiveInt, is_legacy: bool, service_uuid: str
-) -> None:
-    service_address = (
-        f"http://172.17.0.1:{exposed_port}/x/{service_uuid}"
-        if is_legacy
-        else f"http://172.17.0.1:{exposed_port}"
-    )
-    print(f"checking service @ {service_address}")
-
-    async for attempt in tenacity.AsyncRetrying(
-        wait=tenacity.wait_exponential(), stop=tenacity.stop_after_delay(20)
-    ):
-        with attempt:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(service_address)
-                assert response.status_code == 200
-
-
 # TESTS
 
 
@@ -348,13 +274,13 @@ async def test_legacy_and_dynamic_sidecar_run(
             node_data,
             service_data,
         )
-        exposed_port = await _port_forward_service(
+        exposed_port = await port_forward_service(
             service_name=service_data["service_host"],
             is_legacy=is_legacy(node_data),
             internal_port=service_data["service_port"],
         )
 
-        await _assert_service_is_available(
+        await assert_service_is_available(
             exposed_port=exposed_port,
             is_legacy=is_legacy(node_data),
             service_uuid=dynamic_service_uuid,
