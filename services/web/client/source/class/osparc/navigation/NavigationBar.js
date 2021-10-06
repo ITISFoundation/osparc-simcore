@@ -160,7 +160,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             "slidesGuidedStart",
             "slidesAppStart",
             "slidesStop",
-            "slidesEdit"
+            "slidesEdit",
+            "takeSnapshot",
+            "showSnapshots"
           ].forEach(signalName => this.fireEvent(signalName));
           this._add(control);
           break;
@@ -213,7 +215,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
           this.getChildControl("study-options").show();
-          this.getChildControl("study-options").evalButtonsVisibiilty(newCtxt);
+          this.getChildControl("study-options").evalSlidesButtons(newCtxt);
+          this.getChildControl("study-options").evalSnapshotsButtons();
           break;
       }
     },
