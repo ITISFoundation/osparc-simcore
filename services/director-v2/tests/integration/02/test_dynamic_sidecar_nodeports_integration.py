@@ -790,7 +790,7 @@ async def test_nodeports_integration(
     # Since there is no webserver monitoring postgres notifications
     # trigger the call manually
 
-    # dump logs from all the container started by each dynamic-sidecar
+    # dump logs form started containers before retrieve
     await _print_dynamic_sidecars_containers_logs(dynamic_services_urls)
 
     await _assert_retrieve_completed(
@@ -804,6 +804,9 @@ async def test_nodeports_integration(
         director_v0_url=director_v0_url,
         service_uuid=services_node_uuids.dy_compose_spec,
     )
+
+    # dump logs form started containers after retrieve
+    await _print_dynamic_sidecars_containers_logs(dynamic_services_urls)
 
     # STEP 3
     # pull data via nodeports
