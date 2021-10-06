@@ -200,7 +200,7 @@ async def get_container_logs(
         description="Enabling this parameter will include timestamps in logs",
     ),
     shared_store: SharedStore = Depends(get_shared_store),
-) -> Union[str, Dict[str, Any]]:
+) -> List[str]:
     """Returns the logs of a given container if found"""
     _raise_if_container_is_missing(id, shared_store.container_names)
 
@@ -211,7 +211,7 @@ async def get_container_logs(
         if timestamps:
             args["timestamps"] = True
 
-        container_logs: str = await container_instance.log(**args)
+        container_logs: List[str] = await container_instance.log(**args)
         return container_logs
 
 
