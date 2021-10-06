@@ -44,7 +44,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     fl.setColumnFlex(this.self().gridPos.info, 0);
     fl.setColumnAlign(this.self().gridPos.info, "left", "middle");
     fl.setColumnFlex(this.self().gridPos.ctrlField, 1);
-    fl.setColumnMinWidth(this.self().gridPos.ctrlField, 130);
+    fl.setColumnMinWidth(this.self().gridPos.ctrlField, 100);
   },
 
   properties: {
