@@ -18,6 +18,7 @@ from models_library.services import ServiceDockerData
 
 from .meta_funcs import SERVICE_CATALOG, SERVICE_TO_CALLABLES
 from .projects.projects_api import get_project_for_user
+from .utils import compute_sha1
 from .version_control_db import VersionControlRepositoryInternalAPI
 from .version_control_models import CommitID
 
@@ -30,13 +31,9 @@ Parameters = Tuple[NodeOutputsDict]
 _ParametersNodesPair = Tuple[Parameters, NodesDict]
 
 
-def _compute_checksum(parameters: Parameters) -> MD5Str:
-    # TODO: move to utils
-    import hashlib
-
-    block_string = json.dumps(parameters, sort_keys=True).encode("utf-8")
-    raw_hash = hashlib.sha1(block_string)
-    return raw_hash.hexdigest()
+def _compute_params_checksum(parameters: Parameters) -> MD5Str:
+    # TODO: test non-std OutputTypes
+    return compute_sha1(parameters)
 
 
 def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodesPair]:
@@ -157,7 +154,8 @@ async def get_or_create_runnable_projects(
         include_templates=False,
     )
     assert project["uuid"] == str(project_uuid)  # nosec
-    assert project == await vc_repo.get_project(project_uuid)
+    # FIXME: same project but different views
+    #  assert project == await vc_repo.get_project(project_uuid)
 
     project_nodes: Dict[NodeID, Node] = {
         nid: Node.parse_obj(n) for nid, n in project["workbench"].items()
@@ -218,7 +216,10 @@ async def get_or_create_runnable_projects(
 
         # tag to identify this iteration
         branch_name = tag_name = compose_iteration_tag_name(
-            main_commit_id, iter_index, total_count, _compute_checksum(parameters)
+            main_commit_id,
+            iter_index,
+            total_count,
+            _compute_params_checksum(parameters),
         )
 
         commit_id = await vc_repo.force_branch_and_wcopy(
