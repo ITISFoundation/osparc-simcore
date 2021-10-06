@@ -113,11 +113,24 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __getSelectFileButton: function(portId) {
+      const menu = new qx.ui.menu.Menu().set({
+        position: "bottom-right"
+      });
+
       const selectFileButton = new qx.ui.form.Button((this.tr("Select File")));
       selectFileButton.addListener("execute", () => {
         this.fireDataEvent("filePickerRequested", portId);
       }, this);
-      return selectFileButton;
+      menu.add(selectFileButton);
+
+      const menuBtn = new qx.ui.form.MenuButton().set({
+        menu: menu,
+        icon: "@FontAwesome5Solid/ellipsis-v/14",
+        focusable: false,
+        allowGrowX: false,
+        alignX: "center"
+      });
+      return menuBtn;
     },
 
     __getParamsMenuButton: function(portId) {
@@ -517,7 +530,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           flex: 1
         });
 
-        const unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
+        const unlinkBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/unlink/14").set({
+          toolTipText: this.tr("Unlink")
+        });
         unlinkBtn.addListener("execute", function() {
           this.removePortLink(portId);
         }, this);
