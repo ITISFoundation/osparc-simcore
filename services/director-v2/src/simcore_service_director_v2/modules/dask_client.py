@@ -5,7 +5,7 @@ import functools
 import logging
 from dataclasses import dataclass, field
 from pprint import pformat
-from typing import Any, Awaitable, Callable, Dict, Iterable, List, Union
+from typing import Any, Awaitable, Callable, Dict, Iterable, List, Tuple, Union
 
 import dask.distributed
 import distributed
@@ -239,7 +239,7 @@ class DaskClient:
         tasks: Dict[NodeID, Image],
         callback: Callable[[], None],
         remote_fct: Callable = None,
-    ):
+    ) -> List[Tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
 
@@ -268,7 +268,7 @@ class DaskClient:
 
         if remote_fct is None:
             remote_fct = _comp_sidecar_fct
-
+        list_of_node_id_to_job_id: List[Tuple[NodeID, str]] = []
         for node_id, node_image in tasks.items():
             job_id = generate_dask_job_id(
                 service_key=node_image.name,
@@ -331,6 +331,7 @@ class DaskClient:
                 )
 
                 self._taskid_to_future_map[job_id] = task_future
+                list_of_node_id_to_job_id.append((node_id, job_id))
                 dask.distributed.fire_and_forget(
                     task_future
                 )  # this should ensure the task will run even if the future goes out of scope
@@ -340,10 +341,11 @@ class DaskClient:
                 _check_valid_connection_to_scheduler(self.client)
                 # if the connection is good, then the problem is different, so we re-raise
                 raise
+            return list_of_node_id_to_job_id
 
-    async def abort_computation_tasks(self, task_ids: List[str]) -> None:
-
-        for task_id in task_ids:
+    async def abort_computation_tasks(self, job_ids: List[str]) -> None:
+        logger.debug("cancelling tasks with job_ids: [%s]", job_ids)
+        for task_id in job_ids:
             task_future = self._taskid_to_future_map.get(task_id)
             if task_future:
                 await task_future.cancel()

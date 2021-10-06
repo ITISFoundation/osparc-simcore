@@ -1,7 +1,8 @@
+import asyncio
 import json
 import logging
 from dataclasses import dataclass
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Tuple
 
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
@@ -46,16 +47,29 @@ class DaskScheduler(BaseCompScheduler):
         callback: Callable[[], None],
     ):
         # now transfer the pipeline to the dask scheduler
-        await self.dask_client.send_computation_tasks(
+        task_job_ids: List[
+            Tuple[NodeID, str]
+        ] = await self.dask_client.send_computation_tasks(
             user_id=user_id,
             project_id=project_id,
             cluster_id=cluster_id,
             tasks=scheduled_tasks,
             callback=callback,
         )
+        logger.debug("started following tasks (node_id, job_id)[%s]", task_job_ids)
+        # update the database so we do have the correct job_ids there
+        comp_tasks_repo: CompTasksRepository = get_repository(
+            self.db_engine, CompTasksRepository
+        )  # type: ignore
+        await asyncio.gather(
+            *[
+                comp_tasks_repo.set_project_task_job_id(project_id, node_id, job_id)
+                for node_id, job_id in task_job_ids
+            ]
+        )
 
     async def _stop_tasks(self, tasks: List[CompTaskAtDB]) -> None:
-        await self.dask_client.abort_computation_tasks([str(t.job_id) for t in tasks])
+        await self.dask_client.abort_computation_tasks([f"{t.job_id}" for t in tasks])
 
     async def _reconnect_backend(self) -> None:
         await self.dask_client.reconnect_client()
