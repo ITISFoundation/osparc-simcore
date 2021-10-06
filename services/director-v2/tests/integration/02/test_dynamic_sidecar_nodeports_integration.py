@@ -719,8 +719,6 @@ async def _assert_retrieve_completed(
                 await _print_all_docker_volumes()
                 print(SEPARATOR)
 
-                # docker inspect the containers
-                # docker inspect the services
                 assert False, "Timeout reached"
 
             print(
