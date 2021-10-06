@@ -318,6 +318,11 @@ class BaseCompScheduler(ABC):
                 if t.state in [RunningState.STARTED, RunningState.RETRY]
             ]
             await self._stop_tasks(running_tasks)
+            logger.debug(
+                "pipeline '%s' is marked for cancellation. stopping tasks for [%s]",
+                project_id,
+                running_tasks,
+            )
             # the scheduled pipeline will be removed in the next iteration
             return
 
