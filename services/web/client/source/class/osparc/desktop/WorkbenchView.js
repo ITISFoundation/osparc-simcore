@@ -25,7 +25,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   construct: function() {
     this.base(arguments, "horizontal");
 
-    this.getChildControl("side-panel");
+    this.getChildControl("splitter").setWidth(1);
+
+    this.__sidePanels = this.getChildControl("side-panels");
     this.__mainPanel = this.getChildControl("main-panel");
 
     this.__attachEventHandlers();
@@ -40,9 +42,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   members: {
-    __nodesTree: null,
-    __loggerView: null,
+    __sidePanels: null,
     __mainPanel: null,
+    __nodesTree: null,
+    __filesTree: null,
+    __settingsPage: null,
+    __outputsPage: null,
+    __loggerView: null,
     __workbenchUI: null,
     __nodeView: null,
     __groupNodeView: null,
@@ -51,20 +57,41 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "container-scroll-0":
-          control = new qx.ui.container.Scroll().set({
-            minWidth: 0
+        case "side-panels": {
+          control = new qx.ui.splitpane.Pane("horizontal").set({
+            minWidth: 0,
+            width: Math.min(parseInt(window.innerWidth * 0.33), 550)
           });
+          control.getChildControl("splitter").setWidth(1);
+          osparc.utils.Utils.addBorder(control, 2, "right");
           this.add(control, 0); // flex 0
           break;
-        case "side-panel": {
-          control = new osparc.desktop.SidePanel().set({
-            minWidth: 0,
-            width: Math.min(parseInt(window.innerWidth * 0.2), 350)
+        }
+        case "side-panel-left-tabs": {
+          control = new qx.ui.tabview.TabView().set({
+            minWidth: 250,
+            contentPadding: 5,
+            barPosition: "top"
           });
           osparc.utils.Utils.addBorder(control, 2, "right");
-          const scroll = this.getChildControl("container-scroll-0");
-          scroll.add(control);
+          control.getChildControl("bar").set({
+            paddingLeft: 60
+          });
+          const sidePanels = this.getChildControl("side-panels");
+          sidePanels.add(control, 1); // flex 1
+          break;
+        }
+        case "side-panel-right-tabs": {
+          control = new qx.ui.tabview.TabView().set({
+            minWidth: 300,
+            contentPadding: 5,
+            barPosition: "top"
+          });
+          control.getChildControl("bar").set({
+            paddingLeft: 60
+          });
+          const sidePanels = this.getChildControl("side-panels");
+          sidePanels.add(control, 1); // flex 1
           break;
         }
         case "main-panel":
@@ -84,59 +111,64 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__mainPanel.getToolbar().setStudy(study);
     },
 
+    __createTabPage: function(icon, tooltip, widget) {
+      const tabPage = new qx.ui.tabview.Page().set({
+        layout: new qx.ui.layout.VBox(5),
+        backgroundColor: "background-main",
+        icon: icon+"/24"
+      });
+      tabPage.getChildControl("button").set({
+        toolTipText: tooltip
+      });
+      if (widget) {
+        tabPage.add(widget, {
+          flex: 1
+        });
+      }
+      return tabPage;
+    },
+
     __initViews: function() {
+      /*
+      if (this.__sidePanels) {
+        this.remove(this.__sidePanels);
+        this.__sidePanels = this.getChildControl("side-panels");
+      }
+      if (this.__mainPanel) {
+        this.remove(this.__mainPanel);
+        this.__mainPanel = this.getChildControl("main-panel");
+      }
+      */
+
       const study = this.getStudy();
 
-      const sidePanel = this.getChildControl("side-panel");
-      sidePanel.removeAll();
 
-      const tabView = new qx.ui.tabview.TabView().set({
-        contentPadding: 5,
-        barPosition: "top"
-      });
-      tabView.getChildControl("bar").set({
-        paddingLeft: 60
-      });
+      const tabViewLeft = this.getChildControl("side-panel-left-tabs");
 
-      const nodesPage = new qx.ui.tabview.Page().set({
-        layout: new qx.ui.layout.VBox(5),
-        backgroundColor: "material-button-background",
-        icon: "@FontAwesome5Solid/list/24",
-        toolTipText: this.tr("Nodes")
-      });
-      tabView.add(nodesPage);
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree();
       nodesTree.setStudy(study);
-      nodesPage.add(nodesTree, {
-        flex: 1
-      });
+      const nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), nodesTree);
+      tabViewLeft.add(nodesPage);
 
-      const storagePage = new qx.ui.tabview.Page().set({
-        layout: new qx.ui.layout.VBox(5),
-        backgroundColor: "material-button-background",
-        icon: "@FontAwesome5Solid/database/24",
-        toolTipText: this.tr("Storage")
-      });
-      tabView.add(storagePage);
       const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
         hideRoot: true
       });
       filesTree.populateTree();
-      storagePage.add(filesTree, {
-        flex: 1
-      });
+      const storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTree);
+      tabViewLeft.add(storagePage);
 
-      const parametersPage = new qx.ui.tabview.Page().set({
-        layout: new qx.ui.layout.VBox(5),
-        backgroundColor: "material-button-background",
-        icon: "@FontAwesome5Solid/sliders-h/24",
-        toolTipText: this.tr("Parameters")
-      });
-      tabView.add(parametersPage);
+      const parametersPage = this.__createTabPage("@FontAwesome5Solid/sliders-h", this.tr("Parameters"));
+      tabViewLeft.add(parametersPage);
 
-      sidePanel.add(tabView, {
-        flex: 1
-      });
+
+      const tabViewRight = this.getChildControl("side-panel-right-tabs");
+
+      const settingsPage = this.__settingsPage = this.__createTabPage("@FontAwesome5Solid/sign-in-alt", this.tr("Settings"));
+      tabViewRight.add(settingsPage);
+
+      const outputsPage = this.__outputsPage = this.__createTabPage("@FontAwesome5Solid/sign-out-alt", this.tr("Outputs"));
+      tabViewRight.add(outputsPage);
+
 
       const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView();
       const loggerInPanelView = this.__createPanelView(this.tr("Logger"), loggerView);
@@ -351,6 +383,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__showInMainView(this.__nodeView, nodeId);
         this.__nodeView.populateLayout();
       }
+
+      if (node && node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
+        this.__settingsPage.removeAll();
+        this.__settingsPage.add(node.getPropsForm(), {
+          flex: 1
+        });
+      }
     },
 
     getLogger: function() {
@@ -469,15 +508,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.getBlocker().setStyles({
         display: maximize ? "none" : "block"
       });
-      this.getChildControl("container-scroll-0").setVisibility(maximize ? "excluded" : "visible");
+      this.getChildControl("side-panels").setVisibility(maximize ? "excluded" : "visible");
     },
 
     __attachEventHandlers: function() {
-      const blocker = this.getBlocker();
-      blocker.addListener("tap", this.getChildControl("side-panel").toggleCollapsed.bind(this.getChildControl("side-panel")));
-
-      const splitter = this.getChildControl("splitter");
-      splitter.setWidth(1);
+      // const blocker = this.getBlocker();
+      // blocker.addListener("tap", this.getChildControl("side-panels").toggleCollapsed.bind(this.getChildControl("side-panels")));
 
       const maximizeIframeCb = msg => {
         this.__maximizeIframe(msg.getData());
@@ -614,7 +650,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __checkMaximizeable: function() {
-      this.getChildControl("container-scroll-0").setVisibility("visible");
+      this.getChildControl("side-panels").setVisibility("visible");
       this.__nodeView._maximizeIFrame(false); // eslint-disable-line no-underscore-dangle
       const node = this.getStudy().getWorkbench().getNode(this.__currentNodeId);
       if (node && node.getIFrame() && (node.getInputNodes().length === 0)) {
