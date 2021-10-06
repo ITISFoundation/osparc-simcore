@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import pytest
+from aiohttp import web
 from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
 from models_library.projects_state import RunningState
@@ -163,16 +164,17 @@ async def director_v2_service_mock(
     aioresponses_mocker.post(
         create_computation_pattern,
         callback=creation_cb,
+        status=web.HTTPCreated.status_code,
         repeat=True,
     )
     aioresponses_mocker.post(
         stop_computation_pattern,
-        status=204,
+        status=web.HTTPAccepted.status_code,
         repeat=True,
     )
     aioresponses_mocker.get(
         get_computation_pattern,
-        status=202,
+        status=web.HTTPAccepted.status_code,
         callback=get_computation_cb,
         repeat=True,
     )
@@ -191,7 +193,8 @@ async def storage_v0_service_mock(
         file_id = url.path.rsplit("/files/")[1]
 
         return CallbackResult(
-            status=200, payload={"data": {"link": f"file://{file_id}"}}
+            status=web.HTTPOk.status_code,
+            payload={"data": {"link": f"file://{file_id}"}},
         )
 
     get_download_link_pattern = re.compile(
@@ -207,7 +210,7 @@ async def storage_v0_service_mock(
     )
     aioresponses_mocker.get(
         get_locations_link_pattern,
-        status=200,
+        status=web.HTTPOk.status_code,
         payload={"data": [{"name": "simcore.s3", "id": "0"}]},
     )
     return aioresponses_mocker
