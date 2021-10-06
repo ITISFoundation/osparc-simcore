@@ -129,6 +129,18 @@ qx.Class.define("osparc.desktop.MainPage", {
         }
       }, this);
 
+      navBar.addListener("takeSnapshot", () => {
+        if (this.__studyEditor) {
+          this.__studyEditor.takeSnapshot();
+        }
+      }, this);
+
+      navBar.addListener("showSnapshots", () => {
+        if (this.__studyEditor) {
+          this.__studyEditor.showSnapshots();
+        }
+      }, this);
+
       return navBar;
     },
 
