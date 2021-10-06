@@ -65,7 +65,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return borderStyle;
     },
 
-    TOP_OFFSET: osparc.navigation.NavigationBar.HEIGHT + 46,
+    TOP_OFFSET: osparc.navigation.NavigationBar.HEIGHT + 46 + 40,
 
     ZOOM_VALUES: [
       0.2,
@@ -1223,8 +1223,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     _addEventListeners: function() {
       this.addListener("appear", () => {
         // Reset filters and sidebars
-        osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
-        osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "visible");
+        // osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
+        // osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "visible");
 
         qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", false);
 
@@ -1262,8 +1262,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       this.addListener("disappear", () => {
         // Reset filters
-        osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
-        osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "excluded");
+        // osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
+        // osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "excluded");
 
         commandDel.setEnabled(false);
         commandEsc.setEnabled(false);

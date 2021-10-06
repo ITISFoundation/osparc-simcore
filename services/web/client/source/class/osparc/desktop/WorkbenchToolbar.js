@@ -50,8 +50,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
     _buildLayout: function() {
       this.getChildControl("breadcrumb-navigation");
 
-      this._add(new qx.ui.core.Spacer(20));
-
       const startStopBtns = this._startStopBtns = this.getChildControl("start-stop-btns");
       startStopBtns.exclude();
     },
