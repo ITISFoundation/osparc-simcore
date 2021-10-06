@@ -65,15 +65,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       }
     },
 
-    evalSnapshotsBtn: async function() {
-      const study = this.getStudy();
-      if (study) {
-        const hasSnapshots = await study.hasSnapshots();
-        const snapshotsBtn = this.getChildControl("snapshots-btn");
-        hasSnapshots ? snapshotsBtn.show() : snapshotsBtn.exclude();
-      }
-    },
-
     __attachEventHandlers: function() {
       qx.event.message.Bus.subscribe("changeWorkbenchSelection", e => {
         const selectedNodes = e.getData();
