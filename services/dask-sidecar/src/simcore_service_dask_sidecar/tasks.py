@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from pprint import pformat
 from typing import List
 
@@ -9,6 +10,7 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
+from distributed.worker import logger
 
 from .computational_sidecar.core import ComputationalSidecar
 from .dask_utils import (
@@ -25,7 +27,11 @@ log = create_dask_worker_logger(__name__)
 
 def dask_setup(_worker: distributed.Worker) -> None:
     """This is a special function recognized by the dask worker when starting with flag --preload"""
-    log.info("Settings: %s", pformat(Settings.create_from_envs().dict()))
+    settings = Settings.create_from_envs()
+    # set up logging
+    if settings.SC_BOOT_MODE.lower().startswith("debug"):
+        logger.setLevel(logging.DEBUG)
+    logger.info("Settings: %s", pformat(settings.dict()))
     print_banner()
 
 
