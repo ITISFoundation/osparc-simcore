@@ -691,7 +691,7 @@ async def _assert_retrieve_completed(
             if _is_matching_line_in_logs(logs):
                 break
 
-            if True:  # i == TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED - 1:
+            if i == TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED - 1:
                 print("=" * 20)
                 print(f"Dumping information for service_uuid={service_uuid}")
                 print("=" * 20)
