@@ -313,7 +313,7 @@ async def _get_mapped_nodeports_values(
     # Values for at least one of those ports will be None.
 
     # removing the below sleep will make the test fail in the CI
-    # with this sleep interval it works
+    # note that on development machines it works without it
     await asyncio.sleep(POSSIBLE_ISSUE_WORKAROUND)
 
     for node_uuid in workbench:
