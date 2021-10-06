@@ -1,3 +1,9 @@
+# pylint: disable-all
+
+"""
+FIXME: this is experimental code
+"""
+
 import collections.abc
 import inspect
 from typing import Any, Callable, Dict, Optional, Type, get_origin, get_type_hints
