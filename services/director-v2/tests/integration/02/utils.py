@@ -223,31 +223,6 @@ async def assert_all_services_running(
             # let the services boot
             await asyncio.sleep(1.0)
 
-    for service_uuid, node_data in workbench.items():
-        service_data = await get_service_data(
-            director_v2_client=director_v2_client,
-            director_v0_url=director_v0_url,
-            service_uuid=service_uuid,
-            node_data=node_data,
-        )
-        print(
-            "Checking running service availability",
-            service_uuid,
-            node_data,
-            service_data,
-        )
-        exposed_port = await port_forward_service(
-            service_name=service_data["service_host"],
-            is_legacy=False,
-            internal_port=service_data["service_port"],
-        )
-
-        await assert_service_is_available(
-            exposed_port=exposed_port,
-            is_legacy=False,
-            service_uuid=service_uuid,
-        )
-
 
 async def assert_retrieve_service(
     director_v2_client: httpx.AsyncClient, director_v0_url: URL, service_uuid: str
@@ -353,3 +328,34 @@ async def assert_service_is_available(  # pylint: disable=redefined-outer-name
             async with httpx.AsyncClient() as client:
                 response = await client.get(service_address)
                 assert response.status_code == 200
+
+
+async def assert_services_reply_200(
+    director_v2_client: httpx.AsyncClient,
+    director_v0_url: URL,
+    workbench: Dict[str, Node],
+) -> None:
+    for service_uuid, node_data in workbench.items():
+        service_data = await get_service_data(
+            director_v2_client=director_v2_client,
+            director_v0_url=director_v0_url,
+            service_uuid=service_uuid,
+            node_data=node_data,
+        )
+        print(
+            "Checking running service availability",
+            service_uuid,
+            node_data,
+            service_data,
+        )
+        exposed_port = await port_forward_service(
+            service_name=service_data["service_host"],
+            is_legacy=is_legacy(node_data),
+            internal_port=service_data["service_port"],
+        )
+
+        await assert_service_is_available(
+            exposed_port=exposed_port,
+            is_legacy=is_legacy(node_data),
+            service_uuid=service_uuid,
+        )

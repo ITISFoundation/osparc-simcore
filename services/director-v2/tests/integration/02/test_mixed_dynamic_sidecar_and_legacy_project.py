@@ -20,15 +20,13 @@ from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from utils import (
     assert_all_services_running,
-    assert_service_is_available,
+    assert_services_reply_200,
     assert_start_service,
     assert_stop_service,
     ensure_network_cleanup,
     get_director_v0_patched_url,
-    get_service_data,
     is_legacy,
     patch_dynamic_service_url,
-    port_forward_service,
 )
 from yarl import URL
 
@@ -258,33 +256,11 @@ async def test_legacy_and_dynamic_sidecar_run(
     )
 
     # query the service directly and check if it responding accordingly
-    for (
-        dynamic_service_uuid,
-        node_data,
-    ) in dy_static_file_server_project.workbench.items():
-        service_data = await get_service_data(
-            director_v2_client=director_v2_client,
-            director_v0_url=director_v0_url,
-            service_uuid=dynamic_service_uuid,
-            node_data=node_data,
-        )
-        print(
-            "Checking running service availability",
-            dynamic_service_uuid,
-            node_data,
-            service_data,
-        )
-        exposed_port = await port_forward_service(
-            service_name=service_data["service_host"],
-            is_legacy=is_legacy(node_data),
-            internal_port=service_data["service_port"],
-        )
-
-        await assert_service_is_available(
-            exposed_port=exposed_port,
-            is_legacy=is_legacy(node_data),
-            service_uuid=dynamic_service_uuid,
-        )
+    await assert_services_reply_200(
+        director_v2_client=director_v2_client,
+        director_v0_url=director_v0_url,
+        workbench=dy_static_file_server_project.workbench,
+    )
 
     # finally stop the started services
     await asyncio.gather(
