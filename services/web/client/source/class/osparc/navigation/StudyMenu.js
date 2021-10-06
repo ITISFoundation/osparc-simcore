@@ -103,6 +103,7 @@ qx.Class.define("osparc.navigation.StudyMenu", {
     },
 
     evalSlidesButtons: function(editorContext) {
+      console.log("evalSlidesButtons", editorContext);
       const slidesBtnsVisible = ["workbench", "guided", "app"].includes(editorContext);
       if (slidesBtnsVisible) {
         const study = this.getStudy();
