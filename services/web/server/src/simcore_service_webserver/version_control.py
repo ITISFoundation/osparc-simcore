@@ -1,4 +1,4 @@
-""" Version control app module
+""" Meta-modeling app module
 
     Manages version control of studies, both the project document and the associated data
 
@@ -14,7 +14,8 @@ from servicelib.aiohttp.application_setup import (
 
 from . import version_control_handlers
 from .constants import APP_SETTINGS_KEY
-from .meta_projects import projects_redirection_middleware
+from .director_v2_api import get_run_policy, set_run_policy
+from .meta_projects import MetaProjectRunPolicy, projects_redirection_middleware
 from .settings import ApplicationSettings
 
 log = logging.getLogger(__name__)
@@ -37,3 +38,7 @@ def setup_meta(app: web.Application):
 
     app.add_routes(version_control_handlers.routes)
     app.middlewares.append(projects_redirection_middleware)
+
+    # Overrides run-policy from directorv2
+    assert get_run_policy(app)  # nosec
+    set_run_policy(app, MetaProjectRunPolicy())
