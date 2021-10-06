@@ -11,7 +11,7 @@ import logging
 from typing import List, Tuple
 
 from aiohttp import web
-from aiohttp.web_middlewares import _Handler, middleware
+from aiohttp.web_middlewares import _Handler
 from models_library.projects import ProjectID
 
 from ._meta import api_version_prefix as VTAG
@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 PROJECTS_API_PREFIX = f"/{VTAG}/projects/"
 
 
-@middleware
+@web.middleware
 async def projects_redirection_middleware(request: web.Request, handler: _Handler):
     """Intercepts /project/{project_id}* requests and change
     the project_id parameter but the current working copy @HEAD
@@ -59,7 +59,8 @@ async def projects_redirection_middleware(request: web.Request, handler: _Handle
         except KeyError as err:
             log.debug("Skips redirection of %s: %s", request, err)
 
-    return await handler(request)
+    response = await handler(request)
+    return response
 
 
 class MetaProjectRunPolicy(AbstractProjectRunPolicy):
