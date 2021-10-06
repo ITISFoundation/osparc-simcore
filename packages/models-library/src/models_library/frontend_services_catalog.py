@@ -155,7 +155,6 @@ _FACTORY_FUNCTIONS = [
     _create_file_picker_service,
     _create_node_group_service,
     _create_data_iterator_int_range,
-    _create_iterator_consumer_probe_int,
 ] + [
     functools.partial(_create_constant_node_def, output_type=p)
     for p in ["number", "boolean", "integer"]
