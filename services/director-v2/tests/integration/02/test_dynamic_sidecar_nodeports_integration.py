@@ -670,9 +670,12 @@ async def _print_dynamic_sidecars_containers_logs(
                 containers_inspect_response.status_code == status.HTTP_200_OK
             ), containers_inspect_response.text
             containers_inspect = containers_inspect_response.json()
-            print("Containers:", containers_inspect.keys())
 
-            for container_name in containers_inspect.keys():
+            containers_names = containers_inspect.keys()
+            print("Containers:", containers_names)
+
+            for container_name in containers_names:
+                print(f"Fetching logs for {container_name}")
                 container_logs_response = await client.get(
                     f"/containers/{container_name}/logs"
                 )
