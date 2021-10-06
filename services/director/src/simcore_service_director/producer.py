@@ -13,13 +13,14 @@ from typing import Dict, List, Optional, Tuple
 import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
-from servicelib.async_utils import (  # pylint: disable=no-name-in-module
+
+from servicelib.async_utils import (
     run_sequentially_in_context,
-)
-from servicelib.monitor_services import (  # pylint: disable=no-name-in-module
+)  # pylint: disable=no-name-in-module
+from servicelib.monitor_services import (
     service_started,
     service_stopped,
-)
+)  # pylint: disable=no-name-in-module
 
 from . import config, docker_utils, exceptions, registry_proxy
 from .config import (
