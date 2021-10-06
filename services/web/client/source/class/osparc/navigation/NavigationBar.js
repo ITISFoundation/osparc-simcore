@@ -155,6 +155,13 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "study-options":
           control = new osparc.navigation.StudyMenu();
+          [
+            "infoButtonPressed",
+            "slidesGuidedStart",
+            "slidesAppStart",
+            "slidesStop",
+            "slidesEdit"
+          ].forEach(signalName => this.fireEvent(signalName));
           this._add(control);
           break;
         case "read-only-icon":
