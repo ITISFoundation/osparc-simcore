@@ -84,6 +84,7 @@ DY_SERVICES_STATE_PATH: Path = Path("/dy-volumes/workdir_generated-data")
 TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED = 60
 TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED = 60
 POSSIBLE_ISSUE_WORKAROUND = 10
+SEPARATOR = "=" * 50
 
 logger = logging.getLogger(__name__)
 
@@ -692,27 +693,32 @@ async def _assert_retrieve_completed(
                 break
 
             if i == TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED - 1:
-                print("=" * 20)
+
+                print(SEPARATOR)
                 print(f"Dumping information for service_uuid={service_uuid}")
-                print("=" * 20)
+                print(SEPARATOR)
 
                 print("".join(logs))
+                print(SEPARATOR)
 
                 containers_names = (
                     await _print_dynamic_sidecars_containers_logs_and_get_containers(
                         dynamic_services_urls
                     )
                 )
+                print(SEPARATOR)
 
                 # inspect dynamic-sidecar container
                 await _print_container_inspect(container_id=container_id)
+                print(SEPARATOR)
+
                 # inspect spawned container
                 for container_name in containers_names:
                     await _print_container_inspect(container_id=container_name)
+                    print(SEPARATOR)
 
                 await _print_all_docker_volumes()
-
-                print("=" * 20)
+                print(SEPARATOR)
 
                 # docker inspect the containers
                 # docker inspect the services
