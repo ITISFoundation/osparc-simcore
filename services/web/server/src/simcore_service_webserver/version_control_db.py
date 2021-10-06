@@ -157,7 +157,7 @@ class VersionControlRepository(BaseRepository):
     async def _fetch_wcopy_project_id(
         self, repo_id: int, commit_id: int, conn: SAConnection
     ) -> ProjectID:
-        # get wcopy for start_commit_id and update with 'project'
+        # get wcopy for commit_id and update with 'project'
         repo = await self.ReposOrm(conn).set_filter(id=repo_id).fetch("project_uuid")
         assert repo  # nosec
         wcopy_project_id = repo.project_uuid
@@ -535,8 +535,16 @@ class VersionControlRepository(BaseRepository):
 class VersionControlRepositoryInternalAPI(VersionControlRepository):
     """This part is NOT exposed to restAPI"""
 
-    async def get_wcopy_project_id(self, repo_id: int, commit_id: int) -> ProjectID:
+    async def get_wcopy_project_id(
+        self, repo_id: int, commit_id: Optional[int] = None
+    ) -> ProjectID:
         async with self.engine.acquire() as conn:
+            if commit_id is None:
+                commit = await self._get_HEAD_commit(repo_id, conn)
+                assert commit  # nosec
+                commit_id = commit.id
+                assert commit_id
+
             return await self._fetch_wcopy_project_id(repo_id, commit_id, conn)
 
     async def get_wcopy_project(self, repo_id: int, commit_id: int) -> ProjectDict:
