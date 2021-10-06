@@ -624,6 +624,7 @@ async def _assert_retrieve_completed(
     director_v2_client: httpx.AsyncClient,
     director_v0_url: URL,
     service_uuid: str,
+    dynamic_services_urls: Dict[str, str],
 ) -> None:
     await assert_retrieve_service(
         director_v2_client=director_v2_client,
@@ -646,6 +647,7 @@ async def _assert_retrieve_completed(
 
             if i == TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED - 1:
                 print("".join(logs))
+                await _print_dynamic_sidecars_containers_logs(dynamic_services_urls)
                 assert False, "Timeout reached"
 
             print(
@@ -800,16 +802,15 @@ async def test_nodeports_integration(
         director_v2_client=director_v2_client,
         director_v0_url=director_v0_url,
         service_uuid=services_node_uuids.dy,
+        dynamic_services_urls=dynamic_services_urls,
     )
 
     await _assert_retrieve_completed(
         director_v2_client=director_v2_client,
         director_v0_url=director_v0_url,
         service_uuid=services_node_uuids.dy_compose_spec,
+        dynamic_services_urls=dynamic_services_urls,
     )
-
-    # dump logs form started containers after retrieve
-    await _print_dynamic_sidecars_containers_logs(dynamic_services_urls)
 
     # STEP 3
     # pull data via nodeports
