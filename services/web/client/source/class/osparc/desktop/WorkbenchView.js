@@ -90,10 +90,51 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const sidePanel = this.getChildControl("side-panel");
       sidePanel.removeAll();
 
+      const tabView = new qx.ui.tabview.TabView().set({
+        contentPadding: 5,
+        barPosition: "top"
+      });
+      tabView.getChildControl("bar").set({
+        paddingLeft: 60
+      });
+
+      const nodesPage = new qx.ui.tabview.Page().set({
+        layout: new qx.ui.layout.VBox(5),
+        backgroundColor: "material-button-background",
+        icon: "@FontAwesome5Solid/list/24",
+        toolTipText: this.tr("Nodes")
+      });
+      tabView.add(nodesPage);
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree();
       nodesTree.setStudy(study);
-      const nodesTreeInPanelView = this.__createPanelView(this.tr("Nodes"), nodesTree);
-      sidePanel.add(nodesTreeInPanelView, {
+      nodesPage.add(nodesTree, {
+        flex: 1
+      });
+
+      const storagePage = new qx.ui.tabview.Page().set({
+        layout: new qx.ui.layout.VBox(5),
+        backgroundColor: "material-button-background",
+        icon: "@FontAwesome5Solid/database/24",
+        toolTipText: this.tr("Storage")
+      });
+      tabView.add(storagePage);
+      const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
+        hideRoot: true
+      });
+      filesTree.populateTree();
+      storagePage.add(filesTree, {
+        flex: 1
+      });
+
+      const parametersPage = new qx.ui.tabview.Page().set({
+        layout: new qx.ui.layout.VBox(5),
+        backgroundColor: "material-button-background",
+        icon: "@FontAwesome5Solid/sliders-h/24",
+        toolTipText: this.tr("Parameters")
+      });
+      tabView.add(parametersPage);
+
+      sidePanel.add(tabView, {
         flex: 1
       });
 
@@ -103,9 +144,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (!osparc.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
         loggerInPanelView.setCollapsed(true);
       }
+      /*
       sidePanel.add(loggerInPanelView, {
         flex: 1
       });
+      */
 
       const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI();
       workbenchUI.setStudy(study);
