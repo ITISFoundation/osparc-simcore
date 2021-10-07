@@ -3,7 +3,11 @@
 import click
 
 from .meta import __version__
-from .scripts import metadata, run_creator, update_compose_labels
+from .scripts import (  # pylint: disable=no-name-in-module
+    metadata,
+    run_creator,
+    update_compose_labels,
+)
 
 
 @click.group()
