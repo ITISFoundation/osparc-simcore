@@ -156,27 +156,43 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       if (study && thisNode) {
         const inputNodeIDs = thisNode.getInputNodes();
         inputNodeIDs.forEach(inputNodeId => {
-          const inputPortsMenuButton = this.__getInputMenuButton(inputNodeId, targetPortId);
-          if (inputPortsMenuButton) {
-            menu.add(inputPortsMenuButton);
+          const inputNode = this.getStudy().getWorkbench().getNode(inputNodeId);
+          if (inputNode) {
+            for (const outputKey in inputNode.getOutputs()) {
+              const paramButton = new qx.ui.menu.Button();
+              inputNode.bind("label", paramButton, "label", {
+                converter: val => val + " : " + inputNode.getOutput(outputKey).label
+              });
+              paramButton.addListener("execute", () => {
+                this.getNode().addInputNode(inputNodeId);
+                this.getNode().addPortLink(targetPortId, inputNodeId, outputKey);
+              }, this);
+              menu.add(paramButton);
+              osparc.utils.Ports.arePortsCompatible(inputNode, outputKey, this.getNode(), targetPortId)
+                .then(compatible => {
+                  if (compatible === false) {
+                    paramButton.exclude();
+                  }
+                });
+            }
           }
         });
       }
     },
 
-    __getInputMenuButton: function(inputNodeId, targetPortId, menu) {
+    __getInputMenuButton: function(inputNodeId, targetPortId) {
       const study = this.getStudy();
       const thisNode = this.getNode();
       if (study && thisNode) {
         const node = study.getWorkbench().getNode(inputNodeId);
 
         const inputNodePortsMenu = new qx.ui.menu.Menu();
-        const existingParamBtn = new qx.ui.menu.Button(null, null, null, inputNodePortsMenu);
-        node.bind("label", existingParamBtn, "label");
+        const inputMenuBtn = new qx.ui.menu.Button(null, null, null, inputNodePortsMenu);
+        node.bind("label", inputMenuBtn, "label");
         if (this.getStudy()) {
-          this.__populateInputNodePortsMenu(inputNodeId, targetPortId, inputNodePortsMenu, existingParamBtn);
+          this.__populateInputNodePortsMenu(inputNodeId, targetPortId, inputNodePortsMenu, inputMenuBtn);
         }
-        return existingParamBtn;
+        return inputMenuBtn;
       }
       return null;
     },
