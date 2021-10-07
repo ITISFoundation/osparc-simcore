@@ -8,6 +8,7 @@ from pprint import pformat
 from typing import Any, Awaitable, Callable, Dict, Iterable, List, Tuple, Union
 
 import dask.distributed
+import dask_gateway
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.events import (
@@ -124,7 +125,7 @@ def _done_dask_callback(
 
 
 def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
-    @retry(**dask_retry_policy)
+    # @retry(**dask_retry_policy)
     async def on_startup() -> None:
         await DaskClient.create(
             app,
@@ -156,13 +157,15 @@ class DaskClient:
     async def create(
         cls, app: FastAPI, settings: DaskSchedulerSettings
     ) -> "DaskClient":
+        auth = dask_gateway.BasicAuth(username=None, password="asdf")
+        gateway = dask_gateway.Gateway(
+            address="http://172.16.8.64:8000", auth=auth, asynchronous=True
+        )
+        cluster = await gateway.new_cluster()
+
         app.state.dask_client = cls(
             app=app,
-            client=await dask.distributed.Client(
-                f"tcp://{settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
-                asynchronous=True,
-                name="director-v2-client",
-            ),  # type: ignore
+            client=await cluster.get_client(),
             settings=settings,
         )
         return cls.instance(app)
