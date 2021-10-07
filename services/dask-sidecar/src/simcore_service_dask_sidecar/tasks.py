@@ -14,10 +14,10 @@ from distributed.worker import logger
 
 from .computational_sidecar.core import ComputationalSidecar
 from .dask_utils import (
-    MonitorTaskAbortion,
     create_dask_worker_logger,
     get_current_task_boot_mode,
     get_current_task_resources,
+    monitor_task_abortion,
 )
 from .meta import print_banner
 from .settings import Settings
@@ -47,7 +47,7 @@ async def _run_computational_sidecar_async(
         "run_computational_sidecar %s",
         f"{docker_auth=}, {service_key=}, {service_version=}, {input_data=}, {output_data_keys=}, {command=}",
     )
-    async with MonitorTaskAbortion(
+    async with monitor_task_abortion(
         task_name=asyncio.current_task().get_name(),
     ):
         _retry = 0

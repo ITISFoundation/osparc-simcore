@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Awaitable, Dict, Optional
+from typing import Any, AsyncIterator, Awaitable, Dict, Optional, cast
 
 from dask_task_models_library.container_tasks.events import TaskEvent
 from distributed import Pub
@@ -46,12 +46,12 @@ def get_current_task_boot_mode() -> BootMode:
 def get_current_task_resources() -> Dict[str, Any]:
     if task := _get_current_task_state():
         if task_resources := task.resource_restrictions:
-            return task_resources
+            return cast(Dict[str, Any], task_resources)
     return {}
 
 
 @asynccontextmanager
-async def MonitorTaskAbortion(task_name: str) -> AsyncIterator[Awaitable[None]]:
+async def monitor_task_abortion(task_name: str) -> AsyncIterator[Awaitable[None]]:
     async def cancel_task(task_name: str) -> None:
         tasks = asyncio.all_tasks()
         logger.debug("running tasks: %s", tasks)
