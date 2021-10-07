@@ -1,16 +1,15 @@
 import json
 from typing import Any
-from uuid import UUID
 
-
-class _UuidEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, UUID):
-            # NOTE: careful here!
-            return str(o)
-        return json.JSONEncoder.default(self, o)
+from pydantic.json import pydantic_encoder
 
 
 def json_dumps(obj: Any, **kwargs):
-    """json.dumps with UUID encoder"""
-    return json.dumps(obj, cls=_UuidEncoder, **kwargs)
+    """json.dumps with rich encoder.
+    A big applause for pydantic authors here!!!
+    """
+    return json.dumps(obj, default=pydantic_encoder, **kwargs)
+
+
+# TODO: support for orjson
+# TODO: support for ujson (fast but poor encoding, only for basic types)
