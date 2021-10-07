@@ -114,7 +114,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __populateFieldOptionsMenu: function(optionsMenu, field) {
       optionsMenu.removeAll();
 
-      this.__addInputPorts(field.key, optionsMenu);
+      this.__addInputsMenuButtons(field.key, optionsMenu);
 
       if (optionsMenu.getChildren().length) {
         optionsMenu.addSeparator();
@@ -145,21 +145,57 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
     },
 
-    __addInputPorts: function(fieldKey, menu) {
+    __addInputsMenuButtons: function(targetPortId, menu) {
       const study = this.getStudy();
       const thisNode = this.getNode();
       if (study && thisNode) {
-        const inputNodes = thisNode.getInputNodes();
-        inputNodes.forEach(inputNodeId => {
-          const node = study.getWorkbench().getNode(inputNodeId);
-          const nodeButton = new qx.ui.menu.Button();
-          nodeButton.nodeId = node.getNodeId();
-          node.bind("label", nodeButton, "label");
-
-          if (!menu.getChildren().some(child => child.nodeId === nodeButton.nodeId)) {
-            menu.add(nodeButton);
+        const inputNodeIDs = thisNode.getInputNodes();
+        inputNodeIDs.forEach(inputNodeId => {
+          const inputPortsMenuButton = this.__getInputMenuButton(inputNodeId, targetPortId);
+          if (inputPortsMenuButton) {
+            menu.add(inputPortsMenuButton);
           }
         });
+      }
+    },
+
+    __getInputMenuButton: function(inputNodeId, targetPortId, menu) {
+      const study = this.getStudy();
+      const thisNode = this.getNode();
+      if (study && thisNode) {
+        const node = study.getWorkbench().getNode(inputNodeId);
+
+        const inputNodePortsMenu = new qx.ui.menu.Menu();
+        if (this.getStudy()) {
+          this.__populateInputNodePortsMenu(inputNodeId, targetPortId, inputNodePortsMenu);
+        }
+        const existingParamBtn = new qx.ui.menu.Button(null, null, null, inputNodePortsMenu);
+        node.bind("label", existingParamBtn, "label");
+        return existingParamBtn;
+      }
+      return null;
+    },
+
+    __populateInputNodePortsMenu: function(inputNodeId, targetPortId, inputNodePortsMenu) {
+      inputNodePortsMenu.removeAll();
+
+      const study = this.getStudy();
+      const inputNode = study.getWorkbench().getNode(inputNodeId);
+      const thisNode = this.getNode();
+      if (study && inputNode && thisNode) {
+        for (const outputKey in inputNode.getOutputs()) {
+          osparc.utils.Ports.arePortsCompatible(inputNode, outputKey, thisNode, targetPortId)
+            .then(compatible => {
+              if (compatible) {
+                const paramButton = new qx.ui.menu.Button(inputNode.getOutput(outputKey).label);
+                paramButton.addListener("execute", () => {
+                  thisNode.addInputNode(inputNodeId);
+                  thisNode.addPortLink(targetPortId, inputNodeId, outputKey);
+                }, this);
+                inputNodePortsMenu.add(paramButton);
+              }
+            });
+        }
       }
     },
 
@@ -185,11 +221,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return existingParamBtn;
     },
 
-    __populateExistingParamsMenu: function(fieldKey, existingParamMenu) {
+    __populateExistingParamsMenu: function(targetPortId, existingParamMenu) {
       existingParamMenu.removeAll();
+
       const params = this.getStudy().getParameters();
       params.forEach(paramNode => {
-        osparc.utils.Ports.arePortsCompatible(paramNode, "out_1", this.getNode(), fieldKey)
+        osparc.utils.Ports.arePortsCompatible(paramNode, "out_1", this.getNode(), targetPortId)
           .then(compatible => {
             if (compatible) {
               const paramButton = new qx.ui.menu.Button();
@@ -197,7 +234,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
               paramNode.bind("label", paramButton, "label");
               paramButton.addListener("execute", () => {
                 this.getNode().addInputNode(paramNode.getNodeId());
-                this.getNode().addPortLink(fieldKey, paramNode.getNodeId(), "out_1");
+                this.getNode().addPortLink(targetPortId, paramNode.getNodeId(), "out_1");
               }, this);
               if (!existingParamMenu.getChildren().some(child => child.nodeId === paramButton.nodeId)) {
                 existingParamMenu.add(paramButton);
