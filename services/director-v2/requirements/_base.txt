@@ -33,6 +33,7 @@ aiohttp==3.7.4.post0
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   aiodocker
+    #   dask-gateway
 aiopg==1.2.1
     # via
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
@@ -102,13 +103,17 @@ dask==2021.09.1
     # via
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   dask-gateway
     #   distributed
+dask-gateway==0.9.0
+    # via -r requirements/_base.in
 decorator==4.4.2
     # via networkx
 distributed==2021.09.1
     # via
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   dask-gateway
 dnspython==2.1.0
     # via email-validator
 docker==5.0.2

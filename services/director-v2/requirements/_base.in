@@ -20,6 +20,7 @@ aio-pika
 aiodocker
 aiopg[sa]
 celery[redis]
+dask-gateway
 fastapi[all]
 httpx
 networkx
