@@ -22,6 +22,7 @@ attrs==20.2.0
     #   pytest
 certifi==2021.5.30
     # via
+    #   -c requirements/_base.txt
     #   minio
     #   requests
 cffi==1.14.5
@@ -32,6 +33,9 @@ chardet==3.0.4
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+charset-normalizer==2.0.6
+    # via
+    #   -c requirements/_base.txt
     #   requests
 coverage==5.5
     # via
@@ -78,6 +82,7 @@ multidict==5.1.0
 packaging==20.4
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   pytest
     #   pytest-sugar
 platformdirs==2.3.0
@@ -103,6 +108,7 @@ pyopenssl==20.0.1
 pyparsing==2.4.7
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   packaging
 pytest==6.2.5
     # via
@@ -139,8 +145,9 @@ python-dotenv==0.19.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-requests==2.25.1
+requests==2.26.0
     # via
+    #   -c requirements/_base.txt
     #   coveralls
     #   docker
 six==1.15.0
@@ -167,9 +174,10 @@ typing-extensions==3.10.0.2
     #   aiohttp
     #   astroid
     #   pylint
-urllib3==1.26.5
+urllib3==1.26.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   minio
     #   requests
 websocket-client==0.59.0

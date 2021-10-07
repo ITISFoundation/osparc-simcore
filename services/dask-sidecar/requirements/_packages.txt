@@ -6,6 +6,26 @@
 #
 aiodebug==1.1.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+click==7.1.2
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   distributed
+cloudpickle==1.6.0
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   dask
+    #   distributed
+dask==2021.09.1
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   distributed
+distributed==2021.09.1
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
 dnspython==2.0.0
     # via
     #   -c requirements/_base.txt
@@ -14,20 +34,73 @@ email-validator==1.1.1
     # via
     #   -c requirements/_base.txt
     #   pydantic
+fsspec==2021.9.0
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   dask
+heapdict==1.0.1
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   zict
 idna==2.10
     # via
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   email-validator
-pydantic==1.8.2
+jinja2==2.11.3
     # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   distributed
+locket==0.2.1
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   partd
+markupsafe==2.0.1
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   jinja2
+msgpack==1.0.2
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   distributed
+packaging==20.4
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   dask
+partd==1.2.0
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   dask
+psutil==5.8.0
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   distributed
+pydantic==1.8.2
+    # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -35,23 +108,64 @@ pyinstrument==3.4.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 pyinstrument-cext==0.2.4
     # via pyinstrument
+pyparsing==2.4.7
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   packaging
 pyyaml==5.4.1
     # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   dask
+    #   distributed
 six==1.15.0
     # via
     #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   packaging
     #   tenacity
+sortedcontainers==2.4.0
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   distributed
+tblib==1.7.0
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   distributed
 tenacity==6.2.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+toolz==0.11.1
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   dask
+    #   distributed
+    #   partd
+tornado==6.1
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   distributed
 typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
 ujson==4.0.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+zict==2.0.0
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   distributed
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

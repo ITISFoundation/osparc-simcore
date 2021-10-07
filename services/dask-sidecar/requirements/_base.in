@@ -18,7 +18,8 @@
 
 
 aiodocker
-
+aiohttp
+requests
 dask[complete]
 pydantic[email,dotenv]
 
