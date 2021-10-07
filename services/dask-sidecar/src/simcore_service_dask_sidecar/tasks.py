@@ -1,7 +1,10 @@
 import asyncio
 import logging
+import signal
+import threading
 from pprint import pformat
 from typing import List
+from uuid import uuid4
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -25,14 +28,44 @@ from .settings import Settings
 log = create_dask_worker_logger(__name__)
 
 
-def dask_setup(_worker: distributed.Worker) -> None:
+class GracefulKiller:
+    kill_now = False
+    worker = None
+
+    def __init__(self, worker):
+        signal.signal(signal.SIGINT, self.exit_gracefully)
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
+        self.worker = worker
+
+    def exit_gracefully(self, *args):
+        tasks = asyncio.all_tasks()
+        log.debug("We are in THREAD %s", threading.current_thread().ident)
+        logger.warning(
+            "Application shutdown detected!\n %s",
+            pformat([t.get_name() for t in tasks]),
+        )
+        self.kill_now = True
+        asyncio.ensure_future(self.worker.close(timeout=5))
+
+
+async def dask_setup(worker: distributed.Worker) -> None:
     """This is a special function recognized by the dask worker when starting with flag --preload"""
     settings = Settings.create_from_envs()
     # set up logging
     if settings.SC_BOOT_MODE and settings.SC_BOOT_MODE.lower().startswith("debug"):
+
         logger.setLevel(logging.DEBUG)
+    logger.info("Setting up worker...")
     logger.info("Settings: %s", pformat(settings.dict()))
+    log.debug("We are in THREAD %s", threading.current_thread().ident)
+
     print_banner()
+
+    GracefulKiller(worker)
+
+
+async def dask_teardown(worker: distributed.Worker) -> None:
+    logger.warning("Tearing down worker!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 
 async def _run_computational_sidecar_async(
@@ -47,6 +80,7 @@ async def _run_computational_sidecar_async(
         "run_computational_sidecar %s",
         f"{docker_auth=}, {service_key=}, {service_version=}, {input_data=}, {output_data_keys=}, {command=}",
     )
+    log.debug("We are in THREAD %s", threading.current_thread().ident)
     current_task = asyncio.current_task()
     assert current_task  # nosec
     async with monitor_task_abortion(
@@ -77,6 +111,20 @@ def run_computational_sidecar(
     output_data_keys: TaskOutputDataSchema,
     command: List[str],
 ) -> TaskOutputData:
+    task = asyncio.get_event_loop().create_task(
+        _run_computational_sidecar_async(
+            docker_auth,
+            service_key,
+            service_version,
+            input_data,
+            output_data_keys,
+            command,
+        ),
+        name=f"run_computational_sidecar_{uuid4()}",
+    )
+    # TODO: this could be used for constraining task time
+    result = asyncio.get_event_loop().run_until_complete(task)
+    return result
     return asyncio.get_event_loop().run_until_complete(
         _run_computational_sidecar_async(
             docker_auth,
