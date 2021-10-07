@@ -45,33 +45,6 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def mock_service_envs(
-    mock_env_devel_environment: Dict[str, Optional[str]],
-    monkeypatch: MonkeyPatch,
-    mocker: MockerFixture,
-    tmp_path_factory: TempPathFactory,
-) -> None:
-
-    # Variables directly define inside Dockerfile
-    monkeypatch.setenv("SC_BOOT_MODE", "debug-ptvsd")
-
-    monkeypatch.setenv("SWARM_STACK_NAME", "simcore")
-    monkeypatch.setenv("SIDECAR_LOGLEVEL", "DEBUG")
-    monkeypatch.setenv("SIDECAR_HOST_HOSTNAME_PATH", "/home/scu/hostname")
-    monkeypatch.setenv(
-        "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME", "simcore_computational_shared_data"
-    )
-
-    shared_data_folder = tmp_path_factory.mktemp("pytest_comp_shared_data")
-    assert shared_data_folder.exists()
-    monkeypatch.setenv("SIDECAR_COMP_SERVICES_SHARED_FOLDER", f"{shared_data_folder}")
-    mocker.patch(
-        "simcore_service_dask_sidecar.computational_sidecar.core.get_computational_shared_data_mount_point",
-        return_value=shared_data_folder,
-    )
-
-
-@pytest.fixture
 def job_id() -> str:
     return "some_incredible_string"
 
@@ -299,9 +272,7 @@ def test_run_computational_sidecar_real_fct(
         pytest.lazy_fixture("ubuntu_task"),
     ],
 )
-def test_run_computational_sidecar_dask(
-    mock_service_envs: None, dask_client: Client, task: ServiceExampleParam
-):
+def test_run_computational_sidecar_dask(dask_client: Client, task: ServiceExampleParam):
     future = dask_client.submit(
         run_computational_sidecar,
         task.docker_basic_auth,

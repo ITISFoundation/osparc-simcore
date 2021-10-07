@@ -8,7 +8,7 @@ import sys
 import time
 from pathlib import Path
 from pprint import pformat
-from typing import Iterable, List
+from typing import Dict, Iterable, List, Optional
 
 import dask
 import distributed
@@ -16,10 +16,12 @@ import fsspec
 import pytest
 import requests
 import simcore_service_dask_sidecar
+from _pytest.monkeypatch import MonkeyPatch
 from _pytest.tmpdir import TempPathFactory
 from aiohttp.test_utils import loop_context
 from faker import Faker
 from pytest_localftpserver.servers import ProcessFTPServer
+from pytest_mock.plugin import MockerFixture
 from yarl import URL
 
 pytest_plugins = [
@@ -46,11 +48,42 @@ def installed_package_dir() -> Path:
     return dirpath
 
 
+@pytest.fixture()
+def mock_service_envs(
+    mock_env_devel_environment: Dict[str, Optional[str]],
+    monkeypatch: MonkeyPatch,
+    mocker: MockerFixture,
+    tmp_path_factory: TempPathFactory,
+) -> None:
+
+    # Variables directly define inside Dockerfile
+    monkeypatch.setenv("SC_BOOT_MODE", "debug-ptvsd")
+
+    monkeypatch.setenv("SWARM_STACK_NAME", "simcore")
+    monkeypatch.setenv("SIDECAR_LOGLEVEL", "DEBUG")
+    monkeypatch.setenv("SIDECAR_HOST_HOSTNAME_PATH", "/home/scu/hostname")
+    monkeypatch.setenv(
+        "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME", "simcore_computational_shared_data"
+    )
+
+    shared_data_folder = tmp_path_factory.mktemp("pytest_comp_shared_data")
+    assert shared_data_folder.exists()
+    monkeypatch.setenv("SIDECAR_COMP_SERVICES_SHARED_FOLDER", f"{shared_data_folder}")
+    mocker.patch(
+        "simcore_service_dask_sidecar.computational_sidecar.core.get_computational_shared_data_mount_point",
+        return_value=shared_data_folder,
+    )
+
+
 @pytest.fixture
-def dask_client() -> distributed.Client:
+def dask_client(mock_service_envs: None) -> distributed.Client:
     print(pformat(dask.config.get("distributed")))
     with distributed.LocalCluster(
-        **{"resources": {"CPU": 10, "GPU": 10, "MPI": 1}}
+        worker_class=distributed.Worker,
+        **{
+            "resources": {"CPU": 10, "GPU": 10, "MPI": 1},
+            "preload": "simcore_service_dask_sidecar.tasks",
+        },
     ) as cluster:
         with distributed.Client(cluster) as client:
             yield client
