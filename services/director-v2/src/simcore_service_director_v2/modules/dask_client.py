@@ -11,6 +11,7 @@ import dask.distributed
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.events import (
+    TaskCancelEvent,
     TaskLogEvent,
     TaskProgressEvent,
     TaskStateEvent,
@@ -149,6 +150,7 @@ class DaskClient:
         default_factory=dict
     )
     _subscribed_tasks: List[asyncio.Task] = field(default_factory=list)
+    _cancellation_dask_pub: distributed.Pub = field(init=False)
 
     @classmethod
     async def create(
@@ -172,6 +174,9 @@ class DaskClient:
                 "Dask client is not available. Please check the configuration."
             )
         return app.state.dask_client
+
+    def __post_init__(self) -> None:
+        self._cancellation_dask_pub = distributed.Pub(TaskCancelEvent.topic_name())
 
     async def delete(self) -> None:
         for task in self._subscribed_tasks:
@@ -341,13 +346,16 @@ class DaskClient:
                 _check_valid_connection_to_scheduler(self.client)
                 # if the connection is good, then the problem is different, so we re-raise
                 raise
-            return list_of_node_id_to_job_id
+        return list_of_node_id_to_job_id
 
     async def abort_computation_tasks(self, job_ids: List[str]) -> None:
         logger.debug("cancelling tasks with job_ids: [%s]", job_ids)
-        for task_id in job_ids:
-            task_future = self._taskid_to_future_map.get(task_id)
+        for job_id in job_ids:
+            task_future = self._taskid_to_future_map.get(job_id)
             if task_future:
+                await self._cancellation_dask_pub.put(  # type: ignore
+                    TaskCancelEvent(job_id=job_id).json()
+                )
                 await task_future.cancel()
                 logger.debug("Dask task %s cancelled", task_future.key)
 
