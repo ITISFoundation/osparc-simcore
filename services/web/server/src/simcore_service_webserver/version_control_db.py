@@ -68,7 +68,14 @@ def compute_workbench_checksum(workbench: Dict[str, Any]) -> SHA1Str:
                 exclude_unset=True,
                 exclude_defaults=True,
                 exclude_none=True,
-                include={"key", "version", "inputs", "outputs", "output_nodes"},
+                include={
+                    "key",
+                    "version",
+                    "inputs",
+                    "input_nodes",
+                    "outputs",
+                    "output_nodes",
+                },
             )
             for k, node in normalized.items()
         }
