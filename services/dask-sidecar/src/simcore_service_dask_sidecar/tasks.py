@@ -29,7 +29,7 @@ def dask_setup(_worker: distributed.Worker) -> None:
     """This is a special function recognized by the dask worker when starting with flag --preload"""
     settings = Settings.create_from_envs()
     # set up logging
-    if settings.SC_BOOT_MODE.lower().startswith("debug"):
+    if settings.SC_BOOT_MODE and settings.SC_BOOT_MODE.lower().startswith("debug"):
         logger.setLevel(logging.DEBUG)
     logger.info("Settings: %s", pformat(settings.dict()))
     print_banner()
@@ -47,8 +47,10 @@ async def _run_computational_sidecar_async(
         "run_computational_sidecar %s",
         f"{docker_auth=}, {service_key=}, {service_version=}, {input_data=}, {output_data_keys=}, {command=}",
     )
+    current_task = asyncio.current_task()
+    assert current_task  # nosec
     async with monitor_task_abortion(
-        task_name=asyncio.current_task().get_name(),
+        task_name=current_task.get_name(),
     ):
         _retry = 0
         _max_retries = 1
