@@ -59,7 +59,7 @@ def get_current_task_resources() -> Dict[str, Any]:
     return {}
 
 
-_TASK_ABORTION_INTERVAL_CHECK_S: int = 5
+_TASK_ABORTION_INTERVAL_CHECK_S: int = 2
 
 
 @asynccontextmanager
