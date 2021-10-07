@@ -81,7 +81,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
           const part = this.getChildControl("buttons");
           control = new qx.ui.form.Button().set({
             backgroundColor: "transparent",
-            toolTipText: this.tr("openNode"),
+            toolTipText: this.tr("Open"),
             icon: "@FontAwesome5Solid/edit/9"
           });
           control.addListener("execute", () => this.fireDataEvent("openNode", this.getNodeId()));
@@ -92,7 +92,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
           const part = this.getChildControl("buttons");
           control = new qx.ui.form.Button().set({
             backgroundColor: "transparent",
-            toolTipText: this.tr("renameNode"),
+            toolTipText: this.tr("Rename"),
             icon: "@FontAwesome5Solid/i-cursor/9"
           });
           control.addListener("execute", () => this.fireDataEvent("renameNode", this.getNodeId()));
@@ -103,7 +103,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
           const part = this.getChildControl("buttons");
           control = new qx.ui.form.Button().set({
             backgroundColor: "transparent",
-            toolTipText: this.tr("deleteNode"),
+            toolTipText: this.tr("Delete"),
             icon: "@FontAwesome5Solid/trash/9"
           });
           control.addListener("execute", () => this.fireDataEvent("deleteNode", this.getNodeId()));
