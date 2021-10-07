@@ -145,6 +145,7 @@ def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
 class DaskClient:
     app: FastAPI
     client: dask.distributed.Client
+    cluster: dask_gateway.GatewayCluster
     settings: DaskSchedulerSettings
 
     _taskid_to_future_map: Dict[str, dask.distributed.Future] = field(
@@ -162,10 +163,12 @@ class DaskClient:
             address="http://172.16.8.64:8000", auth=auth, asynchronous=True
         )
         cluster = await gateway.new_cluster()
+        await cluster.scale(2)
 
         app.state.dask_client = cls(
             app=app,
             client=await cluster.get_client(),
+            cluster=cluster,
             settings=settings,
         )
         return cls.instance(app)
@@ -185,6 +188,7 @@ class DaskClient:
         for task in self._subscribed_tasks:
             task.cancel()
 
+        await self.cluster.scale(0)
         await self.app.state.dask_client.client.close()
 
     @retry(
