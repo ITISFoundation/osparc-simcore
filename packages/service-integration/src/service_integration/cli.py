@@ -1,4 +1,5 @@
 # Allows entrypoint via python -m as well
+# pylint: disable=no-name-in-module
 
 import click
 
