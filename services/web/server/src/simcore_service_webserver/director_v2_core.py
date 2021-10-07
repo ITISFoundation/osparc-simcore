@@ -72,9 +72,9 @@ async def _request_director_v2(
             ):
                 raise DirectorServiceError(response.status, reason=str(payload))
 
-            assert expected_status == HTTPNoContent or isinstance(  # nosec
-                payload, dict
-            )  # nosec
+            # assert expected_status == HTTPNoContent or isinstance(  # nosec
+            #     payload, dict
+            # )  # nosec
             return payload
 
     # TODO: enrich with https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
