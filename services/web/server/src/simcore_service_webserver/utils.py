@@ -163,7 +163,7 @@ def orjson_dumps(v, *, default=None) -> str:
 
 def compute_sha1(data: Any) -> SHA1Str:
     # SEE options in https://github.com/ijl/orjson#option
-    raw_hash = hashlib.sha1(
+    raw_hash = hashlib.sha1(  # nosec
         orjson.dumps(data, option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS)
     )
     return raw_hash.hexdigest()
