@@ -3,15 +3,20 @@
 # pylint: disable=unused-variable
 # pylint: disable=no-member
 
+import asyncio
 from datetime import datetime
 from typing import Any, Dict, List, Tuple
+from unittest.mock import call
 
+import aiodocker
 import pytest
+from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.boot_mode import BootMode
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     DEFAULT_TIME_STAMP,
     LogType,
     create_container_config,
+    managed_container,
     parse_line,
     to_datetime,
 )
@@ -193,3 +198,62 @@ def test_to_datetime(docker_time: str, expected_datetime: datetime):
 )
 async def test_parse_line(log_line: str, expected_parsing: Tuple[LogType, str, str]):
     assert await parse_line(log_line) == expected_parsing
+
+
+@pytest.mark.parametrize(
+    "exception_type",
+    [
+        KeyError("testkey"),
+        asyncio.CancelledError("testcancel"),
+        aiodocker.DockerError(status=404, data={"message": None}),
+    ],
+)
+async def test_managed_container_always_removes_container(
+    docker_registry: str,
+    service_key: str,
+    service_version: str,
+    command: List[str],
+    comp_volume_mount_point: str,
+    mocker: MockerFixture,
+    exception_type: Exception,
+):
+    container_config = await create_container_config(
+        docker_registry,
+        service_key,
+        service_version,
+        command,
+        comp_volume_mount_point,
+        boot_mode=BootMode.CPU,
+        task_max_resources={},
+    )
+
+    mocked_aiodocker = mocker.patch("aiodocker.Docker", autospec=True)
+    async with aiodocker.Docker() as docker_client:
+        with pytest.raises(type(exception_type)):
+            async with managed_container(
+                docker_client=docker_client, config=container_config
+            ) as container:
+                mocked_aiodocker.assert_has_calls(
+                    calls=[
+                        call(),
+                        call().__aenter__(),
+                        call()
+                        .__aenter__()
+                        .containers.create(
+                            container_config.dict(by_alias=True), name=None
+                        ),
+                    ]
+                )
+                mocked_aiodocker.reset_mock()
+                assert container is not None
+
+                raise exception_type
+        # check the container was deleted
+        mocked_aiodocker.assert_has_calls(
+            calls=[
+                call()
+                .__aenter__()
+                .containers.create()
+                .delete(remove=True, v=True, force=True)
+            ]
+        )

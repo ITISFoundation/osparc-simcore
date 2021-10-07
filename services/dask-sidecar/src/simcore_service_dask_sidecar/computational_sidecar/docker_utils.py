@@ -73,6 +73,9 @@ async def managed_container(
             config.dict(by_alias=True), name=name
         )
         yield container
+    except asyncio.CancelledError:
+        logger.warning("Cancelling container...")
+        raise
     finally:
         try:
             if container:
@@ -80,12 +83,9 @@ async def managed_container(
             logger.info("Completed run of %s", config.image)
         except DockerError:
             logger.exception(
-                "Unknown error with docker client when running container %s",
-                name,
+                "Unknown error with docker client when removing container '%s'",
+                container or name,
             )
-            raise
-        except asyncio.CancelledError:
-            logger.warning("Cancelling container...")
             raise
 
 

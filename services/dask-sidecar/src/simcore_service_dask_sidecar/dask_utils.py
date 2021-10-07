@@ -1,10 +1,10 @@
 import asyncio
 import logging
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from typing import Any, AsyncIterator, Awaitable, Dict, Optional, cast
 
-from dask_task_models_library.container_tasks.events import TaskEvent
-from distributed import Pub
+import distributed
+from dask_task_models_library.container_tasks.events import TaskCancelEvent, TaskEvent
 from distributed.worker import TaskState, get_worker
 
 from .boot_mode import BootMode
@@ -22,15 +22,24 @@ def create_dask_worker_logger(name: str) -> logging.Logger:
 logger = create_dask_worker_logger(__name__)
 
 
-def publish_event(dask_pub: Pub, event: TaskEvent) -> None:
+def publish_event(dask_pub: distributed.Pub, event: TaskEvent) -> None:
     dask_pub.put(event.json())
 
 
-def is_current_task_aborted() -> bool:
+def is_current_task_aborted(sub: distributed.Sub) -> bool:
     task: Optional[TaskState] = _get_current_task_state()
     logger.debug("found following TaskState: %s", task)
-    # the task was removed from the list of tasks this worker should work on, meaning it is aborted
-    return task is None
+    if task is None:
+        # the task was removed from the list of tasks this worker should work on, meaning it is aborted
+        # NOTE: this does not work in distributed mode, hence we need to use Variables,or PubSub
+        return True
+
+    with suppress(asyncio.TimeoutError):
+        msg = sub.get(timeout="100ms")
+        if msg:
+            cancel_event = TaskCancelEvent.parse_raw(msg)  # type: ignore
+            return cancel_event.job_id == task.key
+    return False
 
 
 def get_current_task_boot_mode() -> BootMode:
@@ -50,6 +59,9 @@ def get_current_task_resources() -> Dict[str, Any]:
     return {}
 
 
+_TASK_ABORTION_INTERVAL_CHECK_S: int = 5
+
+
 @asynccontextmanager
 async def monitor_task_abortion(task_name: str) -> AsyncIterator[Awaitable[None]]:
     async def cancel_task(task_name: str) -> None:
@@ -66,11 +78,12 @@ async def monitor_task_abortion(task_name: str) -> AsyncIterator[Awaitable[None]
             logger.debug(
                 "starting task to check for task cancellation for task '%s'", task_name
             )
-            while await asyncio.sleep(5, result=True):
+            sub = distributed.Sub(TaskCancelEvent.topic_name())
+            while await asyncio.sleep(_TASK_ABORTION_INTERVAL_CHECK_S, result=True):
                 logger.debug("checking if task should be cancelled")
-                if is_current_task_aborted():
-                    logger.info("Task was aborted. Cancelling fct [%s]...", task_name)
-                    asyncio.get_event_loop().call_soon(cancel_task, task_name)
+                if is_current_task_aborted(sub):
+                    logger.debug("Task was aborted. Cancelling fct [%s]...", task_name)
+                    await cancel_task(task_name)
         except asyncio.CancelledError:
             pass
 
@@ -81,6 +94,12 @@ async def monitor_task_abortion(task_name: str) -> AsyncIterator[Awaitable[None]
         )
 
         yield periodically_checking_task
+    except asyncio.CancelledError:
+        logger.warning("task '%s' was stopped through cancellation", task_name)
     finally:
         if periodically_checking_task:
+            logger.debug(
+                "cancelling task to check for task cancellation for task '%s'",
+                task_name,
+            )
             periodically_checking_task.cancel()

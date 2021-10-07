@@ -4,16 +4,23 @@
 # pylint: disable=no-member
 
 
+import asyncio
+import concurrent.futures
 import time
 from typing import Any, Dict
 
 import distributed
 import pytest
-from dask_task_models_library.container_tasks.events import TaskLogEvent
+from dask_task_models_library.container_tasks.events import (
+    TaskCancelEvent,
+    TaskLogEvent,
+)
 from simcore_service_dask_sidecar.boot_mode import BootMode
 from simcore_service_dask_sidecar.dask_utils import (
     get_current_task_boot_mode,
+    get_current_task_resources,
     is_current_task_aborted,
+    monitor_task_abortion,
     publish_event,
 )
 
@@ -26,24 +33,65 @@ def test_publish_event(dask_client: distributed.Client):
     publish_event(dask_pub=dask_pub, event=event_to_publish)
     message = dask_sub.get(timeout=5)
     assert message is not None
-    received_task_log_event = TaskLogEvent.parse_raw(message)
+    received_task_log_event = TaskLogEvent.parse_raw(message)  # type: ignore
     assert received_task_log_event == event_to_publish
 
 
-def test_task_is_aborted(dask_client: distributed.Client):
-    def some_long_running_task() -> int:
-        assert is_current_task_aborted() == False
-        for i in range(300):
-            time.sleep(1)
-            if is_current_task_aborted():
-                break
-        assert is_current_task_aborted()
-        return 12
+def _some_long_running_task() -> int:
+    dask_sub = distributed.Sub(TaskCancelEvent.topic_name())
+    assert is_current_task_aborted(dask_sub) == False
+    for i in range(300):
+        print("running iteration", i)
+        time.sleep(0.1)
+        if is_current_task_aborted(dask_sub):
+            print("task is aborted")
+            return -1
+    assert is_current_task_aborted(dask_sub)
+    return 12
 
-    future = dask_client.submit(some_long_running_task)
+
+def test_task_is_aborted(dask_client: distributed.Client):
+    # NOTE: this works because the cluster is in the same machine
+    future = dask_client.submit(_some_long_running_task)
     time.sleep(1)
     future.cancel()
+    time.sleep(1)
     assert future.cancelled()
+    with pytest.raises(concurrent.futures.CancelledError):
+        future.result(timeout=5)
+
+
+def test_task_is_aborted_using_pub(dask_client: distributed.Client):
+    job_id = "myfake_job_id"
+    future = dask_client.submit(_some_long_running_task, key=job_id)
+    time.sleep(1)
+    dask_pub = distributed.Pub(TaskCancelEvent.topic_name())
+    dask_pub.put(TaskCancelEvent(job_id=job_id).json())
+
+    result = future.result(timeout=2)
+    assert result == -1
+
+
+def _some_long_running_task_with_monitoring() -> int:
+    async def _long_running_task_async() -> int:
+        async with monitor_task_abortion(task_name=asyncio.current_task().get_name()):
+            for i in range(300):
+                print("running iteration", i)
+                await asyncio.sleep(0.5)
+            return 12
+
+    return asyncio.get_event_loop().run_until_complete(_long_running_task_async())
+
+
+def test_monitor_task_abortion(dask_client: distributed.Client):
+    job_id = "myfake_job_id"
+    future = dask_client.submit(_some_long_running_task_with_monitoring, key=job_id)
+    time.sleep(1)
+    # trigger cancellation
+    dask_pub = distributed.Pub(TaskCancelEvent.topic_name())
+    dask_pub.put(TaskCancelEvent(job_id=job_id).json())
+    result = future.result(timeout=10)
+    assert result is None
 
 
 @pytest.mark.parametrize(
@@ -62,3 +110,20 @@ def test_task_boot_mode(
     future = dask_client.submit(get_current_task_boot_mode, resources=resources)
     received_boot_mode = future.result(timeout=1)
     assert received_boot_mode == expected_boot_mode
+
+
+@pytest.mark.parametrize(
+    "resources",
+    [
+        ({"CPU": 2}),
+        ({"MPI": 1.0}),
+        ({"GPU": 5.0}),
+    ],
+)
+def test_task_resources(
+    dask_client: distributed.Client,
+    resources: Dict[str, Any],
+):
+    future = dask_client.submit(get_current_task_resources, resources=resources)
+    received_resources = future.result(timeout=1)
+    assert received_resources == resources
