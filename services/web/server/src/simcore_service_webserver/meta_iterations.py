@@ -20,7 +20,7 @@ from .meta_funcs import SERVICE_CATALOG, SERVICE_TO_CALLABLES
 from .projects.projects_api import get_project_for_user
 from .utils import compute_sha1
 from .version_control_db import VersionControlRepositoryInternalAPI
-from .version_control_models import CommitID
+from .version_control_models import CommitID, ProjectDict
 
 log = logging.getLogger(__file__)
 
@@ -146,7 +146,7 @@ async def get_or_create_runnable_projects(
     assert vc_repo.user_id  # nosec
 
     # retrieves project
-    project = await get_project_for_user(
+    project: ProjectDict = await get_project_for_user(
         request.app,
         project_uuid=str(project_uuid),
         user_id=vc_repo.user_id,
@@ -154,6 +154,7 @@ async def get_or_create_runnable_projects(
         include_templates=False,
     )
     assert project["uuid"] == str(project_uuid)  # nosec
+
     # FIXME: same project but different views
     #  assert project == await vc_repo.get_project(project_uuid)
 
@@ -212,7 +213,9 @@ async def get_or_create_runnable_projects(
             parameters,
         )
 
-        project["workbench"].update(updated_nodes)
+        project["workbench"].update(
+            {nid: n.dict(by_alias=True) for nid, n in updated_nodes.items()}
+        )
 
         # tag to identify this iteration
         branch_name = tag_name = compose_iteration_tag_name(
