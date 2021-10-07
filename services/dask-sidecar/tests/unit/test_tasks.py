@@ -12,14 +12,12 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, List, Optional
+from typing import Dict, List
 from uuid import uuid4
 
 import fsspec
 import pytest
 from _pytest.logging import LogCaptureFixture
-from _pytest.monkeypatch import MonkeyPatch
-from _pytest.tmpdir import TempPathFactory
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
@@ -213,7 +211,7 @@ def ubuntu_task(ftp_server: List[URL]) -> ServiceExampleParam:
 @pytest.mark.parametrize(
     "task",
     [
-        pytest.lazy_fixture("ubuntu_task"),
+        pytest.lazy_fixture("ubuntu_task"),  # type: ignore
     ],
 )
 def test_run_computational_sidecar_real_fct(
@@ -233,7 +231,7 @@ def test_run_computational_sidecar_real_fct(
         task.command,
     )
     for event in [TaskProgressEvent, TaskStateEvent, TaskLogEvent]:
-        dask_subsystem_mock["dask_event_publish"].assert_any_call(
+        dask_subsystem_mock["dask_event_publish"].assert_any_call(  # type: ignore
             name=event.topic_name()
         )
 
@@ -269,7 +267,7 @@ def test_run_computational_sidecar_real_fct(
 @pytest.mark.parametrize(
     "task",
     [
-        pytest.lazy_fixture("ubuntu_task"),
+        pytest.lazy_fixture("ubuntu_task"),  # type: ignore
     ],
 )
 def test_run_computational_sidecar_dask(dask_client: Client, task: ServiceExampleParam):
@@ -289,7 +287,7 @@ def test_run_computational_sidecar_dask(dask_client: Client, task: ServiceExampl
     output_data = future.result()
 
     # check that the task produces expected logs
-    worker_logs = [log for _, log in dask_client.get_worker_logs()[worker_name]]
+    worker_logs = [log for _, log in dask_client.get_worker_logs()[worker_name]]  # type: ignore
     for log in task.expected_logs:
         r = re.compile(
             rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: (.+) ({log})"
