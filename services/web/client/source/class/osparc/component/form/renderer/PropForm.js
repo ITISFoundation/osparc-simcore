@@ -23,11 +23,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     if (study) {
       this.setStudy(study);
     }
-
-    this.base(arguments, form, node);
-
     this.__ctrlLinkMap = {};
     this.__ctrlParamMap = {};
+    this.__fieldOptsBtnMap = {};
+
+    this.base(arguments, form, node);
 
     this.__addLinkCtrls();
     this.__addParamCtrls();
@@ -92,23 +92,28 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __ctrlLinkMap: null,
     __ctrlParamMap: null,
+    __fieldOptsBtnMap: null,
 
     __createFieldOpts: function(field) {
       const optionsMenu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
-      const menuBtn = new qx.ui.form.MenuButton().set({
+      const fieldOptsBtn = new qx.ui.form.MenuButton().set({
         menu: optionsMenu,
         icon: "@FontAwesome5Solid/ellipsis-v/14",
         focusable: false,
         allowGrowX: false,
         alignX: "center"
       });
-      if (this.getStudy()) {
-        this.__populateFieldOptionsMenu(optionsMenu, field);
-        this.getStudy().getWorkbench().addListener("pipelineChanged", () => this.__populateFieldOptionsMenu(optionsMenu, field), this);
-      }
-      return menuBtn;
+      this.__fieldOptsBtnMap[field.key] = fieldOptsBtn;
+      // populaten the button/menu when the it appears
+      fieldOptsBtn.addListenerOnce("appear", () => {
+        if (this.getStudy()) {
+          this.__populateFieldOptionsMenu(optionsMenu, field);
+          this.getStudy().getWorkbench().addListener("pipelineChanged", () => this.__populateFieldOptionsMenu(optionsMenu, field), this);
+        }
+      });
+      return fieldOptsBtn;
     },
 
     __populateFieldOptionsMenu: function(optionsMenu, field) {
@@ -605,6 +610,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           column: this.self().gridPos.ctrlField
         });
 
+        if (portId in this.__fieldOptsBtnMap) {
+          this.__fieldOptsBtnMap[portId].setEnabled(false);
+        }
+
         const linkFieldModified = {
           portId,
           fromNodeId,
@@ -621,6 +630,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         const fieldOpts = this._getFieldOptsChild(portId);
         if (fieldOpts) {
           fieldOpts.child.setEnabled(true);
+        }
+
+        if (portId in this.__fieldOptsBtnMap) {
+          this.__fieldOptsBtnMap[portId].setEnabled(true);
         }
 
         const linkFieldModified = {
