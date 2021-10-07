@@ -171,37 +171,14 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         const node = study.getWorkbench().getNode(inputNodeId);
 
         const inputNodePortsMenu = new qx.ui.menu.Menu();
-        if (this.getStudy()) {
-          this.__populateInputNodePortsMenu(inputNodeId, targetPortId, inputNodePortsMenu);
-        }
         const existingParamBtn = new qx.ui.menu.Button(null, null, null, inputNodePortsMenu);
         node.bind("label", existingParamBtn, "label");
+        if (this.getStudy()) {
+          this.__populateInputNodePortsMenu(inputNodeId, targetPortId, inputNodePortsMenu, existingParamBtn);
+        }
         return existingParamBtn;
       }
       return null;
-    },
-
-    __populateInputNodePortsMenu: function(inputNodeId, targetPortId, inputNodePortsMenu) {
-      inputNodePortsMenu.removeAll();
-
-      const study = this.getStudy();
-      const inputNode = study.getWorkbench().getNode(inputNodeId);
-      const thisNode = this.getNode();
-      if (study && inputNode && thisNode) {
-        for (const outputKey in inputNode.getOutputs()) {
-          osparc.utils.Ports.arePortsCompatible(inputNode, outputKey, thisNode, targetPortId)
-            .then(compatible => {
-              if (compatible) {
-                const paramButton = new qx.ui.menu.Button(inputNode.getOutput(outputKey).label);
-                paramButton.addListener("execute", () => {
-                  thisNode.addInputNode(inputNodeId);
-                  thisNode.addPortLink(targetPortId, inputNodeId, outputKey);
-                }, this);
-                inputNodePortsMenu.add(paramButton);
-              }
-            });
-        }
-      }
     },
 
     __getSelectFileButton: function(portId) {
@@ -218,31 +195,57 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __getParamsMenuButton: function(portId) {
       const existingParamMenu = new qx.ui.menu.Menu();
-      if (this.getStudy()) {
-        this.__populateExistingParamsMenu(portId, existingParamMenu);
-      }
-
       const existingParamBtn = new qx.ui.menu.Button(this.tr("Set existing parameter"), null, null, existingParamMenu);
+      if (this.getStudy()) {
+        this.__populateExistingParamsMenu(portId, existingParamMenu, existingParamBtn);
+      }
       return existingParamBtn;
     },
 
-    __populateExistingParamsMenu: function(targetPortId, existingParamMenu) {
-      existingParamMenu.removeAll();
+    __populateInputNodePortsMenu: function(inputNodeId, targetPortId, menu, menuBtn) {
+      menuBtn.exclude();
+      menu.removeAll();
+
+      const inputNode = this.getStudy().getWorkbench().getNode(inputNodeId);
+      if (inputNode) {
+        for (const outputKey in inputNode.getOutputs()) {
+          osparc.utils.Ports.arePortsCompatible(inputNode, outputKey, this.getNode(), targetPortId)
+            .then(compatible => {
+              if (compatible) {
+                const paramButton = new qx.ui.menu.Button(inputNode.getOutput(outputKey).label);
+                paramButton.addListener("execute", () => {
+                  this.getNode().addInputNode(inputNodeId);
+                  this.getNode().addPortLink(targetPortId, inputNodeId, outputKey);
+                }, this);
+                menu.add(paramButton);
+                menuBtn.show();
+              }
+            });
+        }
+      }
+    },
+
+    __populateExistingParamsMenu: function(targetPortId, menu, menuBtn) {
+      menuBtn.exclude();
+      menu.removeAll();
 
       const params = this.getStudy().getParameters();
       params.forEach(paramNode => {
-        osparc.utils.Ports.arePortsCompatible(paramNode, "out_1", this.getNode(), targetPortId)
+        const inputNodeId = paramNode.getNodeId();
+        const outputKey = "out_1";
+        osparc.utils.Ports.arePortsCompatible(paramNode, outputKey, this.getNode(), targetPortId)
           .then(compatible => {
             if (compatible) {
               const paramButton = new qx.ui.menu.Button();
-              paramButton.nodeId = paramNode.getNodeId();
+              paramButton.nodeId = inputNodeId;
               paramNode.bind("label", paramButton, "label");
               paramButton.addListener("execute", () => {
-                this.getNode().addInputNode(paramNode.getNodeId());
-                this.getNode().addPortLink(targetPortId, paramNode.getNodeId(), "out_1");
+                this.getNode().addInputNode(inputNodeId);
+                this.getNode().addPortLink(targetPortId, inputNodeId, outputKey);
               }, this);
-              if (!existingParamMenu.getChildren().some(child => child.nodeId === paramButton.nodeId)) {
-                existingParamMenu.add(paramButton);
+              if (!menu.getChildren().some(child => child.nodeId === paramButton.nodeId)) {
+                menu.add(paramButton);
+                menuBtn.show();
               }
             }
           });
