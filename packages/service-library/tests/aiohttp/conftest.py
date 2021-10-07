@@ -4,7 +4,7 @@
 from pathlib import Path
 
 import pytest
-from servicelib.aiohttp.openapi import create_openapi_specs
+from servicelib.aiohttp.openapi import OpenApiSpec, create_openapi_specs
 
 
 @pytest.fixture
@@ -15,6 +15,6 @@ def petstore_spec_file(here) -> Path:
 
 
 @pytest.fixture
-async def petstore_specs(loop, petstore_spec_file) -> Dict:
+async def petstore_specs(loop, petstore_spec_file) -> OpenApiSpec:
     specs = await create_openapi_specs(petstore_spec_file)
     return specs
