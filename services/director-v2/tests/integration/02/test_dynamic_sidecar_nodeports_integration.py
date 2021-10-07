@@ -641,9 +641,10 @@ async def _print_dynamic_sidecars_containers_logs_and_get_containers(
             containers_inspect = containers_inspect_response.json()
 
             # pylint: disable=unnecessary-comprehension
-            containers_names = [x for x in containers_inspect]
-            print("Containers:", containers_names)
-            for container_name in containers_names:
+            service_containers_names = [x for x in containers_inspect]
+            print("Containers:", service_containers_names)
+            for container_name in service_containers_names:
+                containers_names.append(container_name)
                 print(f"Fetching logs for {container_name}")
                 container_logs_response = await client.get(
                     f"/containers/{container_name}/logs"
@@ -651,6 +652,8 @@ async def _print_dynamic_sidecars_containers_logs_and_get_containers(
                 assert container_logs_response.status_code == status.HTTP_200_OK
                 logs = "".join(container_logs_response.json())
                 print(f"Container {container_name} logs:\n{logs}")
+
+    assert len(containers_names) == 3
     return containers_names
 
 
