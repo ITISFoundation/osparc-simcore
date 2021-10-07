@@ -29,6 +29,11 @@ log = create_dask_worker_logger(__name__)
 
 
 class GracefulKiller:
+    """this ensure the dask-worker is gracefully stopped.
+    the current implementation of distributed.dask_workers does not call close() on the
+    worker as it probably should. Note: this is still a work in progress though.
+    """
+
     kill_now = False
     worker = None
 
@@ -37,9 +42,8 @@ class GracefulKiller:
         signal.signal(signal.SIGTERM, self.exit_gracefully)
         self.worker = worker
 
-    def exit_gracefully(self, *args):
+    def exit_gracefully(self, *_args):
         tasks = asyncio.all_tasks()
-        log.debug("We are in THREAD %s", threading.current_thread().ident)
         logger.warning(
             "Application shutdown detected!\n %s",
             pformat([t.get_name() for t in tasks]),
@@ -57,14 +61,14 @@ async def dask_setup(worker: distributed.Worker) -> None:
         logger.setLevel(logging.DEBUG)
     logger.info("Setting up worker...")
     logger.info("Settings: %s", pformat(settings.dict()))
-    log.debug("We are in THREAD %s", threading.current_thread().ident)
 
     print_banner()
 
-    GracefulKiller(worker)
+    if threading.current_thread() is threading.main_thread():
+        GracefulKiller(worker)
 
 
-async def dask_teardown(worker: distributed.Worker) -> None:
+async def dask_teardown(_worker: distributed.Worker) -> None:
     logger.warning("Tearing down worker!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 
@@ -80,7 +84,6 @@ async def _run_computational_sidecar_async(
         "run_computational_sidecar %s",
         f"{docker_auth=}, {service_key=}, {service_version=}, {input_data=}, {output_data_keys=}, {command=}",
     )
-    log.debug("We are in THREAD %s", threading.current_thread().ident)
     current_task = asyncio.current_task()
     assert current_task  # nosec
     async with monitor_task_abortion(
@@ -125,13 +128,3 @@ def run_computational_sidecar(
     # TODO: this could be used for constraining task time
     result = asyncio.get_event_loop().run_until_complete(task)
     return result
-    return asyncio.get_event_loop().run_until_complete(
-        _run_computational_sidecar_async(
-            docker_auth,
-            service_key,
-            service_version,
-            input_data,
-            output_data_keys,
-            command,
-        )
-    )
