@@ -3,8 +3,8 @@
 
 import click
 
+from .commands import metadata, run_creator, update_compose_labels
 from .meta import __version__
-from .scripts import metadata, run_creator, update_compose_labels
 
 
 @click.group()

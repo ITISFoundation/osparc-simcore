@@ -8,7 +8,7 @@ from typing import Callable, Dict
 
 import pytest
 import yaml
-from service_integration.scripts.metadata import TARGET_VERSION_CHOICES
+from service_integration.commands.metadata import TARGET_VERSION_CHOICES
 
 
 @pytest.fixture
