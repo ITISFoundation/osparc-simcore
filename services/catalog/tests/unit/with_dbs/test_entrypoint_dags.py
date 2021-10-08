@@ -2,13 +2,19 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Any, Dict
+from datetime import datetime
+from random import randint
+from typing import Any, Dict, List
 
 import pytest
+import simcore_service_catalog.api.dependencies.director
 from fastapi import FastAPI
+from models_library.services import ServiceDockerData, ServiceType
 from respx.router import MockRouter
+from simcore_service_catalog.api.routes import services
 from simcore_service_catalog.meta import API_VERSION
 from simcore_service_catalog.models.schemas.meta import Meta
+from simcore_service_catalog.models.schemas.services import ServiceOut
 from starlette.testclient import TestClient
 
 pytest_simcore_core_services_selection = [
@@ -19,7 +25,60 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-@pytest.mark.skip(reason="issue in github CI")
+@pytest.fixture(scope="session")
+def registry_services() -> List[ServiceDockerData]:
+    NUMBER_OF_SERVICES = 5
+    return [
+        ServiceDockerData(
+            key="simcore/services/comp/my_comp_service",
+            version=f"{v}.{randint(0,20)}.{randint(0,20)}",
+            type=ServiceType.COMPUTATIONAL,
+            name=f"my service {v}",
+            description="a sleeping service version {v}",
+            authors=[{"name": "me", "email": "me@myself.com"}],
+            contact="me.myself@you.com",
+            inputs=[],
+            outputs=[],
+        )
+        for v in range(NUMBER_OF_SERVICES)
+    ]
+
+
+@pytest.fixture()
+async def director_mockup(
+    loop, monkeypatch, registry_services: List[ServiceOut], app: FastAPI
+):
+    async def return_list_services(user_id: int) -> List[ServiceOut]:
+        return registry_services
+
+    monkeypatch.setattr(services, "list_services", return_list_services)
+
+    class FakeDirector:
+        @staticmethod
+        async def get(url: str):
+            if url == "/services":
+                return [s.dict(by_alias=True) for s in registry_services]
+            if "/service_extras/" in url:
+                return {
+                    "build_date": f"{datetime.utcnow().isoformat(timespec='seconds')}Z"
+                }
+
+    def fake_director_api(*args, **kwargs):
+        return FakeDirector()
+
+    monkeypatch.setattr(
+        simcore_service_catalog.api.dependencies.director,
+        "get_director_api",
+        fake_director_api,
+    )
+
+    # Check mock
+    from simcore_service_catalog.api.dependencies.director import get_director_api
+
+    assert isinstance(get_director_api(), FakeDirector)
+    yield
+
+
 def test_read_healthcheck(
     director_mockup: MockRouter, app: FastAPI, client: TestClient
 ):
