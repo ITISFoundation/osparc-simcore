@@ -124,13 +124,13 @@ qx.Class.define("osparc.data.model.Workbench", {
       const nodes = this.getNodes(true);
       for (const nodeId in nodes) {
         const node = nodes[nodeId];
-        const inputNode = node.getInputNodes();
-        if (inputNode.length === 0) {
+        const inputNodes = node.getInputNodes();
+        if (inputNodes.length === 0) {
           // first node
           sortedPipeline.splice(0, 0, nodeId);
         } else {
           // insert right after its input node
-          const idx = sortedPipeline.indexOf(inputNode[0]);
+          const idx = sortedPipeline.indexOf(inputNodes[0]);
           sortedPipeline.splice(idx+1, 0, nodeId);
         }
       }
@@ -501,6 +501,11 @@ qx.Class.define("osparc.data.model.Workbench", {
         }
 
         this.fireEvent("pipelineChanged");
+        if (node.isParameter()) {
+          if (this.getStudy()) {
+            this.getStudy().fireEvent("changeParameters");
+          }
+        }
         return true;
       }
       return false;
