@@ -168,7 +168,7 @@ def postgres_db(
     postgres_dsn: Dict[str, str],
     postgres_engine: sa.engine.Engine,
 ) -> Iterator[sa.engine.Engine]:
-    """ An postgres database init with empty tables and an sqlalchemy engine connected to it """
+    """An postgres database init with empty tables and an sqlalchemy engine connected to it"""
 
     # upgrades database from zero
     kwargs = postgres_dsn.copy()
@@ -196,7 +196,7 @@ def postgres_db(
 async def aiopg_engine(
     postgres_db: sa.engine.Engine, loop
 ) -> Iterator[aiopg.sa.engine.Engine]:
-    """ An aiopg engine connected to an initialized database """
+    """An aiopg engine connected to an initialized database"""
     from aiopg.sa import create_engine
 
     engine = await create_engine(str(postgres_db.url))
@@ -236,11 +236,11 @@ def postgres_session(postgres_db: sa.engine.Engine) -> sa.orm.session.Session:
 @tenacity.retry(
     wait=tenacity.wait_fixed(5),
     stop=tenacity.stop_after_attempt(60),
-    before_sleep=tenacity.before_sleep_log(log, logging.INFO),
+    before_sleep=tenacity.before_sleep_log(log, logging.WARNING),
     reraise=True,
 )
 def wait_till_postgres_is_responsive(url: str) -> None:
-    print("Trying", url, "...")
     engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
     conn = engine.connect()
     conn.close()
+    log.info("Connected with %s", url)
