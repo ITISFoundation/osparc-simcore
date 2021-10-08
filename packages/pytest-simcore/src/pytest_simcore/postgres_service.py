@@ -12,6 +12,9 @@ import sqlalchemy as sa
 import tenacity
 from simcore_postgres_database.models.base import metadata
 from sqlalchemy.orm import sessionmaker
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 from .helpers.utils_docker import get_service_published_port
 
@@ -234,9 +237,9 @@ def postgres_session(postgres_db: sa.engine.Engine) -> sa.orm.session.Session:
 
 
 @tenacity.retry(
-    wait=tenacity.wait_fixed(5),
-    stop=tenacity.stop_after_attempt(60),
-    before_sleep=tenacity.before_sleep_log(log, logging.WARNING),
+    wait=wait_fixed(5),
+    stop=stop_after_attempt(60),
+    before_sleep=before_sleep_log(log, logging.WARNING),
     reraise=True,
 )
 def wait_till_postgres_is_responsive(url: str) -> None:
