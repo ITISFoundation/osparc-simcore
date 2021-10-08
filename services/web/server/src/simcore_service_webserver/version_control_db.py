@@ -228,11 +228,19 @@ class VersionControlRepository(BaseRepository):
         project: Union[RowProxy, SimpleNamespace],
         conn: SAConnection,
     ):
+        import json
+
+        from servicelib.json_serialization import json_dumps
+
         # has changes wrt previous commit
         assert project_checksum  # nosec
         insert_stmt = pg_insert(projects_vc_snapshots).values(
             checksum=project_checksum,
-            content={"workbench": project.workbench, "ui": project.ui},
+            content={
+                # FIXME: empty status produces a set() that sqlalchemy cannot serialize. Quick fix
+                "workbench": json.loads(json_dumps(project.workbench)),
+                "ui": json.loads(json_dumps(project.ui)),
+            },
         )
         upsert_snapshot = insert_stmt.on_conflict_do_update(
             constraint=projects_vc_snapshots.primary_key,
@@ -582,8 +590,25 @@ class VersionControlRepositoryInternalAPI(VersionControlRepository):
                 raise UserUndefined
             project = (
                 await self.ProjectsOrm(conn)
-                .set_filter(uuid=project_id, prj_owner=self.user_id)
-                .fetch()
+                .set_filter(uuid=str(project_id), prj_owner=self.user_id)
+                .fetch(
+                    [
+                        "type",
+                        "uuid",
+                        "name",
+                        "description",
+                        "thumbnail",
+                        "prj_owner",
+                        "access_rights",
+                        "workbench",
+                        "ui",
+                        "classifiers",
+                        "dev",
+                        "quality",
+                        "published",
+                        "hidden",
+                    ]
+                )
             )
             assert project  # nosec
             return dict(project.items())
