@@ -146,17 +146,17 @@ async def get_or_create_runnable_projects(
     assert vc_repo.user_id  # nosec
 
     # retrieves project
-    project: ProjectDict = await get_project_for_user(
-        request.app,
-        project_uuid=str(project_uuid),
-        user_id=vc_repo.user_id,
-        include_state=False,
-        include_templates=False,
-    )
-    assert project["uuid"] == str(project_uuid)  # nosec
+    # project: ProjectDict = await get_project_for_user(
+    #     request.app,
+    #     project_uuid=str(project_uuid),
+    #     user_id=vc_repo.user_id,
+    #     include_state=False,
+    #     include_templates=False,
+    # )
+    # assert project["uuid"] == str(project_uuid)  # nosec
 
-    # FIXME: same project but different views
-    #  assert project == await vc_repo.get_project(project_uuid)
+    # TODO:  handle UserUndefined and translate into web.HTTPForbidden
+    project: ProjectDict = await vc_repo.get_project(project_uuid)
 
     project_nodes: Dict[NodeID, Node] = {
         nid: Node.parse_obj(n) for nid, n in project["workbench"].items()

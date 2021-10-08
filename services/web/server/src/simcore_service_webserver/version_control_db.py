@@ -8,6 +8,7 @@ from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
+from models_library.users import UserID
 from pydantic.types import NonNegativeInt, PositiveInt
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_version_control import (
@@ -28,6 +29,7 @@ from .version_control_errors import (
     InvalidParameterError,
     NoCommitError,
     NotFoundError,
+    UserUndefined,
 )
 from .version_control_models import (
     HEAD,
@@ -575,7 +577,14 @@ class VersionControlRepositoryInternalAPI(VersionControlRepository):
 
     async def get_project(self, project_id: ProjectID) -> ProjectDict:
         async with self.engine.acquire() as conn:
-            project = await self.ProjectsOrm(conn).set_filter(uuid=project_id).fetch()
+            if self.user_id is None:
+                # TODO: add message
+                raise UserUndefined
+            project = (
+                await self.ProjectsOrm(conn)
+                .set_filter(uuid=project_id, prj_owner=self.user_id)
+                .fetch()
+            )
             assert project  # nosec
             return dict(project.items())
 

@@ -17,7 +17,7 @@ class NotFoundError(VersionControlValueError):
 
 
 class InvalidParameterError(VersionControlValueError):
-    msg_template = "invalid {name}: {reason}"
+    msg_template = "Invalid {name}: {reason}"
 
 
 class NoCommitError(VersionControlRuntimeError):
@@ -25,4 +25,8 @@ class NoCommitError(VersionControlRuntimeError):
 
 
 class CleanRequiredError(VersionControlRuntimeError):
-    msg_template = "working copy w/o changes (clean) is required: {details}"
+    msg_template = "Working copy w/o changes (clean) is required: {details}"
+
+
+class UserUndefined(VersionControlRuntimeError):
+    msg_template = "User required but undefined"
