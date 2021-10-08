@@ -200,7 +200,7 @@ async def sync_registry_task(app: FastAPI) -> None:
 
         except asyncio.CancelledError:
             # task is stopped
-            logger.info("registry syncing task cancelled", exc_info=True)
+            logger.info("registry syncing task cancelled")
             raise
 
         except Exception:  # pylint: disable=broad-except
