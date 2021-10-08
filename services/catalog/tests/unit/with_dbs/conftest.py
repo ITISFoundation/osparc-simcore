@@ -33,6 +33,7 @@ def app(
     mocker: MockerFixture,
     service_test_environ: None,
     postgres_db: sa.engine.Engine,
+    postgres_host_config: Dict[str, str],
 ) -> FastAPI:
     monkeypatch.setenv("CATALOG_TRACING", "null")
     app = init_app()
