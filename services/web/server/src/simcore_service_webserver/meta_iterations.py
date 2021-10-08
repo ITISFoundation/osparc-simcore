@@ -17,10 +17,11 @@ from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
 from models_library.services import ServiceDockerData
 
 from .meta_funcs import SERVICE_CATALOG, SERVICE_TO_CALLABLES
-from .projects.projects_api import get_project_for_user
 from .utils import compute_sha1
 from .version_control_db import VersionControlRepositoryInternalAPI
 from .version_control_models import CommitID, ProjectDict
+
+##from .projects.projects_api import get_project_for_user
 
 log = logging.getLogger(__file__)
 
@@ -205,6 +206,7 @@ async def get_or_create_runnable_projects(
     parameters: Parameters
     updated_nodes: NodesDict
     total_count = len(iterations)
+    original_name = project["name"]
 
     for iter_index, (parameters, updated_nodes) in enumerate(iterations):
         log.debug(
@@ -213,8 +215,12 @@ async def get_or_create_runnable_projects(
             parameters,
         )
 
+        project["name"] = f"{original_name}/{iter_index}"
         project["workbench"].update(
-            {nid: n.dict(by_alias=True) for nid, n in updated_nodes.items()}
+            {
+                nid: n.dict(by_alias=True, exclude_unset=True)
+                for nid, n in updated_nodes.items()
+            }
         )
 
         # tag to identify this iteration
@@ -235,7 +241,7 @@ async def get_or_create_runnable_projects(
         )
 
         wcopy_project_id = await vc_repo.get_wcopy_project_id(repo_id, commit_id)
-        assert project["uuid"] == wcopy_project_id  # nosec
+        # assert project["uuid"] == wcopy_project_id  # nosec
 
         runnable_project_ids.append(wcopy_project_id)
         runnable_project_vc_commits.append(commit_id)
