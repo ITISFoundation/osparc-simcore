@@ -353,7 +353,7 @@ class DaskClient:
         for job_id in job_ids:
             task_future = self._taskid_to_future_map.get(job_id)
             if task_future:
-                await self._cancellation_dask_pub.put(  # type: ignore
+                self._cancellation_dask_pub.put(  # type: ignore
                     TaskCancelEvent(job_id=job_id).json()
                 )
                 await task_future.cancel()
