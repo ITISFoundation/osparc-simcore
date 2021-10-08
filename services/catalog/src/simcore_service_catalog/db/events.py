@@ -50,7 +50,8 @@ async def connect_to_db(app: FastAPI) -> None:
 async def close_db_connection(app: FastAPI) -> None:
     logger.debug("Disconnecting db ...")
 
-    engine: Engine = app.state.engine
-    engine.close()
-    await engine.wait_closed()
+    if engine := app.state.engine:
+        engine.close()
+        await engine.wait_closed()
+        app.state.engine = None
     logger.debug("Disconnected from %s", engine.dsn)

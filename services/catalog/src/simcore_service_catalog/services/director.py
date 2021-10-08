@@ -1,7 +1,6 @@
 import asyncio
 import functools
 import logging
-from contextlib import suppress
 from typing import Callable, Dict, List, Optional, Union
 
 from fastapi import FastAPI, HTTPException
@@ -21,10 +20,9 @@ def setup_director(app: FastAPI) -> None:
 
 
 async def close_director(app: FastAPI) -> None:
-    with suppress(AttributeError):
-        client: AsyncClient = app.state.director_client.client
-        await client.aclose()
-        del app.state.director_client
+    if director_api := app.state.director_api:
+        await director_api.delete()
+        app.state.director_api = None
 
     logger.debug("Director client closed successfully")
 
@@ -103,6 +101,9 @@ class DirectorApi:
             timeout=app.state.settings.CATALOG_CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
         )
         self.vtag = app.state.settings.CATALOG_DIRECTOR.DIRECTOR_VTAG
+
+    async def delete(self):
+        await self.client.aclose()
 
     # OPERATIONS
     # TODO: policy to retry if NetworkError/timeout?

@@ -5,6 +5,7 @@
 from typing import Any, Dict
 
 import pytest
+from fastapi import FastAPI
 from respx.router import MockRouter
 from simcore_service_catalog.meta import API_VERSION
 from simcore_service_catalog.models.schemas.meta import Meta
@@ -18,13 +19,15 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-def test_read_healthcheck(director_mockup: MockRouter, client: TestClient):
+def test_read_healthcheck(
+    director_mockup: MockRouter, app: FastAPI, client: TestClient
+):
     response = client.get("/")
     assert response.status_code == 200
     assert response.text == '":-)"'
 
 
-def test_read_meta(director_mockup: MockRouter, client: TestClient):
+def test_read_meta(director_mockup: MockRouter, app: FastAPI, client: TestClient):
     response = client.get("/v0/meta")
     assert response.status_code == 200
     meta = Meta(**response.json())
@@ -32,7 +35,7 @@ def test_read_meta(director_mockup: MockRouter, client: TestClient):
     assert meta.name == "simcore_service_catalog"
 
 
-def test_list_dags(director_mockup: MockRouter, client: TestClient):
+def test_list_dags(director_mockup: MockRouter, app: FastAPI, client: TestClient):
     response = client.get("/v0/dags")
     assert response.status_code == 200
     assert response.json() == []
@@ -47,7 +50,10 @@ def test_list_dags(director_mockup: MockRouter, client: TestClient):
 
 @pytest.mark.skip(reason="does not work")
 def test_standard_operations_on_resource(
-    director_mockup: MockRouter, client: TestClient, fake_data_dag_in: Dict[str, Any]
+    director_mockup: MockRouter,
+    app: FastAPI,
+    client: TestClient,
+    fake_data_dag_in: Dict[str, Any],
 ):
 
     response = client.post("/v0/dags", json=fake_data_dag_in)

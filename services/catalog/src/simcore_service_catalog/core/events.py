@@ -1,5 +1,4 @@
 import logging
-from contextlib import suppress
 from typing import Callable
 
 from fastapi import FastAPI
@@ -68,16 +67,14 @@ def create_start_app_handler(app: FastAPI) -> Callable:
 def create_stop_app_handler(app: FastAPI) -> Callable:
     async def stop_app() -> None:
         logger.info("Application stopping")
-
         if app.state.settings.CATALOG_DIRECTOR:
-            with suppress(Exception):
+            try:
                 await stop_registry_sync_task(app)
-
-            with suppress(Exception):
                 await close_director(app)
-
-        if app.state.settings.CATALOG_POSTGRES:
-            with suppress(Exception):
                 await close_db_connection(app)
+            except Exception:  # pylint: disable=broad-except
+                logger.exception(
+                    "Unexpected error while closing application", exc_info=True
+                )
 
     return stop_app
