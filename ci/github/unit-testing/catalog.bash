@@ -16,7 +16,7 @@ install() {
 test() {
   pytest --log-cli-level=DEBUG --cov=simcore_service_catalog --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-    -v -m "not travis" services/catalog/tests/unit
+    -v -m "not travis" services/catalog/tests/unit/with_dbs/test_entrypoint_dags.py
 }
 
 # Check if the function exists (bash specific)
