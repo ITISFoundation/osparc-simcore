@@ -4,78 +4,54 @@
 """
 import csv
 import json
-from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
 from pydantic import Field, validator
-from pydantic.main import Extra
+from pydantic.main import BaseModel, Extra
 from pydantic.networks import HttpUrl
 from pydantic.types import Json, PositiveInt
 
-from .projects import ProjectAtDB, ProjectCommons, ProjectType
+from .projects import ClassifierID, ProjectAtDB, ProjectType, Workbench
+from .projects_access import AccessRights
+from .projects_ui import StudyUI
+from .users import GroupID
 
 
-class ProjectDbSelect(ProjectCommons):
-    """Fields used to select (i.e. read) rows in table"""
-
-    id: int = Field(..., description="The table primary index")
-
-    project_type: ProjectType = Field(..., alias="type", description="The project type")
-
-    prj_owner: Optional[int] = Field(..., description="The project owner id")
-
-    published: Optional[bool] = Field(
-        False, description="Defines if a study is available publicly"
-    )
-
-    @validator("project_type", pre=True)
-    @classmethod
-    def convert_sql_alchemy_enum(cls, v):
-        if isinstance(v, Enum):
-            return v.value
-        return v
-
-    class Config:
-        orm_mode = True
-        use_enum_values = True
+class _NodeRelaxed(Node):
+    class Config(Node.Config):
+        # Drops all extra fields passed at the input
+        extra = Extra.allow
+        allow_population_by_field_name = True
 
 
-class ProjectDbInsert(ProjectCommons):
-    """Fields used to insert a new row in table"""
+class ProjectForPgInsert(BaseModel):
+    """Fields used to insert a new row in a postgres (pg) table"""
 
-    # Within this context, there is no need to set a default
-    # value from table since the sa_tables will take care of that
-    project_type: Optional[ProjectType] = Field(None, alias="type")
+    project_type: ProjectType = Field(ProjectType.STANDARD, alias="type")
     uuid: UUID
     name: str
     description: Optional[str]
     thumbnail: Optional[HttpUrl]
-
     prj_owner: PositiveInt
-
     access_rights: Dict[GroupID, AccessRights]
-
-    workbench: Dict[NodeIDStr, Node]
-
-    ui: Optional[StudyUI]
-
-    classifiers: Optional[List[ClassifierID]] = Field(default_factory=list)
-
-    dev: Dict
-    quality: Dict
-
-    ui: Json
-    classifiers: str  # FIXME: this is ARRAY[sa.STRING]
-    dev: Json
-    quality: Json
-    hidden: bool
+    workbench: Dict[NodeIDStr, _NodeRelaxed]
+    ui: StudyUI = Field({})
+    classifiers: List[ClassifierID] = []
+    dev: Dict = {}
+    quality: Dict = {}
+    published: bool = False
+    hidden: bool = False
 
     class Config:
-        extra = Extra.forbid
+        extra = Extra.allow
+        allow_population_by_field_name = True
+
+    def to_values(self) -> Dict[str, Any]:
+        return self.dict(exclude_unset=True, by_alias=True)
 
 
 class ProjectFromCsv(ProjectAtDB):
