@@ -32,8 +32,6 @@ def _compose_info_on_engine(app: FastAPI) -> str:
 
 @retry(**pg_retry_policy)
 async def connect_to_db(app: FastAPI) -> None:
-    logger.debug("Connecting db ...")
-
     cfg: PostgresSettings = app.state.settings.CATALOG_POSTGRES
     engine: Engine = await create_engine(
         str(cfg.dsn),
@@ -53,5 +51,4 @@ async def close_db_connection(app: FastAPI) -> None:
     if engine := app.state.engine:
         engine.close()
         await engine.wait_closed()
-        app.state.engine = None
     logger.debug("Disconnected from %s", engine.dsn)
