@@ -77,17 +77,8 @@ def docker_swarm(
 
     yield
 
-    for attempt in _attempt_for(retry_error_cls=_StillInSwarmException):
-        with attempt:
-            if _in_docker_swarm(docker_client):
-                if not keep_docker_up:
-                    assert docker_client.swarm.leave(force=True)
-
-            if _in_docker_swarm(docker_client) and not keep_docker_up:
-                # if still in swarm, raise an error to try and leave again
-                raise _StillInSwarmException()
-            if keep_docker_up:
-                assert _in_docker_swarm(docker_client) is True
+    if not keep_docker_up:
+        assert docker_client.swarm.leave(force=True)
 
     assert _in_docker_swarm(docker_client) is keep_docker_up
 
