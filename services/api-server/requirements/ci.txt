@@ -17,7 +17,6 @@
 ../../packages/simcore-sdk
 ../../packages/service-library[fastapi]
 ../../packages/settings-library/
-../../services/storage/client-sdk/python/
 
 # installs current package
 .
