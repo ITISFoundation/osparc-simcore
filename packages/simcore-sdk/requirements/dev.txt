@@ -19,7 +19,6 @@
 
 # FIXME: these dependencies should be removed
 --editable ../service-library/
-../../services/storage/client-sdk/python/ # Needed ONLY for testing
 
 # installs current package
 --editable .
