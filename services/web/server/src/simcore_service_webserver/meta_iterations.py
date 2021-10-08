@@ -1,5 +1,5 @@
 """
-    FIXME: this veeery quick and dirty draft
+    TODO: refactor logic into different modules
 """
 
 import itertools
