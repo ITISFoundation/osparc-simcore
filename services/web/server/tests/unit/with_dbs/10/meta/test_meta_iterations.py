@@ -3,12 +3,11 @@ import json
 from pathlib import Path
 from typing import Dict, Union
 
-from models_library.database_project import (
-    ProjectFromCsv,
+from models_library.database_project_models import (
+    ProjectForPgInsert,
     load_projects_exported_as_csv,
 )
 from models_library.projects import Project, ProjectAtDB
-from pydantic.main import Extra
 from simcore_service_webserver.version_control_db import ProjectDict, ProjectProxy
 
 JSON_KWARGS = dict(indent=2, sort_keys=True)
@@ -21,27 +20,35 @@ def test_it():
 
     reponse_body = json.loads(respath.read_text())
 
-    api_project_dict = reponse_body["data"]
-    with open("api_project_dict.json", "wt") as fh:
-        print(json.dumps(api_project_dict, **JSON_KWARGS), file=fh)
+    project_api_dict = reponse_body["data"]
+    with open("project_api_dict.json", "wt") as fh:
+        print(json.dumps(project_api_dict, **JSON_KWARGS), file=fh)
 
-    api_project_model = Project.parse_obj(api_project_dict)
-    with open("api_project_model.json", "wt") as fh:
+    project_api_model = Project.parse_obj(project_api_dict)
+    with open("project_api_model.json", "wt") as fh:
         print(
-            api_project_model.json(by_alias=True, exclude_unset=True, **JSON_KWARGS),
+            project_api_model.json(by_alias=True, exclude_unset=True, **JSON_KWARGS),
             file=fh,
         )
 
-    db_project_model = load_projects_exported_as_csv(csvpath, delimiter=";")[0]
-    with open("db_project_model.json", "wt") as fh:
+    project_db_model = load_projects_exported_as_csv(csvpath, delimiter=";")[0]
+    with open("project_db_model.json", "wt") as fh:
         print(
-            db_project_model.json(by_alias=True, exclude_unset=True, **JSON_KWARGS),
+            project_db_model.json(by_alias=True, exclude_unset=True, **JSON_KWARGS),
             file=fh,
         )
 
     # given a api_project_model -> convert it into a db project model
 
-    obj = api_project_model.dict(exclude_unset=True)
+    obj = project_api_model.dict(exclude_unset=True)
+    obj["prj_owner"] = 3  # email -> int
+    new_project_db_model = ProjectForPgInsert.parse_obj(obj)
+
+    with open("new_project_db_model.json", "wt") as fh:
+        print(
+            new_project_db_model.to_values(**JSON_KWARGS),
+            file=fh,
+        )
 
     # obj.dict(exclude=)
 
