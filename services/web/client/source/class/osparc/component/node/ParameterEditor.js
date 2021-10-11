@@ -46,7 +46,7 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
     },
 
     setParameterOutputValue: function(node, val) {
-      node.setOutputsData({
+      node.setOutputData({
         "out_1": val
       });
     }

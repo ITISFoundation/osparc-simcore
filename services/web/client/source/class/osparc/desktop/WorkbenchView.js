@@ -328,7 +328,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const workbench = this.getStudy().getWorkbench();
           const node = workbench.getNode(nodeId);
           if (node && nodeData) {
-            node.setOutputsData(nodeData.outputs);
+            node.setOutputData(nodeData.outputs);
             if ("progress" in nodeData) {
               const progress = Number.parseInt(nodeData["progress"]);
               node.getStatus().setProgress(progress);
