@@ -138,6 +138,10 @@ def create_log_response(msg: str, level: str) -> web.Response:
     return response
 
 
+# caches maps found with get_http_error
+_STATUSCODE_TO_HTTPERROR: Dict[int, Type[HTTPError]] = {}
+
+
 def get_http_error(status_code: int) -> Optional[Type[HTTPError]]:
     """Returns aiohttp exception class corresponding to a 4XX or 5XX status code
 
@@ -147,6 +151,9 @@ def get_http_error(status_code: int) -> Optional[Type[HTTPError]]:
     # Errors are exceptions with status codes in the 400s and 500s.
     if status_code < 400 or 599 < status_code:
         return None
+
+    if http_error := _STATUSCODE_TO_HTTPERROR.get(status_code):
+        return http_error
 
     def _pred(obj) -> bool:
         return (
@@ -159,7 +166,8 @@ def get_http_error(status_code: int) -> Optional[Type[HTTPError]]:
 
     if found:
         assert len(found) == 1, f"Unexpected multiple matches {found}"  # nosec
-        _, value = found[0]
-        assert issubclass(value, HTTPError)  # nosec
-        return value
+        _, http_error = found[0]
+        assert issubclass(http_error, HTTPError)  # nosec
+        _STATUSCODE_TO_HTTPERROR[status_code] = http_error
+        return http_error
     return None
