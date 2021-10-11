@@ -1,14 +1,12 @@
 import logging
 from types import SimpleNamespace
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
 import sqlalchemy as sa
 from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectID
-from models_library.projects_nodes import Node
-from models_library.users import UserID
 from pydantic.types import NonNegativeInt, PositiveInt
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_version_control import (
@@ -23,7 +21,7 @@ from simcore_postgres_database.utils_aiopg_orm import BaseOrm
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .db_base_repository import BaseRepository
-from .utils import compute_sha1
+from .version_control_changes import compute_workbench_checksum
 from .version_control_errors import (
     CleanRequiredError,
     InvalidParameterError,
@@ -50,39 +48,6 @@ from .version_control_tags import (
 )
 
 log = logging.getLogger(__name__)
-
-
-def compute_workbench_checksum(workbench: Dict[str, Any]) -> SHA1Str:
-    #
-    # UI is NOT accounted in the checksum
-    # TODO: review other fields to mask?
-    # TODO: search for async def compute_node_hash
-    #
-    # - Add options with include/exclude fields (e.g. to avoid status)
-    #
-    normalized = {
-        str(k): (Node.parse_obj(v) if not isinstance(v, Node) else v)
-        for k, v in workbench.items()
-    }
-    checksum = compute_sha1(
-        {
-            k: node.dict(
-                exclude_unset=True,
-                exclude_defaults=True,
-                exclude_none=True,
-                include={
-                    "key",
-                    "version",
-                    "inputs",
-                    "input_nodes",
-                    "outputs",
-                    "output_nodes",
-                },
-            )
-            for k, node in normalized.items()
-        }
-    )
-    return checksum
 
 
 class VersionControlRepository(BaseRepository):
