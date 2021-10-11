@@ -73,7 +73,7 @@ async def _request_director_v2(
                 raise DirectorServiceError(response.status, reason=str(payload))
 
             assert expected_status == HTTPNoContent or isinstance(  # nosec
-                payload, dict
+                payload, (dict, list)
             )  # nosec
             return payload
 
