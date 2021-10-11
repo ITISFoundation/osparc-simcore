@@ -287,8 +287,7 @@ async def get_dynamic_sidecar_state(service_id: str) -> Tuple[ServiceState, str]
         # it is looking for a service or something with no error message
         return _make_pending()
 
-    task_status = last_task["Status"]
-    service_state, message = extract_task_state(task_status=task_status)
+    service_state, message = extract_task_state(task_status=last_task["Status"])
 
     # to avoid creating confusion for the user, always return the status
     # as pending while the dynamic-sidecar is starting, with
@@ -296,7 +295,7 @@ async def get_dynamic_sidecar_state(service_id: str) -> Tuple[ServiceState, str]
     if service_state not in NO_PENDING_OVERWRITE:
         return ServiceState.PENDING, message
 
-    return extract_task_state(task_status=task_status)
+    return service_state, message
 
 
 async def are_services_missing(

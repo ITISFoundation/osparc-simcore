@@ -1025,6 +1025,20 @@ qx.Class.define("osparc.data.model.Node", {
           break;
         }
         case "pending": {
+          if (data["service_message"]) {
+            const serviceId = data["service_uuid"];
+            const serviceName = this.getLabel();
+            const serviceMessage = data["service_message"];
+            const msg = `The service "${serviceName}" is waiting for available ` +
+              `resources. Please inform support and provide the following message ` +
+              `in case this does not resolve in a few minutes: "${serviceId}" ` +
+              `reported "${serviceMessage}"`;
+            const msgData = {
+              nodeId: this.getNodeId(),
+              msg: msg
+            };
+            this.fireDataEvent("showInLogger", msgData);
+          }
           status.setInteractive("pending");
           const interval = 10000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
