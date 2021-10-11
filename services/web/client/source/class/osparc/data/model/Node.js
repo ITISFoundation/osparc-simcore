@@ -207,6 +207,7 @@ qx.Class.define("osparc.data.model.Node", {
     "retrieveInputs": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
     "parameterNodeRequested": "qx.event.type.Data",
+    "filePickerAdded": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data",
     "outputListChanged": "qx.event.type.Event",
     "changeInputNodes": "qx.event.type.Event"
@@ -427,7 +428,7 @@ qx.Class.define("osparc.data.model.Node", {
     populateInputOutputData: function(nodeData) {
       this.setInputData(nodeData.inputs);
       this.setInputDataAccess(nodeData.inputAccess);
-      this.setOutputData(nodeData.outputs);
+      this.setOutputsData(nodeData.outputs);
       this.addInputNodes(nodeData.inputNodes);
       this.addOutputNodes(nodeData.outputNodes);
     },
@@ -555,6 +556,15 @@ qx.Class.define("osparc.data.model.Node", {
           });
         }, this);
       });
+
+      propsForm.addListener("filePickerAdded", e => {
+        const data = e.getData();
+        this.fireDataEvent("filePickerAdded", {
+          portId: data.portId,
+          nodeId: this.getNodeId(),
+          file: data.file
+        });
+      }, this);
     },
 
     __addSettingsEditor: function(inputs) {
@@ -653,7 +663,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    setOutputData: function(outputs) {
+    setOutputsData: function(outputs) {
       if (outputs) {
         let hasOutputs = false;
         for (const outputKey in this.getOutputs()) {
@@ -724,8 +734,9 @@ qx.Class.define("osparc.data.model.Node", {
           .then(compatible => {
             if (compatible) {
               resolve(this.getPropsForm().addPortLink(toPortId, fromNodeId, fromPortId));
+            } else {
+              resolve(false);
             }
-            resolve(false);
           });
       });
     },
@@ -1197,8 +1208,8 @@ qx.Class.define("osparc.data.model.Node", {
 
     getPosition: function() {
       return {
-        x: this.__posX,
-        y: this.__posY
+        x: this.__posX || 0,
+        y: this.__posY || 0
       };
     },
 

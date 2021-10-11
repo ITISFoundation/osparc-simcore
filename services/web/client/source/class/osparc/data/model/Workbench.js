@@ -50,6 +50,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
   events: {
     "pipelineChanged": "qx.event.type.Event",
+    "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
     "openNode": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data"
@@ -320,6 +321,14 @@ qx.Class.define("osparc.data.model.Workbench", {
           } = e.getData();
           this.__parameterNodeRequested(nodeId, portId);
         }, this);
+        node.addListener("filePickerAdded", e => {
+          const {
+            portId,
+            nodeId,
+            file
+          } = e.getData();
+          this.__filePickerRequested(nodeId, portId, file.data);
+        }, this);
       }
     },
 
@@ -351,7 +360,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       };
     },
 
-    __filePickerRequested: function(nodeId, portId) {
+    __filePickerRequested: function(nodeId, portId, file = null) {
       // Create/Reuse File Picker. Reuse it if a File Picker is already
       // connecteted and it is not used anywhere else
       const requesterNode = this.getNode(nodeId);
@@ -399,7 +408,18 @@ qx.Class.define("osparc.data.model.Workbench", {
         requesterNode.addPortLink(portId, fpId, "outFile")
           .then(success => {
             if (success) {
-              this.fireDataEvent("openNode", fpId);
+              if (file) {
+                osparc.file.FilePicker.setOutputValueFromStore(
+                  fp,
+                  file.getLocation(),
+                  file.getDatasetId(),
+                  file.getFileId(),
+                  file.getLabel()
+                );
+                this.fireEvent("reloadModel");
+              } else {
+                this.fireDataEvent("openNode", fpId);
+              }
             } else {
               this.removeNode(fpId);
               const msg = qx.locale.Manager.tr("File couldn't be assigned");
@@ -408,7 +428,12 @@ qx.Class.define("osparc.data.model.Workbench", {
           });
       } else {
         const connectedFPID = link["nodeUuid"];
-        this.fireDataEvent("openNode", connectedFPID);
+        if (file) {
+          console.log(file);
+          // fp.setOutputValueFromStore("file")
+        } else {
+          this.fireDataEvent("openNode", connectedFPID);
+        }
       }
     },
 

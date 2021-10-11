@@ -161,6 +161,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       tabViewLeft.add(nodesPage);
 
       const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
+        dragMechanism: true,
         hideRoot: true
       });
       filesTree.populateTree();
@@ -327,7 +328,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const workbench = this.getStudy().getWorkbench();
           const node = workbench.getNode(nodeId);
           if (node && nodeData) {
-            node.setOutputData(nodeData.outputs);
+            node.setOutputsData(nodeData.outputs);
             if ("progress" in nodeData) {
               const progress = Number.parseInt(nodeData["progress"]);
               node.getStatus().setProgress(progress);

@@ -39,6 +39,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
   events: {
     "linkFieldModified": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
+    "filePickerAdded": "qx.event.type.Data",
     "parameterNodeRequested": "qx.event.type.Data",
     "changeChildVisibility": "qx.event.type.Event"
   },
@@ -464,10 +465,22 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             }
 
             const compatible = destinations[node2Id][portId];
-            if (compatible === true) {
+            if (compatible) {
               // stop propagation, so that the form doesn't attend it (and preventDefault it)
               e.stopPropagation();
               this.__highlightCompatibles(portId);
+            }
+          }
+
+          if (e.supportsType("osparc-file-link")) {
+            const data = e.getData("osparc-file-link");
+            if ("dragData" in data && "type" in uiElement) {
+              const compatible = uiElement.type.includes("data:");
+              if (compatible) {
+                // stop propagation, so that the form doesn't attend it (and preventDefault it)
+                e.stopPropagation();
+                this.__highlightCompatibles(portId);
+              }
             }
           }
         }, this);
@@ -479,6 +492,15 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             const node1Id = data["node1"].getNodeId();
             const port1Key = data["port1Key"];
             this.getNode().addPortLink(port2Key, node1Id, port1Key);
+          }
+          if (e.supportsType("osparc-file-link")) {
+            const data = e.getData("osparc-file-link");
+            this.fireDataEvent("filePickerAdded", {
+              portId,
+              file: {
+                data: data["dragData"]
+              }
+            });
           }
         }, this);
       }

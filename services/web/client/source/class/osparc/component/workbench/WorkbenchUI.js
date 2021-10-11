@@ -96,6 +96,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
   properties: {
     study: {
       check: "osparc.data.model.Study",
+      apply: "__applyStudy",
       nullable: false
     },
 
@@ -129,6 +130,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __startHint: null,
     __dropHint: null,
     __panning: null,
+
+    __applyStudy: function(study) {
+      study.getWorkbench().addListener("reloadModel", () => {
+        this.__reloadCurrentModel();
+      }, this);
+    },
 
     _addItemsToLayout: function() {
       this.__addInputNodesLayout();
@@ -367,6 +374,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     _addNodeUIToWorkbench: function(nodeUI, position) {
+      if (!("x" in position) || isNaN(position["x"]) || position["x"] < 0) {
+        console.error("not a valid position");
+        return;
+      }
       this.__updateWorkbenchLayoutSize(position);
 
       const node = nodeUI.getNode();
@@ -995,6 +1006,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__svgWidgetWorkbench.addListenerOnce("SvgWidgetReady", () => {
           this._loadModel(model);
         }, this);
+      }
+    },
+
+    __reloadCurrentModel: function() {
+      if (this.__svgWidgetWorkbench.getReady() && this._currentModel) {
+        this._loadModel(this._currentModel);
       }
     },
 

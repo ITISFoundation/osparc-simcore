@@ -97,8 +97,6 @@ qx.Class.define("osparc.navigation.StudyMenu", {
         study.getUi().getSlideshow().addListener("changeSlideshow", () => this.evalSlidesButtons());
         study.getUi().addListener("changeMode", () => this.evalSlidesButtons());
         this.evalSlidesButtons();
-
-        study.getWorkbench().addListener("nNodesChanged", () => this.evalSnapshotsButtons());
         this.evalSnapshotsButtons();
       }
     },
