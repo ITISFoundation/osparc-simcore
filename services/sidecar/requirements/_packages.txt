@@ -215,11 +215,6 @@ typing-extensions==3.10.0.2
     #   -c requirements/_base.txt
     #   aiohttp
     #   pydantic
-ujson==4.0.2
-    # via
-    #   -c requirements/_base.txt
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 urllib3==1.26.5
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

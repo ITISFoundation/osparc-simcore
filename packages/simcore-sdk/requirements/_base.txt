@@ -127,8 +127,6 @@ typing-extensions==3.10.0.2
     # via
     #   aiohttp
     #   pydantic
-ujson==4.1.0
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
 urllib3==1.26.6
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

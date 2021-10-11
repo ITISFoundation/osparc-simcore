@@ -384,11 +384,6 @@ typing-extensions==3.10.0.2
     #   aiohttp
     #   bokeh
     #   pydantic
-ujson==4.0.2
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/_base.in
-    #   -c requirements/../../../services/sidecar/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 urllib3==1.26.5
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

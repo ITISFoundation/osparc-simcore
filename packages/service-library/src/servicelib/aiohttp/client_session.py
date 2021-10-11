@@ -38,7 +38,6 @@ def get_client_session(app: MutableMapping[str, Any]) -> ClientSession:
 
         app[APP_CLIENT_SESSION_KEY] = session = ClientSession(
             timeout=timeout_settings,
-            # NOTE: ujson is faster and ships with among others encoders for uuids
             json_serialize=json_dumps,
         )
     return session

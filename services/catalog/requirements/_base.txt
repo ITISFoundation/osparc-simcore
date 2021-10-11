@@ -182,10 +182,7 @@ tornado==6.1
 typing-extensions==3.10.0.2
     # via pydantic
 ujson==4.0.2
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
-    #   fastapi
+    # via fastapi
 urllib3==1.26.5
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
