@@ -5,7 +5,6 @@ from uuid import UUID
 
 import aiohttp
 from aiohttp import ClientTimeout, web
-from aiohttp.web_exceptions import HTTPNoContent
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.settings.services_common import ServicesCommonSettings
