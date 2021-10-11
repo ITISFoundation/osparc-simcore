@@ -13,6 +13,10 @@ from aioresponses.core import CallbackResult
 from models_library.projects_state import RunningState
 from yarl import URL
 
+pytest_plugins = [
+    "pytest_simcore.aioresponses_mocker",
+]
+
 # WARNING: any request done through the client will go through aioresponses. It is
 # unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
 # Other than that it seems to behave nicely
@@ -55,26 +59,6 @@ FULL_PROJECT_NODE_STATES: Dict[str, Dict[str, Any]] = {
         ],
     },
 }
-
-
-@pytest.fixture
-def aioresponses_mocker() -> AioResponsesMock:
-    # TODO: deprecate this and use aioreponses_mocker instead
-    """Generick aioresponses mock
-
-    SEE https://github.com/pnuckowski/aioresponses
-
-    Usage
-
-        async def test_this(aioresponses_mocker):
-            aioresponses_mocker.get("https://foo.io")
-
-            async with aiohttp.ClientSession() as session:
-                async with session.get("https://foo.io") as response:
-                    assert response.status == 200
-    """
-    with AioResponsesMock(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
-        yield mock
 
 
 def creation_cb(url, **kwargs) -> CallbackResult:
