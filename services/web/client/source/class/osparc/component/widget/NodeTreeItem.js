@@ -41,9 +41,10 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
   extend: qx.ui.tree.VirtualTreeItem,
 
   construct: function(study) {
+    this.__study = study;
+
     this.base(arguments);
 
-    this.__study = study;
     this.__setNotHoveredStyle();
     this.__attachEventHandlers();
   },
@@ -150,8 +151,10 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       });
 
       this.getChildControl("open-btn");
-      this.getChildControl("rename-btn");
-      this.getChildControl("delete-btn");
+      const studyId = this.__study.getUuid();
+      const readOnly = this.__study.isReadOnly();
+      this.getChildControl("rename-btn").setEnabled(!readOnly);
+      this.getChildControl("delete-btn").setEnabled(!readOnly && studyId !== this.getNodeId());
       this.getChildControl("node-id");
     },
 
@@ -199,7 +202,6 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
 
       if (state === "selected") {
         this.getChildControl("buttons").show();
-        this.getChildControl("delete-btn").setEnabled(false);
       }
     },
 
@@ -210,6 +212,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         this.getChildControl("buttons").exclude();
         const studyId = this.__study.getUuid();
         const readOnly = this.__study.isReadOnly();
+        this.getChildControl("rename-btn").setEnabled(!readOnly);
         // disable delete button if the study is read only or if it's the study node item
         this.getChildControl("delete-btn").setEnabled(!readOnly && studyId !== this.getNodeId());
       }
