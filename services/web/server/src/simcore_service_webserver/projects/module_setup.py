@@ -16,9 +16,9 @@ from servicelib.aiohttp.rest_routing import (
     map_handlers_with_operations,
 )
 
+from ..constants import APP_OPENAPI_SPECS_KEY
 from ..resources import resources
-from ..rest_config import APP_OPENAPI_SPECS_KEY
-from . import projects_handlers, projects_node_handlers
+from . import projects_handlers, projects_nodes_handlers, projects_tags_handlers
 from .config import CONFIG_SECTION_NAME, assert_valid_config
 from .projects_access import setup_projects_access
 from .projects_db import setup_projects_db
@@ -78,7 +78,13 @@ def setup_projects(app: web.Application) -> bool:
     setup_projects_db(app)
 
     app.router.add_routes(
-        _create_routes("project", specs, projects_handlers, projects_node_handlers)
+        _create_routes(
+            "project",
+            specs,
+            projects_handlers,
+            projects_nodes_handlers,
+            projects_tags_handlers,
+        )
     )
 
     # FIXME: this uses some unimplemented handlers, do we really need to keep this in?

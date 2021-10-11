@@ -1,4 +1,4 @@
-from ..meta import __version__, project_name
+from ..meta import PROJECT_NAME, __version__
 
 #
 # SEE https://patorjk.com/software/taag/#p=display&f=Small&t=Director
@@ -21,5 +21,5 @@ def on_startup() -> None:
 
 
 def on_shutdown() -> None:
-    msg = project_name + f" v{__version__} SHUT DOWN"
+    msg = PROJECT_NAME + f" v{__version__} SHUT DOWN"
     print(f"{msg:=^100}", flush=True)

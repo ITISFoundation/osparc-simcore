@@ -20,22 +20,24 @@ from pytest_simcore.helpers.utils_projects import create_project, empty_project_
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects, users
-from simcore_service_webserver.director import setup_director
+from simcore_service_webserver.director.module_setup import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
     create_user_group,
     list_user_groups,
 )
-from simcore_service_webserver.login import setup_login
-from simcore_service_webserver.projects import setup_projects
-from simcore_service_webserver.resource_manager import setup_resource_manager
+from simcore_service_webserver.login.module_setup import setup_login
+from simcore_service_webserver.projects.module_setup import setup_projects
+from simcore_service_webserver.resource_manager.module_setup import (
+    setup_resource_manager,
+)
 from simcore_service_webserver.resource_manager.registry import get_registry
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio import setup_socketio
+from simcore_service_webserver.socketio.module_setup import setup_socketio
 from simcore_service_webserver.users import setup_users
 from utils import get_fake_project
 
@@ -371,7 +373,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     aiopg_engine,
     redis_client,
 ):
-    """ after a GUEST users with one opened project closes browser tab regularly (GC cleans everything) """
+    """After a GUEST users with one opened project closes browser tab regularly (GC cleans everything)"""
     logged_guest_user = await login_guest_user(client)
     empty_guest_user_project = await new_project(client, logged_guest_user)
     assert await assert_users_count(aiopg_engine, 1) is True
@@ -405,7 +407,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
 async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     simcore_services, client, socketio_client_factory: Callable, aiopg_engine
 ):
-    """ after a USER disconnects the GC will remove none of its projects or templates nor the user itself """
+    """after a USER disconnects the GC will remove none of its projects or templates nor the user itself"""
     number_of_projects = 5
     number_of_templates = 5
     logged_user = await login_user(client)

@@ -26,14 +26,16 @@ from simcore_postgres_database.webserver_models import (
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director_v2 import setup_director_v2
-from simcore_service_webserver.login import setup_login
-from simcore_service_webserver.projects import setup_projects
-from simcore_service_webserver.resource_manager import setup_resource_manager
+from simcore_service_webserver.login.module_setup import setup_login
+from simcore_service_webserver.projects.module_setup import setup_projects
+from simcore_service_webserver.resource_manager.module_setup import (
+    setup_resource_manager,
+)
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio import setup_socketio
+from simcore_service_webserver.socketio.module_setup import setup_socketio
 from simcore_service_webserver.users import setup_users
 from socketio.exceptions import ConnectionError as SocketConnectionError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed

@@ -208,7 +208,8 @@ qx.Class.define("osparc.data.model.Node", {
     "filePickerRequested": "qx.event.type.Data",
     "parameterNodeRequested": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data",
-    "outputListChanged": "qx.event.type.Event"
+    "outputListChanged": "qx.event.type.Event",
+    "changeInputNodes": "qx.event.type.Event"
   },
 
   statics: {
@@ -754,6 +755,7 @@ qx.Class.define("osparc.data.model.Node", {
     addInputNode: function(inputNodeId) {
       if (!this.__inputNodes.includes(inputNodeId)) {
         this.__inputNodes.push(inputNodeId);
+        this.fireEvent("changeInputNodes");
         return true;
       }
       return false;
@@ -772,6 +774,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (index > -1) {
         // remove node connection
         this.__inputNodes.splice(index, 1);
+        this.fireDataEvent("changeInputNodes");
         return true;
       }
       return false;
@@ -969,24 +972,25 @@ qx.Class.define("osparc.data.model.Node", {
               this.getPropsForm().retrievedPortData(portKey, true, sizeBytes);
             }
           }, this);
-          updReq.addListener("fail", e => {
-            const {
-              error
-            } = e.getTarget().getResponse();
-            if (portKey) {
-              this.getPropsForm().retrievedPortData(portKey, false);
-            }
-            console.error("fail", error);
-          }, this);
-          updReq.addListener("error", e => {
-            const {
-              error
-            } = e.getTarget().getResponse();
-            if (portKey) {
-              this.getPropsForm().retrievedPortData(portKey, false);
-            }
-            console.error("error", error);
-          }, this);
+          [
+            "fail",
+            "error"
+          ].forEach(failure => {
+            updReq.addListener(failure, e => {
+              const {
+                error
+              } = e.getTarget().getResponse();
+              if (portKey) {
+                this.getPropsForm().retrievedPortData(portKey, false);
+              }
+              console.error(failure, error);
+              const msgData = {
+                nodeId: this.getNodeId(),
+                msg: "Failed retrieving inputs"
+              };
+              this.fireDataEvent("showInLogger", msgData);
+            }, this);
+          });
           updReq.send();
 
           if (portKey) {

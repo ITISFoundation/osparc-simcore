@@ -67,6 +67,8 @@ def clone_project_document(
         project_copy["ui"]["slideshow"] = _replace_uuids(
             project_copy["ui"].get("slideshow", {})
         )
+        if "mode" in project_copy["ui"]:
+            project_copy["ui"]["mode"] = project_copy["ui"]["mode"]
     return project_copy, nodes_map
 
 

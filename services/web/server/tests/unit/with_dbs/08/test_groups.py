@@ -20,7 +20,7 @@ from simcore_service_webserver.groups_api import (
     DEFAULT_GROUP_READ_ACCESS_RIGHTS,
     auto_add_user_to_groups,
 )
-from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.login.module_setup import setup_login
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole

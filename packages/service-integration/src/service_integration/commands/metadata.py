@@ -32,7 +32,7 @@ UPGRADE_TAGS = ["major", "minor", "patch"]
     default="metadata/metadata.yml",
 )
 def bump_version(target_version, upgrade, metadata_file_path):
-    """ Bumps target version in metadata """
+    """Bumps target version in metadata"""
     # load
     raw_data: OrderedDict = ordered_safe_load(metadata_file_path.read_text())
 
@@ -67,7 +67,7 @@ def bump_version(target_version, upgrade, metadata_file_path):
     default="metadata/metadata.yml",
 )
 def get_version(target_version, metadata_file_path):
-    """ Prints to output requested version """
+    """Prints to output requested version"""
 
     # parse and validate
     metadata = ServiceDockerData(**yaml.safe_load(metadata_file_path.read_text()))

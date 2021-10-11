@@ -1,7 +1,7 @@
 import logging
+from typing import Tuple
 
 from aiohttp import web
-
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.tracing import schema, setup_tracing
@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 
 @app_module_setup(__name__, ModuleCategory.ADDON, logger=log)
-def setup(app: web.Application):
+def setup_app_tracing(app: web.Application):
     config = app[APP_CONFIG_KEY]
     host = config["main"]["host"]
     port = config["main"]["port"]
@@ -21,7 +21,4 @@ def setup(app: web.Application):
     )
 
 
-# alias
-setup_app_tracing = setup
-tracing_section_name = CONFIG_SECTION_NAME
-__all__ = ("setup_app_tracing", "schema", "tracing_section_name")
+__all__: Tuple[str, ...] = ("schema", "setup_app_tracing")

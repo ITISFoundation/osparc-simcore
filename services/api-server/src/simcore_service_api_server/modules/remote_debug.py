@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def setup(app: FastAPI):
-    remote_debug_port = app.state.settings.remote_debug_port
+    API_SERVER_REMOTE_DEBUG_PORT = app.state.settings.API_SERVER_REMOTE_DEBUG_PORT
 
     def on_startup() -> None:
         try:
@@ -20,13 +20,15 @@ def setup(app: FastAPI):
             import ptvsd
 
             ptvsd.enable_attach(
-                address=("0.0.0.0", remote_debug_port),  # nosec
+                address=("0.0.0.0", API_SERVER_REMOTE_DEBUG_PORT),  # nosec
             )  # nosec
         except ImportError as err:
             raise Exception(
                 "Cannot enable remote debugging. Please install ptvsd first"
             ) from err
 
-        logger.info("Remote debugging enabled: listening port %s", remote_debug_port)
+        logger.info(
+            "Remote debugging enabled: listening port %s", API_SERVER_REMOTE_DEBUG_PORT
+        )
 
     app.add_event_handler("startup", on_startup)

@@ -4,6 +4,7 @@
 
 """
 
+import asyncio
 import logging
 from typing import Any, List, MutableMapping, Optional
 
@@ -148,7 +149,7 @@ class SciCrunch:
         except (
             client_exceptions.ClientConnectionError,
             client_exceptions.ClientPayloadError,
-            TimeoutError,
+            asyncio.TimeoutError,
         ) as err:
             # https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
             raise ScicrunchServiceError("Failed to connect scicrunch service") from err

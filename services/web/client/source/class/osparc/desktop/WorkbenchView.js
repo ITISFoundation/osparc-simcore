@@ -92,16 +92,17 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     nodeSelected: function(nodeId) {
-      if (!nodeId) {
-        this.__loggerView.setCurrentNodeId("");
-        return;
+      const study = this.getStudy();
+
+      if (nodeId === null) {
+        nodeId = study.getUuid();
       }
 
-      const study = this.getStudy();
       const workbench = study.getWorkbench();
       const node = workbench.getNode(nodeId);
       if (node && node.isParameter()) {
-        this.__popUpParameterEditor(node);
+        const parameterEditor = new osparc.component.node.ParameterEditor(node);
+        parameterEditor.popUpInWindow();
         return;
       }
 
@@ -141,23 +142,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __popUpParameterEditor: function(node) {
-      const parameterEditor = new osparc.component.node.ParameterEditor(node);
-      const win = osparc.ui.window.Window.popUpInWindow(parameterEditor, "Edit Parameter", 250, 175);
-      parameterEditor.addListener("editParameter", () => {
-        const label = parameterEditor.getLabel();
-        node.setLabel(label);
-
-        const val = parameterEditor.getValue();
-        osparc.component.node.ParameterEditor.setParameterOutputValue(node, val);
-
-        win.close();
-      }, this);
-      parameterEditor.addListener("cancel", () => {
-        win.close();
-      }, this);
-    },
-
     getLogger: function() {
       return this.__loggerView;
     },
@@ -175,7 +159,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __editSlides: function() {
       const uiData = this.getStudy().getUi();
       const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(uiData.getSlideshow());
-      const title = this.tr("Edit Slides");
+      const title = this.tr("Edit Slideshow");
       const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 600, 500).set({
         modal: false,
         clickAwayClose: false
@@ -367,7 +351,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
-      this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Nodes tree"), nodesTree), 0, {
+      this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Nodes"), nodesTree), 0, {
         flex: 1
       });
 

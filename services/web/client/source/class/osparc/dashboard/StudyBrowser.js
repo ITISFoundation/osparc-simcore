@@ -154,7 +154,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.data.Resources.fetch("studies", "getActive", params)
         .then(studyData => {
           if (studyData) {
-            this._startStudy(studyData["uuid"]);
+            this._startStudy(studyData);
           } else {
             osparc.store.Store.getInstance().setCurrentStudyId(null);
           }
@@ -287,7 +287,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       };
       osparc.data.Resources.getOne("studies", params)
         .then(studyData => {
-          this._startStudy(studyData["uuid"]);
+          this._startStudy(studyData);
         })
         .catch(() => {
           const msg = this.tr("Study unavailable or inaccessible");
@@ -408,14 +408,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.data.Resources.fetch("studies", "post", params)
         .then(studyData => {
           this._hideLoadingPage();
-          this._startStudy(studyData["uuid"]);
+          this._startStudy(studyData);
         })
         .catch(err => {
           console.error(err);
         });
     },
 
-    _startStudy: function(studyId, pageContext) {
+    _startStudy: function(studyData, pageContext) {
+      if (pageContext === undefined) {
+        pageContext = osparc.data.model.Study.getUiMode(studyData) || "workbench";
+      }
+      const studyId = studyData["uuid"];
       const data = {
         studyId,
         pageContext
@@ -572,11 +576,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       if (osparc.data.model.Study.hasSlideshow(studyData) && osparc.data.Permissions.getInstance().canDo("study.slides")) {
-        const startAsSlideshowButton = this.__getStartAsSlideshowButton(studyData);
-        menu.add(startAsSlideshowButton);
+        const startAsGuidedModeButton = this.__getStartAsGuidedModeButton(studyData);
+        menu.add(startAsGuidedModeButton);
 
-        const startAsFullSlideshowButton = this.__getStartAsFullSlideshowButton(studyData);
-        menu.add(startAsFullSlideshowButton);
+        const startAsAppButton = this.__getStartAsAppButton(studyData);
+        menu.add(startAsAppButton);
       }
 
       const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
@@ -619,6 +623,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __openPermissions: function(studyData) {
       const permissionsView = osparc.studycard.Utils.openAccessRights(studyData);
+      permissionsView.getChildControl("study-link").show();
       permissionsView.addListener("updateAccessRights", e => {
         const updatedData = e.getData();
         this._resetStudyItem(updatedData);
@@ -686,20 +691,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return saveAsTemplateButton;
     },
 
-    __getStartAsSlideshowButton: function(studyData) {
-      const startAsSlideshowButton = new qx.ui.menu.Button(this.tr("Start Guided mode"));
-      startAsSlideshowButton.addListener("execute", () => {
-        this._startStudy(studyData["uuid"], "slideshow");
+    __getStartAsGuidedModeButton: function(studyData) {
+      const startAsGuidedModeButton = new qx.ui.menu.Button(this.tr("Start Guided mode"));
+      startAsGuidedModeButton.addListener("execute", () => {
+        this._startStudy(studyData, "guided");
       }, this);
-      return startAsSlideshowButton;
+      return startAsGuidedModeButton;
     },
 
-    __getStartAsFullSlideshowButton: function(studyData) {
-      const startAsSlideshowButton = new qx.ui.menu.Button(this.tr("Start Full Guided mode"));
-      startAsSlideshowButton.addListener("execute", () => {
-        this._startStudy(studyData["uuid"], "fullSlideshow");
+    __getStartAsAppButton: function(studyData) {
+      const startAsAppButton = new qx.ui.menu.Button(this.tr("Start App mode"));
+      startAsAppButton.addListener("execute", () => {
+        this._startStudy(studyData, "app");
       }, this);
-      return startAsSlideshowButton;
+      return startAsAppButton;
     },
 
     __getDeleteStudyMenuButton: function(studyData) {
@@ -745,7 +750,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       if (selected && selection.length === 1) {
         const studyData = this.__getStudyData(item.getUuid(), false);
-        this._startStudy(studyData["uuid"]);
+        this._startStudy(studyData);
       }
     },
 

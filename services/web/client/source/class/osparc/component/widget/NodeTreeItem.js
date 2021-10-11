@@ -12,6 +12,7 @@
 
    Authors:
      * Tobias Oetiker (oetiker)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
@@ -37,9 +38,18 @@
  */
 
 qx.Class.define("osparc.component.widget.NodeTreeItem", {
-  extend : qx.ui.tree.VirtualTreeItem,
+  extend: qx.ui.tree.VirtualTreeItem,
 
-  properties : {
+  construct: function(study) {
+    this.__study = study;
+
+    this.base(arguments);
+
+    this.__setNotHoveredStyle();
+    this.__attachEventHandlers();
+  },
+
+  properties: {
     nodeId : {
       check : "String",
       event: "changeNodeId",
@@ -48,7 +58,78 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
     }
   },
 
-  members : {
+  events: {
+    "openNode": "qx.event.type.Data",
+    "renameNode": "qx.event.type.Data",
+    "deleteNode": "qx.event.type.Data"
+  },
+
+  members: {
+    __study: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "buttons": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(0).set({
+            alignY: "middle"
+          }));
+          control.exclude();
+          this.addWidget(control);
+          break;
+        }
+        case "open-btn": {
+          const part = this.getChildControl("buttons");
+          control = new qx.ui.form.Button().set({
+            backgroundColor: "transparent",
+            toolTipText: this.tr("Open"),
+            icon: "@FontAwesome5Solid/edit/9"
+          });
+          control.addListener("execute", () => this.fireDataEvent("openNode", this.getNodeId()));
+          part.add(control);
+          break;
+        }
+        case "rename-btn": {
+          const part = this.getChildControl("buttons");
+          control = new qx.ui.form.Button().set({
+            backgroundColor: "transparent",
+            toolTipText: this.tr("Rename"),
+            icon: "@FontAwesome5Solid/i-cursor/9"
+          });
+          control.addListener("execute", () => this.fireDataEvent("renameNode", this.getNodeId()));
+          part.add(control);
+          break;
+        }
+        case "delete-btn": {
+          const part = this.getChildControl("buttons");
+          control = new qx.ui.form.Button().set({
+            backgroundColor: "transparent",
+            toolTipText: this.tr("Delete"),
+            icon: "@FontAwesome5Solid/trash/9"
+          });
+          control.addListener("execute", () => this.fireDataEvent("deleteNode", this.getNodeId()));
+          part.add(control);
+          break;
+        }
+        case "node-id": {
+          control = new qx.ui.basic.Label().set({
+            maxWidth: 250
+          });
+          this.bind("nodeId", control, "value", {
+            converter: value => value && value.substring(0, 8)
+          });
+          const permissions = osparc.data.Permissions.getInstance();
+          control.setVisibility(permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded");
+          permissions.addListener("changeRole", () => {
+            control.setVisibility(permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded");
+          });
+          this.addWidget(control);
+        }
+      }
+
+      return control || this.base(arguments, id);
+    },
+
     _addWidgets: function() {
       // Here's our indentation and tree-lines
       this.addSpacer();
@@ -69,13 +150,12 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         flex: 1
       });
 
-      if (osparc.data.Permissions.getInstance().canDo("study.nodestree.uuid.read")) {
-        // Add a NodeId
-        const nodeIdWidget = new qx.ui.basic.Label();
-        this.bind("nodeId", nodeIdWidget, "value");
-        nodeIdWidget.setMaxWidth(250);
-        this.addWidget(nodeIdWidget);
-      }
+      this.getChildControl("open-btn");
+      const studyId = this.__study.getUuid();
+      const readOnly = this.__study.isReadOnly();
+      this.getChildControl("rename-btn").setEnabled(!readOnly);
+      this.getChildControl("delete-btn").setEnabled(!readOnly && studyId !== this.getNodeId());
+      this.getChildControl("node-id");
     },
 
     _applyNodeId: function(nodeId) {
@@ -84,6 +164,57 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         osparc.utils.Utils.setIdToWidget(this, "nodeTreeItem_root");
       } else {
         osparc.utils.Utils.setIdToWidget(this, "nodeTreeItem_" + nodeId);
+      }
+      const opnBtn = this.getChildControl("open-btn");
+      osparc.utils.Utils.setIdToWidget(opnBtn, "openNodeBtn_"+this.getNodeId());
+    },
+
+    __setHoveredStyle: function() {
+      this.getContentElement().setStyles({
+        "border-radius": "4px",
+        "border": "1px solid " + qx.theme.manager.Color.getInstance().resolve("background-selected")
+      });
+    },
+
+    __setNotHoveredStyle: function() {
+      this.getContentElement().setStyles({
+        "border-radius": "4px",
+        "border": "1px solid transparent"
+      });
+    },
+
+    __attachEventHandlers: function() {
+      this.addListener("mouseover", () => {
+        this.getChildControl("buttons").show();
+        this.__setHoveredStyle();
+      });
+      this.addListener("mouseout", () => {
+        if (!this.hasState("selected")) {
+          this.getChildControl("buttons").exclude();
+        }
+        this.__setNotHoveredStyle();
+      });
+    },
+
+    // overridden
+    addState: function(state) {
+      this.base(arguments, state);
+
+      if (state === "selected") {
+        this.getChildControl("buttons").show();
+      }
+    },
+
+    // overridden
+    removeState: function(state) {
+      this.base(arguments, state);
+      if (state === "selected") {
+        this.getChildControl("buttons").exclude();
+        const studyId = this.__study.getUuid();
+        const readOnly = this.__study.isReadOnly();
+        this.getChildControl("rename-btn").setEnabled(!readOnly);
+        // disable delete button if the study is read only or if it's the study node item
+        this.getChildControl("delete-btn").setEnabled(!readOnly && studyId !== this.getNodeId());
       }
     }
   }

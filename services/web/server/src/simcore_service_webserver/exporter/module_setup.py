@@ -2,9 +2,12 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from servicelib.aiohttp.rest_routing import iter_path_operations, map_handlers_with_operations
+from servicelib.aiohttp.rest_routing import (
+    iter_path_operations,
+    map_handlers_with_operations,
+)
 
-from ..rest_config import APP_OPENAPI_SPECS_KEY
+from ..constants import APP_OPENAPI_SPECS_KEY
 from .config import inject_settings
 from .request_handlers import rest_handler_functions
 

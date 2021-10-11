@@ -70,6 +70,11 @@ qx.Class.define("osparc.utils.Utils", {
       });
     },
 
+    isProduct: function(productName) {
+      const product = qx.core.Environment.get("product.name");
+      return (productName === product);
+    },
+
     getEditButton: function() {
       const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
         allowGrowY: false,

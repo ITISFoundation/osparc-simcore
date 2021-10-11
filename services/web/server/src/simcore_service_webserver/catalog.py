@@ -6,7 +6,6 @@ from typing import List, Optional
 
 from aiohttp import web
 from aiohttp.web_routedef import RouteDef
-from servicelib.aiohttp.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.rest_routing import iter_path_operations
 from yarl import URL
@@ -22,7 +21,7 @@ from .catalog_config import (
     KCATALOG_VERSION_PREFIX,
     assert_valid_config,
 )
-from .constants import RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
+from .constants import APP_OPENAPI_SPECS_KEY, RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
 
