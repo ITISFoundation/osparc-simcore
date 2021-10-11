@@ -181,34 +181,24 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       tabViewRight.add(outputsPage);
 
 
-      const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView();
-      const loggerInPanelView = this.__createPanelView(this.tr("Logger"), loggerView);
-      osparc.utils.Utils.setIdToWidget(loggerInPanelView.getTitleLabel(), "studyLoggerTitleLabel");
-      if (!osparc.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
-        loggerInPanelView.setCollapsed(true);
-      }
-      /*
-      sidePanel.add(loggerInPanelView, {
-        flex: 1
-      });
-
-      const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI();
-      workbenchUI.setStudy(study);
-
-      this.__groupNodeView = new osparc.component.node.GroupNodeView().set({
-        minHeight: 200
-      });
-      */
       const tabViewMain = this.getChildControl("main-panel-tabs");
 
-      // const workbenchPanel = this.__workbenchPanel = new osparc.desktop.WorkbenchPanel();
-      // this.__workbenchUI = workbenchPanel.getMainView();
       this.__workbenchUI.setStudy(study);
       const workbenchPanelPage = this.__workbenchPanelPage = this.__createTabPage("@FontAwesome5Solid/object-group", this.tr("Nodes"), this.__workbenchPanel);
       tabViewMain.add(workbenchPanelPage);
 
+      /*
+      this.__groupNodeView = new osparc.component.node.GroupNodeView().set({
+        minHeight: 200
+      });
+      */
+
       const iFramePage = this.__iFramePage = this.__createTabPage("@FontAwesome5Solid/desktop", this.tr("Interactive"));
       tabViewMain.add(iFramePage);
+
+      const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView();
+      const logsPage = this.__logsPage = this.__createTabPage("@FontAwesome5Solid/file-alt", this.tr("Logger"), loggerView);
+      tabViewMain.add(logsPage);
     },
 
     __connectEvents: function() {
