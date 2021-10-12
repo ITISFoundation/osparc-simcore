@@ -154,8 +154,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
 
       const tabViewLeft = this.getChildControl("side-panel-left-tabs");
+      this.__removePages(tabViewLeft);
 
-      const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree();
+      const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree().set({
+        hideRoot: true
+      });
       nodesTree.setStudy(study);
       const nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), nodesTree);
       tabViewLeft.add(nodesPage);
@@ -168,11 +171,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTree);
       tabViewLeft.add(storagePage);
 
-      const parametersPage = this.__createTabPage("@FontAwesome5Solid/sliders-h", this.tr("Parameters"));
-      tabViewLeft.add(parametersPage);
-
 
       const tabViewRight = this.getChildControl("side-panel-right-tabs");
+      this.__removePages(tabViewRight);
 
       const settingsPage = this.__settingsPage = this.__createTabPage("@FontAwesome5Solid/sign-in-alt", this.tr("Settings"));
       tabViewRight.add(settingsPage);
@@ -182,16 +183,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
 
       const tabViewMain = this.getChildControl("main-panel-tabs");
+      this.__removePages(tabViewMain);
 
       this.__workbenchUI.setStudy(study);
       const workbenchPanelPage = this.__workbenchPanelPage = this.__createTabPage("@FontAwesome5Solid/object-group", this.tr("Nodes"), this.__workbenchPanel);
       tabViewMain.add(workbenchPanelPage);
-
-      /*
-      this.__groupNodeView = new osparc.component.node.GroupNodeView().set({
-        minHeight: 200
-      });
-      */
 
       const iFramePage = this.__iFramePage = this.__createTabPage("@FontAwesome5Solid/desktop", this.tr("Interactive"));
       tabViewMain.add(iFramePage);
@@ -199,6 +195,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView();
       const logsPage = this.__logsPage = this.__createTabPage("@FontAwesome5Solid/file-alt", this.tr("Logger"), loggerView);
       tabViewMain.add(logsPage);
+    },
+
+    __removePages: function(tabView) {
+      const pages = tabView.getChildren();
+      for (let i=pages.length-1; i>=0; i--) {
+        tabView.remove(pages[i]);
+      }
     },
 
     __connectEvents: function() {
