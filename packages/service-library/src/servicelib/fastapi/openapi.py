@@ -73,7 +73,7 @@ def _patch_openapi_specs(app_openapi: Dict[str, Any]):
     _patch(app_openapi)
 
 
-def override_fastapi_openapi_method(app: FastAPI):
+def override_fastapi_openapi_method(app: FastAPI) -> FastAPI:
     # pylint: disable=protected-access
     app._original_openapi = types.MethodType(copy_func(app.openapi), app)  # type: ignore
 
@@ -89,3 +89,4 @@ def override_fastapi_openapi_method(app: FastAPI):
         return self.openapi_schema
 
     app.openapi = types.MethodType(_custom_openapi_method, app)
+    return app
