@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import asyncio
 from asyncio import BaseEventLoop
 from typing import Any, AsyncIterator, Dict, List
 from uuid import UUID, uuid4
@@ -28,6 +29,8 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
 )
 
 pytestmark = pytest.mark.asyncio
+
+MAX_INT64 = 9223372036854775807
 
 # FIXTURES
 
@@ -262,6 +265,12 @@ async def _count_services_in_stack(
     return len(services)
 
 
+def _inject_impossible_resources(dynamic_sidecar_service_spec: Dict[str, Any]) -> None:
+    dynamic_sidecar_service_spec["task_template"]["Resources"] = {
+        "Reservations": {"NanoCPUs": MAX_INT64, "MemoryBytes": MAX_INT64}
+    }
+
+
 # TESTS
 
 
@@ -390,6 +399,28 @@ async def test_dynamic_sidecar_in_running_state_and_node_id_is_recovered(
     # will be in a running state
     dynamic_sidecar_state = await docker_api.get_dynamic_sidecar_state(service_id)
     assert dynamic_sidecar_state == (ServiceState.RUNNING, "")
+
+
+async def test_dynamic_sidecar_get_dynamic_sidecar_sate_fail_to_schedule(
+    dynamic_sidecar_service_spec: Dict[str, Any],
+    dynamic_sidecar_settings: DynamicSidecarSettings,
+    cleanup_test_dynamic_sidecar_service: None,
+    docker_swarm: None,
+) -> None:
+    _inject_impossible_resources(dynamic_sidecar_service_spec)
+    service_id = await docker_api.create_service_and_get_id(
+        dynamic_sidecar_service_spec
+    )
+    assert service_id
+
+    # wait for the service to get scheduled
+    await asyncio.sleep(0.2)
+
+    dynamic_sidecar_state = await docker_api.get_dynamic_sidecar_state(service_id)
+    assert dynamic_sidecar_state == (
+        ServiceState.PENDING,
+        "no suitable node (insufficient resources on 1 node)",
+    )
 
 
 async def test_are_services_missing(
