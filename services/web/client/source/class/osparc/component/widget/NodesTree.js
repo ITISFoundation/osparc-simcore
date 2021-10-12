@@ -18,9 +18,7 @@
 /**
  * Widget that shows workbench hierarchy in tree view.
  *
- * It contains:
- * - Toolbar for adding, removing or renaming nodes
- * - VirtualTree populated with NodeTreeItems
+ * VirtualTree populated with NodeTreeItems
  *
  *   Helps the user navigating through nodes and gives a hierarchical view of containers. Also allows
  * some operations.
@@ -36,14 +34,18 @@
  */
 
 qx.Class.define("osparc.component.widget.NodesTree", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.tree.VirtualTree,
 
   construct: function() {
-    this.base(arguments);
+    this.base(arguments, null, "label", "children");
 
-    this._setLayout(new qx.ui.layout.VBox());
-
-    this.__tree = this._createChildControlImpl("tree");
+    this.set({
+      decorator: "service-tree",
+      openMode: "none",
+      contentPadding: 0,
+      padding: 0
+    });
+    osparc.utils.Utils.setIdToWidget(this, "nodesTree");
 
     this.__attachEventHandlers();
   },
@@ -84,22 +86,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   },
 
   members: {
-    __tree: null,
     __currentNodeId: null,
-
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "tree":
-          control = this.__buildTree();
-          this._add(control, {
-            flex: 1
-          });
-          break;
-      }
-
-      return control || this.base(arguments, id);
-    },
 
     _applyStudy: function() {
       this.populateTree();
@@ -110,22 +97,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     __getOneSelectedRow: function() {
-      const selection = this.__tree.getSelection();
+      const selection = this.getSelection();
       if (selection && selection.toArray().length > 0) {
         return selection.toArray()[0];
       }
       return null;
-    },
-
-    __buildTree: function() {
-      const tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
-        decorator: "service-tree",
-        openMode: "none",
-        contentPadding: 0,
-        padding: 0
-      });
-      osparc.utils.Utils.setIdToWidget(tree, "nodesTree");
-      return tree;
     },
 
     populateTree: function() {
@@ -138,11 +114,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         isContainer: true
       };
       let newModel = qx.data.marshal.Json.createModel(data, true);
-      let oldModel = this.__tree.getModel();
+      let oldModel = this.getModel();
       if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
         study.bind("name", newModel, "label");
-        this.__tree.setModel(newModel);
-        this.__tree.setDelegate({
+        this.setModel(newModel);
+        this.setDelegate({
           createItem: () => {
             const nodeTreeItem = new osparc.component.widget.NodeTreeItem(study);
             nodeTreeItem.addListener("openNode", e => this.__openItem(e.getData()));
@@ -192,7 +168,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     __getSelection: function() {
-      let treeSelection = this.__tree.getSelection();
+      let treeSelection = this.getSelection();
       if (treeSelection.length < 1) {
         return null;
       }
@@ -224,7 +200,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     __openItemRenamer: function(nodeId) {
-      const renameItem = nodeId === undefined ? this.__getSelection() : this.__getNodeInTree(this.__tree.getModel(), nodeId);
+      const renameItem = nodeId === undefined ? this.__getSelection() : this.__getNodeInTree(this.getModel(), nodeId);
       if (renameItem) {
         const treeItemRenamer = new osparc.component.widget.Renamer(renameItem.getLabel());
         treeItemRenamer.addListener("labelChanged", e => {
@@ -266,22 +242,22 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     nodeSelected: function(nodeId) {
-      const dataModel = this.__tree.getModel();
+      const dataModel = this.getModel();
       const item = this.__getNodeInTree(dataModel, nodeId);
       if (item) {
-        this.__tree.openNodeAndParents(item);
-        this.__tree.setSelection(new qx.data.Array([item]));
+        this.openNodeAndParents(item);
+        this.setSelection(new qx.data.Array([item]));
       }
     },
 
     __attachEventHandlers: function() {
-      this.addListener("keypress", function(keyEvent) {
+      this.addListener("keypress", keyEvent => {
         if (keyEvent.getKeyIdentifier() === "Delete") {
           this.__deleteNode();
         }
       }, this);
 
-      this.addListener("keypress", function(keyEvent) {
+      this.addListener("keypress", keyEvent => {
         if (keyEvent.getKeyIdentifier() === "F2") {
           this.__openItemRenamer();
         }
