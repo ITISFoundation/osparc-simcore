@@ -363,8 +363,9 @@
             "required": true,
             "schema": {
               "title": "User Id",
-              "exclusiveMinimum": false,
-              "type": "integer"
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "minimum": 0
             },
             "name": "user_id",
             "in": "query"
@@ -1625,9 +1626,10 @@
         "properties": {
           "minHeight": {
             "title": "Minheight",
-            "exclusiveMinimum": false,
+            "exclusiveMinimum": true,
             "type": "integer",
-            "description": "minimum Height of the textarea"
+            "description": "minimum Height of the textarea",
+            "minimum": 0
           }
         },
         "additionalProperties": false
