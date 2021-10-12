@@ -211,12 +211,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __connectEvents: function() {
       const studyTreeItem = this.__studyTreeItem;
+      const nodesTree = this.__nodesTree;
+
       studyTreeItem.addListener("changeSelectedNode", () => {
+        nodesTree.resetSelection();
         this.__populateSecondPanel(this.getStudy());
       });
 
 
-      const nodesTree = this.__nodesTree;
       nodesTree.addListener("removeNode", e => {
         if (this.getStudy().isReadOnly()) {
           return;
@@ -225,6 +227,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__removeNode(nodeId);
       }, this);
       nodesTree.addListener("changeSelectedNode", e => {
+        studyTreeItem.resetSelection();
         const nodeUI = this.__workbenchUI.getNodeUI(e.getData());
         if (nodeUI) {
           if (nodeUI.classname.includes("NodeUI")) {
