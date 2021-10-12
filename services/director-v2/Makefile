@@ -2,34 +2,20 @@
 # DEVELOPMENT recipes for director-v2
 #
 
-
 include ../../scripts/common.Makefile
 include ../../scripts/common-service.Makefile
+include ../../scripts/common-service-fastapi.Makefile
+
 
 .PHONY: requirements reqs
 requirements reqs: ## (or reqs) compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
 
 
-.PHONY: openapi.json
-openapi-specs: openapi.json
-openapi.json: .env
-	# generating openapi specs file (need to have the environment set for this)
-	@set -o allexport; \
-	source .env; \
-	set +o allexport; \
-	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
-
-
-
 # DEVELOPMENT #############
 include .env
 
 REGISTRY_NAMESPACE=$(subst http://,,${REGISTRY_URL})
-
-.env:
-	# Copying makefile from .env-devel
-	@cp .env-devel $@
 
 
 .PHONY: up-extra down down-extra run-devel
