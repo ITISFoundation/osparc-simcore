@@ -3,6 +3,7 @@
 #
 include ../../scripts/common.Makefile
 include ../../scripts/common-service.Makefile
+include ../../scripts/common-service-fastapi.Makefile
 
 .PHONY: reqs
 reqs: ## compiles pip requirements (.in -> .txt)
@@ -11,8 +12,6 @@ reqs: ## compiles pip requirements (.in -> .txt)
 
 # DEVELOPMENT TOOLS ###########################################################################
 
-.env:
-	cp .env-devel $@
 
 DOCKER_COMPOSE_EXTRA_FILE:=.docker-compose-extra-ignore.yml
 $(DOCKER_COMPOSE_EXTRA_FILE):
@@ -80,18 +79,6 @@ run-fake-devel: # starts a fake server in a dev-container
 		--volume $(REPO_BASE_DIR)/packages:/devel/packages \
 		local/${APP_NAME}:development
 	# Open http://172.0.0.1:8000/dev/doc
-
-
-# BUILD ###########################################################################
-
-.PHONY: openapi-specs openapi.json
-openapi-specs: openapi.json
-openapi.json: .env
-	# generating openapi specs file
-	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
-	# validates OAS file: $@
-	@cd $(CURDIR); \
-	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
 
 
 

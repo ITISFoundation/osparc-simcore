@@ -8,6 +8,7 @@ import yaml
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.routing import APIRoute
+from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
 from .redoc import add_vendor_extensions, compose_long_description
 
@@ -43,6 +44,7 @@ def override_openapi_method(app: FastAPI):
         return zelf.openapi_schema
 
     app.openapi = types.MethodType(_custom_openapi_method, app)
+    app = override_fastapi_openapi_method(app)
 
 
 def use_route_names_as_operation_ids(app: FastAPI) -> None:

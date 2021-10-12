@@ -107,7 +107,7 @@
           "files"
         ],
         "summary": "List Files",
-        "description": "Lists all files stored in the system  ",
+        "description": "Lists all files stored in the system",
         "operationId": "list_files",
         "responses": {
           "200": {
@@ -196,7 +196,7 @@
           "files"
         ],
         "summary": "Get File",
-        "description": "Gets metadata for a given file resource ",
+        "description": "Gets metadata for a given file resource",
         "operationId": "get_file",
         "parameters": [
           {
@@ -262,6 +262,12 @@
           }
         ],
         "responses": {
+          "307": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "File not found"
+          },
           "200": {
             "description": "Returns a arbitrary binary data",
             "content": {
@@ -277,9 +283,6 @@
                 }
               }
             }
-          },
-          "404": {
-            "description": "File not found"
           },
           "422": {
             "description": "Validation Error",
@@ -1176,6 +1179,9 @@
                   "type": "integer"
                 },
                 {
+                  "type": "boolean"
+                },
+                {
                   "type": "string"
                 }
               ]
@@ -1223,6 +1229,9 @@
                 },
                 {
                   "type": "integer"
+                },
+                {
+                  "type": "boolean"
                 },
                 {
                   "type": "string"
@@ -1317,8 +1326,8 @@
             "title": "Released",
             "type": "object",
             "additionalProperties": {
-              "type": "string",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
             },
             "description": "Maps every route's path tag with a released version"
           },
