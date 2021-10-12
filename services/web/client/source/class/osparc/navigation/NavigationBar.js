@@ -63,7 +63,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
   events: {
     "dashboardPressed": "qx.event.type.Event",
-    "infoButtonPressed": "qx.event.type.Event",
     "slidesGuidedStart": "qx.event.type.Event",
     "slidesAppStart": "qx.event.type.Event",
     "slidesStop": "qx.event.type.Event",
@@ -158,7 +157,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "study-options-menu":
           control = new osparc.navigation.StudyMenu();
           [
-            "infoButtonPressed",
             "slidesGuidedStart",
             "slidesAppStart",
             "slidesStop",

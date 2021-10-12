@@ -29,7 +29,6 @@ qx.Class.define("osparc.navigation.StudyMenu", {
   },
 
   events: {
-    "infoButtonPressed": "qx.event.type.Event",
     "slidesGuidedStart": "qx.event.type.Event",
     "slidesAppStart": "qx.event.type.Event",
     "slidesStop": "qx.event.type.Event",
@@ -57,12 +56,6 @@ qx.Class.define("osparc.navigation.StudyMenu", {
     __populateMenu: function() {
       const studyButtonMenu = new qx.ui.menu.Menu();
       this.setMenu(studyButtonMenu);
-
-      const studyInfoButton = new qx.ui.menu.Button(this.tr("More Information"));
-      studyInfoButton.addListener("execute", () => this.fireEvent("infoButtonPressed"), this);
-      studyButtonMenu.add(studyInfoButton);
-
-      studyButtonMenu.addSeparator();
 
       const editSlidesBtn = this.__editSlidesButton = new qx.ui.menu.Button(this.tr("Edit Slideshow"));
       editSlidesBtn.addListener("execute", () => this.fireEvent("slidesEdit"), this);

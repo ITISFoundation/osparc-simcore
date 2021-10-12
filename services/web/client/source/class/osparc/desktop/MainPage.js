@@ -92,16 +92,6 @@ qx.Class.define("osparc.desktop.MainPage", {
         }
       }, this);
 
-      navBar.addListener("infoButtonPressed", () => {
-        if (this.__studyEditor) {
-          const studyDetails = new osparc.studycard.Large(this.__studyEditor.getStudy());
-          const title = this.tr("Study Details");
-          const width = 500;
-          const height = 500;
-          osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
-        }
-      }, this);
-
       navBar.addListener("slidesGuidedStart", () => {
         if (this.__studyEditor) {
           navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[2]);

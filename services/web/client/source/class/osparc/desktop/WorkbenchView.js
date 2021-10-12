@@ -45,7 +45,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
   members: {
     __sidePanels: null,
-    __studyItem: null,
+    __studyTreeItem: null,
     __nodesTree: null,
     __filesTree: null,
     __settingsPage: null,
@@ -177,6 +177,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const tabViewRight = this.getChildControl("side-panel-right-tabs");
       this.__removePages(tabViewRight);
 
+      const infoPage = this.__infoPage = this.__createTabPage("@FontAwesome5Solid/info", this.tr("Information"));
+      tabViewRight.add(infoPage);
+
       const settingsPage = this.__settingsPage = this.__createTabPage("@FontAwesome5Solid/sign-in-alt", this.tr("Settings"));
       tabViewRight.add(settingsPage);
 
@@ -188,7 +191,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__removePages(tabViewMain);
 
       this.__workbenchUI.setStudy(study);
-      const workbenchPanelPage = this.__workbenchPanelPage = this.__createTabPage("@FontAwesome5Solid/object-group", this.tr("Nodes"), this.__workbenchPanel);
+      const workbenchPanelPage = this.__workbenchPanelPage = this.__createTabPage("@FontAwesome5Solid/object-group", this.tr("Workbench"), this.__workbenchPanel);
       tabViewMain.add(workbenchPanelPage);
 
       const iFramePage = this.__iFramePage = this.__createTabPage("@FontAwesome5Solid/desktop", this.tr("Interactive"));
@@ -207,6 +210,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __connectEvents: function() {
+      const studyTreeItem = this.__studyTreeItem;
+      studyTreeItem.addListener("changeSelectedNode", () => {
+        this.__populateSecondPanel(this.getStudy());
+      });
+
+
       const nodesTree = this.__nodesTree;
       nodesTree.addListener("removeNode", e => {
         if (this.getStudy().isReadOnly()) {
@@ -472,9 +481,25 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __populateSecondPanel: function(node) {
+      this.__infoPage.removeAll();
       this.__settingsPage.removeAll();
       this.__outputsPage.removeAll();
-      if (node) {
+
+      if (node instanceof osparc.data.model.Study) {
+        this.__infoPage.getChildControl("button").show();
+        this.__settingsPage.getChildControl("button").exclude();
+        this.__outputsPage.getChildControl("button").exclude();
+        this.getChildControl("side-panel-right-tabs").setSelection([this.__infoPage]);
+
+        this.__infoPage.add(new osparc.studycard.Medium(node), {
+          flex: 1
+        });
+      } else if (node) {
+        this.__infoPage.getChildControl("button").exclude();
+        this.__settingsPage.getChildControl("button").show();
+        this.__outputsPage.getChildControl("button").show();
+        this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
+
         if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
           this.__settingsPage.add(node.getPropsForm(), {
             flex: 1
@@ -690,37 +715,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __workbenchChanged: function() {
       this.__nodesTree.populateTree();
       this.__nodesTree.nodeSelected(this.__currentNodeId);
-    },
-
-    __exportMacro: function(nodeId) {
-      if (!osparc.data.Permissions.getInstance().canDo("study.node.export", true)) {
-        return;
-      }
-      const node = this.getStudy().getWorkbench().getNode(nodeId);
-      if (node && node.isContainer()) {
-        const exportDAGView = new osparc.component.study.ExportDAG(node);
-        const window = new qx.ui.window.Window(this.tr("Export: ") + node.getLabel()).set({
-          appearance: "service-window",
-          layout: new qx.ui.layout.Grow(),
-          autoDestroy: true,
-          contentPadding: 0,
-          width: 700,
-          height: 700,
-          showMinimize: false,
-          modal: true
-        });
-        window.add(exportDAGView);
-        window.center();
-        window.open();
-
-        window.addListener("close", () => {
-          exportDAGView.tearDown();
-        }, this);
-
-        exportDAGView.addListener("finished", () => {
-          window.close();
-        }, this);
-      }
     },
 
     __checkMaximizeable: function() {
