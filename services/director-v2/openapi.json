@@ -484,8 +484,9 @@
             "required": true,
             "schema": {
               "title": "User Id",
-              "exclusiveMinimum": 0.0,
-              "type": "integer"
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "minimum": 0
             },
             "name": "user_id",
             "in": "query"
@@ -624,8 +625,9 @@
             "required": false,
             "schema": {
               "title": "User Id",
-              "exclusiveMinimum": 0.0,
-              "type": "integer"
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "minimum": 0
             },
             "name": "user_id",
             "in": "query"
@@ -897,20 +899,12 @@
             "title": "Email",
             "type": "string",
             "description": "Email address",
-            "format": "email",
-            "examples": [
-              "sun@sense.eight",
-              "deleen@minbar.bab"
-            ]
+            "format": "email"
           },
           "affiliation": {
             "title": "Affiliation",
             "type": "string",
-            "description": "Affiliation of the author",
-            "examples": [
-              "Sense8",
-              "Babylon 5"
-            ]
+            "description": "Affiliation of the author"
           }
         },
         "additionalProperties": false
@@ -927,12 +921,7 @@
           "name": {
             "title": "Name",
             "type": "string",
-            "description": "Name of the subject",
-            "examples": [
-              "travis-ci",
-              "coverals.io",
-              "github.io"
-            ]
+            "description": "Name of the subject"
           },
           "image": {
             "title": "Image",
@@ -940,12 +929,7 @@
             "minLength": 1,
             "type": "string",
             "description": "Url to the badge",
-            "format": "uri",
-            "examples": [
-              "https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master",
-              "https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master",
-              "https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation"
-            ]
+            "format": "uri"
           },
           "url": {
             "title": "Url",
@@ -953,12 +937,7 @@
             "minLength": 1,
             "type": "string",
             "description": "Link to the status",
-            "format": "uri",
-            "examples": [
-              "https://travis-ci.org/ITISFoundation/osparc-simcore 'State of CI: build, test and pushing images'",
-              "https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master 'Test coverage'",
-              "https://itisfoundation.github.io/"
-            ]
+            "format": "uri"
           }
         },
         "additionalProperties": false
@@ -973,8 +952,9 @@
         "properties": {
           "user_id": {
             "title": "User Id",
-            "exclusiveMinimum": 0.0,
-            "type": "integer"
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
           },
           "project_id": {
             "title": "Project Id",
@@ -1001,6 +981,12 @@
             "type": "boolean",
             "description": "if True will force re-running all dependent nodes",
             "default": false
+          },
+          "cluster_id": {
+            "title": "Cluster Id",
+            "minimum": 0.0,
+            "type": "integer",
+            "description": "the computation shall use the cluster described by its id, 0 is the default cluster"
           }
         }
       },
@@ -1013,8 +999,9 @@
         "properties": {
           "user_id": {
             "title": "User Id",
-            "exclusiveMinimum": 0.0,
-            "type": "integer"
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
           },
           "force": {
             "title": "Force",
@@ -1113,8 +1100,9 @@
         "properties": {
           "user_id": {
             "title": "User Id",
-            "exclusiveMinimum": 0.0,
-            "type": "integer"
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
           }
         }
       },
@@ -1177,8 +1165,10 @@
         "properties": {
           "CPU": {
             "title": "Cpu",
+            "exclusiveMinimum": true,
             "type": "number",
-            "description": "defines the required (maximum) CPU shares for running the services"
+            "description": "defines the required (maximum) CPU shares for running the services",
+            "minimum": 0.0
           },
           "GPU": {
             "title": "Gpu",
@@ -1188,14 +1178,13 @@
           },
           "RAM": {
             "title": "Ram",
-            "minimum": 1024.0,
             "type": "integer",
             "description": "defines the required (maximum) amount of RAM for running the services in bytes"
           },
           "MPI": {
             "title": "Mpi",
             "maximum": 1.0,
-            "exclusiveMinimum": 0.0,
+            "minimum": 0.0,
             "type": "integer",
             "description": "defines whether a MPI node is required for running the services",
             "deprecated": true
@@ -1232,26 +1221,7 @@
             "default": "NOT_STARTED"
           }
         },
-        "additionalProperties": false,
-        "examples": [
-          {
-            "modified": true,
-            "dependencies": [],
-            "current_status": "NOT_STARTED"
-          },
-          {
-            "modified": true,
-            "dependencies": [
-              "42838344-03de-4ce2-8d93-589a5dcdfd05"
-            ],
-            "current_status": "ABORTED"
-          },
-          {
-            "modified": false,
-            "dependencies": [],
-            "current_status": "SUCCESS"
-          }
-        ]
+        "additionalProperties": false
       },
       "PipelineDetails": {
         "title": "PipelineDetails",
@@ -1345,25 +1315,19 @@
             "title": "Service Key",
             "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
             "type": "string",
-            "description": "distinctive name for the node based on the docker registry path",
-            "examples": [
-              "simcore/services/dynamic/3dviewer"
-            ]
+            "description": "distinctive name for the node based on the docker registry path"
           },
           "service_version": {
             "title": "Service Version",
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "type": "string",
-            "description": "semantic version number of the node",
-            "examples": [
-              "1.0.0",
-              "0.0.1"
-            ]
+            "description": "semantic version number of the node"
           },
           "user_id": {
             "title": "User Id",
-            "exclusiveMinimum": 0.0,
-            "type": "integer"
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
           },
           "project_id": {
             "title": "Project Id",
@@ -1397,18 +1361,22 @@
           },
           "service_port": {
             "title": "Service Port",
-            "exclusiveMaximum": 65535.0,
-            "exclusiveMinimum": 0.0,
+            "exclusiveMaximum": true,
+            "exclusiveMinimum": true,
             "type": "integer",
-            "description": "the service swarm internal port"
+            "description": "the service swarm internal port",
+            "maximum": 65535,
+            "minimum": 0
           },
           "published_port": {
             "title": "Published Port",
-            "exclusiveMaximum": 65535.0,
-            "exclusiveMinimum": 0.0,
+            "exclusiveMaximum": true,
+            "exclusiveMinimum": true,
             "type": "integer",
             "description": "the service swarm published port if any",
-            "deprecated": true
+            "deprecated": true,
+            "maximum": 65535,
+            "minimum": 0
           },
           "entry_point": {
             "title": "Entry Point",
@@ -1429,36 +1397,7 @@
             "type": "string",
             "description": "additional information related to service state"
           }
-        },
-        "examples": [
-          {
-            "boot_type": "V0",
-            "key": "simcore/services/dynamic/3dviewer",
-            "version": "2.4.5",
-            "user_id": 234,
-            "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-            "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-            "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-            "host": "3dviewer_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-            "internal_port": 8888,
-            "state": "running",
-            "message": "",
-            "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa"
-          },
-          {
-            "boot_type": "V2",
-            "key": "simcore/services/dynamic/dy-static-file-viewer-dynamic-sidecar",
-            "version": "1.0.0",
-            "user_id": 234,
-            "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-            "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-            "host": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-            "internal_port": 80,
-            "state": "running",
-            "message": "",
-            "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa"
-          }
-        ]
+        }
       },
       "RunningServiceDetails": {
         "title": "RunningServiceDetails",
@@ -1476,11 +1415,13 @@
         "properties": {
           "published_port": {
             "title": "Published Port",
-            "exclusiveMaximum": 65535.0,
-            "exclusiveMinimum": 0.0,
+            "exclusiveMaximum": true,
+            "exclusiveMinimum": true,
             "type": "integer",
             "description": "The ports where the service provides its interface on the docker swarm",
-            "deprecated": true
+            "deprecated": true,
+            "maximum": 65535,
+            "minimum": 0
           },
           "entry_point": {
             "title": "Entry Point",
@@ -1520,11 +1461,13 @@
           },
           "service_port": {
             "title": "Service Port",
-            "exclusiveMaximum": 65535.0,
-            "exclusiveMinimum": 0.0,
+            "exclusiveMaximum": true,
+            "exclusiveMinimum": true,
             "type": "integer",
             "description": "port to access the service within the network",
-            "default": 80
+            "default": 80,
+            "maximum": 65535,
+            "minimum": 0
           },
           "service_basepath": {
             "title": "Service Basepath",
@@ -1646,25 +1589,19 @@
             "title": "Service Key",
             "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
             "type": "string",
-            "description": "distinctive name for the node based on the docker registry path",
-            "examples": [
-              "simcore/services/dynamic/3dviewer"
-            ]
+            "description": "distinctive name for the node based on the docker registry path"
           },
           "service_version": {
             "title": "Service Version",
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "type": "string",
-            "description": "semantic version number of the node",
-            "examples": [
-              "1.0.0",
-              "0.0.1"
-            ]
+            "description": "semantic version number of the node"
           },
           "user_id": {
             "title": "User Id",
-            "exclusiveMinimum": 0.0,
-            "type": "integer"
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
           },
           "project_id": {
             "title": "Project Id",
@@ -1719,48 +1656,30 @@
             "minLength": 1,
             "type": "string",
             "description": "url to the thumbnail",
-            "format": "uri",
-            "examples": [
-              "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
-            ]
+            "format": "uri"
           },
           "description": {
             "title": "Description",
             "type": "string",
-            "description": "human readable description of the purpose of the node",
-            "examples": [
-              "Our best node type",
-              "The mother of all nodes, makes your numbers shine!"
-            ]
+            "description": "human readable description of the purpose of the node"
           },
           "key": {
             "title": "Key",
             "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
             "type": "string",
-            "description": "distinctive name for the node based on the docker registry path",
-            "examples": [
-              "simcore/services/comp/itis/sleeper",
-              "simcore/services/dynamic/3dviewer"
-            ]
+            "description": "distinctive name for the node based on the docker registry path"
           },
           "version": {
             "title": "Version",
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "type": "string",
-            "description": "service version number",
-            "examples": [
-              "1.0.0",
-              "0.0.1"
-            ]
+            "description": "service version number"
           },
           "integration-version": {
             "title": "Integration-Version",
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "type": "string",
-            "description": "integration version number",
-            "examples": [
-              "1.0.0"
-            ]
+            "description": "integration version number"
           },
           "type": {
             "allOf": [
@@ -1768,10 +1687,7 @@
                 "$ref": "#/components/schemas/ServiceType"
               }
             ],
-            "description": "service type",
-            "examples": [
-              "computational"
-            ]
+            "description": "service type"
           },
           "badges": {
             "title": "Badges",
@@ -1792,114 +1708,21 @@
             "title": "Contact",
             "type": "string",
             "description": "email to correspond to the authors about the node",
-            "format": "email",
-            "examples": [
-              "lab@net.flix"
-            ]
+            "format": "email"
           },
           "inputs": {
             "title": "Inputs",
             "type": "object",
-            "description": "definition of the inputs of this node",
-            "patternProperties": {
-              "^[-_a-zA-Z0-9]+$": {
-                "$ref": "#/components/schemas/ServiceInput"
-              }
-            }
+            "description": "definition of the inputs of this node"
           },
           "outputs": {
             "title": "Outputs",
             "type": "object",
-            "description": "definition of the outputs of this node",
-            "patternProperties": {
-              "^[-_a-zA-Z0-9]+$": {
-                "$ref": "#/components/schemas/ServiceOutput"
-              }
-            }
+            "description": "definition of the outputs of this node"
           }
         },
         "additionalProperties": false,
-        "description": "Static metadata for a service injected in the image labels",
-        "examples": [
-          {
-            "name": "oSparc Python Runner",
-            "key": "simcore/services/comp/osparc-python-runner",
-            "type": "computational",
-            "integration-version": "1.0.0",
-            "version": "1.7.0",
-            "description": "oSparc Python Runner",
-            "contact": "smith@company.com",
-            "authors": [
-              {
-                "name": "John Smith",
-                "email": "smith@company.com",
-                "affiliation": "Company"
-              },
-              {
-                "name": "Richard Brown",
-                "email": "brown@uni.edu",
-                "affiliation": "University"
-              }
-            ],
-            "inputs": {
-              "input_1": {
-                "displayOrder": 1,
-                "label": "Input data",
-                "description": "Any code, requirements or data file",
-                "type": "data:*/*"
-              }
-            },
-            "outputs": {
-              "output_1": {
-                "displayOrder": 1,
-                "label": "Output data",
-                "description": "All data produced by the script is zipped as output_data.zip",
-                "type": "data:*/*",
-                "fileToKeyMap": {
-                  "output_data.zip": "output_1"
-                }
-              }
-            }
-          },
-          {
-            "name": "oSparc Python Runner",
-            "key": "simcore/services/comp/osparc-python-runner",
-            "type": "computational",
-            "integration-version": "1.0.0",
-            "version": "1.7.0",
-            "description": "oSparc Python Runner",
-            "contact": "smith@company.com",
-            "authors": [
-              {
-                "name": "John Smith",
-                "email": "smith@company.com",
-                "affiliation": "Company"
-              },
-              {
-                "name": "Richard Brown",
-                "email": "brown@uni.edu",
-                "affiliation": "University"
-              }
-            ],
-            "inputs": {
-              "input_1": {
-                "label": "Input data",
-                "description": "Any code, requirements or data file",
-                "type": "data:*/*"
-              }
-            },
-            "outputs": {
-              "output_1": {
-                "label": "Output data",
-                "description": "All data produced by the script is zipped as output_data.zip",
-                "type": "data:*/*",
-                "fileToKeyMap": {
-                  "output_data.zip": "output_1"
-                }
-              }
-            }
-          }
-        ]
+        "description": "Static metadata for a service injected in the image labels"
       },
       "ServiceExtras": {
         "title": "ServiceExtras",
@@ -1959,37 +1782,12 @@
             "title": "Type",
             "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
             "type": "string",
-            "description": "data type expected on this input glob matching for data type is allowed",
-            "examples": [
-              "number",
-              "boolean",
-              "data:*/*",
-              "data:text/*",
-              "data:[image/jpeg,image/png]",
-              "data:application/json",
-              "data:application/json;schema=https://my-schema/not/really/schema.json",
-              "data:application/vnd.ms-excel",
-              "data:text/plain",
-              "data:application/hdf5",
-              "data:application/edu.ucdavis@ceclancy.xyz"
-            ]
+            "description": "data type expected on this input glob matching for data type is allowed"
           },
           "fileToKeyMap": {
             "title": "Filetokeymap",
             "type": "object",
-            "description": "Place the data associated with the named keys in files",
-            "patternProperties": {
-              ".+": {
-                "type": "string",
-                "pattern": "^[-_a-zA-Z0-9]+$"
-              }
-            },
-            "examples": [
-              {
-                "dir/input1.txt": "key_1",
-                "dir33/input2.txt": "key2"
-              }
-            ]
+            "description": "Place the data associated with the named keys in files"
           },
           "unit": {
             "title": "Unit",
@@ -2011,10 +1809,6 @@
               {
                 "type": "string"
               }
-            ],
-            "examples": [
-              "Dog",
-              true
             ]
           },
           "widget": {
@@ -2028,42 +1822,7 @@
           }
         },
         "additionalProperties": false,
-        "description": "Metadata on a service input port",
-        "examples": [
-          {
-            "displayOrder": 1,
-            "label": "Input files",
-            "description": "Files downloaded from service connected at the input",
-            "type": "data:*/*"
-          },
-          {
-            "displayOrder": 2,
-            "label": "Sleep Time",
-            "description": "Time to wait before completion",
-            "type": "number",
-            "defaultValue": 0,
-            "unit": "second",
-            "widget": {
-              "type": "TextArea",
-              "details": {
-                "minHeight": 3
-              }
-            }
-          },
-          {
-            "label": "Sleep Time",
-            "description": "Time to wait before completion",
-            "type": "number",
-            "defaultValue": 0,
-            "unit": "second",
-            "widget": {
-              "type": "TextArea",
-              "details": {
-                "minHeight": 3
-              }
-            }
-          }
-        ]
+        "description": "Metadata on a service input port"
       },
       "ServiceOutput": {
         "title": "ServiceOutput",
@@ -2096,37 +1855,12 @@
             "title": "Type",
             "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
             "type": "string",
-            "description": "data type expected on this input glob matching for data type is allowed",
-            "examples": [
-              "number",
-              "boolean",
-              "data:*/*",
-              "data:text/*",
-              "data:[image/jpeg,image/png]",
-              "data:application/json",
-              "data:application/json;schema=https://my-schema/not/really/schema.json",
-              "data:application/vnd.ms-excel",
-              "data:text/plain",
-              "data:application/hdf5",
-              "data:application/edu.ucdavis@ceclancy.xyz"
-            ]
+            "description": "data type expected on this input glob matching for data type is allowed"
           },
           "fileToKeyMap": {
             "title": "Filetokeymap",
             "type": "object",
-            "description": "Place the data associated with the named keys in files",
-            "patternProperties": {
-              ".+": {
-                "type": "string",
-                "pattern": "^[-_a-zA-Z0-9]+$"
-              }
-            },
-            "examples": [
-              {
-                "dir/input1.txt": "key_1",
-                "dir33/input2.txt": "key2"
-              }
-            ]
+            "description": "Place the data associated with the named keys in files"
           },
           "unit": {
             "title": "Unit",
@@ -2145,28 +1879,7 @@
           }
         },
         "additionalProperties": false,
-        "description": "Metadata on a service input or output port",
-        "examples": [
-          {
-            "displayOrder": 2,
-            "label": "Time Slept",
-            "description": "Time the service waited before completion",
-            "type": "number"
-          },
-          {
-            "displayOrder": 2,
-            "label": "Time Slept",
-            "description": "Time the service waited before completion",
-            "type": "number",
-            "unit": "second"
-          },
-          {
-            "label": "Time Slept",
-            "description": "Time the service waited before completion",
-            "type": "number",
-            "unit": "second"
-          }
-        ]
+        "description": "Metadata on a service input or output port"
       },
       "ServiceState": {
         "title": "ServiceState",
@@ -2244,9 +1957,10 @@
         "properties": {
           "minHeight": {
             "title": "Minheight",
-            "exclusiveMinimum": 0.0,
+            "exclusiveMinimum": true,
             "type": "integer",
-            "description": "minimum Height of the textarea"
+            "description": "minimum Height of the textarea",
+            "minimum": 0
           }
         },
         "additionalProperties": false

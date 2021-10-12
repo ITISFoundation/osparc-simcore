@@ -52,6 +52,8 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     )
     override_fastapi_openapi_method(app)
 
+    override_fastapi_openapi_method(app)
+
     logger.debug(settings)
     app.state.settings = settings
 
