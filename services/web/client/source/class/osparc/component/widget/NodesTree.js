@@ -53,7 +53,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   events: {
     "nodeSelected": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
-    "exportNode": "qx.event.type.Data",
     "changeSelectedNode": "qx.event.type.Data"
   },
 
@@ -138,6 +137,9 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               node.bind("label", item.getModel(), "label");
             }
             c.bindProperty("label", "label", null, item, id);
+            if (item.getModel().getNodeId() === study.getUuid()) {
+              item.setIcon("@FontAwesome5Solid/home/14");
+            }
           },
           configureItem: item => {
             item.addListener("dbltap", () => {
@@ -179,18 +181,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     __selectedItem: function(item) {
       const nodeId = item.getModel().getNodeId();
       this.fireDataEvent("changeSelectedNode", nodeId);
-    },
-
-    __exportDAG: function() {
-      const selectedItem = this.__getSelection();
-      if (selectedItem) {
-        if (selectedItem.getIsContainer()) {
-          const nodeId = selectedItem.getNodeId();
-          this.fireDataEvent("exportNode", nodeId);
-        } else {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only Groups can be exported."), "ERROR");
-        }
-      }
     },
 
     __openItem: function(nodeId) {

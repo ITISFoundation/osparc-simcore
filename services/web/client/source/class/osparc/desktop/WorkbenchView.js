@@ -45,6 +45,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
   members: {
     __sidePanels: null,
+    __studyItem: null,
     __nodesTree: null,
     __filesTree: null,
     __settingsPage: null,
@@ -139,28 +140,29 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __initViews: function() {
-      /*
-      if (this.__sidePanels) {
-        this.remove(this.__sidePanels);
-        this.__sidePanels = this.getChildControl("side-panels");
-      }
-      if (this.__workbenchPanel) {
-        this.remove(this.__workbenchPanel);
-        this.__workbenchPanel = this.getChildControl("workbench-panel");
-      }
-      */
-
       const study = this.getStudy();
 
 
       const tabViewLeft = this.getChildControl("side-panel-left-tabs");
       this.__removePages(tabViewLeft);
 
+      const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
+
+      const studyTreeItem = this.__studyTreeItem = new osparc.component.widget.StudyTitleOnlyTree().set({
+        minHeight: 21,
+        maxHeight: 24
+      });
+      studyTreeItem.setStudy(study);
+      homeAndNodesTree.add(studyTreeItem);
+
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree().set({
         hideRoot: true
       });
       nodesTree.setStudy(study);
-      const nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), nodesTree);
+      homeAndNodesTree.add(nodesTree, {
+        flex: 1
+      });
+      const nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree);
       tabViewLeft.add(nodesPage);
 
       const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
@@ -223,10 +225,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.__populateSecondPanel(node);
           this.__evalIframeButton(node);
         }
-      });
-      nodesTree.addListener("exportNode", e => {
-        const nodeId = e.getData();
-        this.__exportMacro(nodeId);
       });
 
       const workbenchUI = this.__workbenchUI;

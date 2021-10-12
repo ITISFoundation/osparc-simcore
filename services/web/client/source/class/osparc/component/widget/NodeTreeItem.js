@@ -53,7 +53,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
     nodeId : {
       check : "String",
       event: "changeNodeId",
-      apply: "_applyNodeId",
+      apply: "__applyNodeId",
       nullable : true
     }
   },
@@ -153,12 +153,12 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       this.getChildControl("open-btn");
       const studyId = this.__study.getUuid();
       const readOnly = this.__study.isReadOnly();
-      this.getChildControl("rename-btn").setEnabled(!readOnly);
-      this.getChildControl("delete-btn").setEnabled(!readOnly && studyId !== this.getNodeId());
+      this.getChildControl("rename-btn").setVisibility(readOnly ? "excluded" : "visible");
+      this.getChildControl("delete-btn").setVisibility((readOnly || studyId === this.getNodeId()) ? "excluded" : "visible");
       this.getChildControl("node-id");
     },
 
-    _applyNodeId: function(nodeId) {
+    __applyNodeId: function(nodeId) {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       if (nodeId === study.getUuid()) {
         osparc.utils.Utils.setIdToWidget(this, "nodeTreeItem_root");
@@ -211,10 +211,8 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       if (state === "selected") {
         this.getChildControl("buttons").exclude();
         const studyId = this.__study.getUuid();
-        const readOnly = this.__study.isReadOnly();
-        this.getChildControl("rename-btn").setEnabled(!readOnly);
         // disable delete button if the study is read only or if it's the study node item
-        this.getChildControl("delete-btn").setEnabled(!readOnly && studyId !== this.getNodeId());
+        this.getChildControl("delete-btn").setEnabled(studyId !== this.getNodeId());
       }
     }
   }
