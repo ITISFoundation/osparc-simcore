@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 from models_library.basic_types import BootModeEnum
+from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import setup_tracing
 
 from ..api.module_setup import setup_api
@@ -38,6 +39,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
     )
+    override_fastapi_openapi_method(app)
 
     logger.debug(settings)
     app.state.settings = settings

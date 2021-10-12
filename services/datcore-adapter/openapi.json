@@ -1,0 +1,1010 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "Datcore Adapter Service",
+    "description": "Interfaces with Pennsieve storage service",
+    "version": "0.1.0a0"
+  },
+  "paths": {
+    "/v0/live": {
+      "get": {
+        "tags": [
+          "healthcheck"
+        ],
+        "summary": "return service health",
+        "operationId": "get_service_alive_v0_live_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/ready": {
+      "get": {
+        "tags": [
+          "healthcheck"
+        ],
+        "summary": "Get Service Ready",
+        "operationId": "get_service_ready_v0_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppStatusCheck"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/user/profile": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "returns the user profile",
+        "operationId": "get_user_profile_v0_user_profile_get",
+        "parameters": [
+          {
+            "description": "Datcore API Key",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Key",
+              "type": "string",
+              "description": "Datcore API Key"
+            },
+            "name": "x-datcore-api-key",
+            "in": "header"
+          },
+          {
+            "description": "Datcore API Secret",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Secret",
+              "type": "string",
+              "description": "Datcore API Secret"
+            },
+            "name": "x-datcore-api-secret",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/datasets": {
+      "get": {
+        "tags": [
+          "datasets"
+        ],
+        "summary": "list datasets",
+        "operationId": "list_datasets_v0_datasets_get",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Page",
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "default": 1,
+              "minimum": 0
+            },
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Size",
+              "maximum": 100.0,
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "default": 50,
+              "minimum": 0
+            },
+            "name": "size",
+            "in": "query"
+          },
+          {
+            "description": "Datcore API Key",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Key",
+              "type": "string",
+              "description": "Datcore API Key"
+            },
+            "name": "x-datcore-api-key",
+            "in": "header"
+          },
+          {
+            "description": "Datcore API Secret",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Secret",
+              "type": "string",
+              "description": "Datcore API Secret"
+            },
+            "name": "x-datcore-api-secret",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_DatasetMetaData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/datasets/{dataset_id}/files": {
+      "get": {
+        "tags": [
+          "datasets"
+        ],
+        "summary": "list top level files/folders in a dataset",
+        "operationId": "list_dataset_top_level_files_v0_datasets__dataset_id__files_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            },
+            "name": "dataset_id",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Page",
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "default": 1,
+              "minimum": 0
+            },
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Size",
+              "maximum": 100.0,
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "default": 50,
+              "minimum": 0
+            },
+            "name": "size",
+            "in": "query"
+          },
+          {
+            "description": "Datcore API Key",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Key",
+              "type": "string",
+              "description": "Datcore API Key"
+            },
+            "name": "x-datcore-api-key",
+            "in": "header"
+          },
+          {
+            "description": "Datcore API Secret",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Secret",
+              "type": "string",
+              "description": "Datcore API Secret"
+            },
+            "name": "x-datcore-api-secret",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_FileMetaData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "datasets"
+        ],
+        "summary": "uploads a file into a dataset",
+        "operationId": "upload_file_v0_datasets__dataset_id__files_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            },
+            "name": "dataset_id",
+            "in": "path"
+          },
+          {
+            "description": "Datcore API Key",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Key",
+              "type": "string",
+              "description": "Datcore API Key"
+            },
+            "name": "x-datcore-api-key",
+            "in": "header"
+          },
+          {
+            "description": "Datcore API Secret",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Secret",
+              "type": "string",
+              "description": "Datcore API Secret"
+            },
+            "name": "x-datcore-api-secret",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_file_v0_datasets__dataset_id__files_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/datasets/{dataset_id}/files/{collection_id}": {
+      "get": {
+        "tags": [
+          "datasets"
+        ],
+        "summary": "list top level files/folders in a collection in a dataset",
+        "operationId": "list_dataset_collection_files_v0_datasets__dataset_id__files__collection_id__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            },
+            "name": "dataset_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Collection Id",
+              "type": "string"
+            },
+            "name": "collection_id",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Page",
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "default": 1,
+              "minimum": 0
+            },
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Size",
+              "maximum": 100.0,
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "default": 50,
+              "minimum": 0
+            },
+            "name": "size",
+            "in": "query"
+          },
+          {
+            "description": "Datcore API Key",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Key",
+              "type": "string",
+              "description": "Datcore API Key"
+            },
+            "name": "x-datcore-api-key",
+            "in": "header"
+          },
+          {
+            "description": "Datcore API Secret",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Secret",
+              "type": "string",
+              "description": "Datcore API Secret"
+            },
+            "name": "x-datcore-api-secret",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_FileMetaData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "datasets"
+        ],
+        "summary": "uploads a file into a collection",
+        "operationId": "upload_file_in_collection_v0_datasets__dataset_id__files__collection_id__post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            },
+            "name": "dataset_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Collection Id",
+              "type": "string"
+            },
+            "name": "collection_id",
+            "in": "path"
+          },
+          {
+            "description": "Datcore API Key",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Key",
+              "type": "string",
+              "description": "Datcore API Key"
+            },
+            "name": "x-datcore-api-key",
+            "in": "header"
+          },
+          {
+            "description": "Datcore API Secret",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Secret",
+              "type": "string",
+              "description": "Datcore API Secret"
+            },
+            "name": "x-datcore-api-secret",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_file_in_collection_v0_datasets__dataset_id__files__collection_id__post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/datasets/{dataset_id}/files_legacy": {
+      "get": {
+        "tags": [
+          "datasets"
+        ],
+        "summary": "list all file meta data in dataset",
+        "operationId": "list_dataset_files_legacy_v0_datasets__dataset_id__files_legacy_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            },
+            "name": "dataset_id",
+            "in": "path"
+          },
+          {
+            "description": "Datcore API Key",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Key",
+              "type": "string",
+              "description": "Datcore API Key"
+            },
+            "name": "x-datcore-api-key",
+            "in": "header"
+          },
+          {
+            "description": "Datcore API Secret",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Secret",
+              "type": "string",
+              "description": "Datcore API Secret"
+            },
+            "name": "x-datcore-api-secret",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Dataset Files Legacy V0 Datasets  Dataset Id  Files Legacy Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FileMetaData"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/files/{file_id}": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "summary": "returns a pre-signed download link for the file",
+        "operationId": "download_file_v0_files__file_id__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "File Id",
+              "type": "string"
+            },
+            "name": "file_id",
+            "in": "path"
+          },
+          {
+            "description": "Datcore API Key",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Key",
+              "type": "string",
+              "description": "Datcore API Key"
+            },
+            "name": "x-datcore-api-key",
+            "in": "header"
+          },
+          {
+            "description": "Datcore API Secret",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Secret",
+              "type": "string",
+              "description": "Datcore API Secret"
+            },
+            "name": "x-datcore-api-secret",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileDownloadOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "files"
+        ],
+        "summary": "deletes a file",
+        "operationId": "delete_file_v0_files__file_id__delete",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "File Id",
+              "type": "string"
+            },
+            "name": "file_id",
+            "in": "path"
+          },
+          {
+            "description": "Datcore API Key",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Key",
+              "type": "string",
+              "description": "Datcore API Key"
+            },
+            "name": "x-datcore-api-key",
+            "in": "header"
+          },
+          {
+            "description": "Datcore API Secret",
+            "required": true,
+            "schema": {
+              "title": "X-Datcore-Api-Secret",
+              "type": "string",
+              "description": "Datcore API Secret"
+            },
+            "name": "x-datcore-api-secret",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AppStatusCheck": {
+        "title": "AppStatusCheck",
+        "required": [
+          "app_name",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "app_name": {
+            "title": "App Name",
+            "type": "string",
+            "description": "Application name"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string",
+            "description": "Application's version"
+          },
+          "services": {
+            "title": "Services",
+            "type": "object",
+            "description": "Other backend services connected from this service",
+            "default": {}
+          },
+          "sessions": {
+            "title": "Sessions",
+            "type": "object",
+            "description": "Client sessions info. If single session per app, then is denoted as main",
+            "default": {}
+          },
+          "url": {
+            "title": "Url",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "description": "Link to current resource",
+            "format": "uri"
+          },
+          "diagnostics_url": {
+            "title": "Diagnostics Url",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "description": "Link to diagnostics report sub-resource. This MIGHT take some time to compute",
+            "format": "uri"
+          }
+        }
+      },
+      "Body_upload_file_in_collection_v0_datasets__dataset_id__files__collection_id__post": {
+        "title": "Body_upload_file_in_collection_v0_datasets__dataset_id__files__collection_id__post",
+        "required": [
+          "file"
+        ],
+        "type": "object",
+        "properties": {
+          "file": {
+            "title": "File",
+            "type": "string",
+            "format": "binary"
+          }
+        }
+      },
+      "Body_upload_file_v0_datasets__dataset_id__files_post": {
+        "title": "Body_upload_file_v0_datasets__dataset_id__files_post",
+        "required": [
+          "file"
+        ],
+        "type": "object",
+        "properties": {
+          "file": {
+            "title": "File",
+            "type": "string",
+            "format": "binary"
+          }
+        }
+      },
+      "DataType": {
+        "title": "DataType",
+        "enum": [
+          "FILE",
+          "FOLDER"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
+      "DatasetMetaData": {
+        "title": "DatasetMetaData",
+        "required": [
+          "id",
+          "display_name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          }
+        }
+      },
+      "FileDownloadOut": {
+        "title": "FileDownloadOut",
+        "required": [
+          "link"
+        ],
+        "type": "object",
+        "properties": {
+          "link": {
+            "title": "Link",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "FileMetaData": {
+        "title": "FileMetaData",
+        "required": [
+          "dataset_id",
+          "package_id",
+          "id",
+          "name",
+          "type",
+          "path",
+          "size",
+          "created_at",
+          "last_modified_at",
+          "data_type"
+        ],
+        "type": "object",
+        "properties": {
+          "dataset_id": {
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "package_id": {
+            "title": "Package Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string",
+            "format": "path"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_modified_at": {
+            "title": "Last Modified At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "data_type": {
+            "$ref": "#/components/schemas/DataType"
+          }
+        }
+      },
+      "HTTPValidationError": {
+        "title": "HTTPValidationError",
+        "type": "object",
+        "properties": {
+          "errors": {
+            "title": "Validation errors",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "Page_DatasetMetaData_": {
+        "title": "Page[DatasetMetaData]",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "title": "Items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DatasetMetaData"
+            }
+          },
+          "total": {
+            "title": "Total",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "page": {
+            "title": "Page",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "Page_FileMetaData_": {
+        "title": "Page[FileMetaData]",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "title": "Items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FileMetaData"
+            }
+          },
+          "total": {
+            "title": "Total",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "page": {
+            "title": "Page",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "Profile": {
+        "title": "Profile",
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        }
+      },
+      "ValidationError": {
+        "title": "ValidationError",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "loc": {
+            "title": "Location",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
