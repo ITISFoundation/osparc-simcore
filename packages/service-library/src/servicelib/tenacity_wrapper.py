@@ -1,6 +1,5 @@
 import logging
 import sys
-import typing
 from typing import Any, Callable, Dict, Union
 
 from tenacity import RetryCallState
@@ -10,13 +9,6 @@ from tenacity import retry as tenacity_retry
 from tenacity._asyncio import AsyncRetrying as TenacityAsyncRetrying
 from tenacity.after import after_log
 from tenacity.before import before_log
-
-if typing.TYPE_CHECKING:
-    import types
-
-    from tenacity.stop import stop_base
-    from tenacity.wait import wait_base
-
 
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -30,7 +22,7 @@ def _get_after_logger() -> Callable[[RetryCallState], None]:
     return after_log(logger, logging.DEBUG)
 
 
-def _inject_in_kwargs(kwargs: Dict[str, Any]) -> None:
+def _inject_loggers_if_missing(kwargs: Dict[str, Any]) -> None:
     if "before" not in kwargs:
         kwargs["before"] = _get_before_logger()
     if "after" not in kwargs:
@@ -39,20 +31,20 @@ def _inject_in_kwargs(kwargs: Dict[str, Any]) -> None:
 
 class AsyncRetrying(TenacityAsyncRetrying):
     def __init__(self, **kwargs: Any) -> None:
-        _inject_in_kwargs(kwargs)
+        _inject_loggers_if_missing(kwargs)
         super().__init__(**kwargs)
 
 
 class Retrying(TenacityRetrying):
     def __init__(self, **kwargs: Any):
-        _inject_in_kwargs(kwargs)
+        _inject_loggers_if_missing(kwargs)
         super().__init__(**kwargs)
 
 
 def retry(
     *dargs: Any, **dkw: Any
 ) -> Union[WrappedFn, Callable[[WrappedFn], WrappedFn]]:
-    _inject_in_kwargs(dkw)
+    _inject_loggers_if_missing(dkw)
     return tenacity_retry(*dargs, **dkw)
 
 

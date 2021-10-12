@@ -10,8 +10,8 @@ from servicelib.aiohttp import monitor_slow_callbacks
 from servicelib.aiohttp.aiopg_utils import (
     DatabaseError,
     postgres_service_retry_policy_kwargs,
-    retry,
 )
+from servicelib.tenacity_wrapper import retry
 
 
 async def slow_task(delay):
