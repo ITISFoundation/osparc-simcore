@@ -9,7 +9,10 @@ from dask.distributed import Client, Future, fire_and_forget
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from tenacity import before_sleep_log, retry, retry_if_exception_type, wait_random
+from servicelib.tenacity_wrapper import retry
+from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_exception_type
+from tenacity.wait import wait_random
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,

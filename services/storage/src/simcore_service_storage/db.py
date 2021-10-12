@@ -3,7 +3,6 @@ from typing import Any, Dict, Optional
 
 from aiohttp import web
 from aiopg.sa import Engine
-from servicelib.common_aiopg_utils import create_pg_engine
 from servicelib.aiohttp.aiopg_utils import (
     DataSourceName,
     PostgresRetryPolicyUponInitialization,
@@ -12,7 +11,8 @@ from servicelib.aiohttp.aiopg_utils import (
     is_pg_responsive,
     raise_if_not_responsive,
 )
-from tenacity import AsyncRetrying
+from servicelib.common_aiopg_utils import create_pg_engine
+from servicelib.tenacity_wrapper import AsyncRetrying
 
 from .constants import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from .models import metadata

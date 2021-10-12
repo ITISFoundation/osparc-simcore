@@ -19,6 +19,7 @@ import click
 import docker
 from alembic import __version__ as __alembic_version__
 from alembic.config import Config as AlembicConfig
+from servicelib.tenacity_wrapper import Retrying
 from simcore_postgres_database.models import *
 from simcore_postgres_database.utils import (
     build_url,
@@ -26,7 +27,8 @@ from simcore_postgres_database.utils import (
     hide_url_pass,
     raise_if_not_responsive,
 )
-from tenacity import Retrying, after_log, wait_fixed
+from tenacity.after import after_log
+from tenacity.wait import wait_fixed
 
 alembic_version = tuple(int(v) for v in __alembic_version__.split(".")[0:3])
 
@@ -149,7 +151,7 @@ DEFAULT_DB = "simcoredb"
 
 @click.group()
 def main():
-    """ Simplified CLI for database migration with alembic """
+    """Simplified CLI for database migration with alembic"""
 
 
 @main.command()
@@ -159,7 +161,7 @@ def main():
 @click.option("--port", type=int)
 @click.option("--database", "-d")
 def discover(**cli_inputs) -> Optional[Dict]:
-    """ Discovers databases and caches configs in ~/.simcore_postgres_database.json (except if --no-cache)"""
+    """Discovers databases and caches configs in ~/.simcore_postgres_database.json (except if --no-cache)"""
     # NOTE: Do not add defaults to user, password so we get a chance to ping urls
     # TODO: if multiple candidates online, then query user to select
 
@@ -169,13 +171,13 @@ def discover(**cli_inputs) -> Optional[Dict]:
     # tests different urls
 
     def _test_cached() -> Dict:
-        """Tests cached configuration """
+        """Tests cached configuration"""
         cfg = _load_cache(raise_if_error=True)
         cfg.update(cli_cfg)  # overrides
         return cfg
 
     def _test_env() -> Dict:
-        """Tests environ variables """
+        """Tests environ variables"""
         cfg = {
             "user": os.getenv("POSTGRES_USER"),
             "password": os.getenv("POSTGRES_PASSWORD"),
@@ -187,7 +189,7 @@ def discover(**cli_inputs) -> Optional[Dict]:
         return cfg
 
     def _test_swarm() -> Dict:
-        """Tests published port in swarm from host """
+        """Tests published port in swarm from host"""
         cfg = _test_env()
         cfg["host"] = "127.0.0.1"
         cfg["port"] = _get_service_published_port(cli_cfg.get("host", DEFAULT_HOST))
@@ -231,7 +233,7 @@ def discover(**cli_inputs) -> Optional[Dict]:
 
 @main.command()
 def info():
-    """ Displays discovered config and other alembic infos"""
+    """Displays discovered config and other alembic infos"""
     click.echo("Using alembic {}.{}.{}".format(*alembic_version))
 
     cfg = _load_cache()
@@ -246,13 +248,13 @@ def info():
 
 @main.command()
 def clean():
-    """ Clears discovered database """
+    """Clears discovered database"""
     _reset_cache()
 
 
 @main.command()
 def upgrade_and_close():
-    """ Used in migration service program to discover, upgrade and close"""
+    """Used in migration service program to discover, upgrade and close"""
 
     for attempt in Retrying(wait=wait_fixed(5), after=after_log(log, logging.ERROR)):
         with attempt:

@@ -14,7 +14,7 @@ from servicelib.aiohttp.monitor_services import (
     service_stopped,
 )
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
-from tenacity import retry
+from servicelib.tenacity_wrapper import retry
 
 from .computation_config import (
     APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
@@ -157,7 +157,7 @@ async def subscribe(app: web.Application) -> None:
 
 @retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
 async def wait_till_rabbitmq_responsive(url: str) -> bool:
-    """Check if something responds to ``url`` """
+    """Check if something responds to ``url``"""
     connection = await aio_pika.connect(url)
     await connection.close()
     return True

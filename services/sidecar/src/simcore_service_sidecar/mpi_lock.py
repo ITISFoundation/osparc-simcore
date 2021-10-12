@@ -12,9 +12,12 @@ import multiprocessing
 import os
 
 import aioredis
-import tenacity
 from aioredlock import Aioredlock, LockError
 from pydantic.networks import RedisDsn
+from servicelib.tenacity_wrapper import retry
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 from . import config
 
@@ -39,10 +42,10 @@ async def _wrapped_acquire_and_extend_lock_worker(
         reply_queue.put(False)
 
 
-@tenacity.retry(
-    wait=tenacity.wait_fixed(5),
-    stop=tenacity.stop_after_attempt(60),
-    before_sleep=tenacity.before_sleep_log(logger, logging.INFO),
+@retry(
+    wait=wait_fixed(5),
+    stop=stop_after_attempt(60),
+    before_sleep=before_sleep_log(logger, logging.INFO),
     reraise=True,
 )
 async def wait_till_redis_responsive(dsn: RedisDsn) -> None:

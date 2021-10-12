@@ -27,12 +27,15 @@ from models_library.settings.redis import RedisConfig
 from pydantic.networks import AnyHttpUrl
 from pydantic.types import PositiveInt
 from requests.models import Response
+from servicelib.tenacity_wrapper import retry
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from starlette import status
 from starlette.testclient import TestClient
-from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random
 from yarl import URL
 
 pytest_simcore_core_services_selection = [

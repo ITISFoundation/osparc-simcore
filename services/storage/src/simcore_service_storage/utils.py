@@ -6,9 +6,12 @@ from typing import Union
 from uuid import UUID
 
 import aiofiles
-import tenacity
 from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
+from servicelib.tenacity_wrapper import retry
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 from yarl import URL
 
 logger = logging.getLogger(__name__)
@@ -20,10 +23,10 @@ RETRY_COUNT = 20
 CONNECT_TIMEOUT_SECS = 30
 
 
-@tenacity.retry(
-    wait=tenacity.wait_fixed(RETRY_WAIT_SECS),
-    stop=tenacity.stop_after_attempt(RETRY_COUNT),
-    before_sleep=tenacity.before_sleep_log(logger, logging.INFO),
+@retry(
+    wait=wait_fixed(RETRY_WAIT_SECS),
+    stop=stop_after_attempt(RETRY_COUNT),
+    before_sleep=before_sleep_log(logger, logging.INFO),
 )
 async def assert_enpoint_is_ok(
     session: ClientSession, url: URL, expected_response: int = 200

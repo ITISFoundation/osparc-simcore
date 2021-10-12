@@ -4,7 +4,6 @@
 import logging
 import socket
 
-import tenacity
 from aiopg.sa import Engine
 from servicelib.common_aiopg_utils import (
     DataSourceName,
@@ -12,13 +11,14 @@ from servicelib.common_aiopg_utils import (
     create_pg_engine,
     is_postgres_responsive,
 )
+from servicelib.tenacity_wrapper import retry
 
 from .config import POSTGRES_DB, POSTGRES_ENDPOINT, POSTGRES_PW, POSTGRES_USER
 
 log = logging.getLogger(__name__)
 
 
-@tenacity.retry(**PostgresRetryPolicyUponInitialization().kwargs)
+@retry(**PostgresRetryPolicyUponInitialization().kwargs)
 async def wait_till_postgres_responsive(dsn: DataSourceName) -> None:
     if not is_postgres_responsive(dsn):
         raise Exception

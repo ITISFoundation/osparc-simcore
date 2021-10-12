@@ -13,6 +13,7 @@ from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
+from servicelib.tenacity_wrapper import retry
 from simcore_service_webserver.diagnostics import (
     kMAX_AVG_RESP_LATENCY,
     setup_diagnostics,
@@ -24,7 +25,9 @@ from simcore_service_webserver.diagnostics_core import (
 )
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
-from tenacity import before_log, retry, stop_after_attempt, wait_fixed
+from tenacity.before import before_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 from yarl import URL
 
 logger = logging.getLogger(__name__)

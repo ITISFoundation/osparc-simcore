@@ -23,10 +23,10 @@ from aiopg.sa import Engine
 from aiopg.sa.result import RowProxy
 from servicelib.aiohttp.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.aiohttp.client_session import get_client_session
+from servicelib.tenacity_wrapper import retry
 from servicelib.utils import fire_and_forget_task
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql.expression import literal_column
-from tenacity import retry
 from yarl import URL
 
 from .access_layer import (

@@ -10,15 +10,19 @@ from typing import Any, Dict, List
 
 import aiopg.sa
 import pytest
-import tenacity
 from aiopg.sa.result import RowProxy
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from servicelib.tenacity_wrapper import AsyncRetrying
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_service_webserver.computation_comp_tasks_listening_task import (
     comp_tasks_listening_task,
 )
 from sqlalchemy.sql.elements import literal_column
+from tenacity.before import before_log
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 logger = logging.getLogger(__name__)
 
@@ -135,10 +139,10 @@ async def test_listen_comp_tasks_task(
 
 def _async_retry_if_fails():
     # Helper that retries to account for some uncontrolled delays
-    return tenacity.AsyncRetrying(
-        wait=tenacity.wait_fixed(1),
-        stop=tenacity.stop_after_delay(10),
-        retry=tenacity.retry_if_exception_type(AssertionError),
-        before=tenacity.before_log(logger, logging.INFO),
+    return AsyncRetrying(
+        wait=wait_fixed(1),
+        stop=stop_after_delay(10),
+        retry=retry_if_exception_type(AssertionError),
+        before=before_log(logger, logging.INFO),
         reraise=True,
     )

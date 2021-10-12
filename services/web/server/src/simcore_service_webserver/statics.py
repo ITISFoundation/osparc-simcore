@@ -15,13 +15,11 @@ from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ClientConnectionError, ClientError
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.client_session import get_client_session
-from tenacity import (
-    AsyncRetrying,
-    before_log,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_fixed,
-)
+from servicelib.tenacity_wrapper import AsyncRetrying
+from tenacity.before import before_log
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 from yarl import URL
 
 from .constants import (

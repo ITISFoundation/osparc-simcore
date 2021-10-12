@@ -3,7 +3,10 @@ from typing import Optional
 
 from aiohttp import web
 from celery import Celery
-from tenacity import AsyncRetrying, before_log, stop_after_attempt, wait_fixed
+from servicelib.tenacity_wrapper import AsyncRetrying
+from tenacity.before import before_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 from ..computation_config import ComputationSettings, get_settings
 from .config import CONFIG_SECTION_NAME

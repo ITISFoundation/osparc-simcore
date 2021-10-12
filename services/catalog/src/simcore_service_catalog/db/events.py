@@ -3,7 +3,10 @@ from io import StringIO
 
 from aiopg.sa import Engine, create_engine
 from fastapi import FastAPI
-from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
+from servicelib.tenacity_wrapper import retry
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 from ..core.settings import PostgresSettings
 

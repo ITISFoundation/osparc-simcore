@@ -12,19 +12,21 @@ import httpx
 import pytest
 import requests
 import sqlalchemy as sa
-import tenacity
 from asgi_lifespan import LifespanManager
 from async_timeout import timeout
 from models_library.projects import Node, ProjectAtDB
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from pydantic.types import PositiveInt
+from servicelib.tenacity_wrapper import AsyncRetrying
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_exponential
 from utils import ensure_network_cleanup, patch_dynamic_service_url
 from yarl import URL
 
@@ -341,8 +343,8 @@ async def _assert_service_is_available(exposed_port: PositiveInt) -> None:
     service_address = f"http://172.17.0.1:{exposed_port}"
     print(f"checking service @ {service_address}")
 
-    async for attempt in tenacity.AsyncRetrying(
-        wait=tenacity.wait_exponential(), stop=tenacity.stop_after_delay(15)
+    async for attempt in AsyncRetrying(
+        wait=wait_exponential(), stop=stop_after_delay(15)
     ):
         with attempt:
             async with httpx.AsyncClient() as client:

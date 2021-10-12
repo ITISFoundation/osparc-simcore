@@ -9,8 +9,8 @@ import celery.bin.base
 import celery.bin.celery
 import celery.platforms
 import pytest
-import tenacity
 from servicelib.celery_utils import CeleryRetryPolicyUponInitialization
+from servicelib.tenacity_wrapper import retry
 
 from .helpers.utils_docker import get_service_published_port
 
@@ -38,7 +38,7 @@ def celery_service(celery_config: Dict, docker_stack: Dict) -> str:
     yield url
 
 
-@tenacity.retry(**CeleryRetryPolicyUponInitialization().kwargs)
+@retry(**CeleryRetryPolicyUponInitialization().kwargs)
 def wait_till_celery_responsive(url: str) -> None:
     app = celery.Celery("tasks", broker=url)
     status = celery.bin.celery.celery.commands["status"]()

@@ -15,14 +15,12 @@ from typing import Callable, Union
 
 import httpx
 from fastapi import HTTPException
+from servicelib.tenacity_wrapper import retry
 from starlette import status
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_fixed,
-)
+from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 from ..models.raw_data import JSON
 

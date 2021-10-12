@@ -7,7 +7,10 @@ from typing import Dict, List, Optional, Union
 
 import docker
 import yaml
-from tenacity import after_log, retry, stop_after_attempt, wait_fixed
+from servicelib.tenacity_wrapper import retry
+from tenacity.after import after_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 log = logging.getLogger(__name__)
 

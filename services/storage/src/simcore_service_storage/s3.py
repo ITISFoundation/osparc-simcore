@@ -5,7 +5,10 @@ import logging
 from typing import Dict
 
 from aiohttp import web
-from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
+from servicelib.tenacity_wrapper import retry
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 from .constants import APP_CONFIG_KEY, APP_S3_KEY
 from .s3wrapper.s3_client import MinioClientWrapper

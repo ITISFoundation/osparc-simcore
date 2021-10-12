@@ -17,7 +17,7 @@ from servicelib.aiohttp.aiopg_utils import (
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.common_aiopg_utils import create_pg_engine
-from tenacity import AsyncRetrying
+from servicelib.tenacity_wrapper import AsyncRetrying
 
 from .db_config import CONFIG_SECTION_NAME, assert_valid_config
 

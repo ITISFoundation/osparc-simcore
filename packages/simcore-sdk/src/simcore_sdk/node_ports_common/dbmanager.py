@@ -4,7 +4,6 @@ import socket
 from typing import Optional
 
 import aiopg.sa
-import tenacity
 from aiopg.sa.result import RowProxy
 from servicelib.common_aiopg_utils import (
     DataSourceName,
@@ -12,6 +11,7 @@ from servicelib.common_aiopg_utils import (
     create_pg_engine,
     is_postgres_responsive,
 )
+from servicelib.tenacity_wrapper import retry
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from sqlalchemy import and_
 
@@ -46,7 +46,7 @@ async def _get_node_from_db(
     return node
 
 
-@tenacity.retry(**PostgresRetryPolicyUponInitialization().kwargs)
+@retry(**PostgresRetryPolicyUponInitialization().kwargs)
 async def wait_till_postgres_responsive(dsn: DataSourceName) -> None:
     if not is_postgres_responsive(dsn):
         raise Exception

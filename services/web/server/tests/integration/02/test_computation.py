@@ -17,6 +17,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import NewProject
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.tenacity_wrapper import retry
 from simcore_postgres_database.webserver_models import (
     NodeClass,
     StateType,
@@ -38,7 +39,9 @@ from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.module_setup import setup_socketio
 from simcore_service_webserver.users import setup_users
 from socketio.exceptions import ConnectionError as SocketConnectionError
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 from yarl import URL
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent

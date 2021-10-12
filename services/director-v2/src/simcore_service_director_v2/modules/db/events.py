@@ -6,8 +6,11 @@ import orjson
 from aiopg.sa import Engine, create_engine
 from aiopg.sa.engine import get_dialect
 from fastapi import FastAPI
+from servicelib.tenacity_wrapper import retry
 from settings_library.postgres import PostgresSettings
-from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 logger = logging.getLogger(__name__)
 

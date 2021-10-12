@@ -5,13 +5,13 @@ from asyncio import CancelledError
 from typing import Any, Dict, List, Optional, Union
 
 import aio_pika
-import tenacity
 from models_library.settings.celery import CeleryConfig
 from models_library.settings.rabbit import (  # pylint: disable=no-name-in-module
     RabbitDsn,
 )
 from pydantic import BaseModel, PrivateAttr
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
+from servicelib.tenacity_wrapper import retry
 
 from . import config
 
@@ -143,7 +143,7 @@ class RabbitMQ(BaseModel):
         await self.close()
 
 
-@tenacity.retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
+@retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
 async def _wait_till_rabbit_responsive(url: RabbitDsn):
     connection = await aio_pika.connect(url)
     await connection.close()

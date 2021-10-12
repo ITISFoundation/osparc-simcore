@@ -4,9 +4,11 @@ from typing import Optional
 import aioredis
 from aiohttp import web
 from aioredlock import Aioredlock
-from tenacity import AsyncRetrying, before_log, stop_after_attempt, wait_fixed
-
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
+from servicelib.tenacity_wrapper import AsyncRetrying
+from tenacity.before import before_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 from .config import (
     APP_CLIENT_REDIS_CLIENT_KEY,
