@@ -45,6 +45,9 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
 
     this.base(arguments);
 
+    this.getContentElement().setStyles({
+      "border-radius": "6px"
+    });
     this.__setNotHoveredStyle();
     this.__attachEventHandlers();
   },
@@ -80,9 +83,10 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "fullscreen-button": {
           control = new qx.ui.form.Button().set({
+            icon: "@MaterialIcons/fullscreen/12",
             backgroundColor: "transparent",
             toolTipText: this.tr("Full Screen"),
-            icon: "@FontAwesome5Solid/desktop/9",
+            alignY: "middle",
             visibility: "excluded"
           });
           control.addListener("execute", () => this.fireDataEvent("fullscreenNode", this.getNodeId()));
@@ -95,9 +99,8 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
           control = new qx.ui.form.MenuButton().set({
             menu: optionsMenu,
             icon: "@FontAwesome5Solid/ellipsis-v/9",
-            focusable: false,
             allowGrowX: false,
-            alignX: "center"
+            alignY: "middle"
           });
           const part = this.getChildControl("buttons");
           part.add(control);
@@ -195,14 +198,12 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
 
     __setHoveredStyle: function() {
       this.getContentElement().setStyles({
-        "border-radius": "4px",
         "border": "1px solid " + qx.theme.manager.Color.getInstance().resolve("background-selected")
       });
     },
 
     __setNotHoveredStyle: function() {
       this.getContentElement().setStyles({
-        "border-radius": "4px",
         "border": "1px solid transparent"
       });
     },

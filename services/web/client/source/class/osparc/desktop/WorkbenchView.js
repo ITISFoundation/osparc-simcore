@@ -198,6 +198,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       tabViewSecondary.add(outputsPage);
 
       this.__addTopBarSpacer(topBar);
+
+      this.__populateSecondPanel();
     },
 
     __initMainView: function() {
@@ -248,6 +250,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       studyTreeItem.addListener("nodeSelected", () => {
         nodesTree.resetSelection();
         this.__populateSecondPanel(this.getStudy());
+        this.__evalIframeButton();
+        this.__openWorkbench();
       });
 
       nodesTree.addListener("nodeSelected", e => {
@@ -258,7 +262,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         if (node) {
           this.__populateSecondPanel(node);
           this.__evalIframeButton(node);
-          this.__openWorkbench();
+          if (node.isDynamic()) {
+            this.__openIframe(node);
+          } else {
+            this.__openWorkbench();
+          }
         }
         const nodeUI = this.__workbenchUI.getNodeUI(nodeId);
         if (nodeUI) {
@@ -276,6 +284,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.__populateSecondPanel(node);
           this.__evalIframeButton(node);
           this.__openIframe(node);
+          this.__maximizeIFrame(true);
         }
         const nodeUI = this.__workbenchUI.getNodeUI(nodeId);
         if (nodeUI) {
@@ -285,9 +294,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
       }, this);
       nodesTree.addListener("removeNode", e => {
-        if (this.getStudy().isReadOnly()) {
-          return;
-        }
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
@@ -471,8 +477,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __maximizeIFrame: function(maximize) {
-      console.log("maximizeIFrame", maximize);
-      // this.getChildControl("main-panel-tabs").setVisibility(maximize ? "visible" : "excluded");
+      this.getChildControl("side-panels").setVisibility(maximize ? "excluded" : "visible");
+
+      const tabViewMain = this.getChildControl("main-panel-tabs");
+      const mainViewtopBar = tabViewMain.getChildControl("bar");
+      mainViewtopBar.setVisibility(maximize ? "excluded" : "visible");
     },
 
     __addIFrame: function(node) {
@@ -526,6 +535,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__outputsPage.removeAll();
 
       if (node instanceof osparc.data.model.Study) {
+        // Study or File
         this.__infoPage.getChildControl("button").show();
         this.__settingsPage.getChildControl("button").exclude();
         this.__outputsPage.getChildControl("button").exclude();
@@ -535,6 +545,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           flex: 1
         });
       } else if (node) {
+        // Comp/Dynamic Node or Parameter
         this.__infoPage.getChildControl("button").exclude();
         this.__settingsPage.getChildControl("button").show();
         this.__outputsPage.getChildControl("button").show();
@@ -545,11 +556,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             flex: 1
           });
         }
-
         const portTree = new osparc.component.widget.inputs.NodeOutputTree(node, node.getMetaData().outputs);
         this.__outputsPage.add(portTree, {
           flex: 1
         });
+      } else {
+        this.__infoPage.getChildControl("button").exclude();
+        this.__settingsPage.getChildControl("button").exclude();
+        this.__outputsPage.getChildControl("button").exclude();
       }
     },
 
@@ -669,10 +683,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
 
     __removeNode: function(nodeId) {
-      if (nodeId === this.__currentNodeId) {
-        return;
-      }
-
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
         const msg = this.tr("Are you sure you want to delete node?");
@@ -699,6 +709,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.__workbenchUI.clearEdge(edgeId);
         }
         this.__workbenchUI.clearNode(nodeId);
+      }
+      if (nodeId === this.__currentNodeId) {
+        this.nodeSelected(this.getStudy().getUuid());
       }
     },
 
