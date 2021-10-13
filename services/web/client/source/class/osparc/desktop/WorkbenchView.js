@@ -78,9 +78,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             barPosition: "top"
           });
           osparc.utils.Utils.addBorder(control, 2, "right");
-          control.getChildControl("bar").set({
-            paddingLeft: 60
-          });
           const sidePanels = this.getChildControl("side-panels");
           sidePanels.add(control, 1); // flex 1
           break;
@@ -91,9 +88,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             contentPadding: 6,
             barPosition: "top"
           });
-          control.getChildControl("bar").set({
-            paddingLeft: 100
-          });
           const sidePanels = this.getChildControl("side-panels");
           sidePanels.add(control, 1); // flex 1
           break;
@@ -102,9 +96,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           control = new qx.ui.tabview.TabView().set({
             contentPadding: 0,
             barPosition: "top"
-          });
-          control.getChildControl("bar").set({
-            paddingLeft: 400
           });
           this.add(control, 1); // flex 1
           break;
@@ -141,10 +132,24 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __initViews: function() {
       const study = this.getStudy();
+      if (study === null) {
+        return;
+      }
+      this.__initPrimaryColumn();
+      this.__initSecondaryColumn();
+      this.__initMainView();
+    },
 
+    __initPrimaryColumn: function() {
+      const study = this.getStudy();
 
-      const tabViewLeft = this.getChildControl("side-panel-left-tabs");
-      this.__removePages(tabViewLeft);
+      const tabViewPrimary = this.getChildControl("side-panel-left-tabs");
+      this.__removePages(tabViewPrimary);
+
+      const topBar = tabViewPrimary.getChildControl("bar");
+      topBar.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
 
       const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
 
@@ -163,7 +168,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         flex: 1
       });
       const nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree);
-      tabViewLeft.add(nodesPage);
+      tabViewPrimary.add(nodesPage);
 
       const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
         dragMechanism: true,
@@ -171,24 +176,49 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       filesTree.populateTree();
       const storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTree);
-      tabViewLeft.add(storagePage);
+      tabViewPrimary.add(storagePage);
 
+      topBar.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+    },
 
-      const tabViewRight = this.getChildControl("side-panel-right-tabs");
-      this.__removePages(tabViewRight);
+    __initSecondaryColumn: function() {
+      const tabViewSecondary = this.getChildControl("side-panel-right-tabs");
+      this.__removePages(tabViewSecondary);
+
+      const topBar = tabViewSecondary.getChildControl("bar");
+      topBar.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
 
       const infoPage = this.__infoPage = this.__createTabPage("@FontAwesome5Solid/info", this.tr("Information"));
-      tabViewRight.add(infoPage);
+      infoPage.exclude();
+      tabViewSecondary.add(infoPage);
 
       const settingsPage = this.__settingsPage = this.__createTabPage("@FontAwesome5Solid/sign-in-alt", this.tr("Settings"));
-      tabViewRight.add(settingsPage);
+      settingsPage.exclude();
+      tabViewSecondary.add(settingsPage);
 
       const outputsPage = this.__outputsPage = this.__createTabPage("@FontAwesome5Solid/sign-out-alt", this.tr("Outputs"));
-      tabViewRight.add(outputsPage);
+      outputsPage.exclude();
+      tabViewSecondary.add(outputsPage);
 
+      topBar.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+    },
+
+    __initMainView: function() {
+      const study = this.getStudy();
 
       const tabViewMain = this.getChildControl("main-panel-tabs");
       this.__removePages(tabViewMain);
+
+      const topBar = tabViewMain.getChildControl("bar");
+      topBar.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
 
       this.__workbenchUI.setStudy(study);
       const workbenchPanelPage = this.__workbenchPanelPage = this.__createTabPage("@FontAwesome5Solid/object-group", this.tr("Workbench"), this.__workbenchPanel);
@@ -200,6 +230,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView();
       const logsPage = this.__logsPage = this.__createTabPage("@FontAwesome5Solid/file-alt", this.tr("Logger"), loggerView);
       tabViewMain.add(logsPage);
+
+      topBar.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
     },
 
     __removePages: function(tabView) {
