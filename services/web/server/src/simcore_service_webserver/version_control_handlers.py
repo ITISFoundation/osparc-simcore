@@ -8,7 +8,7 @@ from servicelib.rest_pagination_utils import (
     PageResponseLimitOffset,
 )
 
-from ._meta import api_version_prefix as vtag
+from ._meta import api_version_prefix as VTAG
 from .login.decorators import login_required
 from .rest_utils import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
@@ -57,7 +57,7 @@ def _normalize_refid(ref_id: RefID) -> RefID:
 routes = web.RouteTableDef()
 
 
-@routes.get(f"/{vtag}/repos/projects")
+@routes.get(f"/{VTAG}/repos/projects")
 @login_required
 @permission_required("project.read")
 @handle_request_errors
@@ -101,7 +101,7 @@ async def _list_repos_handler(request: web.Request):
     )
 
 
-@routes.post(f"/{vtag}/repos/projects/{{project_uuid}}/checkpoints")
+@routes.post(f"/{VTAG}/repos/projects/{{project_uuid}}/checkpoints")
 @login_required
 @permission_required("project.create")
 @handle_request_errors
@@ -131,7 +131,7 @@ async def _create_checkpoint_handler(request: web.Request):
     return enveloped_response(data, status_cls=web.HTTPCreated)
 
 
-@routes.get(f"/{vtag}/repos/projects/{{project_uuid}}/checkpoints")
+@routes.get(f"/{VTAG}/repos/projects/{{project_uuid}}/checkpoints")
 @login_required
 @permission_required("project.read")
 @handle_request_errors
@@ -180,7 +180,7 @@ async def _list_checkpoints_handler(request: web.Request):
 
 
 @routes.get(
-    f"/{vtag}/repos/projects/{{project_uuid}}/checkpoints/{{ref_id}}",
+    f"/{VTAG}/repos/projects/{{project_uuid}}/checkpoints/{{ref_id}}",
 )
 @login_required
 @permission_required("project.read")
@@ -212,7 +212,7 @@ async def _get_checkpoint_handler(request: web.Request):
 
 
 @routes.patch(
-    f"/{vtag}/repos/projects/{{project_uuid}}/checkpoints/{{ref_id}}",
+    f"/{VTAG}/repos/projects/{{project_uuid}}/checkpoints/{{ref_id}}",
 )
 @login_required
 @permission_required("project.update")
@@ -246,7 +246,7 @@ async def _update_checkpoint_annotations_handler(request: web.Request):
     return enveloped_response(data)
 
 
-@routes.post(f"/{vtag}/repos/projects/{{project_uuid}}/checkpoints/{{ref_id}}:checkout")
+@routes.post(f"/{VTAG}/repos/projects/{{project_uuid}}/checkpoints/{{ref_id}}:checkout")
 @login_required
 @permission_required("project.create")
 @handle_request_errors
@@ -277,7 +277,7 @@ async def _checkout_handler(request: web.Request):
 
 
 @routes.get(
-    f"/{vtag}/repos/projects/{{project_uuid}}/checkpoints/{{ref_id}}/workbench/view"
+    f"/{VTAG}/repos/projects/{{project_uuid}}/checkpoints/{{ref_id}}/workbench/view"
 )
 @login_required
 @permission_required("project.read")
