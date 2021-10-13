@@ -257,16 +257,11 @@ async def get_runnable_projects_ids(
     vc_repo = VersionControlRepositoryInternalAPI(request)
     assert vc_repo.user_id  # nosec
 
-    project = await get_project_for_user(
-        request.app,
-        project_uuid=str(project_uuid),
-        user_id=vc_repo.user_id,
-        include_state=False,
-        include_templates=False,
-    )
+    project: ProjectDict = await vc_repo.get_project(project_uuid)
     assert project["uuid"] == str(project_uuid)  # nosec
-
-    project_nodes: Dict[NodeID, Node] = project["workbench"]
+    project_nodes: Dict[NodeID, Node] = {
+        nid: Node.parse_obj(n) for nid, n in project["workbench"].items()
+    }
 
     # init returns
     runnable_project_ids: List[ProjectID] = []

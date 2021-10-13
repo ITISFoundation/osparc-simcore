@@ -625,8 +625,15 @@ class VersionControlRepositoryInternalAPI(VersionControlRepository):
 
                 # creates unique identifier for variant
                 project["uuid"] = compose_wcopy_project_id(repo.project_uuid, commit_id)
+
                 # FIXME: File-picker takes project uuid. replace!
                 project["hidden"] = True
+                # FIXME: project api validator fails when it is none because API schema does not contemplate None!
+                if project["thumbnail"] is None:
+                    project["thumbnail"] = ""
+                for nid in project["workbench"]:
+                    value = project["workbench"][nid]["thumbnail"]
+                    project["workbench"][nid]["thumbnail"] = value or ""
 
                 # creates runnable version in project
                 # raises ?? if same uuid

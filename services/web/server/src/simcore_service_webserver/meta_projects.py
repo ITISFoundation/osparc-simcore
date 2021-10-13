@@ -32,9 +32,7 @@ PROJECTS_API_PREFIX = f"/{VTAG}/projects/"
 
 @web.middleware
 async def projects_redirection_middleware(request: web.Request, handler: _Handler):
-    """Intercepts /project/{project_id}* requests and change
-    the project_id parameter but the current working copy @HEAD
-    """
+    """Intercepts /project/{project_id}* requests and redirect them to the copy @HEAD"""
     if str(request.rel_url).startswith(PROJECTS_API_PREFIX):
 
         try:
@@ -60,6 +58,13 @@ async def projects_redirection_middleware(request: web.Request, handler: _Handle
             log.debug("Skips redirection of %s: %s", request, err)
 
     response = await handler(request)
+
+    #
+    # FIXME: any reference to project_id in the response has to be replaced by wcopy_project_id?
+    # Asks for project X and returns project Y !! should instead be composed
+    #
+
+    # A solution would be to have project/*/workbench ?
     return response
 
 
