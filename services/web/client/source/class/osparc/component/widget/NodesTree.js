@@ -141,9 +141,17 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               if (node.isDynamic()) {
                 item.getChildControl("fullscreen-button").show();
               }
-              const icon = osparc.utils.Services.getIcon(node.getMetaData().type);
-              if (icon) {
+              if (node.isFilePicker()) {
+                const icon = osparc.utils.Services.getIcon("file");
                 item.setIcon(icon+"14");
+              } else if (node.isParameter()) {
+                const icon = osparc.utils.Services.getIcon("parameter");
+                item.setIcon(icon+"14");
+              } else {
+                const icon = osparc.utils.Services.getIcon(node.getMetaData().type);
+                if (icon) {
+                  item.setIcon(icon+"14");
+                }
               }
             }
           },
