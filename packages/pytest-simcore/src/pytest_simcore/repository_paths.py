@@ -49,6 +49,13 @@ def osparc_simcore_packages_dir(osparc_simcore_root_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
+def osparc_simcore_api_specs_dir(osparc_simcore_root_dir: Path) -> Path:
+    _folder = osparc_simcore_root_dir / "api" / "specs"
+    assert _folder.exists()
+    return _folder
+
+
+@pytest.fixture(scope="session")
 def osparc_simcore_scripts_dir(osparc_simcore_root_dir: Path) -> Path:
     scripts_folder = osparc_simcore_root_dir / "scripts"
     assert scripts_folder.exists()
@@ -77,7 +84,7 @@ def env_devel_file(osparc_simcore_root_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def services_docker_compose_file(services_dir):
+def services_docker_compose_file(services_dir) -> Path:
     dcpath = services_dir / "docker-compose.yml"
     assert dcpath.exists()
     return dcpath
@@ -95,11 +102,38 @@ def pylintrc(osparc_simcore_root_dir: Path) -> Path:
 
 @pytest.fixture(scope="session")
 def project_slug_dir() -> Path:
+    """Current service's project slug directory"""
     raise NotImplementedError("Override fixture in project's tests/conftest.py")
 
 
 @pytest.fixture(scope="session")
 def project_tests_dir(project_slug_dir: Path) -> Path:
+    """Current service's tests directory"""
     test_dir = project_slug_dir / "tests"
     assert test_dir.exists()
     return test_dir
+
+
+@pytest.fixture(scope="session")
+def openapi_specs_file_path(
+    project_slug_dir: Path, osparc_simcore_api_specs_dir: Path
+) -> Path:
+    """Current services's OpenAPI specification file path"""
+    # By convention, the OAS is stored in one of two places
+    # SEE https://github.com/ITISFoundation/osparc-simcore/pull/2584
+
+    # fastapi based apps
+    fastapi_apps_oas_path = project_slug_dir / "openapi.json"
+    # aiohttp based apps
+    aiohttp_apps_oas_path = (
+        osparc_simcore_api_specs_dir / project_slug_dir.name / "openapi.json"
+    )
+
+    assert (
+        fastapi_apps_oas_path.exists() or aiohttp_apps_oas_path.exists()
+    ), f"expected {fastapi_apps_oas_path} or {aiohttp_apps_oas_path}"
+
+    if fastapi_apps_oas_path.exists():
+        return fastapi_apps_oas_path
+
+    return aiohttp_apps_oas_path
