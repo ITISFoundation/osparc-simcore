@@ -55,7 +55,7 @@ def test_get_none_for_invalid_or_not_errors_code(status_code):
     "status_code, http_error_cls", _STATUS_CODE_TO_HTTP_ERRORS.items()
 )
 def test_collected_http_errors_map(status_code: int, http_error_cls: Type[HTTPError]):
-    assert status_code > 399 and status_code < 600, "expected 4XX, 5XX"
+    assert 399 < status_code < 600, "expected 4XX, 5XX"
     assert http_error_cls.status_code == status_code
 
     assert http_error_cls != HTTPError
