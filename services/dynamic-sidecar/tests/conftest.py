@@ -1,5 +1,6 @@
-# pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import asyncio
 import json
@@ -14,6 +15,7 @@ from unittest.mock import AsyncMock, Mock
 
 import aiodocker
 import pytest
+import simcore_service_dynamic_sidecar
 from _pytest.monkeypatch import MonkeyPatch
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
@@ -30,7 +32,34 @@ from simcore_service_dynamic_sidecar.modules import mounted_fs
 
 pytest_plugins = [
     "pytest_simcore.monkeypatch_extra",
+    "pytest_simcore.repository_paths",
 ]
+
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+
+## FOLDER LAYOUT ---------------------------------------------------------------------
+
+
+@pytest.fixture(scope="session")
+def project_slug_dir() -> Path:
+    folder = CURRENT_DIR.parent
+    assert folder.exists()
+    assert any(folder.glob("src/simcore_service_dynamic_sidecar"))
+    return folder
+
+
+@pytest.fixture(scope="session")
+def package_dir() -> Path:
+    """Notice that this might be under src (if installed as edit mode)
+    or in the installation folder
+    """
+    dirpath = Path(simcore_service_dynamic_sidecar.__file__).resolve().parent
+    assert dirpath.exists()
+    return dirpath
+
+
+## APP ---------------------------------------------------------------------
 
 
 @pytest.fixture(scope="session")
