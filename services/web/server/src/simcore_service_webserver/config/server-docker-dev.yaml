@@ -63,3 +63,7 @@ storage:
   version: v0
 session:
   secret_key: ${WEBSERVER_SESSION_SECRET_KEY}
+meta:
+  enabled: ${WEBSERVER_DEV_FEATURES_ENABLED}
+version_control:
+  enabled: ${WEBSERVER_DEV_FEATURES_ENABLED}
