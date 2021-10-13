@@ -1,0 +1,7 @@
+# installs base + tests requirements
+--requirement _base.txt
+--requirement _test.txt
+
+# installs this repo's packages
+# --editable ../packages/models-library/
+--editable ../packages/pytest-simcore/
