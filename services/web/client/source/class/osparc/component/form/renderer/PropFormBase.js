@@ -60,14 +60,13 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       info: 1,
       ctrlField: 2,
       unit: 3,
-      fieldOptions: 4
+      fieldLinkUnlink: 4
     },
 
     getDisableables: function() {
       return [
         this.gridPos.label,
-        this.gridPos.ctrlField,
-        this.gridPos.fieldOptions
+        this.gridPos.ctrlField
       ];
     }
   },
@@ -243,10 +242,6 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
 
     _getCtrlFieldChild: function(portId) {
       return this._getLayoutChild(portId, this.self().gridPos.ctrlField);
-    },
-
-    _getFieldOptsChild: function(portId) {
-      return this._getLayoutChild(portId, this.self().gridPos.fieldOptions);
     }
   }
 });

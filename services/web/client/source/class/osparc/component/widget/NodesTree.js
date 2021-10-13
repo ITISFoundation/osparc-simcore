@@ -143,7 +143,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               }
               const icon = osparc.utils.Services.getIcon(node.getMetaData().type);
               if (icon) {
-                item.setIcon(icon);
+                item.setIcon(icon+"14");
               }
             }
           },

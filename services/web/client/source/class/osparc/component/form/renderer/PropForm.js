@@ -24,13 +24,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       this.setStudy(study);
     }
     this.__ctrlLinkMap = {};
-    this.__ctrlParamMap = {};
+    this.__linkUnlinkStackMap = {};
     this.__fieldOptsBtnMap = {};
 
     this.base(arguments, form, node);
 
     this.__addLinkCtrls();
-    this.__addParamCtrls();
 
     this.setDroppable(true);
     this.__attachDragoverHighlighter();
@@ -92,16 +91,33 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __ctrlLinkMap: null,
-    __ctrlParamMap: null,
+    __linkUnlinkStackMap: null,
     __fieldOptsBtnMap: null,
 
-    __createFieldOpts: function(field) {
+    __createLinkUnlinkStack: function(field) {
+      const linkUnlinkStack = new qx.ui.container.Stack();
+
+      const linkOptions = this.__createLinkOpts(field);
+      linkUnlinkStack.add(linkOptions);
+
+      const unlinkBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/unlink/12").set({
+        toolTipText: this.tr("Unlink")
+      });
+      unlinkBtn.addListener("execute", () => this.removePortLink(field.key), this);
+      linkUnlinkStack.add(unlinkBtn);
+
+      this.__linkUnlinkStackMap[field.key] = linkUnlinkStack;
+
+      return linkUnlinkStack;
+    },
+
+    __createLinkOpts: function(field) {
       const optionsMenu = new qx.ui.menu.Menu().set({
-        position: "bottom-right"
+        position: "bottom-left"
       });
       const fieldOptsBtn = new qx.ui.form.MenuButton().set({
         menu: optionsMenu,
-        icon: "@FontAwesome5Solid/ellipsis-v/14",
+        icon: "@FontAwesome5Solid/link/12",
         focusable: false,
         allowGrowX: false,
         alignX: "center"
@@ -279,11 +295,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
 
-        const fieldOpts = this.__createFieldOpts(item);
+        const fieldOpts = this.__createLinkUnlinkStack(item);
         if (fieldOpts) {
           this._add(fieldOpts, {
             row,
-            column: this.self().gridPos.fieldOptions
+            column: this.self().gridPos.fieldLinkUnlink
           });
         }
 
@@ -622,7 +638,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       });
     },
 
-    __linkAdded: function(portId, fromNodeId, fromPortId) {
+    __portLinkAdded: function(portId, fromNodeId, fromPortId) {
       let data = this._getCtrlFieldChild(portId);
       if (data) {
         let child = data.child;
@@ -630,29 +646,17 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         const layoutProps = child.getLayoutProperties();
         this._remove(child);
 
-        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-
-        hBox.add(this.getControlLink(portId), {
-          flex: 1
-        });
-
-        const unlinkBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/unlink/14").set({
-          toolTipText: this.tr("Unlink")
-        });
-        unlinkBtn.addListener("execute", function() {
-          this.removePortLink(portId);
-        }, this);
-        hBox.add(unlinkBtn);
-
-        hBox.key = portId;
-
-        this._addAt(hBox, idx, {
+        const ctrlLink = this.getControlLink(portId);
+        ctrlLink.setEnabled(false);
+        ctrlLink.key = portId;
+        this._addAt(ctrlLink, idx, {
           row: layoutProps.row,
           column: this.self().gridPos.ctrlField
         });
 
-        if (portId in this.__fieldOptsBtnMap) {
-          this.__fieldOptsBtnMap[portId].setEnabled(false);
+        if (portId in this.__linkUnlinkStackMap) {
+          const stack = this.__linkUnlinkStackMap[portId];
+          stack.setSelection([stack.getSelectables()[1]]);
         }
 
         const linkFieldModified = {
@@ -667,14 +671,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __portLinkRemoved: function(portId) {
       if (this.__resetCtrlField(portId)) {
-        // enable fieldOpts button
-        const fieldOpts = this._getFieldOptsChild(portId);
-        if (fieldOpts) {
-          fieldOpts.child.setEnabled(true);
-        }
-
-        if (portId in this.__fieldOptsBtnMap) {
-          this.__fieldOptsBtnMap[portId].setEnabled(true);
+        if (portId in this.__linkUnlinkStackMap) {
+          const stack = this.__linkUnlinkStackMap[portId];
+          stack.setSelection([stack.getSelectables()[0]]);
         }
 
         const linkFieldModified = {
@@ -725,7 +724,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         converter: label => label + ": " + fromPortLabel
       });
 
-      this.__linkAdded(toPortId, fromNodeId, fromPortId);
+      this.__portLinkAdded(toPortId, fromNodeId, fromPortId);
 
       return true;
     },
@@ -745,42 +744,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
 
       this.__portLinkRemoved(toPortId);
-    },
-    /* /LINKS */
-
-    /* PARAMETERS */
-    getControlParam: function(key) {
-      return this.__ctrlParamMap[key];
-    },
-
-    __addParamCtrl: function(portId) {
-      const controlParam = this.__createFieldCtrl(portId);
-      this.__ctrlParamMap[portId] = controlParam;
-    },
-
-    __addParamCtrls: function() {
-      this.__getPortKeys().forEach(portId => {
-        this.__addParamCtrl(portId);
-      });
-    },
-
-    __parameterRemoved: function(portId) {
-      this.__resetCtrlField(portId);
-    },
-
-    removeParameter: function(portId) {
-      this.getControlParam(portId).setEnabled(false);
-      let ctrlField = this._form.getControl(portId);
-      if (ctrlField && "parameter" in ctrlField) {
-        delete ctrlField.parameter;
-      }
-
-      this.__parameterRemoved(portId);
-    },
-    /* /PARAMETERS */
-
-    __getRetrieveFieldChild: function(portId) {
-      return this._getLayoutChild(portId, this.self().gridPos.retrieveStatus);
     }
+    /* /LINKS */
   }
 });

@@ -132,6 +132,11 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
 
       // The standard tree icon follows
       this.addIcon();
+      this.getChildControl("icon").set({
+        alignX: "center",
+        alignY: "middle",
+        width: 22
+      });
 
       // The label
       this.addLabel();
