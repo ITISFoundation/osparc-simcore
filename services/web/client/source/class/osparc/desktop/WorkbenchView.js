@@ -147,9 +147,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__removePages(tabViewPrimary);
 
       const topBar = tabViewPrimary.getChildControl("bar");
-      topBar.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
+      this.__addTopBarSpacer(topBar);
 
       const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
 
@@ -178,9 +176,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTree);
       tabViewPrimary.add(storagePage);
 
-      topBar.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
+      this.__addTopBarSpacer(topBar);
     },
 
     __initSecondaryColumn: function() {
@@ -188,9 +184,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__removePages(tabViewSecondary);
 
       const topBar = tabViewSecondary.getChildControl("bar");
-      topBar.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
+      this.__addTopBarSpacer(topBar);
 
       const infoPage = this.__infoPage = this.__createTabPage("@FontAwesome5Solid/info", this.tr("Information"));
       infoPage.exclude();
@@ -204,9 +198,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       outputsPage.exclude();
       tabViewSecondary.add(outputsPage);
 
-      topBar.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
+      this.__addTopBarSpacer(topBar);
     },
 
     __initMainView: function() {
@@ -216,9 +208,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__removePages(tabViewMain);
 
       const topBar = tabViewMain.getChildControl("bar");
-      topBar.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
+      this.__addTopBarSpacer(topBar);
 
       this.__workbenchUI.setStudy(study);
       const workbenchPanelPage = this.__workbenchPanelPage = this.__createTabPage("@FontAwesome5Solid/object-group", this.tr("Workbench"), this.__workbenchPanel);
@@ -231,16 +221,25 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const logsPage = this.__logsPage = this.__createTabPage("@FontAwesome5Solid/file-alt", this.tr("Logger"), loggerView);
       tabViewMain.add(logsPage);
 
-      topBar.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
+      this.__addTopBarSpacer(topBar);
     },
 
     __removePages: function(tabView) {
       const pages = tabView.getChildren();
+      // remove pages
       for (let i=pages.length-1; i>=0; i--) {
         tabView.remove(pages[i]);
       }
+      // remove spacers
+      const topBar = tabView.getChildControl("bar");
+      topBar.removeAll();
+    },
+
+    __addTopBarSpacer: function(tabViewTopBar) {
+      const spacer = new qx.ui.core.Spacer();
+      tabViewTopBar.add(spacer, {
+        flex: 1
+      });
     },
 
     __connectEvents: function() {
