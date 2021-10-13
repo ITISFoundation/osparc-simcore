@@ -52,8 +52,8 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
   events: {
     "nodeSelected": "qx.event.type.Data",
-    "removeNode": "qx.event.type.Data",
-    "changeSelectedNode": "qx.event.type.Data"
+    "fullscreenNode": "qx.event.type.Data",
+    "removeNode": "qx.event.type.Data"
   },
 
   properties: {
@@ -120,13 +120,9 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         this.setDelegate({
           createItem: () => {
             const nodeTreeItem = new osparc.component.widget.NodeTreeItem(study);
-            nodeTreeItem.addListener("openNode", e => this.__openItem(e.getData()));
+            nodeTreeItem.addListener("fullscreenNode", e => this.__openFullscreen(e.getData()));
             nodeTreeItem.addListener("renameNode", e => this.__openItemRenamer(e.getData()));
             nodeTreeItem.addListener("deleteNode", e => this.__deleteNode(e.getData()));
-            const readOnly = study.isReadOnly();
-            // disable rename and delete button if the study is read only
-            nodeTreeItem.getChildControl("rename-btn").setEnabled(!readOnly);
-            nodeTreeItem.getChildControl("delete-btn").setEnabled(!readOnly);
             return nodeTreeItem;
           },
           bindItem: (c, item, id) => {
@@ -139,15 +135,15 @@ qx.Class.define("osparc.component.widget.NodesTree", {
             c.bindProperty("label", "label", null, item, id);
             if (item.getModel().getNodeId() === study.getUuid()) {
               item.setIcon("@FontAwesome5Solid/home/14");
+              item.getChildControl("options-menu-button").exclude();
+            }
+            if (node && node.isDynamic()) {
+              item.getChildControl("fullscreen-button").show();
             }
           },
           configureItem: item => {
-            item.addListener("dbltap", () => {
-              this.__openItem(item.getModel().getNodeId());
-              this.__selectedItem(item);
-            }, this);
             item.addListener("tap", () => {
-              this.__selectedItem(item);
+              this.__openItem(item.getModel().getNodeId());
               this.nodeSelected(item.getModel().getNodeId());
             }, this);
           }
@@ -178,14 +174,15 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       return selectedItem;
     },
 
-    __selectedItem: function(item) {
-      const nodeId = item.getModel().getNodeId();
-      this.fireDataEvent("changeSelectedNode", nodeId);
-    },
-
     __openItem: function(nodeId) {
       if (nodeId) {
         this.fireDataEvent("nodeSelected", nodeId);
+      }
+    },
+
+    __openFullscreen: function(nodeId) {
+      if (nodeId) {
+        this.fireDataEvent("fullscreenNode", nodeId);
       }
     },
 

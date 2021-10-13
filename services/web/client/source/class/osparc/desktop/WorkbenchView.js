@@ -55,7 +55,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __workbenchUI: null,
     __iFramePage: null,
     __loggerView: null,
-    __groupNodeView: null,
     __currentNodeId: null,
 
     _createChildControlImpl: function(id) {
@@ -246,12 +245,45 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const studyTreeItem = this.__studyTreeItem;
       const nodesTree = this.__nodesTree;
 
-      studyTreeItem.addListener("changeSelectedNode", () => {
+      studyTreeItem.addListener("nodeSelected", () => {
         nodesTree.resetSelection();
         this.__populateSecondPanel(this.getStudy());
       });
 
-
+      nodesTree.addListener("nodeSelected", e => {
+        studyTreeItem.resetSelection();
+        const nodeId = e.getData();
+        const workbench = this.getStudy().getWorkbench();
+        const node = workbench.getNode(nodeId);
+        if (node) {
+          this.__populateSecondPanel(node);
+          this.__evalIframeButton(node);
+          this.__openWorkbench();
+        }
+        const nodeUI = this.__workbenchUI.getNodeUI(nodeId);
+        if (nodeUI) {
+          if (nodeUI.classname.includes("NodeUI")) {
+            nodeUI.setActive(true);
+          }
+        }
+      });
+      nodesTree.addListener("fullscreenNode", e => {
+        studyTreeItem.resetSelection();
+        const nodeId = e.getData();
+        const workbench = this.getStudy().getWorkbench();
+        const node = workbench.getNode(nodeId);
+        if (node) {
+          this.__populateSecondPanel(node);
+          this.__evalIframeButton(node);
+          this.__openIframe(node);
+        }
+        const nodeUI = this.__workbenchUI.getNodeUI(nodeId);
+        if (nodeUI) {
+          if (nodeUI.classname.includes("NodeUI")) {
+            nodeUI.setActive(true);
+          }
+        }
+      }, this);
       nodesTree.addListener("removeNode", e => {
         if (this.getStudy().isReadOnly()) {
           return;
@@ -259,18 +291,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
-      nodesTree.addListener("changeSelectedNode", e => {
-        studyTreeItem.resetSelection();
-        const nodeUI = this.__workbenchUI.getNodeUI(e.getData());
-        if (nodeUI) {
-          if (nodeUI.classname.includes("NodeUI")) {
-            nodeUI.setActive(true);
-          }
-          const node = nodeUI.getNode();
-          this.__populateSecondPanel(node);
-          this.__evalIframeButton(node);
-        }
-      });
 
       const workbenchUI = this.__workbenchUI;
       workbenchUI.addListener("removeNode", e => {
@@ -414,44 +434,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (this.__nodesTree) {
         this.__nodesTree.setCurrentNodeId(nodeId);
       }
-      /*
-      if (this.__groupNodeView) {
-        this.__groupNodeView.restoreIFrame();
-      }
-      const prevNodeId = this.__currentNodeId;
-      */
+
       this.__currentNodeId = nodeId;
       study.getUi().setCurrentNodeId(nodeId);
 
       this.__workbenchUI.loadModel(workbench);
-      /*
-      if (node === null || nodeId === study.getUuid()) {
-        this.__showInMainView(this.__workbenchUI, study.getUuid());
-        this.__workbenchUI.loadModel(workbench);
-      } else if (node.isContainer()) {
-        this.__groupNodeView.setNode(node);
-        this.__showInMainView(this.__workbenchUI, nodeId);
-        this.__workbenchUI.loadModel(node);
-        this.__groupNodeView.populateLayout();
-      } else if (node.isFilePicker()) {
-        const nodeView = new osparc.component.node.FilePickerNodeView();
-        nodeView.setNode(node);
-        this.__showInMainView(nodeView, nodeId);
-        nodeView.populateLayout();
-        nodeView.addListener("itemSelected", () => {
-          this.nodeSelected(prevNodeId);
-        }, this);
-      }
-      */
 
       this.__evalIframeButton(node);
-      const tabViewMain = this.getChildControl("main-panel-tabs");
-      if (node && node.getIFrame()) {
-        tabViewMain.setSelection([this.__iFramePage]);
-        this.__addIFrame(node);
-      } else {
-        tabViewMain.setSelection([this.__workbenchPanelPage]);
-      }
     },
 
     __evalIframeButton: function(node) {
@@ -463,6 +452,21 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__iFramePage.getChildControl("button").set({
           enabled: false
         });
+      }
+    },
+
+    __openWorkbench: function() {
+      const tabViewMain = this.getChildControl("main-panel-tabs");
+      tabViewMain.setSelection([this.__workbenchPanelPage]);
+    },
+
+    __openIframe: function(node) {
+      const tabViewMain = this.getChildControl("main-panel-tabs");
+      if (node && node.getIFrame()) {
+        tabViewMain.setSelection([this.__iFramePage]);
+        this.__addIFrame(node);
+      } else {
+        this.__openWorkbench();
       }
     },
 
@@ -574,16 +578,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       nodesSlidesTree.addListener("finished", () => {
         win.close();
       });
-    },
-
-    __showWorkbenchUI: function() {
-      const workbench = this.getStudy().getWorkbench();
-      const currentNode = workbench.getNode(this.__currentNodeId);
-      if (currentNode === this.__workbenchUI.getCurrentModel()) {
-        this.__showInMainView(this.__workbenchUI, this.__currentNodeId);
-      } else {
-        osparc.component.message.FlashMessenger.getInstance().logAs("No Workbench view for this node", "ERROR");
-      }
     },
 
     __isSelectionEmpty: function(selectedNodeUIs) {
@@ -733,19 +727,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (removed) {
         this.__workbenchUI.clearEdge(edgeId);
       }
-    },
-
-    __showInMainView: function(widget, nodeId) {
-      // this.__workbenchPanel.setMainView(widget);
-
-      if (widget.getNode && widget.getInputsView) {
-        setTimeout(() => {
-          widget.getInputsView().setCollapsed(widget.getNode().getInputNodes().length === 0);
-        }, 150);
-      }
-
-      this.__nodesTree.nodeSelected(nodeId);
-      this.__loggerView.setCurrentNodeId(nodeId);
     },
 
     __workbenchChanged: function() {
