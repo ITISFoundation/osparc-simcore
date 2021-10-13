@@ -135,6 +135,36 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
+    buildInfoView: function(node) {
+      const form = new qx.ui.form.Form();
+      const outValue = osparc.file.FilePicker.getOutput(node.getOutputs());
+      console.log(outValue);
+      if (outValue && "store" in outValue && "dataset" in outValue) {
+        const params = {
+          url: {
+            locationId: outValue.store,
+            datasetId: outValue.dataset
+          }
+        };
+        osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
+          .then(files => {
+            console.log(files);
+            const fileMetadata = files.find(file => file.file_uuid === outValue.path);
+            if (fileMetadata) {
+              for (let [key, value] of Object.entries(fileMetadata)) {
+                const entry = new qx.ui.form.TextField();
+                form.add(entry, key, null, key);
+                if (value) {
+                  entry.setValue(value.toString());
+                }
+              }
+            }
+          });
+      }
+
+      return new qx.ui.form.renderer.Single(form);
+    },
+
     serializeOutput: function(outputs) {
       let output = {};
       const outFileValue = osparc.file.FilePicker.getOutput(outputs);

@@ -533,11 +533,17 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__outputsPage.getChildControl("button").exclude();
 
       if (node instanceof osparc.data.model.Study) {
-        // Study or File
         this.__infoPage.getChildControl("button").show();
         this.getChildControl("side-panel-right-tabs").setSelection([this.__infoPage]);
 
         this.__infoPage.add(new osparc.studycard.Medium(node), {
+          flex: 1
+        });
+      } else if (node && node.isFilePicker()) {
+        this.__infoPage.getChildControl("button").show();
+        const view = osparc.file.FilePicker.buildInfoView(node);
+        view.setEnabled(false);
+        this.__settingsPage.add(view, {
           flex: 1
         });
       } else if (node && node.isParameter()) {
@@ -548,7 +554,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           flex: 1
         });
       } else if (node) {
-        // Comp/Dynamic Node or Parameter
         this.__settingsPage.getChildControl("button").show();
         this.__outputsPage.getChildControl("button").show();
         this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
