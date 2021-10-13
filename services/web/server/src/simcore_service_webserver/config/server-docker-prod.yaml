@@ -68,7 +68,3 @@ activity:
   prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}
   prometheus_port: ${WEBSERVER_PROMETHEUS_PORT}
   prometheus_api_version: ${WEBSERVER_PROMETHEUS_API_VERSION}
-meta:
-  enabled: ${WEBSERVER_DEV_FEATURES_ENABLED}
-version_control:
-  enabled: ${WEBSERVER_DEV_FEATURES_ENABLED}
