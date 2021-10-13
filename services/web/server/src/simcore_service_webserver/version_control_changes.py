@@ -11,11 +11,13 @@ has changed
 
 from typing import Any, Dict, Optional
 
+from aiopg.sa.result import ResultProxy
 from models_library.basic_types import SHA1Str
 from models_library.projects_nodes import Node
 
 from .utils import compute_sha1
-from .version_control_db import ProjectProxy
+
+ProjectProxy = ResultProxy
 
 
 def compute_workbench_checksum(workbench: Dict[str, Any]) -> SHA1Str:
