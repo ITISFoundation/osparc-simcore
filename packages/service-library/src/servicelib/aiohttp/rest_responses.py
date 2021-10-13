@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 import attr
 from aiohttp import web, web_exceptions
-from aiohttp.web_exceptions import HTTPError
+from aiohttp.web_exceptions import HTTPError, HTTPException
 
 from .rest_codecs import json, jsonify
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
@@ -138,35 +138,32 @@ def create_log_response(msg: str, level: str) -> web.Response:
     return response
 
 
-# caches maps requested from get_http_error
-_STATUS_CODE_TO_HTTP_ERROR: Dict[int, Type[HTTPError]] = {}
-
-
-def get_http_error(status_code: int) -> Optional[Type[HTTPError]]:
-    """Returns aiohttp exception class corresponding to a 4XX or 5XX status code
-
-    NOTICE that any non-error code (i.e. 2XX, 3XX and 4XX) will return None
-    """
-    # SEE https://httpstatuses.com/
-    # Errors are exceptions with status codes in the 400s and 500s.
-    if status_code < 400 or 599 < status_code:
-        return None
-
-    if status_code in _STATUS_CODE_TO_HTTP_ERROR:
-        return _STATUS_CODE_TO_HTTP_ERROR[status_code]
-
+# Inverse map from code to HTTPException classes
+def _collect_http_exceptions(exception_cls: Type[HTTPException] = HTTPException):
     def _pred(obj) -> bool:
         return (
             inspect.isclass(obj)
-            and issubclass(obj, HTTPError)
-            and getattr(obj, "status_code", None) == status_code
+            and issubclass(obj, exception_cls)
+            and getattr(obj, "status_code", 0) > 0
         )
 
     found: List[Tuple[str, Any]] = inspect.getmembers(web_exceptions, _pred)
+    assert found  # nosec
 
-    if found:
-        assert len(found) == 1, f"Unexpected multiple matches {found}"  # nosec
-        _, http_error = found[0]
-        assert issubclass(http_error, HTTPError)  # nosec
-        return http_error
-    return None
+    http_statuses = {cls.status_code: cls for _, cls in found}
+    assert len(http_statuses) == len(found), "No duplicates"  # nosec
+
+    return http_statuses
+
+
+_STATUS_CODE_TO_HTTP_ERRORS: Dict[int, Type[HTTPError]] = _collect_http_exceptions(
+    HTTPError
+)
+
+
+def get_http_error(status_code: int) -> Optional[Type[HTTPError]]:
+    """Returns aiohttp error class corresponding to a 4XX or 5XX status code
+
+    NOTICE that any non-error code (i.e. 2XX, 3XX and 4XX) will return None
+    """
+    return _STATUS_CODE_TO_HTTP_ERRORS.get(status_code)
