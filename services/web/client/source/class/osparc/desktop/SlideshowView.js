@@ -127,7 +127,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         let view;
         if (node.isParameter()) {
           view = new osparc.component.node.ParameterEditor(node);
-          view.formForSlideshow();
+          view.turnIntoForm();
         } else {
           if (node.isContainer()) {
             view = new osparc.component.node.GroupNodeView();

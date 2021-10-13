@@ -120,20 +120,27 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
       return control || this.base(arguments, id);
     },
 
-    formForSlideshow: function() {
+    createSimpleForm: function() {
+      const form = this.__buildForm(false);
+      const node = this.getNode();
+      form.getItem("value").addListener("changeValue", e => osparc.component.node.ParameterEditor.setParameterOutputValue(node, e.getData()));
+      return new qx.ui.form.renderer.Single(form);
+    },
+
+    __createForm: function() {
       const form = this.__buildForm();
       const node = this.getNode();
       form.getItem("label").addListener("changeValue", e => node.setLabel(e.getData()));
       form.getItem("value").addListener("changeValue", e => osparc.component.node.ParameterEditor.setParameterOutputValue(node, e.getData()));
+      return new qx.ui.form.renderer.Single(form);
+    },
 
+    turnIntoForm: function() {
+      const renderer = this.__createForm();
       this._removeAll();
-      const renderer = new qx.ui.form.renderer.Single(form);
-
       const settingsGroupBox = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
       this._add(settingsGroupBox);
       settingsGroupBox.add(renderer);
-
-      return form;
     },
 
     popUpInWindow: function() {
@@ -158,24 +165,26 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
       }, this);
     },
 
-    __buildForm: function() {
+    __buildForm: function(allSettings = true) {
       const form = new qx.ui.form.Form();
 
       const node = this.getNode();
 
-      const label = this.getChildControl("label");
-      form.add(label, "Label", null, "label");
-      label.setValue(node.getLabel());
-
       const type = this.self().getParameterOutputType(node);
-      const typeBox = this.getChildControl("data-type");
-      typeBox.getSelectables().forEach(selectable => {
-        if (selectable.type === type) {
-          typeBox.setSelection([selectable]);
-          typeBox.setEnabled(false);
-        }
-      });
-      form.add(typeBox, "Data Type", null, "type");
+      if (allSettings) {
+        const label = this.getChildControl("label");
+        form.add(label, "Label", null, "label");
+        label.setValue(node.getLabel());
+
+        const typeBox = this.getChildControl("data-type");
+        typeBox.getSelectables().forEach(selectable => {
+          if (selectable.type === type) {
+            typeBox.setSelection([selectable]);
+            typeBox.setEnabled(false);
+          }
+        });
+        form.add(typeBox, "Data Type", null, "type");
+      }
 
       const valueField = this.getChildControl(type);
       const outputs = node.getOutputs();

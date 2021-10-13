@@ -431,11 +431,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const workbench = study.getWorkbench();
       const node = workbench.getNode(nodeId);
-      if (node && node.isParameter()) {
-        const parameterEditor = new osparc.component.node.ParameterEditor(node);
-        parameterEditor.popUpInWindow();
-        return;
-      }
 
       if (this.__nodesTree) {
         this.__nodesTree.setCurrentNodeId(nodeId);
@@ -533,20 +528,27 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__infoPage.removeAll();
       this.__settingsPage.removeAll();
       this.__outputsPage.removeAll();
+      this.__infoPage.getChildControl("button").exclude();
+      this.__settingsPage.getChildControl("button").exclude();
+      this.__outputsPage.getChildControl("button").exclude();
 
       if (node instanceof osparc.data.model.Study) {
         // Study or File
         this.__infoPage.getChildControl("button").show();
-        this.__settingsPage.getChildControl("button").exclude();
-        this.__outputsPage.getChildControl("button").exclude();
         this.getChildControl("side-panel-right-tabs").setSelection([this.__infoPage]);
 
         this.__infoPage.add(new osparc.studycard.Medium(node), {
           flex: 1
         });
+      } else if (node && node.isParameter()) {
+        this.__settingsPage.getChildControl("button").show();
+        const parameterEditor = new osparc.component.node.ParameterEditor(node);
+        const view = parameterEditor.createSimpleForm();
+        this.__settingsPage.add(view, {
+          flex: 1
+        });
       } else if (node) {
         // Comp/Dynamic Node or Parameter
-        this.__infoPage.getChildControl("button").exclude();
         this.__settingsPage.getChildControl("button").show();
         this.__outputsPage.getChildControl("button").show();
         this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
@@ -560,10 +562,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__outputsPage.add(portTree, {
           flex: 1
         });
-      } else {
-        this.__infoPage.getChildControl("button").exclude();
-        this.__settingsPage.getChildControl("button").exclude();
-        this.__outputsPage.getChildControl("button").exclude();
       }
     },
 
