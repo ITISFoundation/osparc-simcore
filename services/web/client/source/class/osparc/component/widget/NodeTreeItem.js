@@ -83,7 +83,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "fullscreen-button": {
           control = new qx.ui.form.Button().set({
-            icon: "@MaterialIcons/fullscreen/12",
+            icon: "@MaterialIcons/fullscreen/14",
             backgroundColor: "transparent",
             toolTipText: this.tr("Full Screen"),
             alignY: "middle",

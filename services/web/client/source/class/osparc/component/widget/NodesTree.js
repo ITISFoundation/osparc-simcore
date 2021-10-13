@@ -137,8 +137,14 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               item.setIcon("@FontAwesome5Solid/home/14");
               item.getChildControl("options-menu-button").exclude();
             }
-            if (node && node.isDynamic()) {
-              item.getChildControl("fullscreen-button").show();
+            if (node) {
+              if (node.isDynamic()) {
+                item.getChildControl("fullscreen-button").show();
+              }
+              const icon = osparc.utils.Services.getIcon(node.getMetaData().type);
+              if (icon) {
+                item.setIcon(icon);
+              }
             }
           },
           configureItem: item => {

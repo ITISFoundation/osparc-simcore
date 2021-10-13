@@ -63,6 +63,14 @@ qx.Class.define("osparc.utils.Services", {
       return this.TYPES[type.trim().toLowerCase()];
     },
 
+    getIcon: function(type) {
+      const typeInfo = this.getType(type);
+      if (typeInfo) {
+        return typeInfo["icon"];
+      }
+      return typeInfo[""];
+    },
+
     convertArrayToObject: function(servicesArray) {
       let services = {};
       for (let i = 0; i < servicesArray.length; i++) {
