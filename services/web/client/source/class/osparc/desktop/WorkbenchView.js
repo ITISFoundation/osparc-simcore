@@ -194,6 +194,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       tabViewSecondary.add(settingsPage);
 
       const outputsPage = this.__outputsPage = this.__createTabPage("@FontAwesome5Solid/sign-out-alt", this.tr("Outputs"));
+      osparc.utils.Utils.setIdToWidget(outputsPage.getChildControl("button"), "outputsTabButton");
       outputsPage.exclude();
       tabViewSecondary.add(outputsPage);
 
@@ -560,10 +561,16 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             flex: 1
           });
         }
+
         const portTree = new osparc.component.widget.inputs.NodeOutputTree(node, node.getMetaData().outputs);
-        this.__outputsPage.add(portTree, {
-          flex: 1
+        this.__outputsPage.add(portTree);
+
+        const outputFilesBtn = new qx.ui.form.Button(this.tr("Output Files"), "@FontAwesome5Solid/folder-open/14").set({
+          allowGrowX: false
         });
+        osparc.utils.Utils.setIdToWidget(outputFilesBtn, "nodeOutputFilesBtn");
+        outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
+        this.__outputsPage.add(outputFilesBtn);
       }
     },
 

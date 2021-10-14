@@ -335,7 +335,7 @@ async function maximizeIFrame(page) {
 async function openNodeFiles(page) {
   console.log("Opening Data produced by Node");
 
-  await utils.waitAndClick(page, '[osparc-test-id="nodeViewFilesBtn"]')
+  await utils.waitAndClick(page, '[osparc-test-id="nodeOutputFilesBtn"]')
 }
 
 async function checkDataProducedByNode(page, nFiles = 1, itemSuffix = 'NodeFiles') {
