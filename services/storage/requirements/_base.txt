@@ -184,9 +184,7 @@ typing-extensions==3.10.0.2
     #   aiohttp
     #   pydantic
 ujson==4.0.2
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
-    #   aiohttp-swagger
+    # via aiohttp-swagger
 urllib3==1.26.6
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

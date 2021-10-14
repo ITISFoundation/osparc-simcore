@@ -285,11 +285,6 @@ typing-extensions==3.10.0.2
     #   aiodocker
     #   aiohttp
     #   pydantic
-ujson==4.2.0
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 urllib3==1.26.6
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

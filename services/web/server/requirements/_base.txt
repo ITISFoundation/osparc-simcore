@@ -215,10 +215,7 @@ typing-extensions==3.10.0.2
     #   aiohttp-jinja2
     #   pydantic
 ujson==4.0.2
-    # via
-    #   -c requirements/../../../../packages/service-library/requirements/./_base.in
-    #   -c requirements/../../../../packages/service-library/requirements/_base.in
-    #   aiohttp-swagger
+    # via aiohttp-swagger
 vine==5.0.0
     # via
     #   amqp
