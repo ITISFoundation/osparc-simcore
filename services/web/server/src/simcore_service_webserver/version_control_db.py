@@ -628,12 +628,6 @@ class VersionControlRepositoryInternalAPI(VersionControlRepository):
 
                 # FIXME: File-picker takes project uuid. replace!
                 project["hidden"] = True
-                # FIXME: project api validator fails when it is none because API schema does not contemplate None!
-                if project["thumbnail"] is None:
-                    project["thumbnail"] = ""
-                for nid in project["workbench"]:
-                    value = project["workbench"][nid]["thumbnail"]
-                    project["workbench"][nid]["thumbnail"] = value or ""
 
                 # creates runnable version in project
                 # raises ?? if same uuid
