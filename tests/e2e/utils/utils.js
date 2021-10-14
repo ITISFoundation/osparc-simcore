@@ -459,8 +459,8 @@ function isElementVisible(page, selector) {
 }
 
 async function clickLoggerTitle(page) {
-  console.log("Click LoggerTitle");
-  await this.waitAndClick(page, '[osparc-test-id="studyLoggerTitleLabel"]')
+  console.log("Click Logger");
+  await this.waitAndClick(page, '[osparc-test-id="loggerTabButton"]')
 }
 
 

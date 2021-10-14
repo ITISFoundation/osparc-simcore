@@ -221,6 +221,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView();
       const logsPage = this.__logsPage = this.__createTabPage("@FontAwesome5Solid/file-alt", this.tr("Logger"), loggerView);
+      osparc.utils.Utils.setIdToWidget(logsPage.getChildControl("button"), "loggerTabButton");
       tabViewMain.add(logsPage);
 
       this.__addTopBarSpacer(topBar);
