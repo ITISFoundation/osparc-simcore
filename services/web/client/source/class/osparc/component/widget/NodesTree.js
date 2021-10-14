@@ -124,7 +124,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         this.setModel(newModel);
         this.setDelegate({
           createItem: () => {
-            const nodeTreeItem = new osparc.component.widget.NodeTreeItem(study);
+            const nodeTreeItem = new osparc.component.widget.NodeTreeItem();
             nodeTreeItem.addListener("fullscreenNode", e => this.__openFullscreen(e.getData()));
             nodeTreeItem.addListener("renameNode", e => this.__openItemRenamer(e.getData()));
             nodeTreeItem.addListener("deleteNode", e => this.__deleteNode(e.getData()));
