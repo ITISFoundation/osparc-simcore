@@ -733,6 +733,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __workbenchChanged: function() {
       this.__nodesTree.populateTree();
       this.__nodesTree.nodeSelected(this.__currentNodeId);
+
+      this.__workbenchUI.loadModel(this.getStudy().getWorkbench());
     },
 
     __checkMaximizeable: function() {

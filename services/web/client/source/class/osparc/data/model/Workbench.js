@@ -477,11 +477,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
       node.setParentNodeId(parentNode ? parentNode.getNodeId() : null);
       this.fireEvent("pipelineChanged");
-      if (node.isParameter()) {
-        if (this.getStudy()) {
-          this.getStudy().fireEvent("changeParameters");
-        }
-      }
     },
 
     moveNode: function(node, newParent, oldParent) {
@@ -526,11 +521,6 @@ qx.Class.define("osparc.data.model.Workbench", {
         }
 
         this.fireEvent("pipelineChanged");
-        if (node.isParameter()) {
-          if (this.getStudy()) {
-            this.getStudy().fireEvent("changeParameters");
-          }
-        }
         return true;
       }
       return false;
