@@ -183,6 +183,24 @@ class TutorialBase {
     return resp;
   }
 
+  async openStudy(waitFor = 1000) {
+    await this.takeScreenshot("dashboardOpenFirstStudy_before");
+    this.__responsesQueue.addResponseListener("open");
+    let resp = null;
+    try {
+      const templateFound = await auto.dashboardOpenFirstTemplate(this.__page, this.__templateName);
+      assert(templateFound, "Expected study, got nothing. TIP: did you inject studies in database??")
+      resp = await this.__responsesQueue.waitUntilResponse("open");
+    }
+    catch (err) {
+      console.error(`"${this.__templateName}" study could not be started:\n`, err);
+      throw (err);
+    }
+    await this.waitFor(waitFor);
+    await this.takeScreenshot("dashboardOpenFirstStudy_after");
+    return resp;
+  }
+
   async openTemplate(waitFor = 1000) {
     await this.takeScreenshot("dashboardOpenFirstTemplate_before");
     this.__responsesQueue.addResponseListener("projects?from_template=");
