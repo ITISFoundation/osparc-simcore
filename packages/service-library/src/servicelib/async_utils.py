@@ -27,6 +27,7 @@ async def stop_pending_workers() -> None:
         if context.task is not None:
             await context.task
     _sequential_jobs_contexts.clear()
+    logger.info("All run_sequentially_in_context pending workers stopped")
 
 
 def run_sequentially_in_context(target_args: List[str] = None):
