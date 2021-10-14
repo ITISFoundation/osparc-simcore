@@ -618,6 +618,7 @@ class VersionControlRepositoryInternalAPI(VersionControlRepository):
                 commit_id = await self.CommitsOrm(conn).insert(
                     repo_id=repo_id,
                     parent_commit_id=start_commit_id,
+                    message=tag_message,
                     snapshot_checksum=snapshot_checksum,
                 )
                 assert commit_id  # nosec
