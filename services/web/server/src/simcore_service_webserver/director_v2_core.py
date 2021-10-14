@@ -64,11 +64,11 @@ async def _request_director_v2(
             )
 
             # NOTE:
-            # sometimes director-v0 (via redirects)
-            # replies in plain text and this is considered an error
-            # director-v2 and director-v0 can reply with 204 no content
-            if response.status != expected_status.status_code or isinstance(
-                payload, str
+            # - `sometimes director-v0` (via redirects) replies
+            #   in plain text and this is considered an error
+            # - `director-v2` and `director-v0` can reply with 204 no content
+            if response.status != expected_status.status_code or (
+                response.status != web.HTTPNoContent and isinstance(payload, str)
             ):
                 raise DirectorServiceError(response.status, reason=str(payload))
 
