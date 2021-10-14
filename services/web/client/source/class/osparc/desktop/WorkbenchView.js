@@ -485,20 +485,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           iFrame
         ].forEach(widget => {
           if (widget) {
-            widget.addListener("maximize", e => {
-              this.__maximizeIframe(true);
-            }, this);
-            widget.addListener("restore", e => {
-              this.__maximizeIframe(false);
-            }, this);
-            this.__maximizeIframe(widget.hasState("maximized"));
+            widget.addListener("maximize", () => this.__maximizeIframe(true), this);
+            widget.addListener("restore", () => this.__maximizeIframe(false), this);
           }
         });
         this.__iFrameChanged(node);
 
-        iFrame.addListener("load", () => {
-          this.__iFrameChanged(node);
-        });
+        iFrame.addListener("load", () => this.__iFrameChanged(node), this);
       } else {
         // This will keep what comes after at the bottom
         this.__iFramePage.add(new qx.ui.core.Spacer(), {
