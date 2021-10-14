@@ -126,8 +126,15 @@ qx.Class.define("osparc.desktop.SlideshowView", {
 
         let view;
         if (node.isParameter()) {
-          view = new osparc.component.node.ParameterEditor(node);
-          view.turnIntoForm();
+          view = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
+          const renderer = new osparc.component.node.ParameterEditor(node);
+          renderer.buildForm();
+          renderer.set({
+            appearance: "settings-groupbox",
+            maxWidth: 800,
+            alignX: "center"
+          });
+          view.add(renderer);
         } else {
           if (node.isContainer()) {
             view = new osparc.component.node.GroupNodeView();

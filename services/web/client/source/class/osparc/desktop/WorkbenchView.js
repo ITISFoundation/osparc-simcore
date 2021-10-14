@@ -541,6 +541,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         });
       } else if (node && node.isFilePicker()) {
         this.__infoPage.getChildControl("button").show();
+        this.getChildControl("side-panel-right-tabs").setSelection([this.__infoPage]);
+
         const view = osparc.file.FilePicker.buildInfoView(node);
         view.setEnabled(false);
         this.__settingsPage.add(view, {
@@ -548,8 +550,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         });
       } else if (node && node.isParameter()) {
         this.__settingsPage.getChildControl("button").show();
-        const parameterEditor = new osparc.component.node.ParameterEditor(node);
-        const view = parameterEditor.createSimpleForm();
+        this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
+
+        const view = new osparc.component.node.ParameterEditor(node);
+        view.buildForm(false);
         this.__settingsPage.add(view, {
           flex: 1
         });
