@@ -79,10 +79,18 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_director(app)
     setup_director_v2(app)
     setup_storage(app)
+
+    # users
     setup_users(app)
     setup_groups(app)
+
+    # projects
     setup_projects(app)
+    # project add-ons
     setup_version_control(app)
+    setup_meta(app)
+
+    # TODO: classify
     setup_activity(app)
     setup_resource_manager(app)
     setup_tags(app)
@@ -93,7 +101,6 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_studies_dispatcher(app)
     setup_exporter(app)
     setup_clusters(app)
-    setup_meta(app)
 
     async def welcome_banner(_app: web.Application):
         print(WELCOME_MSG, flush=True)
