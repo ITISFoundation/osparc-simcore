@@ -158,6 +158,7 @@ async def get_or_create_runnable_projects(
 
     # TODO:  handle UserUndefined and translate into web.HTTPForbidden
     project: ProjectDict = await vc_repo.get_project(project_uuid)
+    project["thumbnail"] |= ""
 
     project_nodes: Dict[NodeID, Node] = {
         nid: Node.parse_obj(n) for nid, n in project["workbench"].items()
@@ -218,7 +219,10 @@ async def get_or_create_runnable_projects(
         project["name"] = f"{original_name}/{iter_index}"
         project["workbench"].update(
             {
-                nid: n.dict(by_alias=True, exclude_unset=True)
+                # converts model in dict patching first thumbnail
+                nid: n.copy(update={"thumbnail": n.thumbnail or ""}).dict(
+                    by_alias=True, exclude_unset=True
+                )
                 for nid, n in updated_nodes.items()
             }
         )
