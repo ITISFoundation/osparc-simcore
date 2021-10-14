@@ -416,10 +416,10 @@ qx.Class.define("osparc.data.model.Workbench", {
                   file.getFileId(),
                   file.getLabel()
                 );
-                this.fireEvent("reloadModel");
               } else {
                 this.fireDataEvent("openNode", fpId);
               }
+              this.fireEvent("reloadModel");
             } else {
               this.removeNode(fpId);
               const msg = qx.locale.Manager.tr("File couldn't be assigned");
@@ -459,6 +459,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           .then(success => {
             if (success) {
               this.fireDataEvent("openNode", pmId);
+              this.fireEvent("reloadModel");
             } else {
               this.removeNode(pmId);
               const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
