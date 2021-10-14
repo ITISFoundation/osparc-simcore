@@ -12,7 +12,7 @@ from servicelib.aiohttp.application_setup import (
     app_module_setup,
 )
 
-from . import version_control_handlers, version_control_handlers_snapshots
+from . import version_control_handlers
 from .constants import APP_SETTINGS_KEY
 from .settings import ApplicationSettings
 
@@ -32,4 +32,3 @@ def setup_version_control(app: web.Application):
         raise SkipModuleSetup(reason="Development feature")
 
     app.add_routes(version_control_handlers.routes)
-    app.add_routes(version_control_handlers_snapshots.routes)

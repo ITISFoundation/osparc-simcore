@@ -3,11 +3,12 @@ from typing import Set
 
 from aiohttp import web
 from pydantic.types import NonNegativeInt
-from servicelib.aiohttp.rest_responses import wrap_as_envelope
+from servicelib.aiohttp.rest_responses import create_error_response, get_http_error
+from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_decorator
 from yarl import URL
 
-from ._meta import api_version_prefix as vtag
+from ._meta import api_version_prefix as VTAG
 from .director_v2_core import DirectorServiceError, _request_director_v2
 from .director_v2_settings import Directorv2Settings, get_settings
 from .login.decorators import RQT_USERID_KEY, login_required
@@ -19,8 +20,7 @@ log = logging.getLogger(__file__)
 routes = web.RouteTableDef()
 
 
-# TODO: replace by @routes.post(f"/{vtag}/projects/{{project_uuid}}/workbench:start")
-@routes.post(f"/{vtag}/computation/pipeline/{{project_uuid}}:start")
+@routes.post(f"/{VTAG}/computation/pipeline/{{project_id}}:start")
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
@@ -58,16 +58,19 @@ async def start_pipeline(request: web.Request) -> web.Response:
         data = {"pipeline_id": computation_task_out["id"]}
 
         return web.json_response(
-            data=wrap_as_envelope(data=data), status=web.HTTPCreated.status_code
+            data={"data": data},
+            status=web.HTTPCreated.status_code,
+            dumps=json_dumps,
         )
     except DirectorServiceError as exc:
-        return web.json_response(
-            data=wrap_as_envelope(error=exc.reason), status=exc.status
+        return create_error_response(
+            exc,
+            reason=exc.reason,
+            http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
         )
 
 
-# TODO: replace by @routes.post(f"/{vtag}/projects/{{project_uuid}}/workbench:start")
-@routes.post(f"/{vtag}/computation/pipeline/{{project_uuid}}:stop")
+@routes.post(f"/{VTAG}/computation/pipeline/{{project_id}}:stop")
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
@@ -91,11 +94,11 @@ async def stop_pipeline(request: web.Request) -> web.Response:
             expected_status=web.HTTPAccepted,
             data=body,
         )
-        data = {}
-        return web.json_response(
-            data=wrap_as_envelope(data=data), status=web.HTTPNoContent.status_code
-        )
+
+        raise web.HTTPNoContent()
     except DirectorServiceError as exc:
-        return web.json_response(
-            data=wrap_as_envelope(error=exc.reason), status=exc.status
+        return create_error_response(
+            exc,
+            reason=exc.reason,
+            http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
         )
