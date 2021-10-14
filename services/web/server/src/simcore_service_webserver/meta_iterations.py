@@ -158,7 +158,7 @@ async def get_or_create_runnable_projects(
 
     # TODO:  handle UserUndefined and translate into web.HTTPForbidden
     project: ProjectDict = await vc_repo.get_project(project_uuid)
-    project["thumbnail"] |= ""
+    project["thumbnail"] = project["thumbnail"] or ""
 
     project_nodes: Dict[NodeID, Node] = {
         nid: Node.parse_obj(n) for nid, n in project["workbench"].items()
