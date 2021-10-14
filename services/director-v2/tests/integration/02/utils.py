@@ -333,7 +333,7 @@ async def assert_service_is_available(  # pylint: disable=redefined-outer-name
         with attempt:
             async with httpx.AsyncClient() as client:
                 response = await client.get(service_address)
-                assert response.status_code == 200, response.text()
+                assert response.status_code == 200, response.text
 
 
 async def assert_services_reply_200(
