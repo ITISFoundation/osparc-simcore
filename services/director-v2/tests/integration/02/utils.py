@@ -5,7 +5,6 @@ from typing import Any, Dict, Optional, Union
 import aiodocker
 import httpx
 import requests
-import tenacity
 from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects import Node
@@ -17,10 +16,14 @@ from simcore_service_director_v2.models.schemas.constants import (
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
 )
+from tenacity._asyncio import AsyncRetrying
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 from yarl import URL
 
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 20
 SERVICES_ARE_READY_TIMEOUT = 10 * 60
+SEPARATOR = "=" * 50
 
 
 def is_legacy(node_data: Node) -> bool:
@@ -325,14 +328,16 @@ async def assert_service_is_available(  # pylint: disable=redefined-outer-name
     )
     print(f"checking service @ {service_address}")
 
-    async for attempt in tenacity.AsyncRetrying(
-        wait=tenacity.wait_exponential(),
-        stop=tenacity.stop_after_delay(20),
-        reraise=True,
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(1.5), stop=stop_after_attempt(60), reraise=True
     ):
         with attempt:
             async with httpx.AsyncClient() as client:
                 response = await client.get(service_address)
+                print(f"{SEPARATOR}\nAttempt={attempt.retry_state.attempt_number}")
+                print(
+                    f"Body:\n{response.text}\nHeaders={response.headers}\n{SEPARATOR}"
+                )
                 assert response.status_code == 200, response.text
 
 

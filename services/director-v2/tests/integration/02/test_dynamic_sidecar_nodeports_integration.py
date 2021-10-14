@@ -48,6 +48,7 @@ from simcore_service_director_v2.models.schemas.constants import (
 from starlette import status
 from starlette.testclient import TestClient
 from utils import (
+    SEPARATOR,
     assert_all_services_running,
     assert_retrieve_service,
     assert_services_reply_200,
@@ -84,7 +85,7 @@ DY_SERVICES_STATE_PATH: Path = Path("/dy-volumes/workdir_generated-data")
 TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED = 60
 TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED = 60
 POSSIBLE_ISSUE_WORKAROUND = 10
-SEPARATOR = "=" * 50
+
 
 logger = logging.getLogger(__name__)
 
