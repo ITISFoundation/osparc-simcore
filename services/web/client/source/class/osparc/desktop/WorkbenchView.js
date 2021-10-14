@@ -430,9 +430,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       this.__currentNodeId = nodeId;
       study.getUi().setCurrentNodeId(nodeId);
+
       if (this.__nodesTree) {
-        this.__nodesTree.setCurrentNodeId(nodeId);
+        this.__nodesTree.nodeSelected(nodeId);
       }
+
+      const node = study.getWorkbench().getNode(nodeId);
+      this.__populateSecondPanel(node);
     },
 
     __evalIframe: function(node) {
@@ -698,7 +702,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         this.__workbenchUI.clearNode(nodeId);
       }
-      if (nodeId === this.__currentNodeId) {
+      if (this.__nodesTree.getCurrentNodeId() === this.__currentNodeId) {
         this.nodeSelected(this.getStudy().getUuid());
       }
     },

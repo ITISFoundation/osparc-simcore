@@ -91,6 +91,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       this.populateTree();
     },
 
+    getCurrentNodeId: function() {
+      return this.__currentNodeId;
+    },
+
+
     setCurrentNodeId: function(nodeId) {
       this.__currentNodeId = nodeId;
     },
