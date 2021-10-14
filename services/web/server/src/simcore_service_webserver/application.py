@@ -62,9 +62,9 @@ def create_application(config: Dict[str, Any]) -> web.Application:
 
     # TODO: create dependency mechanism
     # and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
-    #
 
-    setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
+    # core modules
+    setup_app_tracing(app) # WARNING: must be UPPERMOST middleware
     setup_statics(app)
     setup_db(app)
     setup_session(app)
@@ -78,10 +78,18 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_director(app)
     setup_director_v2(app)
     setup_storage(app)
+
+    # users
     setup_users(app)
     setup_groups(app)
+
+    # projects
     setup_projects(app)
+    # project add-ons
     setup_version_control(app)
+    setup_meta(app)
+
+    # TODO: classify
     setup_activity(app)
     setup_resource_manager(app)
     setup_tags(app)
@@ -92,7 +100,6 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_studies_dispatcher(app)
     setup_exporter(app)
     setup_clusters(app)
-    setup_meta(app)
 
     return app
 
