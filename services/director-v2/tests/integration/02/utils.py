@@ -391,7 +391,7 @@ async def assert_services_reply_200(
         )
 
         await _inspect_service_and_print_logs(
-            tag="before_port_forward",
+            tag=f"before_port_forward {service_uuid}",
             service_name=service_data["service_host"],
             is_legacy=is_legacy(node_data),
         )
@@ -401,18 +401,20 @@ async def assert_services_reply_200(
             internal_port=service_data["service_port"],
         )
         await _inspect_service_and_print_logs(
-            tag="after_port_forward",
+            tag=f"after_port_forward {service_uuid}",
             service_name=service_data["service_host"],
             is_legacy=is_legacy(node_data),
         )
 
-        await assert_service_is_available(
-            exposed_port=exposed_port,
-            is_legacy=is_legacy(node_data),
-            service_uuid=service_uuid,
-        )
-        await _inspect_service_and_print_logs(
-            tag="after_service_is_available",
-            service_name=service_data["service_host"],
-            is_legacy=is_legacy(node_data),
-        )
+        try:
+            await assert_service_is_available(
+                exposed_port=exposed_port,
+                is_legacy=is_legacy(node_data),
+                service_uuid=service_uuid,
+            )
+        finally:
+            await _inspect_service_and_print_logs(
+                tag=f"after_service_is_available {service_uuid}",
+                service_name=service_data["service_host"],
+                is_legacy=is_legacy(node_data),
+            )
