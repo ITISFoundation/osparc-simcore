@@ -1,21 +1,23 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 
 import asyncio
 import copy
 import random
 from collections import deque
 from time import time
-from typing import Any, Dict, List
+from typing import Any, AsyncIterable, Dict, List
 
 import pytest
-from servicelib.async_utils import run_sequentially_in_context, sequential_jobs_contexts
+from servicelib.async_utils import run_sequentially_in_context, stop_pending_workers
 
 
-@pytest.fixture(autouse=True)
-def ensure_run_in_sequence_context_is_empty():
+@pytest.fixture
+async def ensure_run_in_sequence_context_is_empty(loop) -> AsyncIterable[None]:
+    yield
     # NOTE: since the contexts variable is initialized at import time, when several test run
     # the import happens only once and is rendered invalid, therefore explicit clearance is necessary
-    sequential_jobs_contexts.clear()
+    await stop_pending_workers()
 
 
 class LockedStore:
@@ -34,7 +36,9 @@ class LockedStore:
             return list(self._queue)
 
 
-async def test_context_aware_dispatch() -> None:
+async def test_context_aware_dispatch(
+    ensure_run_in_sequence_context_is_empty: None,
+) -> None:
     @run_sequentially_in_context(target_args=["c1", "c2", "c3"])
     async def orderly(c1: Any, c2: Any, c3: Any, control: Any) -> None:
         _ = (c1, c2, c3)
@@ -81,12 +85,14 @@ async def test_context_aware_dispatch() -> None:
         assert list(expected_outcomes[key]) == await locked_stores[key].get_all()
 
 
-async def test_context_aware_function_sometimes_fails() -> None:
+async def test_context_aware_function_sometimes_fails(
+    ensure_run_in_sequence_context_is_empty: None,
+) -> None:
     class DidFailException(Exception):
         pass
 
     @run_sequentially_in_context(target_args=["will_fail"])
-    async def sometimes_failing(will_fail: bool) -> None:
+    async def sometimes_failing(will_fail: bool) -> bool:
         if will_fail:
             raise DidFailException("I was instructed to fail")
         return True
@@ -101,7 +107,9 @@ async def test_context_aware_function_sometimes_fails() -> None:
             assert await sometimes_failing(raise_error) is True
 
 
-async def test_context_aware_wrong_target_args_name() -> None:
+async def test_context_aware_wrong_target_args_name(
+    ensure_run_in_sequence_context_is_empty: None,
+) -> None:
     expected_param_name = "wrong_parameter"
 
     # pylint: disable=unused-argument
@@ -119,7 +127,9 @@ async def test_context_aware_wrong_target_args_name() -> None:
     assert str(excinfo.value).startswith(message) is True
 
 
-async def test_context_aware_measure_parallelism() -> None:
+async def test_context_aware_measure_parallelism(
+    ensure_run_in_sequence_context_is_empty: None,
+) -> None:
     # expected duration 1 second
     @run_sequentially_in_context(target_args=["control"])
     async def sleep_for(sleep_interval: float, control: Any) -> Any:
@@ -138,7 +148,9 @@ async def test_context_aware_measure_parallelism() -> None:
     assert control_sequence == result
 
 
-async def test_context_aware_measure_serialization() -> None:
+async def test_context_aware_measure_serialization(
+    ensure_run_in_sequence_context_is_empty: None,
+) -> None:
     # expected duration 1 second
     @run_sequentially_in_context(target_args=["control"])
     async def sleep_for(sleep_interval: float, control: Any) -> Any:
