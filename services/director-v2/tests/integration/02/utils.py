@@ -1,4 +1,7 @@
+# pylint: disable=redefined-outer-name
+
 import asyncio
+import json
 import os
 from typing import Any, Dict, Optional, Union
 
@@ -277,6 +280,33 @@ def _run_command(command: str) -> str:
     return command_result
 
 
+async def _inspect_service_and_print_logs(
+    tag: str, service_name: str, is_legacy: bool
+) -> None:
+    """inspects proxy and prints logs from it"""
+    if is_legacy:
+        print(f"Skipping service logs and inspect for {service_name}")
+        return
+
+    target_service = service_name.replace(
+        DYNAMIC_SIDECAR_SERVICE_PREFIX, DYNAMIC_PROXY_SERVICE_PREFIX
+    )
+
+    async with aiodocker.Docker() as docker_client:
+        service_details = await docker_client.services.inspect(target_service)
+
+        print(f"{SEPARATOR} - {tag}\nService inspect: {target_service}")
+
+        formatted_inspect = json.dumps(service_details, indent=2)
+        print(f"{formatted_inspect}\n{SEPARATOR}")
+
+        logs = await docker_client.services.logs(
+            service_details["ID"], stdout=True, stderr=True
+        )
+        formatted_logs = "".join(logs)
+        print(f"{formatted_logs}\n{SEPARATOR} - {tag}")
+
+
 async def port_forward_service(  # pylint: disable=redefined-outer-name
     service_name: str, is_legacy: bool, internal_port: PositiveInt
 ) -> PositiveInt:
@@ -359,14 +389,30 @@ async def assert_services_reply_200(
             node_data,
             service_data,
         )
+
+        await _inspect_service_and_print_logs(
+            tag="before_port_forward",
+            service_name=service_data["service_host"],
+            is_legacy=is_legacy(node_data),
+        )
         exposed_port = await port_forward_service(
             service_name=service_data["service_host"],
             is_legacy=is_legacy(node_data),
             internal_port=service_data["service_port"],
+        )
+        await _inspect_service_and_print_logs(
+            tag="after_port_forward",
+            service_name=service_data["service_host"],
+            is_legacy=is_legacy(node_data),
         )
 
         await assert_service_is_available(
             exposed_port=exposed_port,
             is_legacy=is_legacy(node_data),
             service_uuid=service_uuid,
+        )
+        await _inspect_service_and_print_logs(
+            tag="after_service_is_available",
+            service_name=service_data["service_host"],
+            is_legacy=is_legacy(node_data),
         )
