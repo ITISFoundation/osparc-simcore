@@ -49,6 +49,9 @@ def _inject_traefik_configuration(
             f"io.simcore.zone={simcore_traefik_zone}",
             "traefik.enable=true",
             f"traefik.http.services.{target_container}.loadbalancer.server.port={service_port}",
+            f"traefik.http.services.{target_container}.loadbalancer.healthcheck.path=/",
+            f"traefik.http.services.{target_container}.loadbalancer.healthcheck.interval=5s",
+            f"traefik.http.services.{target_container}.loadbalancer.healthcheck.timeout=3s",
             f"traefik.http.routers.{target_container}.entrypoints=http",
             f"traefik.http.routers.{target_container}.rule=PathPrefix(`/`)",
         ]
