@@ -316,7 +316,7 @@ class DynamicSidecarsScheduler:
                 # fire and forget about the task
                 asyncio.create_task(observing_single_service(service_name))
 
-        logging.info("Scheduler 'trigger observation queue task' was shut down")
+        logger.info("Scheduler 'trigger observation queue task' was shut down")
 
     async def _run_scheduler_task(self) -> None:
         settings: DynamicServicesSchedulerSettings = (
@@ -347,7 +347,7 @@ class DynamicSidecarsScheduler:
             ServiceLabelsStoredData
         ] = await get_dynamic_sidecars_to_observe(dynamic_sidecar_settings)
 
-        logging.info(
+        logger.info(
             "The following services need to be observed: %s", services_to_observe
         )
 
@@ -360,7 +360,7 @@ class DynamicSidecarsScheduler:
 
     async def start(self) -> None:
         # run as a background task
-        logging.info("Starting dynamic-sidecar scheduler")
+        logger.info("Starting dynamic-sidecar scheduler")
         self._keep_running = True
         self._scheduler_task = asyncio.create_task(self._run_scheduler_task())
         self._trigger_observation_queue_task = asyncio.create_task(
@@ -370,7 +370,7 @@ class DynamicSidecarsScheduler:
         await self._discover_running_services()
 
     async def shutdown(self):
-        logging.info("Shutting down dynamic-sidecar scheduler")
+        logger.info("Shutting down dynamic-sidecar scheduler")
         self._keep_running = False
         self._inverse_search_mapping = {}
         self._to_observe = {}
