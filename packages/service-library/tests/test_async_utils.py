@@ -15,8 +15,9 @@ from servicelib.async_utils import run_sequentially_in_context, stop_pending_wor
 @pytest.fixture
 async def ensure_run_in_sequence_context_is_empty(loop) -> AsyncIterable[None]:
     yield
-    # NOTE: since the contexts variable is initialized at import time, when several test run
-    # the import happens only once and is rendered invalid, therefore explicit clearance is necessary
+    # NOTE
+    # required when shutting down the application or ending tests
+    # otherwise errors will occur when closing the loop
     await stop_pending_workers()
 
 
@@ -108,7 +109,7 @@ async def test_context_aware_function_sometimes_fails(
 
 
 async def test_context_aware_wrong_target_args_name(
-    ensure_run_in_sequence_context_is_empty: None,
+    ensure_run_in_sequence_context_is_empty: None,  # pylint: disable=unused-argument
 ) -> None:
     expected_param_name = "wrong_parameter"
 
