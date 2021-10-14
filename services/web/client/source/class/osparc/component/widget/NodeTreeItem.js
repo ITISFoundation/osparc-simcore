@@ -40,9 +40,7 @@
 qx.Class.define("osparc.component.widget.NodeTreeItem", {
   extend: qx.ui.tree.VirtualTreeItem,
 
-  construct: function(study) {
-    this.__study = study;
-
+  construct: function() {
     this.base(arguments);
 
     this.getContentElement().setStyles({
@@ -68,7 +66,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
   },
 
   members: {
-    __study: null,
+    __optionsMenu: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -156,7 +154,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
     },
 
     __getOptionsMenu: function() {
-      const optionsMenu = new qx.ui.menu.Menu().set({
+      const optionsMenu = this.__optionsMenu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
 
@@ -194,7 +192,17 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         this.__setHoveredStyle();
       });
       this.addListener("mouseout", () => {
-        if (!this.hasState("selected")) {
+        if (this.__optionsMenu.isVisible()) {
+          const hideButtonsIfMouseOut = event => {
+            if (osparc.utils.Utils.isMouseOnElement(this.__optionsMenu, event, 5)) {
+              return;
+            }
+            document.removeEventListener("mousemove", hideButtonsIfMouseOut);
+            this.getChildControl("buttons").exclude();
+            this.__optionsMenu.exclude();
+          };
+          document.addEventListener("mousemove", hideButtonsIfMouseOut);
+        } else {
           this.getChildControl("buttons").exclude();
         }
         this.__setNotHoveredStyle();
@@ -211,23 +219,6 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       this.getContentElement().setStyles({
         "border": "1px solid transparent"
       });
-    },
-
-    // overridden
-    addState: function(state) {
-      this.base(arguments, state);
-
-      if (state === "selected") {
-        this.getChildControl("buttons").show();
-      }
-    },
-
-    // overridden
-    removeState: function(state) {
-      this.base(arguments, state);
-      if (state === "selected") {
-        this.getChildControl("buttons").exclude();
-      }
     }
   }
 });
