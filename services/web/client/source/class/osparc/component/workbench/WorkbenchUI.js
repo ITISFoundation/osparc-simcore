@@ -456,7 +456,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
 
       nodeUI.addListener("tap", e => {
-        this.__activeNodeChanged(nodeUI, e.isCtrlPressed());
+        this.activeNodeChanged(nodeUI, e.isCtrlPressed());
         e.stopPropagation();
       }, this);
 
@@ -499,7 +499,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       qx.event.message.Bus.dispatchByName("changeWorkbenchSelection", []);
     },
 
-    __activeNodeChanged: function(activeNode, isControlPressed = false) {
+    activeNodeChanged: function(activeNode, isControlPressed = false) {
       if (isControlPressed) {
         if (this.__selectedNodes.includes(activeNode)) {
           const index = this.__selectedNodes.indexOf(activeNode);

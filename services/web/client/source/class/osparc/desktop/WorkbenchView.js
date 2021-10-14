@@ -212,6 +212,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__addTopBarSpacer(topBar);
 
       this.__workbenchUI.setStudy(study);
+      this.__workbenchUI.loadModel(study.getWorkbench());
       const workbenchPanelPage = this.__workbenchPanelPage = this.__createTabPage("@FontAwesome5Solid/object-group", this.tr("Workbench"), this.__workbenchPanel);
       tabViewMain.add(workbenchPanelPage);
 
@@ -246,6 +247,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __connectEvents: function() {
       const studyTreeItem = this.__studyTreeItem;
       const nodesTree = this.__nodesTree;
+      const workbenchUI = this.__workbenchUI;
 
       studyTreeItem.addListener("nodeSelected", () => {
         nodesTree.resetSelection();
@@ -268,10 +270,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             this.__openWorkbench();
           }
         }
-        const nodeUI = this.__workbenchUI.getNodeUI(nodeId);
+        const nodeUI = workbenchUI.getNodeUI(nodeId);
         if (nodeUI) {
           if (nodeUI.classname.includes("NodeUI")) {
-            nodeUI.setActive(true);
+            workbenchUI.activeNodeChanged(nodeUI);
           }
         }
       });
@@ -286,10 +288,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.__openIframe(node);
           this.__maximizeIFrame(true);
         }
-        const nodeUI = this.__workbenchUI.getNodeUI(nodeId);
+        const nodeUI = workbenchUI.getNodeUI(nodeId);
         if (nodeUI) {
           if (nodeUI.classname.includes("NodeUI")) {
-            nodeUI.setActive(true);
+            workbenchUI.activeNodeChanged(nodeUI);
           }
         }
       }, this);
@@ -298,7 +300,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__removeNode(nodeId);
       }, this);
 
-      const workbenchUI = this.__workbenchUI;
       workbenchUI.addListener("removeNode", e => {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
@@ -308,6 +309,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__removeEdge(edgeId);
       }, this);
       workbenchUI.addListener("changeSelectedNode", e => {
+        studyTreeItem.resetSelection();
         const nodeId = e.getData();
         this.__nodesTree.nodeSelected(nodeId);
         const workbench = this.getStudy().getWorkbench();
@@ -429,19 +431,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         nodeId = study.getUuid();
       }
 
-      const workbench = study.getWorkbench();
-      const node = workbench.getNode(nodeId);
-
       if (this.__nodesTree) {
         this.__nodesTree.setCurrentNodeId(nodeId);
       }
+      // const workbench = study.getWorkbench();
+      // const node = workbench.getNode(nodeId);
+      // this.__evalIframeButton(node);
 
       this.__currentNodeId = nodeId;
       study.getUi().setCurrentNodeId(nodeId);
-
-      this.__workbenchUI.loadModel(workbench);
-
-      this.__evalIframeButton(node);
     },
 
     __evalIframeButton: function(node) {
@@ -545,7 +543,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
         const view = osparc.file.FilePicker.buildInfoView(node);
         view.setEnabled(false);
-        this.__settingsPage.add(view, {
+        this.__infoPage.add(view, {
           flex: 1
         });
       } else if (node && node.isParameter()) {
