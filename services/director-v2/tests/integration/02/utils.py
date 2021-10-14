@@ -326,12 +326,14 @@ async def assert_service_is_available(  # pylint: disable=redefined-outer-name
     print(f"checking service @ {service_address}")
 
     async for attempt in tenacity.AsyncRetrying(
-        wait=tenacity.wait_exponential(), stop=tenacity.stop_after_delay(20)
+        wait=tenacity.wait_exponential(),
+        stop=tenacity.stop_after_delay(20),
+        reraise=True,
     ):
         with attempt:
             async with httpx.AsyncClient() as client:
                 response = await client.get(service_address)
-                assert response.status_code == 200
+                assert response.status_code == 200, response.text()
 
 
 async def assert_services_reply_200(
