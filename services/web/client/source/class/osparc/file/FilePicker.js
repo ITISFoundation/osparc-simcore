@@ -138,7 +138,6 @@ qx.Class.define("osparc.file.FilePicker", {
     buildInfoView: function(node) {
       const form = new qx.ui.form.Form();
       const outValue = osparc.file.FilePicker.getOutput(node.getOutputs());
-      console.log(outValue);
       if (outValue && "store" in outValue && "dataset" in outValue) {
         const params = {
           url: {
@@ -148,7 +147,6 @@ qx.Class.define("osparc.file.FilePicker", {
         };
         osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
           .then(files => {
-            console.log(files);
             const fileMetadata = files.find(file => file.file_uuid === outValue.path);
             if (fileMetadata) {
               for (let [key, value] of Object.entries(fileMetadata)) {
