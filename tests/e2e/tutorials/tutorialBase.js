@@ -332,7 +332,7 @@ class TutorialBase {
     await this.takeScreenshot("openNodeRetrieveAndRestart_after");
   }
 
-  async checkNodeOutputs(nodePos, fileNames, checkNFiles=true) {
+  async checkNodeOutputs(nodePos, fileNames, checkNFiles=true, checkFileNames=true) {
     try {
       await this.openNodeFiles(nodePos);
       await this.takeScreenshot("checkNodeOutputs_before");
@@ -342,10 +342,13 @@ class TutorialBase {
         assert(files.length === fileNames.length, 'Number of files is incorrect')
         console.log('Number of files is correct')
       }
-      assert(
-        fileNames.every(fileName => files.some(file => file.includes(fileName))),
-        'File names are incorrect'
-      )
+      console.log('Number of Files is correct')
+      if (checkFileNames) {
+        assert(
+          fileNames.every(fileName => files.some(file => file.includes(fileName))),
+          'File names are incorrect'
+        )
+      }
       console.log('File names are correct')
     }
     catch (err) {
