@@ -320,12 +320,13 @@ qx.Class.define("osparc.data.model.Workbench", {
           } = e.getData();
           this.connectFilePicker(nodeId, portId)
             .then(filePicker => {
+              const fileObj = file.data;
               osparc.file.FilePicker.setOutputValueFromStore(
                 filePicker,
-                file.getLocation(),
-                file.getDatasetId(),
-                file.getFileId(),
-                file.getLabel()
+                fileObj.getLocation(),
+                fileObj.getDatasetId(),
+                fileObj.getFileId(),
+                fileObj.getLabel()
               );
               this.fireEvent("reloadModel");
             });
