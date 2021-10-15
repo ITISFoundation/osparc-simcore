@@ -18,7 +18,7 @@ from models_library.services import ServiceDockerData
 
 from .meta_funcs import SERVICE_CATALOG, SERVICE_TO_CALLABLES
 from .utils import compute_sha1
-from .version_control_db import VersionControlRepositoryInternalAPI
+from .version_control_db import VersionControlForMetaModeling
 from .version_control_models import CommitID, ProjectDict
 
 ##from .projects.projects_api import get_project_for_user
@@ -95,7 +95,7 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodes
 
 
 def extract_parameters(
-    vc_repo: VersionControlRepositoryInternalAPI,
+    vc_repo: VersionControlForMetaModeling,
     project_uuid: ProjectID,
     commit_id: CommitID,
 ) -> Parameters:
@@ -143,18 +143,8 @@ async def get_or_create_runnable_projects(
 
     # FIXME: what happens if not
 
-    vc_repo = VersionControlRepositoryInternalAPI(request)
+    vc_repo = VersionControlForMetaModeling(request)
     assert vc_repo.user_id  # nosec
-
-    # retrieves project
-    # project: ProjectDict = await get_project_for_user(
-    #     request.app,
-    #     project_uuid=str(project_uuid),
-    #     user_id=vc_repo.user_id,
-    #     include_state=False,
-    #     include_templates=False,
-    # )
-    # assert project["uuid"] == str(project_uuid)  # nosec
 
     # TODO:  handle UserUndefined and translate into web.HTTPForbidden
     project: ProjectDict = await vc_repo.get_project(project_uuid)
@@ -258,7 +248,7 @@ async def get_runnable_projects_ids(
     project_uuid: ProjectID,
 ) -> List[ProjectID]:
 
-    vc_repo = VersionControlRepositoryInternalAPI(request)
+    vc_repo = VersionControlForMetaModeling(request)
     assert vc_repo.user_id  # nosec
 
     project: ProjectDict = await vc_repo.get_project(project_uuid)
