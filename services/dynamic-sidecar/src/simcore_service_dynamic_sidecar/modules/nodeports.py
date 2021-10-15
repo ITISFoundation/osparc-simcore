@@ -30,18 +30,21 @@ logger = logging.getLogger(__name__)
 
 
 async def _set_data_to_port(port: Port, value: Optional[Any]) -> int:
-    logger.info("transfer started for %s", port.key)
+    # NOTE: multiple calls to this function will occur in parallel
+    tag = f"[{port.key}] "
+    logger.info("%s transfer started for %s=%s", tag, port.key, value)
 
     start_time = time.perf_counter()
     await port.set(value)
     elapsed_time = time.perf_counter() - start_time
 
-    logger.info("transfer completed in %ss", elapsed_time)
+    logger.info("%s transfer completed in %ss", tag, elapsed_time)
 
     if isinstance(value, Path):
         size_bytes = value.stat().st_size
         logger.info(
-            "%s: data size: %sMB, transfer rate %sMB/s",
+            "%s %s: data size: %sMB, transfer rate %sMB/s",
+            tag,
             value.name,
             size_bytes / 1024 / 1024,
             size_bytes / 1024 / 1024 / elapsed_time,
