@@ -1,4 +1,3 @@
-import csv
 import json
 from pathlib import Path
 from typing import Dict, Union
@@ -7,8 +6,7 @@ from models_library.database_project_models import (
     ProjectForPgInsert,
     load_projects_exported_as_csv,
 )
-from models_library.projects import Project, ProjectAtDB
-from simcore_service_webserver.version_control_db import ProjectDict, ProjectProxy
+from models_library.projects import Project
 
 JSON_KWARGS = dict(indent=2, sort_keys=True)
 

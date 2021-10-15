@@ -34,6 +34,8 @@ class Checkpoint(BaseModel):
     checksum: SHA1Str
     created_at: datetime
     tags: Tuple[str, ...]
+    # TODO: so front-end can proper break tree branches
+    # branches: Tuple[str, ...] = tuple()
 
     message: Optional[str] = None
     parents_ids: Tuple[PositiveInt, ...] = None  # type: ignore
