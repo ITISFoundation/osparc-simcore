@@ -32,7 +32,7 @@ async function runTutorial() {
       "logs.zip",
       "out_1"
     ];
-    await tutorial.checkNodeOutputs(0, outFiles, false);
+    await tutorial.checkNodeOutputs(0, outFiles, true, false);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
