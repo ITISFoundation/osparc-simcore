@@ -20,13 +20,13 @@
     "version": "2.0.2",
     "label": "dy-static-file-server-dynamic-sidecar",
     "inputs": {
-      "string_input": "lorem ipsum",
+      "string_input": "not the default value",
       "integer_input": {
         "nodeUuid": "e6becb37-4699-47f5-81ef-e58fbdf8a9e5",
         "output": "out_2"
       },
-      "boolean_input": false,
-      "number_input": 1.12,
+      "boolean_input": true,
+      "number_input": 3.14,
       "file_input": {
         "nodeUuid": "e6becb37-4699-47f5-81ef-e58fbdf8a9e5",
         "output": "out_1"
