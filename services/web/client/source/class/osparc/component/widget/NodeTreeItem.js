@@ -179,10 +179,11 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
 
     __applyNodeId: function(nodeId) {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
+      osparc.utils.Utils.setIdToWidget(this, "nodeTreeItem");
       if (nodeId === study.getUuid()) {
-        osparc.utils.Utils.setIdToWidget(this, "nodeTreeItem_root");
+        osparc.utils.Utils.setMoreToWidget(this, "root");
       } else {
-        osparc.utils.Utils.setIdToWidget(this, "nodeTreeItem_" + nodeId);
+        osparc.utils.Utils.setMoreToWidget(this, nodeId);
       }
     },
 
