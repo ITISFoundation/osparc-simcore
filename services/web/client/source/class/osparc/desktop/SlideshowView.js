@@ -230,40 +230,14 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     __addServiceBetween: function(service, leftNodeId, rightNodeId) {
       const workbench = this.getStudy().getWorkbench();
 
-      // create node
-      const node = workbench.createNode(service.getKey(), service.getVersion());
-      if (!node) {
+      const node = workbench.addServiceBetween(service, leftNodeId, rightNodeId);
+      if (node === null) {
         return;
       }
-      if (leftNodeId) {
-        const leftNode = workbench.getNode(leftNodeId);
-        node.setPosition(workbench.getFreePosition(leftNode, false));
-      } else if (rightNodeId) {
-        const rightNode = workbench.getNode(rightNodeId);
-        node.setPosition(workbench.getFreePosition(rightNode, true));
-      } else {
-        node.setPosition({
-          x: 20,
-          y: 20
-        });
-      }
+      this.addNodeToSlideshow(node, leftNodeId, rightNodeId);
+    },
 
-      // break previous connection
-      if (leftNodeId && rightNodeId) {
-        const edge = workbench.getEdge(null, leftNodeId, rightNodeId);
-        if (edge) {
-          workbench.removeEdge(edge.getEdgeId());
-        }
-      }
-
-      // create connections
-      if (leftNodeId) {
-        workbench.createEdge(null, leftNodeId, node.getNodeId());
-      }
-      if (rightNodeId) {
-        workbench.createEdge(null, node.getNodeId(), rightNodeId);
-      }
-
+    addNodeToSlideshow: function(node, leftNodeId, rightNodeId) {
       // add to the slideshow
       const slideshow = this.getStudy().getUi().getSlideshow();
       const nodeId = node.getNodeId();

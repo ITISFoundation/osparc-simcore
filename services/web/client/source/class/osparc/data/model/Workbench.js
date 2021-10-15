@@ -474,6 +474,44 @@ qx.Class.define("osparc.data.model.Workbench", {
       return false;
     },
 
+    addServiceBetween: function(service, leftNodeId, rightNodeId) {
+      // create node
+      const node = this.createNode(service.getKey(), service.getVersion());
+      if (!node) {
+        return null;
+      }
+      if (leftNodeId) {
+        const leftNode = this.getNode(leftNodeId);
+        node.setPosition(this.getFreePosition(leftNode, false));
+      } else if (rightNodeId) {
+        const rightNode = this.getNode(rightNodeId);
+        node.setPosition(this.getFreePosition(rightNode, true));
+      } else {
+        node.setPosition({
+          x: 20,
+          y: 20
+        });
+      }
+
+      // break previous connection
+      if (leftNodeId && rightNodeId) {
+        const edge = this.getEdge(null, leftNodeId, rightNodeId);
+        if (edge) {
+          this.removeEdge(edge.getEdgeId());
+        }
+      }
+
+      // create connections
+      if (leftNodeId) {
+        this.createEdge(null, leftNodeId, node.getNodeId());
+      }
+      if (rightNodeId) {
+        this.createEdge(null, node.getNodeId(), rightNodeId);
+      }
+
+      return node;
+    },
+
     removeEdge: function(edgeId) {
       if (!osparc.data.Permissions.getInstance().canDo("study.edge.delete", true)) {
         return false;
