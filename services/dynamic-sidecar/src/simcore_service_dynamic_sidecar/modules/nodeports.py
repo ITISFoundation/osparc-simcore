@@ -35,7 +35,7 @@ async def _set_data_to_port(port: Port, value: Optional[Any]) -> int:
     logger.info("%s transfer started for %s=%s", tag, port.key, value)
 
     start_time = time.perf_counter()
-    await port.set(value)
+    await port.set(value, save_immediately=False)
     elapsed_time = time.perf_counter() - start_time
 
     logger.info("%s transfer completed in %ss", tag, elapsed_time)
@@ -118,6 +118,8 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
     if upload_tasks:
         try:
             results = cast(List[int], await logged_gather(*upload_tasks))
+            # update in database after setting all the values to the ports
+            await PORTS.save_to_database()
             total_bytes = sum(results)
         finally:
             # clean up possible compressed files
