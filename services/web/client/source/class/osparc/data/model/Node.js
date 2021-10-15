@@ -205,9 +205,9 @@ qx.Class.define("osparc.data.model.Node", {
 
   events: {
     "retrieveInputs": "qx.event.type.Data",
-    "filePickerRequested": "qx.event.type.Data",
+    "fileRequested": "qx.event.type.Data",
     "parameterNodeRequested": "qx.event.type.Data",
-    "filePickerAdded": "qx.event.type.Data",
+    "filePickerRequested": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data",
     "outputListChanged": "qx.event.type.Event",
     "changeInputNodes": "qx.event.type.Event"
@@ -545,7 +545,7 @@ qx.Class.define("osparc.data.model.Node", {
       }, this);
 
       [
-        "filePickerRequested",
+        "fileRequested",
         "parameterNodeRequested"
       ].forEach(nodeRequestSignal => {
         propsForm.addListener(nodeRequestSignal, e => {
@@ -557,9 +557,9 @@ qx.Class.define("osparc.data.model.Node", {
         }, this);
       });
 
-      propsForm.addListener("filePickerAdded", e => {
+      propsForm.addListener("filePickerRequested", e => {
         const data = e.getData();
-        this.fireDataEvent("filePickerAdded", {
+        this.fireDataEvent("filePickerRequested", {
           portId: data.portId,
           nodeId: this.getNodeId(),
           file: data.file

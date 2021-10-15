@@ -48,6 +48,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __studyTreeItem: null,
     __nodesTree: null,
     __filesTree: null,
+    __storagePage: null,
     __settingsPage: null,
     __outputsPage: null,
     __workbenchPanel: null,
@@ -172,7 +173,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         hideRoot: true
       });
       filesTree.populateTree();
-      const storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTree);
+      const storagePage = this.__storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTree);
       tabViewPrimary.add(storagePage);
 
       this.__addTopBarSpacer(topBar);
@@ -334,11 +335,24 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const workbench = this.getStudy().getWorkbench();
       workbench.addListener("pipelineChanged", this.__workbenchChanged, this);
 
-      workbench.addListener("showInLogger", ev => {
-        const data = ev.getData();
+      workbench.addListener("showInLogger", e => {
+        const data = e.getData();
         const nodeId = data.nodeId;
         const msg = data.msg;
         this.getLogger().info(nodeId, msg);
+      }, this);
+
+      workbench.addListener("fileRequested", e => {
+        const {
+          nodeId,
+          portId
+        } = e.getData();
+        if (this.getStudy().getUi().getMode() === "workbench") {
+          const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
+          tabViewLeftPanel.setSelection([this.__storagePage]);
+        } else {
+          console.log("add File Picker and connect", nodeId, portId);
+        }
       }, this);
     },
 

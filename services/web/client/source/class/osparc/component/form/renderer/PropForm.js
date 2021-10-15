@@ -37,8 +37,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
   events: {
     "linkFieldModified": "qx.event.type.Data",
+    "fileRequested": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
-    "filePickerAdded": "qx.event.type.Data",
     "parameterNodeRequested": "qx.event.type.Data",
     "changeChildVisibility": "qx.event.type.Event"
   },
@@ -216,7 +216,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __getSelectFileButton: function(portId) {
       const selectFileButton = new qx.ui.menu.Button(this.tr("Select File"));
-      selectFileButton.addListener("execute", () => this.fireDataEvent("filePickerRequested", portId), this);
+      selectFileButton.addListener("execute", () => this.fireDataEvent("fileRequested", portId), this);
       return selectFileButton;
     },
 
@@ -511,7 +511,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           }
           if (e.supportsType("osparc-file-link")) {
             const data = e.getData("osparc-file-link");
-            this.fireDataEvent("filePickerAdded", {
+            this.fireDataEvent("filePickerRequested", {
               portId,
               file: {
                 data: data["dragData"]
