@@ -144,7 +144,10 @@ async def get_workbench(
 ) -> WorkbenchView:
     repo_id, commit_id = await vc_repo.as_repo_and_commit_ids(project_uuid, ref_id)
 
-    content: Dict = await vc_repo.get_snapshot_content(repo_id, commit_id)
+    # prefer actual project to snapshot
+    # TODO: tmp disabled
+    # content: Dict = await vc_repo.get_snapshot_content(repo_id, commit_id)
+    content = await vc_repo.get_workbench_view(repo_id, commit_id)
     return WorkbenchView.parse_obj(content)
 
 

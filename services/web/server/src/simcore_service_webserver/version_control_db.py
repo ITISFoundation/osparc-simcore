@@ -1,12 +1,12 @@
 import logging
 from types import SimpleNamespace
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
 import sqlalchemy as sa
 from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
-from models_library.projects import ProjectID
+from models_library.projects import ProjectIDStr
 from pydantic.types import NonNegativeInt, PositiveInt
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_version_control import (
@@ -142,21 +142,19 @@ class VersionControlRepository(BaseRepository):
 
     async def _fetch_wcopy_project_id(
         self, repo_id: int, commit_id: int, conn: SAConnection
-    ) -> ProjectID:
-        # get wcopy for commit_id and update with 'project'
-        repo = await self.ReposOrm(conn).set_filter(id=repo_id).fetch("project_uuid")
-        assert repo  # nosec
-        wcopy_project_id = repo.project_uuid
-
+    ) -> ProjectIDStr:
+        # commit has a wcopy associated?
         found = (
             await self.TagsOrm(conn).set_filter(commit_id=commit_id).fetch_all("name")
         )
         for tag in found:
             if wcp_tag := parse_wcopy_project_tag_name(tag.name):
                 wcopy_project_id = wcp_tag["wcopy_project_id"]
-                break
+                return wcopy_project_id
 
-        return wcopy_project_id
+        repo = await self.ReposOrm(conn).set_filter(id=repo_id).fetch("project_uuid")
+        assert repo  # nosec
+        return repo.project_uuid
 
     async def _update_state(
         self, repo_id: int, conn: SAConnection
@@ -500,7 +498,7 @@ class VersionControlRepository(BaseRepository):
                     .values(
                         repo_id=repo_id,
                         head_commit_id=commit_id,
-                        name="DETACHED",
+                        name=f"{commit_id}-DETACHED",
                     )
                     .returning(projects_vc_branches.c.id)
                 )
@@ -517,8 +515,11 @@ class VersionControlRepository(BaseRepository):
 
         return commit_id
 
-    async def get_snapshot_content(self, repo_id: int, commit_id: int) -> Dict:
+    async def get_snapshot_content(
+        self, repo_id: int, commit_id: int
+    ) -> Dict[str, Any]:
         async with self.engine.acquire() as conn:
+
             if (
                 commit := await self.CommitsOrm(conn)
                 .set_filter(repo_id=repo_id, id=commit_id)
@@ -533,13 +534,56 @@ class VersionControlRepository(BaseRepository):
 
         raise NotFoundError(name="snapshot for commit", value=(repo_id, commit_id))
 
+    async def get_workbench_view(self, repo_id: int, commit_id: int) -> Dict[str, Any]:
+        # FIXME: q&d fix!!!
+        # TODO: move to VersionControlRepositoryInternalAPI
+        async with self.engine.acquire() as conn:
+            if (
+                commit := await self.CommitsOrm(conn)
+                .set_filter(repo_id=repo_id, id=commit_id)
+                .fetch("snapshot_checksum")
+            ):
+                repo = (
+                    await self.ReposOrm(conn)
+                    .set_filter(id=repo_id)
+                    .fetch("project_uuid")
+                )
+                assert repo  # nosec
 
-class VersionControlRepositoryInternalAPI(VersionControlRepository):
+                # if snapshot differs from wcopy, then show working copy
+                wcopy_project_id = await self._fetch_wcopy_project_id(
+                    repo_id, commit_id, conn
+                )
+
+                # FIXME: in general this is wrong. For the moment,
+                # all wcopies except for the repo's main wcopy (i.e. repo.project_uuid) are READ-ONLY
+                #
+                if wcopy_project_id != repo.project_uuid:
+                    # FIXME: not aligned with content ...
+                    if project := (
+                        await self.ProjectsOrm(conn)
+                        .set_filter(uuid=wcopy_project_id)
+                        .fetch("workbench ui")
+                    ):
+                        return dict(project.items())
+                else:
+                    if (
+                        snapshot := await self.SnapshotsOrm(conn)
+                        .set_filter(checksum=commit.snapshot_checksum)
+                        .fetch("content")
+                    ):
+                        assert isinstance(snapshot.content, dict)  # nosec
+                        return snapshot.content
+
+        raise NotFoundError(name="snapshot for commit", value=(repo_id, commit_id))
+
+
+class VersionControlForMetaModeling(VersionControlRepository):
     """This part is NOT exposed to restAPI"""
 
     async def get_wcopy_project_id(
         self, repo_id: int, commit_id: Optional[int] = None
-    ) -> ProjectID:
+    ) -> ProjectIDStr:
         async with self.engine.acquire() as conn:
             if commit_id is None:
                 commit = await self._get_HEAD_commit(repo_id, conn)
@@ -556,7 +600,7 @@ class VersionControlRepositoryInternalAPI(VersionControlRepository):
             assert project  # nosec
             return dict(project.items())
 
-    async def get_project(self, project_id: ProjectID) -> ProjectDict:
+    async def get_project(self, project_id: ProjectIDStr) -> ProjectDict:
         async with self.engine.acquire() as conn:
             if self.user_id is None:
                 # TODO: add message
