@@ -342,14 +342,13 @@ class TutorialBase {
         assert(files.length === fileNames.length, 'Number of files is incorrect')
         console.log('Number of files is correct')
       }
-      console.log('Number of Files is correct')
       if (checkFileNames) {
         assert(
           fileNames.every(fileName => files.some(file => file.includes(fileName))),
           'File names are incorrect'
         )
+        console.log('File names are correct')
       }
-      console.log('File names are correct')
     }
     catch (err) {
       console.error("Results don't match", err);
