@@ -22,7 +22,7 @@ from ._meta import api_version_prefix as VTAG
 from .director_v2_api import AbstractProjectRunPolicy
 from .meta_iterations import get_or_create_runnable_projects, get_runnable_projects_ids
 from .projects.projects_handlers import RQ_REQUESTED_REPO_PROJECT_UUID_KEY
-from .version_control_db import VersionControlRepositoryInternalAPI
+from .version_control_db import VersionControlForMetaModeling
 from .version_control_models import CommitID
 
 log = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ async def projects_redirection_middleware(request: web.Request, handler: _Handle
 
         project_id = ProjectID(request.match_info["project_id"])
 
-        vc_repo = VersionControlRepositoryInternalAPI(request)
+        vc_repo = VersionControlForMetaModeling(request)
         if repo_id := await vc_repo.get_repo_id(project_id):
             # Changes resolved project_id parameter with working copy instead
             #
