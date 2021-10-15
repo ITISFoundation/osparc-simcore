@@ -342,16 +342,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.getLogger().info(nodeId, msg);
       }, this);
 
-      workbench.addListener("fileRequested", e => {
-        const {
-          nodeId,
-          portId
-        } = e.getData();
+      workbench.addListener("fileRequested", () => {
         if (this.getStudy().getUi().getMode() === "workbench") {
           const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
           tabViewLeftPanel.setSelection([this.__storagePage]);
-        } else {
-          console.log("add File Picker and connect", nodeId, portId);
         }
       }, this);
     },

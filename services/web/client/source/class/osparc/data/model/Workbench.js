@@ -318,7 +318,17 @@ qx.Class.define("osparc.data.model.Workbench", {
             nodeId,
             file
           } = e.getData();
-          this.__filePickerRequested(nodeId, portId, file.data);
+          this.connectFilePicker(nodeId, portId)
+            .then(filePicker => {
+              osparc.file.FilePicker.setOutputValueFromStore(
+                filePicker,
+                file.getLocation(),
+                file.getDatasetId(),
+                file.getFileId(),
+                file.getLabel()
+              );
+              this.fireEvent("reloadModel");
+            });
         }, this);
       }
     },
@@ -351,37 +361,33 @@ qx.Class.define("osparc.data.model.Workbench", {
       };
     },
 
-    __filePickerRequested: function(nodeId, portId, file) {
-      const requesterNode = this.getNode(nodeId);
-      const freePos = this.getFreePosition(requesterNode);
+    connectFilePicker: function(nodeId, portId) {
+      return new Promise((resolve, reject) => {
+        const requesterNode = this.getNode(nodeId);
+        const freePos = this.getFreePosition(requesterNode);
 
-      // create a new FP
-      const fpMD = osparc.utils.Services.getFilePicker();
-      const parentNodeId = requesterNode.getParentNodeId();
-      const parent = parentNodeId ? this.getNode(parentNodeId) : null;
-      const fp = this.createNode(fpMD["key"], fpMD["version"], null, parent);
-      fp.setPosition(freePos);
+        // create a new FP
+        const filePickerMetadata = osparc.utils.Services.getFilePicker();
+        const parentNodeId = requesterNode.getParentNodeId();
+        const parent = parentNodeId ? this.getNode(parentNodeId) : null;
+        const filePicker = this.createNode(filePickerMetadata["key"], filePickerMetadata["version"], null, parent);
+        filePicker.setPosition(freePos);
 
-      // create connection
-      const fpId = fp.getNodeId();
-      requesterNode.addInputNode(fpId);
-      requesterNode.addPortLink(portId, fpId, "outFile")
-        .then(success => {
-          if (success) {
-            osparc.file.FilePicker.setOutputValueFromStore(
-              fp,
-              file.getLocation(),
-              file.getDatasetId(),
-              file.getFileId(),
-              file.getLabel()
-            );
-            this.fireEvent("reloadModel");
-          } else {
-            this.removeNode(fpId);
-            const msg = qx.locale.Manager.tr("File couldn't be assigned");
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-          }
-        });
+        // create connection
+        const filePickerId = filePicker.getNodeId();
+        requesterNode.addInputNode(filePickerId);
+        requesterNode.addPortLink(portId, filePickerId, "outFile")
+          .then(success => {
+            if (success) {
+              resolve(filePicker);
+            } else {
+              this.removeNode(filePickerId);
+              const msg = qx.locale.Manager.tr("File couldn't be assigned");
+              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+              reject();
+            }
+          });
+      });
     },
 
     __parameterNodeRequested: function(nodeId, portId) {

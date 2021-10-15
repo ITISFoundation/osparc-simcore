@@ -540,6 +540,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       // build representation
       const nodeUI1 = this.getNodeUI(node1Id);
       const nodeUI2 = this.getNodeUI(node2Id);
+      if (nodeUI1.getCurrentBounds() === null || nodeUI2.getCurrentBounds() === null) {
+        console.error("bounds not ready");
+        return null;
+      }
       const port1 = nodeUI1.getOutputPort();
       const port2 = nodeUI2.getInputPort();
       if (port1 && port2) {

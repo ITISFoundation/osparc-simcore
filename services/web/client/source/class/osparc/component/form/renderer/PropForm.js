@@ -142,8 +142,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         optionsMenu.addSeparator();
       }
 
+      const studyUI = this.getStudy().getUi();
       if (["FileButton"].includes(field.widgetType)) {
         const menuButton = this.__getSelectFileButton(field.key);
+        studyUI.bind("mode", menuButton, "visibility", {
+          converter: mode => mode === "workbench" ? "visible" : "excluded"
+        });
         optionsMenu.add(menuButton);
       }
       if (this.self().isFieldParametrizable(field)) {
@@ -159,8 +163,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
               newParamBtn,
               paramsMenuBtn
             ].forEach(btn => {
-              field.bind("visibility", btn, "visibility", {
-                converter: visibility => (visibility === "visible" && areParamsEnabled) ? "visible" : "excluded"
+              studyUI.bind("mode", btn, "visibility", {
+                converter: mode => mode === "workbench" && areParamsEnabled ? "visible" : "excluded"
               });
             });
           });
