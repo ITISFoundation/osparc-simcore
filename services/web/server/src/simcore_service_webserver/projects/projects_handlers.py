@@ -38,6 +38,12 @@ from .projects_utils import (
     project_uses_available_services,
 )
 
+# When the user requests a project with a repo, the working copy might differ from
+# the repo project. A middleware in the meta module (if active) will resolve
+# the working copy and redirect to the appropriate project entrypoint. Nonetheless, the
+# response needs to refer to the uuid of the request and this is passed through this request key
+RQ_REQUESTED_REPO_PROJECT_UUID_KEY = f"{__name__}.RQT_REQUESTED_REPO_PROJECT_UUID_KEY"
+
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",
     "description",
@@ -287,6 +293,10 @@ async def get_project(request: web.Request):
                     f"for permission for the following services {formatted_services}"
                 )
             )
+
+        if new_uuid := request.get(RQ_REQUESTED_REPO_PROJECT_UUID_KEY):
+            project["uuid"] = new_uuid
+
         return {"data": project}
 
     except ProjectInvalidRightsError as exc:
