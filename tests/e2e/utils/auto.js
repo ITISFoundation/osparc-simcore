@@ -321,6 +321,7 @@ async function openLastNode(page) {
 async function restoreIFrame(page) {
   console.log("Restoring iFrame");
 
+  await utils.waitAndClick(page, '[osparc-test-id="iframeTabButton"]')
   await utils.waitAndClick(page, '[osparc-test-id="restoreBtn"]')
 }
 

@@ -53,7 +53,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __workbenchPanel: null,
     __workbenchPanelPage: null,
     __workbenchUI: null,
-    __iFramePage: null,
+    __iframePage: null,
     __loggerView: null,
     __currentNodeId: null,
 
@@ -217,8 +217,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const workbenchPanelPage = this.__workbenchPanelPage = this.__createTabPage("@FontAwesome5Solid/object-group", this.tr("Workbench"), this.__workbenchPanel);
       tabViewMain.add(workbenchPanelPage);
 
-      const iFramePage = this.__iFramePage = this.__createTabPage("@FontAwesome5Solid/desktop", this.tr("Interactive"));
-      tabViewMain.add(iFramePage);
+      const iframePage = this.__iframePage = this.__createTabPage("@FontAwesome5Solid/desktop", this.tr("Interactive"));
+      osparc.utils.Utils.setIdToWidget(iframePage.getChildControl("button"), "iframeTabButton");
+      tabViewMain.add(iframePage);
 
       const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView();
       const logsPage = this.__logsPage = this.__createTabPage("@FontAwesome5Solid/file-alt", this.tr("Logger"), loggerView);
@@ -443,12 +444,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __evalIframe: function(node) {
       if (node && node.getIFrame()) {
-        this.__iFramePage.getChildControl("button").set({
+        this.__iframePage.getChildControl("button").set({
           enabled: true
         });
         this.__addIframe(node);
       } else {
-        this.__iFramePage.getChildControl("button").set({
+        this.__iframePage.getChildControl("button").set({
           enabled: false
         });
       }
@@ -462,7 +463,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __openIframe: function(node) {
       const tabViewMain = this.getChildControl("main-panel-tabs");
       if (node && node.getIFrame()) {
-        tabViewMain.setSelection([this.__iFramePage]);
+        tabViewMain.setSelection([this.__iframePage]);
       } else {
         tabViewMain.setSelection([this.__workbenchPanelPage]);
       }
@@ -481,7 +482,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __addIframe: function(node) {
-      this.__iFramePage.removeAll();
+      this.__iframePage.removeAll();
 
       const loadingPage = node.getLoadingPage();
       const iFrame = node.getIFrame();
@@ -500,20 +501,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         iFrame.addListener("load", () => this.__iFrameChanged(node), this);
       } else {
         // This will keep what comes after at the bottom
-        this.__iFramePage.add(new qx.ui.core.Spacer(), {
+        this.__iframePage.add(new qx.ui.core.Spacer(), {
           flex: 1
         });
       }
     },
 
     __iFrameChanged: function(node) {
-      this.__iFramePage.removeAll();
+      this.__iframePage.removeAll();
 
       const loadingPage = node.getLoadingPage();
       const iFrame = node.getIFrame();
       const src = iFrame.getSource();
       const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
-      this.__iFramePage.add(iFrameView, {
+      this.__iframePage.add(iFrameView, {
         flex: 1
       });
     },
