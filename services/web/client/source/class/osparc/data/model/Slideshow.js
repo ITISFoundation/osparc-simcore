@@ -101,6 +101,19 @@ qx.Class.define("osparc.data.model.Slideshow", {
       return -1;
     },
 
+    addNodeToSlideshow: function(newNode, leftNodeId, rightNodeId) {
+      const nodeId = newNode.getNodeId();
+      if (leftNodeId) {
+        let leftPos = this.getPosition(leftNodeId);
+        this.insertNode(nodeId, leftPos+1);
+      } else if (rightNodeId) {
+        const rightPos = this.getPosition(rightNodeId);
+        this.insertNode(nodeId, rightPos);
+      } else {
+        this.insertNode(nodeId, 0);
+      }
+    },
+
     __moveNode: function(nodes, from, to) {
       let numberOfDeletedElm = 1;
       const elm = nodes.splice(from, numberOfDeletedElm)[0];
