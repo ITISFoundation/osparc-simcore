@@ -1014,12 +1014,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __reloadCurrentModel: function() {
-      if (this.__svgWidgetWorkbench.getReady() && this._currentModel) {
-        this._loadModel(this._currentModel);
+      if (this._currentModel) {
+        this.loadModel(this._currentModel);
       }
     },
 
-    _loadModel: function(model) {
+    _loadModel: async function(model) {
       this.clearAll();
       this.resetSelectedNodes();
       this._currentModel = model;
@@ -1038,11 +1038,22 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
         // create nodes
         let nodes = isContainer ? model.getInnerNodes() : model.getNodes();
+        const nodeUIs = [];
         for (const nodeId in nodes) {
           const node = nodes[nodeId];
           const nodeUI = this._createNodeUI(nodeId);
           this.__createDragDropMechanism(nodeUI);
           this._addNodeUIToWorkbench(nodeUI, node.getPosition());
+          nodeUIs.push(nodeUI);
+        }
+
+        const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+        const allNodesVisible = nodeUIss => nodeUIss.every(nodeUI => nodeUI.getCurrentBounds() !== null);
+
+        let tries = 0;
+        while (!allNodesVisible(nodeUIs) && tries < 10) {
+          await sleep(50);
+          tries++;
         }
 
         // create edges
