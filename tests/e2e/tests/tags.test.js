@@ -47,9 +47,9 @@ describe('tags testing', () => {
     await auto.register(page, user, pass);
     // Create new study
     await waitAndClick(page, '[osparc-test-id="newStudyBtn"]');
-    // Back to dashboard
-    await waitAndClick(page, '[osparc-test-id="dashboardBtn"]');
-    await waitAndClick(page, '[osparc-test-id="confirmDashboardBtn"]');
+    // Wait until project is created and Dashboard button is enabled
+    await utils.sleep(4000);
+    await auto.toDashboard(page);
   }, ourTimeout * 2);
 
   afterAll(async () => {
