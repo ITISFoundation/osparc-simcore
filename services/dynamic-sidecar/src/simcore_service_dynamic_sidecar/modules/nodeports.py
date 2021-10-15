@@ -106,6 +106,10 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
                 data = json.loads(data_file.read_text())
                 if port.key in data and data[port.key] is not None:
                     upload_tasks.append(_set_data_to_port(port, data[port.key]))
+                else:
+                    logger.debug("Port %s not found in %s", port.key, data)
+            else:
+                logger.debug("No file %s to fetch port values from", data_file)
 
     total_bytes: int = 0
     if upload_tasks:
