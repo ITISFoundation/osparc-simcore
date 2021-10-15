@@ -96,7 +96,11 @@ class DBManager:
     async def write_ports_configuration(
         self, json_configuration: str, project_id: str, node_uuid: str
     ):
-        log.debug("Writing ports configuration to database")
+        message = (
+            f"Writing port configuration to database for "
+            f"project={project_id} node={node_uuid}: {json_configuration}"
+        )
+        log.debug(message)
 
         node_configuration = json.loads(json_configuration)
         async with DBContextManager(self._db_engine) as engine:

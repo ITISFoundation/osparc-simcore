@@ -134,15 +134,17 @@ async def dispatch_update_for_directory(directory_path: Path) -> None:
 
 
 async def _get_data_from_port(port: Port) -> Tuple[Port, ItemConcreteValue]:
-    logger.info("transfer started for %s", port.key)
+    tag = f"[{port.key}] "
+    logger.info("%s transfer started for %s", tag, port.key)
     start_time = time.perf_counter()
     ret = await port.get()
     elapsed_time = time.perf_counter() - start_time
-    logger.info("transfer completed in %ss", elapsed_time)
+    logger.info("%s transfer completed (=%s) in %3.2fs", tag, ret, elapsed_time)
     if isinstance(ret, Path):
         size_mb = ret.stat().st_size / 1024 / 1024
         logger.info(
-            "%s: data size: %sMB, transfer rate %sMB/s",
+            "%s %s: data size: %sMB, transfer rate %sMB/s",
+            tag,
             ret.name,
             size_mb,
             size_mb / elapsed_time,
