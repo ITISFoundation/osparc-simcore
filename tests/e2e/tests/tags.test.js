@@ -8,7 +8,6 @@ describe('tags testing', () => {
     pass,
   } = utils.getUserAndPass();
 
-  // const STUDY_NAME = 'study_tag_test';
   const TAG_NAME = 'tag_test';
   const TAG_NAME_2 = 'tag_test_2';
   let studyId = null;
@@ -48,18 +47,9 @@ describe('tags testing', () => {
     await auto.register(page, user, pass);
     // Create new study
     await waitAndClick(page, '[osparc-test-id="newStudyBtn"]');
-    /*
-    // Edit its title and go back to dashboard
-    await waitAndClick(page, '[qxclass="osparc.navigation.NavigationBar"] [qxclass="osparc.ui.form.EditLabel"]');
-    await page.keyboard.type(STUDY_NAME);
-    await page.keyboard.press('Enter');
-    await page.waitForFunction(studyName => {
-      return document.querySelector(
-        '[qxclass="osparc.navigation.NavigationBar"] [qxclass="osparc.ui.form.EditLabel"] [qxclass="qx.ui.basic.Label"]'
-      ).innerText === studyName;
-    }, {}, STUDY_NAME);
-    */
-    await auto.toDashboard(page);
+    // Back to dashboard
+    await waitAndClick(page, '[osparc-test-id="dashboardBtn"]');
+    await waitAndClick(page, '[osparc-test-id="confirmDashboardBtn"]');
   }, ourTimeout * 2);
 
   afterAll(async () => {
