@@ -7,6 +7,7 @@
 import filecmp
 import tempfile
 import threading
+from asyncio import gather
 from pathlib import Path
 from typing import Any, Callable, Dict, Type, Union
 from uuid import uuid4
@@ -554,3 +555,54 @@ async def test_file_mapping(
     assert received_file_link["path"] == file_id
     # received a new eTag
     assert received_file_link["eTag"]
+
+
+@pytest.fixture
+def int_item_value() -> int:
+    return 42
+
+
+@pytest.fixture
+def port_count() -> int:
+    # the issue manifests from 4 ports onwards
+    # going for many more ports to be sure issue
+    # always occurs in CI or locally
+    return 20
+
+
+async def test_regression_concurrent_port_update_fails(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    special_configuration: Callable,
+    int_item_value: int,
+    port_count: int,
+):
+
+    outputs = [(f"value_{i}", "integer", None) for i in range(port_count)]
+    config_dict, _, _ = special_configuration(inputs=[], outputs=outputs)
+
+    PORTS = await node_ports_v2.ports(
+        user_id=user_id, project_id=project_id, node_uuid=node_uuid
+    )
+    await check_config_valid(PORTS, config_dict)
+
+    async def _upload_task(item_key: str) -> None:
+        ports_outputs = await PORTS.outputs
+        await ports_outputs[item_key].set(int_item_value)
+
+    # updating in parallel creates a race condition
+    results = await gather(*[_upload_task(item_key) for item_key, _, _ in outputs])
+    assert len(results) == port_count
+
+    # since a race condition was created when uploading values in parallel
+    # it is expected to find at least one mismatching value here
+    with pytest.raises(AssertionError) as exc_info:
+        for item_key, _, _ in outputs:
+            ports_outputs = await PORTS.outputs
+
+            assert ports_outputs[item_key].value == int_item_value
+            assert isinstance(await ports_outputs[item_key].get(), int)
+            assert await ports_outputs[item_key].get() == int_item_value
+
+    assert exc_info.value.args[0].startswith("assert equals failed")
