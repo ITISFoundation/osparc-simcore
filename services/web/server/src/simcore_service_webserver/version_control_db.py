@@ -174,18 +174,23 @@ class VersionControlRepository(BaseRepository):
         wcopy_project_id = await self._fetch_wcopy_project_id(
             repo_id, head_commit.id if head_commit else -1, conn
         )
-        project_orm = self.ProjectsOrm(conn).set_filter(uuid=wcopy_project_id)
-        project = await project_orm.fetch("last_change_date workbench ui")
-        assert project  # nosec
+        wcopy_project = (
+            await self.ProjectsOrm(conn)
+            .set_filter(uuid=wcopy_project_id)
+            .fetch("last_change_date workbench ui uuid")
+        )
+        assert wcopy_project  # nosec
 
         # uses checksum cached in repo table to avoid re-computing checksum
         checksum: Optional[SHA1Str] = repo.project_checksum
-        if not checksum or (checksum and repo.modified < project.last_change_date):
-            checksum = compute_workbench_checksum(project.workbench)
+        if not checksum or (
+            checksum and repo.modified < wcopy_project.last_change_date
+        ):
+            checksum = compute_workbench_checksum(wcopy_project.workbench)
 
             repo = await repo_orm.update(returning_cols, project_checksum=checksum)
             assert repo
-        return repo, head_commit, project
+        return repo, head_commit, wcopy_project
 
     @staticmethod
     async def _upsert_snapshot(
@@ -289,7 +294,7 @@ class VersionControlRepository(BaseRepository):
             log.info("On branch %s", branch.name)
 
             # get head commit
-            repo, head_commit, project = await self._update_state(repo_id, conn)
+            repo, head_commit, wcopy_project = await self._update_state(repo_id, conn)
 
             if head_commit is None:
                 previous_checksum = None
@@ -301,7 +306,9 @@ class VersionControlRepository(BaseRepository):
             async with conn.begin():
                 # take a snapshot if changes
                 if repo.project_checksum != previous_checksum:
-                    await self._upsert_snapshot(repo.project_checksum, project, conn)
+                    await self._upsert_snapshot(
+                        repo.project_checksum, wcopy_project, conn
+                    )
 
                     # commit new snapshot in history
                     commit_id = await self.CommitsOrm(conn).insert(
@@ -447,7 +454,7 @@ class VersionControlRepository(BaseRepository):
         :rtype: int
         """
         async with self.engine.acquire() as conn:
-            repo, head_commit, _ = await self._update_state(repo_id, conn)
+            repo, head_commit, wcopy_project = await self._update_state(repo_id, conn)
 
             if head_commit is None:
                 raise NoCommitError(
@@ -473,17 +480,18 @@ class VersionControlRepository(BaseRepository):
                 )
                 assert commit  # nosec
 
-                # restores project snapshot
-                snapshot = (
-                    await self.SnapshotsOrm(conn)
-                    .set_filter(commit.snapshot_checksum)
-                    .fetch("content")
-                )
-                assert snapshot  # nosec
+                # restores project snapshot ONLY if main wcopy project
+                if wcopy_project.uuid == repo.project_uuid:
+                    snapshot = (
+                        await self.SnapshotsOrm(conn)
+                        .set_filter(commit.snapshot_checksum)
+                        .fetch("content")
+                    )
+                    assert snapshot  # nosec
 
-                await self.ProjectsOrm(conn).set_filter(uuid=repo.project_uuid).update(
-                    **snapshot.content
-                )
+                    await self.ProjectsOrm(conn).set_filter(
+                        uuid=repo.project_uuid
+                    ).update(**snapshot.content)
 
                 # create detached branch that points to (repo_id, commit_id)
                 # upsert "detached" branch
