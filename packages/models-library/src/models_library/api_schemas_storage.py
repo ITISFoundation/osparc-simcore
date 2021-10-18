@@ -11,9 +11,12 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
+from models_library.generics import DataEnveloped, ListBaseModel
 from pydantic import BaseModel, Field, constr
+from pydantic.networks import AnyUrl
 
 from .basic_regex import UUID_RE
+from .generics import DataEnveloped
 
 
 # /
@@ -22,11 +25,6 @@ class HealthCheck(BaseModel):
     status: Optional[str]
     api_version: Optional[str]
     version: Optional[str]
-
-
-class HealthCheckEnveloped(BaseModel):
-    data: HealthCheck
-    error: Any
 
 
 # /check/{action}:
@@ -49,19 +47,7 @@ class FileLocation(BaseModel):
         }
 
 
-class FileLocationArray(BaseModel):
-    __root__: List[FileLocation]
-
-
-class FileLocationEnveloped(BaseModel):
-    data: FileLocation
-    error: Any
-
-
-class FileLocationArrayEnveloped(BaseModel):
-    data: FileLocationArray
-    error: Any
-
+FileLocationArray = ListBaseModel[FileLocation]
 
 # /locations/{location_id}/datasets
 
@@ -101,18 +87,7 @@ class DatasetMetaData(BaseModel):
         }
 
 
-class DatasetMetaDataArray(BaseModel):
-    __root__: List[DatasetMetaData] = []
-
-
-class DatasetMetaDataEnveloped(BaseModel):
-    data: DatasetMetaData
-    error: Any
-
-
-class DatasetMetaDataArrayEnveloped(BaseModel):
-    data: DatasetMetaDataArray
-    error: Any
+DatasetMetaDataArray = ListBaseModel[DatasetMetaData]
 
 
 # /locations/{location_id}/files/metadata:
@@ -215,26 +190,11 @@ class FileMetaDataArray(BaseModel):
     __root__: List[FileMetaData] = []
 
 
-class FileMetaDataEnveloped(BaseModel):
-    data: FileMetaData
-    error: Any
-
-
-class FileMetaDataArrayEnveloped(BaseModel):
-    data: FileMetaDataArray
-    error: Any
-
-
 # /locations/{location_id}/files/{fileId}
 
 
 class PresignedLink(BaseModel):
-    link: str
-
-
-class PresignedLinkEnveloped(BaseModel):
-    data: PresignedLink
-    error: Any
+    link: AnyUrl
 
 
 # /simcore-s3/
@@ -281,16 +241,20 @@ class Error(BaseModel):
     status: Optional[int] = Field(description="HTTP error code")
 
 
-class LogMessageEnveloped(BaseModel):
-    data: LogMessage
-    error: Any
+# ENVELOPES
+HealthCheckEnveloped = DataEnveloped[HealthCheck]
 
+FileLocationEnveloped = DataEnveloped[FileLocation]
 
-class FakeEnveloped(BaseModel):
-    data: Fake
-    error: Any
+FileLocationArrayEnveloped = DataEnveloped[FileLocationArray]
 
+DatasetMetaDataEnveloped = DataEnveloped[DatasetMetaData]
+DatasetMetaDataArrayEnveloped = DataEnveloped[DatasetMetaDataArray]
 
-class ErrorEnveloped(BaseModel):
-    data: Any
-    error: Error
+FileMetaDataEnveloped = DataEnveloped[FileMetaData]
+FileMetaDataArrayEnveloped = DataEnveloped[FileMetaDataArray]
+
+PresignedLinkEnveloped = DataEnveloped[PresignedLink]
+LogMessageEnveloped = DataEnveloped[LogMessage]
+FakeEnveloped = DataEnveloped[Fake]
+ErrorEnveloped = DataEnveloped[Any]

@@ -1,14 +1,18 @@
 import warnings
 from functools import wraps
 from json import JSONDecodeError
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict
 from urllib.parse import quote
 
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
-from models_library.generics import DataEnveloped
+from models_library.api_schemas_storage import (
+    FileLocationArray,
+    FileLocationArrayEnveloped,
+    FileMetaDataEnveloped,
+    PresignedLinkEnveloped,
+)
 from models_library.users import UserID
-from pydantic.main import BaseModel
 from pydantic.networks import AnyUrl
 
 from ..config.http_clients import client_request_settings
@@ -47,30 +51,6 @@ class ClientSessionContextManager:
             await self.active_session.close()
 
 
-class FileLocation(BaseModel):
-    name: str
-    id: int
-
-
-class FileLocationsArray(BaseModel):
-    __root__: List[FileLocation]
-
-    def __iter__(self):
-        return iter(self.__root__)
-
-    def __getitem__(self, item):
-        return self.__root__[item]
-
-
-class PresignedLink(BaseModel):
-    link: AnyUrl
-
-
-FileLocationsArrayEnveloped = DataEnveloped[FileLocationsArray]
-PresignedLinkEnveloped = DataEnveloped[PresignedLink]
-FileMetadataEnveloped = DataEnveloped[Dict[str, Any]]
-
-
 def handle_client_exception(handler: Callable):
     @wraps(handler)
     async def wrapped(*args, **kwargs):
@@ -97,7 +77,7 @@ def _base_url() -> str:
 @handle_client_exception
 async def get_storage_locations(
     session: ClientSession, user_id: UserID
-) -> FileLocationsArray:
+) -> FileLocationArray:
     if not isinstance(user_id, int) or user_id is None:
         raise exceptions.StorageInvalidCall("invalid call!")
 
@@ -105,7 +85,7 @@ async def get_storage_locations(
         f"{_base_url()}/locations", params={"user_id": f"{user_id}"}
     ) as response:
         response.raise_for_status()
-        locations_enveloped = FileLocationsArrayEnveloped.parse_obj(
+        locations_enveloped = FileLocationArrayEnveloped.parse_obj(
             await response.json()
         )
         if locations_enveloped.data is None:
@@ -184,7 +164,7 @@ async def get_file_metadata(
     ) as response:
         response.raise_for_status()
 
-        file_metadata_enveloped = FileMetadataEnveloped.parse_obj(await response.json())
+        file_metadata_enveloped = FileMetaDataEnveloped.parse_obj(await response.json())
         if file_metadata_enveloped.data is None:
             raise exceptions.S3InvalidPathError(file_id)
-        return file_metadata_enveloped.data
+        return file_metadata_enveloped.data.dict(by_alias=True)

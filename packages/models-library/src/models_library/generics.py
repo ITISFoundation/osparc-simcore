@@ -5,6 +5,7 @@ from typing import (
     ItemsView,
     Iterator,
     KeysView,
+    List,
     Optional,
     TypeVar,
     ValuesView,
@@ -46,6 +47,19 @@ class DictBaseModel(GenericModel, Generic[DictKey, DictValue]):
 
 
 DataT = TypeVar("DataT")
+
+
+class ListBaseModel(GenericModel, Generic[DataT]):
+    __root__: List[DataT]
+
+    def __iter__(self):
+        return iter(self.__root__)
+
+    def __getitem__(self, item):
+        return self.__root__[item]
+
+    def __len__(self):
+        return len(self.__root__)
 
 
 class DataEnveloped(GenericModel, Generic[DataT]):
