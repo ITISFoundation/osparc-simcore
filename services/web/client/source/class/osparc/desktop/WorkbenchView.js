@@ -534,53 +534,69 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__outputsPage.getChildControl("button").exclude();
 
       if (node instanceof osparc.data.model.Study) {
-        this.__infoPage.getChildControl("button").show();
-        this.getChildControl("side-panel-right-tabs").setSelection([this.__infoPage]);
-
-        this.__infoPage.add(new osparc.studycard.Medium(node), {
-          flex: 1
-        });
+        this.__populateSecondPanelStudy(node);
       } else if (node && node.isFilePicker()) {
-        this.__infoPage.getChildControl("button").show();
-        this.getChildControl("side-panel-right-tabs").setSelection([this.__infoPage]);
-
-        const view = osparc.file.FilePicker.buildInfoView(node);
-        view.setEnabled(false);
-        this.__infoPage.add(view, {
-          flex: 1
-        });
+        this.__populateSecondPanelFilePicker(node);
       } else if (node && node.isParameter()) {
-        this.__settingsPage.getChildControl("button").show();
-        this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
+        this.__populateSecondPanelParameter(node);
+      } else if (node) {
+        this.__populateSecondPanelNode(node);
+      }
+    },
 
-        const view = new osparc.component.node.ParameterEditor(node);
-        view.buildForm(false);
-        this.__settingsPage.add(view, {
+    __populateSecondPanelStudy: function(study) {
+      this.__infoPage.getChildControl("button").show();
+      this.getChildControl("side-panel-right-tabs").setSelection([this.__infoPage]);
+
+      this.__infoPage.add(new osparc.studycard.Medium(study), {
+        flex: 1
+      });
+    },
+
+    __populateSecondPanelFilePicker: function(filePicker) {
+      this.__infoPage.getChildControl("button").show();
+      this.getChildControl("side-panel-right-tabs").setSelection([this.__infoPage]);
+
+      const view = osparc.file.FilePicker.buildInfoView(filePicker);
+      view.setEnabled(false);
+      this.__infoPage.add(view, {
+        flex: 1
+      });
+    },
+
+    __populateSecondPanelParameter: function(parameter) {
+      this.__settingsPage.getChildControl("button").show();
+      this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
+
+      const view = new osparc.component.node.ParameterEditor(parameter);
+      view.buildForm(false);
+      this.__settingsPage.add(view, {
+        flex: 1
+      });
+    },
+
+    __populateSecondPanelNode: function(node) {
+      this.__settingsPage.getChildControl("button").show();
+      this.__outputsPage.getChildControl("button").show();
+      this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
+
+      if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
+        this.__settingsPage.add(node.getPropsForm(), {
           flex: 1
         });
-      } else if (node) {
-        this.__settingsPage.getChildControl("button").show();
-        this.__outputsPage.getChildControl("button").show();
-        this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
-
-        if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
-          this.__settingsPage.add(node.getPropsForm(), {
-            flex: 1
-          });
-        }
-
-        const portTree = new osparc.component.widget.inputs.NodeOutputTree(node, node.getMetaData().outputs).set({
-          allowGrowY: false
-        });
-        this.__outputsPage.add(portTree);
-
-        const outputFilesBtn = new qx.ui.form.Button(this.tr("Artifacts"), "@FontAwesome5Solid/folder-open/14").set({
-          allowGrowX: false
-        });
-        osparc.utils.Utils.setIdToWidget(outputFilesBtn, "nodeOutputFilesBtn");
-        outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
-        this.__outputsPage.add(outputFilesBtn);
       }
+
+      const portTree = new osparc.component.widget.inputs.NodeOutputTree(node, node.getMetaData().outputs).set({
+        allowGrowY: false
+      });
+      this.__outputsPage.add(portTree);
+
+      const outputFilesBtn = new qx.ui.form.Button(this.tr("Artifacts"), "@FontAwesome5Solid/folder-open/14").set({
+        allowGrowX: false
+      });
+      osparc.utils.Utils.setIdToWidget(outputFilesBtn, "nodeOutputFilesBtn");
+      outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
+      this.__outputsPage.add(outputFilesBtn);
     },
 
     getLogger: function() {
