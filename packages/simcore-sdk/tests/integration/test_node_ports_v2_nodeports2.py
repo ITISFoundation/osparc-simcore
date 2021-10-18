@@ -563,6 +563,11 @@ def int_item_value() -> int:
 
 
 @pytest.fixture
+def parallel_int_item_value() -> int:
+    return 142
+
+
+@pytest.fixture
 def port_count() -> int:
     # the issue manifests from 4 ports onwards
     # going for many more ports to be sure issue
@@ -576,6 +581,7 @@ async def test_regression_concurrent_port_update_fails(
     node_uuid: str,
     special_configuration: Callable,
     int_item_value: int,
+    parallel_int_item_value: int,
     port_count: int,
 ):
 
@@ -587,9 +593,15 @@ async def test_regression_concurrent_port_update_fails(
     )
     await check_config_valid(PORTS, config_dict)
 
+    # when writing in serial these are expected to work
+    for item_key, _, _ in outputs:
+        await (await PORTS.outputs)[item_key].set(int_item_value)
+        assert (await PORTS.outputs)[item_key].value == int_item_value
+
+    # when writing in parallel and reading back,
+    # they fail, with enough concurrency
     async def _upload_task(item_key: str) -> None:
-        ports_outputs = await PORTS.outputs
-        await ports_outputs[item_key].set(int_item_value)
+        await (await PORTS.outputs)[item_key].set(parallel_int_item_value)
 
     # updating in parallel creates a race condition
     results = await gather(*[_upload_task(item_key) for item_key, _, _ in outputs])
@@ -599,10 +611,8 @@ async def test_regression_concurrent_port_update_fails(
     # it is expected to find at least one mismatching value here
     with pytest.raises(AssertionError) as exc_info:
         for item_key, _, _ in outputs:
-            ports_outputs = await PORTS.outputs
-
-            assert ports_outputs[item_key].value == int_item_value
-            assert isinstance(await ports_outputs[item_key].get(), int)
-            assert await ports_outputs[item_key].get() == int_item_value
-
-    assert exc_info.value.args[0].startswith("assert equals failed")
+            assert (await PORTS.outputs)[item_key].value == parallel_int_item_value
+    assert (
+        exc_info.value.args[0]
+        == f"assert {int_item_value} == {parallel_int_item_value}\n  +{int_item_value}\n  -{parallel_int_item_value}"
+    )
