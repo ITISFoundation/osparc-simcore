@@ -4,6 +4,7 @@
 # pylint:disable=too-many-arguments
 
 import asyncio
+from typing import Awaitable, Callable
 
 import aiohttp
 import pytest
@@ -12,6 +13,7 @@ from models_library.api_schemas_storage import FileLocationArray, FileMetaData
 from models_library.users import UserID
 from pydantic.networks import AnyUrl
 from simcore_sdk.node_ports_common import config as node_config
+from simcore_sdk.node_ports_common import exceptions
 from simcore_sdk.node_ports_common.storage_client import (
     get_download_file_presigned_link,
     get_file_metadata,
@@ -97,3 +99,34 @@ async def test_get_file_metada(
     assert file_metadata == FileMetaData.parse_obj(
         FileMetaData.Config.schema_extra["examples"][0]
     )
+
+
+@pytest.mark.parametrize(
+    "fct_call",
+    [
+        get_file_metadata,
+        get_download_file_presigned_link,
+        get_upload_file_presigned_link,
+    ],
+)
+async def test_invalid_calls(
+    mock_environment: None,
+    loop: asyncio.AbstractEventLoop,
+    storage_v0_service_mock: AioResponsesMock,
+    user_id: UserID,
+    file_id: str,
+    location_id: str,
+    fct_call: Callable[..., Awaitable],
+):
+    async with aiohttp.ClientSession() as session:
+        for invalid_keyword in ["file_id", "location_id", "user_id"]:
+            with pytest.raises(exceptions.StorageInvalidCall):
+                kwargs = {
+                    **{
+                        "file_id": file_id,
+                        "location_id": location_id,
+                        "user_id": user_id,
+                    },
+                    **{invalid_keyword: None},
+                }
+                await fct_call(session=session, **kwargs)
