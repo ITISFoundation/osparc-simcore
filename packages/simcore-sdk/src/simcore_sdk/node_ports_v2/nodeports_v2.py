@@ -1,8 +1,10 @@
 import logging
+from collections import deque
 from pathlib import Path
 from typing import Any, Callable, Coroutine, Dict, Type, Union
 
 from pydantic import BaseModel, Field
+from servicelib.utils import logged_gather
 
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.exceptions import PortNotFound, UnboundPortError
@@ -104,13 +106,15 @@ class Nodeports(BaseModel):
         self, port_values: Dict[Union[int, str], ItemConcreteValue]
     ) -> None:
         """sets the provided values to the respective input or output ports"""
+        tasks = deque()
         for port_key, value in port_values.items():
             # pylint: disable=protected-access
             try:
-                await self.internal_inputs[port_key]._set(value)
+                tasks.append(self.internal_inputs[port_key]._set(value))
             except UnboundPortError:
                 # not available try outputs
                 # if this fails it will raise another exception
-                await self.internal_outputs[port_key]._set(value)
+                tasks.append(self.internal_outputs[port_key]._set(value))
 
+        await logged_gather(*tasks)
         await self.save_to_db_cb(self)
