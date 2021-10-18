@@ -11,12 +11,11 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
-from models_library.generics import DataEnveloped, ListBaseModel
 from pydantic import BaseModel, Field, constr
 from pydantic.networks import AnyUrl
 
 from .basic_regex import UUID_RE
-from .generics import DataEnveloped
+from .generics import DataEnveloped, ListBaseModel
 
 
 # /
