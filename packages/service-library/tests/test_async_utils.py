@@ -13,7 +13,7 @@ import pytest
 from servicelib.async_utils import (
     _sequential_jobs_contexts,
     run_sequentially_in_context,
-    stop_pending_workers,
+    stop_sequential_workers,
 )
 
 RETRIES = 10
@@ -26,7 +26,7 @@ async def ensure_run_in_sequence_context_is_empty(loop) -> AsyncIterable[None]:
     # NOTE
     # required when shutting down the application or ending tests
     # otherwise errors will occur when closing the loop
-    await stop_pending_workers()
+    await stop_sequential_workers()
 
 
 @pytest.fixture

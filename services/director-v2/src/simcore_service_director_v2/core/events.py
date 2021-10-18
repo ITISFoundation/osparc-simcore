@@ -1,4 +1,4 @@
-from servicelib.async_utils import stop_pending_workers
+from servicelib.async_utils import stop_sequential_workers
 
 from ..meta import PROJECT_NAME, __version__
 
@@ -23,6 +23,6 @@ async def on_startup() -> None:
 
 
 async def on_shutdown() -> None:
-    await stop_pending_workers()
+    await stop_sequential_workers()
     msg = PROJECT_NAME + f" v{__version__} SHUT DOWN"
     print(f"{msg:=^100}", flush=True)

@@ -20,7 +20,7 @@ class Context:
 _sequential_jobs_contexts: Dict[str, Context] = {}
 
 
-async def stop_pending_workers() -> None:
+async def stop_sequential_workers() -> None:
     """Singlas all workers to close thus avoiding errors on shutdown"""
     for context in _sequential_jobs_contexts.values():
         await context.in_queue.put(None)
