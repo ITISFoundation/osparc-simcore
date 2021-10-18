@@ -317,4 +317,4 @@ async def get_file_metadata(
     if not result:
         raise exceptions.StorageInvalidCall(f"The file '{s3_object}' cannot be found")
     log.debug("Result for metadata s3_object=%s, result=%s", s3_object, result)
-    return (result.get("location_id", ""), result.get("entity_tag", ""))
+    return (f"{result.get('location_id', '')}", result.get("entity_tag", ""))
