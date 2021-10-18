@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Dict, Type
+from typing import Any, Callable, Coroutine, Dict, Type, Union
 
 from pydantic import BaseModel, Field
 
@@ -100,7 +100,9 @@ class Nodeports(BaseModel):
         for output_key in self.internal_outputs:
             self.internal_outputs[output_key]._node_ports = self
 
-    async def set_multiple(self, port_values: Dict[str, ItemConcreteValue]) -> None:
+    async def set_multiple(
+        self, port_values: Dict[Union[int, str], ItemConcreteValue]
+    ) -> None:
         """sets the provided values to the respective input or output ports"""
         await self._auto_update_from_db()
         for port_key, value in port_values.items():

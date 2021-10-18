@@ -643,8 +643,16 @@ async def test_batch_update_inputs_outputs(
         {
             port.key: parallel_int_item_value
             for port in set((await PORTS.outputs).values())
-            | set((await PORTS.inputs).values())
         }
+    )
+    await PORTS.set_multiple(
+        {
+            port.key: parallel_int_item_value
+            for port in set((await PORTS.outputs).values())
+        }
+    )
+    await PORTS.set_multiple(
+        {i: parallel_int_item_value for i in range(len((await PORTS.inputs)))}
     )
 
     ports_outputs = await PORTS.outputs
