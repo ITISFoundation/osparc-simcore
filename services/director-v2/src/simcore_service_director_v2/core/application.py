@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from simcore_service_director_v2.modules import dask_client
 from starlette import status
 from starlette.exceptions import HTTPException
@@ -49,6 +50,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
     )
+    override_fastapi_openapi_method(app)
 
     logger.debug(settings)
     app.state.settings = settings

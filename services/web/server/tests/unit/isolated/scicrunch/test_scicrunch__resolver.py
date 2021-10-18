@@ -9,9 +9,9 @@ from aiohttp.client import ClientTimeout
 from simcore_service_webserver.scicrunch._resolver import ResolvedItem, resolve_rrid
 from simcore_service_webserver.scicrunch.submodule_setup import SciCrunchSettings
 
-from ._citations import (
+# FIXME: PC check the CELL_LINE_CITATIONS test please
+from ._citations import (  # CELL_LINE_CITATIONS,
     ANTIBODY_CITATIONS,
-    CELL_LINE_CITATIONS,
     ORGANISM_CITATIONS,
     PLAMID_CITATIONS,
     TOOL_CITATIONS,

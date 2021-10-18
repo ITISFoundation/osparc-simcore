@@ -15,6 +15,10 @@ import docker
 import pytest
 import tenacity
 import yaml
+from docker.errors import APIError
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt, stop_after_delay
+from tenacity.wait import wait_exponential, wait_fixed
 
 from .helpers.utils_docker import get_ip
 
@@ -36,7 +40,7 @@ def _in_docker_swarm(
         docker_client.swarm.reload()
         inspect_result = docker_client.swarm.attrs
         assert type(inspect_result) == dict
-    except docker.errors.APIError as error:
+    except APIError as error:
         if raise_error:
             raise _NotInSwarmException() from error
         return False
@@ -45,8 +49,8 @@ def _in_docker_swarm(
 
 def _attempt_for(retry_error_cls: Type[Exception]) -> tenacity.Retrying:
     return tenacity.Retrying(
-        wait=tenacity.wait_exponential(),
-        stop=tenacity.stop_after_delay(15),
+        wait=wait_exponential(),
+        stop=stop_after_delay(15),
         retry_error_cls=retry_error_cls,
     )
 
@@ -77,17 +81,8 @@ def docker_swarm(
 
     yield
 
-    for attempt in _attempt_for(retry_error_cls=_StillInSwarmException):
-        with attempt:
-            if _in_docker_swarm(docker_client):
-                if not keep_docker_up:
-                    assert docker_client.swarm.leave(force=True)
-
-            if _in_docker_swarm(docker_client) and not keep_docker_up:
-                # if still in swarm, raise an error to try and leave again
-                raise _StillInSwarmException()
-            if keep_docker_up:
-                assert _in_docker_swarm(docker_client) is True
+    if not keep_docker_up:
+        assert docker_client.swarm.leave(force=True)
 
     assert _in_docker_swarm(docker_client) is keep_docker_up
 
@@ -109,9 +104,9 @@ def by_task_update(task: Dict) -> datetime:
 
 
 @tenacity.retry(
-    wait=tenacity.wait_fixed(5),
-    stop=tenacity.stop_after_attempt(20),
-    before_sleep=tenacity.before_sleep_log(log, logging.INFO),
+    wait=wait_fixed(5),
+    stop=stop_after_attempt(20),
+    before_sleep=before_sleep_log(log, logging.INFO),
     reraise=True,
 )
 def _wait_for_services(docker_client: docker.client.DockerClient) -> None:
@@ -236,5 +231,18 @@ def docker_stack(
             filters={"label": f"com.docker.stack.namespace={stack}"}
         ):
             time.sleep(WAIT_BEFORE_RETRY_SECS)
+
+        while docker_client.containers.list(
+            filters={"label": f"com.docker.stack.namespace={stack}"}
+        ):
+            time.sleep(WAIT_BEFORE_RETRY_SECS)
+
+        for attempt in _attempt_for(retry_error_cls=APIError):
+            with attempt:
+                list_of_volumes = docker_client.volumes.list(
+                    filters={"label": f"com.docker.stack.namespace={stack}"}
+                )
+                for volume in list_of_volumes:
+                    volume.remove(force=True)
 
     _print_services(docker_client, "[AFTER REMOVED]")
