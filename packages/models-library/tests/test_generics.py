@@ -54,5 +54,10 @@ def test_data_enveloped():
     assert not some_enveloped_bool.data
     assert some_enveloped_bool.error == "some error happened"
 
+
+def test_data_enveloped_validator():
+    # empty data should validate also with an empty dict
+    DataEnveloped[int](data={}, error="some error message")
+    #
     with pytest.raises(ValueError):
         DataEnveloped[int](data=213, error="some error message")
