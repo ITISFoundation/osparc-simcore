@@ -11,8 +11,8 @@ from pydantic.networks import AnyUrl
 from tqdm import tqdm
 from yarl import URL
 
-from ..node_ports_common.http_client_manager import ClientSessionContextManager
-from . import exceptions, http_client_manager
+from ..node_ports_common.client_session_manager import ClientSessionContextManager
+from . import exceptions, storage_client
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ async def _get_location_id_from_location_name(
     store: str,
     session: ClientSession,
 ) -> str:
-    resp = await http_client_manager.get_storage_locations(session, user_id)
+    resp = await storage_client.get_storage_locations(session, user_id)
     for location in resp:
         if location.name == store:
             return f"{location.id}"
@@ -38,7 +38,7 @@ async def _get_download_link(
     file_id: str,
     session: ClientSession,
 ) -> URL:
-    presigned_link: AnyUrl = await http_client_manager.get_download_file_presigned_link(
+    presigned_link: AnyUrl = await storage_client.get_download_file_presigned_link(
         session, file_id, store_id, user_id
     )
     if not presigned_link:
@@ -53,7 +53,7 @@ async def _get_upload_link(
     file_id: str,
     session: ClientSession,
 ) -> URL:
-    presigned_link: AnyUrl = await http_client_manager.get_upload_file_presigned_link(
+    presigned_link: AnyUrl = await storage_client.get_upload_file_presigned_link(
         session, file_id, store_id, user_id
     )
     if not presigned_link:
@@ -294,7 +294,7 @@ async def entry_exists(
         async with ClientSessionContextManager(client_session) as session:
             log.debug("Will request metadata for s3_object=%s", s3_object)
 
-            result = await http_client_manager.get_file_metadata(
+            result = await storage_client.get_file_metadata(
                 session, s3_object, store_id, user_id
             )
             log.debug("Result for metadata s3_object=%s, result=%s", s3_object, result)
@@ -311,7 +311,7 @@ async def get_file_metadata(
 ) -> Tuple[str, str]:
     async with ClientSessionContextManager(client_session) as session:
         log.debug("Will request metadata for s3_object=%s", s3_object)
-        result = await http_client_manager.get_file_metadata(
+        result = await storage_client.get_file_metadata(
             session, s3_object, store_id, user_id
         )
     if not result:
