@@ -80,13 +80,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           });
           control.bind("collapsed", sidePanels, "width", {
             converter: collapsed => {
+              const oldWidth = sidePanels.getWidth();
+              const content = control.getContent();
               if (control.getContent()) {
-                if (collapsed) {
-                  return sidePanels.getWidth() - control.getContent().getWidth() + 15;
-                }
-                return sidePanels.getWidth() + control.getContent().getWidth() - 15;
+                return collapsed ? (oldWidth - content.getWidth() + 15) : (oldWidth + content.getWidth() - 15);
               }
-              return sidePanels.getWidth();
+              return oldWidth;
             }
           });
           osparc.utils.Utils.addBorder(control, 2, "right");
@@ -101,13 +100,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           });
           control.bind("collapsed", sidePanels, "width", {
             converter: collapsed => {
+              const oldWidth = sidePanels.getWidth();
+              const content = control.getContent();
               if (control.getContent()) {
-                if (collapsed) {
-                  return sidePanels.getWidth() - control.getContent().getWidth() + 15;
-                }
-                return sidePanels.getWidth() + control.getContent().getWidth() - 15;
+                return collapsed ? (oldWidth - content.getWidth() + 15) : (oldWidth + content.getWidth() - 15);
               }
-              return sidePanels.getWidth();
+              return oldWidth;
             }
           });
           osparc.utils.Utils.addBorder(control, 2, "right");
