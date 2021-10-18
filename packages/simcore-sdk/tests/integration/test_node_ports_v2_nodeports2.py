@@ -584,6 +584,10 @@ async def test_regression_concurrent_port_update_fails(
     parallel_int_item_value: int,
     port_count: int,
 ):
+    """
+    when using `await PORTS.outputs` test will fail
+    an unexpected status will end up in the database
+    """
 
     outputs = [(f"value_{i}", "integer", None) for i in range(port_count)]
     config_dict, _, _ = special_configuration(inputs=[], outputs=outputs)
