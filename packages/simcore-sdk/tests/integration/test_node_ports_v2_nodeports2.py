@@ -640,16 +640,7 @@ async def test_batch_update_inputs_outputs(
     await check_config_valid(PORTS, config_dict)
 
     await PORTS.set_multiple(
-        {
-            port.key: parallel_int_item_value
-            for port in set((await PORTS.outputs).values())
-        }
-    )
-    await PORTS.set_multiple(
-        {
-            port.key: parallel_int_item_value
-            for port in set((await PORTS.outputs).values())
-        }
+        {port.key: parallel_int_item_value for port in (await PORTS.outputs).values()}
     )
     await PORTS.set_multiple(
         {i: parallel_int_item_value for i in range(len((await PORTS.inputs)))}

@@ -129,7 +129,7 @@ async def test_node_ports_accessors(
     await node_ports.set_multiple(
         {
             port.key: port.value
-            for port in set(original_inputs.values()) | set(original_outputs.values())
+            for port in list(original_inputs.values()) + list(original_outputs.values())
         }
     )
 
