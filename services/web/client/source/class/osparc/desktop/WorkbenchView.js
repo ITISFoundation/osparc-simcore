@@ -25,6 +25,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   construct: function() {
     this.base(arguments, "horizontal");
 
+    this.setOffset(3);
     this.getChildControl("splitter").setWidth(1);
 
     this.__sidePanels = this.getChildControl("side-panels");
@@ -63,33 +64,74 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       switch (id) {
         case "side-panels": {
           control = new qx.ui.splitpane.Pane("horizontal").set({
-            minWidth: 0,
-            width: Math.min(parseInt(window.innerWidth * 0.4), 550)
+            offset: 3,
+            // width: Math.min(parseInt(window.innerWidth * 0.4), 550),
+            minWidth: 32
           });
           control.getChildControl("splitter").setWidth(1);
-          osparc.utils.Utils.addBorder(control, 2, "right");
           this.add(control, 0); // flex 0
+          break;
+        }
+        case "collapsible-view-left": {
+          const sidePanels = this.getChildControl("side-panels");
+          control = new osparc.component.widget.CollapsibleViewLight();
+          control.bind("collapsed", control, "maxWidth", {
+            converter: collapsed => collapsed ? 15 : null
+          });
+          control.bind("collapsed", sidePanels, "width", {
+            converter: collapsed => {
+              if (control.getContent()) {
+                if (collapsed) {
+                  return sidePanels.getWidth() - control.getContent().getWidth() + 15;
+                }
+                return sidePanels.getWidth() + control.getContent().getWidth() - 15;
+              }
+              return sidePanels.getWidth();
+            }
+          });
+          osparc.utils.Utils.addBorder(control, 2, "right");
+          sidePanels.add(control, 1); // flex 1
+          break;
+        }
+        case "collapsible-view-right": {
+          const sidePanels = this.getChildControl("side-panels");
+          control = new osparc.component.widget.CollapsibleViewLight();
+          control.bind("collapsed", control, "maxWidth", {
+            converter: collapsed => collapsed ? 15 : null
+          });
+          control.bind("collapsed", sidePanels, "width", {
+            converter: collapsed => {
+              if (control.getContent()) {
+                if (collapsed) {
+                  return sidePanels.getWidth() - control.getContent().getWidth() + 15;
+                }
+                return sidePanels.getWidth() + control.getContent().getWidth() - 15;
+              }
+              return sidePanels.getWidth();
+            }
+          });
+          osparc.utils.Utils.addBorder(control, 2, "right");
+          sidePanels.add(control, 1); // flex 1
           break;
         }
         case "side-panel-left-tabs": {
           control = new qx.ui.tabview.TabView().set({
-            minWidth: 250,
+            width: 250,
             contentPadding: 6,
             barPosition: "top"
           });
-          osparc.utils.Utils.addBorder(control, 2, "right");
-          const sidePanels = this.getChildControl("side-panels");
-          sidePanels.add(control, 1); // flex 1
+          const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
+          collapsibleViewLeft.setContent(control);
           break;
         }
         case "side-panel-right-tabs": {
           control = new qx.ui.tabview.TabView().set({
-            minWidth: 300,
+            width: 300,
             contentPadding: 6,
             barPosition: "top"
           });
-          const sidePanels = this.getChildControl("side-panels");
-          sidePanels.add(control, 1); // flex 1
+          const collapsibleViewRight = this.getChildControl("collapsible-view-right");
+          collapsibleViewRight.setContent(control);
           break;
         }
         case "main-panel-tabs": {
