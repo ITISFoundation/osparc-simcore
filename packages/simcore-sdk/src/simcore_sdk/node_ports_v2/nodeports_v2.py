@@ -1,13 +1,12 @@
 import logging
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Set, Tuple, Type
+from typing import Any, Callable, Coroutine, Dict, Type
 
 from pydantic import BaseModel, Field
 
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.exceptions import PortNotFound, UnboundPortError
 from .links import ItemConcreteValue
-from .port import Port
 from .port_utils import is_file_type
 from .ports_mapping import InputsList, OutputsList
 
@@ -101,12 +100,16 @@ class Nodeports(BaseModel):
         for output_key in self.internal_outputs:
             self.internal_outputs[output_key]._node_ports = self
 
-    async def _store_values(self, port_values: Set[Tuple[Port, Any]]) -> None:
-        for port, value in port_values:
-            await port._set(value)  # pylint: disable=protected-access
+    async def set_multiple(self, port_values: Dict[str, ItemConcreteValue]) -> None:
+        """sets the provided values to the respective input or output ports"""
+        await self._auto_update_from_db()
+        for port_key, value in port_values.items():
+            # pylint: disable=protected-access
+            try:
+                await self.internal_inputs[port_key]._set(value)
+            except UnboundPortError:
+                # not available try outputs
+                # if this fails it will raise another exception
+                await self.internal_outputs[port_key]._set(value)
 
         await self.save_to_db_cb(self)
-
-    async def set_multiple(self, port_values: Set[Tuple[Port, Any]]) -> None:
-        """sets the provided values to the respective input or output ports"""
-        await self._store_values(port_values)
