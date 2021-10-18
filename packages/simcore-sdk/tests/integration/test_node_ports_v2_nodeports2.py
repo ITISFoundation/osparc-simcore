@@ -583,7 +583,7 @@ async def test_regression_concurrent_port_update_fails(
     int_item_value: int,
     parallel_int_item_value: int,
     port_count: int,
-):
+) -> None:
     """
     when using `await PORTS.outputs` test will fail
     an unexpected status will end up in the database
@@ -620,3 +620,37 @@ async def test_regression_concurrent_port_update_fails(
         exc_info.value.args[0]
         == f"assert {int_item_value} == {parallel_int_item_value}\n  +{int_item_value}\n  -{parallel_int_item_value}"
     )
+
+
+async def test_batch_update_inputs_outputs(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    special_configuration: Callable,
+    parallel_int_item_value: int,
+    port_count: int,
+) -> None:
+    outputs = [(f"value_out_{i}", "integer", None) for i in range(port_count)]
+    inputs = [(f"value_in_{i}", "integer", None) for i in range(port_count)]
+    config_dict, _, _ = special_configuration(inputs=inputs, outputs=outputs)
+
+    PORTS = await node_ports_v2.ports(
+        user_id=user_id, project_id=project_id, node_uuid=node_uuid
+    )
+    await check_config_valid(PORTS, config_dict)
+
+    ports_outputs = await PORTS.outputs
+    await PORTS.set_outputs(
+        [(port, parallel_int_item_value) for port in ports_outputs.values()]
+    )
+    for item_key, _, _ in outputs:
+        assert ports_outputs[item_key].value == parallel_int_item_value
+        assert await ports_outputs[item_key].get() == parallel_int_item_value
+
+    ports_inputs = await PORTS.inputs
+    await PORTS.set_inputs(
+        [(port, parallel_int_item_value) for port in ports_inputs.values()]
+    )
+    for item_key, _, _ in inputs:
+        assert ports_inputs[item_key].value == parallel_int_item_value
+        assert await ports_inputs[item_key].get() == parallel_int_item_value
