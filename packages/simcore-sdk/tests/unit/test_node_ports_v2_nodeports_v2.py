@@ -126,11 +126,9 @@ async def test_node_ports_accessors(
         await node_ports.set(port.key, port.value)
 
     # test batch add
-    await node_ports.set_inputs(
+    await node_ports.set_multiple(
         [(port, port.value) for port in original_inputs.values()]
-    )
-    await node_ports.set_outputs(
-        [(port, port.value) for port in original_outputs.values()]
+        + [(port, port.value) for port in original_outputs.values()]
     )
 
 

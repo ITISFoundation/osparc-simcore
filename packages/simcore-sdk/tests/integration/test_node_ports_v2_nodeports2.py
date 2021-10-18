@@ -640,17 +640,15 @@ async def test_batch_update_inputs_outputs(
     await check_config_valid(PORTS, config_dict)
 
     ports_outputs = await PORTS.outputs
-    await PORTS.set_outputs(
+    ports_inputs = await PORTS.inputs
+    await PORTS.set_multiple(
         [(port, parallel_int_item_value) for port in ports_outputs.values()]
+        + [(port, parallel_int_item_value) for port in ports_inputs.values()]
     )
+
     for item_key, _, _ in outputs:
         assert ports_outputs[item_key].value == parallel_int_item_value
         assert await ports_outputs[item_key].get() == parallel_int_item_value
-
-    ports_inputs = await PORTS.inputs
-    await PORTS.set_inputs(
-        [(port, parallel_int_item_value) for port in ports_inputs.values()]
-    )
     for item_key, _, _ in inputs:
         assert ports_inputs[item_key].value == parallel_int_item_value
         assert await ports_inputs[item_key].get() == parallel_int_item_value

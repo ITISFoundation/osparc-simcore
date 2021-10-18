@@ -559,10 +559,6 @@ async def test_valid_port(
         async def save_to_db_cb(node_ports):
             return
 
-        @staticmethod
-        async def save_to_database():
-            pass
-
     fake_node_ports = FakeNodePorts(
         user_id=user_id, project_id=project_id, node_uuid=node_uuid
     )

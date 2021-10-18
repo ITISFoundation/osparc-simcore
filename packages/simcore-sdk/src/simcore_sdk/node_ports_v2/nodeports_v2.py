@@ -101,18 +101,12 @@ class Nodeports(BaseModel):
         for output_key in self.internal_outputs:
             self.internal_outputs[output_key]._node_ports = self
 
-    async def save_to_database(self) -> None:
-        """commit inputs and outputs changes to the database"""
-        await self.save_to_db_cb(self)
-
     async def _store_values(self, port_values: List[Tuple[Port, Any]]) -> None:
         for port, value in port_values:
-            await port.set(value, save_to_database=False)
+            await port._set(value)  # pylint: disable=protected-access
 
-        await self.save_to_database()
+        await self.save_to_db_cb(self)
 
-    async def set_outputs(self, port_values: List[Tuple[Port, Any]]) -> None:
-        await self._store_values(port_values)
-
-    async def set_inputs(self, port_values: List[Tuple[Port, Any]]) -> None:
+    async def set_multiple(self, port_values: List[Tuple[Port, Any]]) -> None:
+        """sets the provided values to the respective input or output ports"""
         await self._store_values(port_values)
