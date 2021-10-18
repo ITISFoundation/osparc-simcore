@@ -25,7 +25,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   construct: function() {
     this.base(arguments, "horizontal");
 
-    this.setOffset(3);
+    this.setOffset(2);
     this.getChildControl("splitter").setWidth(1);
 
     this.__sidePanels = this.getChildControl("side-panels");
@@ -64,7 +64,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       switch (id) {
         case "side-panels": {
           control = new qx.ui.splitpane.Pane("horizontal").set({
-            offset: 3,
+            offset: 2,
             // width: Math.min(parseInt(window.innerWidth * 0.4), 550),
             minWidth: 32
           });
@@ -83,6 +83,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
               const oldWidth = sidePanels.getWidth();
               const content = control.getContent();
               if (control.getContent()) {
+                // if collapsed set width to show collapse button only
                 return collapsed ? (oldWidth - content.getWidth() + 15) : (oldWidth + content.getWidth() - 15);
               }
               return oldWidth;
