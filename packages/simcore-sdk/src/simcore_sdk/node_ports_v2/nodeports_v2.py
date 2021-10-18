@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Callable, Coroutine, List, Tuple, Type
+from typing import Any, Callable, Coroutine, Set, Tuple, Type
 
 from pydantic import BaseModel, Field
 
@@ -101,12 +101,12 @@ class Nodeports(BaseModel):
         for output_key in self.internal_outputs:
             self.internal_outputs[output_key]._node_ports = self
 
-    async def _store_values(self, port_values: List[Tuple[Port, Any]]) -> None:
+    async def _store_values(self, port_values: Set[Tuple[Port, Any]]) -> None:
         for port, value in port_values:
             await port._set(value)  # pylint: disable=protected-access
 
         await self.save_to_db_cb(self)
 
-    async def set_multiple(self, port_values: List[Tuple[Port, Any]]) -> None:
+    async def set_multiple(self, port_values: Set[Tuple[Port, Any]]) -> None:
         """sets the provided values to the respective input or output ports"""
         await self._store_values(port_values)

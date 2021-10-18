@@ -33,6 +33,9 @@ class Port(ServiceProperty):
     _node_ports = PrivateAttr()
     _used_default_value: bool = PrivateAttr(False)
 
+    def __hash__(self):
+        return hash((type(self),) + tuple(self.__dict__.values()))
+
     @validator("value", always=True)
     @classmethod
     def ensure_value(cls, v: DataItemValue, values: Dict[str, Any]) -> DataItemValue:
