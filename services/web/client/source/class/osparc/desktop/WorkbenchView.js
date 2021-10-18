@@ -554,14 +554,31 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __populateSecondPanelFilePicker: function(filePicker) {
-      this.__infoPage.getChildControl("button").show();
-      this.getChildControl("side-panel-right-tabs").setSelection([this.__infoPage]);
+      if (osparc.file.FilePicker.hasOutputAssigned(filePicker.getOutputs())) {
+        this.__infoPage.getChildControl("button").show();
+        this.getChildControl("side-panel-right-tabs").setSelection([this.__infoPage]);
 
-      const view = osparc.file.FilePicker.buildInfoView(filePicker);
-      view.setEnabled(false);
-      this.__infoPage.add(view, {
-        flex: 1
-      });
+        const view = osparc.file.FilePicker.buildInfoView(filePicker);
+        view.setEnabled(false);
+        this.__infoPage.add(view);
+      } else {
+        this.__settingsPage.getChildControl("button").show();
+        this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
+
+        const filePickerView = new osparc.file.FilePicker(filePicker);
+        filePickerView.buildLayout();
+        filePickerView.getChildControl("files-tree").set({
+          hideRoot: true,
+          showLeafs: true
+        });
+        filePickerView.getChildControl("folder-viewer").exclude();
+        filePickerView.getChildControl("files-add").exclude();
+        filePickerView.getChildControl("selected-file-layout").getChildControl("download-button").exclude();
+        filePickerView.addListener("itemSelected", () => this.__populateSecondPanel(filePicker));
+        this.__settingsPage.add(filePickerView, {
+          flex: 1
+        });
+      }
     },
 
     __populateSecondPanelParameter: function(parameter) {

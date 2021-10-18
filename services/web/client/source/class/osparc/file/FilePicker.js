@@ -99,6 +99,10 @@ qx.Class.define("osparc.file.FilePicker", {
       return osparc.file.FileDownloadLink.extractLabelFromLink(outFileValue["downloadLink"]);
     },
 
+    hasOutputAssigned: function(outputs) {
+      return osparc.file.FilePicker.isOutputFromStore(outputs) || osparc.file.FilePicker.isOutputDownloadLink(outputs);
+    },
+
     __setOutputValue: function(node, outputValue) {
       const outputs = node.getOutputs();
       outputs["outFile"]["value"] = outputValue;
@@ -135,29 +139,53 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
-    buildInfoView: function(node) {
-      const form = new qx.ui.form.Form();
+    buildFileFromStoreInfoView: function(node, form) {
       const outValue = osparc.file.FilePicker.getOutput(node.getOutputs());
-      if (outValue && "store" in outValue && "dataset" in outValue) {
-        const params = {
-          url: {
-            locationId: outValue.store,
-            datasetId: outValue.dataset
-          }
-        };
-        osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
-          .then(files => {
-            const fileMetadata = files.find(file => file.file_uuid === outValue.path);
-            if (fileMetadata) {
-              for (let [key, value] of Object.entries(fileMetadata)) {
-                const entry = new qx.ui.form.TextField();
-                form.add(entry, key, null, key);
-                if (value) {
-                  entry.setValue(value.toString());
-                }
+      const params = {
+        url: {
+          locationId: outValue.store,
+          datasetId: outValue.dataset
+        }
+      };
+      osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
+        .then(files => {
+          const fileMetadata = files.find(file => file.file_uuid === outValue.path);
+          if (fileMetadata) {
+            for (let [key, value] of Object.entries(fileMetadata)) {
+              const entry = new qx.ui.form.TextField();
+              form.add(entry, key, null, key);
+              if (value) {
+                entry.setValue(value.toString());
               }
             }
-          });
+          }
+        });
+    },
+
+    buildDownloadLinkInfoView: function(node, form) {
+      const outputs = node.getOutputs();
+
+      const outFileValue = osparc.file.FilePicker.getOutput(outputs);
+      const urlEntry = new qx.ui.form.TextField().set({
+        value: outFileValue
+      });
+      form.add(urlEntry, "url", null, "url");
+
+      const label = osparc.file.FilePicker.extractLabelFromLink(outputs);
+      if (label) {
+        const labelEntry = new qx.ui.form.TextField().set({
+          value: label
+        });
+        form.add(labelEntry, "label", null, "label");
+      }
+    },
+
+    buildInfoView: function(node) {
+      const form = new qx.ui.form.Form();
+      if (osparc.file.FilePicker.isOutputFromStore(node.getOutputs())) {
+        this.self().buildFileFromStoreInfoView(node, form);
+      } else if (osparc.file.FilePicker.isOutputDownloadLink(node.getOutputs())) {
+        this.self().buildDownloadLinkInfoView(node, form);
       }
 
       return new qx.ui.form.renderer.Single(form);
