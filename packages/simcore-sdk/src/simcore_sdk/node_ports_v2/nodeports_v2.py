@@ -104,7 +104,6 @@ class Nodeports(BaseModel):
         self, port_values: Dict[Union[int, str], ItemConcreteValue]
     ) -> None:
         """sets the provided values to the respective input or output ports"""
-        await self._auto_update_from_db()
         for port_key, value in port_values.items():
             # pylint: disable=protected-access
             try:
