@@ -99,7 +99,3 @@ class Nodeports(BaseModel):
             self.internal_inputs[input_key]._node_ports = self
         for output_key in self.internal_outputs:
             self.internal_outputs[output_key]._node_ports = self
-
-    async def save_to_database(self) -> None:
-        """Stores the current status of the Nodeports to the database"""
-        await self.save_to_db_cb(self)

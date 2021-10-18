@@ -106,9 +106,7 @@ class Port(ServiceProperty):
 
         return self._py_value_converter(value)
 
-    async def set(
-        self, new_value: ItemConcreteValue, save_immediately: bool = True
-    ) -> None:
+    async def set(self, new_value: ItemConcreteValue) -> None:
         log.debug(
             "setting %s[%s] with value %s", self.key, self.property_type, new_value
         )
@@ -131,14 +129,4 @@ class Port(ServiceProperty):
 
         self.value = final_value
         self._used_default_value = False
-
-        if save_immediately:
-            log.warning(
-                "Please note that if you are `trying to update multiple ports "
-                "at the same time`, this option will lead to race conditions! "
-                "Some files values in the database may be missing or correspond "
-                "previous ones! Update all the ports with option "
-                "save_immediately=False and then call save_to_database to write "
-                "the all the data to the DB."
-            )
-            await self._node_ports.save_to_database()
+        await self._node_ports.save_to_db_cb(self._node_ports)
