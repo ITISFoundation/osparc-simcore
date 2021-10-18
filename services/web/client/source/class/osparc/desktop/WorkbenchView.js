@@ -257,7 +257,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         nodesTree.resetSelection();
         this.__populateSecondPanel(this.getStudy());
         this.__evalIframe();
-        this.__openWorkbench();
+        this.__openWorkbenchTab();
       });
 
       nodesTree.addListener("nodeSelected", e => {
@@ -267,11 +267,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const node = workbench.getNode(nodeId);
         if (node) {
           this.__populateSecondPanel(node);
-          this.__evalIframe(node);
           if (node.isDynamic()) {
-            this.__openIframe(node);
+            this.__openIframeTab(node);
           } else {
-            this.__openWorkbench();
+            this.__openWorkbenchTab();
           }
         }
         const nodeUI = workbenchUI.getNodeUI(nodeId);
@@ -288,8 +287,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const node = workbench.getNode(nodeId);
         if (node) {
           this.__populateSecondPanel(node);
-          this.__evalIframe(node);
-          this.__openIframe(node);
+          this.__openIframeTab(node);
           this.__maximizeIframe(true);
         }
         const nodeUI = workbenchUI.getNodeUI(nodeId);
@@ -328,8 +326,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const workbench = this.getStudy().getWorkbench();
         const node = workbench.getNode(nodeId);
         this.__populateSecondPanel(node);
-        this.__evalIframe(node);
-        this.__openIframe(node);
+        this.__openIframeTab(node);
       }, this);
 
       const workbench = this.getStudy().getWorkbench();
@@ -463,12 +460,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __openWorkbench: function() {
+    __openWorkbenchTab: function() {
       const tabViewMain = this.getChildControl("main-panel-tabs");
       tabViewMain.setSelection([this.__workbenchPanelPage]);
     },
 
-    __openIframe: function(node) {
+    __openIframeTab: function(node) {
+      this.__evalIframe(node);
       const tabViewMain = this.getChildControl("main-panel-tabs");
       if (node && node.getIFrame()) {
         tabViewMain.setSelection([this.__iframePage]);
@@ -758,29 +756,22 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__nodesTree.nodeSelected(this.__currentNodeId);
     },
 
-    __checkMaximizeable: function() {
-      return;
-    },
-
     openFirstNode: function() {
-      const validNodeIds = [];
-      const allNodes = this.getStudy().getWorkbench().getNodes(true);
-      Object.values(allNodes).forEach(node => {
-        if (!node.isFilePicker()) {
-          validNodeIds.push(node.getNodeId());
-        }
-      });
-
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
-      if (validNodeIds.length === 1 && preferencesSettings.getAutoOpenNode()) {
-        this.nodeSelected(validNodeIds[0]);
-        // Todo Odei: A bit of a hack
-        qx.event.Timer.once(() => {
-          this.__checkMaximizeable();
-        }, this, 10);
-      } else {
-        this.nodeSelected(this.getStudy().getUuid());
+      if (preferencesSettings.getAutoOpenNode()) {
+        const nodes = this.getStudy().getWorkbench().getNodes(true);
+        const validNodes = Object.values(nodes).filter(node => node.isComputational() || node.isDynamic());
+        if (validNodes.length === 1 && validNodes[0].isDynamic()) {
+          const dynamicNode = validNodes[0];
+          this.nodeSelected(dynamicNode.getNodeId());
+          qx.event.Timer.once(() => {
+            this.__openIframeTab(dynamicNode);
+            this.__maximizeIframe(true);
+          }, this, 10);
+          return;
+        }
       }
+      this.nodeSelected(this.getStudy().getUuid());
     }
   }
 });
