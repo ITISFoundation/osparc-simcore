@@ -419,7 +419,11 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         # await dcw.upload_file_to_id(destination_id, local_file_path)
 
     async def update_database_from_storage(
-        self, file_uuid: str, bucket_name: str, object_name: str
+        self,
+        file_uuid: str,
+        bucket_name: str,
+        object_name: str,
+        silence_exception: bool = False,
     ) -> Optional[FileMetaDataEx]:
         try:
             async with self._create_aiobotocore_client_context() as aioboto_client:
@@ -450,9 +454,12 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
                     return to_meta_data_extended(row)
         except botocore.exceptions.ClientError:
-            logger.warning(
-                "Error happened while trying to access %s", file_uuid, exc_info=True
-            )
+            if silence_exception:
+                logger.debug("Error happened while trying to access %s", file_uuid)
+            else:
+                logger.warning(
+                    "Error happened while trying to access %s", file_uuid, exc_info=True
+                )
             # the file is not existing or some error happened
             return None
 
@@ -468,7 +475,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         self, file_uuid: str, bucket_name: str, object_name: str
     ):
         return await self.update_database_from_storage(
-            file_uuid, bucket_name, object_name
+            file_uuid, bucket_name, object_name, silence_exception=True
         )
 
     async def upload_link(self, user_id: str, file_uuid: str):
