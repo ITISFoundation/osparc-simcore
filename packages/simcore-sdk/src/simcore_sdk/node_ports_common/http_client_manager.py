@@ -186,5 +186,5 @@ async def get_file_metadata(
 
         file_metadata_enveloped = FileMetadataEnveloped.parse_obj(await response.json())
         if file_metadata_enveloped.data is None:
-            raise exceptions.StorageServerIssue("Storage server is not reponding")
+            raise exceptions.S3InvalidPathError(file_id)
         return file_metadata_enveloped.data

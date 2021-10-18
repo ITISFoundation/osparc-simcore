@@ -290,13 +290,17 @@ async def entry_exists(
     client_session: Optional[ClientSession] = None,
 ) -> bool:
     """Returns True if metadata for s3_object is present"""
-    async with ClientSessionContextManager(client_session) as session:
-        log.debug("Will request metadata for s3_object=%s", s3_object)
-        result = await http_client_manager.get_file_metadata(
-            session, s3_object, store_id, user_id
-        )
-    log.debug("Result for metadata s3_object=%s, result=%s", s3_object, result)
-    return result.get("object_name") == s3_object if result else False
+    try:
+        async with ClientSessionContextManager(client_session) as session:
+            log.debug("Will request metadata for s3_object=%s", s3_object)
+
+            result = await http_client_manager.get_file_metadata(
+                session, s3_object, store_id, user_id
+            )
+            log.debug("Result for metadata s3_object=%s, result=%s", s3_object, result)
+            return result.get("object_name") == s3_object if result else False
+    except exceptions.S3InvalidPathError:
+        return False
 
 
 async def get_file_metadata(
