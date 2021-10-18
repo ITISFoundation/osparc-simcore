@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 from models_library.basic_types import BootModeEnum
+from servicelib.fastapi.tracing import setup_tracing
 
 from ..api.module_setup import setup_api
 from ..meta import api_version, api_vtag
@@ -52,5 +53,8 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
 
     if settings.PENNSIEVE.PENNSIEVE_ENABLED:
         pennsieve.setup(app, settings.PENNSIEVE)
+
+    if settings.DATCORE_ADAPTER_TRACING:
+        setup_tracing(app, settings.DATCORE_ADAPTER_TRACING)
 
     return app
