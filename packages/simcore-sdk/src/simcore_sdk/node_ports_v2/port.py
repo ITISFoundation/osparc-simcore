@@ -106,7 +106,10 @@ class Port(ServiceProperty):
 
         return self._py_value_converter(value)
 
-    async def set(self, new_value: ItemConcreteValue) -> None:
+    async def set(
+        self, new_value: ItemConcreteValue, save_to_database: bool = True
+    ) -> None:
+        """sets a value to the port, by default it is also stored in the database"""
         log.debug(
             "setting %s[%s] with value %s", self.key, self.property_type, new_value
         )
@@ -129,4 +132,5 @@ class Port(ServiceProperty):
 
         self.value = final_value
         self._used_default_value = False
-        await self._node_ports.save_to_database()
+        if save_to_database:
+            await self._node_ports.save_to_database()

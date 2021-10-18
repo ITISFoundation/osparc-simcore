@@ -1,12 +1,13 @@
 import logging
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Type
+from typing import Any, Callable, Coroutine, List, Tuple, Type
 
 from pydantic import BaseModel, Field
 
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.exceptions import PortNotFound, UnboundPortError
 from .links import ItemConcreteValue
+from .port import Port
 from .port_utils import is_file_type
 from .ports_mapping import InputsList, OutputsList
 
@@ -101,5 +102,17 @@ class Nodeports(BaseModel):
             self.internal_outputs[output_key]._node_ports = self
 
     async def save_to_database(self) -> None:
-        """Stores the current status of the Nodeports to the database"""
+        """commit inputs and outputs changes to the database"""
         await self.save_to_db_cb(self)
+
+    async def _store_values(self, port_values: List[Tuple[Port, Any]]) -> None:
+        for port, value in port_values:
+            await port.set(value, save_to_database=False)
+
+        await self.save_to_database()
+
+    async def set_outputs(self, port_values: List[Tuple[Port, Any]]) -> None:
+        await self._store_values(port_values)
+
+    async def set_inputs(self, port_values: List[Tuple[Port, Any]]) -> None:
+        await self._store_values(port_values)
