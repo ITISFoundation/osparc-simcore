@@ -129,4 +129,4 @@ class Port(ServiceProperty):
 
         self.value = final_value
         self._used_default_value = False
-        await self._node_ports.save_to_db_cb(self._node_ports)
+        await self._node_ports.save_to_database()
