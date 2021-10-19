@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from faker import Faker
 from models_library.generics import DictModel, Envelope
 
 
@@ -38,21 +39,23 @@ def test_dict_base_model():
     assert some_instance["a new key"] == 23
 
 
-def test_data_enveloped():
+def test_data_enveloped(faker: Faker):
     some_enveloped_string = Envelope[str]()
     assert some_enveloped_string
     assert not some_enveloped_string.data
     assert not some_enveloped_string.error
 
-    some_enveloped_float = Envelope[float](data=232.44)
+    random_float = faker.pyfloat()
+    some_enveloped_float = Envelope[float](data=random_float)
     assert some_enveloped_float
-    assert some_enveloped_float.data == 232.44
+    assert some_enveloped_float.data == random_float
     assert not some_enveloped_float.error
 
-    some_enveloped_bool = Envelope[bool](error="some error happened")
+    random_text = faker.text()
+    some_enveloped_bool = Envelope[bool](error=random_text)
     assert some_enveloped_bool
     assert not some_enveloped_bool.data
-    assert some_enveloped_bool.error == "some error happened"
+    assert some_enveloped_bool.error == random_text
 
     with pytest.raises(ValueError):
         Envelope[int](data=213, error="some error message")
