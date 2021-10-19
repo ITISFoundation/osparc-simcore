@@ -82,9 +82,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             converter: collapsed => {
               const oldWidth = sidePanels.getWidth();
               const content = control.getContent();
-              if (control.getContent()) {
+              if (content) {
                 // if collapsed set width to show collapse button only
-                return collapsed ? (oldWidth - content.getWidth() + 15) : (oldWidth + content.getWidth() - 15);
+                return collapsed ? (oldWidth - content.getWidth()) : (oldWidth + content.getWidth());
               }
               return oldWidth;
             }

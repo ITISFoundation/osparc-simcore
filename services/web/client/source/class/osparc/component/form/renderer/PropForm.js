@@ -100,10 +100,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       const linkOptions = this.__createLinkOpts(field);
       linkUnlinkStack.add(linkOptions);
 
-      const unlinkBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/unlink/12").set({
-        toolTipText: this.tr("Unlink")
-      });
-      unlinkBtn.addListener("execute", () => this.removePortLink(field.key), this);
+
+      const unlinkBtn = this.__createUnlinkButton(field);
       linkUnlinkStack.add(unlinkBtn);
 
       this.__linkUnlinkStackMap[field.key] = linkUnlinkStack;
@@ -113,11 +111,19 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __createLinkOpts: function(field) {
       const optionsMenu = new qx.ui.menu.Menu().set({
-        position: "bottom-left"
+        offsetLeft: 6,
+        position: "right-top",
+        backgroundColor: "background-main-lighter+"
+      });
+      optionsMenu.getContentElement().setStyles({
+        "border-top-right-radius": "6px",
+        "border-bottom-right-radius": "6px",
+        "border-bottom-left-radius": "6px"
       });
       const fieldOptsBtn = new qx.ui.form.MenuButton().set({
         menu: optionsMenu,
         icon: "@FontAwesome5Solid/link/12",
+        height: 23,
         focusable: false,
         allowGrowX: false,
         alignX: "center"
@@ -130,7 +136,24 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           this.getStudy().getWorkbench().addListener("pipelineChanged", () => this.__populateFieldOptionsMenu(optionsMenu, field), this);
         }
       });
+      optionsMenu.addListener("changeVisibility", e => {
+        const children = this._getFieldChildren(field.key);
+        if (e.getData() === "visible") {
+          children.forEach(el => el.setBackgroundColor("background-main-lighter+"));
+        } else {
+          children.forEach(el => el.resetBackgroundColor());
+        }
+      });
       return fieldOptsBtn;
+    },
+
+    __createUnlinkButton: function(field) {
+      const unlinkBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/unlink/12").set({
+        toolTipText: this.tr("Unlink"),
+        height: 23
+      });
+      unlinkBtn.addListener("execute", () => this.removePortLink(field.key), this);
+      return unlinkBtn;
     },
 
     __populateFieldOptionsMenu: function(optionsMenu, field) {
