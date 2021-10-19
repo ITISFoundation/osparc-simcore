@@ -65,6 +65,7 @@ def core_services_running(
 
 
 def test_all_services_up(
+    docker_registry: str,
     core_services_running: List[Service],
     core_stack_name: str,
     core_stack_compose: Dict[str, Any],

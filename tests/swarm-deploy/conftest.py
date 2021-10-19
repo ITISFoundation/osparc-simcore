@@ -103,7 +103,10 @@ def by_task_update(task: Dict) -> datetime:
 
 @pytest.fixture(scope="module")
 def deployed_simcore_stack(
-    core_stack_name: str, core_stack_compose: Dict, docker_client: DockerClient
+    docker_registry: str,
+    core_stack_name: str,
+    core_stack_compose: Dict,
+    docker_client: DockerClient,
 ) -> List[Service]:
 
     # NOTE: the goal here is NOT to test time-to-deploy but
