@@ -30,7 +30,7 @@ from sqlalchemy.sql.expression import literal_column
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type, retry_if_result
-from tenacity.stop import stop_after_attempt
+from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 from yarl import URL
 
@@ -464,8 +464,8 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
             return None
 
     @retry(
-        stop=stop_after_attempt(50),
-        wait=wait_exponential(multiplier=0.1, exp_base=1.2, max=2),
+        stop=stop_after_delay(3600),
+        wait=wait_exponential(multiplier=0.1, exp_base=1.2, max=30),
         retry=(
             retry_if_exception_type() | retry_if_result(lambda result: result is None)
         ),
