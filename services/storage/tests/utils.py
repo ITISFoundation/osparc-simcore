@@ -112,6 +112,7 @@ def insert_metadata(url: str, fmd: FileMetaData):
         created_at=fmd.created_at,
         last_modified=fmd.last_modified,
         file_size=fmd.file_size,
+        entity_tag=fmd.entity_tag,
     )
 
     engine = sa.create_engine(url)

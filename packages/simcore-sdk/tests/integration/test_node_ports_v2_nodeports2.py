@@ -218,7 +218,7 @@ async def test_port_file_accessors(
     )
     await check_config_valid(PORTS, config_dict)
     assert await (await PORTS.outputs)["out_34"].get() is None  # check emptyness
-    with pytest.raises(exceptions.InvalidDownloadLinkError):
+    with pytest.raises(exceptions.StorageInvalidCall):
         await (await PORTS.inputs)["in_1"].get()
 
     # this triggers an upload to S3 + configuration change
