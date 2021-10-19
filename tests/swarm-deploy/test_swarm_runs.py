@@ -174,7 +174,7 @@ def test_product_frontend_app_served(
     # the webserver takes time to start
     # TODO: determine wait times with pre-calibration step
     @tenacity.retry(
-        wait=wait_fixed(2),
+        wait=wait_fixed(10),
         stop=stop_after_attempt(20),
     )
     def request_test_url():
