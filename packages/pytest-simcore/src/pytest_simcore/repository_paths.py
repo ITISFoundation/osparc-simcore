@@ -126,7 +126,7 @@ def openapi_specs_file_path(
     fastapi_apps_oas_path = project_slug_dir / "openapi.json"
     # aiohttp based apps
     aiohttp_apps_oas_path = (
-        osparc_simcore_api_specs_dir / project_slug_dir.name / "openapi.json"
+        osparc_simcore_api_specs_dir / project_slug_dir.name / "openapi.yml"
     )
 
     assert (
