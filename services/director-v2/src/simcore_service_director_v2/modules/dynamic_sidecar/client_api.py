@@ -192,7 +192,7 @@ class DynamicSidecarClient:
         self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
     ) -> int:
         port_keys = [] if port_keys is None else port_keys
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports:pull")
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports/inputs:pull")
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
                 response = await client.post(url, json=port_keys)
@@ -212,7 +212,7 @@ class DynamicSidecarClient:
         self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
     ) -> None:
         port_keys = [] if port_keys is None else port_keys
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports:push")
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports/outputs:push")
         try:
             async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
                 response = await client.post(url, json=port_keys)

@@ -296,13 +296,13 @@
         }
       }
     },
-    "/v1/containers/ports:pull": {
+    "/v1/containers/ports/inputs:pull": {
       "post": {
         "tags": [
           "containers"
         ],
         "summary": "Pull input ports data",
-        "operationId": "pull_input_ports_v1_containers_ports_pull_post",
+        "operationId": "pull_input_ports_v1_containers_ports_inputs_pull_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -338,13 +338,13 @@
         }
       }
     },
-    "/v1/containers/ports:push": {
+    "/v1/containers/ports/outputs:push": {
       "post": {
         "tags": [
           "containers"
         ],
         "summary": "Push output ports data",
-        "operationId": "push_output_ports_v1_containers_ports_push_post",
+        "operationId": "push_output_ports_v1_containers_ports_outputs_push_post",
         "requestBody": {
           "content": {
             "application/json": {

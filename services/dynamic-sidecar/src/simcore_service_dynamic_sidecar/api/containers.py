@@ -282,7 +282,7 @@ async def save_state() -> Response:
 
 
 @containers_router.post(
-    "/containers/ports:pull",
+    "/containers/ports/inputs:pull",
     summary="Pull input ports data",
     response_model=None,
     status_code=status.HTTP_200_OK,
@@ -298,7 +298,7 @@ async def pull_input_ports(port_keys: Optional[List[str]] = None) -> int:
 
 
 @containers_router.post(
-    "/containers/ports:push",
+    "/containers/ports/outputs:push",
     summary="Push output ports data",
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
