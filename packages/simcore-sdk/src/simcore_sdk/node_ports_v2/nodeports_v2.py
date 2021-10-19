@@ -1,7 +1,7 @@
 import logging
 from collections import deque
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Dict, Type, Union
+from typing import Any, Callable, Coroutine, Dict, Type
 
 from pydantic import BaseModel, Field
 from servicelib.utils import logged_gather
@@ -102,19 +102,21 @@ class Nodeports(BaseModel):
         for output_key in self.internal_outputs:
             self.internal_outputs[output_key]._node_ports = self
 
-    async def set_multiple(
-        self, port_values: Dict[Union[int, str], ItemConcreteValue]
-    ) -> None:
-        """sets the provided values to the respective input or output ports"""
+    async def set_multiple(self, port_values: Dict[str, ItemConcreteValue]) -> None:
+        """
+        Sets the provided values to the respective input or output ports
+        Only supports port_key by name, not able to distinguish between inputs
+        and outputs using the index.
+        """
         tasks = deque()
         for port_key, value in port_values.items():
             # pylint: disable=protected-access
-            try:
-                tasks.append(self.internal_inputs[port_key]._set(value))
-            except UnboundPortError:
-                # not available try outputs
-                # if this fails it will raise another exception
+            if port_key in self.internal_outputs:
                 tasks.append(self.internal_outputs[port_key]._set(value))
+            elif port_key in self.internal_inputs:
+                tasks.append(self.internal_inputs[port_key]._set(value))
+            else:
+                raise UnboundPortError(port_key)
 
         await logged_gather(*tasks)
         await self.save_to_db_cb(self)
