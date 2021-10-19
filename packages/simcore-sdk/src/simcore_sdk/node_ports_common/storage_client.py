@@ -7,10 +7,10 @@ from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
 from models_library.api_schemas_storage import (
     FileLocationArray,
-    FileLocationArrayEnveloped,
-    FileMetaEnvelope,
-    PresignedLinkEnveloped,
+    FileMetaData,
+    PresignedLink,
 )
+from models_library.generics import Envelope
 from models_library.users import UserID
 from pydantic.networks import AnyUrl
 
@@ -53,7 +53,7 @@ async def get_storage_locations(
         f"{_base_url()}/locations", params={"user_id": f"{user_id}"}
     ) as response:
         response.raise_for_status()
-        locations_enveloped = FileLocationArrayEnveloped.parse_obj(
+        locations_enveloped = Envelope[FileLocationArray].parse_obj(
             await response.json()
         )
         if locations_enveloped.data is None:
@@ -84,7 +84,7 @@ async def get_download_file_presigned_link(
     ) as response:
         response.raise_for_status()
 
-        presigned_link_enveloped = PresignedLinkEnveloped.parse_obj(
+        presigned_link_enveloped = Envelope[PresignedLink].parse_obj(
             await response.json()
         )
         if presigned_link_enveloped.data is None:
@@ -114,7 +114,7 @@ async def get_upload_file_presigned_link(
     ) as response:
         response.raise_for_status()
 
-        presigned_link_enveloped = PresignedLinkEnveloped.parse_obj(
+        presigned_link_enveloped = Envelope[PresignedLink].parse_obj(
             await response.json()
         )
         if presigned_link_enveloped.data is None:
@@ -143,7 +143,9 @@ async def get_file_metadata(
         params={"user_id": f"{user_id}"},
     ) as response:
         response.raise_for_status()
-        file_metadata_enveloped = FileMetaEnvelope.parse_obj(await response.json())
+        file_metadata_enveloped = Envelope[FileMetaData].parse_obj(
+            await response.json()
+        )
         if file_metadata_enveloped.data is None:
             raise exceptions.S3InvalidPathError(file_id)
         return file_metadata_enveloped.data.dict(by_alias=True)

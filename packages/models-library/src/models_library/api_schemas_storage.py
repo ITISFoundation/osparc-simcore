@@ -238,22 +238,3 @@ class Error(BaseModel):
     logs: Optional[List[LogMessage]] = Field(description="Log messages")
     errors: Optional[List[ErrorItem]] = Field(description="Errors metadata")
     status: Optional[int] = Field(description="HTTP error code")
-
-
-# ENVELOPES
-HealthCheckEnveloped = Envelope[HealthCheck]
-
-FileLocationEnveloped = Envelope[FileLocation]
-
-FileLocationArrayEnveloped = Envelope[FileLocationArray]
-
-DatasetMetaEnvelope = Envelope[DatasetMetaData]
-DatasetMetaDataArrayEnveloped = Envelope[DatasetMetaDataArray]
-
-FileMetaEnvelope = Envelope[FileMetaData]
-FileMetaDataArrayEnveloped = Envelope[FileMetaDataArray]
-
-PresignedLinkEnveloped = Envelope[PresignedLink]
-LogMessageEnveloped = Envelope[LogMessage]
-FakeEnveloped = Envelope[Fake]
-ErrorEnveloped = Envelope[Any]
