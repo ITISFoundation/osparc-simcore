@@ -1,3 +1,5 @@
+# pylint: disable=unused-argument
+
 from typing import List, Optional
 from uuid import UUID
 
@@ -26,7 +28,7 @@ class File(BaseModel):
 router = APIRouter()
 
 
-@router.get("/files", response_model=List[File])
+@router.get("", response_model=List[File])
 def list_files():
     ...
 

@@ -61,19 +61,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /v0/files/files:
+  /v0/files:
     get:
       tags:
       - files
       summary: List Files
-      operationId: list_files_v0_files_files_get
+      operationId: list_files_v0_files_get
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                title: Response List Files V0 Files Files Get
+                title: Response List Files V0 Files Get
                 type: array
                 items:
                   $ref: '#/components/schemas/File'
@@ -148,6 +148,134 @@ paths:
             text/plain:
               schema:
                 type: string
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v0/solvers:
+    get:
+      tags:
+      - solvers
+      summary: List Solvers
+      description: Lists all available solvers (latest version)
+      operationId: list_solvers_v0_solvers_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: Response List Solvers V0 Solvers Get
+                type: array
+                items:
+                  $ref: '#/components/schemas/Solver'
+  /v0/solvers/releases:
+    get:
+      tags:
+      - solvers
+      summary: Lists All Releases
+      description: Lists all released solvers (all released versions)
+      operationId: list_solvers_releases_v0_solvers_releases_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: Response List Solvers Releases V0 Solvers Releases Get
+                type: array
+                items:
+                  $ref: '#/components/schemas/Solver'
+  /v0/solvers/{solver_key}/latest:
+    get:
+      tags:
+      - solvers
+      summary: Get Latest Release of a Solver
+      description: Gets latest release of a solver
+      operationId: get_solver_v0_solvers__solver_key__latest_get
+      parameters:
+      - required: true
+        schema:
+          title: Solver Key
+          pattern: ^(simcore)/(services)/comp(/[\w/-]+)+$
+          type: string
+        name: solver_key
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Solver'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v0/solvers/{solver_key}/releases:
+    get:
+      tags:
+      - solvers
+      summary: List Solver Releases
+      description: Lists all releases of a given solver
+      operationId: list_solver_releases_v0_solvers__solver_key__releases_get
+      parameters:
+      - required: true
+        schema:
+          title: Solver Key
+          pattern: ^(simcore)/(services)/comp(/[\w/-]+)+$
+          type: string
+        name: solver_key
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: Response List Solver Releases V0 Solvers  Solver Key  Releases
+                  Get
+                type: array
+                items:
+                  $ref: '#/components/schemas/Solver'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v0/solvers/{solver_key}/releases/{version}:
+    get:
+      tags:
+      - solvers
+      summary: Get Solver Release
+      description: Gets a specific release of a solver
+      operationId: get_solver_release_v0_solvers__solver_key__releases__version__get
+      parameters:
+      - required: true
+        schema:
+          title: Solver Key
+          pattern: ^(simcore)/(services)/comp(/[\w/-]+)+$
+          type: string
+        name: solver_key
+        in: path
+      - required: true
+        schema:
+          title: Version
+          type: string
+        name: version
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Solver'
         '422':
           description: Validation Error
           content:
@@ -530,6 +658,11 @@ components:
       title: ProfileUpdate
       type: object
       properties: {}
+    Solver:
+      title: Solver
+      type: object
+      properties: {}
+      description: A released solver with a specific version
     ValidationError:
       title: ValidationError
       required:

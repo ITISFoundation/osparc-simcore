@@ -1,10 +1,11 @@
+# pylint: disable=unused-argument
+
 from typing import Dict, Optional
 
 from fastapi import APIRouter
 from pydantic import AnyHttpUrl, BaseModel, Field, constr
 
-# VersionStr = constr(strip_whitespace=True, regex=VERSION_RE)  # as M.m.p
-VersionStr = str
+VersionStr = constr(strip_whitespace=True)  # , regex=VERSION_RE)  # as M.m.p
 
 
 # MODELS -----------------------------------------------------------------------------------------
