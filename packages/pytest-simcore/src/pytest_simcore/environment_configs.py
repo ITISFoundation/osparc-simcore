@@ -25,6 +25,5 @@ def mock_env_devel_environment(
     env_devel_dict: Dict[str, Optional[str]], monkeypatch: MonkeyPatch
 ) -> Dict[str, Optional[str]]:
     for key, value in env_devel_dict.items():
-        if value:
-            monkeypatch.setenv(key, value)
+        monkeypatch.setenv(key, value)
     return deepcopy(env_devel_dict)
