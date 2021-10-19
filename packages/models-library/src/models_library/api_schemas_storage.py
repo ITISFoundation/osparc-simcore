@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field, constr
 from pydantic.networks import AnyUrl
 
 from .basic_regex import UUID_RE
-from .generics import Envelope, ListModel
+from .generics import ListModel
 
 
 # /
