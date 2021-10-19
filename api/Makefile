@@ -16,3 +16,8 @@ install-dev install-ci: _check_venv_active ## install app in development/CI mode
 test: _check_venv_active ## runs all tests [DEV]
 	# running unit tests
 	pytest -vv --exitfirst --failed-first  --durations=10 --pdb $(CURDIR)/tests
+
+
+.PHONY: openapi-specs
+openapi-specs: ## composes and validates openapi specifications and schemas of ALL service's API
+	@$(MAKE_C) specs/api-server openapi.yml
