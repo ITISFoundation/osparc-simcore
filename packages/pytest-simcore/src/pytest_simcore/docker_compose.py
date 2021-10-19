@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Union
 
 import pytest
 import yaml
+from _pytest.config import ExitCode
 from dotenv import dotenv_values
 
 from .helpers import (
@@ -232,6 +233,15 @@ def pytest_exception_interact(node, call, report):
     root_directory: Path = Path(node.config.rootdir)
     failed_test_directory = root_directory / "test_failures" / node.name
     save_docker_infos(failed_test_directory)
+
+
+@pytest.hookimpl()
+def pytest_sessionfinish(session: pytest.Session, exitstatus: ExitCode) -> None:
+    if exitstatus == ExitCode.TESTS_FAILED:
+        # get the node root dir (guaranteed to exist)
+        root_directory: Path = Path(session.fspath)
+        failed_test_directory = root_directory / "test_failures" / session.name
+        save_docker_infos(failed_test_directory)
 
 
 # HELPERS ---------------------------------------------

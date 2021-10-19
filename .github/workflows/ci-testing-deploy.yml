@@ -354,9 +354,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install
-        run: ./ci/github/unit-testing/director_v2.bash install
+        run: ./ci/github/unit-testing/director-v2.bash install
       - name: test
-        run: ./ci/github/unit-testing/director_v2.bash test
+        run: ./ci/github/unit-testing/director-v2.bash test
       - name: upload failed tests logs
         if: failure()
         uses: actions/upload-artifact@v2
@@ -746,7 +746,6 @@ jobs:
         with:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
-
 
   unit-test-service-library:
     timeout-minutes: 14 # if this timeout gets too small, then split the tests

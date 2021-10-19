@@ -17,8 +17,10 @@ from pydantic import AnyHttpUrl, Field, PositiveFloat, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.celery import CelerySettings as BaseCelerySettings
 from settings_library.docker_registry import RegistrySettings
+from settings_library.http_client_request import ClientRequestSettings
 from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
+from settings_library.tracing import TracingSettings
 
 from ..meta import API_VTAG
 from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE, ClusterID
@@ -37,34 +39,6 @@ ORG_LABELS_TO_SCHEMA_LABELS: Dict[str, str] = {
 }
 
 SUPPORTED_TRAEFIK_LOG_LEVELS: Set[str] = {"info", "debug", "warn", "error"}
-
-
-class ClientRequestSettings(BaseCustomSettings):
-    # NOTE: when updating the defaults please make sure to search for the env vars
-    # in all the project, they also need to be updated inside the service-library
-    HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT: Optional[int] = Field(
-        default=20,
-        description="timeout used for outgoing http requests",
-    )
-
-    HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT: Optional[int] = Field(
-        default=None,
-        description=(
-            "Maximal number of seconds for acquiring a connection"
-            " from pool. The time consists connection establishment"
-            " for a new connection or waiting for a free connection"
-            " from a pool if pool connection limits are exceeded. "
-            "For pure socket connection establishment time use sock_connect."
-        ),
-    )
-
-    HTTP_CLIENT_REQUEST_AIOHTTP_SOCK_CONNECT_TIMEOUT: Optional[int] = Field(
-        default=5,
-        description=(
-            "aiohttp specific field used in ClientTimeout, timeout for connecting to a "
-            "peer for a new connection not given a pool"
-        ),
-    )
 
 
 class DirectorV0Settings(BaseCustomSettings):
@@ -330,6 +304,8 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     CELERY_SCHEDULER: CelerySchedulerSettings
 
     DASK_SCHEDULER: DaskSchedulerSettings
+
+    DIRECTOR_V2_TRACING: Optional[TracingSettings] = None
 
     @validator("LOG_LEVEL", pre=True)
     @classmethod
