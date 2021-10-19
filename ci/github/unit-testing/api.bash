@@ -7,7 +7,7 @@ IFS=$'\n\t'
 
 install() {
     bash ci/helpers/ensure_python_pip.bash
-    pip3 install --requirement api/tests/requirements.txt
+    pushd api; pip3 install -r requirements/ci.txt; popd
     pip list --verbose
 }
 
