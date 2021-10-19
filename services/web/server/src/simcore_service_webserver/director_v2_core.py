@@ -5,7 +5,6 @@ from uuid import UUID
 
 import aiohttp
 from aiohttp import ClientTimeout, web
-from aiohttp.web_exceptions import HTTPNoContent
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.settings.services_common import ServicesCommonSettings
@@ -72,9 +71,6 @@ async def _request_director_v2(
             ):
                 raise DirectorServiceError(response.status, reason=str(payload))
 
-            assert expected_status == HTTPNoContent or isinstance(  # nosec
-                payload, dict
-            )  # nosec
             return payload
 
     # TODO: enrich with https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions

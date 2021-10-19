@@ -5,6 +5,7 @@ from pydantic import Field
 from pydantic.networks import AnyUrl
 from settings_library.base import BaseCustomSettings
 from settings_library.logging_utils import MixinLoggingSettings
+from settings_library.tracing import TracingSettings
 
 
 class PennsieveSettings(BaseCustomSettings):
@@ -26,3 +27,5 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     PENNSIEVE: PennsieveSettings
+
+    DATCORE_ADAPTER_TRACING: Optional[TracingSettings] = None

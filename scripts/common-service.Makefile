@@ -106,12 +106,30 @@ TEST_TARGET := $(if $(target),$(target),$(CURDIR)/tests/unit)
 
 _run-test-dev: _check_venv_active
 	# runs tests for development (e.g w/ pdb)
-	pytest -vv --exitfirst --failed-first --durations=10 --pdb --color=yes --cov=$(APP_PACKAGE_NAME) --cov-report=term-missing --cov-config=.coveragerc $(TEST_TARGET)
+	pytest -vv \
+		--color=yes \
+		--cov-config=.coveragerc \
+		--cov-report=term-missing \
+		--cov=$(APP_PACKAGE_NAME) \
+		--durations=10 \
+		--exitfirst \
+		--failed-first \
+		--pdb \
+		$(TEST_TARGET)
 
 
 _run-test-ci: _check_venv_active
 	# runs tests for CI (e.g. w/o pdb but w/ converage)
-	pytest --cov=$(APP_PACKAGE_NAME) --durations=10 --cov-append --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc -v -m "not travis" $(TEST_TARGET)
+	pytest -v \
+		--color=yes \
+		--cov-append \
+		--cov-config=.coveragerc \
+		--cov-report=term-missing \
+		--cov-report=xml \
+		--cov=$(APP_PACKAGE_NAME) \
+		--durations=10 \
+		-m "not travis" \
+		$(TEST_TARGET)
 
 
 .PHONY: _assert_target_defined

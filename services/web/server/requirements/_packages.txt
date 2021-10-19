@@ -159,11 +159,6 @@ typing-extensions==3.10.0.2
     #   -c requirements/_base.txt
     #   aiohttp
     #   pydantic
-ujson==4.0.2
-    # via
-    #   -c requirements/../../../../packages/service-library/requirements/./_base.in
-    #   -c requirements/_base.txt
-    #   -r requirements/../../../../packages/service-library/requirements/_base.in
 werkzeug==2.0.1
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 yarl==1.5.1

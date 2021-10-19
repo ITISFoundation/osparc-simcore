@@ -31,7 +31,7 @@ class DAGsRepository(BaseRepository):
             new_id: int = await (
                 await conn.execute(
                     dags.insert().values(
-                        workbench=json.dumps(dag.dict()["workbench"]),
+                        workbench=dag.json(include={"workbench"}),
                         **dag.dict(exclude={"workbench"})
                     )
                 )
@@ -43,7 +43,7 @@ class DAGsRepository(BaseRepository):
             await conn.execute(
                 dags.update()
                 .values(
-                    workbench=json.dumps(dag.dict()["workbench"]),
+                    workbench=dag.json(include={"workbench"}),
                     **dag.dict(exclude={"workbench"})
                 )
                 .where(dags.c.id == dag_id)

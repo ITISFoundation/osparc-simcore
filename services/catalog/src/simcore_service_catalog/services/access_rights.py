@@ -88,7 +88,7 @@ async def evaluate_default_policy(
             gid=gid,
             execute_access=True,
             write_access=(gid == owner_gid),
-            product_name=app.state.settings.access_rights_default_product_name,
+            product_name=app.state.settings.CATALOG_ACCESS_RIGHTS_DEFAULT_PRODUCT_NAME,
         )
         for gid in set(group_ids)
     ]
@@ -155,11 +155,11 @@ def reduce_access_rights(
     # helper functions to simplify operation of access rights
 
     def get_target(access: ServiceAccessRightsAtDB) -> Tuple[Union[str, int], ...]:
-        """ Hashable identifier of the resource the access rights apply to """
+        """Hashable identifier of the resource the access rights apply to"""
         return tuple([access.key, access.version, access.gid, access.product_name])
 
     def get_flags(access: ServiceAccessRightsAtDB) -> Dict[str, bool]:
-        """ Extracts only """
+        """Extracts only"""
         return access.dict(include={"execute_access", "write_access"})
 
     access_flags_map = {}
