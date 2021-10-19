@@ -3,7 +3,7 @@ info:
   title: api-server
   version: 0.3.0
 servers:
-- url: http://{host}:{port}/v0
+- url: http://{host}:{port}
   description: up-devel
   variables:
     host:
@@ -11,12 +11,12 @@ servers:
     port:
       default: '3006'
 paths:
-  /meta:
+  /v0/meta:
     get:
       tags:
       - meta
       summary: Get Service Metadata
-      operationId: get_service_metadata_meta_get
+      operationId: get_service_metadata_v0_meta_get
       responses:
         '200':
           description: Successful Response
@@ -24,12 +24,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Meta'
-  /me:
+  /v0/me:
     get:
       tags:
       - users
       summary: Get My Profile
-      operationId: get_my_profile_me_get
+      operationId: get_my_profile_v0_me_get
       responses:
         '200':
           description: Successful Response
@@ -41,7 +41,7 @@ paths:
       tags:
       - users
       summary: Update My Profile
-      operationId: update_my_profile_me_put
+      operationId: update_my_profile_v0_me_put
       requestBody:
         content:
           application/json:
@@ -61,28 +61,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /files/files:
+  /v0/files/files:
     get:
       tags:
       - files
       summary: List Files
-      operationId: list_files_files_files_get
+      operationId: list_files_v0_files_files_get
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                title: Response List Files Files Files Get
+                title: Response List Files V0 Files Files Get
                 type: array
                 items:
                   $ref: '#/components/schemas/File'
-  /files/content:
+  /v0/files/content:
     put:
       tags:
       - files
       summary: Upload File
-      operationId: upload_file_files_content_put
+      operationId: upload_file_v0_files_content_put
       responses:
         '200':
           description: Successful Response
@@ -90,12 +90,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/File'
-  /files/{file_id}:
+  /v0/files/{file_id}:
     get:
       tags:
       - files
       summary: Get File
-      operationId: get_file_files__file_id__get
+      operationId: get_file_v0_files__file_id__get
       parameters:
       - required: true
         schema:
@@ -119,12 +119,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /files/{file_id}/content:
+  /v0/files/{file_id}/content:
     get:
       tags:
       - files
       summary: Download File
-      operationId: download_file_files__file_id__content_get
+      operationId: download_file_v0_files__file_id__content_get
       parameters:
       - required: true
         schema:
@@ -154,12 +154,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /solvers/{solver_key}/releases/{version}/jobs:
+  /v0/solvers/{solver_key}/releases/{version}/jobs:
     get:
       tags:
       - solvers
       summary: List Jobs
-      operationId: list_jobs_solvers__solver_key__releases__version__jobs_get
+      operationId: list_jobs_v0_solvers__solver_key__releases__version__jobs_get
       parameters:
       - required: true
         schema:
@@ -180,7 +180,7 @@ paths:
           content:
             application/json:
               schema:
-                title: Response List Jobs Solvers  Solver Key  Releases  Version  Jobs
+                title: Response List Jobs V0 Solvers  Solver Key  Releases  Version  Jobs
                   Get
                 type: array
                 items:
@@ -195,7 +195,7 @@ paths:
       tags:
       - solvers
       summary: Create Job
-      operationId: create_job_solvers__solver_key__releases__version__jobs_post
+      operationId: create_job_v0_solvers__solver_key__releases__version__jobs_post
       parameters:
       - required: true
         schema:
@@ -229,13 +229,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /solvers/{solver_key}/releases/{version}/jobs/{job_id}:
+  /v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:
     get:
       tags:
       - solvers
       summary: Get Job
       description: Gets job of a given solver
-      operationId: get_job_solvers__solver_key__releases__version__jobs__job_id__get
+      operationId: get_job_v0_solvers__solver_key__releases__version__jobs__job_id__get
       parameters:
       - required: true
         schema:
@@ -270,12 +270,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /solvers/{solver_key}/releases/{version}/jobs/{job_id}:start:
+  /v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:start:
     post:
       tags:
       - solvers
       summary: Start Job
-      operationId: start_job_solvers__solver_key__releases__version__jobs__job_id__start_post
+      operationId: start_job_v0_solvers__solver_key__releases__version__jobs__job_id__start_post
       parameters:
       - required: true
         schema:
@@ -310,12 +310,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /solvers/{solver_key}/releases/{version}/jobs/{job_id}:stop:
+  /v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:stop:
     post:
       tags:
       - solvers
       summary: Stop Job
-      operationId: stop_job_solvers__solver_key__releases__version__jobs__job_id__stop_post
+      operationId: stop_job_v0_solvers__solver_key__releases__version__jobs__job_id__stop_post
       parameters:
       - required: true
         schema:
@@ -350,12 +350,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /solvers/{solver_key}/releases/{version}/jobs/{job_id}:inspect:
+  /v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:inspect:
     post:
       tags:
       - solvers
       summary: Inspect Job
-      operationId: inspect_job_solvers__solver_key__releases__version__jobs__job_id__inspect_post
+      operationId: inspect_job_v0_solvers__solver_key__releases__version__jobs__job_id__inspect_post
       parameters:
       - required: true
         schema:
@@ -390,12 +390,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /solvers/{solver_key}/releases/{version}/jobs/{job_id}/outputs:
+  /v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/outputs:
     get:
       tags:
       - solvers
       summary: Get Job Outputs
-      operationId: get_job_outputs_solvers__solver_key__releases__version__jobs__job_id__outputs_get
+      operationId: get_job_outputs_v0_solvers__solver_key__releases__version__jobs__job_id__outputs_get
       parameters:
       - required: true
         schema:
