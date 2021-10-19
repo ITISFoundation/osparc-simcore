@@ -45,7 +45,9 @@ async def get_storage_locations(
     session: ClientSession, user_id: UserID
 ) -> FileLocationArray:
     if not isinstance(user_id, int) or user_id is None:
-        raise exceptions.StorageInvalidCall("invalid call!")
+        raise exceptions.StorageInvalidCall(
+            f"invalid call: user_id '{user_id}' is invalid",
+        )
 
     async with session.get(
         f"{_base_url()}/locations", params={"user_id": f"{user_id}"}
@@ -68,9 +70,13 @@ async def get_download_file_presigned_link(
         or not isinstance(location_id, str)
         or not isinstance(user_id, int)
     ):
-        raise exceptions.StorageInvalidCall("invalid call!")
+        raise exceptions.StorageInvalidCall(
+            f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are invalid",
+        )
     if file_id is None or location_id is None or user_id is None:
-        raise exceptions.StorageInvalidCall("invalid call!")
+        raise exceptions.StorageInvalidCall(
+            f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are not allowed to be empty",
+        )
 
     async with session.get(
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
@@ -95,9 +101,13 @@ async def get_upload_file_presigned_link(
         or not isinstance(location_id, str)
         or not isinstance(user_id, int)
     ):
-        raise exceptions.StorageInvalidCall("invalid call!")
+        raise exceptions.StorageInvalidCall(
+            f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are invalid",
+        )
     if file_id is None or location_id is None or user_id is None:
-        raise exceptions.StorageInvalidCall("invalid call!")
+        raise exceptions.StorageInvalidCall(
+            f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are not allowed to be empty",
+        )
     async with session.put(
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
         params={"user_id": f"{user_id}"},
@@ -121,9 +131,13 @@ async def get_file_metadata(
         or not isinstance(location_id, str)
         or not isinstance(user_id, int)
     ):
-        raise exceptions.StorageInvalidCall("invalid call!")
+        raise exceptions.StorageInvalidCall(
+            f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are invalid",
+        )
     if file_id is None or location_id is None or user_id is None:
-        raise exceptions.StorageInvalidCall("invalid call!")
+        raise exceptions.StorageInvalidCall(
+            f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are not allowed to be empty",
+        )
     async with session.get(
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}/metadata",
         params={"user_id": f"{user_id}"},
