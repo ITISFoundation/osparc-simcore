@@ -156,8 +156,6 @@ def store_link(
             ) as resp:
                 resp.raise_for_status()
 
-        # assert upload.status_code == 200, upload.text
-
         # FIXME: that at this point, S3 and pg have some data that is NOT cleaned up
         return {"store": s3_simcore_location, "path": file_id}
 
