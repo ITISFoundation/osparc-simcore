@@ -111,12 +111,12 @@ class Nodeports(BaseModel):
         tasks = deque()
         for port_key, value in port_values.items():
             # pylint: disable=protected-access
-            if port_key in self.internal_outputs:
+            try:
                 tasks.append(self.internal_outputs[port_key]._set(value))
-            elif port_key in self.internal_inputs:
+            except UnboundPortError:
+                # not available try inputs
+                # if this fails it will raise another exception
                 tasks.append(self.internal_inputs[port_key]._set(value))
-            else:
-                raise UnboundPortError(port_key)
 
         await logged_gather(*tasks)
         await self.save_to_db_cb(self)

@@ -16,6 +16,7 @@ import np_helpers  # pylint: disable=no-name-in-module
 import pytest
 import sqlalchemy as sa
 from simcore_sdk import node_ports_v2
+from simcore_sdk.node_ports_common.exceptions import UnboundPortError
 from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
@@ -627,7 +628,6 @@ async def test_batch_update_inputs_outputs(
     project_id: str,
     node_uuid: str,
     special_configuration: Callable,
-    parallel_int_item_value: int,
     port_count: int,
 ) -> None:
     outputs = [(f"value_out_{i}", "integer", None) for i in range(port_count)]
@@ -640,18 +640,27 @@ async def test_batch_update_inputs_outputs(
     await check_config_valid(PORTS, config_dict)
 
     await PORTS.set_multiple(
-        {port.key: parallel_int_item_value for port in (await PORTS.outputs).values()}
+        {port.key: k for k, port in enumerate((await PORTS.outputs).values())}
     )
     await PORTS.set_multiple(
-        {i: parallel_int_item_value for i in range(len((await PORTS.inputs)))}
+        {
+            port.key: k
+            for k, port in enumerate((await PORTS.inputs).values(), start=1000)
+        }
     )
 
     ports_outputs = await PORTS.outputs
     ports_inputs = await PORTS.inputs
-    for item_key, _, _ in outputs:
-        assert ports_outputs[item_key].value == parallel_int_item_value
-        assert await ports_outputs[item_key].get() == parallel_int_item_value
+    for k, asd in enumerate(outputs):
+        item_key, _, _ = asd
+        assert ports_outputs[item_key].value == k
+        assert await ports_outputs[item_key].get() == k
 
-    for item_key, _, _ in inputs:
-        assert ports_inputs[item_key].value == parallel_int_item_value
-        assert await ports_inputs[item_key].get() == parallel_int_item_value
+    for k, asd in enumerate(inputs, start=1000):
+        item_key, _, _ = asd
+        assert ports_inputs[item_key].value == k
+        assert await ports_inputs[item_key].get() == k
+
+    # test missing key raises error
+    with pytest.raises(UnboundPortError):
+        await PORTS.set_multiple({"missing_key_in_both": 123132})
