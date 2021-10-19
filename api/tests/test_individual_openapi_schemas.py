@@ -45,7 +45,7 @@ def add_namespace_for_converted_schemas(schema_specs: dict):
 
 
 def change_references_to_schemas(filepath: Path, specs: dict):
-    from os.path import relpath, isabs, join, abspath, exists
+    from os.path import abspath, exists, isabs, join, relpath
 
     filedir = filepath.parent
 
@@ -95,17 +95,19 @@ def change_references_to_schemas(filepath: Path, specs: dict):
 
 
 @pytest.fixture(scope="session")
-def converted_specs_testdir(api_specs_dir, all_api_specs_tails, tmpdir_factory):
+def converted_specs_testdir(
+    osparc_simcore_api_specs_dir, all_api_specs_tails, tmpdir_factory
+):
     """
-        - All api_specs files are copied into tmpdir
-        - All openapi files under schemas/ folders are processed into valid openapi specs
-        - All references to these files are replaced from
-            $ref: ... /schemas/some_file.yaml#Reference
-        to
-            $ref: ... /schemas/some_file.yaml#/components/reference/Reference
+    - All api_specs files are copied into tmpdir
+    - All openapi files under schemas/ folders are processed into valid openapi specs
+    - All references to these files are replaced from
+        $ref: ... /schemas/some_file.yaml#Reference
+    to
+        $ref: ... /schemas/some_file.yaml#/components/reference/Reference
 
     """
-    basedir = api_specs_dir
+    basedir = osparc_simcore_api_specs_dir
     testdir = Path(tmpdir_factory.mktemp("converted-specs"))
 
     print(testdir)

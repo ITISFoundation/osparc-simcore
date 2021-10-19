@@ -12,7 +12,7 @@ from typing import Dict, List
 import jsonschema
 import pytest
 import yaml
-from utils import current_repo_dir
+from utils import CURRENT_REPO_DIR
 
 SYNCED_VERSIONS_SUFFIX = [
     ".json",  # json-schema specs file
@@ -53,10 +53,10 @@ def _load_data(fpath: Path):
     params=[
         str(schema_path)
         for suffix in SYNCED_VERSIONS_SUFFIX
-        for schema_path in current_repo_dir.rglob(f"schemas/project*{suffix}")
+        for schema_path in CURRENT_REPO_DIR.rglob(f"schemas/project*{suffix}")
     ],
 )
-def project_schema(request, api_specs_dir):
+def project_schema(request, osparc_simcore_api_specs_dir):
     schema_path = Path(request.param)
     return _load_data(schema_path)
 
@@ -65,11 +65,11 @@ def project_schema(request, api_specs_dir):
 
 
 @pytest.mark.parametrize("data_path", PROJECTS_PATHS)
-def test_project_against_schema(data_path, project_schema, this_repo_root_dir):
+def test_project_against_schema(data_path, project_schema, osparc_simcore_root_dir):
     """
     Both projects and workbench datasets are tested against the project schema
     """
-    data = _load_data(this_repo_root_dir / data_path)
+    data = _load_data(osparc_simcore_root_dir / data_path)
 
     # Adapts workbench-only data: embedds data within a fake project skeleton
     if "workbench" in data_path:
