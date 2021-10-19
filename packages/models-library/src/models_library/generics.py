@@ -18,7 +18,7 @@ DictKey = TypeVar("DictKey")
 DictValue = TypeVar("DictValue")
 
 
-class DictBaseModel(GenericModel, Generic[DictKey, DictValue]):
+class DictModel(GenericModel, Generic[DictKey, DictValue]):
     __root__: Dict[DictKey, DictValue]
 
     def __getitem__(self, k: DictKey) -> DictValue:
@@ -49,7 +49,7 @@ class DictBaseModel(GenericModel, Generic[DictKey, DictValue]):
 DataT = TypeVar("DataT")
 
 
-class ListBaseModel(GenericModel, Generic[DataT]):
+class ListModel(GenericModel, Generic[DataT]):
     __root__: List[DataT]
 
     def __iter__(self):
@@ -62,7 +62,7 @@ class ListBaseModel(GenericModel, Generic[DataT]):
         return len(self.__root__)
 
 
-class DataEnveloped(GenericModel, Generic[DataT]):
+class Envelope(GenericModel, Generic[DataT]):
     data: Optional[DataT]
     error: Optional[Any]
 

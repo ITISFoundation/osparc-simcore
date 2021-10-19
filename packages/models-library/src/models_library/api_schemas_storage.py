@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field, constr
 from pydantic.networks import AnyUrl
 
 from .basic_regex import UUID_RE
-from .generics import DataEnveloped, ListBaseModel
+from .generics import Envelope, ListModel
 
 
 # /
@@ -46,7 +46,7 @@ class FileLocation(BaseModel):
         }
 
 
-FileLocationArray = ListBaseModel[FileLocation]
+FileLocationArray = ListModel[FileLocation]
 
 # /locations/{location_id}/datasets
 
@@ -86,7 +86,7 @@ class DatasetMetaData(BaseModel):
         }
 
 
-DatasetMetaDataArray = ListBaseModel[DatasetMetaData]
+DatasetMetaDataArray = ListModel[DatasetMetaData]
 
 
 # /locations/{location_id}/files/metadata:
@@ -241,19 +241,19 @@ class Error(BaseModel):
 
 
 # ENVELOPES
-HealthCheckEnveloped = DataEnveloped[HealthCheck]
+HealthCheckEnveloped = Envelope[HealthCheck]
 
-FileLocationEnveloped = DataEnveloped[FileLocation]
+FileLocationEnveloped = Envelope[FileLocation]
 
-FileLocationArrayEnveloped = DataEnveloped[FileLocationArray]
+FileLocationArrayEnveloped = Envelope[FileLocationArray]
 
-DatasetMetaDataEnveloped = DataEnveloped[DatasetMetaData]
-DatasetMetaDataArrayEnveloped = DataEnveloped[DatasetMetaDataArray]
+DatasetMetaEnvelope = Envelope[DatasetMetaData]
+DatasetMetaDataArrayEnveloped = Envelope[DatasetMetaDataArray]
 
-FileMetaDataEnveloped = DataEnveloped[FileMetaData]
-FileMetaDataArrayEnveloped = DataEnveloped[FileMetaDataArray]
+FileMetaEnvelope = Envelope[FileMetaData]
+FileMetaDataArrayEnveloped = Envelope[FileMetaDataArray]
 
-PresignedLinkEnveloped = DataEnveloped[PresignedLink]
-LogMessageEnveloped = DataEnveloped[LogMessage]
-FakeEnveloped = DataEnveloped[Fake]
-ErrorEnveloped = DataEnveloped[Any]
+PresignedLinkEnveloped = Envelope[PresignedLink]
+LogMessageEnveloped = Envelope[LogMessage]
+FakeEnveloped = Envelope[Fake]
+ErrorEnveloped = Envelope[Any]

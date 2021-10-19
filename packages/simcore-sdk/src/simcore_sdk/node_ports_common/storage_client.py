@@ -8,7 +8,7 @@ from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
 from models_library.api_schemas_storage import (
     FileLocationArray,
     FileLocationArrayEnveloped,
-    FileMetaDataEnveloped,
+    FileMetaEnvelope,
     PresignedLinkEnveloped,
 )
 from models_library.users import UserID
@@ -143,7 +143,7 @@ async def get_file_metadata(
         params={"user_id": f"{user_id}"},
     ) as response:
         response.raise_for_status()
-        file_metadata_enveloped = FileMetaDataEnveloped.parse_obj(await response.json())
+        file_metadata_enveloped = FileMetaEnvelope.parse_obj(await response.json())
         if file_metadata_enveloped.data is None:
             raise exceptions.S3InvalidPathError(file_id)
         return file_metadata_enveloped.data.dict(by_alias=True)
