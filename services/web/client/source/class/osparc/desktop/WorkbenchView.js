@@ -226,6 +226,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       tabViewPrimary.add(nodesPage);
 
       const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
+        backgroundColor: primaryColumnBGColor,
         dragMechanism: true,
         hideRoot: true
       });
