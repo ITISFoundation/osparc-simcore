@@ -15,12 +15,15 @@ BASE_SERVICE_SPEC: Dict[str, Any] = {
 }
 
 
-def _inject_proxy_configuration(
+def _inject_proxy_network_configuration(
     service_spec: Dict[str, Any],
     target_container: str,
     dynamic_sidecar_network_name: str,
 ) -> None:
-    """Injects configuration to allow the service to be accessible on the uuid.services.SERVICE_DNS"""
+    """
+    Injects network configuration to allow the service
+    to be accessible on `uuid.services.SERVICE_DNS`
+    """
 
     # add external network to existing networks defined in the container
     service_spec["networks"] = {
@@ -94,7 +97,7 @@ async def assemble_spec(
 
     assert container_name is not None  # nosec
 
-    _inject_proxy_configuration(
+    _inject_proxy_network_configuration(
         service_spec,
         target_container=container_name,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
