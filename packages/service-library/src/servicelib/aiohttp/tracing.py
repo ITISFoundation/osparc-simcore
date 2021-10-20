@@ -52,7 +52,7 @@ def setup_tracing(
     zipkin_address = URL(f"{jaeger_base_url}") / "api/v2/spans"
 
     log.debug(
-        "Settings up tracing for %s(%s:%d) -> %s",
+        "Settings up tracing for %s at %s:%d -> %s",
         service_name,
         host,
         port,
@@ -67,7 +67,7 @@ def setup_tracing(
         )
 
     # WARNING: adds a middleware that should be the outermost since
-    # it expects stream responses and not flexible handler returns
+    # it expects stream responses while we allow data returns from a handler
     az.setup(app, tracer)
 
     return True
