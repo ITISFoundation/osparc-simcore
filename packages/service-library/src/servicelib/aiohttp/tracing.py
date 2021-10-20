@@ -5,10 +5,11 @@ import asyncio
 import logging
 import time
 from contextlib import contextmanager
-from typing import Union
+from typing import Iterable, Optional, Union
 
 import aiozipkin as az
 from aiohttp import web
+from aiohttp.web import AbstractRoute
 from aiozipkin.tracer import Tracer
 from yarl import URL
 
@@ -44,6 +45,7 @@ def setup_tracing(
     host: str,
     port: int,
     jaeger_base_url: Union[URL, str],
+    skip_routes: Optional[Iterable[AbstractRoute]] = None,
 ) -> bool:
     """
     Sets up this service for a distributed tracing system
@@ -68,6 +70,6 @@ def setup_tracing(
 
     # WARNING: adds a middleware that should be the outermost since
     # it expects stream responses while we allow data returns from a handler
-    az.setup(app, tracer)
+    az.setup(app, tracer, skip_routes=skip_routes)
 
     return True

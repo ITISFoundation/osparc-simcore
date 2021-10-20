@@ -2,12 +2,17 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import itertools
 from asyncio import AbstractEventLoop
 from typing import Callable
 
 import pytest
 from aiohttp import web
+from aiohttp.client_reqrep import ClientResponse
 from aiohttp.test_utils import TestClient
+from aiohttp.web_exceptions import HTTPBadRequest
+from aiohttp.web_response import Response
+from servicelib.aiohttp.rest_responses import _collect_http_exceptions, get_http_error
 from servicelib.aiohttp.tracing import DEFAULT_JAEGER_BASE_URL, setup_tracing
 
 
@@ -17,18 +22,31 @@ def client(
 ) -> TestClient:
     ports = [aiohttp_unused_port() for _ in range(2)]
 
-    async def ok(request: web.Request) -> web.Response:
-        return web.HTTPOk()
+    async def redirect(request: web.Request) -> web.Response:
+        return web.HTTPFound(location="/return/200")
 
-    async def fail_with(request: web.Request) -> web.Response:
+    async def return_response(request: web.Request) -> web.Response:
         code = int(request.match_info["code"])
         return web.Response(status=code)
+
+    async def raise_response(request: web.Request):
+        status_code = int(request.match_info["code"])
+        status_to_http_exception = _collect_http_exceptions()
+        http_exception_cls = status_to_http_exception[status_code]
+        raise http_exception_cls(
+            reason=f"raised from raised_error with code {status_code}"
+        )
+
+    async def skip(request: web.Request):
+        return web.HTTPServiceUnavailable(reason="should not happen")
 
     app = web.Application()
     app.add_routes(
         [
-            web.get("/ok", ok),
-            web.get("/fail/{code}", fail_with),
+            web.get("/redirect", redirect),
+            web.get("/return/{code}", return_response),
+            web.get("/raise/{code}", raise_response),
+            web.get("/skip", skip, name="skip"),
         ]
     )
 
@@ -37,12 +55,17 @@ def client(
         print(resource)
 
     # UNDER TEST ---
+    # SEE RoutesView
+    resource = app.router["skip"]
+    routes_in_a_resource = [r for r in resource]
+
     setup_tracing(
         app,
         service_name=f"{__name__}.client",
         host="127.0.0.1",
         port=ports[0],
         jaeger_base_url=DEFAULT_JAEGER_BASE_URL,
+        skip_routes=routes_in_a_resource,
     )
 
     return loop.run_until_complete(
@@ -50,15 +73,25 @@ def client(
     )
 
 
-async def test_it(client: TestClient):
+async def test_setup_tracing(client: TestClient):
 
-    # res = await client.get("/ok")
-    # assert res.status == web.HTTPOk.status_code
+    res: ClientResponse
 
-    # for code in range(400, 500):
-    #     res = await client.get(f"/fail/{code}")
-    #     assert res.status == code
+    # on error
+    for code in (web.HTTPOk.status_code, web.HTTPBadRequest.status_code):
+        res = await client.get(f"/return/{code}")
 
-    # POST instead of GET --> HTTPM
-    res = await client.post("/ok")
+        assert res.status == code, await res.text()
+        res = await client.get(f"/raise/{code}")
+        assert res.status == code, await res.text()
+
+    res = await client.get("/redirect")
+    # TODO: check it was redirected
+    assert res.status == 200, await res.text()
+
+    res = await client.get("/skip")
+    assert res.status == web.HTTPServiceUnavailable.status_code
+
+    # using POST instead of GET ->  HTTPMethodNotAllowed
+    res = await client.post("/skip")
     assert res.status == web.HTTPMethodNotAllowed.status_code, "GET and not POST"

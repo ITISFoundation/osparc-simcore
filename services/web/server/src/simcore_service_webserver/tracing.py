@@ -27,10 +27,14 @@ def setup_app_tracing(app: web.Application):
     host = config["main"]["host"]
     port = config["main"]["port"]
 
+    cfg = config[CONFIG_SECTION_NAME]
+
     # TODO: this should be part of app settings but
     # temporary here until
     # https://github.com/ITISFoundation/osparc-simcore/pull/2376 is completed
-    zipkin_endpoint = config[CONFIG_SECTION_NAME]["zipkin_endpoint"]
+    zipkin_endpoint = cfg["zipkin_endpoint"]
+
+    # TODO: skip all routes that are ouside vX ??
 
     return setup_tracing(
         app,
@@ -38,4 +42,5 @@ def setup_app_tracing(app: web.Application):
         host=host,
         port=port,
         jaeger_base_url=zipkin_endpoint,
+        skip_routes=None,
     )
