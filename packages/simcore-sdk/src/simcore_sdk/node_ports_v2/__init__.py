@@ -1,12 +1,9 @@
 import logging
 from typing import Optional
 
-import aiohttp
-
 from ..node_ports_common import config as node_config
 from ..node_ports_common import exceptions
 from ..node_ports_common.dbmanager import DBManager
-from ..node_ports_common.http_client_manager import ClientSessionContextManager
 from .nodeports_v2 import Nodeports
 from .port import Port
 from .serialization_v2 import load

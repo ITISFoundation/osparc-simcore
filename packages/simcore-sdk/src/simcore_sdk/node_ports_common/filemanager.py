@@ -177,29 +177,6 @@ async def get_upload_link_from_s3(
         )
 
 
-async def get_upload_link_from_s3(
-    *,
-    user_id: int,
-    store_name: str = None,
-    store_id: str = None,
-    s3_object: str,
-    client_session: Optional[ClientSession] = None,
-) -> Tuple[str, URL]:
-    if store_name is None and store_id is None:
-        raise exceptions.NodeportsException(msg="both store name and store id are None")
-
-    async with ClientSessionContextManager(client_session) as session:
-        if store_name is not None:
-            store_id = await _get_location_id_from_location_name(
-                user_id, store_name, session
-            )
-        assert store_id is not None  # nosec
-        return (
-            store_id,
-            await _get_upload_link(user_id, store_id, s3_object, session),
-        )
-
-
 async def download_file_from_s3(
     *,
     user_id: int,
