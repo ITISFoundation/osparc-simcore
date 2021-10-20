@@ -176,8 +176,8 @@ def validate_middleware_factory(api_version: str) -> Middleware:
     return _middleware_handler
 
 
-_FlexibleReturns = Union[StreamResponse, _DataType]
-HandlerFlexible = Callable[[Request], Awaitable[_FlexibleReturns]]
+_ResponseOrBodyData = Union[StreamResponse, _DataType]
+HandlerFlexible = Callable[[Request], Awaitable[_ResponseOrBodyData]]
 MiddlewareFlexible = Callable[[Request, HandlerFlexible], Awaitable[StreamResponse]]
 
 
@@ -199,7 +199,7 @@ def envelope_middleware_factory(api_version: str) -> MiddlewareFlexible:
             return resp
 
         # WARNING: this is not a handler in the classic way
-        resp: _FlexibleReturns = await handler(request)
+        resp: _ResponseOrBodyData = await handler(request)
 
         if isinstance(resp, web.FileResponse):
             # WARNING: allows for files to be downloaded
