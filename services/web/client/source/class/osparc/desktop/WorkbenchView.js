@@ -89,7 +89,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
               return oldWidth;
             }
           });
-          osparc.utils.Utils.addBorder(control, 2, "right");
           sidePanels.add(control, 1); // flex 1
           break;
         }
@@ -109,7 +108,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
               return oldWidth;
             }
           });
-          osparc.utils.Utils.addBorder(control, 2, "right");
+          osparc.utils.Utils.addBorder(control, 1, "right");
           sidePanels.add(control, 1); // flex 1
           break;
         }
@@ -121,6 +120,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           });
           const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
           collapsibleViewLeft.setContent(control);
+          control.setBackgroundColor("background-main-lighter+");
+          collapsibleViewLeft.getChildControl("expand-button").setBackgroundColor("background-main-lighter+");
+          collapsibleViewLeft.getChildControl("collapse-button").setBackgroundColor("background-main-lighter+");
           break;
         }
         case "side-panel-right-tabs": {
@@ -154,14 +156,18 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__workbenchPanel.getToolbar().setStudy(study);
     },
 
-    __createTabPage: function(icon, tooltip, widget) {
+    __createTabPage: function(icon, tooltip, widget, backgroundColor = "background-main") {
       const tabPage = new qx.ui.tabview.Page().set({
         layout: new qx.ui.layout.VBox(5),
-        backgroundColor: "background-main",
+        backgroundColor,
         icon: icon+"/24"
       });
-      tabPage.getChildControl("button").set({
-        toolTipText: tooltip
+      const tabPageBtn = tabPage.getChildControl("button").set({
+        toolTipText: tooltip,
+        backgroundColor
+      });
+      tabPageBtn.bind("value", tabPageBtn, "backgroundColor", {
+        converter: val => val ? backgroundColor : "contrasted-background+"
       });
       if (widget) {
         tabPage.add(widget, {
@@ -182,17 +188,26 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __initPrimaryColumn: function() {
+      const primaryColumnBGColor = "background-main-lighter+";
       const study = this.getStudy();
 
       const tabViewPrimary = this.getChildControl("side-panel-left-tabs");
       this.__removePages(tabViewPrimary);
+      tabViewPrimary.setBackgroundColor("background-main-lighter+");
+      const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
+      collapsibleViewLeft.getChildControl("expand-button").setBackgroundColor(primaryColumnBGColor);
+      collapsibleViewLeft.getChildControl("collapse-button").setBackgroundColor(primaryColumnBGColor);
+
 
       const topBar = tabViewPrimary.getChildControl("bar");
       this.__addTopBarSpacer(topBar);
 
-      const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
+      const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
+        backgroundColor: primaryColumnBGColor
+      });
 
       const studyTreeItem = this.__studyTreeItem = new osparc.component.widget.StudyTitleOnlyTree().set({
+        backgroundColor: primaryColumnBGColor,
         minHeight: 21,
         maxHeight: 24
       });
@@ -200,13 +215,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       homeAndNodesTree.add(studyTreeItem);
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree().set({
+        backgroundColor: primaryColumnBGColor,
         hideRoot: true
       });
       nodesTree.setStudy(study);
       homeAndNodesTree.add(nodesTree, {
         flex: 1
       });
-      const nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree);
+      const nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, primaryColumnBGColor);
       tabViewPrimary.add(nodesPage);
 
       const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
@@ -214,7 +230,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         hideRoot: true
       });
       filesTree.populateTree();
-      const storagePage = this.__storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTree);
+      const storagePage = this.__storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTree, primaryColumnBGColor);
       tabViewPrimary.add(storagePage);
 
       this.__addTopBarSpacer(topBar);
@@ -283,7 +299,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __addTopBarSpacer: function(tabViewTopBar) {
-      const spacer = new qx.ui.core.Spacer();
+      const spacer = new qx.ui.core.Widget().set({
+        backgroundColor: "contrasted-background+"
+      });
       tabViewTopBar.add(spacer, {
         flex: 1
       });
