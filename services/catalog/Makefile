@@ -3,6 +3,7 @@
 #
 include ../../scripts/common.Makefile
 include ../../scripts/common-service.Makefile
+include ../../scripts/common-service-fastapi.Makefile
 
 
 .PHONY: requirements reqs
@@ -10,13 +11,7 @@ requirements reqs: ## (or reqs) compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
 
 
-
-
-
 # DEVELOPMENT ########
-
-.env:
-	cp .env-devel $@
 
 
 .PHONY: run-devel up-extra down down-extra
@@ -49,16 +44,3 @@ run-devel: .env up-extra  ## starts app with extra stack
 run-prod: .env up-extra
 	# start app (within $<) in prod mode
 	$(APP_CLI_NAME)
-
-
-
-# BUILD #####################
-
-.PHONY: openapi-specs openapi.json
-openapi-specs: openapi.json
-openapi.json: .env
-	# generating openapi specs file
-	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
-	# validates OAS file: $@
-	@cd $(CURDIR); \
-	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
