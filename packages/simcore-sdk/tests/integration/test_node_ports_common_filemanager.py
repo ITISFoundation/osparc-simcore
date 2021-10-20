@@ -39,6 +39,12 @@ async def test_valid_upload_download(
     assert store_id == s3_simcore_location
     assert e_tag
 
+    get_store_id, get_e_tag = await filemanager.get_file_metadata(
+        user_id=user_id, store_id=store_id, s3_object=file_id
+    )
+    assert get_store_id == store_id
+    assert get_e_tag == e_tag
+
     download_folder = Path(tmpdir) / "downloads"
     download_file_path = await filemanager.download_file_from_s3(
         user_id=user_id,
@@ -110,12 +116,12 @@ async def test_errors_upon_invalid_file_identifiers(
         )
 
     download_folder = Path(tmpdir) / "downloads"
-    with pytest.raises(exceptions.InvalidDownloadLinkError):
+    with pytest.raises(exceptions.StorageInvalidCall):
         await filemanager.download_file_from_s3(
             user_id=user_id, store_id=store, s3_object="", local_folder=download_folder
         )
 
-    with pytest.raises(exceptions.InvalidDownloadLinkError):
+    with pytest.raises(exceptions.StorageInvalidCall):
         await filemanager.download_file_from_s3(
             user_id=user_id,
             store_id=store,
@@ -207,15 +213,15 @@ async def test_invalid_call_raises_exception(
     file_id = create_valid_file_uuid(file_path)
     assert file_path.exists() is False
 
-    with pytest.raises(exceptions.NodeportsException):
+    with pytest.raises(exceptions.StorageInvalidCall):
         await filemanager.entry_exists(
             user_id=None, store_id=s3_simcore_location, s3_object=file_id  # type: ignore
         )
-    with pytest.raises(exceptions.NodeportsException):
+    with pytest.raises(exceptions.StorageInvalidCall):
         await filemanager.entry_exists(
             user_id=user_id, store_id=None, s3_object=file_id  # type: ignore
         )
-    with pytest.raises(exceptions.NodeportsException):
+    with pytest.raises(exceptions.StorageInvalidCall):
         await filemanager.entry_exists(
             user_id=user_id, store_id=s3_simcore_location, s3_object=None  # type: ignore
         )

@@ -69,6 +69,8 @@ docopt==0.6.2
     #   docker-compose
 faker==8.13.2
     # via -r requirements/_test.in
+icdiff==2.0.4
+    # via pytest-icdiff
 idna==2.10
     # via
     #   -c requirements/_base.txt
@@ -107,6 +109,8 @@ platformdirs==2.3.0
     # via pylint
 pluggy==1.0.0
     # via pytest
+pprintpp==0.4.0
+    # via pytest-icdiff
 ptvsd==4.3.2
     # via -r requirements/_test.in
 py==1.10.0
@@ -129,6 +133,7 @@ pytest==6.2.5
     #   pytest-aiohttp
     #   pytest-cov
     #   pytest-docker
+    #   pytest-icdiff
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
@@ -137,6 +142,8 @@ pytest-aiohttp==0.3.0
 pytest-cov==2.12.1
     # via -r requirements/_test.in
 pytest-docker==0.10.3
+    # via -r requirements/_test.in
+pytest-icdiff==0.5
     # via -r requirements/_test.in
 pytest-instafail==0.4.2
     # via -r requirements/_test.in

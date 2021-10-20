@@ -1,10 +1,10 @@
-DatasetMetaDataEnveloped:
+DatasetMetaEnvelope:
   type: object
   required:
     - data
   properties:
     data:
-      $ref: '#DatasetMetaData'
+      $ref: "#DatasetMetaData"
     error:
       nullable: true
       default: null
@@ -17,10 +17,10 @@ DatasetMetaData:
     display_name:
       type: string
   example:
-    dataset_uuid: 'N:id-aaaa'
+    dataset_uuid: "N:id-aaaa"
     display_name: "simcore-testing"
 
 DatasetMetaDataArray:
   type: array
   items:
-    $ref: '#/DatasetMetaData'
+    $ref: "#/DatasetMetaData"
