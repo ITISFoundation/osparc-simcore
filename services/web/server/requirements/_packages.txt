@@ -23,7 +23,7 @@ aiopg==1.2.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
-aiozipkin==1.1.0
+aiozipkin==0.7.1
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 async-timeout==3.0.1
     # via
