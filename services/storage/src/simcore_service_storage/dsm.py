@@ -388,15 +388,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                     file_metadata = to_meta_data_extended(row)
                     if file_metadata.fmd.entity_tag is None:
                         # we need to update from S3 here since the database is not up-to-date
-<<<<<<< HEAD
-<<<<<<< HEAD
                         file_metadata = await self.update_database_from_storage(
-=======
-                        file_metadata = await self._update_metadata_from_storage(
->>>>>>> auto update the database on need
-=======
-                        file_metadata = await self.update_database_from_storage(
->>>>>>> use tenacity instead of self made retryal
                             file_metadata.fmd.file_uuid,
                             file_metadata.fmd.bucket_name,
                             file_metadata.fmd.object_name,
@@ -426,54 +418,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         # api_token, api_secret = self._get_datcore_tokens(user_id)
         # await dcw.upload_file_to_id(destination_id, local_file_path)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     async def update_database_from_storage(
-=======
-    async def _update_metadata_from_storage(
-=======
-    async def update_database_from_storage(
->>>>>>> use tenacity instead of self made retryal
-        self, file_uuid: str, bucket_name: str, object_name: str
-    ) -> Optional[FileMetaDataEx]:
-        try:
-            async with self._create_aiobotocore_client_context() as aioboto_client:
-                result = await aioboto_client.head_object(
-                    Bucket=bucket_name, Key=object_name
-                )  # type: ignore
-
-                file_size = result["ContentLength"]  # type: ignore
-                last_modified = result["LastModified"]  # type: ignore
-                entity_tag = result["ETag"].strip('"')  # type: ignore
-
-                async with self.engine.acquire() as conn:
-                    result: ResultProxy = await conn.execute(
-                        file_meta_data.update()
-                        .where(file_meta_data.c.file_uuid == file_uuid)
-                        .values(
-                            file_size=file_size,
-                            last_modified=last_modified,
-                            entity_tag=entity_tag,
-                        )
-                        .returning(literal_column("*"))
-                    )
-                    if not result:
-                        return None
-                    row: Optional[RowProxy] = await result.first()
-                    if not row:
-                        return None
-
-                    return to_meta_data_extended(row)
-        except botocore.exceptions.ClientError:
-            logger.warning(
-                "Error happened while trying to access %s", file_uuid, exc_info=True
-            )
-            # the file is not existing or some error happened
-            return None
-
-<<<<<<< HEAD
-    async def _metadata_file_updater(
->>>>>>> auto update the database on need
         self,
         file_uuid: str,
         bucket_name: str,
@@ -521,37 +466,16 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     @retry(
         stop=stop_after_delay(3600),
         wait=wait_exponential(multiplier=0.1, exp_base=1.2, max=30),
-=======
-    @retry(
-        stop=stop_after_attempt(50),
-<<<<<<< HEAD
-        wait=wait_exponential(),
->>>>>>> use tenacity instead of self made retryal
-=======
-        wait=wait_exponential(multiplier=0.1, exp_base=1.2, max=2),
->>>>>>> this should now be fixed
         retry=(
             retry_if_exception_type() | retry_if_result(lambda result: result is None)
         ),
         before_sleep=before_sleep_log(logger, logging.INFO),
     )
-<<<<<<< HEAD
-<<<<<<< HEAD
     async def auto_update_database_from_storage_task(
         self, file_uuid: str, bucket_name: str, object_name: str
     ):
         return await self.update_database_from_storage(
             file_uuid, bucket_name, object_name, silence_exception=True
-=======
-    async def auto_update_database_from_storage(
-=======
-    async def auto_update_database_from_storage_task(
->>>>>>> this should now be fixed
-        self, file_uuid: str, bucket_name: str, object_name: str
-    ):
-        return await self.update_database_from_storage(
-            file_uuid, bucket_name, object_name
->>>>>>> use tenacity instead of self made retryal
         )
 
     async def upload_link(self, user_id: str, file_uuid: str):
@@ -600,15 +524,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         # a parallel task is tarted which will update the metadata of the updated file
         # once the update has finished.
         fire_and_forget_task(
-<<<<<<< HEAD
-<<<<<<< HEAD
             self.auto_update_database_from_storage_task(
-=======
-            self.auto_update_database_from_storage(
->>>>>>> use tenacity instead of self made retryal
-=======
-            self.auto_update_database_from_storage_task(
->>>>>>> this should now be fixed
                 file_uuid=file_uuid,
                 bucket_name=bucket_name,
                 object_name=object_name,

@@ -183,45 +183,21 @@ async def test_update_metadata_from_storage(
     fmd = await _upload_file(dsm_fixture, fmd, Path(tmp_file))
 
     assert (
-<<<<<<< HEAD
-<<<<<<< HEAD
         await dsm_fixture.update_database_from_storage(  # pylint: disable=protected-access
-=======
-        await dsm_fixture._update_metadata_from_storage(  # pylint: disable=protected-access
->>>>>>> auto update the database on need
-=======
-        await dsm_fixture.update_database_from_storage(  # pylint: disable=protected-access
->>>>>>> use tenacity instead of self made retryal
             "some_fake_uuid", fmd.bucket_name, fmd.object_name
         )
         is None
     )
 
     assert (
-<<<<<<< HEAD
-<<<<<<< HEAD
         await dsm_fixture.update_database_from_storage(  # pylint: disable=protected-access
-=======
-        await dsm_fixture._update_metadata_from_storage(  # pylint: disable=protected-access
->>>>>>> auto update the database on need
-=======
-        await dsm_fixture.update_database_from_storage(  # pylint: disable=protected-access
->>>>>>> use tenacity instead of self made retryal
             fmd.file_uuid, "some_fake_bucket", fmd.object_name
         )
         is None
     )
 
     assert (
-<<<<<<< HEAD
-<<<<<<< HEAD
         await dsm_fixture.update_database_from_storage(  # pylint: disable=protected-access
-=======
-        await dsm_fixture._update_metadata_from_storage(  # pylint: disable=protected-access
->>>>>>> auto update the database on need
-=======
-        await dsm_fixture.update_database_from_storage(  # pylint: disable=protected-access
->>>>>>> use tenacity instead of self made retryal
             fmd.file_uuid, fmd.bucket_name, "some_fake_object"
         )
         is None
@@ -229,15 +205,7 @@ async def test_update_metadata_from_storage(
 
     file_metadata: Optional[
         FileMetaDataEx
-<<<<<<< HEAD
-<<<<<<< HEAD
     ] = await dsm_fixture.update_database_from_storage(  # pylint: disable=protected-access
-=======
-    ] = await dsm_fixture._update_metadata_from_storage(  # pylint: disable=protected-access
->>>>>>> auto update the database on need
-=======
-    ] = await dsm_fixture.update_database_from_storage(  # pylint: disable=protected-access
->>>>>>> use tenacity instead of self made retryal
         fmd.file_uuid, fmd.bucket_name, fmd.object_name
     )
     assert file_metadata is not None
@@ -259,60 +227,7 @@ async def test_links_s3(
 
     dsm = dsm_fixture
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     fmd = await _upload_file(dsm_fixture, fmd, Path(tmp_file))
-
-    # test wrong user
-    assert await dsm.list_file("654654654", fmd.location, fmd.file_uuid) is None
-
-    # test wrong location
-    assert await dsm.list_file(fmd.user_id, "whatever_location", fmd.file_uuid) is None
-
-    # test wrong file uuid
-    with pytest.raises(InvalidFileIdentifier):
-        await dsm.list_file(fmd.user_id, fmd.location, "some_fake_uuid")
-    # use correctly
-    file_metadata: Optional[FileMetaDataEx] = await dsm.list_file(
-        fmd.user_id, fmd.location, fmd.file_uuid
-    )
-    assert file_metadata is not None
-    excluded_fields = [
-        "project_id",
-        "project_name",
-        "node_name",
-        "user_name",
-        "display_file_path",
-        "created_at",
-        "last_modified",
-    ]
-    for field in FileMetaData.__attrs_attrs__:
-        if field.name not in excluded_fields:
-            if field.name == "location_id":
-                assert int(
-                    file_metadata.fmd.__getattribute__(field.name)
-                ) == fmd.__getattribute__(
-                    field.name
-                ), f"{field.name}: expected {fmd.__getattribute__(field.name)} vs {file_metadata.fmd.__getattribute__(field.name)}"
-            else:
-                assert file_metadata.fmd.__getattribute__(
-                    field.name
-                ) == fmd.__getattribute__(
-                    field.name
-                ), f"{field.name}: expected {fmd.__getattribute__(field.name)} vs {file_metadata.fmd.__getattribute__(field.name)}"
-=======
-    up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
-    with io.open(tmp_file, "rb") as fp:
-        d = fp.read()
-        req = urllib.request.Request(up_url, data=d, method="PUT")
-        with urllib.request.urlopen(req) as _f:
-            entity_tag = _f.headers.get("ETag")
-            assert entity_tag is not None
-            fmd.entity_tag = entity_tag.strip('"')
->>>>>>> test runs well
-=======
-    fmd = await _upload_file(dsm_fixture, fmd, Path(tmp_file))
->>>>>>> auto update the database on need
 
     # test wrong user
     assert await dsm.list_file("654654654", fmd.location, fmd.file_uuid) is None

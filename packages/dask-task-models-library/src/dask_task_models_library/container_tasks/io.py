@@ -3,7 +3,7 @@ from contextlib import suppress
 from pathlib import Path
 from typing import Any, Dict, Optional, Union, cast
 
-from models_library.generics import DictBaseModel
+from models_library.generics import DictModel
 from models_library.services import PROPERTY_KEY_RE
 from pydantic import (
     AnyUrl,
@@ -76,8 +76,8 @@ PortValue = Union[StrictBool, StrictInt, StrictFloat, StrictStr, FileUrl, None]
 PortSchemaValue = Union[PortSchema, FilePortSchema]
 
 
-class TaskInputData(DictBaseModel[PortKey, PortValue]):
-    class Config(DictBaseModel.Config):
+class TaskInputData(DictModel[PortKey, PortValue]):
+    class Config(DictModel.Config):
         schema_extra = {
             "examples": [
                 {
@@ -91,8 +91,8 @@ class TaskInputData(DictBaseModel[PortKey, PortValue]):
         }
 
 
-class TaskOutputDataSchema(DictBaseModel[PortKey, PortSchemaValue]):
-    class Config(DictBaseModel.Config):
+class TaskOutputDataSchema(DictModel[PortKey, PortSchemaValue]):
+    class Config(DictModel.Config):
         schema_extra = {
             "examples": [
                 {
@@ -114,7 +114,7 @@ class TaskOutputDataSchema(DictBaseModel[PortKey, PortSchemaValue]):
         }
 
 
-class TaskOutputData(DictBaseModel[PortKey, PortValue]):
+class TaskOutputData(DictModel[PortKey, PortValue]):
     @classmethod
     def from_task_output(
         cls, schema: TaskOutputDataSchema, output_folder: Path
@@ -149,7 +149,7 @@ class TaskOutputData(DictBaseModel[PortKey, PortValue]):
         # NOTE: this cast is necessary to make mypy happy
         return cast(TaskOutputData, cls.parse_obj(data))
 
-    class Config(DictBaseModel.Config):
+    class Config(DictModel.Config):
         schema_extra = {
             "examples": [
                 {
