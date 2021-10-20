@@ -5,8 +5,9 @@ import sys
 import tempfile
 import time
 import zipfile
+from collections import deque
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple, cast
+from typing import Coroutine, Deque, Dict, List, Optional, Set, Tuple, cast
 
 from pydantic import ByteSize
 from servicelib.archiving_utils import PrunableFolder, archive_dir, unarchive_dir
@@ -53,6 +54,7 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
     # let's gather the tasks
     temp_files: List[Path] = []
     ports_values: Dict[str, ItemConcreteValue] = {}
+    archiving_tasks: Deque[Coroutine] = deque()
 
     for port in (await PORTS.outputs).values():
         logger.info("Checking port %s", port.key)
@@ -67,12 +69,10 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
 
             if not files_and_folders_list:
                 ports_values[port.key] = None
-                # ports_values.append((port, None))
                 continue
 
             if len(files_and_folders_list) == 1 and files_and_folders_list[0].is_file():
                 # special case, direct upload
-                # ports_values.append((port, files_and_folders_list[0]))
                 ports_values[port.key] = files_and_folders_list[0]
                 continue
 
@@ -81,22 +81,22 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
             tmp_file = Path(tempfile.mkdtemp()) / f"{src_folder.stem}.zip"
             temp_files.append(tmp_file)
 
-            # TODO: should compress multiple directories in parallel!
-            # not one at a time
-            await archive_dir(
-                dir_to_compress=src_folder,
-                destination=tmp_file,
-                compress=False,
-                store_relative_path=True,
+            # when having multiple directories it is important to
+            # run the compression in parallel to guarantee better performance
+            archiving_tasks.append(
+                archive_dir(
+                    dir_to_compress=src_folder,
+                    destination=tmp_file,
+                    compress=False,
+                    store_relative_path=True,
+                )
             )
-            # ports_values.append((port, tmp_file))
             ports_values[port.key] = tmp_file
         else:
             data_file = outputs_path / _KEY_VALUE_FILE_NAME
             if data_file.exists():
                 data = json.loads(data_file.read_text())
                 if port.key in data and data[port.key] is not None:
-                    # ports_values.append((port, data[port.key]))
                     ports_values[port.key] = data[port.key]
                 else:
                     logger.debug("Port %s not found in %s", port.key, data)
@@ -104,6 +104,8 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
                 logger.debug("No file %s to fetch port values from", data_file)
 
     try:
+        if archiving_tasks:
+            await logged_gather(*archiving_tasks)
         await PORTS.set_multiple(ports_values)
     finally:
         # clean up possible compressed files
