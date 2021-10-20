@@ -5,7 +5,6 @@ from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.tracing import setup_tracing
-from settings_library.tracing import TracingSettings
 
 CONFIG_SECTION_NAME = "tracing"
 
@@ -31,15 +30,12 @@ def setup_app_tracing(app: web.Application):
     # TODO: this should be part of app settings but
     # temporary here until
     # https://github.com/ITISFoundation/osparc-simcore/pull/2376 is completed
-    cfg = config[CONFIG_SECTION_NAME]
-
-    settings = TracingSettings()
-    assert str(settings.TRACING_ZIPKIN_ENDPOINT) == str(cfg["zipkin_endpoint"])  # nosec
+    zipkin_endpoint = config[CONFIG_SECTION_NAME]["zipkin_endpoint"]
 
     return setup_tracing(
         app,
         service_name="simcore_service_webserver",
         host=host,
         port=port,
-        jaeger_base_url=str(settings.TRACING_ZIPKIN_ENDPOINT),
+        jaeger_base_url=zipkin_endpoint,
     )

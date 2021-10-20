@@ -5,7 +5,6 @@
 from asyncio import AbstractEventLoop
 from typing import Callable
 
-import aiohttp
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -38,14 +37,13 @@ def client(
         print(resource)
 
     # UNDER TEST ---
-    if 1:
-        setup_tracing(
-            app,
-            service_name=f"{__name__}.client",
-            host="127.0.0.1",
-            port=ports[0],
-            jaeger_base_url=DEFAULT_JAEGER_BASE_URL,
-        )
+    setup_tracing(
+        app,
+        service_name=f"{__name__}.client",
+        host="127.0.0.1",
+        port=ports[0],
+        jaeger_base_url=DEFAULT_JAEGER_BASE_URL,
+    )
 
     return loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": ports[0]})
