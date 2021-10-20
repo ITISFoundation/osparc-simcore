@@ -54,7 +54,7 @@ def client(
     # UNDER TEST ---
     # SEE RoutesView to understand how resources can be iterated to get routes
     resource = app.router["skip"]
-    routes_in_a_resource = [r for r in resource]
+    routes_in_a_resource = list(resource)
 
     setup_tracing(
         app,
