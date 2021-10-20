@@ -214,7 +214,7 @@ async def get_file_metadata(request: web.Request):
         )
         # when no metadata is found
         if data is None:
-            return {"error": "No result found", "data": {}}
+            return {"error": "No result found"}
 
         return {
             "error": None,
