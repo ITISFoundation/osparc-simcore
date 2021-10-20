@@ -17,7 +17,6 @@
 --editable ../../packages/pytest-simcore/
 --editable ../../packages/simcore-sdk
 --editable ../../packages/service-library[fastapi]
---editable ../../services/storage/client-sdk/python/
 --editable ../../packages/settings-library
 
 # installs current package

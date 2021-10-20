@@ -148,8 +148,6 @@ ENV SC_BUILD_TARGET=development \
 
 WORKDIR /devel
 
-COPY --chown=scu:scu services/storage/client-sdk/python/ services/storage/client-sdk/python/
-
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
 ENTRYPOINT ["/bin/sh", "services/director-v2/docker/entrypoint.sh"]

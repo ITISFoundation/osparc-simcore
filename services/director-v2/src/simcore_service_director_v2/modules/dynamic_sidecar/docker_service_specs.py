@@ -222,20 +222,6 @@ async def get_dynamic_sidecar_spec(
                     "Type": "bind",
                 }
             )
-            storage_client_sdk_path = (
-                dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
-                / ".."
-                / "storage"
-                / "client-sdk"
-                / "python"
-            )
-            mounts.append(
-                {
-                    "Source": str(storage_client_sdk_path),
-                    "Target": "/devel/services/storage/client-sdk/python",
-                    "Type": "bind",
-                }
-            )
     # expose this service on an empty port
     if dynamic_sidecar_settings.DYNAMIC_SIDECAR_EXPOSE_PORT:
         endpint_spec["Ports"] = [
