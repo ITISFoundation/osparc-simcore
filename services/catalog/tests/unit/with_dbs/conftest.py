@@ -55,6 +55,7 @@ def director_mockup(app: FastAPI) -> MockRouter:
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
+        respx_mock.head("/", name="healthcheck").respond(200, json={"health": "OK"})
         respx_mock.get("/services", name="list_services").respond(
             200, json={"data": []}
         )

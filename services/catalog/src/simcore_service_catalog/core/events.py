@@ -51,7 +51,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
             await connect_to_db(app)
 
         # setup connection to director
-        setup_director(app)
+        await setup_director(app)
 
         if app.state.settings.CATALOG_DIRECTOR:
             # FIXME: check director service is in place and ready. Hand-shake??
