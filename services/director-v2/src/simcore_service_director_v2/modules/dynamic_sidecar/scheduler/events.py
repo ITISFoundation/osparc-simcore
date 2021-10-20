@@ -223,12 +223,9 @@ class CreateUserServices(DynamicSchedulerEvent):
             app=app,
             service_key=scheduler_data.key,
             service_tag=scheduler_data.version,
-            paths_mapping=scheduler_data.paths_mapping,
             compose_spec=scheduler_data.compose_spec,
             container_http_entry=scheduler_data.container_http_entry,
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
-            simcore_traefik_zone=scheduler_data.simcore_traefik_zone,
-            service_port=scheduler_data.service_port,
         )
 
         await dynamic_sidecar_client.start_service_creation(
