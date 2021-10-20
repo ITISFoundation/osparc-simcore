@@ -108,14 +108,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
               return oldWidth;
             }
           });
-          osparc.utils.Utils.addBorder(control, 1, "right");
+          // osparc.utils.Utils.addBorder(control, 1, "right");
           sidePanels.add(control, 1); // flex 1
           break;
         }
         case "side-panel-left-tabs": {
           control = new qx.ui.tabview.TabView().set({
             width: 250,
-            contentPadding: 6,
+            contentPadding: 8,
             barPosition: "top"
           });
           const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
@@ -128,7 +128,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         case "side-panel-right-tabs": {
           control = new qx.ui.tabview.TabView().set({
             width: 300,
-            contentPadding: 6,
+            contentPadding: 8,
             barPosition: "top"
           });
           const collapsibleViewRight = this.getChildControl("collapsible-view-right");
@@ -137,7 +137,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         case "main-panel-tabs": {
           control = new qx.ui.tabview.TabView().set({
-            contentPadding: 0,
+            contentPadding: 2,
             barPosition: "top"
           });
           this.add(control, 1); // flex 1
