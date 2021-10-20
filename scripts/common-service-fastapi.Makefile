@@ -8,10 +8,10 @@
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
-.PHONY: openapi-specs openapi.json
+.PHONY: openapi-specs openapi.json openapi.yaml
 
 openapi.json: .env
-	# generating openapi specs file
+	# generating openapi specs in a JSON file
 	@set -o allexport; \
 	source .env; \
 	set +o allexport; \
@@ -20,4 +20,12 @@ openapi.json: .env
 	@cd $(CURDIR); \
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
 
-openapi-specs: openapi.json ## OpenApi Specification (OAS) file
+openapi.yaml: .env
+	# generating openapi specs in a YAML file
+	@set -o allexport; \
+	source .env; \
+	set +o allexport; \
+	python3 -c "import yaml; import sys; from $(APP_PACKAGE_NAME).main import *; print( yaml.safe_dump(the_app.openapi(), sys.stdout, indent=2, sort_keys=False) )" > $@
+
+
+openapi-specs: openapi.json openapi.yaml ## OpenApi Specification (OAS) file
