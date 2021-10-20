@@ -9,8 +9,8 @@
 
 
 .PHONY: openapi-specs openapi.json
-openapi-specs: openapi.json
-openapi.json: .env ## OpenApi Specification (OAS) file
+
+openapi.json: .env
 	# generating openapi specs file
 	@set -o allexport; \
 	source .env; \
@@ -19,3 +19,5 @@ openapi.json: .env ## OpenApi Specification (OAS) file
 	# validates OAS file: $@
 	@cd $(CURDIR); \
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
+
+openapi-specs: openapi.json ## OpenApi Specification (OAS) file

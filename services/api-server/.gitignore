@@ -1,2 +1,5 @@
 # outputs from makefile
 client
+
+# now should be placed in api/specs/api-server
+openapi.json
