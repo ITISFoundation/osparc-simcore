@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import itertools
 from asyncio import AbstractEventLoop
 from typing import Callable
 
@@ -10,9 +9,7 @@ import pytest
 from aiohttp import web
 from aiohttp.client_reqrep import ClientResponse
 from aiohttp.test_utils import TestClient
-from aiohttp.web_exceptions import HTTPBadRequest
-from aiohttp.web_response import Response
-from servicelib.aiohttp.rest_responses import _collect_http_exceptions, get_http_error
+from servicelib.aiohttp.rest_responses import _collect_http_exceptions
 from servicelib.aiohttp.tracing import DEFAULT_JAEGER_BASE_URL, setup_tracing
 
 
@@ -55,7 +52,7 @@ def client(
         print(resource)
 
     # UNDER TEST ---
-    # SEE RoutesView
+    # SEE RoutesView to understand how resources can be iterated to get routes
     resource = app.router["skip"]
     routes_in_a_resource = [r for r in resource]
 
