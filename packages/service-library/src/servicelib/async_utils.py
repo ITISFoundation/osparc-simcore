@@ -1,39 +1,33 @@
 import asyncio
+import logging
 from collections import deque
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Deque, Dict, List, Optional
+from typing import Dict, List, Optional
 
-from pydantic import BaseModel
+import attr
 
-if TYPE_CHECKING:
-    Queue = asyncio.Queue
-else:
-    # This is a bit of hack, but makes mypy happy.
-    # The issue is with asyncio.Queue which does not inherit from
-    # `typing.Generic`, but typeshed stubs for it says that it does.
-    # As a result there is no `__getitem__` inherited from
-    # typing.GenericMeta at runtime.
-    # SEE https://stackoverflow.com/a/48554601/2855718
-    class FakeGenericMeta(type):
-        def __getitem__(self, item):
-            return self
-
-    class Queue(
-        asyncio.Queue, metaclass=FakeGenericMeta
-    ):  # pylint: disable=function-redefined
-        pass
+logger = logging.getLogger(__name__)
 
 
-class Context(BaseModel):
-    in_queue: Queue
-    out_queue: Queue
+@attr.s(auto_attribs=True)
+class Context:
+    in_queue: asyncio.Queue
+    out_queue: asyncio.Queue
     initialized: bool
-
-    class Config:
-        arbitrary_types_allowed: bool = True
+    task: Optional[asyncio.Task] = None
 
 
 _sequential_jobs_contexts: Dict[str, Context] = {}
+
+
+async def stop_sequential_workers() -> None:
+    """Singlas all workers to close thus avoiding errors on shutdown"""
+    for context in _sequential_jobs_contexts.values():
+        await context.in_queue.put(None)
+        if context.task is not None:
+            await context.task
+    _sequential_jobs_contexts.clear()
+    logger.info("All run_sequentially_in_context pending workers stopped")
 
 
 def run_sequentially_in_context(
@@ -110,8 +104,8 @@ def run_sequentially_in_context(
 
             if key not in _sequential_jobs_contexts:
                 _sequential_jobs_contexts[key] = Context(
-                    in_queue=Queue(),
-                    out_queue=Queue(),
+                    in_queue=asyncio.Queue(),
+                    out_queue=asyncio.Queue(),
                     initialized=False,
                 )
 
@@ -128,13 +122,24 @@ def run_sequentially_in_context(
                     while True:
                         awaitable = await in_q.get()
                         in_q.task_done()
+                        # check if requested to shutdown
+                        if awaitable is None:
+                            break
                         try:
                             result = await awaitable
                         except Exception as e:  # pylint: disable=broad-except
                             result = e
                         await out_q.put(result)
 
-                asyncio.create_task(worker(context.in_queue, context.out_queue))
+                    logging.info(
+                        "Closed worker for @run_sequentially_in_context applied to '%s' with target_args=%s",
+                        decorated_function.__name__,
+                        target_args,
+                    )
+
+                context.task = asyncio.create_task(
+                    worker(context.in_queue, context.out_queue)
+                )
 
             await context.in_queue.put(decorated_function(*args, **kwargs))  # type: ignore
 
