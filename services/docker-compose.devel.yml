@@ -13,7 +13,6 @@ services:
       - DEBUG=true
     volumes:
       - ./api-server:/devel/services/api-server
-      - ./storage/client-sdk:/devel/services/storage/client-sdk
       - ../packages:/devel/packages
 
   catalog:
@@ -73,7 +72,6 @@ services:
     volumes: &dev-dask-sidecar-volumes
       - ./dask-sidecar:/devel/services/dask-sidecar
       - ./sidecar:/devel/services/sidecar
-      - ./storage/client-sdk:/devel/services/storage/client-sdk
       - ../packages:/devel/packages
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment:

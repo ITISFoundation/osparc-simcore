@@ -167,7 +167,7 @@ def wait_for_services() -> int:
 
                     #
                     # NOTE: a service could set 'ready' as desired-state instead of 'running' if
-                    # it constantly breaks and the swarm desides to "stopy trying".
+                    # it constantly breaks and the swarm desides to "stop trying".
                     #
                     valid_replicas = sum(
                         task["Status"]["State"] == RUNNING_STATE
