@@ -38,13 +38,13 @@ def create(settings: Settings) -> web.Application:
     if settings.STORAGE_MONITORING_ENABLED:
         setup_monitoring(app, "simcore_service_storage")
 
-    if settings.STORAGE_TRACING.enabled:
+    if settings.STORAGE_TRACING:
         setup_tracing(
             app,
             service_name="simcore_service_storage",
             host=settings.STORAGE_HOST,
             port=settings.STORAGE_PORT,
-            jaeger_base_url=f"{settings.STORAGE_TRACING.zipkin_endpoint}",
+            jaeger_base_url=f"{settings.STORAGE_TRACING.TRACING_ZIPKIN_ENDPOINT}",
             skip_routes=None,
         )
 
