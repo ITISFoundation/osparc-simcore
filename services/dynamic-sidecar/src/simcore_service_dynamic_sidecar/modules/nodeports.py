@@ -6,7 +6,7 @@ import tempfile
 import time
 import zipfile
 from pathlib import Path
-from typing import Any, List, Optional, Set, Tuple, cast
+from typing import Dict, List, Optional, Set, Tuple, cast
 
 from pydantic import ByteSize
 from servicelib.archiving_utils import PrunableFolder, archive_dir, unarchive_dir
@@ -29,26 +29,9 @@ logger = logging.getLogger(__name__)
 # OUTPUTS section
 
 
-async def _set_data_to_port(port: Port, value: Optional[Any]) -> int:
-    # NOTE: multiple calls to this function will occur in parallel
-    tag = f"[{port.key}] "
-    logger.info("%s transfer started for %s=%s", tag, port.key, value)
-
-    start_time = time.perf_counter()
-    await port.set(value, save_immediately=False)
-    elapsed_time = time.perf_counter() - start_time
-
-    logger.info("%s transfer completed in %ss", tag, elapsed_time)
-
+def _get_size_of_value(value: ItemConcreteValue) -> int:
     if isinstance(value, Path):
         size_bytes = value.stat().st_size
-        logger.info(
-            "%s %s: data size: %sMB, transfer rate %sMB/s",
-            tag,
-            value.name,
-            size_bytes / 1024 / 1024,
-            size_bytes / 1024 / 1024 / elapsed_time,
-        )
         return size_bytes
     return sys.getsizeof(value)
 
@@ -69,7 +52,7 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
 
     # let's gather the tasks
     temp_files: List[Path] = []
-    upload_tasks = []
+    ports_values: Dict[str, ItemConcreteValue] = {}
 
     for port in (await PORTS.outputs).values():
         logger.info("Checking port %s", port.key)
@@ -83,12 +66,14 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
             files_and_folders_list = list(src_folder.rglob("*"))
 
             if not files_and_folders_list:
-                upload_tasks.append(_set_data_to_port(port, None))
+                ports_values[port.key] = None
+                # ports_values.append((port, None))
                 continue
 
             if len(files_and_folders_list) == 1 and files_and_folders_list[0].is_file():
                 # special case, direct upload
-                upload_tasks.append(_set_data_to_port(port, files_and_folders_list[0]))
+                # ports_values.append((port, files_and_folders_list[0]))
+                ports_values[port.key] = files_and_folders_list[0]
                 continue
 
             # generic case let's create an archive
@@ -96,40 +81,40 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
             tmp_file = Path(tempfile.mkdtemp()) / f"{src_folder.stem}.zip"
             temp_files.append(tmp_file)
 
+            # TODO: should compress multiple directories in parallel!
+            # not one at a time
             await archive_dir(
                 dir_to_compress=src_folder,
                 destination=tmp_file,
                 compress=False,
                 store_relative_path=True,
             )
-            upload_tasks.append(_set_data_to_port(port, tmp_file))
+            # ports_values.append((port, tmp_file))
+            ports_values[port.key] = tmp_file
         else:
             data_file = outputs_path / _KEY_VALUE_FILE_NAME
             if data_file.exists():
                 data = json.loads(data_file.read_text())
                 if port.key in data and data[port.key] is not None:
-                    upload_tasks.append(_set_data_to_port(port, data[port.key]))
+                    # ports_values.append((port, data[port.key]))
+                    ports_values[port.key] = data[port.key]
                 else:
                     logger.debug("Port %s not found in %s", port.key, data)
             else:
                 logger.debug("No file %s to fetch port values from", data_file)
 
-    total_bytes: int = 0
-    if upload_tasks:
-        try:
-            results = cast(List[int], await logged_gather(*upload_tasks))
-            # update in database after setting all the values to the ports
-            await PORTS.save_to_database()
-            total_bytes = sum(results)
-        finally:
-            # clean up possible compressed files
-            for file_path in temp_files:
-                await async_on_threadpool(
-                    # pylint: disable=cell-var-from-loop
-                    lambda: shutil.rmtree(file_path.parent, ignore_errors=True)
-                )
+    try:
+        await PORTS.set_multiple(ports_values)
+    finally:
+        # clean up possible compressed files
+        for file_path in temp_files:
+            await async_on_threadpool(
+                # pylint: disable=cell-var-from-loop
+                lambda: shutil.rmtree(file_path.parent, ignore_errors=True)
+            )
 
     elapsed_time = time.perf_counter() - start_time
+    total_bytes = sum([_get_size_of_value(x) for x in ports_values.values()])
     logger.info("Uploaded %s bytes in %s seconds", total_bytes, elapsed_time)
 
 
