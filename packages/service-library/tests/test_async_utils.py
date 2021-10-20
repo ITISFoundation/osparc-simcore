@@ -1,21 +1,47 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 
 import asyncio
 import copy
 import random
 from collections import deque
+from dataclasses import dataclass
 from time import time
-from typing import Any, Dict, List
+from typing import Any, AsyncIterable, Dict, List, Optional
 
 import pytest
-from servicelib.async_utils import run_sequentially_in_context, sequential_jobs_contexts
+from servicelib.async_utils import (
+    _sequential_jobs_contexts,
+    run_sequentially_in_context,
+    stop_sequential_workers,
+)
+
+RETRIES = 10
+DIFFERENT_CONTEXTS_COUNT = 10
 
 
-@pytest.fixture(autouse=True)
-def ensure_run_in_sequence_context_is_empty():
-    # NOTE: since the contexts variable is initialized at import time, when several test run
-    # the import happens only once and is rendered invalid, therefore explicit clearance is necessary
-    sequential_jobs_contexts.clear()
+@pytest.fixture
+async def ensure_run_in_sequence_context_is_empty(loop) -> AsyncIterable[None]:
+    yield
+    # NOTE
+    # required when shutting down the application or ending tests
+    # otherwise errors will occur when closing the loop
+    await stop_sequential_workers()
+
+
+@pytest.fixture
+def payload() -> str:
+    return "some string payload"
+
+
+@pytest.fixture
+def expected_param_name() -> str:
+    return "expected_param_name"
+
+
+@pytest.fixture
+def sleep_duration() -> float:
+    return 0.01
 
 
 class LockedStore:
@@ -34,12 +60,14 @@ class LockedStore:
             return list(self._queue)
 
 
-async def test_context_aware_dispatch() -> None:
+async def test_context_aware_dispatch(
+    sleep_duration: float,
+    ensure_run_in_sequence_context_is_empty: None,
+) -> None:
     @run_sequentially_in_context(target_args=["c1", "c2", "c3"])
     async def orderly(c1: Any, c2: Any, c3: Any, control: Any) -> None:
         _ = (c1, c2, c3)
-        sleep_interval = random.uniform(0, 0.01)
-        await asyncio.sleep(sleep_interval)
+        await asyncio.sleep(sleep_duration)
 
         context = dict(c1=c1, c2=c2, c3=c3)
         await locked_stores[make_key_from_context(context)].push(control)
@@ -81,12 +109,14 @@ async def test_context_aware_dispatch() -> None:
         assert list(expected_outcomes[key]) == await locked_stores[key].get_all()
 
 
-async def test_context_aware_function_sometimes_fails() -> None:
+async def test_context_aware_function_sometimes_fails(
+    ensure_run_in_sequence_context_is_empty: None,
+) -> None:
     class DidFailException(Exception):
         pass
 
     @run_sequentially_in_context(target_args=["will_fail"])
-    async def sometimes_failing(will_fail: bool) -> None:
+    async def sometimes_failing(will_fail: bool) -> bool:
         if will_fail:
             raise DidFailException("I was instructed to fail")
         return True
@@ -101,8 +131,10 @@ async def test_context_aware_function_sometimes_fails() -> None:
             assert await sometimes_failing(raise_error) is True
 
 
-async def test_context_aware_wrong_target_args_name() -> None:
-    expected_param_name = "wrong_parameter"
+async def test_context_aware_wrong_target_args_name(
+    expected_param_name: str,
+    ensure_run_in_sequence_context_is_empty: None,  # pylint: disable=unused-argument
+) -> None:
 
     # pylint: disable=unused-argument
     @run_sequentially_in_context(target_args=[expected_param_name])
@@ -119,15 +151,17 @@ async def test_context_aware_wrong_target_args_name() -> None:
     assert str(excinfo.value).startswith(message) is True
 
 
-async def test_context_aware_measure_parallelism() -> None:
+async def test_context_aware_measure_parallelism(
+    sleep_duration: float,
+    ensure_run_in_sequence_context_is_empty: None,
+) -> None:
     # expected duration 1 second
     @run_sequentially_in_context(target_args=["control"])
     async def sleep_for(sleep_interval: float, control: Any) -> Any:
         await asyncio.sleep(sleep_interval)
         return control
 
-    control_sequence = list(range(1000))
-    sleep_duration = 0.5
+    control_sequence = list(range(RETRIES))
     functions = [sleep_for(sleep_duration, x) for x in control_sequence]
 
     start = time()
@@ -138,15 +172,17 @@ async def test_context_aware_measure_parallelism() -> None:
     assert control_sequence == result
 
 
-async def test_context_aware_measure_serialization() -> None:
+async def test_context_aware_measure_serialization(
+    sleep_duration: float,
+    ensure_run_in_sequence_context_is_empty: None,
+) -> None:
     # expected duration 1 second
     @run_sequentially_in_context(target_args=["control"])
     async def sleep_for(sleep_interval: float, control: Any) -> Any:
         await asyncio.sleep(sleep_interval)
         return control
 
-    control_sequence = [1 for _ in range(10)]
-    sleep_duration = 0.1
+    control_sequence = [1 for _ in range(RETRIES)]
     functions = [sleep_for(sleep_duration, x) for x in control_sequence]
 
     start = time()
@@ -156,3 +192,36 @@ async def test_context_aware_measure_serialization() -> None:
     minimum_timelapse = (sleep_duration) * len(control_sequence)
     assert elapsed > minimum_timelapse
     assert control_sequence == result
+
+
+async def test_nested_object_attribute(
+    payload: str,
+    ensure_run_in_sequence_context_is_empty: None,
+) -> None:
+    @dataclass
+    class ObjectWithPropos:
+        attr1: str = payload
+
+    @run_sequentially_in_context(target_args=["object_with_props.attr1"])
+    async def test_attribute(
+        object_with_props: ObjectWithPropos, other_attr: Optional[int] = None
+    ) -> str:
+        return object_with_props.attr1
+
+    for _ in range(RETRIES):
+        assert payload == await test_attribute(ObjectWithPropos())
+
+
+async def test_different_contexts(
+    payload: str,
+    ensure_run_in_sequence_context_is_empty: None,
+) -> None:
+    @run_sequentially_in_context(target_args=["context_param"])
+    async def test_multiple_context_calls(context_param: int) -> int:
+        return context_param
+
+    for _ in range(RETRIES):
+        for i in range(DIFFERENT_CONTEXTS_COUNT):
+            assert i == await test_multiple_context_calls(i)
+
+    assert len(_sequential_jobs_contexts) == RETRIES
