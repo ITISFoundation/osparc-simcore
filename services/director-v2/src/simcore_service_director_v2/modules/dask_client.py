@@ -212,7 +212,7 @@ class DaskClient:
             dask_sub = distributed.Sub(dask_sub_topic_name)
 
             async for event in dask_sub:
-                logger.error("received event %s", event)
+                logger.debug("received event %s", event)
                 await handler(event)
 
         for dask_sub, handler in [

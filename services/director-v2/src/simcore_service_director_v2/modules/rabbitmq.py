@@ -32,7 +32,7 @@ def setup(app: FastAPI) -> None:
 
     async def on_shutdown() -> None:
         if app.state.rabbitmq_client:
-            app.state.rabbitmq_client.delete()
+            await app.state.rabbitmq_client.delete()
             del app.state.rabbitmq_client  # type: ignore
 
     app.add_event_handler("startup", on_startup)
