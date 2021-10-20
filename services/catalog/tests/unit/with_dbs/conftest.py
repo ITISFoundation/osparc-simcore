@@ -32,7 +32,7 @@ from starlette.testclient import TestClient
 def app(
     monkeypatch: MonkeyPatch,
     mocker: MockerFixture,
-    service_test_environ: None,
+    mock_service_env_devel_environment: Dict[str, str],
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
 ) -> Iterable[FastAPI]:

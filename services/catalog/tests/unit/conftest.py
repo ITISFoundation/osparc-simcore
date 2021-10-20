@@ -5,20 +5,24 @@
 import sys
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Iterator
 
 import pytest
 import simcore_service_catalog
+from _pytest.monkeypatch import MonkeyPatch
+from fastapi import FastAPI
+from simcore_service_catalog.core.application import init_app
+from starlette.testclient import TestClient
 
 pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.environment_configs",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
-    "pytest_simcore.service_environs",
     "pytest_simcore.tmp_path_extra",
 ]
 
@@ -116,3 +120,19 @@ def fake_data_dag_in() -> Dict:
         },
     }
     return deepcopy(DAG_DATA_IN_DICT)
+
+
+@pytest.fixture
+def minimal_app(
+    monkeypatch: MonkeyPatch, mock_service_env_devel_environment: Dict[str, str]
+) -> Iterator[FastAPI]:
+    # disable a couple of subsystems
+    monkeypatch.setenv("CATALOG_POSTGRES", "null")
+    monkeypatch.setenv("CATALOG_TRACING", "null")
+
+    app = init_app()
+
+    # NOTE: this way we ensure the events are run in the application
+    # since it starts the app on a test server
+    with TestClient(app):
+        yield app
