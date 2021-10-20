@@ -111,7 +111,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __createLinkOpts: function(field) {
       const optionsMenu = new qx.ui.menu.Menu().set({
-        offsetLeft: 6,
+        offsetLeft: 2,
         position: "right-top",
         backgroundColor: "background-main-lighter+"
       });
@@ -134,14 +134,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         if (this.getStudy()) {
           this.__populateFieldOptionsMenu(optionsMenu, field);
           this.getStudy().getWorkbench().addListener("pipelineChanged", () => this.__populateFieldOptionsMenu(optionsMenu, field), this);
-        }
-      });
-      optionsMenu.addListener("changeVisibility", e => {
-        const children = this._getFieldChildren(field.key);
-        if (e.getData() === "visible") {
-          children.forEach(el => el.setBackgroundColor("background-main-lighter+"));
-        } else {
-          children.forEach(el => el.resetBackgroundColor());
         }
       });
       return fieldOptsBtn;
