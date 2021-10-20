@@ -2,11 +2,24 @@ import asyncio
 import logging
 from collections import deque
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 import attr
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    Queue = asyncio.Queue
+else:
+
+    class FakeGenericMeta(type):
+        def __getitem__(self, item):
+            return self
+
+    class Queue(
+        asyncio.Queue, metaclass=FakeGenericMeta
+    ):  # pylint: disable=function-redefined
+        pass
 
 
 @attr.s(auto_attribs=True)
