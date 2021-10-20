@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections import deque
 from functools import wraps
-from typing import Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import attr
 
