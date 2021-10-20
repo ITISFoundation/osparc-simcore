@@ -12,7 +12,7 @@ from models_library.service_settings_labels import (
 from models_library.services import ServiceKeyVersion
 
 from ...api.dependencies.director_v0 import DirectorV0Client
-from ...core.settings import DynamicSidecarSettings, DynamicSidecarTraefikSettings
+from ...core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 from ...models.schemas.dynamic_services import SchedulerData, ServiceType
 from ...utils.registry import get_dynamic_sidecar_env_vars
@@ -64,8 +64,8 @@ async def get_dynamic_proxy_spec(
             "ReadOnly": True,
         }
     ]
-    traefik_settings: DynamicSidecarTraefikSettings = (
-        dynamic_sidecar_settings.DYNAMIC_SIDECAR_TRAEFIK_SETTINGS
+    proxy_settings: DynamicSidecarProxySettings = (
+        dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
     )
 
     return {
@@ -97,21 +97,16 @@ async def get_dynamic_proxy_spec(
             "ContainerSpec": {
                 "Env": {},
                 "Hosts": [],
-                "Image": f"traefik:{traefik_settings.DYNAMIC_SIDECAR_TRAEFIK_VERSION}",
+                "Image": f"caddy:{proxy_settings.DYNAMIC_SIDECAR_CADDY_VERSION}",
                 "Init": True,
                 "Labels": {},
                 "Command": [
-                    "traefik",
-                    f"--log.level={traefik_settings.DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL}",
-                    f"--accesslog={traefik_settings.access_log_as_string}",
-                    "--entryPoints.http.address=:80",
-                    "--entryPoints.http.forwardedHeaders.insecure",
-                    "--providers.docker.endpoint=unix:///var/run/docker.sock",
-                    f"--providers.docker.network={scheduler_data.dynamic_sidecar_network_name}",
-                    "--providers.docker.exposedByDefault=false",
-                    f"--providers.docker.constraints=Label(`io.simcore.zone`, `{scheduler_data.simcore_traefik_zone}`)",
-                    # TODO: add authentication once a middleware is in place
-                    # something like https://doc.traefik.io/traefik/middlewares/forwardauth/
+                    "caddy",
+                    "reverse-proxy",
+                    "--from",
+                    ":80",
+                    "--to",
+                    "dy-sidecar-6f2ac0cc-3ad8-4c1f-a68e-b17104ff2bfc-0-container:8080",
                 ],
                 "Mounts": mounts,
             },
