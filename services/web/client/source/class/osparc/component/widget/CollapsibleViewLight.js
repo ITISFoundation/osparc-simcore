@@ -47,7 +47,7 @@ qx.Class.define("osparc.component.widget.CollapsibleViewLight", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "caret-collapsed":
+        case "expand-button":
           control = new qx.ui.form.Button(null, "@FontAwesome5Solid/angle-right/14").set({
             toolTipText: this.tr("Expand"),
             backgroundColor: "transparent",
@@ -57,9 +57,24 @@ qx.Class.define("osparc.component.widget.CollapsibleViewLight", {
             alignY: "middle"
           });
           control.addListener("execute", () => this.setCollapsed(false));
+          break;
+        case "caret-collapsed": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+            width: 15
+          });
+          const spacer = new qx.ui.core.Widget().set({
+            backgroundColor: "contrasted-background+",
+            height: 50
+          });
+          control.add(spacer);
+          const expandBtn = this.getChildControl("expand-button");
+          control.add(expandBtn, {
+            flex: 1
+          });
           this._addAt(control, 1);
           break;
-        case "caret-expanded":
+        }
+        case "collapse-button":
           control = new qx.ui.form.Button(null, "@FontAwesome5Solid/angle-left/14").set({
             toolTipText: this.tr("Collapse"),
             backgroundColor: "transparent",
@@ -69,8 +84,23 @@ qx.Class.define("osparc.component.widget.CollapsibleViewLight", {
             alignY: "middle"
           });
           control.addListener("execute", () => this.setCollapsed(true));
+          break;
+        case "caret-expanded": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+            width: 15
+          });
+          const spacer = new qx.ui.core.Widget().set({
+            backgroundColor: "contrasted-background+",
+            height: 50
+          });
+          control.add(spacer);
+          const collapseBtn = this.getChildControl("collapse-button");
+          control.add(collapseBtn, {
+            flex: 1
+          });
           this._addAt(control, 2);
           break;
+        }
       }
       return control || this.base(arguments, id);
     },
