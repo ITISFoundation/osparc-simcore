@@ -125,6 +125,14 @@ async def test_node_ports_accessors(
         assert await node_ports.get(port.key) == port.value
         await node_ports.set(port.key, port.value)
 
+    # test batch add
+    await node_ports.set_multiple(
+        {
+            port.key: port.value
+            for port in list(original_inputs.values()) + list(original_outputs.values())
+        }
+    )
+
 
 @pytest.fixture(scope="session")
 def e_tag() -> str:
