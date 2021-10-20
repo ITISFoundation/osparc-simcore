@@ -54,7 +54,7 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
     # let's gather the tasks
     temp_files: List[Path] = []
     ports_values: Dict[str, ItemConcreteValue] = {}
-    archiving_tasks: Deque[Coroutine] = deque()
+    archiving_tasks: Deque[Coroutine[None, None, None]] = deque()
 
     for port in (await PORTS.outputs).values():
         logger.info("Checking port %s", port.key)
