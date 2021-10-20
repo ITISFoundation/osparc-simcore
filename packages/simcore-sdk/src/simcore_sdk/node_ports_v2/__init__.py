@@ -16,7 +16,7 @@ async def ports(
     project_id: str,
     node_uuid: str,
     *,
-    db_manager: Optional[DBManager] = None
+    db_manager: Optional[DBManager] = None,
 ) -> Nodeports:
     log.debug("creating node_ports_v2 object using provided dbmanager: %s", db_manager)
     # FIXME: warning every dbmanager create a new db engine!
