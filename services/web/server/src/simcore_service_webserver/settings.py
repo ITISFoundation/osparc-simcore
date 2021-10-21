@@ -8,7 +8,7 @@ from typing import Dict, Optional
 from aiohttp import web
 from pydantic import BaseSettings, Field
 
-from ._meta import api_version, app_name
+from ._meta import API_VERSION, APP_NAME
 from .constants import APP_SETTINGS_KEY
 from .utils import snake_to_camel
 
@@ -19,8 +19,8 @@ class ApplicationSettings(BaseSettings):
     # CODE STATICS ---
     # settings defined by the code
 
-    app_name: str = app_name
-    api_version: str = api_version
+    app_name: str = APP_NAME
+    api_version: str = API_VERSION
 
     # IMAGE BUILD ---
     # settings defined when docker image is built
