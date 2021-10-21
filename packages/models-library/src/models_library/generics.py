@@ -69,7 +69,8 @@ class Envelope(GenericModel, Generic[DataT]):
     @validator("error")
     @classmethod
     def data_and_error_cannot_be_populated_together(cls, v, values):
-        if v is not None and values.get("data") is not None:
+        # because of storage micro-services sometimes the data is not None but filled with an empty {} so we do not check for None here
+        if v is not None and values.get("data"):
             raise ValueError(
                 "both data and error cannot contain values at the same time"
             )
