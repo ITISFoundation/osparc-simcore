@@ -95,10 +95,6 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       const clustersSelectBox = this.__createClustersSelectBox();
       this._add(clustersSelectBox);
 
-      const stopButton = this.__createStopButton();
-      stopButton.setEnabled(false);
-      this._add(stopButton);
-
       const startButton = this.__createStartButton();
       this._add(startButton);
 
@@ -106,6 +102,10 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
         visibility: "excluded"
       });
       this._add(startSplitButton);
+
+      const stopButton = this.__createStopButton();
+      stopButton.setEnabled(false);
+      this._add(stopButton);
     },
 
     __createClustersSelectBox: function() {

@@ -95,12 +95,7 @@ qx.Class.define("osparc.component.task.TasksButton", {
       const tapListener = event => {
         const tasks = osparc.component.task.Tasks.getInstance();
         const tasksContainer = tasks.getTasksContainer();
-        const tasksContainerElement = tasksContainer.getContentElement().getDomElement();
-        const boundRect = tasksContainerElement.getBoundingClientRect();
-        if (event.x > boundRect.x &&
-          event.y > boundRect.y &&
-          event.x < (boundRect.x + boundRect.width) &&
-          event.y < (boundRect.y + boundRect.height)) {
+        if (osparc.utils.Utils.isMouseOnElement(tasksContainer, event)) {
           return;
         }
         // eslint-disable-next-line no-underscore-dangle

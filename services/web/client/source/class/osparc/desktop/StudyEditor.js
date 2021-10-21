@@ -26,10 +26,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     const viewsStack = this.__viewsStack = new qx.ui.container.Stack();
 
     const workbenchView = this.__workbenchView = new osparc.desktop.WorkbenchView();
-    workbenchView.addListener("startSnapshot", e => {
-      this.getStudy().removeIFrames();
-      this.fireDataEvent("startSnapshot", e.getData());
-    });
     viewsStack.add(workbenchView);
 
     const slideshowView = this.__slideshowView = new osparc.desktop.SlideshowView();
@@ -61,6 +57,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
   events: {
     "forceBackToDashboard": "qx.event.type.Event",
+    "snapshotTaken": "qx.event.type.Event",
     "startSnapshot": "qx.event.type.Data"
   },
 
@@ -369,14 +366,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__viewsStack.setVisibility(show ? "visible" : "excluded");
     },
 
-    /**
-     * Destructor
-     */
-    destruct: function() {
-      osparc.store.Store.getInstance().setCurrentStudy(null);
-      this.__stopAutoSaveTimer();
-    },
-
     nodeSelected: function(nodeId) {
       this.__workbenchView.nodeSelected(nodeId);
       this.__slideshowView.nodeSelected(nodeId);
@@ -398,6 +387,49 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__slideshowView.startSlides(newCtxt);
           break;
       }
+    },
+
+    takeSnapshot: function() {
+      const editSnapshotView = new osparc.component.snapshots.EditSnapshotView();
+      const tagCtrl = editSnapshotView.getChildControl("tags");
+      const study = this.getStudy();
+      study.getSnapshots()
+        .then(snapshots => {
+          tagCtrl.setValue("V"+snapshots.length);
+        });
+      const title = this.tr("Take Snapshot");
+      const win = osparc.ui.window.Window.popUpInWindow(editSnapshotView, title, 400, 180);
+      editSnapshotView.addListener("takeSnapshot", () => {
+        const tag = editSnapshotView.getTag();
+        const message = editSnapshotView.getMessage();
+        const params = {
+          url: {
+            "studyId": study.getUuid()
+          },
+          data: {
+            "tag": tag,
+            "message": message
+          }
+        };
+        osparc.data.Resources.fetch("snapshots", "takeSnapshot", params)
+          .then(data => this.fireEvent("snapshotTaken"))
+          .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
+
+        win.close();
+      }, this);
+      editSnapshotView.addListener("cancel", () => win.close(), this);
+    },
+
+    showSnapshots: function() {
+      const study = this.getStudy();
+      const snapshots = new osparc.component.snapshots.SnapshotsView(study);
+      const title = this.tr("Snapshots");
+      const win = osparc.ui.window.Window.popUpInWindow(snapshots, title, 1000, 500);
+      snapshots.addListener("openSnapshot", e => {
+        win.close();
+        const snapshotId = e.getData();
+        this.fireDataEvent("startSnapshot", snapshotId);
+      });
     },
 
     __startAutoSaveTimer: function() {
@@ -467,6 +499,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (this.getStudy()) {
         this.getStudy().stopStudy();
       }
+    },
+
+    /**
+     * Destructor
+     */
+    destruct: function() {
+      osparc.store.Store.getInstance().setCurrentStudy(null);
+      this.__stopAutoSaveTimer();
     }
   }
 });
