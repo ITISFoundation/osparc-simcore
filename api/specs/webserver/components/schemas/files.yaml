@@ -51,6 +51,8 @@ FileMetaData:
       type: integer
     parent_id:
       type: string
+    entity_tag:
+      type: string
   example:
     file_uuid: "simcore-testing/105/1000/3"
     location_id: "0"
@@ -71,6 +73,7 @@ FileMetaData:
     last_modified: "2019-06-19T12:29:03.78852Z"
     file_size: 73
     parent_id: "N:collection:e263da07-2d89-45a6-8b0f-61061b913873"
+    entity_tag: a87ff679a2f3e71d9181a67b7542122c
 
 FileMetaDataArray:
   type: array
