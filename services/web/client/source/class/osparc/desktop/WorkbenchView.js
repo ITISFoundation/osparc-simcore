@@ -412,7 +412,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         if (node) {
           this.__populateSecondPanel(node);
           this.__openIframeTab(node);
-          this.__maximizeIframe(true);
+          node.getLoadingPage().maximizeIFrame(true);
+          node.getIFrame().maximizeIFrame(true);
         }
         const nodeUI = workbenchUI.getNodeUI(nodeId);
         if (nodeUI) {
@@ -923,8 +924,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.nodeSelected(dynamicNode.getNodeId());
           qx.event.Timer.once(() => {
             this.__openIframeTab(dynamicNode);
+            dynamicNode.getLoadingPage().maximizeIFrame(true);
             dynamicNode.getIFrame().maximizeIFrame(true);
-            // this.__maximizeIframe(true);
           }, this, 10);
           return;
         }

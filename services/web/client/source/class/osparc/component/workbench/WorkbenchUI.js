@@ -1262,7 +1262,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         // osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
         // osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "visible");
 
-        qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", false);
+        // qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", false);
 
         this.addListener("resize", () => this.__updateAllEdges(), this);
       });
