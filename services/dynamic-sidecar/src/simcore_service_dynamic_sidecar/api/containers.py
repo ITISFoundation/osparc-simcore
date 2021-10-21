@@ -246,7 +246,7 @@ async def inspect_container(
 async def get_entrypoint_container_name(
     swarm_network_name: str,
     shared_store: SharedStore = Depends(get_shared_store),
-) -> Dict[str, Any]:
+) -> Union[str, Dict[str, Any]]:
     """
     Searches for the container's name given the network
     on which the proxy communicates with it.
@@ -276,7 +276,7 @@ async def get_entrypoint_container_name(
             detail=f"No container found for network={swarm_network_name}",
         )
 
-    return container_name
+    return f"{container_name}"
 
 
 __all__ = ["containers_router"]

@@ -144,7 +144,7 @@ def _inject_backend_networking(
     parsed_compose_spec["networks"] = networks
 
 
-def parse_compose_spec(compose_file_content: str) -> Dict[str, Any]:
+def parse_compose_spec(compose_file_content: str) -> Any:
     try:
         return yaml.safe_load(compose_file_content)
     except yaml.YAMLError as e:
