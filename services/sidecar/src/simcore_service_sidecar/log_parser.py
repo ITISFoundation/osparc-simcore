@@ -8,7 +8,6 @@ from typing import Awaitable, Callable, Optional, Tuple, Union
 import aiofiles
 from aiodocker.containers import DockerContainer
 from aiodocker.exceptions import DockerError
-from aiofile import AIOFile, Writer
 from servicelib.logging_utils import log_decorator
 
 from . import exceptions
@@ -91,12 +90,11 @@ async def _monitor_docker_container(
     log_file = out_log_file or touch_tmpfile(extension=".dat")
 
     try:
-        async with AIOFile(str(log_file), "w+") as afp:
-            writer = Writer(afp)
+        async with aiofiles.open(str(log_file), "w+") as afp:
             async for line in container.log(stdout=True, stderr=True, follow=True):
                 log_type, parsed_line = await parse_line(line)
                 await log_cb(log_type, parsed_line)
-                await writer(f"{log_type.name}: {parsed_line}")
+                await afp.write(f"{log_type.name}: {parsed_line}")
 
     except DockerError as e:
         log_type, parsed_line = await parse_line(f"Could not recover logs because: {e}")
