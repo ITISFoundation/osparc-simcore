@@ -13,6 +13,12 @@ install() {
   pip list -v
 }
 
+codestyle() {
+  pushd packages/dask-task-models-library
+  make codestyle-ci
+  popd
+}
+
 test() {
   pytest --cov=dask_task_models_library --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \

@@ -475,6 +475,8 @@ jobs:
             ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/dask-task-models-library.bash install
+      - name: codestyle
+        run: ./ci/github/unit-testing/dask-task-models-library.bash codestyle
       - name: test
         run: ./ci/github/unit-testing/dask-task-models-library.bash test
       - uses: codecov/codecov-action@v2.1.0
