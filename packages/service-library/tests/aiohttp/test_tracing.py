@@ -10,7 +10,9 @@ from aiohttp import web
 from aiohttp.client_reqrep import ClientResponse
 from aiohttp.test_utils import TestClient
 from servicelib.aiohttp.rest_responses import _collect_http_exceptions
-from servicelib.aiohttp.tracing import DEFAULT_JAEGER_BASE_URL, setup_tracing
+from servicelib.aiohttp.tracing import setup_tracing
+
+DEFAULT_JAEGER_BASE_URL = "http://jaeger:9411"
 
 
 @pytest.fixture()
