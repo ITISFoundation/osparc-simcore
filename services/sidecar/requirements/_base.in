@@ -17,7 +17,6 @@
 
 aio-pika
 aiodocker
-aiofile
 aiofiles
 aiopg
 aioredlock
