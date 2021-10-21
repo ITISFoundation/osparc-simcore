@@ -43,7 +43,6 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     --reload-dir packages/postgres-database/src/simcore_postgres_database \
     --reload-dir packages/service-library/src/servicelib \
     --reload-dir packages/settings-library/src/settings_library \
-    --reload-dir packages/settings-library/src/settings_library \
     --reload-dir packages/simcore-sdk/src/simcore_sdk \
     --reload-dir services/director-v2/src/simcore_service_director_v2
 else
