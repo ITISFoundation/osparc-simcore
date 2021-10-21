@@ -159,53 +159,11 @@ typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
-urllib3==1.26.5
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_migration.in
-    #   -r requirements/../../../services/sidecar/requirements/_base.txt
-    #   requests
-vine==5.0.0
-    # via
-    #   -r requirements/../../../services/sidecar/requirements/_base.txt
-    #   amqp
-    #   celery
-    #   kombu
-wcwidth==0.2.5
-    # via
-    #   -r requirements/../../../services/sidecar/requirements/_base.txt
-    #   prompt-toolkit
-websocket-client==0.59.0
+zict==2.0.0
     # via
     #   -c requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_migration.in
-    #   -r requirements/../../../services/sidecar/requirements/_base.txt
-    #   docker
-yarl==1.6.3
-    # via
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
-    #   -c requirements/_base.txt
-    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
-    #   -r requirements/../../../services/sidecar/requirements/_base.txt
-    #   aio-pika
-    #   aiohttp
-    #   aiormq
-zipp==3.6.0
-    # via
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
-    #   -c requirements/_base.txt
-    #   -r requirements/../../../services/sidecar/requirements/_base.txt
-    #   importlib-metadata
-    #   importlib-resources
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   distributed
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

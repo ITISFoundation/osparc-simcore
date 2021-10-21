@@ -18,6 +18,7 @@
 
 
 aiodocker
+aiofiles
 aiohttp
 requests
 dask[complete]

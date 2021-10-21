@@ -178,20 +178,17 @@ urllib3==1.26.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   -c requirements/_packages.txt
     #   minio
     #   requests
 websocket-client==0.59.0
     # via
     #   -c requirements/_base.txt
-    #   -c requirements/_packages.txt
     #   docker
 wrapt==1.12.1
     # via astroid
 yarl==1.6.3
     # via
     #   -c requirements/_base.txt
-    #   -c requirements/_packages.txt
     #   aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
