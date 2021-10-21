@@ -11,7 +11,6 @@ from typing import (
     ValuesView,
 )
 
-from pydantic import validator
 from pydantic.generics import GenericModel
 
 DictKey = TypeVar("DictKey")
@@ -65,12 +64,3 @@ class ListModel(GenericModel, Generic[DataT]):
 class Envelope(GenericModel, Generic[DataT]):
     data: Optional[DataT]
     error: Optional[Any]
-
-    @validator("error")
-    @classmethod
-    def data_and_error_cannot_be_populated_together(cls, v, values):
-        if v is not None and values.get("data") is not None:
-            raise ValueError(
-                "both data and error cannot contain values at the same time"
-            )
-        return v

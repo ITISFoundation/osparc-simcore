@@ -214,7 +214,9 @@ async def get_file_metadata(request: web.Request):
         )
         # when no metadata is found
         if data is None:
-            return {"error": "No result found"}
+            # NOTE: This is what happens Larry... data must be an empty {} or else some old
+            # dynamic services will FAIL (sic)
+            return {"error": "No result found", "data": {}}
 
         return {
             "error": None,
