@@ -69,7 +69,15 @@ def _raise_if_container_is_missing(id: str, container_names: List[str]) -> None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=message)
 
 
-@containers_router.post("/containers", status_code=status.HTTP_202_ACCEPTED)
+@containers_router.post(
+    "/containers",
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Cannot validate submitted compose spec"
+        }
+    },
+)
 async def runs_docker_compose_up(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -98,7 +106,13 @@ async def runs_docker_compose_up(
     return shared_store.container_names
 
 
-@containers_router.post("/containers:down", response_class=PlainTextResponse)
+@containers_router.post(
+    "/containers:down",
+    response_class=PlainTextResponse,
+    responses={
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "No compose spec found"}
+    },
+)
 async def runs_docker_compose_down(
     command_timeout: float = Query(
         10.0, description="docker-compose down command timeout default"
@@ -123,7 +137,7 @@ async def runs_docker_compose_down(
     )
 
     if not finished_without_errors:
-        logger.warning("docker-compose command finished with errors\n%s", stdout)
+        logger.warning("docker-compose down command finished with errors\n%s", stdout)
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=stdout)
 
     return stdout
@@ -234,8 +248,8 @@ async def inspect_container(
         return inspect_result
 
 
-@containers_router.get(
-    "/containers/entrypoint",
+@containers_router.post(
+    "/containers:entrypoint",
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "No entrypoint container found"},
         status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "No compose spec found"},
