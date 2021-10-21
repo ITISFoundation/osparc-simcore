@@ -312,7 +312,7 @@ class DaskClient:
                 task_future = self.client.submit(
                     remote_fct,
                     docker_auth=DockerBasicAuth(
-                        server_address=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_URL,
+                        server_address=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.resolved_registry_url,
                         username=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_USER,
                         password=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_PW,
                     ),
