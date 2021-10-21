@@ -40,6 +40,14 @@ qx.Class.define("osparc.utils.Services", {
       dynamic: {
         label: "Interactive",
         icon: "@FontAwesome5Solid/mouse-pointer/"
+      },
+      parameter: {
+        label: "",
+        icon: "@FontAwesome5Solid/sliders-h/"
+      },
+      file: {
+        label: "",
+        icon: "@FontAwesome5Solid/file/"
       }
     },
 
@@ -61,6 +69,14 @@ qx.Class.define("osparc.utils.Services", {
 
     getType: function(type) {
       return this.TYPES[type.trim().toLowerCase()];
+    },
+
+    getIcon: function(type) {
+      const typeInfo = this.getType(type);
+      if (typeInfo) {
+        return typeInfo["icon"];
+      }
+      return typeInfo[""];
     },
 
     convertArrayToObject: function(servicesArray) {

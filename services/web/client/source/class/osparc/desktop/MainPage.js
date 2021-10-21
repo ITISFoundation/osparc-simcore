@@ -119,6 +119,18 @@ qx.Class.define("osparc.desktop.MainPage", {
         }
       }, this);
 
+      navBar.addListener("takeSnapshot", () => {
+        if (this.__studyEditor) {
+          this.__studyEditor.takeSnapshot();
+        }
+      }, this);
+
+      navBar.addListener("showSnapshots", () => {
+        if (this.__studyEditor) {
+          this.__studyEditor.showSnapshots();
+        }
+      }, this);
+
       return navBar;
     },
 
@@ -359,9 +371,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__navBar.setPageContext(pageContext);
       studyEditor.setPageContext(pageContext);
 
-      this.__studyEditor.addListener("forceBackToDashboard", () => {
-        this.__showDashboard();
-      }, this);
+      this.__studyEditor.addListener("forceBackToDashboard", () => this.__showDashboard(), this);
     },
 
     __getStudyEditor: function() {
@@ -369,6 +379,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         return this.__studyEditor;
       }
       const studyEditor = new osparc.desktop.StudyEditor();
+      studyEditor.addListener("snapshotTaken", () => this.__navBar.getChildControl("study-options-menu").evalSnapshotsButtons(), this);
       studyEditor.addListener("startSnapshot", e => {
         const snapshotId = e.getData();
         this.__startSnapshot(this.__studyEditor.getStudy().getUuid(), snapshotId);

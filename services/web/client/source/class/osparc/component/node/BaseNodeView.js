@@ -42,6 +42,15 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         layout: new qx.ui.layout.VBox()
       });
       return settingsGroupBox;
+    },
+
+    openNodeDataManager: function(node) {
+      const nodeDataManager = new osparc.component.widget.NodeDataManager(node);
+      const win = osparc.ui.window.Window.popUpInWindow(nodeDataManager, node.getLabel(), 900, 600).set({
+        appearance: "service-window"
+      });
+      const closeBtn = win.getChildControl("close-button");
+      osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
     }
   },
 
@@ -249,7 +258,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
       const buttonsLayout = this.__buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       const filesBtn = this.__outFilesButton = new qx.ui.form.Button(this.tr("Output Files"), "@FontAwesome5Solid/folder-open/14");
-      osparc.utils.Utils.setIdToWidget(filesBtn, "nodeViewFilesBtn");
+      osparc.utils.Utils.setIdToWidget(filesBtn, "nodeOutputFilesBtn");
       filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
       buttonsLayout.add(filesBtn);
 
@@ -375,12 +384,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __openNodeDataManager: function() {
-      const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode());
-      const win = osparc.ui.window.Window.popUpInWindow(nodeDataManager, this.getNode().getLabel(), 900, 600).set({
-        appearance: "service-window"
-      });
-      const closeBtn = win.getChildControl("close-button");
-      osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
+      this.self().openNodeDataManager(this.getNode());
     },
 
     __openServiceDetails: function() {
