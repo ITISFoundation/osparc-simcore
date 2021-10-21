@@ -79,15 +79,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             converter: collapsed => collapsed ? 15 : null
           });
           control.bind("collapsed", sidePanels, "width", {
-            converter: collapsed => {
-              const oldWidth = sidePanels.getWidth();
-              const content = control.getContent();
-              if (content) {
-                // if collapsed set width to show collapse button only
-                return collapsed ? (oldWidth - content.getWidth()) : (oldWidth + content.getWidth());
-              }
-              return oldWidth;
-            }
+            converter: collapsed => this.__getSidePanelsNewWidth(collapsed, sidePanels, control)
           });
           sidePanels.add(control, 1); // flex 1
           break;
@@ -99,14 +91,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             converter: collapsed => collapsed ? 15 : null
           });
           control.bind("collapsed", sidePanels, "width", {
-            converter: collapsed => {
-              const oldWidth = sidePanels.getWidth();
-              const content = control.getContent();
-              if (control.getContent()) {
-                return collapsed ? (oldWidth - content.getWidth() + 15) : (oldWidth + content.getWidth() - 15);
-              }
-              return oldWidth;
-            }
+            converter: collapsed => this.__getSidePanelsNewWidth(collapsed, sidePanels, control)
           });
           osparc.utils.Utils.addBorder(control, 1, "right");
           sidePanels.add(control, 1); // flex 1
@@ -147,6 +132,17 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return control || this.base(arguments, id);
     },
 
+    __getSidePanelsNewWidth: function(collapsed, sidePanels, collapsableView) {
+      const content = collapsableView.getContent();
+      if (sidePanels && sidePanels.getBounds() && content && content.getBounds()) {
+        const oldWidth = sidePanels.getBounds().width;
+        const contentWidth = content.getBounds().width;
+        // if collapsed set width to show collapse button only
+        return collapsed ? (oldWidth - contentWidth) : (oldWidth + contentWidth);
+      }
+      return null;
+    },
+
     _applyStudy: function(study) {
       if (study) {
         this.__initViews();
@@ -164,6 +160,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       const tabPageBtn = tabPage.getChildControl("button").set({
         toolTipText: tooltip,
+        alignX: "center",
+        alignY: "middle",
         backgroundColor
       });
       tabPageBtn.getContentElement().setStyles({
@@ -276,6 +274,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const topBar = tabViewMain.getChildControl("bar");
       this.__addTopBarSpacer(topBar);
 
+
       this.__workbenchUI.setStudy(study);
       this.__workbenchUI.loadModel(study.getWorkbench());
       const workbenchPanelPage = this.__workbenchPanelPage = this.__createTabPage("@FontAwesome5Solid/object-group", this.tr("Workbench"), this.__workbenchPanel);
@@ -290,7 +289,25 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       osparc.utils.Utils.setIdToWidget(logsPage.getChildControl("button"), "loggerTabButton");
       tabViewMain.add(logsPage);
 
+
       this.__addTopBarSpacer(topBar);
+
+
+      const collapseExpandNavBarStack = new qx.ui.container.Stack();
+
+      const collapseNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-up/14").set({
+        backgroundColor: "contrasted-background+"
+      });
+      collapseExpandNavBarStack.add(collapseNavBarBtn);
+      collapseNavBarBtn.addListener("execute", () => this.fireEvent("expandNavBar"));
+
+      const expandNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-down/14").set({
+        backgroundColor: "contrasted-background+"
+      });
+      collapseExpandNavBarStack.add(expandNavBarBtn);
+      expandNavBarBtn.addListener("execute", () => this.fireEvent("collapseNavBar"));
+
+      topBar.add(collapseExpandNavBarStack);
     },
 
     __removePages: function(tabView) {
