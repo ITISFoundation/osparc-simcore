@@ -37,17 +37,15 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
   # NOTE: ptvsd is programmatically enabled inside of the service
   # this way we can have reload in place as well
   reload_dir_packages=$(find packages -maxdepth 3 -type d -path "*/src/*" ! -path "*.*" -exec echo --reload-dir {} \;)
-  reload_dir_packages_concat=""
-  for dir in $reload_dir_packages
-  do
-      # the + returns the fallback if the variable is set (inverse to MYVAR:-default)
-      reload_dir_packages_concat="${reload_dir_packages_concat:+${reload_dir_packages_concat} }${dir}"
-  done
 
+  # NOTE: keep the reload_dir_package as un-quoted as the IFS (internal field separators works only this way. any SH shell guru is welcome to enhance this!
+  # FIXME: when uvicorn >0.15.0 comes in, replace it with --reload-include '*.py'
+  IFS=$(printf ' \n\t');
+  #shellcheck disable=SC2086
   exec uvicorn simcore_service_director_v2.main:the_app \
     --host 0.0.0.0 \
     --reload \
-    "$reload_dir_packages_concat" \
+    $reload_dir_packages \
     --reload-dir services/director-v2/src/simcore_service_director_v2
 else
   exec uvicorn simcore_service_director_v2.main:the_app \
