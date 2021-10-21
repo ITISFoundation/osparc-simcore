@@ -3,37 +3,48 @@
 """
 import asyncio
 import logging
-from typing import Dict, Optional
+from typing import Iterable, Optional, Union
 
 import aiozipkin as az
-import trafaret as T
 from aiohttp import web
-from pydantic import AnyHttpUrl, BaseSettings
+from aiohttp.web import AbstractRoute
+from aiozipkin.tracer import Tracer
+from yarl import URL
 
 log = logging.getLogger(__name__)
 
 
 def setup_tracing(
-    app: web.Application, app_name: str, host: str, port: int, config: Dict
+    app: web.Application,
+    *,
+    service_name: str,
+    host: str,
+    port: int,
+    jaeger_base_url: Union[URL, str],
+    skip_routes: Optional[Iterable[AbstractRoute]] = None,
 ) -> bool:
-    zipkin_address = f"{config['zipkin_endpoint']}/api/v2/spans"
-    endpoint = az.create_endpoint(app_name, ipv4=host, port=port)
-    loop = asyncio.get_event_loop()
-    tracer = loop.run_until_complete(
-        az.create(zipkin_address, endpoint, sample_rate=1.0)
+    """
+    Sets up this service for a distributed tracing system
+    using zipkin (https://zipkin.io/) and Jaeger (https://www.jaegertracing.io/)
+    """
+    zipkin_address = URL(f"{jaeger_base_url}") / "api/v2/spans"
+
+    log.debug(
+        "Settings up tracing for %s at %s:%d -> %s",
+        service_name,
+        host,
+        port,
+        zipkin_address,
     )
-    az.setup(app, tracer)
+
+    endpoint = az.create_endpoint(service_name, ipv4=host, port=port)
+
+    tracer: Tracer = asyncio.get_event_loop().run_until_complete(
+        az.create(f"{zipkin_address}", endpoint, sample_rate=1.0)
+    )
+
+    # WARNING: adds a middleware that should be the outermost since
+    # it expects stream responses while we allow data returns from a handler
+    az.setup(app, tracer, skip_routes=skip_routes)
+
     return True
-
-
-schema = T.Dict(
-    {
-        T.Key("enabled", default=True, optional=True): T.Or(T.Bool(), T.ToInt),
-        T.Key("zipkin_endpoint", default="http://jaeger:9411"): T.String(),
-    }
-)
-
-
-class TracingSettings(BaseSettings):
-    enabled: Optional[bool] = True
-    zipkin_endpoint: AnyHttpUrl = "http://jaeger:9411"

@@ -13,7 +13,7 @@ from models_library.projects import Project
 from pydantic.main import BaseModel
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.rest_pagination_utils import PageResponseLimitOffset
-from simcore_service_webserver._meta import api_vtag as vtag
+from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.version_control_models import (
     CheckpointApiModel,
     RepoApiModel,
@@ -60,14 +60,14 @@ async def test_workflow(
     project_uuid = user_project["uuid"]
 
     # get existing project
-    resp = await client.get(f"/{vtag}/projects/{project_uuid}")
+    resp = await client.get(f"/{VX}/projects/{project_uuid}")
     data, _ = await assert_status(resp, web.HTTPOk)
     project = Project.parse_obj(data)
     assert project.uuid == UUID(project_uuid)
 
     #
     # list repos i.e. versioned projects
-    resp = await client.get(f"/{vtag}/repos/projects")
+    resp = await client.get(f"/{VX}/repos/projects")
     data, _ = await assert_status(resp, web.HTTPOk)
 
     assert data == []
@@ -75,7 +75,7 @@ async def test_workflow(
     #
     # CREATE a checkpoint
     resp = await client.post(
-        f"/{vtag}/repos/projects/{project_uuid}/checkpoints",
+        f"/{VX}/repos/projects/{project_uuid}/checkpoints",
         json={"tag": "v1", "message": "init"},
     )
     data, _ = await assert_status(resp, web.HTTPCreated)
@@ -85,20 +85,20 @@ async def test_workflow(
 
     #
     # this project now has a repo
-    resp = await client.get(f"/{vtag}/repos/projects")
+    resp = await client.get(f"/{VX}/repos/projects")
     page = await assert_resp_page(resp, expected_total=1, expected_count=1)
 
     repo = RepoApiModel.parse_obj(page.data[0])
     assert repo.project_uuid == UUID(project_uuid)
 
     # GET checkpoint with HEAD
-    resp = await client.get(f"/{vtag}/repos/projects/{project_uuid}/checkpoints/HEAD")
+    resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints/HEAD")
     data, _ = await assert_status(resp, web.HTTPOk)
     assert CheckpointApiModel.parse_obj(data) == checkpoint1
 
     # TODO: GET checkpoint with tag
     with pytest.raises(aiohttp.ClientResponseError) as excinfo:
-        resp = await client.get(f"/{vtag}/repos/projects/{project_uuid}/checkpoints/v1")
+        resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints/v1")
         resp.raise_for_status()
         assert CheckpointApiModel.parse_obj(data) == checkpoint1
 
@@ -106,20 +106,20 @@ async def test_workflow(
 
     # GET checkpoint with id
     resp = await client.get(
-        f"/{vtag}/repos/projects/{project_uuid}/checkpoints/{checkpoint1.id}"
+        f"/{VX}/repos/projects/{project_uuid}/checkpoints/{checkpoint1.id}"
     )
     assert str(resp.url) == checkpoint1.url
     assert CheckpointApiModel.parse_obj(data) == checkpoint1
 
     # LIST checkpoints
-    resp = await client.get(f"/{vtag}/repos/projects/{project_uuid}/checkpoints")
+    resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints")
     page = await assert_resp_page(resp, expected_total=1, expected_count=1)
 
     assert CheckpointApiModel.parse_obj(page.data[0]) == checkpoint1
 
     # UPDATE checkpoint annotations
     resp = await client.patch(
-        f"/{vtag}/repos/projects/{project_uuid}/checkpoints/{checkpoint1.id}",
+        f"/{VX}/repos/projects/{project_uuid}/checkpoints/{checkpoint1.id}",
         json={"message": "updated message", "tag": "Version 1"},
     )
     data, _ = await assert_status(resp, web.HTTPOk)
@@ -132,7 +132,7 @@ async def test_workflow(
 
     # GET view
     resp = await client.get(
-        f"/{vtag}/repos/projects/{project_uuid}/checkpoints/HEAD/workbench/view"
+        f"/{VX}/repos/projects/{project_uuid}/checkpoints/HEAD/workbench/view"
     )
     data, _ = await assert_status(resp, web.HTTPOk)
     assert (
@@ -145,7 +145,7 @@ async def test_workflow(
 
     # CREATE new checkpoint
     resp = await client.post(
-        f"/{vtag}/repos/projects/{project_uuid}/checkpoints",
+        f"/{VX}/repos/projects/{project_uuid}/checkpoints",
         json={"tag": "v2", "message": "new commit"},
     )
     data, _ = await assert_status(resp, web.HTTPCreated)
@@ -153,24 +153,24 @@ async def test_workflow(
     assert checkpoint2.tags == ("v2",)
 
     # GET checkpoint with HEAD
-    resp = await client.get(f"/{vtag}/repos/projects/{project_uuid}/checkpoints/HEAD")
+    resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints/HEAD")
     data, _ = await assert_status(resp, web.HTTPOk)
     assert CheckpointApiModel.parse_obj(data) == checkpoint2
 
     # CHECKOUT
     resp = await client.post(
-        f"/{vtag}/repos/projects/{project_uuid}/checkpoints/{checkpoint1.id}:checkout"
+        f"/{VX}/repos/projects/{project_uuid}/checkpoints/{checkpoint1.id}:checkout"
     )
     data, _ = await assert_status(resp, web.HTTPOk)
     assert CheckpointApiModel.parse_obj(data) == checkpoint1_updated
 
     # GET checkpoint with HEAD
-    resp = await client.get(f"/{vtag}/repos/projects/{project_uuid}/checkpoints/HEAD")
+    resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints/HEAD")
     data, _ = await assert_status(resp, web.HTTPOk)
     assert CheckpointApiModel.parse_obj(data) == checkpoint1_updated
 
     # get working copy
-    resp = await client.get(f"/{vtag}/projects/{project_uuid}")
+    resp = await client.get(f"/{VX}/projects/{project_uuid}")
     data, _ = await assert_status(resp, web.HTTPOk)
     project_wc = Project.parse_obj(data)
     assert project_wc.uuid == UUID(project_uuid)
@@ -182,7 +182,7 @@ async def test_create_checkpoint_without_changes(
 ):
     # CREATE a checkpoint
     resp = await client.post(
-        f"/{vtag}/repos/projects/{project_uuid}/checkpoints",
+        f"/{VX}/repos/projects/{project_uuid}/checkpoints",
         json={"tag": "v1", "message": "first commit"},
     )
     data, _ = await assert_status(resp, web.HTTPCreated)
@@ -192,7 +192,7 @@ async def test_create_checkpoint_without_changes(
 
     # CREATE checkpoint WITHOUT changes
     resp = await client.post(
-        f"/{vtag}/repos/projects/{project_uuid}/checkpoints",
+        f"/{VX}/repos/projects/{project_uuid}/checkpoints",
         json={"tag": "v2", "message": "second commit"},
     )
     data, _ = await assert_status(resp, web.HTTPCreated)
@@ -213,22 +213,22 @@ async def test_delete_project_and_repo(
 
     # CREATE a checkpoint
     resp = await client.post(
-        f"/{vtag}/repos/projects/{project_uuid}/checkpoints",
+        f"/{VX}/repos/projects/{project_uuid}/checkpoints",
         json={"tag": "v1", "message": "first commit"},
     )
     data, _ = await assert_status(resp, web.HTTPCreated)
 
     # LIST
-    resp = await client.get(f"/{vtag}/repos/projects/{project_uuid}/checkpoints")
+    resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints")
     await assert_resp_page(resp, expected_total=1, expected_count=1)
 
     # DELETE project -> projects_vc_*  deletion follow
     await do_delete_user_project(project_uuid)
 
     # LIST empty
-    resp = await client.get(f"/{vtag}/repos/projects/{project_uuid}/checkpoints")
+    resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints")
     await assert_resp_page(resp, expected_total=0, expected_count=0)
 
     # GET HEAD
-    resp = await client.get(f"/{vtag}/repos/projects/{project_uuid}/HEAD")
+    resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/HEAD")
     await assert_status(resp, web.HTTPNotFound)

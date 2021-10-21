@@ -17,6 +17,8 @@ JSON_CONTENT_TYPE = "application/json"
 
 JsonLikeModel = Union[Dict[str, Any], List[Dict[str, Any]]]
 
+_DataType = Union[str, Dict[str, Any], List[Any]]
+
 
 def is_enveloped_from_map(payload: Mapping) -> bool:
     return all(k in ENVELOPE_KEYS for k in payload.keys() if not str(k).startswith("_"))
@@ -66,7 +68,7 @@ def unwrap_envelope(payload: Dict[str, Any]) -> Tuple:
 
 
 def create_data_response(
-    data: Union[Mapping, str], *, skip_internal_error_details=False
+    data: _DataType, *, skip_internal_error_details=False
 ) -> web.Response:
     response = None
     try:
