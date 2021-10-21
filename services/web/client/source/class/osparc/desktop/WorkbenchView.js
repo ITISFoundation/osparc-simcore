@@ -108,7 +108,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
               return oldWidth;
             }
           });
-          // osparc.utils.Utils.addBorder(control, 1, "right");
+          osparc.utils.Utils.addBorder(control, 1, "right");
           sidePanels.add(control, 1); // flex 1
           break;
         }
@@ -166,6 +166,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         toolTipText: tooltip,
         backgroundColor
       });
+      tabPageBtn.getContentElement().setStyles({
+        "border": "0px"
+      });
       tabPageBtn.bind("value", tabPageBtn, "backgroundColor", {
         converter: val => val ? backgroundColor : "contrasted-background+"
       });
@@ -202,14 +205,16 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const topBar = tabViewPrimary.getChildControl("bar");
       this.__addTopBarSpacer(topBar);
 
-      const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
+      const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(0)).set({
         backgroundColor: primaryColumnBGColor
       });
 
       const studyTreeItem = this.__studyTreeItem = new osparc.component.widget.StudyTitleOnlyTree().set({
+        alignY: "middle",
+        minHeight: 24,
+        maxHeight: 24,
         backgroundColor: primaryColumnBGColor,
-        minHeight: 21,
-        maxHeight: 24
+        marginBottom: 6
       });
       studyTreeItem.setStudy(study);
       homeAndNodesTree.add(studyTreeItem);

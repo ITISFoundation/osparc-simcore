@@ -127,6 +127,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
             const nodeTreeItem = new osparc.component.widget.NodeTreeItem();
             nodeTreeItem.addListener("fullscreenNode", e => this.__openFullscreen(e.getData()));
             nodeTreeItem.addListener("renameNode", e => this.__openItemRenamer(e.getData()));
+            nodeTreeItem.addListener("showInfo", e => this.__openNodeInfo(e.getData()));
             nodeTreeItem.addListener("deleteNode", e => this.__deleteNode(e.getData()));
             return nodeTreeItem;
           },
@@ -232,6 +233,17 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         const bounds = this.getLayoutParent().getContentLocation();
         treeItemRenamer.moveTo(bounds.left + 100, bounds.top + 150);
         treeItemRenamer.open();
+      }
+    },
+
+    __openNodeInfo: function(nodeId) {
+      if (nodeId) {
+        const node = this.getStudy().getWorkbench().getNode(nodeId);
+        const serviceDetails = new osparc.servicecard.Large(node.getMetaData());
+        const title = this.tr("Service information");
+        const width = 600;
+        const height = 700;
+        osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
       }
     },
 

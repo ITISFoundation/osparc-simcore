@@ -62,6 +62,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
   events: {
     "fullscreenNode": "qx.event.type.Data",
     "renameNode": "qx.event.type.Data",
+    "showInfo": "qx.event.type.Data",
     "deleteNode": "qx.event.type.Data"
   },
 
@@ -106,15 +107,15 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "node-id": {
           control = new qx.ui.basic.Label().set({
-            maxWidth: 250
+            maxWidth: 70,
+            alignY: "middle"
           });
           this.bind("nodeId", control, "value", {
             converter: value => value && value.substring(0, 8)
           });
           const permissions = osparc.data.Permissions.getInstance();
-          control.setVisibility(permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded");
-          permissions.addListener("changeRole", () => {
-            control.setVisibility(permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded");
+          permissions.bind("role", control, "visibility", {
+            converter: () => permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded"
           });
           this.addWidget(control);
         }
@@ -161,15 +162,23 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       const renameButton = new qx.ui.menu.Button().set({
         backgroundColor: "transparent",
         label: this.tr("Rename"),
-        icon: "@FontAwesome5Solid/i-cursor/9"
+        icon: "@FontAwesome5Solid/i-cursor/10"
       });
       renameButton.addListener("execute", () => this.fireDataEvent("renameNode", this.getNodeId()));
       optionsMenu.add(renameButton);
 
+      const infoButton = new qx.ui.menu.Button().set({
+        backgroundColor: "transparent",
+        label: this.tr("Information"),
+        icon: "@FontAwesome5Solid/info/10"
+      });
+      infoButton.addListener("execute", () => this.fireDataEvent("showInfo", this.getNodeId()));
+      optionsMenu.add(infoButton);
+
       const deleteButton = new qx.ui.menu.Button().set({
         backgroundColor: "transparent",
         label: this.tr("Delete"),
-        icon: "@FontAwesome5Solid/trash/9"
+        icon: "@FontAwesome5Solid/trash/10"
       });
       deleteButton.addListener("execute", () => this.fireDataEvent("deleteNode", this.getNodeId()));
       optionsMenu.add(deleteButton);
