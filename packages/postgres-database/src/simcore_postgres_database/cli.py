@@ -10,9 +10,10 @@ import logging
 import os
 import sys
 from copy import deepcopy
+from functools import wraps
 from logging.config import fileConfig
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Callable, Dict, Final, Optional
 
 import alembic.command
 import click
@@ -26,26 +27,31 @@ from simcore_postgres_database.utils import (
     hide_url_pass,
     raise_if_not_responsive,
 )
-from tenacity import Retrying, after_log, wait_fixed
+from tenacity import Retrying
+from tenacity.after import after_log
+from tenacity.wait import wait_fixed
 
-alembic_version = tuple(int(v) for v in __alembic_version__.split(".")[0:3])
+ALEMBIC_VERSION = tuple(int(v) for v in __alembic_version__.split(".")[0:3])
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.resolve()
-default_ini = current_dir / "alembic.ini"
-migration_dir = current_dir / "migration"
-discovered_cache = os.path.expanduser("~/.simcore_postgres_database_cache.json")
+CURRENT_DIR: Final = Path(
+    sys.argv[0] if __name__ == "__main__" else __file__
+).parent.resolve()
+DEFAULT_INI: Final = CURRENT_DIR / "alembic.ini"
+MIGRATION_DIR: Final = CURRENT_DIR / "migration"
+DISCOVERED_CACHE: Final = os.path.expanduser("~/.simcore_postgres_database_cache.json")
 
 log = logging.getLogger("root")
 
 if __name__ == "__main__":
     # swallows up all log messages from tests
     # only enable it during cli invocation
-    fileConfig(default_ini)
+    fileConfig(DEFAULT_INI)
 
 
 def safe(if_fails_return=False):
-    def decorate(func):
-        def safe_func(*args, **kargs):
+    def _decorator(func: Callable):
+        @wraps(func)
+        def wrapper(*args, **kargs):
             try:
                 res = func(*args, **kargs)
                 return res
@@ -66,9 +72,9 @@ def safe(if_fails_return=False):
                 )
             return deepcopy(if_fails_return)  # avoid issues with default mutables
 
-        return safe_func
+        return wrapper
 
-    return decorate
+    return _decorator
 
 
 @safe(if_fails_return=None)
@@ -118,15 +124,15 @@ def _get_alembic_config_from_cache(
         return None
 
     # build config
-    config = AlembicConfig(default_ini)
-    config.set_main_option("script_location", str(migration_dir))
+    config = AlembicConfig(file_=str(DEFAULT_INI))
+    config.set_main_option("script_location", str(MIGRATION_DIR))
     config.set_main_option("sqlalchemy.url", str(url))
     return config
 
 
 def _load_cache(*, raise_if_error=False) -> Dict:
     try:
-        with open(discovered_cache) as fh:
+        with open(DISCOVERED_CACHE) as fh:
             cfg = json.load(fh)
     except (FileNotFoundError, json.decoder.JSONDecodeError):
         if raise_if_error:
@@ -136,9 +142,9 @@ def _load_cache(*, raise_if_error=False) -> Dict:
 
 
 def _reset_cache():
-    if os.path.exists(discovered_cache):
-        os.remove(discovered_cache)
-        click.echo("Removed %s" % discovered_cache)
+    if os.path.exists(DISCOVERED_CACHE):
+        os.remove(DISCOVERED_CACHE)
+        click.echo("Removed %s" % DISCOVERED_CACHE)
 
 
 # CLI -----------------------------------------------
@@ -149,7 +155,7 @@ DEFAULT_DB = "simcoredb"
 
 @click.group()
 def main():
-    """ Simplified CLI for database migration with alembic """
+    """Simplified CLI for database migration with alembic"""
 
 
 @main.command()
@@ -159,7 +165,7 @@ def main():
 @click.option("--port", type=int)
 @click.option("--database", "-d")
 def discover(**cli_inputs) -> Optional[Dict]:
-    """ Discovers databases and caches configs in ~/.simcore_postgres_database.json (except if --no-cache)"""
+    """Discovers databases and caches configs in ~/.simcore_postgres_database.json (except if --no-cache)"""
     # NOTE: Do not add defaults to user, password so we get a chance to ping urls
     # TODO: if multiple candidates online, then query user to select
 
@@ -169,13 +175,13 @@ def discover(**cli_inputs) -> Optional[Dict]:
     # tests different urls
 
     def _test_cached() -> Dict:
-        """Tests cached configuration """
+        """Tests cached configuration"""
         cfg = _load_cache(raise_if_error=True)
         cfg.update(cli_cfg)  # overrides
         return cfg
 
     def _test_env() -> Dict:
-        """Tests environ variables """
+        """Tests environ variables"""
         cfg = {
             "user": os.getenv("POSTGRES_USER"),
             "password": os.getenv("POSTGRES_PASSWORD"),
@@ -187,7 +193,7 @@ def discover(**cli_inputs) -> Optional[Dict]:
         return cfg
 
     def _test_swarm() -> Dict:
-        """Tests published port in swarm from host """
+        """Tests published port in swarm from host"""
         cfg = _test_env()
         cfg["host"] = "127.0.0.1"
         cfg["port"] = _get_service_published_port(cli_cfg.get("host", DEFAULT_HOST))
@@ -206,8 +212,8 @@ def discover(**cli_inputs) -> Optional[Dict]:
             raise_if_not_responsive(url, verbose=False)
 
             print("Saving config ")
-            click.echo(f"Saving config at {discovered_cache}: {hide_dict_pass(cfg)}")
-            with open(discovered_cache, "wt") as fh:
+            click.echo(f"Saving config at {DISCOVERED_CACHE}: {hide_dict_pass(cfg)}")
+            with open(DISCOVERED_CACHE, "wt") as fh:
                 json.dump(cfg, fh, sort_keys=True, indent=4)
 
             print("Saving config at ")
@@ -231,11 +237,11 @@ def discover(**cli_inputs) -> Optional[Dict]:
 
 @main.command()
 def info():
-    """ Displays discovered config and other alembic infos"""
-    click.echo("Using alembic {}.{}.{}".format(*alembic_version))
+    """Displays discovered config and other alembic infos"""
+    click.echo("Using alembic {}.{}.{}".format(*ALEMBIC_VERSION))
 
     cfg = _load_cache()
-    click.echo(f"Saved config: {hide_dict_pass(cfg)} @ {discovered_cache}")
+    click.echo(f"Saved config: {hide_dict_pass(cfg)} @ {DISCOVERED_CACHE}")
     config = _get_alembic_config_from_cache(cfg)
     if config:
         click.echo("Revisions history ------------")
@@ -246,13 +252,13 @@ def info():
 
 @main.command()
 def clean():
-    """ Clears discovered database """
+    """Clears discovered database"""
     _reset_cache()
 
 
 @main.command()
 def upgrade_and_close():
-    """ Used in migration service program to discover, upgrade and close"""
+    """Used in migration service program to discover, upgrade and close"""
 
     for attempt in Retrying(wait=wait_fixed(5), after=after_log(log, logging.ERROR)):
         with attempt:
