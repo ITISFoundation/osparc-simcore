@@ -241,10 +241,15 @@ class CreateUserServices(DynamicSchedulerEvent):
                 )
             )
 
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
+
         async for attempt in AsyncRetrying(
-            # it could take a really long time to pull the images
-            stop=stop_after_delay(60 * 60),
-            wait=wait_fixed(2),
+            stop=stop_after_delay(
+                dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START
+            ),
+            wait=wait_fixed(1),
             retry_error_cls=EntrypointContainerNotFoundError,
         ):
             with attempt:
@@ -255,10 +260,6 @@ class CreateUserServices(DynamicSchedulerEvent):
                         swarm_network_name=scheduler_data.dynamic_sidecar_network_name,
                     )
                 )
-
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-        )
 
         dynamic_sidecar_node_id = await get_node_id_from_task_for_service(
             scheduler_data.dynamic_sidecar.dynamic_sidecar_id, dynamic_sidecar_settings

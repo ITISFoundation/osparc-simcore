@@ -126,6 +126,14 @@ class DynamicSidecarSettings(BaseCustomSettings):
             "twards the dynamic-sidecar, as is the case with the above timeout field."
         ),
     )
+    DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START: PositiveFloat = Field(
+        60.0 * 60.0,
+        description=(
+            "After running `docker-compose up`, images might need to be pulled "
+            "before everything is started. Using default 1hour timeout to let this "
+            "operation finish."
+        ),
+    )
 
     TRAEFIK_SIMCORE_ZONE: str = Field(
         ...,
