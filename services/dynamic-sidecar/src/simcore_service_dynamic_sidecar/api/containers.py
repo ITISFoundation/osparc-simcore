@@ -237,10 +237,7 @@ async def inspect_container(
 @containers_router.get(
     "/containers:entrypoint-name",
     responses={
-        status.HTTP_404_NOT_FOUND: {
-            "description": "Container was not found",
-        },
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"},
+        status.HTTP_404_NOT_FOUND: {"description": "No entrypoint container found"},
     },
 )
 async def get_entrypoint_container_name(
