@@ -30,14 +30,6 @@ def create(settings: Settings) -> web.Application:
     app = create_safe_application(None)
     app[APP_CONFIG_KEY] = settings
 
-    setup_db(app)  # -> postgres service
-    setup_s3(app)  # -> minio service
-    setup_dsm(app)  # core subsystem. Needs s3 and db setups done
-    setup_rest(app)  # lastly, we expose API to the world
-
-    if settings.STORAGE_MONITORING_ENABLED:
-        setup_monitoring(app, "simcore_service_storage")
-
     if settings.STORAGE_TRACING:
         setup_tracing(
             app,
@@ -47,6 +39,14 @@ def create(settings: Settings) -> web.Application:
             jaeger_base_url=f"{settings.STORAGE_TRACING.TRACING_ZIPKIN_ENDPOINT}",
             skip_routes=None,
         )
+
+    setup_db(app)  # -> postgres service
+    setup_s3(app)  # -> minio service
+    setup_dsm(app)  # core subsystem. Needs s3 and db setups done
+    setup_rest(app)  # lastly, we expose API to the world
+
+    if settings.STORAGE_MONITORING_ENABLED:
+        setup_monitoring(app, "simcore_service_storage")
 
     return app
 
