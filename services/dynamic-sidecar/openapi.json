@@ -267,6 +267,53 @@
         }
       }
     },
+    "/v1/containers:entrypoint-name": {
+      "get": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Get Entrypoint Container Name",
+        "description": "Searches for the container's name given the network\non which the proxy communicates with it.",
+        "operationId": "get_entrypoint_container_name_v1_containers_entrypoint_name_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Swarm Network Name",
+              "type": "string"
+            },
+            "name": "swarm_network_name",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "Container was not found"
+          },
+          "500": {
+            "description": "Errors in container"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/push": {
       "post": {
         "tags": [

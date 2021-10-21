@@ -144,6 +144,15 @@ def _inject_backend_networking(
     parsed_compose_spec["networks"] = networks
 
 
+def parse_compose_spec(compose_file_content: str) -> Dict[str, Any]:
+    try:
+        return yaml.safe_load(compose_file_content)
+    except yaml.YAMLError as e:
+        raise InvalidComposeSpec(
+            f"{str(e)}\n{compose_file_content}\nProvided yaml is not valid!"
+        ) from e
+
+
 async def validate_compose_spec(
     settings: DynamicSidecarSettings, compose_file_content: str
 ) -> str:
@@ -158,12 +167,7 @@ async def validate_compose_spec(
     Finally runs docker-compose config to properly validate the result
     """
 
-    try:
-        parsed_compose_spec = yaml.safe_load(compose_file_content)
-    except yaml.YAMLError as e:
-        raise InvalidComposeSpec(
-            f"{str(e)}\n{compose_file_content}\nProvided yaml is not valid!"
-        ) from e
+    parsed_compose_spec = parse_compose_spec(compose_file_content)
 
     if parsed_compose_spec is None or not isinstance(parsed_compose_spec, dict):
         raise InvalidComposeSpec(f"{compose_file_content}\nProvided yaml is not valid!")

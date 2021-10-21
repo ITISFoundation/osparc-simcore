@@ -19,7 +19,11 @@ from ..core.dependencies import get_application_health, get_settings, get_shared
 from ..core.settings import DynamicSidecarSettings
 from ..core.shared_handlers import remove_the_compose_spec, write_file_and_run_command
 from ..core.utils import assemble_container_names, docker_client
-from ..core.validation import InvalidComposeSpec, validate_compose_spec
+from ..core.validation import (
+    InvalidComposeSpec,
+    parse_compose_spec,
+    validate_compose_spec,
+)
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
 
@@ -228,6 +232,51 @@ async def inspect_container(
         container_instance = await docker.containers.get(id)
         inspect_result: Dict[str, Any] = await container_instance.show()
         return inspect_result
+
+
+@containers_router.get(
+    "/containers:entrypoint-name",
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Container was not found",
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"},
+    },
+)
+async def get_entrypoint_container_name(
+    swarm_network_name: str,
+    shared_store: SharedStore = Depends(get_shared_store),
+) -> Dict[str, Any]:
+    """
+    Searches for the container's name given the network
+    on which the proxy communicates with it.
+    """
+
+    stored_compose_content = shared_store.compose_spec
+    if stored_compose_content is None:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No spec for docker-compose down was found",
+        )
+
+    compose_spec = parse_compose_spec(stored_compose_content)
+
+    container_name = None
+
+    spec_services = compose_spec["services"]
+    for service in spec_services:
+        service_content = spec_services[service]
+        if swarm_network_name in service_content.get("networks", {}):
+            container_name = service_content["container_name"]
+            break
+
+    if container_name is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=f"No container found for network={swarm_network_name}",
+        )
+
+    return container_name
 
 
 __all__ = ["containers_router"]
