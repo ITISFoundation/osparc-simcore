@@ -39,14 +39,14 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
 
 def error_middleware_factory(api_version: str, log_exceptions=True) -> Middleware:
 
-    _IS_PROD: bool = is_production_environ()
+    _is_prod: bool = is_production_environ()
 
     def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
         resp = create_error_response(
             err,
             "Unexpected Server error",
             web.HTTPInternalServerError,
-            skip_internal_error_details=_IS_PROD,
+            skip_internal_error_details=_is_prod,
         )
 
         if log_exceptions:
@@ -78,7 +78,7 @@ def error_middleware_factory(api_version: str, log_exceptions=True) -> Middlewar
         except web.HTTPError as err:
             # TODO: differenciate between server/client error
             if not err.reason:
-                err.reason = "Unexpected error"
+                err.set_status(err.status_code, reason="Unexpected error")
 
             err.content_type = JSON_CONTENT_TYPE
 
@@ -117,7 +117,7 @@ def error_middleware_factory(api_version: str, log_exceptions=True) -> Middlewar
                 err,
                 str(err),
                 web.HTTPNotImplemented,
-                skip_internal_error_details=_IS_PROD,
+                skip_internal_error_details=_is_prod,
             )
             raise error_response from err
 
@@ -198,11 +198,10 @@ def envelope_middleware_factory(api_version: str) -> MiddlewareFlexible:
             assert isinstance(resp, StreamResponse)  # nosec
             return resp
 
-        # WARNING: this is not a handler in the classic way
+        # NOTE: the return values of this handler
         resp: _ResponseOrBodyData = await handler(request)
 
         if isinstance(resp, web.FileResponse):
-            # WARNING: allows for files to be downloaded
             return resp
 
         if not isinstance(resp, StreamResponse):
