@@ -100,7 +100,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       const linkOptions = this.__createLinkOpts(field);
       linkUnlinkStack.add(linkOptions);
 
-
       const unlinkBtn = this.__createUnlinkButton(field);
       linkUnlinkStack.add(unlinkBtn);
 
