@@ -23,20 +23,23 @@ from dask_task_models_library.container_tasks.io import (
 )
 from distributed import Pub
 from models_library.projects_state import RunningState
+from packaging import version
 from pydantic import ValidationError
-from simcore_service_dask_sidecar.boot_mode import BootMode
 from yarl import URL
 
+from ..boot_mode import BootMode
 from ..dask_utils import create_dask_worker_logger, publish_event
 from ..settings import Settings
 from .docker_utils import (
     create_container_config,
     get_computational_shared_data_mount_point,
+    get_integration_version,
     managed_container,
     managed_monitor_container_log_task,
     pull_image,
 )
 from .errors import ServiceBadFormattedOutputError, ServiceRunError
+from .models import IntegrationVersion
 from .task_shared_volume import TaskSharedVolumes
 
 logger = create_dask_worker_logger(__name__)
@@ -62,8 +65,15 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         self._progress_pub = Pub(name=TaskProgressEvent.topic_name())
         self._logs_pub = Pub(name=TaskLogEvent.topic_name())
 
-    async def _write_input_data(self, task_volumes: TaskSharedVolumes) -> None:
-        input_data_file = task_volumes.inputs_folder / "inputs.json"
+    async def _write_input_data(
+        self,
+        task_volumes: TaskSharedVolumes,
+        integration_version: IntegrationVersion,
+    ) -> None:
+        input_data_file = (
+            task_volumes.inputs_folder
+            / f"{'input' if integration_version == version.parse('0.0.0') else 'inputs'}.json"
+        )
         input_data = {}
         for input_key, input_params in self.input_data.items():
             if isinstance(input_params, FileUrl):
@@ -88,7 +98,9 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         )
 
     async def _retrieve_output_data(
-        self, task_volumes: TaskSharedVolumes
+        self,
+        task_volumes: TaskSharedVolumes,
+        integration_version: IntegrationVersion,
     ) -> TaskOutputData:
         try:
             logger.debug(
@@ -101,7 +113,11 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 pformat(self.output_data_keys),
             )
             output_data = TaskOutputData.from_task_output(
-                self.output_data_keys, task_volumes.outputs_folder
+                self.output_data_keys,
+                task_volumes.outputs_folder,
+                "output.json"
+                if integration_version == version.parse("0.0.0")
+                else "outputs.json",
             )
             for output_params in output_data.values():
                 if isinstance(output_params, FileUrl):
@@ -148,6 +164,9 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             await pull_image(
                 docker_client, self.docker_auth, self.service_key, self.service_version
             )
+            integration_version = await get_integration_version(
+                docker_client, self.docker_auth, self.service_key, self.service_version
+            )
             computational_shared_data_mount_point = (
                 await get_computational_shared_data_mount_point(docker_client)
             )
@@ -163,7 +182,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             logger.debug("Container configuration: \n%s", pformat(config.dict()))
 
             # set up the inputs
-            await self._write_input_data(task_volumes)
+            await self._write_input_data(task_volumes, integration_version)
 
             # run the image
             async with managed_container(docker_client, config) as container:
@@ -173,6 +192,8 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     service_version=self.service_version,
                     progress_pub=self._progress_pub,
                     logs_pub=self._logs_pub,
+                    integration_version=integration_version,
+                    task_volumes=task_volumes,
                 ):
                     # run the container
                     await container.start()
@@ -206,7 +227,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                         container.id,
                     )
             # get the outputs
-            return await self._retrieve_output_data(task_volumes)
+            return await self._retrieve_output_data(task_volumes, integration_version)
 
     async def __aenter__(self) -> "ComputationalSidecar":
         return self

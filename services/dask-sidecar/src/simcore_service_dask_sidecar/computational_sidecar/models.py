@@ -1,6 +1,9 @@
-from typing import Dict, List
+from typing import Dict, List, Union
 
+from packaging import version
 from pydantic import BaseModel, ByteSize, Field
+
+IntegrationVersion = Union[version.LegacyVersion, version.Version]
 
 
 class ContainerHostConfig(BaseModel):

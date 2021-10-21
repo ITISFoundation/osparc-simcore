@@ -34,8 +34,10 @@ from distributed import Client
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from packaging import version
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
+from simcore_service_dask_sidecar.computational_sidecar.models import IntegrationVersion
 from simcore_service_dask_sidecar.tasks import run_computational_sidecar
 from yarl import URL
 
@@ -119,6 +121,7 @@ class ServiceExampleParam:
     output_data_keys: TaskOutputDataSchema
     expected_output_data: TaskOutputData
     expected_logs: List[str]
+    integration_version: IntegrationVersion
 
 
 @pytest.fixture()
@@ -205,6 +208,7 @@ def ubuntu_task(ftp_server: List[URL]) -> ServiceExampleParam:
             "This file is named: file_2",
             "This file is named: file_3",
         ],
+        integration_version=version.parse("1.0.0"),
     )
 
 
@@ -220,7 +224,12 @@ def test_run_computational_sidecar_real_fct(
     dask_subsystem_mock: Dict[str, MockerFixture],
     task: ServiceExampleParam,
     caplog: LogCaptureFixture,
+    mocker: MockerFixture,
 ):
+    mocker.patch(
+        "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
+        return_value=task.service_version,
+    )
     caplog.set_level(logging.INFO)
     output_data = run_computational_sidecar(
         task.docker_basic_auth,
@@ -270,7 +279,13 @@ def test_run_computational_sidecar_real_fct(
         pytest.lazy_fixture("ubuntu_task"),  # type: ignore
     ],
 )
-def test_run_computational_sidecar_dask(dask_client: Client, task: ServiceExampleParam):
+def test_run_computational_sidecar_dask(
+    dask_client: Client, task: ServiceExampleParam, mocker: MockerFixture
+):
+    mocker.patch(
+        "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
+        return_value=task.service_version,
+    )
     future = dask_client.submit(
         run_computational_sidecar,
         task.docker_basic_auth,

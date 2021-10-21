@@ -1,4 +1,5 @@
 import asyncio
+import json
 import re
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -7,6 +8,7 @@ from pathlib import Path
 from pprint import pformat
 from typing import Any, AsyncIterator, Awaitable, Dict, List, Tuple
 
+import aiofiles
 from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
@@ -16,12 +18,14 @@ from dask_task_models_library.container_tasks.events import (
     TaskProgressEvent,
 )
 from distributed.pubsub import Pub
+from packaging import version
 from pydantic import ByteSize
 
 from ..boot_mode import BootMode
 from ..dask_utils import create_dask_worker_logger, publish_event
 from ..settings import Settings
-from .models import ContainerHostConfig, DockerContainerConfig
+from .models import ContainerHostConfig, DockerContainerConfig, IntegrationVersion
+from .task_shared_volume import TaskSharedVolumes
 
 logger = create_dask_worker_logger(__name__)
 
@@ -180,28 +184,24 @@ async def publish_logs(
         publish_event(logs_pub, TaskLogEvent.from_dask_worker(log=message))
 
 
-async def monitor_container_logs(
+async def _parse_container_log_file(
     container: DockerContainer,
     service_key: str,
     service_version: str,
+    container_name: str,
     progress_pub: Pub,
     logs_pub: Pub,
-) -> None:
-    try:
-        container_info = await container.show()
-        container_name = container_info.get("Name", "undefined")
-        logger.info(
-            "Starting to parse information of task [%s:%s - %s%s]",
-            service_key,
-            service_version,
-            container.id,
-            container_name,
-        )
-        latest_log_timestamp = DEFAULT_TIME_STAMP
-        async for log_line in container.log(
-            stdout=True, stderr=True, follow=True, timestamps=True
-        ):
-            log_type, latest_log_timestamp, message = await parse_line(log_line)
+    task_volumes: TaskSharedVolumes,
+):
+    log_file = task_volumes.logs_folder / "log.dat"
+    log_file.touch()
+
+    async with aiofiles.open(log_file, mode="r") as file_pointer:
+        logger.debug("log monitoring: opened %s", log_file)
+        # await file_pointer.seek(0, 2)
+        async for line in file_pointer:
+            # try to read line
+            log_type, _, message = await parse_line(line)
             await publish_logs(
                 service_key=service_key,
                 service_version=service_version,
@@ -213,25 +213,96 @@ async def monitor_container_logs(
                 message=message,
             )
 
-        # NOTE: The log stream may be interrupted before all the logs are gathered!
-        # therefore it is needed to get the remaining logs
-        missing_logs = await container.log(
-            stdout=True,
-            stderr=True,
-            timestamps=True,
-            since=to_datetime(latest_log_timestamp).strftime("%s"),
+
+async def _parse_container_docker_logs(
+    container: DockerContainer,
+    service_key: str,
+    service_version: str,
+    container_name: str,
+    progress_pub: Pub,
+    logs_pub: Pub,
+):
+    latest_log_timestamp = DEFAULT_TIME_STAMP
+    async for log_line in container.log(
+        stdout=True, stderr=True, follow=True, timestamps=True
+    ):
+        log_type, latest_log_timestamp, message = await parse_line(log_line)
+        await publish_logs(
+            service_key=service_key,
+            service_version=service_version,
+            container=container,
+            container_name=container_name,
+            progress_pub=progress_pub,
+            logs_pub=logs_pub,
+            log_type=log_type,
+            message=message,
         )
-        for log_line in missing_logs:
-            log_type, latest_log_timestamp, message = await parse_line(log_line)
-            await publish_logs(
-                service_key=service_key,
-                service_version=service_version,
-                container=container,
-                container_name=container_name,
-                progress_pub=progress_pub,
-                logs_pub=logs_pub,
-                log_type=log_type,
-                message=message,
+
+    # NOTE: The log stream may be interrupted before all the logs are gathered!
+    # therefore it is needed to get the remaining logs
+    missing_logs = await container.log(
+        stdout=True,
+        stderr=True,
+        timestamps=True,
+        since=to_datetime(latest_log_timestamp).strftime("%s"),
+    )
+    for log_line in missing_logs:
+        log_type, latest_log_timestamp, message = await parse_line(log_line)
+        await publish_logs(
+            service_key=service_key,
+            service_version=service_version,
+            container=container,
+            container_name=container_name,
+            progress_pub=progress_pub,
+            logs_pub=logs_pub,
+            log_type=log_type,
+            message=message,
+        )
+
+
+async def monitor_container_logs(
+    container: DockerContainer,
+    service_key: str,
+    service_version: str,
+    progress_pub: Pub,
+    logs_pub: Pub,
+    integration_version: IntegrationVersion,
+    task_volumes: TaskSharedVolumes,
+) -> None:
+    """Services running with integration version 0.0.0 are logging into a file
+    that must be available in task_volumes.log / log.dat
+    Services above are not creating a file and use the usual docker logging. These logs
+    are retrieved using the usual cli 'docker logs CONTAINERID'
+    """
+    try:
+        container_info = await container.show()
+        container_name = container_info.get("Name", "undefined")
+        logger.info(
+            "Starting to parse information of task [%s:%s - %s%s]",
+            service_key,
+            service_version,
+            container.id,
+            container_name,
+        )
+
+        if integration_version == version.parse("0.0.0"):
+            await _parse_container_log_file(
+                container,
+                service_key,
+                service_version,
+                container_name,
+                progress_pub,
+                logs_pub,
+                task_volumes,
+            )
+        else:
+            await _parse_container_docker_logs(
+                container,
+                service_key,
+                service_version,
+                container_name,
+                progress_pub,
+                logs_pub,
             )
 
         logger.info(
@@ -258,12 +329,20 @@ async def managed_monitor_container_log_task(
     service_version: str,
     progress_pub: Pub,
     logs_pub: Pub,
+    integration_version: IntegrationVersion,
+    task_volumes: TaskSharedVolumes,
 ) -> AsyncIterator[Awaitable[None]]:
     monitoring_task = None
     try:
         monitoring_task = asyncio.create_task(
             monitor_container_logs(
-                container, service_key, service_version, progress_pub, logs_pub
+                container,
+                service_key,
+                service_version,
+                progress_pub,
+                logs_pub,
+                integration_version,
+                task_volumes,
             ),
             name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
         )
@@ -296,6 +375,39 @@ async def pull_image(
             pformat(pull_progress),
         )
     logger.info("%s:%s pulled", service_key, service_version)
+
+
+async def get_integration_version(
+    docker_client: Docker,
+    docker_auth: DockerBasicAuth,
+    service_key: str,
+    service_version: str,
+) -> IntegrationVersion:
+
+    INTEGRATION_VERSION_LABEL = "io.simcore.integration-version"
+
+    image_cfg = await docker_client.images.inspect(
+        f"{docker_auth.server_address}/{service_key}:{service_version}"
+    )
+    # NOTE: old services did not have the integration-version label
+    default_label = json.dumps({"integration-version": "0.0.0"})
+    # image labels are set to None when empty
+    image_labels = image_cfg["Config"].get("Labels", {})
+    if not image_labels:
+        image_labels = {INTEGRATION_VERSION_LABEL: default_label}
+
+    integration_version = version.parse(
+        json.loads(image_labels.get(INTEGRATION_VERSION_LABEL, default_label)).get(
+            "integration-version", "0.0.0"
+        )
+    )
+    logger.info(
+        "%s:%s has integration version %s",
+        service_key,
+        service_version,
+        integration_version,
+    )
+    return integration_version
 
 
 async def get_computational_shared_data_mount_point(docker_client: Docker) -> Path:

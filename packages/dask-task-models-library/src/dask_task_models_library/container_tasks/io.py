@@ -117,11 +117,11 @@ class TaskOutputDataSchema(DictModel[PortKey, PortSchemaValue]):
 class TaskOutputData(DictModel[PortKey, PortValue]):
     @classmethod
     def from_task_output(
-        cls, schema: TaskOutputDataSchema, output_folder: Path
+        cls, schema: TaskOutputDataSchema, output_folder: Path, output_file_ext: str
     ) -> "TaskOutputData":
         data = {}
         # try reading the outputs.json if available
-        output_data_file = output_folder / "outputs.json"
+        output_data_file = output_folder / output_file_ext
         if output_data_file.exists():
             with suppress(json.JSONDecodeError):
                 # in case the loading throw, then the data will be missing
