@@ -26,6 +26,8 @@ qx.Class.define("osparc.component.widget.CollapsibleViewLight", {
     if (content) {
       this.setContent(content);
     }
+
+    this.initCollapsed();
   },
 
   properties: {
@@ -58,22 +60,6 @@ qx.Class.define("osparc.component.widget.CollapsibleViewLight", {
           });
           control.addListener("execute", () => this.setCollapsed(false));
           break;
-        case "caret-collapsed": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-            width: 15
-          });
-          const spacer = new qx.ui.core.Widget().set({
-            backgroundColor: "contrasted-background+",
-            height: 50
-          });
-          control.add(spacer);
-          const expandBtn = this.getChildControl("expand-button");
-          control.add(expandBtn, {
-            flex: 1
-          });
-          this._addAt(control, 1);
-          break;
-        }
         case "collapse-button":
           control = new qx.ui.form.Button(null, "@FontAwesome5Solid/angle-left/14").set({
             toolTipText: this.tr("Collapse"),
@@ -85,18 +71,30 @@ qx.Class.define("osparc.component.widget.CollapsibleViewLight", {
           });
           control.addListener("execute", () => this.setCollapsed(true));
           break;
-        case "caret-expanded": {
+        case "caret-collapsed-layout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
             width: 15
           });
-          const spacer = new qx.ui.core.Widget().set({
-            backgroundColor: "contrasted-background+",
-            height: 50
+          const expandBtn = this.getChildControl("expand-button");
+          control.add(expandBtn, {
+            flex: 1
           });
-          control.add(spacer);
+          this.bind("collapsed", control, "visibility", {
+            converter: collapsed => collapsed ? "visible" : "excluded"
+          });
+          this._addAt(control, 1);
+          break;
+        }
+        case "caret-expanded-layout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+            width: 15
+          });
           const collapseBtn = this.getChildControl("collapse-button");
           control.add(collapseBtn, {
             flex: 1
+          });
+          this.bind("collapsed", control, "visibility", {
+            converter: collapsed => collapsed ? "excluded" : "visible"
           });
           this._addAt(control, 2);
           break;
@@ -109,12 +107,12 @@ qx.Class.define("osparc.component.widget.CollapsibleViewLight", {
       if (this.getContent()) {
         this.getContent().setVisibility(collapsed ? "excluded" : "visible");
       }
-      this.getChildControl("caret-collapsed").setVisibility(collapsed ? "visible" : "excluded");
-      this.getChildControl("caret-expanded").setVisibility(collapsed ? "excluded" : "visible");
     },
 
-    __applyContent: function(content) {
-      this._removeAll();
+    __applyContent: function(content, oldContent) {
+      if (oldContent) {
+        this._remove(oldContent);
+      }
 
       this._addAt(content, 0, {
         flex: 1

@@ -36,6 +36,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     this.__attachEventHandlers();
   },
 
+  statics: {
+    TAB_BUTTON_HEIGHT: 50
+  },
+
   properties: {
     study: {
       check: "osparc.data.model.Study",
@@ -65,8 +69,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         case "side-panels": {
           control = new qx.ui.splitpane.Pane("horizontal").set({
             offset: 2,
-            // width: Math.min(parseInt(window.innerWidth * 0.4), 550),
-            minWidth: 32
+            minWidth: 30
           });
           control.getChildControl("splitter").setWidth(1);
           this.add(control, 0); // flex 0
@@ -75,6 +78,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         case "collapsible-view-left": {
           const sidePanels = this.getChildControl("side-panels");
           control = new osparc.component.widget.CollapsibleViewLight();
+          const caretExpandedLayout = control.getChildControl("caret-expanded-layout");
+          caretExpandedLayout.addAt(this.__createCollapsableViewSpacer(), 0);
+          const caretCollapsedLayout = control.getChildControl("caret-collapsed-layout");
+          caretCollapsedLayout.addAt(this.__createCollapsableViewSpacer(), 0);
           control.bind("collapsed", control, "maxWidth", {
             converter: collapsed => collapsed ? 15 : null
           });
@@ -87,6 +94,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         case "collapsible-view-right": {
           const sidePanels = this.getChildControl("side-panels");
           control = new osparc.component.widget.CollapsibleViewLight();
+          const caretExpandedLayout = control.getChildControl("caret-expanded-layout");
+          caretExpandedLayout.addAt(this.__createCollapsableViewSpacer(), 0);
+          const caretCollapsedLayout = control.getChildControl("caret-collapsed-layout");
+          caretCollapsedLayout.addAt(this.__createCollapsableViewSpacer(), 0);
           control.bind("collapsed", control, "maxWidth", {
             converter: collapsed => collapsed ? 15 : null
           });
@@ -160,6 +171,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       const tabPageBtn = tabPage.getChildControl("button").set({
         toolTipText: tooltip,
+        height: this.self().TAB_BUTTON_HEIGHT,
         alignX: "center",
         alignY: "middle",
         backgroundColor
@@ -328,6 +340,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       tabViewTopBar.add(spacer, {
         flex: 1
       });
+    },
+
+    __createCollapsableViewSpacer: function() {
+      const spacer = new qx.ui.core.Widget().set({
+        backgroundColor: "contrasted-background+",
+        height: this.self().TAB_BUTTON_HEIGHT
+      });
+      return spacer;
     },
 
     __connectEvents: function() {
