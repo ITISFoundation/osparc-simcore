@@ -65,8 +65,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return borderStyle;
     },
 
-    TOP_OFFSET: osparc.navigation.NavigationBar.HEIGHT + 46 + 40,
-
     ZOOM_VALUES: [
       0.2,
       0.3,
@@ -322,7 +320,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const maxHeight = this.getBounds().height - osparc.component.workbench.ServiceCatalog.Height;
       const posX = Math.min(winPos.x, maxLeft);
       const posY = Math.min(winPos.y, maxHeight);
-      srvCat.moveTo(posX + this.__getSidePanelWidth(), posY + this.self().TOP_OFFSET);
+      srvCat.moveTo(posX + this.__getLeftOffset(), posY + this.__getTopOffset());
       return srvCat;
     },
 
@@ -824,16 +822,22 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__updateEdges(nodeUI);
     },
 
-    __getSidePanelWidth: function() {
-      const sidePanelWidth = window.innerWidth - this.getInnerSize().width;
-      return sidePanelWidth;
+    __getLeftOffset: function() {
+      const leftOffset = window.innerWidth - this.getInnerSize().width;
+      return leftOffset;
+    },
+
+    __getTopOffset: function() {
+      // const topOffset = osparc.navigation.NavigationBar.HEIGHT + osparc.desktop.WorkbenchView.TAB_BUTTON_HEIGHT + 53;
+      const topOffset = window.innerHeight - this.getInnerSize().height;
+      return topOffset;
     },
 
     __pointerEventToWorkbenchPos: function(pointerEvent, scale = false) {
-      const leftOffset = this.__getSidePanelWidth();
+      const leftOffset = this.__getLeftOffset();
       const inputNodesLayoutWidth = this.__inputNodesLayout && this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
       const x = pointerEvent.getDocumentLeft() - leftOffset - inputNodesLayoutWidth;
-      const y = pointerEvent.getDocumentTop() - this.self().TOP_OFFSET;
+      const y = pointerEvent.getDocumentTop() - this.__getTopOffset();
       if (scale) {
         return this.__scaleCoordinates(x, y);
       }
