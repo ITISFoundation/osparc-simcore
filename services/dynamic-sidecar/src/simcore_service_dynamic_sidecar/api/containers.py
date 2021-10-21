@@ -238,6 +238,7 @@ async def inspect_container(
     "/containers/entrypoint",
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "No entrypoint container found"},
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "No compose spec found"},
     },
 )
 async def get_entrypoint_container_name(
