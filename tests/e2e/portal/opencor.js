@@ -26,10 +26,8 @@ async function runTutorial () {
     await tutorial.waitFor(10000, 'Some time for loading the workbench');
     await utils.takeScreenshot(page, screenshotPrefix + 'workbench_loaded');
 
-    await tutorial.showLogger(true);
     await tutorial.runPipeline();
     await tutorial.waitForStudyDone(studyId, 30000);
-    await tutorial.showLogger(false);
 
     const outFiles = [
       "results.json",

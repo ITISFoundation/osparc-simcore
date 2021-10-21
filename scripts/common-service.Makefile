@@ -37,12 +37,7 @@ export APP_VERSION
 
 install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
 	# Installing in $(subst install-,,$@) mode
-	pip-sync --pip-args="--use-feature=in-tree-build" requirements/$(subst install-,,$@).txt
-
-## 2021.06.03
-## DEPRECATION: A future pip version will change local packages to be built in-place without first copying to a temporary directory.
-## We recommend you use --use-feature=in-tree-build to test your packages with this new behavior before it becomes the default.
-## pip 21.3 will remove support for this functionality. You can find discussion regarding this at https://github.com/pypa/pip/issues/7555.
+	pip-sync requirements/$(subst install-,,$@).txt
 
 
 .PHONY: test-dev-unit test-ci-unit test-dev-integration test-ci-integration test-dev

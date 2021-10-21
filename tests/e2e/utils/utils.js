@@ -107,16 +107,15 @@ function getDomain(url) {
 async function getNodeTreeItemIDs(page) {
   const childrenIDs = await page.evaluate((selector) => {
     const children = [];
-    const treeRoot = document.querySelector(selector);
-    if (treeRoot.parentElement) {
-      const tree = treeRoot.parentElement;
-      for (let i = 1; i < tree.children.length; i++) {
-        const child = tree.children[i];
-        children.push(child.getAttribute("osparc-test-id"));
+    const nodeTreeItems = document.querySelectorAll(selector);
+    nodeTreeItems.forEach(nodeTreeItem => {
+      const nodeId = nodeTreeItem.getAttribute("osparc-test-more")
+      if (nodeId !== "root") {
+        children.push(nodeId);
       }
-    }
+    });
     return children;
-  }, '[osparc-test-id="nodeTreeItem_root"]');
+  }, '[osparc-test-id="nodeTreeItem"]');
   return childrenIDs;
 }
 
@@ -459,8 +458,8 @@ function isElementVisible(page, selector) {
 }
 
 async function clickLoggerTitle(page) {
-  console.log("Click LoggerTitle");
-  await this.waitAndClick(page, '[osparc-test-id="studyLoggerTitleLabel"]')
+  console.log("Click Logger");
+  await this.waitAndClick(page, '[osparc-test-id="loggerTabButton"]')
 }
 
 

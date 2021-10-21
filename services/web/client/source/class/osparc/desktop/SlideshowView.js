@@ -126,8 +126,15 @@ qx.Class.define("osparc.desktop.SlideshowView", {
 
         let view;
         if (node.isParameter()) {
-          view = new osparc.component.node.ParameterEditor(node);
-          view.formForSlideshow();
+          view = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
+          const renderer = new osparc.component.node.ParameterEditor(node);
+          renderer.buildForm();
+          renderer.set({
+            appearance: "settings-groupbox",
+            maxWidth: 800,
+            alignX: "center"
+          });
+          view.add(renderer);
         } else {
           if (node.isContainer()) {
             view = new osparc.component.node.GroupNodeView();
@@ -223,52 +230,15 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     __addServiceBetween: function(service, leftNodeId, rightNodeId) {
       const workbench = this.getStudy().getWorkbench();
 
-      // create node
-      const node = workbench.createNode(service.getKey(), service.getVersion());
-      if (!node) {
+      const node = workbench.addServiceBetween(service, leftNodeId, rightNodeId);
+      if (node === null) {
         return;
-      }
-      if (leftNodeId) {
-        const leftNode = workbench.getNode(leftNodeId);
-        node.setPosition(workbench.getFreePosition(leftNode, false));
-      } else if (rightNodeId) {
-        const rightNode = workbench.getNode(rightNodeId);
-        node.setPosition(workbench.getFreePosition(rightNode, true));
-      } else {
-        node.setPosition({
-          x: 20,
-          y: 20
-        });
-      }
-
-      // break previous connection
-      if (leftNodeId && rightNodeId) {
-        const edge = workbench.getEdge(null, leftNodeId, rightNodeId);
-        if (edge) {
-          workbench.removeEdge(edge.getEdgeId());
-        }
-      }
-
-      // create connections
-      if (leftNodeId) {
-        workbench.createEdge(null, leftNodeId, node.getNodeId());
-      }
-      if (rightNodeId) {
-        workbench.createEdge(null, node.getNodeId(), rightNodeId);
       }
 
       // add to the slideshow
       const slideshow = this.getStudy().getUi().getSlideshow();
-      const nodeId = node.getNodeId();
-      if (leftNodeId) {
-        let leftPos = slideshow.getPosition(leftNodeId);
-        slideshow.insertNode(nodeId, leftPos+1);
-      } else if (rightNodeId) {
-        const rightPos = slideshow.getPosition(rightNodeId);
-        slideshow.insertNode(nodeId, rightPos);
-      } else {
-        slideshow.insertNode(nodeId, 0);
-      }
+      slideshow.addNodeToSlideshow(node, leftNodeId, rightNodeId);
+
       this.__slideshowToolbar.populateButtons();
     },
 
