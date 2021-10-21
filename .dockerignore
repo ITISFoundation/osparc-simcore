@@ -28,3 +28,6 @@ dask*-space/
 
 # produced when mounting volumes on docker and pip installing
 .local/
+
+# mypy cache
+**/.mypy_cache/
