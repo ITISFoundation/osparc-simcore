@@ -7,7 +7,7 @@ from .settings import DynamicSidecarSettings
 
 
 def get_app_state(request: Request) -> State:
-    return request.app.state  # type: ignore
+    return request.app.state
 
 
 def get_application_health(
