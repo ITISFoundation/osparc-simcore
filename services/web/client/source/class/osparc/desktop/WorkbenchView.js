@@ -40,6 +40,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     TAB_BUTTON_HEIGHT: 50
   },
 
+  events: {
+    "collapseNavBar": "qx.event.type.Event",
+    "expandNavBar": "qx.event.type.Event"
+  },
+
   properties: {
     study: {
       check: "osparc.data.model.Study",
@@ -79,9 +84,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const sidePanels = this.getChildControl("side-panels");
           control = new osparc.component.widget.CollapsibleViewLight();
           const caretExpandedLayout = control.getChildControl("caret-expanded-layout");
-          caretExpandedLayout.addAt(this.__createCollapsableViewSpacer(), 0);
+          caretExpandedLayout.addAt(this.__createCollapsibleViewSpacer(), 0);
           const caretCollapsedLayout = control.getChildControl("caret-collapsed-layout");
-          caretCollapsedLayout.addAt(this.__createCollapsableViewSpacer(), 0);
+          caretCollapsedLayout.addAt(this.__createCollapsibleViewSpacer(), 0);
           control.bind("collapsed", control, "maxWidth", {
             converter: collapsed => collapsed ? 15 : null
           });
@@ -95,9 +100,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const sidePanels = this.getChildControl("side-panels");
           control = new osparc.component.widget.CollapsibleViewLight();
           const caretExpandedLayout = control.getChildControl("caret-expanded-layout");
-          caretExpandedLayout.addAt(this.__createCollapsableViewSpacer(), 0);
+          caretExpandedLayout.addAt(this.__createCollapsibleViewSpacer(), 0);
           const caretCollapsedLayout = control.getChildControl("caret-collapsed-layout");
-          caretCollapsedLayout.addAt(this.__createCollapsableViewSpacer(), 0);
+          caretCollapsedLayout.addAt(this.__createCollapsibleViewSpacer(), 0);
           control.bind("collapsed", control, "maxWidth", {
             converter: collapsed => collapsed ? 15 : null
           });
@@ -143,8 +148,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return control || this.base(arguments, id);
     },
 
-    __getSidePanelsNewWidth: function(collapsed, sidePanels, collapsableView) {
-      const content = collapsableView.getContent();
+    __getSidePanelsNewWidth: function(collapsed, sidePanels, collapsibleView) {
+      const content = collapsibleView.getContent();
       if (sidePanels && sidePanels.getBounds() && content && content.getBounds()) {
         const oldWidth = sidePanels.getBounds().width;
         const contentWidth = content.getBounds().width;
@@ -311,13 +316,19 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         backgroundColor: "contrasted-background+"
       });
       collapseExpandNavBarStack.add(collapseNavBarBtn);
-      collapseNavBarBtn.addListener("execute", () => this.fireEvent("expandNavBar"));
+      collapseNavBarBtn.addListener("execute", () => {
+        collapseExpandNavBarStack.setSelection([collapseExpandNavBarStack.getSelectables()[1]]);
+        this.fireEvent("collapseNavBar");
+      });
 
       const expandNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-down/14").set({
         backgroundColor: "contrasted-background+"
       });
       collapseExpandNavBarStack.add(expandNavBarBtn);
-      expandNavBarBtn.addListener("execute", () => this.fireEvent("collapseNavBar"));
+      expandNavBarBtn.addListener("execute", () => {
+        collapseExpandNavBarStack.setSelection([collapseExpandNavBarStack.getSelectables()[0]]);
+        this.fireEvent("expandNavBar");
+      });
 
       topBar.add(collapseExpandNavBarStack);
     },
@@ -342,7 +353,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __createCollapsableViewSpacer: function() {
+    __createCollapsibleViewSpacer: function() {
       const spacer = new qx.ui.core.Widget().set({
         backgroundColor: "contrasted-background+",
         height: this.self().TAB_BUTTON_HEIGHT
