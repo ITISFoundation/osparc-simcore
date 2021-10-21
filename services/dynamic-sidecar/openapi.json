@@ -267,14 +267,14 @@
         }
       }
     },
-    "/v1/containers:entrypoint-name": {
+    "/v1/containers/entrypoint": {
       "get": {
         "tags": [
           "containers"
         ],
         "summary": "Get Entrypoint Container Name",
         "description": "Searches for the container's name given the network\non which the proxy communicates with it.",
-        "operationId": "get_entrypoint_container_name_v1_containers_entrypoint_name_get",
+        "operationId": "get_entrypoint_container_name_v1_containers_entrypoint_get",
         "parameters": [
           {
             "required": true,
@@ -296,10 +296,7 @@
             }
           },
           "404": {
-            "description": "Container was not found"
-          },
-          "500": {
-            "description": "Errors in container"
+            "description": "No entrypoint container found"
           },
           "422": {
             "description": "Validation Error",

@@ -312,7 +312,7 @@ async def test_containers_entrypoint_name_ok(
     test_client: TestClient, swarm_stack_name: str, started_containers: List[str]
 ) -> None:
     response = await test_client.get(
-        f"/{api_vtag}/containers:entrypoint-name?swarm_network_name={swarm_stack_name}"
+        f"/{api_vtag}/containers/entrypoint?swarm_network_name={swarm_stack_name}"
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     assert response.json() == _get_entrypoint_container_name(
@@ -335,7 +335,7 @@ async def test_containers_entrypoint_name_containers_not_started(
     )
 
     response = await test_client.get(
-        f"/{api_vtag}/containers:entrypoint-name?swarm_network_name={swarm_stack_name}"
+        f"/{api_vtag}/containers/entrypoint?swarm_network_name={swarm_stack_name}"
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
     assert response.json() == {

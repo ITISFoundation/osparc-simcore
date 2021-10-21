@@ -164,7 +164,7 @@ class DynamicSidecarClient:
         """While HTTPStatusError is returned it is OK to wait for"""
         url = get_url(
             dynamic_sidecar_endpoint,
-            f"/{self.API_VERSION}/containers:entrypoint-name?swarm_network_name={swarm_network_name}",
+            f"/{self.API_VERSION}/containers/entrypoint?swarm_network_name={swarm_network_name}",
         )
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:
