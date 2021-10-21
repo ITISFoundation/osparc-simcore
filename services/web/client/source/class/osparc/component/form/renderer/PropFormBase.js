@@ -232,25 +232,6 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       return null;
     },
 
-    _getFieldChildren: function(portId) {
-      const children = [];
-      /*
-      Object.values(this.self().gridPos).forEach(pos => {
-        const widget = this._getLayoutChild(portId, pos);
-        if (widget) {
-          children.push(widget);
-        }
-      });
-      */
-      Object.values(this.self().gridPos).forEach(pos => {
-        const widget = this._getLayout().getCellWidget(0, pos);
-        if (widget) {
-          children.push(widget);
-        }
-      });
-      return children;
-    },
-
     _getLabelFieldChild: function(portId) {
       return this._getLayoutChild(portId, this.self().gridPos.label);
     },
