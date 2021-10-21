@@ -26,7 +26,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     this.base(arguments, "horizontal");
 
     this.setOffset(2);
-    this.getChildControl("splitter").setWidth(1);
+    osparc.desktop.WorkbenchView.decorateSplitter(this.getChildControl("splitter"));
 
     this.__sidePanels = this.getChildControl("side-panels");
     this.getChildControl("main-panel-tabs");
@@ -37,7 +37,18 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   statics: {
-    TAB_BUTTON_HEIGHT: 50
+    TAB_BUTTON_HEIGHT: 50,
+
+    decorateSplitter: function(splitter) {
+      splitter.setWidth(2);
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const binaryColor = osparc.utils.Utils.getRoundedBinaryColor(colorManager.resolve("background-main"));
+      splitter.setBackgroundColor(binaryColor);
+      colorManager.addListener("changeTheme", () => {
+        const newBinaryColor = osparc.utils.Utils.getRoundedBinaryColor(colorManager.resolve("background-main"));
+        splitter.setBackgroundColor(newBinaryColor);
+      }, this);
+    }
   },
 
   events: {
@@ -76,7 +87,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             offset: 2,
             minWidth: 30
           });
-          control.getChildControl("splitter").setWidth(1);
+          osparc.desktop.WorkbenchView.decorateSplitter(control.getChildControl("splitter"));
           this.add(control, 0); // flex 0
           break;
         }
@@ -109,7 +120,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           control.bind("collapsed", sidePanels, "width", {
             converter: collapsed => this.__getSidePanelsNewWidth(collapsed, sidePanels, control)
           });
-          osparc.utils.Utils.addBorder(control, 1, "right");
           sidePanels.add(control, 1); // flex 1
           break;
         }
@@ -913,7 +923,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.nodeSelected(dynamicNode.getNodeId());
           qx.event.Timer.once(() => {
             this.__openIframeTab(dynamicNode);
-            this.__maximizeIframe(true);
+            dynamicNode.getIFrame().maximizeIFrame(true);
+            // this.__maximizeIframe(true);
           }, this, 10);
           return;
         }
