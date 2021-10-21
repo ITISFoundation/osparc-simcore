@@ -1,10 +1,13 @@
-import logging
+from asyncio.tasks import wait
 from collections import deque
 from pprint import pformat
 from typing import Any, Deque, Dict, List, Optional, Type
 
 import httpx
 from fastapi import FastAPI
+from tenacity._asyncio import AsyncRetrying
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.dynamic_services import (
@@ -15,11 +18,11 @@ from ....models.schemas.dynamic_services import (
 from ....modules.director_v0 import DirectorV0Client
 from ..client_api import get_dynamic_sidecar_client
 from ..docker_api import (
-    are_services_missing,
     create_network,
     create_service_and_get_id,
     get_node_id_from_task_for_service,
     get_swarm_network,
+    is_dynamic_sidecar_missing,
 )
 from ..docker_compose_specs import assemble_spec
 from ..docker_service_specs import (
@@ -28,7 +31,7 @@ from ..docker_service_specs import (
     get_dynamic_sidecar_spec,
     merge_settings_before_use,
 )
-from ..errors import DynamicSidecarNetworkError
+from ..errors import DynamicSidecarNetworkError, EntrypointContainerNotFoundError
 from .abc import DynamicSchedulerEvent
 
 logger = logging.getLogger(__name__)
@@ -58,12 +61,12 @@ class CreateSidecars(DynamicSchedulerEvent):
 
     @classmethod
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
-        # the are_services_missing is expensive, if the proxy
-        # was already started just skip this event
-        if scheduler_data.dynamic_sidecar.were_services_created:
+        # the call to is_dynamic_sidecar_missing is expensive
+        # if the dynamic sidecar was started skip
+        if scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started:
             return False
 
-        return await are_services_missing(
+        return await is_dynamic_sidecar_missing(
             node_uuid=scheduler_data.node_uuid,
             dynamic_sidecar_settings=app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR,
         )
@@ -122,26 +125,6 @@ class CreateSidecars(DynamicSchedulerEvent):
             dynamic_sidecar_create_service_params
         )
 
-        dynamic_sidecar_node_id = await get_node_id_from_task_for_service(
-            dynamic_sidecar_id, dynamic_sidecar_settings
-        )
-
-        dynamic_sidecar_proxy_create_service_params = await get_dynamic_proxy_spec(
-            scheduler_data=scheduler_data,
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
-            dynamic_sidecar_network_id=dynamic_sidecar_network_id,
-            swarm_network_id=swarm_network_id,
-            swarm_network_name=swarm_network_name,
-            dynamic_sidecar_node_id=dynamic_sidecar_node_id,
-        )
-        logger.debug(
-            "dynamic-sidecar-proxy create_service_params %s",
-            pformat(dynamic_sidecar_proxy_create_service_params),
-        )
-
-        # no need for the id any longer
-        await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
-
         # update service_port and assing it to the status
         # needed by CreateUserServices action
         scheduler_data.service_port = extract_service_port_from_compose_start_spec(
@@ -149,7 +132,13 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
 
         # finally mark services created
-        scheduler_data.dynamic_sidecar.were_services_created = True
+        scheduler_data.dynamic_sidecar.dynamic_sidecar_id = dynamic_sidecar_id
+        scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id = (
+            dynamic_sidecar_network_id
+        )
+        scheduler_data.dynamic_sidecar.swarm_network_id = swarm_network_id
+        scheduler_data.dynamic_sidecar.swarm_network_name = swarm_network_name
+        scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started = True
 
 
 class GetStatus(DynamicSchedulerEvent):
@@ -231,6 +220,68 @@ class CreateUserServices(DynamicSchedulerEvent):
         await dynamic_sidecar_client.start_service_creation(
             dynamic_sidecar_endpoint, compose_spec
         )
+
+        # The entrypoint container name was now computed
+        # continue starting the proxy
+
+        # check values have been set by previous step
+        if (
+            scheduler_data.dynamic_sidecar.dynamic_sidecar_id is None
+            or scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id is None
+            or scheduler_data.dynamic_sidecar.swarm_network_id is None
+            or scheduler_data.dynamic_sidecar.swarm_network_name is None
+        ):
+            raise ValueError(
+                (
+                    "Expected a value for all the following values: "
+                    f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_id=} "
+                    f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id=} "
+                    f"{scheduler_data.dynamic_sidecar.swarm_network_id=} "
+                    f"{scheduler_data.dynamic_sidecar.swarm_network_name=}"
+                )
+            )
+
+        async for attempt in AsyncRetrying(
+            # it could take a really long time to pull the images
+            stop=stop_after_delay(60 * 60),
+            wait=wait_fixed(2),
+            retry_error_cls=EntrypointContainerNotFoundError,
+        ):
+            with attempt:
+                logger.debug("trying to fetch entrypoint_container_name")
+                entrypoint_container = (
+                    await dynamic_sidecar_client.get_entrypoint_container_name(
+                        dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
+                        swarm_network_name=scheduler_data.dynamic_sidecar_network_name,
+                    )
+                )
+
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
+
+        dynamic_sidecar_node_id = await get_node_id_from_task_for_service(
+            scheduler_data.dynamic_sidecar.dynamic_sidecar_id, dynamic_sidecar_settings
+        )
+
+        dynamic_sidecar_proxy_create_service_params = await get_dynamic_proxy_spec(
+            scheduler_data=scheduler_data,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            dynamic_sidecar_network_id=scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id,
+            swarm_network_id=scheduler_data.dynamic_sidecar.swarm_network_id,
+            swarm_network_name=scheduler_data.dynamic_sidecar.swarm_network_name,
+            dynamic_sidecar_node_id=dynamic_sidecar_node_id,
+            entrypoint_container_name=entrypoint_container,
+            service_port=scheduler_data.service_port,
+        )
+        logger.debug(
+            "dynamic-sidecar-proxy create_service_params %s",
+            pformat(dynamic_sidecar_proxy_create_service_params),
+        )
+
+        # no need for the id any longer
+        await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
+        scheduler_data.dynamic_sidecar.were_services_created = True
 
         scheduler_data.dynamic_sidecar.was_compose_spec_submitted = True
 

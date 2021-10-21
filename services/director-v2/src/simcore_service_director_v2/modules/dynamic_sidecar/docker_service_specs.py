@@ -10,6 +10,7 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion
+from pydantic.types import PositiveInt
 
 from ...api.dependencies.director_v0 import DirectorV0Client
 from ...core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
@@ -47,6 +48,8 @@ async def get_dynamic_proxy_spec(
     swarm_network_id: str,
     swarm_network_name: str,
     dynamic_sidecar_node_id: str,
+    entrypoint_container_name: str,
+    service_port: PositiveInt,
 ) -> Dict[str, Any]:
     """
     The Traefik proxy is the entrypoint which forwards
@@ -106,7 +109,7 @@ async def get_dynamic_proxy_spec(
                     "--from",
                     ":80",
                     "--to",
-                    "dy-sidecar-6f2ac0cc-3ad8-4c1f-a68e-b17104ff2bfc-0-container:8080",
+                    f"{entrypoint_container_name}:{service_port}",
                 ],
                 "Mounts": mounts,
             },
@@ -116,9 +119,11 @@ async def get_dynamic_proxy_spec(
                     f"node.id == {dynamic_sidecar_node_id}",
                 ]
             },
-            "Resources": {  # starts from 100 MB and maxes at 250 MB with 10% max CPU usage
+            "Resources": {
+                # MEMORY from 50 MB and maxes at 250 MB
+                # CPU from 1% and maxes at 10%
                 "Limits": {"MemoryBytes": 262144000, "NanoCPUs": 100000000},
-                "Reservations": {"MemoryBytes": 104857600, "NanoCPUs": 100000000},
+                "Reservations": {"MemoryBytes": 52430000, "NanoCPUs": 10000000},
             },
             "RestartPolicy": {
                 "Condition": "on-failure",

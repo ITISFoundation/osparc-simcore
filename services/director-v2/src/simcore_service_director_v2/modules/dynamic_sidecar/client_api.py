@@ -4,10 +4,15 @@ from typing import Any, Dict
 
 import httpx
 from fastapi import FastAPI
+from starlette import status
 
 from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.dynamic_services import SchedulerData
-from .errors import DynamicSchedulerException, DynamicSidecarNetworkError
+from .errors import (
+    DynamicSchedulerException,
+    DynamicSidecarNetworkError,
+    EntrypointContainerNotFoundError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +46,8 @@ class DynamicSidecarClient:
     # The previous implementation (with a shared client) raised
     # RuntimeErrors because resources were already locked.
 
+    API_VERSION = "v1"
+
     def __init__(self, app: FastAPI):
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
@@ -73,11 +80,11 @@ class DynamicSidecarClient:
         returns dict containing docker inspect result form
         all dynamic-sidecar started containers
         """
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
+        url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers")
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:
                 response = await client.get(url=url)
-            if response.status_code != 200:
+            if response.status_code != status.HTTP_200_OK:
                 message = (
                     f"error during request status={response.status_code}, "
                     f"body={response.text}"
@@ -93,11 +100,11 @@ class DynamicSidecarClient:
     async def containers_docker_status(
         self, dynamic_sidecar_endpoint: str
     ) -> Dict[str, Dict[str, str]]:
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
+        url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers")
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:
                 response = await client.get(url=url, params=dict(only_status=True))
-            if response.status_code != 200:
+            if response.status_code != status.HTTP_200_OK:
                 logging.warning(
                     "error during request status=%s, body=%s",
                     response.status_code,
@@ -114,7 +121,7 @@ class DynamicSidecarClient:
         self, dynamic_sidecar_endpoint: str, compose_spec: str
     ) -> None:
         """returns: True if the compose up was submitted correctly"""
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
+        url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers")
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:
                 response = await client.post(url, data=compose_spec)
@@ -134,11 +141,11 @@ class DynamicSidecarClient:
 
     async def begin_service_destruction(self, dynamic_sidecar_endpoint: str) -> None:
         """runs docker compose down on the started spec"""
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers:down")
+        url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers:down")
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:
                 response = await client.post(url)
-            if response.status_code != 200:
+            if response.status_code != status.HTTP_200_OK:
                 message = (
                     f"ERROR during service destruction request: "
                     f"status={response.status_code}, body={response.text}"
@@ -150,6 +157,26 @@ class DynamicSidecarClient:
         except httpx.HTTPError as e:
             log_httpx_http_error(url, "POST", traceback.format_exc())
             raise e
+
+    async def get_entrypoint_container_name(
+        self, dynamic_sidecar_endpoint: str, swarm_network_name: str
+    ) -> str:
+        """While HTTPStatusError is returned it is OK to wait for"""
+        url = get_url(
+            dynamic_sidecar_endpoint,
+            f"/{self.API_VERSION}/containers:entrypoint-name?swarm_network_name={swarm_network_name}",
+        )
+        try:
+            async with httpx.AsyncClient(timeout=self._base_timeout) as client:
+                response = await client.get(url=url, params=dict(only_status=True))
+                if response.status_code == status.HTTP_404_NOT_FOUND:
+                    raise EntrypointContainerNotFoundError()
+                response.raise_for_status()
+
+                return response.json()
+        except httpx.HTTPError:
+            log_httpx_http_error(url, "GET", traceback.format_exc())
+            raise
 
 
 async def setup_api_client(app: FastAPI) -> None:

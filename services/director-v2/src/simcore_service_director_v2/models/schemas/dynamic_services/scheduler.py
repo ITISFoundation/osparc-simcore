@@ -141,12 +141,25 @@ class DynamicSidecar(BaseModel):
         scription="docker inspect results from all the container ran at regular intervals",
     )
 
+    was_dynamic_sidecar_started: bool = False
     were_services_created: bool = Field(
         False,
         description=(
             "when True no longer will the Docker api "
             "be used to check if the services were started"
         ),
+    )
+    dynamic_sidecar_id: Optional[str] = Field(
+        None, description="used for starting the proxy"
+    )
+    dynamic_sidecar_network_id: Optional[str] = Field(
+        None, description="used for starting the proxy"
+    )
+    swarm_network_id: Optional[str] = Field(
+        None, description="used for starting the proxy"
+    )
+    swarm_network_name: Optional[str] = Field(
+        None, description="used for starting the proxy"
     )
 
     @property
