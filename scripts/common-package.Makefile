@@ -14,7 +14,10 @@
 # NOTE $(CURDIR) in this file refers to the directory where this file is included
 
 # Variable based on conventions (override if they do not apply)
+PACKAGE_NAME      = $(notdir $(CURDIR))
+PY_PACKAGE_NAME  = $(subst -,_,$(PACKAGE_NAME))
 PACKAGE_VERSION  := $(shell cat VERSION)
+SRC_DIR           = $(abspath $(CURDIR)/src/$(PY_PACKAGE_NAME))
 
 export PACKAGE_VERSION
 
