@@ -8,9 +8,11 @@ IFS=$'\n\t'
 install() {
   bash ci/helpers/ensure_python_pip.bash
   pushd packages/dask-task-models-library
-  pip3 install -r requirements/ci.txt
+  pip3 install \
+      --requirement requirements/ci.txt \
+      --requirement requirements/_tools.txt
   popd
-  pip list -v
+  pip list --verbose
 }
 
 codestyle() {
@@ -20,9 +22,16 @@ codestyle() {
 }
 
 test() {
-  pytest --cov=dask_task_models_library --durations=10 --cov-append \
-    --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-    -v packages/dask-task-models-library/tests
+  pytest \
+    --color=yes \
+    --cov-append \
+    --cov-config=.coveragerc \
+    --cov-report=term-missing \
+    --cov-report=xml \
+    --cov=dask_task_models_library \
+    --durations=10 \
+    --verbose \
+    packages/dask-task-models-library/tests
 }
 
 # Check if the function exists (bash specific)
