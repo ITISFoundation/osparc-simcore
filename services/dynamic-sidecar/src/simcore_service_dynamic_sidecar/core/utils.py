@@ -53,7 +53,7 @@ async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
     try:
         yield file_path
     finally:
-        await aiofiles.os.remove(file_path)
+        await aiofiles.os.remove(file_path)  # type: ignore
 
 
 @asynccontextmanager

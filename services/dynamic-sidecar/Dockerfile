@@ -63,9 +63,9 @@ RUN python -m venv ${VIRTUAL_ENV}
 RUN mkdir -p ${DY_VOLUMES}
 
 RUN pip install --upgrade --no-cache-dir \
-  pip~=21.2.3  \
-  wheel \
-  setuptools
+    pip~=21.3  \
+    wheel \
+    setuptools
 
 WORKDIR /build
 
