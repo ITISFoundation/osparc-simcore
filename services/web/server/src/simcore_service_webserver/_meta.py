@@ -8,12 +8,12 @@ __version__: str = pkg_resources.get_distribution("simcore_service_webserver").v
 
 version = Version(__version__)
 
-app_name: str = __name__.split(".")[0]
-api_version: str = __version__
-api_vtag: str = f"v{version.major}"
+APP_NAME: str = __name__.split(".")[0]
+API_VERSION: str = __version__
+API_VTAG: str = f"v{version.major}"
 
 # legacy
-api_version_prefix: str = api_vtag
+api_version_prefix: str = API_VTAG
 
 
 WELCOME_MSG = r"""

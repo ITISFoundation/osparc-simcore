@@ -5,9 +5,9 @@ from typing import Any, Callable, Optional, Type
 import orjson
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPException
-from aiohttp.web_middlewares import _Handler
 from pydantic.error_wrappers import ValidationError
 from pydantic.main import BaseModel
+from servicelib.aiohttp.typing_extension import Handler
 from yarl import URL
 
 from .projects.projects_exceptions import ProjectNotFoundError
@@ -37,7 +37,7 @@ def enveloped_response(
     )
 
 
-def handle_request_errors(handler: _Handler) -> _Handler:
+def handle_request_errors(handler: Handler) -> Handler:
     """
     - required and type validation of path and query parameters
     """

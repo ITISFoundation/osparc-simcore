@@ -56,6 +56,3 @@ def test_data_enveloped(faker: Faker):
     assert some_enveloped_bool
     assert not some_enveloped_bool.data
     assert some_enveloped_bool.error == random_text
-
-    with pytest.raises(ValueError):
-        Envelope[int](data=213, error="some error message")
