@@ -126,36 +126,8 @@ class ServiceExampleParam:
 
 @pytest.fixture()
 def ubuntu_task(ftp_server: List[URL]) -> ServiceExampleParam:
-    file_names = [file.path for file in ftp_server]
-    check_input_file_command = " && ".join(
-        [
-            f"(test -f ${{INPUT_FOLDER}}/{file} || (echo ${{INPUT_FOLDER}}/{file} does not exists && exit 1))"
-            for file in file_names
-        ]
-    )
-    echo_input_files_in_log_command = " && ".join(
-        [f"echo $(cat ${{INPUT_FOLDER}}/{file})" for file in file_names]
-    )
-
-    jsonable_outputs = {
-        "pytest_string": "is quite an amazing feat",
-        "pytest_integer": 432,
-        "pytest_float": 3.2,
-        "pytest_bool": False,
-    }
-    echo_jsonable_outputs_command = json.dumps(jsonable_outputs).replace('"', '\\"')
-
-    command = [
-        "/bin/bash",
-        "-c",
-        "echo User: $(id $(whoami)) && "
-        "(test -f ${INPUT_FOLDER}/inputs.json || (echo ${INPUT_FOLDER}/inputs.json file does not exists && exit 1)) && "
-        "echo $(cat ${INPUT_FOLDER}/inputs.json) && "
-        f"{check_input_file_command} && "
-        f"{echo_input_files_in_log_command} && "
-        f"echo {echo_jsonable_outputs_command} > ${{OUTPUT_FOLDER}}/outputs.json && "
-        "echo 'some data for the output file' > ${OUTPUT_FOLDER}/a_outputfile",
-    ]
+    """Creates a console task in an ubuntu distro that checks for the expected files and error in case they are missing"""
+    # defines the inputs of the task
     input_data = TaskInputData.parse_obj(
         {
             "input_1": 23,
@@ -168,8 +140,65 @@ def ubuntu_task(ftp_server: List[URL]) -> ServiceExampleParam:
             },
         }
     )
+    # check in the console that the expected files are present in the expected INPUT folder (set as ${INPUT_FOLDER} in the service)
+    file_names = [file.path for file in ftp_server]
+    check_input_file_commands = [
+        f"(test -f ${{INPUT_FOLDER}}/{file} || (echo ${{INPUT_FOLDER}}/{file} does not exists && exit 1))"
+        for file in file_names
+    ] + [f"echo $(cat ${{INPUT_FOLDER}}/{file})" for file in file_names]
 
+    check_input_json_commands = [
+        "(test -f ${INPUT_FOLDER}/inputs.json || (echo ${INPUT_FOLDER}/inputs.json file does not exists && exit 1))",
+        "echo $(cat ${INPUT_FOLDER}/inputs.json)",
+    ]
+
+    # defines the expected outputs
+    jsonable_outputs = {
+        "pytest_string": "is quite an amazing feat",
+        "pytest_integer": 432,
+        "pytest_float": 3.2,
+        "pytest_bool": False,
+    }
     output_file_url = next(iter(ftp_server)).with_path("output_file")
+    expected_output_keys = TaskOutputDataSchema.parse_obj(
+        {
+            **{k: {"required": True} for k in jsonable_outputs.keys()},
+            **{
+                "pytest_file": {
+                    "required": True,
+                    "mapping": "a_outputfile",
+                    "url": f"{output_file_url}",
+                }
+            },
+        }
+    )
+    expected_output_data = TaskOutputData.parse_obj(
+        {
+            **jsonable_outputs,
+            **{
+                "pytest_file": {
+                    "url": f"{output_file_url}",
+                    "file_mapping": "a_outputfile",
+                }
+            },
+        }
+    )
+    jsonized_outputs = json.dumps(jsonable_outputs).replace('"', '\\"')
+    create_outputs_commands = [
+        f"echo {jsonized_outputs} > ${{OUTPUT_FOLDER}}/outputs.json",
+        "echo 'some data for the output file' > ${OUTPUT_FOLDER}/a_outputfile",
+    ]
+
+    command = [
+        "/bin/bash",
+        "-c",
+        " && ".join(
+            ["echo User: $(id $(whoami))"]
+            + check_input_file_commands
+            + check_input_json_commands
+            + create_outputs_commands
+        ),
+    ]
 
     return ServiceExampleParam(
         docker_basic_auth=DockerBasicAuth(
@@ -179,29 +208,8 @@ def ubuntu_task(ftp_server: List[URL]) -> ServiceExampleParam:
         service_version="latest",
         command=command,
         input_data=input_data,
-        output_data_keys=TaskOutputDataSchema.parse_obj(
-            {
-                **{k: {"required": True} for k in jsonable_outputs.keys()},
-                **{
-                    "pytest_file": {
-                        "required": True,
-                        "mapping": "a_outputfile",
-                        "url": f"{output_file_url}",
-                    }
-                },
-            }
-        ),
-        expected_output_data=TaskOutputData.parse_obj(
-            {
-                **jsonable_outputs,
-                **{
-                    "pytest_file": {
-                        "url": f"{output_file_url}",
-                        "file_mapping": "a_outputfile",
-                    }
-                },
-            }
-        ),
+        output_data_keys=expected_output_keys,
+        expected_output_data=expected_output_data,
         expected_logs=[
             '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
             "This file is named: file_1",
