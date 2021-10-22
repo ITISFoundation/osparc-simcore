@@ -236,10 +236,6 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       return this._getLayoutChild(portId, this.self().gridPos.label);
     },
 
-    _getInfoFieldChild: function(portId) {
-      return this._getLayoutChild(portId, this.self().gridPos.info);
-    },
-
     _getCtrlFieldChild: function(portId) {
       return this._getLayoutChild(portId, this.self().gridPos.ctrlField);
     }
