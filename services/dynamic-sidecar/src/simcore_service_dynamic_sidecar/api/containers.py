@@ -230,26 +230,7 @@ async def get_container_logs(
 
 
 @containers_router.get(
-    "/containers/{id}",
-    responses={
-        status.HTTP_404_NOT_FOUND: {"description": "Container does not exist"},
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"},
-    },
-)
-async def inspect_container(
-    id: str, shared_store: SharedStore = Depends(get_shared_store)
-) -> Dict[str, Any]:
-    """Returns information about the container, like docker inspect command"""
-    _raise_if_container_is_missing(id, shared_store.container_names)
-
-    async with docker_client() as docker:
-        container_instance = await docker.containers.get(id)
-        inspect_result: Dict[str, Any] = await container_instance.show()
-        return inspect_result
-
-
-@containers_router.post(
-    "/containers:entrypoint",
+    "/containers/entrypoint",
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "No entrypoint container found"},
         status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "No compose spec found"},
@@ -289,6 +270,25 @@ async def get_entrypoint_container_name(
         )
 
     return f"{container_name}"
+
+
+@containers_router.get(
+    "/containers/{id}",
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "Container does not exist"},
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"},
+    },
+)
+async def inspect_container(
+    id: str, shared_store: SharedStore = Depends(get_shared_store)
+) -> Dict[str, Any]:
+    """Returns information about the container, like docker inspect command"""
+    _raise_if_container_is_missing(id, shared_store.container_names)
+
+    async with docker_client() as docker:
+        container_instance = await docker.containers.get(id)
+        inspect_result: Dict[str, Any] = await container_instance.show()
+        return inspect_result
 
 
 __all__ = ["containers_router"]
