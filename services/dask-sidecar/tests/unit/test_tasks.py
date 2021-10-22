@@ -39,7 +39,9 @@ from models_library.users import UserID
 from packaging import version
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
-from simcore_service_dask_sidecar.computational_sidecar.models import IntegrationVersion
+from simcore_service_dask_sidecar.computational_sidecar.models import (
+    LEGACY_INTEGRATION_VERSION,
+)
 from simcore_service_dask_sidecar.tasks import run_computational_sidecar
 from yarl import URL
 
@@ -123,12 +125,14 @@ class ServiceExampleParam:
     output_data_keys: TaskOutputDataSchema
     expected_output_data: TaskOutputData
     expected_logs: List[str]
-    integration_version: IntegrationVersion
+    integration_version: version.Version
 
 
-@pytest.fixture(params=["0.0.0", "1.0.0"])
+@pytest.fixture(params=[f"{LEGACY_INTEGRATION_VERSION}", "1.0.0"])
 def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampleParam:
     """Creates a console task in an ubuntu distro that checks for the expected files and error in case they are missing"""
+    integration_version = version.Version(request.param)
+    print("Using service integration:", integration_version)
     # defines the inputs of the task
     input_data = TaskInputData.parse_obj(
         {
@@ -149,9 +153,14 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         for file in file_names
     ] + [f"echo $(cat ${{INPUT_FOLDER}}/{file})" for file in file_names]
 
+    input_json_file_name = (
+        "inputs.json"
+        if integration_version > LEGACY_INTEGRATION_VERSION
+        else "input.json"
+    )
     check_input_json_commands = [
-        "(test -f ${INPUT_FOLDER}/inputs.json || (echo ${INPUT_FOLDER}/inputs.json file does not exists && exit 1))",
-        "echo $(cat ${INPUT_FOLDER}/inputs.json)",
+        f"(test -f ${{INPUT_FOLDER}}/{input_json_file_name} || (echo ${{INPUT_FOLDER}}/{input_json_file_name} file does not exists && exit 1))",
+        f"echo $(cat ${{INPUT_FOLDER}}/{input_json_file_name})",
     ]
 
     # defines the expected outputs
@@ -186,8 +195,13 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         }
     )
     jsonized_outputs = json.dumps(jsonable_outputs).replace('"', '\\"')
+    output_json_file_name = (
+        "outputs.json"
+        if integration_version > LEGACY_INTEGRATION_VERSION
+        else "output.json"
+    )
     create_outputs_commands = [
-        f"echo {jsonized_outputs} > ${{OUTPUT_FOLDER}}/outputs.json",
+        f"echo {jsonized_outputs} > ${{OUTPUT_FOLDER}}/{output_json_file_name}",
         "echo 'some data for the output file' > ${OUTPUT_FOLDER}/a_outputfile",
     ]
 
@@ -214,11 +228,11 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         expected_output_data=expected_output_data,
         expected_logs=[
             '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
-            "This file is named: file_1",
-            "This file is named: file_2",
-            "This file is named: file_3",
+            "This is the file contents of 'file_1'",
+            "This is the file contents of 'file_2'",
+            "This is the file contents of 'file_3'",
         ],
-        integration_version=version.parse(request.param),
+        integration_version=integration_version,
     )
 
 
@@ -239,7 +253,7 @@ def test_run_computational_sidecar_real_fct(
     mocked_get_integration_version = mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
         autospec=True,
-        return_value=task.service_version,
+        return_value=task.integration_version,
     )
     caplog.set_level(logging.INFO)
     output_data = run_computational_sidecar(
@@ -299,7 +313,8 @@ def test_run_computational_sidecar_dask(
 ):
     mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
-        return_value=task.service_version,
+        autospec=True,
+        return_value=task.integration_version,
     )
     future = dask_client.submit(
         run_computational_sidecar,

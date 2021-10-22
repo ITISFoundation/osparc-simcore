@@ -39,7 +39,7 @@ from .docker_utils import (
     pull_image,
 )
 from .errors import ServiceBadFormattedOutputError, ServiceRunError
-from .models import IntegrationVersion
+from .models import LEGACY_INTEGRATION_VERSION
 from .task_shared_volume import TaskSharedVolumes
 
 logger = create_dask_worker_logger(__name__)
@@ -68,11 +68,11 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     async def _write_input_data(
         self,
         task_volumes: TaskSharedVolumes,
-        integration_version: IntegrationVersion,
+        integration_version: version.Version,
     ) -> None:
         input_data_file = (
             task_volumes.inputs_folder
-            / f"{'input' if integration_version == version.parse('0.0.0') else 'inputs'}.json"
+            / f"{'inputs' if integration_version > LEGACY_INTEGRATION_VERSION else 'input'}.json"
         )
         input_data = {}
         for input_key, input_params in self.input_data.items():
@@ -100,7 +100,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     async def _retrieve_output_data(
         self,
         task_volumes: TaskSharedVolumes,
-        integration_version: IntegrationVersion,
+        integration_version: version.Version,
     ) -> TaskOutputData:
         try:
             logger.debug(
@@ -115,9 +115,9 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             output_data = TaskOutputData.from_task_output(
                 self.output_data_keys,
                 task_volumes.outputs_folder,
-                "output.json"
-                if integration_version == version.parse("0.0.0")
-                else "outputs.json",
+                "outputs.json"
+                if integration_version > LEGACY_INTEGRATION_VERSION
+                else "output.json",
             )
             for output_params in output_data.values():
                 if isinstance(output_params, FileUrl):

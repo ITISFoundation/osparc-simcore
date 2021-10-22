@@ -136,7 +136,7 @@ def ftp_server(ftpserver: ProcessFTPServer) -> List[URL]:
     list_of_file_urls = [f"{ftp_server_base_url}/{filename}.txt" for filename in files]
     with fsspec.open_files(list_of_file_urls, "wt") as open_files:
         for index, fp in enumerate(open_files):
-            fp.write(f"This file is named: {files[index]}\n")
+            fp.write(f"This is the file contents of '{files[index]}'\n")
             for s in faker.sentences():
                 fp.write(f"{s}\n")
 

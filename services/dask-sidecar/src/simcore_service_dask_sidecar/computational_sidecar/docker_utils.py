@@ -24,7 +24,11 @@ from pydantic import ByteSize
 from ..boot_mode import BootMode
 from ..dask_utils import create_dask_worker_logger, publish_event
 from ..settings import Settings
-from .models import ContainerHostConfig, DockerContainerConfig, IntegrationVersion
+from .models import (
+    LEGACY_INTEGRATION_VERSION,
+    ContainerHostConfig,
+    DockerContainerConfig,
+)
 from .task_shared_volume import TaskSharedVolumes
 
 logger = create_dask_worker_logger(__name__)
@@ -266,7 +270,7 @@ async def monitor_container_logs(
     service_version: str,
     progress_pub: Pub,
     logs_pub: Pub,
-    integration_version: IntegrationVersion,
+    integration_version: version.Version,
     task_volumes: TaskSharedVolumes,
 ) -> None:
     """Services running with integration version 0.0.0 are logging into a file
@@ -285,7 +289,16 @@ async def monitor_container_logs(
             container_name,
         )
 
-        if integration_version == version.parse("0.0.0"):
+        if integration_version >= LEGACY_INTEGRATION_VERSION:
+            await _parse_container_docker_logs(
+                container,
+                service_key,
+                service_version,
+                container_name,
+                progress_pub,
+                logs_pub,
+            )
+        else:
             await _parse_container_log_file(
                 container,
                 service_key,
@@ -294,15 +307,6 @@ async def monitor_container_logs(
                 progress_pub,
                 logs_pub,
                 task_volumes,
-            )
-        else:
-            await _parse_container_docker_logs(
-                container,
-                service_key,
-                service_version,
-                container_name,
-                progress_pub,
-                logs_pub,
             )
 
         logger.info(
@@ -329,7 +333,7 @@ async def managed_monitor_container_log_task(
     service_version: str,
     progress_pub: Pub,
     logs_pub: Pub,
-    integration_version: IntegrationVersion,
+    integration_version: version.Version,
     task_volumes: TaskSharedVolumes,
 ) -> AsyncIterator[Awaitable[None]]:
     monitoring_task = None
@@ -382,7 +386,7 @@ async def get_integration_version(
     docker_auth: DockerBasicAuth,
     service_key: str,
     service_version: str,
-) -> IntegrationVersion:
+) -> version.Version:
 
     INTEGRATION_VERSION_LABEL = "io.simcore.integration-version"
 
@@ -390,17 +394,17 @@ async def get_integration_version(
         f"{docker_auth.server_address}/{service_key}:{service_version}"
     )
     # NOTE: old services did not have the integration-version label
-    default_label = json.dumps({"integration-version": "0.0.0"})
+    integration_version = LEGACY_INTEGRATION_VERSION
     # image labels are set to None when empty
-    image_labels = image_cfg["Config"].get("Labels", {})
-    if not image_labels:
-        image_labels = {INTEGRATION_VERSION_LABEL: default_label}
-
-    integration_version = version.parse(
-        json.loads(image_labels.get(INTEGRATION_VERSION_LABEL, default_label)).get(
-            "integration-version", "0.0.0"
+    if image_labels := image_cfg["Config"].get("Labels"):
+        version.Version(
+            json.loads(
+                image_labels.get(INTEGRATION_VERSION_LABEL, {}).get(
+                    "integration-version", f"{LEGACY_INTEGRATION_VERSION}"
+                )
+            )
         )
-    )
+
     logger.info(
         "%s:%s has integration version %s",
         service_key,
