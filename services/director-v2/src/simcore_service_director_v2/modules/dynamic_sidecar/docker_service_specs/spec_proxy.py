@@ -6,10 +6,8 @@ from ....core.settings import DynamicSidecarProxySettings, DynamicSidecarSetting
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
 
 # Proxy resources
-RESERVATION_MEMORY_50MB = 52430000
-RESERVATION_CPU_1_PERCENT = 10000000
-LIMIT_MEMORY_250MB = 262144000
-LIMIT_CPU_10_PERCENT = 100000000
+LIMIT_MEMORY_50MB = 52430000
+LIMIT_CPU_1_PERCENT = 10000000
 
 
 async def get_dynamic_proxy_spec(
@@ -92,12 +90,8 @@ async def get_dynamic_proxy_spec(
             },
             "Resources": {
                 "Limits": {
-                    "MemoryBytes": LIMIT_MEMORY_250MB,
-                    "NanoCPUs": LIMIT_CPU_10_PERCENT,
-                },
-                "Reservations": {
-                    "MemoryBytes": RESERVATION_MEMORY_50MB,
-                    "NanoCPUs": RESERVATION_CPU_1_PERCENT,
+                    "MemoryBytes": LIMIT_MEMORY_50MB,
+                    "NanoCPUs": LIMIT_CPU_1_PERCENT,
                 },
             },
             "RestartPolicy": {
