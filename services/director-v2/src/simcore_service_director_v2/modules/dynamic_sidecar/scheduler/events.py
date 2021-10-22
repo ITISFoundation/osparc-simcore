@@ -6,6 +6,7 @@ from typing import Any, Deque, Dict, List, Optional, Type
 import httpx
 from fastapi import FastAPI
 from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
@@ -251,14 +252,17 @@ class CreateUserServices(DynamicSchedulerEvent):
             ),
             wait=wait_fixed(1),
             retry_error_cls=EntrypointContainerNotFoundError,
+            before_sleep=before_sleep_log(logger, logging.WARNING),
         ):
             with attempt:
-                logger.debug("trying to fetch entrypoint_container_name")
                 entrypoint_container = (
                     await dynamic_sidecar_client.get_entrypoint_container_name(
                         dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
                         swarm_network_name=scheduler_data.dynamic_sidecar_network_name,
                     )
+                )
+                logger.info(
+                    "Fetched container entrypoint name %s", entrypoint_container
                 )
 
         dynamic_sidecar_node_id = await get_node_id_from_task_for_service(
