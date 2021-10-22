@@ -85,7 +85,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         case "side-panels": {
           control = new qx.ui.splitpane.Pane("horizontal").set({
             offset: 2,
-            minWidth: 30,
             width: Math.min(parseInt(window.innerWidth * (0.16+0.24)), 550)
           });
           osparc.desktop.WorkbenchView.decorateSplitter(control.getChildControl("splitter"));
@@ -95,6 +94,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         case "collapsible-view-left": {
           const sidePanels = this.getChildControl("side-panels");
           control = new osparc.component.widget.CollapsibleViewLight().set({
+            minWidth: 15,
             width: Math.min(parseInt(window.innerWidth * 0.16), 240)
           });
           const caretExpandedLayout = control.getChildControl("caret-expanded-layout");
@@ -107,12 +107,24 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           control.bind("collapsed", sidePanels, "width", {
             converter: collapsed => this.__getSidePanelsNewWidth(collapsed, sidePanels, control)
           });
-          sidePanels.add(control, 0); // flex 1
+          control.addListener("changeCollapsed", e => {
+            const collapsed = e.getData();
+            const collapsibleViewLeft = this.getChildControl("collapsible-view-right");
+            // if both panes are collapsed set the maxWidth of the layout to 2*15
+            if (collapsed && collapsibleViewLeft.isCollapsed()) {
+              sidePanels.setMaxWidth(2*15);
+            } else {
+              sidePanels.setMaxWidth(null);
+            }
+          }, this);
+          // flex 0 by default, this will be changed if "collapsible-view-right" gets collapsed
+          sidePanels.add(control, 0);
           break;
         }
         case "collapsible-view-right": {
           const sidePanels = this.getChildControl("side-panels");
           control = new osparc.component.widget.CollapsibleViewLight().set({
+            minWidth: 15,
             width: Math.min(parseInt(window.innerWidth * 0.24), 310)
           });
           const caretExpandedLayout = control.getChildControl("caret-expanded-layout");
@@ -125,6 +137,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           control.bind("collapsed", sidePanels, "width", {
             converter: collapsed => this.__getSidePanelsNewWidth(collapsed, sidePanels, control)
           });
+          control.addListener("changeCollapsed", e => {
+            // switch flex to 1 if the secondary pane gets collapsed
+            const collapsed = e.getData();
+            const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
+            collapsibleViewLeft.setLayoutProperties({flex: collapsed ? 1 : 0});
+            control.setLayoutProperties({flex: collapsed ? 0 : 1});
+
+            // if both panes are collapsed set the maxWidth of the layout to 2*15
+            if (collapsed && collapsibleViewLeft.isCollapsed()) {
+              sidePanels.setMaxWidth(2*15);
+            } else {
+              sidePanels.setMaxWidth(null);
+            }
+          }, this);
           sidePanels.add(control, 1); // flex 1
           break;
         }
