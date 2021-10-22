@@ -17,6 +17,7 @@ from servicelib.aiohttp.aiopg_utils import (
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.common_aiopg_utils import create_pg_engine
+from simcore_postgres_database.utils_migration import get_current_head
 from tenacity import AsyncRetrying
 
 from .db_config import CONFIG_SECTION_NAME, assert_valid_config
@@ -66,14 +67,28 @@ async def pg_engine(app: web.Application):
     if engine is not app.get(APP_DB_ENGINE_KEY):
         log.critical("app does not hold right db engine. Somebody has changed it??")
 
-    engine.close()
-    await engine.wait_closed()
+    await _close_engine(engine)
     log.debug(
         "engine '%s' after shutdown: closed=%s, size=%d",
         engine.dsn,
         engine.closed,
         engine.size,
     )
+
+
+async def _close_engine(engine: Engine) -> None:
+    engine.close()
+    await engine.wait_closed()
+
+
+async def _raise_if_migration_not_ready(engine: Engine):
+    async with engine.acquire() as conn:
+        version_num = await conn.scalar('SELECT "version_num" FROM "alembic_version"')
+        head_version_num = get_current_head()
+        if version_num != head_version_num:
+            raise RuntimeError(
+                f"Migration is incomplete, expected {head_version_num} and got {version_num}"
+            )
 
 
 async def _create_pg_engine(
@@ -87,7 +102,12 @@ async def _create_pg_engine(
     ):
         with attempt:
             engine = await create_pg_engine(dsn, minsize=min_size, maxsize=max_size)
-            await raise_if_not_responsive(engine)
+            try:
+                await raise_if_not_responsive(engine)
+                await _raise_if_migration_not_ready(engine)
+            except Exception:
+                await _close_engine(engine)
+                raise
 
     return engine  # type: ignore # tenacity rules guarantee exit with exc
 
@@ -104,18 +124,18 @@ async def pg_engines(app: web.Application) -> Iterator[None]:
         host=pg_cfg["host"],
         port=pg_cfg["port"],
     )  # type: ignore
-    normal_engine = await _create_pg_engine(dsn, pg_cfg["minsize"], pg_cfg["maxsize"])
-    app[APP_DB_ENGINE_KEY] = normal_engine
+    aiopg_engine = await _create_pg_engine(dsn, pg_cfg["minsize"], pg_cfg["maxsize"])
+    app[APP_DB_ENGINE_KEY] = aiopg_engine
 
     yield  # -------------------
 
     # clean-up
-    if normal_engine is not app.get(APP_DB_ENGINE_KEY):
+    if aiopg_engine is not app.get(APP_DB_ENGINE_KEY):
         log.critical("app does not hold right db engine. Somebody has changed it??")
 
-    for engine in [normal_engine]:
-        engine.close()
-        await engine.wait_closed()
+    for engine in [aiopg_engine]:
+        await _close_engine(engine)
+
         log.debug(
             "engine '%s' after shutdown: closed=%s, size=%d",
             engine.dsn,
