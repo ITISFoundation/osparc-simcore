@@ -202,13 +202,6 @@ qx.Class.define("osparc.data.model.Study", {
       return studyObject;
     },
 
-    isStudySecondary: function(studyData) {
-      if ("dev" in studyData && "sweeper" in studyData["dev"] && "primaryStudyId" in studyData["dev"]["sweeper"]) {
-        return true;
-      }
-      return false;
-    },
-
     isOwner: function(studyData) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       let accessRights = {};
@@ -282,6 +275,17 @@ qx.Class.define("osparc.data.model.Study", {
     getUiMode: function(studyData) {
       if ("ui" in studyData && "mode" in studyData["ui"]) {
         return studyData["ui"]["mode"];
+      }
+      return null;
+    },
+
+    getOutputValue: function(studyData, nodeId, portId) {
+      if ("workbench" in studyData &&
+        nodeId in studyData["workbench"] &&
+        "outputs" in studyData["workbench"][nodeId] &&
+        portId in studyData["workbench"][nodeId]["outputs"]
+      ) {
+        return studyData["workbench"][nodeId]["outputs"][portId];
       }
       return null;
     }

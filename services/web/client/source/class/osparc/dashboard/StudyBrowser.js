@@ -461,10 +461,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
 
         userStudy["resourceType"] = "study";
-        // do not add secondary studies to the list
-        if (osparc.data.model.Study.isStudySecondary(userStudy)) {
-          return;
-        }
         const idx = studyList.findIndex(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === userStudy["uuid"]);
         if (idx !== -1) {
           return;
