@@ -59,7 +59,7 @@ async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
             head_version_num = get_current_head()
             if version_num != head_version_num:
                 raise RuntimeError(
-                    "Migration is incomplete, expected {head_version_num} and got {version_num}"
+                    f"Migration is incomplete, expected {head_version_num} and got {version_num}"
                 )
 
     except Exception:
