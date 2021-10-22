@@ -16,7 +16,21 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.component.node.ProbeView", {
-  extend: osparc.component.node.BaseNodeView,
+  extend: qx.ui.core.Widget,
+
+  construct: function(node, portId) {
+    this.base();
+
+    this._setLayout(new qx.ui.layout.VBox());
+
+    if (node) {
+      this.setNode(node);
+    }
+
+    if (portId) {
+      this.setPortId(portId);
+    }
+  },
 
   statics: {
     getOutputValues: function(metaStudy, nodeId, portId) {
@@ -34,42 +48,42 @@ qx.Class.define("osparc.component.node.ProbeView", {
     }
   },
 
+  properties: {
+    node: {
+      check: "osparc.data.model.Node",
+      init: null,
+      nullable: false,
+      apply: "__applyNode"
+    },
+
+    portId: {
+      check: "String",
+      init: null,
+      nullable: false,
+      apply: "__populateLayout"
+    }
+  },
+
   members: {
-    __probe: null,
-
-    // overridden
-    isSettingsGroupShowable: function() {
-      return false;
-    },
-
-    // overridden
-    _addSettings: function() {
-      return;
-    },
-
-    // overridden
-    _addIFrame: function() {
-      this.__buildMyLayout();
-    },
-
-    // overridden
-    _openEditAccessLevel: function() {
-      return;
-    },
-
-    // overridden
-    _applyNode: function(node) {
+    __applyNode: function(node) {
       if (!node.isProbe()) {
         console.error("Only Probe nodes are supported");
       }
-      this.base(arguments, node);
+      this.__populateLayout();
     },
 
-    __buildMyLayout: function() {
+    __populateLayout: function() {
       const node = this.getNode();
+      const portId = this.getPortId();
       if (!node) {
         return;
       }
+
+      this._removeAll();
+      const outputValues = this.self().getOutputValues(node.getStudy(), node, portId);
+      outputValues.forEach(outputValue => {
+        this._add(new qx.ui.basic.Label(outputValue));
+      });
     }
   }
 });
