@@ -8,7 +8,10 @@ from aiopg.sa.engine import get_dialect
 from fastapi import FastAPI
 from settings_library.postgres import PostgresSettings
 from simcore_postgres_database.utils_migration import get_current_head
-from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
+from tenacity import retry
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 logger = logging.getLogger(__name__)
 
@@ -39,14 +42,17 @@ def json_serializer(o: Any) -> str:
 
 @retry(**pg_retry_policy)
 async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
+    """
+    Creates an engine to communicate to the db and retries until
+    the db is ready
+    """
     logger.debug("Connecting db ...")
-    aiopg_dialect = get_dialect(json_serializer=json_serializer)
     engine: Engine = await create_engine(
         str(settings.dsn),
         application_name=f"{__name__}_{id(app)}",  # unique identifier per app
         minsize=settings.POSTGRES_MINSIZE,
         maxsize=settings.POSTGRES_MAXSIZE,
-        dialect=aiopg_dialect,
+        dialect=get_dialect(json_serializer=json_serializer),
     )
     logger.debug("Connected to %s", engine.dsn)
 
