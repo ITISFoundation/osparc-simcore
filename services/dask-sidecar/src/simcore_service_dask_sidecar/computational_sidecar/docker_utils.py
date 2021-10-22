@@ -190,9 +190,23 @@ async def _parse_container_log_file(
 
     async with aiofiles.open(log_file, mode="r") as file_pointer:
         logger.debug("monitoring legacy-style container log file: opened %s", log_file)
-        # await file_pointer.seek(0, 2)
+        while (await container.show())["State"]["Running"]:
+            if line := await file_pointer.readline():
+                log_type, _, message = await parse_line(line)
+                await publish_container_logs(
+                    service_key=service_key,
+                    service_version=service_version,
+                    container=container,
+                    container_name=container_name,
+                    progress_pub=progress_pub,
+                    logs_pub=logs_pub,
+                    log_type=log_type,
+                    message=message,
+                )
+
+            await asyncio.sleep(0.5)
+        # finish reading the logs if possible
         async for line in file_pointer:
-            # try to read line
             log_type, _, message = await parse_line(line)
             await publish_container_logs(
                 service_key=service_key,
