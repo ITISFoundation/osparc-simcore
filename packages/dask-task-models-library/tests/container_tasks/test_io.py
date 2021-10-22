@@ -61,6 +61,7 @@ def _create_fake_outputs(
             json.dump(jsonable_data, fp)
         assert output_file.exists()
         return output_file.name
+    return None
 
 
 @pytest.mark.parametrize("optional_fields_set", [True, False])
