@@ -85,7 +85,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         case "side-panels": {
           control = new qx.ui.splitpane.Pane("horizontal").set({
             offset: 2,
-            minWidth: 30
+            minWidth: 30,
+            width: Math.min(parseInt(window.innerWidth * (0.16+0.24)), 550)
           });
           osparc.desktop.WorkbenchView.decorateSplitter(control.getChildControl("splitter"));
           this.add(control, 0); // flex 0
@@ -93,7 +94,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         case "collapsible-view-left": {
           const sidePanels = this.getChildControl("side-panels");
-          control = new osparc.component.widget.CollapsibleViewLight();
+          control = new osparc.component.widget.CollapsibleViewLight().set({
+            width: Math.min(parseInt(window.innerWidth * 0.16), 240)
+          });
           const caretExpandedLayout = control.getChildControl("caret-expanded-layout");
           caretExpandedLayout.addAt(this.__createCollapsibleViewSpacer(), 0);
           const caretCollapsedLayout = control.getChildControl("caret-collapsed-layout");
@@ -109,7 +112,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         case "collapsible-view-right": {
           const sidePanels = this.getChildControl("side-panels");
-          control = new osparc.component.widget.CollapsibleViewLight();
+          control = new osparc.component.widget.CollapsibleViewLight().set({
+            width: Math.min(parseInt(window.innerWidth * 0.24), 310)
+          });
           const caretExpandedLayout = control.getChildControl("caret-expanded-layout");
           caretExpandedLayout.addAt(this.__createCollapsibleViewSpacer(), 0);
           const caretCollapsedLayout = control.getChildControl("caret-collapsed-layout");
@@ -125,7 +130,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         case "side-panel-left-tabs": {
           control = new qx.ui.tabview.TabView().set({
-            width: 250,
             contentPadding: 8,
             barPosition: "top"
           });
@@ -138,7 +142,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         case "side-panel-right-tabs": {
           control = new qx.ui.tabview.TabView().set({
-            width: 300,
             contentPadding: 8,
             barPosition: "top"
           });
@@ -237,10 +240,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const studyTreeItem = this.__studyTreeItem = new osparc.component.widget.StudyTitleOnlyTree().set({
         alignY: "middle",
-        minHeight: 24,
-        maxHeight: 24,
+        minHeight: 32,
+        maxHeight: 32,
         backgroundColor: primaryColumnBGColor,
-        marginBottom: 6
+        marginBottom: 5
       });
       studyTreeItem.setStudy(study);
       homeAndNodesTree.add(studyTreeItem);
@@ -723,7 +726,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
 
       if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
-        this.__settingsPage.add(node.getPropsForm(), {
+        const scrollContariner = new qx.ui.container.Scroll();
+        scrollContariner.add(node.getPropsForm());
+        this.__settingsPage.add(scrollContariner, {
           flex: 1
         });
       }
