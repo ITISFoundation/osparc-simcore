@@ -21,19 +21,12 @@ from aiohttp import web
 from aiopg.sa import Engine
 from psycopg2 import DatabaseError
 from psycopg2 import Error as DBAPIError
-from tenacity import (
-    RetryCallState,
-    after_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_fixed,
-)
+from tenacity import RetryCallState, retry
+from tenacity.after import after_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
-from ..common_aiopg_utils import (
-    DataSourceName,
-    PostgresRetryPolicyUponInitialization
-)
+from ..common_aiopg_utils import DataSourceName, PostgresRetryPolicyUponInitialization
 
 log = logging.getLogger(__name__)
 
