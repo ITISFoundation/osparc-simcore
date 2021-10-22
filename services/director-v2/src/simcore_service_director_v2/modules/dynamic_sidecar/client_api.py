@@ -161,7 +161,11 @@ class DynamicSidecarClient:
     async def get_entrypoint_container_name(
         self, dynamic_sidecar_endpoint: str, swarm_network_name: str
     ) -> str:
-        """While HTTPStatusError is returned it is OK to wait for"""
+        """
+        While this API raises EntrypointContainerNotFoundError
+        it should be called again, because in the menwhile the containers
+        might still be starting.
+        """
         url = get_url(
             dynamic_sidecar_endpoint,
             f"/{self.API_VERSION}/containers/entrypoint?swarm_network_name={swarm_network_name}",
