@@ -201,6 +201,15 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+      "iterations": {
+        idField: "uuid",
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/repos/projects/{studyId}/{snapshotId}/iterations"
+          }
+        }
+      },
       /*
        * TEMPLATES (actually studies flagged as templates)
        */

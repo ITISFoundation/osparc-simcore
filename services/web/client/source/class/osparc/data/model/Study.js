@@ -272,6 +272,29 @@ qx.Class.define("osparc.data.model.Study", {
       });
     },
 
+    getIterations: function(studyId, snapshotId) {
+      return new Promise((resolve, reject) => {
+        if (!osparc.data.Permissions.getInstance().canDo("study.snapshot.read")) {
+          reject();
+          return;
+        }
+        const params = {
+          url: {
+            studyId,
+            snapshotId
+          }
+        };
+        osparc.data.Resources.get("iterations", params)
+          .then(iterations => {
+            resolve(iterations);
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
+    },
+
     getUiMode: function(studyData) {
       if ("ui" in studyData && "mode" in studyData["ui"]) {
         return studyData["ui"]["mode"];
@@ -314,6 +337,11 @@ qx.Class.define("osparc.data.model.Study", {
 
     hasSnapshots: function() {
       return this.self().hasSnapshots(this.getUuid());
+    },
+
+    getIterations: function() {
+      const snapshotId = "HEAD";
+      return this.self().getIterations(this.getUuid(), snapshotId);
     },
 
     getPipelineState: function() {
