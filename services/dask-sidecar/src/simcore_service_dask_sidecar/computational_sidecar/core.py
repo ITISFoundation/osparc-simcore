@@ -109,8 +109,8 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 pformat(list(task_volumes.outputs_folder.rglob("*"))),
             )
             logger.debug(
-                "following outputs will be searched for: %s",
-                pformat(self.output_data_keys),
+                "following outputs will be searched for:\n%s",
+                pformat(self.output_data_keys.dict()),
             )
             output_data = TaskOutputData.from_task_output(
                 self.output_data_keys,
@@ -143,7 +143,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                             dst.write(src.read())
 
                     logger.info("retrieved output file %s", src_path)
-            logger.info("retrieved outputs data %s", pformat(output_data))
+            logger.info("retrieved outputs data:\n%s", pformat(output_data.dict()))
             return output_data
 
         except ValidationError as exc:
