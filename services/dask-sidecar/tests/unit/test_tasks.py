@@ -148,7 +148,7 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
     )
     # check in the console that the expected files are present in the expected INPUT folder (set as ${INPUT_FOLDER} in the service)
     file_names = [file.path for file in ftp_server]
-    check_input_file_commands = [
+    list_of_commands = [
         f"(test -f ${{INPUT_FOLDER}}/{file} || (echo ${{INPUT_FOLDER}}/{file} does not exists && exit 1))"
         for file in file_names
     ] + [f"echo $(cat ${{INPUT_FOLDER}}/{file})" for file in file_names]
@@ -158,7 +158,7 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         if integration_version > LEGACY_INTEGRATION_VERSION
         else "input.json"
     )
-    check_input_json_commands = [
+    list_of_commands += [
         f"(test -f ${{INPUT_FOLDER}}/{input_json_file_name} || (echo ${{INPUT_FOLDER}}/{input_json_file_name} file does not exists && exit 1))",
         f"echo $(cat ${{INPUT_FOLDER}}/{input_json_file_name})",
     ]
@@ -200,7 +200,7 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         if integration_version > LEGACY_INTEGRATION_VERSION
         else "output.json"
     )
-    create_outputs_commands = [
+    list_of_commands += [
         f"echo {jsonized_outputs} > ${{OUTPUT_FOLDER}}/{output_json_file_name}",
         "echo 'some data for the output file' > ${OUTPUT_FOLDER}/a_outputfile",
     ]
@@ -208,12 +208,7 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
     command = [
         "/bin/bash",
         "-c",
-        " && ".join(
-            ["echo User: $(id $(whoami))"]
-            + check_input_file_commands
-            + check_input_json_commands
-            + create_outputs_commands
-        ),
+        " && ".join(["echo User: $(id $(whoami))"] + list_of_commands),
     ]
 
     return ServiceExampleParam(
