@@ -37,20 +37,8 @@ def _create_basic_config() -> AlembicConfig:
     return config
 
 
-def get_current_head() -> Optional[RevisionID]:
-    """Return the current head revision.
-
-    If the script directory has multiple heads
-    due to branching, an error is raised;
-    """
-    config = _create_basic_config()
-    script = ScriptDirectory.from_config(config)
-
-    return script.get_current_head()
-
-
-def safe(if_fails_return=False):
-    def _decorator(func: Callable):
+def _safe(if_fails_return=False):
+    def decorator(func: Callable):
         @wraps(func)
         def wrapper(*args, **kargs):
             try:
@@ -75,10 +63,10 @@ def safe(if_fails_return=False):
 
         return wrapper
 
-    return _decorator
+    return decorator
 
 
-@safe(if_fails_return=None)
+@_safe(if_fails_return=None)
 def get_service_published_port(service_name: str) -> int:
     client = docker.from_env()
     services = [
@@ -147,3 +135,17 @@ def get_alembic_config_from_cache(
     config = _create_basic_config()
     config.set_main_option("sqlalchemy.url", str(url))
     return config
+
+
+def get_current_head() -> RevisionID:
+    """Return the current head revision.
+
+    If the script directory has multiple heads
+    due to branching, an error is raised;
+    """
+    config = _create_basic_config()
+    script = ScriptDirectory.from_config(config)
+
+    head = script.get_current_head()
+    assert head  # nosec
+    return head
