@@ -3,7 +3,7 @@
 """
 
 import logging
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, AsyncIterator, Dict, Optional
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -18,7 +18,7 @@ from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KE
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.common_aiopg_utils import create_pg_engine
 from simcore_postgres_database.utils_migration import get_current_head
-from tenacity import AsyncRetrying
+from tenacity import retry
 
 from .db_config import CONFIG_SECTION_NAME, assert_valid_config
 
@@ -26,54 +26,6 @@ THIS_MODULE_NAME = __name__.split(".")[-1]
 THIS_SERVICE_NAME = "postgres"
 
 log = logging.getLogger(__name__)
-
-
-async def pg_engine(app: web.Application):
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    pg_cfg = cfg["postgres"]
-
-    app[f"{__name__}.dsn"] = dsn = DataSourceName(
-        application_name=f"{__name__}_{id(app)}",
-        database=pg_cfg["database"],
-        user=pg_cfg["user"],
-        password=pg_cfg["password"],
-        host=pg_cfg["host"],
-        port=pg_cfg["port"],
-    )  # type: ignore
-
-    pool_kwargs: Dict[str, Any] = {}
-    if app[APP_CONFIG_KEY]["main"]["testing"]:
-        pool_kwargs["echo"] = True
-
-    log.info("Creating pg engine for %s", dsn)
-
-    engine: Optional[Engine] = None
-
-    async for attempt in AsyncRetrying(
-        **PostgresRetryPolicyUponInitialization(log).kwargs
-    ):
-        with attempt:
-            engine = await create_pg_engine(
-                dsn, minsize=pg_cfg["minsize"], maxsize=pg_cfg["maxsize"], **pool_kwargs
-            )
-            assert engine  # nosec
-            await raise_if_not_responsive(engine)
-
-    assert engine  # nosec
-    app[APP_DB_ENGINE_KEY] = engine
-
-    yield  # -------------------
-
-    if engine is not app.get(APP_DB_ENGINE_KEY):
-        log.critical("app does not hold right db engine. Somebody has changed it??")
-
-    await _close_engine(engine)
-    log.debug(
-        "engine '%s' after shutdown: closed=%s, size=%d",
-        engine.dsn,
-        engine.closed,
-        engine.size,
-    )
 
 
 async def _close_engine(engine: Engine) -> None:
@@ -91,28 +43,23 @@ async def _raise_if_migration_not_ready(engine: Engine):
             )
 
 
-async def _create_pg_engine(
-    dsn: DataSourceName, min_size: int, max_size: int
-) -> Engine:
+@retry(**PostgresRetryPolicyUponInitialization(log).kwargs)
+async def _ensure_pg_ready(dsn: DataSourceName, min_size: int, max_size: int) -> Engine:
 
     log.info("Creating pg engine for %s", dsn)
 
-    async for attempt in AsyncRetrying(
-        **PostgresRetryPolicyUponInitialization(log).kwargs
-    ):
-        with attempt:
-            engine = await create_pg_engine(dsn, minsize=min_size, maxsize=max_size)
-            try:
-                await raise_if_not_responsive(engine)
-                await _raise_if_migration_not_ready(engine)
-            except Exception:
-                await _close_engine(engine)
-                raise
+    engine = await create_pg_engine(dsn, minsize=min_size, maxsize=max_size)
+    try:
+        await raise_if_not_responsive(engine)
+        await _raise_if_migration_not_ready(engine)
+    except Exception:
+        await _close_engine(engine)
+        raise
 
     return engine  # type: ignore # tenacity rules guarantee exit with exc
 
 
-async def pg_engines(app: web.Application) -> Iterator[None]:
+async def postgres_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     pg_cfg = cfg["postgres"]
 
@@ -124,7 +71,7 @@ async def pg_engines(app: web.Application) -> Iterator[None]:
         host=pg_cfg["host"],
         port=pg_cfg["port"],
     )  # type: ignore
-    aiopg_engine = await _create_pg_engine(dsn, pg_cfg["minsize"], pg_cfg["maxsize"])
+    aiopg_engine = await _ensure_pg_ready(dsn, pg_cfg["minsize"], pg_cfg["maxsize"])
     app[APP_DB_ENGINE_KEY] = aiopg_engine
 
     yield  # -------------------
@@ -164,7 +111,7 @@ def get_engine_state(app: web.Application) -> Dict[str, Any]:
 
 
 @app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
-def setup(app: web.Application):
+def setup_db(app: web.Application):
     # ----------------------------------------------
     # TODO: temporary, just to check compatibility between
     # trafaret and pydantic schemas
@@ -175,10 +122,4 @@ def setup(app: web.Application):
     app[APP_DB_ENGINE_KEY] = None
 
     # async connection to db
-    app.cleanup_ctx.append(pg_engines)
-
-
-# alias ---
-setup_db = setup
-
-__all__ = ("setup_db", "is_service_enabled")
+    app.cleanup_ctx.append(postgres_cleanup_ctx)
