@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 containers_router = APIRouter(tags=["containers"])
 
 
-async def task_docker_compose_up(
+async def _task_docker_compose_up(
     settings: DynamicSidecarSettings,
     shared_store: SharedStore,
     application_health: ApplicationHealth = Depends(get_application_health),
@@ -101,7 +101,7 @@ async def runs_docker_compose_up(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
 
     # run docker-compose in a background queue and return early
-    background_tasks.add_task(task_docker_compose_up, settings, shared_store)
+    background_tasks.add_task(_task_docker_compose_up, settings, shared_store)
 
     return shared_store.container_names
 
