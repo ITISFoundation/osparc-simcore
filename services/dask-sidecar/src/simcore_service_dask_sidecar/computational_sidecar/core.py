@@ -226,6 +226,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                         self.service_version,
                         container.id,
                     )
+
             # get the outputs
             return await self._retrieve_output_data(task_volumes, integration_version)
 

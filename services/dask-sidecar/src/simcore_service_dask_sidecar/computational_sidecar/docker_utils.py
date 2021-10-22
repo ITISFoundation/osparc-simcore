@@ -77,17 +77,22 @@ async def managed_container(
 ) -> AsyncIterator[DockerContainer]:
     container = None
     try:
+        logger.debug("Creating container...")
         container = await docker_client.containers.create(
             config.dict(by_alias=True), name=name
         )
+        logger.debug("container %s created", container.id)
         yield container
     except asyncio.CancelledError:
-        logger.warning("Cancelling container...")
+        if container:
+            logger.warning("Stopping container %s", container.id)
         raise
     finally:
         try:
             if container:
+                logger.debug("Removing container %s...", container.id)
                 await container.delete(remove=True, v=True, force=True)
+                logger.debug("container removed")
             logger.info("Completed run of %s", config.image)
         except DockerError:
             logger.exception(
@@ -188,6 +193,9 @@ async def publish_logs(
         publish_event(logs_pub, TaskLogEvent.from_dask_worker(log=message))
 
 
+LEGACY_SERVICE_LOG_FILE_NAME = "log.dat"
+
+
 async def _parse_container_log_file(
     container: DockerContainer,
     service_key: str,
@@ -197,11 +205,14 @@ async def _parse_container_log_file(
     logs_pub: Pub,
     task_volumes: TaskSharedVolumes,
 ):
-    log_file = task_volumes.logs_folder / "log.dat"
-    log_file.touch()
+    log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
+    # log_file.write_text(
+    #     f"log file for {service_key}:{service_version} running as {container_name}:{container.id}"
+    # )
+    logger.debug("monitoring legacy-style container log file in %s", log_file)
 
     async with aiofiles.open(log_file, mode="r") as file_pointer:
-        logger.debug("log monitoring: opened %s", log_file)
+        logger.debug("monitoring legacy-style container log file: opened %s", log_file)
         # await file_pointer.seek(0, 2)
         async for line in file_pointer:
             # try to read line
@@ -216,6 +227,10 @@ async def _parse_container_log_file(
                 log_type=log_type,
                 message=message,
             )
+        logger.debug(
+            "monitoring legacy-style container log file: completed reading of %s",
+            log_file,
+        )
 
 
 async def _parse_container_docker_logs(
@@ -227,6 +242,11 @@ async def _parse_container_docker_logs(
     logs_pub: Pub,
 ):
     latest_log_timestamp = DEFAULT_TIME_STAMP
+    logger.debug(
+        "monitoring 1.0+ container logs from container %s:%s",
+        container.id,
+        container_name,
+    )
     async for log_line in container.log(
         stdout=True, stderr=True, follow=True, timestamps=True
     ):
@@ -242,6 +262,11 @@ async def _parse_container_docker_logs(
             message=message,
         )
 
+    logger.debug(
+        "monitoring 1.0+ container logs from container %s:%s: getting remaining logs",
+        container.id,
+        container_name,
+    )
     # NOTE: The log stream may be interrupted before all the logs are gathered!
     # therefore it is needed to get the remaining logs
     missing_logs = await container.log(
@@ -262,6 +287,11 @@ async def _parse_container_docker_logs(
             log_type=log_type,
             message=message,
         )
+    logger.debug(
+        "monitoring 1.0+ container logs from container %s:%s: completed",
+        container.id,
+        container_name,
+    )
 
 
 async def monitor_container_logs(
@@ -289,7 +319,7 @@ async def monitor_container_logs(
             container_name,
         )
 
-        if integration_version >= LEGACY_INTEGRATION_VERSION:
+        if integration_version > LEGACY_INTEGRATION_VERSION:
             await _parse_container_docker_logs(
                 container,
                 service_key,

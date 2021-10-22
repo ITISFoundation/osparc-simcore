@@ -39,6 +39,9 @@ from models_library.users import UserID
 from packaging import version
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
+from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
+    LEGACY_SERVICE_LOG_FILE_NAME,
+)
 from simcore_service_dask_sidecar.computational_sidecar.models import (
     LEGACY_INTEGRATION_VERSION,
 )
@@ -149,6 +152,15 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
     # check in the console that the expected files are present in the expected INPUT folder (set as ${INPUT_FOLDER} in the service)
     file_names = [file.path for file in ftp_server]
     list_of_commands = [
+        "echo User: $(id $(whoami))",
+        "echo Inputs:",
+        "ls -tlah ${INPUT_FOLDER}",
+        "echo Outputs:",
+        "ls -tlah ${OUTPUT_FOLDER}",
+        "echo Logs:",
+        "ls -tlah ${LOG_FOLDER}",
+    ]
+    list_of_commands += [
         f"(test -f ${{INPUT_FOLDER}}/{file} || (echo ${{INPUT_FOLDER}}/{file} does not exists && exit 1))"
         for file in file_names
     ] + [f"echo $(cat ${{INPUT_FOLDER}}/{file})" for file in file_names]
@@ -200,15 +212,20 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         if integration_version > LEGACY_INTEGRATION_VERSION
         else "output.json"
     )
+
+    # check for the log file if legacy version
+    list_of_commands += [
+        "echo $(ls -tlah ${LOG_FOLDER})",
+        f"(test {'!' if integration_version > LEGACY_INTEGRATION_VERSION else ''} -f ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME} || (echo ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME} file does {'' if integration_version > LEGACY_INTEGRATION_VERSION else 'not'} exists && exit 1))",
+    ]
+    if integration_version == LEGACY_INTEGRATION_VERSION:
+        list_of_commands = [
+            f"{c} >> ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME}"
+            for c in list_of_commands
+        ]
     list_of_commands += [
         f"echo {jsonized_outputs} > ${{OUTPUT_FOLDER}}/{output_json_file_name}",
         "echo 'some data for the output file' > ${OUTPUT_FOLDER}/a_outputfile",
-    ]
-
-    command = [
-        "/bin/bash",
-        "-c",
-        " && ".join(["echo User: $(id $(whoami))"] + list_of_commands),
     ]
 
     return ServiceExampleParam(
@@ -217,7 +234,11 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         ),
         service_key="ubuntu",
         service_version="latest",
-        command=command,
+        command=[
+            "/bin/bash",
+            "-c",
+            " && ".join(list_of_commands),
+        ],
         input_data=input_data,
         output_data_keys=expected_output_keys,
         expected_output_data=expected_output_data,
