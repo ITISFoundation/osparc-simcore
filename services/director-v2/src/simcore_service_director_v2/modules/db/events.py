@@ -7,6 +7,7 @@ from aiopg.sa import Engine, create_engine
 from aiopg.sa.engine import get_dialect
 from fastapi import FastAPI
 from settings_library.postgres import PostgresSettings
+from simcore_postgres_database.utils_migration import get_current_head
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 logger = logging.getLogger(__name__)
@@ -48,8 +49,28 @@ async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
         dialect=aiopg_dialect,
     )
     logger.debug("Connected to %s", engine.dsn)
-    app.state.engine = engine
 
+    logger.debug("Checking db migrationn ...")
+    try:
+        async with engine.acquire() as conn:
+            version_num = await conn.scalar(
+                'SELECT "version_num" FROM "alembic_version"'
+            )
+            head_version_num = get_current_head()
+            if version_num != head_version_num:
+                raise RuntimeError(
+                    "Migration is incomplete, expected {head_version_num} and got {version_num}"
+                )
+
+    except Exception:
+        # WARNING: engine must be closed because retry will create a new engine
+        engine.close()
+        await engine.wait_closed()
+        raise
+    else:
+        logger.debug("Migration up-to-date")
+
+    app.state.engine = engine
     logger.debug(_compose_info_on_engine(app))
 
 
