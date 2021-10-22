@@ -72,7 +72,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   },
 
   statics: {
-    NODE_WIDTH: 200,
+    NODE_WIDTH: 180,
     NODE_HEIGHT: 80,
     CIRCLED_RADIUS: 16
   },
