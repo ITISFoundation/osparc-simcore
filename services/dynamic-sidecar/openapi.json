@@ -127,8 +127,11 @@
               }
             }
           },
-          "422": {
+          "404": {
             "description": "No compose spec found"
+          },
+          "422": {
+            "description": "Error while shutting down containers"
           }
         }
       }
@@ -245,10 +248,17 @@
             }
           },
           "404": {
-            "description": "No entrypoint container found"
+            "description": "No entrypoint container found or spec is not yet present"
           },
           "422": {
-            "description": "No compose spec found"
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }

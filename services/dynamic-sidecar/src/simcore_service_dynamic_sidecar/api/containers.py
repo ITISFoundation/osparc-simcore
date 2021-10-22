@@ -110,7 +110,10 @@ async def runs_docker_compose_up(
     "/containers:down",
     response_class=PlainTextResponse,
     responses={
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "No compose spec found"}
+        status.HTTP_404_NOT_FOUND: {"description": "No compose spec found"},
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Error while shutting down containers"
+        },
     },
 )
 async def runs_docker_compose_down(
@@ -126,7 +129,7 @@ async def runs_docker_compose_down(
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
         raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_404_NOT_FOUND,
             detail="No spec for docker-compose down was found",
         )
 
@@ -232,8 +235,9 @@ async def get_container_logs(
 @containers_router.get(
     "/containers/entrypoint",
     responses={
-        status.HTTP_404_NOT_FOUND: {"description": "No entrypoint container found"},
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "No compose spec found"},
+        status.HTTP_404_NOT_FOUND: {
+            "description": "No entrypoint container found or spec is not yet present"
+        },
     },
 )
 async def get_entrypoint_container_name(
@@ -248,7 +252,7 @@ async def get_entrypoint_container_name(
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
         raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_404_NOT_FOUND,
             detail="No spec for docker-compose down was found",
         )
 
