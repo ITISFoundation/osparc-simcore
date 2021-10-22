@@ -80,6 +80,7 @@ def app_module_setup(
             ...
     """
     # TODO: resilience to failure. if this setup fails, then considering dependencies, is it fatal or app can start?
+    # TODO: enforce signature as def setup(app: web.Application, **kwargs) -> web.Application
 
     module_name = module_name.replace(".__init__", "")
     depends = depends or []
@@ -94,7 +95,7 @@ def app_module_setup(
         # if passes config_enabled, invalidates info on section
         section = None
 
-    def decorate(setup_func):
+    def _decorate(setup_func: Callable):
 
         if "setup" not in setup_func.__name__:
             logger.warning("Rename '%s' to contain 'setup'", setup_func.__name__)
@@ -110,7 +111,7 @@ def app_module_setup(
 
         # wrapper
         @functools.wraps(setup_func)
-        def setup_wrapper(app: web.Application, *args, **kargs) -> bool:
+        def _wrapper(app: web.Application, *args, **kargs) -> bool:
             # pre-setup
             logger.debug(
                 "Setting up '%s' [%s; %s] ... ", module_name, category.name, depends
@@ -176,12 +177,12 @@ def app_module_setup(
             )
             return completed
 
-        setup_wrapper.metadata = setup_metadata
-        setup_wrapper.MARK = "setup"
+        _wrapper.metadata = setup_metadata
+        _wrapper.MARK = "setup"
 
-        return setup_wrapper
+        return _wrapper
 
-    return decorate
+    return _decorate
 
 
 def is_setup_function(fun):

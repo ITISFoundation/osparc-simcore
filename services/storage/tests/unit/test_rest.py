@@ -60,10 +60,10 @@ def client(
     pg_config.pop("database")
 
     for key, value in pg_config.items():
-        monkeypatch.setenv(f"POSTGRES_{key.upper()}", value)
+        monkeypatch.setenv(f"POSTGRES_{key.upper()}", f"{value}")
 
     for key, value in minio_service.items():
-        monkeypatch.setenv(f"S3_{key.upper()}", value)
+        monkeypatch.setenv(f"S3_{key.upper()}", f"{value}")
 
     monkeypatch.setenv("STORAGE_PORT", str(aiohttp_unused_port()))
     monkeypatch.setenv("STORAGE_LOG_LEVEL", "DEBUG")

@@ -24,13 +24,7 @@ aiopg==1.2.1
     #   -c requirements/_base.txt
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 aiozipkin==0.7.1
-    # via
-    #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../../../requirements/constraints.txt
-    #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
+    # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 async-timeout==3.0.1
     # via
     #   -c requirements/_base.txt
