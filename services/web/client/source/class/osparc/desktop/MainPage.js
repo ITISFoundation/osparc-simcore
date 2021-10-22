@@ -384,6 +384,8 @@ qx.Class.define("osparc.desktop.MainPage", {
         const snapshotId = e.getData();
         this.__startSnapshot(this.__studyEditor.getStudy().getUuid(), snapshotId);
       }, this);
+      studyEditor.addListener("expandNavBar", () => this.__navBar.show());
+      studyEditor.addListener("collapseNavBar", () => this.__navBar.exclude());
       return studyEditor;
     },
 
