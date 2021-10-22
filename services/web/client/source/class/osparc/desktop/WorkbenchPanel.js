@@ -30,8 +30,7 @@ qx.Class.define("osparc.desktop.WorkbenchPanel", {
     });
     toolbar.getChildControl("breadcrumb-navigation").exclude();
     toolbar.getContentElement().setStyles({
-      "border-radius": "12px",
-      "border": "1px solid " + qx.theme.manager.Color.getInstance().resolve("background-main")
+      "border-radius": "12px"
     });
     this._add(toolbar);
 
