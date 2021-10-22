@@ -306,6 +306,9 @@ async def monitor_container_logs(
                 logs_pub,
             )
         else:
+            # NOTE: ensure the file is present
+            log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
+            log_file.touch()
             await _parse_container_log_file(
                 container,
                 service_key,
@@ -401,9 +404,9 @@ async def get_integration_version(
     integration_version = LEGACY_INTEGRATION_VERSION
     # image labels are set to None when empty
     if image_labels := image_cfg["Config"].get("Labels"):
-        logger.debug("found following image labels: %s", pformat(image_labels))
+        logger.debug("found following image labels:\n%s", pformat(image_labels))
         service_integration_label = image_labels.get(
-            "io.simcore.integration-version", {}
+            "io.simcore.integration-version", "{}"
         )
 
         service_integration_label = json.loads(service_integration_label).get(
