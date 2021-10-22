@@ -107,7 +107,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           control.bind("collapsed", sidePanels, "width", {
             converter: collapsed => this.__getSidePanelsNewWidth(collapsed, sidePanels, control)
           });
-          sidePanels.add(control, 1); // flex 1
+          sidePanels.add(control, 0); // flex 1
           break;
         }
         case "collapsible-view-right": {
