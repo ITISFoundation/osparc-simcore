@@ -15,7 +15,13 @@ from fastapi import (
 )
 from fastapi.responses import PlainTextResponse
 
-from ..core.dependencies import get_application_health, get_settings, get_shared_store
+from ..core.dependencies import (
+    get_application_health,
+    get_background_log_fetcher,
+    get_settings,
+    get_shared_store,
+)
+from ..core.docker_logs import BackgroundLogFetcher
 from ..core.settings import DynamicSidecarSettings
 from ..core.shared_handlers import remove_the_compose_spec, write_file_and_run_command
 from ..core.utils import assemble_container_names, docker_client
@@ -31,6 +37,7 @@ containers_router = APIRouter(tags=["containers"])
 async def task_docker_compose_up(
     settings: DynamicSidecarSettings,
     shared_store: SharedStore,
+    background_log_fetcher: BackgroundLogFetcher = Depends(get_background_log_fetcher),
     application_health: ApplicationHealth = Depends(get_application_health),
 ) -> None:
     # building is a security risk hence is disabled via "--no-build" parameter
@@ -48,6 +55,8 @@ async def task_docker_compose_up(
 
     if finished_without_errors:
         logger.info(message)
+        for container_name in shared_store.container_names:
+            await background_log_fetcher.start_log_feching(container_name)
     else:
         application_health.is_healthy = False
         application_health.error_message = message
@@ -101,6 +110,7 @@ async def runs_docker_compose_down(
     ),
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
+    background_log_fetcher: BackgroundLogFetcher = Depends(get_background_log_fetcher),
 ) -> Union[str, Dict[str, Any]]:
     """Removes the previously started service
     and returns the docker-compose output"""
@@ -117,6 +127,9 @@ async def runs_docker_compose_down(
         settings=settings,
         command_timeout=command_timeout,
     )
+
+    for container_name in shared_store.container_names:
+        await background_log_fetcher.stop_log_fetching(container_name)
 
     if not finished_without_errors:
         logger.warning("docker-compose command finished with errors\n%s", stdout)

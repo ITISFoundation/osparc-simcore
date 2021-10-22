@@ -5,6 +5,10 @@ from fastapi import FastAPI
 
 from .._meta import __version__, api_vtag
 from ..api import main_router
+from ..core.docker_logs import (
+    setup_background_log_fetching,
+    stop_background_log_fetching,
+)
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
 from .remote_debug import setup as remote_debug_setup
@@ -70,16 +74,24 @@ def assemble_application() -> FastAPI:
     ) -> Callable[[], Coroutine[Any, Any, None]]:
         async def on_startup() -> None:
             await login_registry(app.state.settings.registry)
+            await setup_background_log_fetching(app)
+
             print(WELCOME_MSG, flush=True)
 
         return on_startup
 
-    # setting up handler for lifecycle
-    async def on_shutdown() -> None:
-        await on_shutdown_handler(application)
-        logger.info("shutdown cleanup completed")
+    def create_stop_app_handler(
+        app: FastAPI,
+    ) -> Callable[[], Coroutine[Any, Any, None]]:
+        async def on_shutdown() -> None:
+            await on_shutdown_handler(application)
+            await stop_background_log_fetching(app)
+
+            logger.info("shutdown cleanup completed")
+
+        return on_shutdown
 
     application.add_event_handler("startup", create_start_app_handler(application))
-    application.add_event_handler("shutdown", on_shutdown)
+    application.add_event_handler("shutdown", create_stop_app_handler(application))
 
     return application
