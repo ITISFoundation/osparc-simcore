@@ -251,7 +251,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const tabViewPrimary = this.getChildControl("side-panel-left-tabs");
       this.__removePages(tabViewPrimary);
-      tabViewPrimary.setBackgroundColor("background-main-lighter+");
+      tabViewPrimary.setBackgroundColor(primaryColumnBGColor);
       const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
       collapsibleViewLeft.getChildControl("expand-button").setBackgroundColor(primaryColumnBGColor);
       collapsibleViewLeft.getChildControl("collapse-button").setBackgroundColor(primaryColumnBGColor);

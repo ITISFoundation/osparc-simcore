@@ -43,6 +43,10 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
   construct: function() {
     this.base(arguments);
 
+    this.set({
+      indent: 8
+    });
+
     this.getContentElement().setStyles({
       "border-radius": "6px"
     });
