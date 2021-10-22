@@ -23,6 +23,7 @@ from psycopg2 import DatabaseError
 from psycopg2 import Error as DBAPIError
 from tenacity import RetryCallState, retry
 from tenacity.after import after_log
+from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
