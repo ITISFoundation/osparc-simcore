@@ -156,7 +156,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               } else if (node.isIterator()) {
                 const icon = osparc.utils.Services.getIcon("iterator");
                 item.setIcon(icon+"14");
-              } else if (node.isIteratorConsumer()) {
+              } else if (node.isProbe()) {
                 const icon = osparc.utils.Services.getIcon("iterator-consumer");
                 item.setIcon(icon+"14");
               } else {

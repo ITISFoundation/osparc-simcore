@@ -102,7 +102,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           let nodeType = this.getNode().getMetaData().type;
           if (this.getNode().isIterator()) {
             nodeType = "iterator";
-          } else if (this.getNode().isIteratorConsumer()) {
+          } else if (this.getNode().isProbe()) {
             nodeType = "iterator-consumer";
           }
           const type = osparc.utils.Services.getType(nodeType);
@@ -169,7 +169,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       } else if (node.isIterator()) {
         this.__svgWorkbenchCanvas = svgWorkbenchCanvas;
         this.setType("iterator");
-      } else if (node.isIteratorConsumer()) {
+      } else if (node.isProbe()) {
         this.setType("iterator-consumer");
       }
     },
@@ -199,7 +199,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           this.__turnIntoIteratorUI();
           break;
         case "iterator-consumer":
-          this.__turnIntoIteratorConsumerUI();
+          this.__turnIntoProbeUI();
           break;
       }
     },
@@ -296,7 +296,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
     },
 
-    __turnIntoIteratorConsumerUI: function() {
+    __turnIntoProbeUI: function() {
       const width = 150;
       this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
     },
