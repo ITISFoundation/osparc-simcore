@@ -101,7 +101,7 @@ async def monitor_task_abortion(task_name: str) -> AsyncIterator[Awaitable[None]
     finally:
         if periodically_checking_task:
             logger.debug(
-                "cancelling task to check for task cancellation for task '%s'",
+                "cancelling task cancellation checker for task '%s'",
                 task_name,
             )
             periodically_checking_task.cancel()
