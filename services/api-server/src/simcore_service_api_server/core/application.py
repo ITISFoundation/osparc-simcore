@@ -93,7 +93,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     # routing
 
-    # healthcheck at / and at /vX/
+    # healthcheck at / and at /VTAG/
     app.include_router(health_router)
 
     # docs

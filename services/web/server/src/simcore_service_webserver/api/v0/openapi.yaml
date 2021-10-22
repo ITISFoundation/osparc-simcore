@@ -5276,6 +5276,8 @@ paths:
                       type: integer
                     parent_id:
                       type: string
+                    entity_tag:
+                      type: string
                   example:
                     file_uuid: simcore-testing/105/1000/3
                     location_id: '0'
@@ -5296,6 +5298,7 @@ paths:
                     last_modified: '2019-06-19T12:29:03.78852Z'
                     file_size: 73
                     parent_id: 'N:collection:e263da07-2d89-45a6-8b0f-61061b913873'
+                    entity_tag: a87ff679a2f3e71d9181a67b7542122c
         default:
           description: Default http error response body
           content:
@@ -5528,6 +5531,8 @@ paths:
                     type: integer
                   parent_id:
                     type: string
+                  entity_tag:
+                    type: string
                 example:
                   file_uuid: simcore-testing/105/1000/3
                   location_id: '0'
@@ -5548,6 +5553,7 @@ paths:
                   last_modified: '2019-06-19T12:29:03.78852Z'
                   file_size: 73
                   parent_id: 'N:collection:e263da07-2d89-45a6-8b0f-61061b913873'
+                  entity_tag: a87ff679a2f3e71d9181a67b7542122c
     patch:
       summary: Update File Metadata
       tags:
@@ -5608,6 +5614,8 @@ paths:
                   type: integer
                 parent_id:
                   type: string
+                entity_tag:
+                  type: string
               example:
                 file_uuid: simcore-testing/105/1000/3
                 location_id: '0'
@@ -5628,6 +5636,7 @@ paths:
                 last_modified: '2019-06-19T12:29:03.78852Z'
                 file_size: 73
                 parent_id: 'N:collection:e263da07-2d89-45a6-8b0f-61061b913873'
+                entity_tag: a87ff679a2f3e71d9181a67b7542122c
       responses:
         '200':
           description: Returns file metadata
@@ -5674,6 +5683,8 @@ paths:
                     type: integer
                   parent_id:
                     type: string
+                  entity_tag:
+                    type: string
                 example:
                   file_uuid: simcore-testing/105/1000/3
                   location_id: '0'
@@ -5694,6 +5705,7 @@ paths:
                   last_modified: '2019-06-19T12:29:03.78852Z'
                   file_size: 73
                   parent_id: 'N:collection:e263da07-2d89-45a6-8b0f-61061b913873'
+                  entity_tag: a87ff679a2f3e71d9181a67b7542122c
   '/storage/locations/{location_id}/datasets/{dataset_id}/metadata':
     get:
       summary: Get Files Metadata
@@ -5759,6 +5771,8 @@ paths:
                       type: integer
                     parent_id:
                       type: string
+                    entity_tag:
+                      type: string
                   example:
                     file_uuid: simcore-testing/105/1000/3
                     location_id: '0'
@@ -5779,6 +5793,7 @@ paths:
                     last_modified: '2019-06-19T12:29:03.78852Z'
                     file_size: 73
                     parent_id: 'N:collection:e263da07-2d89-45a6-8b0f-61061b913873'
+                    entity_tag: a87ff679a2f3e71d9181a67b7542122c
         default:
           description: Default http error response body
           content:
@@ -13251,477 +13266,6 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
-  '/projects/{project_id}/snapshots':
-    get:
-      tags:
-        - project
-        - snapshot
-      summary: List Snapshots
-      description: Lists all snapshots taken from a given project
-      operationId: simcore_service_webserver.version_control_handlers_snapshots.list_project_snapshots_handler
-      parameters:
-        - required: true
-          schema:
-            title: Project Id
-            type: string
-            format: uuid
-          name: project_id
-          in: path
-        - description: index to the first item to return (pagination)
-          required: false
-          schema:
-            title: Offset
-            exclusiveMinimum: false
-            type: integer
-            description: index to the first item to return (pagination)
-            default: 0
-          name: offset
-          in: query
-        - description: maximum number of items to return (pagination)
-          required: false
-          schema:
-            title: Limit
-            maximum: 50
-            minimum: 1
-            type: integer
-            description: maximum number of items to return (pagination)
-            default: 20
-          name: limit
-          in: query
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                title: Response List Snapshots Projects  Project Id  Snapshots Get
-                type: array
-                items:
-                  title: SnapshotItem
-                  required:
-                    - parent_uuid
-                    - project_uuid
-                    - url
-                    - url_parent
-                    - url_project
-                  type: object
-                  properties:
-                    id:
-                      title: Id
-                      type: integer
-                      description: Unique snapshot identifier
-                    name:
-                      title: Name
-                      type: string
-                      description: Unique human readable display name
-                    created_at:
-                      title: Created At
-                      type: string
-                      description: Timestamp of the time snapshot was taken from parent.Notice that parent might change with time
-                      format: date-time
-                    parent_uuid:
-                      title: Parent Uuid
-                      type: string
-                      description: Parent's project uuid
-                      format: uuid
-                    project_uuid:
-                      title: Project Uuid
-                      type: string
-                      description: Current project's uuid
-                      format: uuid
-                    url:
-                      title: Url
-                      maxLength: 65536
-                      minLength: 1
-                      type: string
-                      format: uri
-                    url_parent:
-                      title: Url Parent
-                      maxLength: 65536
-                      minLength: 1
-                      type: string
-                      format: uri
-                    url_project:
-                      title: Url Project
-                      maxLength: 65536
-                      minLength: 1
-                      type: string
-                      format: uri
-                  description: Model for a snapshot API resource
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                title: HTTPValidationError
-                type: object
-                properties:
-                  detail:
-                    title: Detail
-                    type: array
-                    items:
-                      title: ValidationError
-                      required:
-                        - loc
-                        - msg
-                        - type
-                      type: object
-                      properties:
-                        loc:
-                          title: Location
-                          type: array
-                          items:
-                            type: string
-                        msg:
-                          title: Message
-                          type: string
-                        type:
-                          title: Error Type
-                          type: string
-    post:
-      tags:
-        - project
-        - snapshot
-      summary: Create Snapshot
-      description: Takes a snapshot of the project at this time
-      operationId: simcore_service_webserver.version_control_handlers_snapshots.create_project_snapshot_handler
-      parameters:
-        - required: true
-          schema:
-            title: Project Id
-            type: string
-            format: uuid
-          name: project_id
-          in: path
-        - required: false
-          schema:
-            title: Snapshot Label
-            type: string
-          name: snapshot_label
-          in: query
-      responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                title: SnapshotItem
-                required:
-                  - parent_uuid
-                  - project_uuid
-                  - url
-                  - url_parent
-                  - url_project
-                type: object
-                properties:
-                  id:
-                    title: Id
-                    type: integer
-                    description: Unique snapshot identifier
-                  name:
-                    title: Name
-                    type: string
-                    description: Unique human readable display name
-                  created_at:
-                    title: Created At
-                    type: string
-                    description: Timestamp of the time snapshot was taken from parent.Notice that parent might change with time
-                    format: date-time
-                  parent_uuid:
-                    title: Parent Uuid
-                    type: string
-                    description: Parent's project uuid
-                    format: uuid
-                  project_uuid:
-                    title: Project Uuid
-                    type: string
-                    description: Current project's uuid
-                    format: uuid
-                  url:
-                    title: Url
-                    maxLength: 65536
-                    minLength: 1
-                    type: string
-                    format: uri
-                  url_parent:
-                    title: Url Parent
-                    maxLength: 65536
-                    minLength: 1
-                    type: string
-                    format: uri
-                  url_project:
-                    title: Url Project
-                    maxLength: 65536
-                    minLength: 1
-                    type: string
-                    format: uri
-                description: Model for a snapshot API resource
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                title: HTTPValidationError
-                type: object
-                properties:
-                  detail:
-                    title: Detail
-                    type: array
-                    items:
-                      title: ValidationError
-                      required:
-                        - loc
-                        - msg
-                        - type
-                      type: object
-                      properties:
-                        loc:
-                          title: Location
-                          type: array
-                          items:
-                            type: string
-                        msg:
-                          title: Message
-                          type: string
-                        type:
-                          title: Error Type
-                          type: string
-  '/projects/{project_id}/snapshots/{snapshot_id}':
-    get:
-      tags:
-        - project
-        - snapshot
-      summary: Get Snapshot
-      description: Gets commit info for a given snapshot
-      operationId: simcore_service_webserver.version_control_handlers_snapshots.get_project_snapshot_handler
-      parameters:
-        - required: true
-          schema:
-            title: Snapshot Id
-            exclusiveMinimum: false
-            type: integer
-          name: snapshot_id
-          in: path
-        - required: true
-          schema:
-            title: Project Id
-            type: string
-            format: uuid
-          name: project_id
-          in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                title: SnapshotItem
-                required:
-                  - parent_uuid
-                  - project_uuid
-                  - url
-                  - url_parent
-                  - url_project
-                type: object
-                properties:
-                  id:
-                    title: Id
-                    type: integer
-                    description: Unique snapshot identifier
-                  name:
-                    title: Name
-                    type: string
-                    description: Unique human readable display name
-                  created_at:
-                    title: Created At
-                    type: string
-                    description: Timestamp of the time snapshot was taken from parent.Notice that parent might change with time
-                    format: date-time
-                  parent_uuid:
-                    title: Parent Uuid
-                    type: string
-                    description: Parent's project uuid
-                    format: uuid
-                  project_uuid:
-                    title: Project Uuid
-                    type: string
-                    description: Current project's uuid
-                    format: uuid
-                  url:
-                    title: Url
-                    maxLength: 65536
-                    minLength: 1
-                    type: string
-                    format: uri
-                  url_parent:
-                    title: Url Parent
-                    maxLength: 65536
-                    minLength: 1
-                    type: string
-                    format: uri
-                  url_project:
-                    title: Url Project
-                    maxLength: 65536
-                    minLength: 1
-                    type: string
-                    format: uri
-                description: Model for a snapshot API resource
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                title: HTTPValidationError
-                type: object
-                properties:
-                  detail:
-                    title: Detail
-                    type: array
-                    items:
-                      title: ValidationError
-                      required:
-                        - loc
-                        - msg
-                        - type
-                      type: object
-                      properties:
-                        loc:
-                          title: Location
-                          type: array
-                          items:
-                            type: string
-                        msg:
-                          title: Message
-                          type: string
-                        type:
-                          title: Error Type
-                          type: string
-    delete:
-      tags:
-        - project
-        - snapshot
-      summary: Delete Snapshot
-      description: Deletes both the commit and the project itself
-      operationId: simcore_service_webserver.version_control_handlers_snapshots.delete_project_snapshot_handler
-      parameters:
-        - required: true
-          schema:
-            title: Snapshot Id
-            exclusiveMinimum: false
-            type: integer
-          name: snapshot_id
-          in: path
-        - required: true
-          schema:
-            title: Project Id
-            type: string
-            format: uuid
-          name: project_id
-          in: path
-      responses:
-        '204':
-          description: Successful Response
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                title: HTTPValidationError
-                type: object
-                properties:
-                  detail:
-                    title: Detail
-                    type: array
-                    items:
-                      title: ValidationError
-                      required:
-                        - loc
-                        - msg
-                        - type
-                      type: object
-                      properties:
-                        loc:
-                          title: Location
-                          type: array
-                          items:
-                            type: string
-                        msg:
-                          title: Message
-                          type: string
-                        type:
-                          title: Error Type
-                          type: string
-    patch:
-      tags:
-        - project
-        - snapshot
-      summary: Update Snapshot
-      description: Updates label/name of a snapshot
-      operationId: simcore_service_webserver.version_control_handlers_snapshots.patch_project_snapshot_handler
-      parameters:
-        - required: true
-          schema:
-            title: Snapshot Id
-            exclusiveMinimum: false
-            type: integer
-          name: snapshot_id
-          in: path
-        - required: true
-          schema:
-            title: Project Id
-            type: string
-            format: uuid
-          name: project_id
-          in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              title: SnapshotPatchBody
-              type: object
-              properties:
-                name:
-                  title: Name
-                  type: string
-                  description: Unique human readable display name
-              description: Model to patch a snapshot resource
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                title: HTTPValidationError
-                type: object
-                properties:
-                  detail:
-                    title: Detail
-                    type: array
-                    items:
-                      title: ValidationError
-                      required:
-                        - loc
-                        - msg
-                        - type
-                      type: object
-                      properties:
-                        loc:
-                          title: Location
-                          type: array
-                          items:
-                            type: string
-                        msg:
-                          title: Message
-                          type: string
-                        type:
-                          title: Error Type
-                          type: string
   /repos/projects:
     get:
       tags:

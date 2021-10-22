@@ -68,14 +68,13 @@ RUN apt-get update \
 RUN python -m venv "${VIRTUAL_ENV}"
 
 RUN pip --no-cache-dir install --upgrade \
-  pip~=21.2.3  \
+  pip~=21.3  \
   wheel \
   setuptools
 
 # copy sidecar and dependencies
 COPY --chown=scu:scu packages /build/packages
 COPY --chown=scu:scu services/sidecar /build/services/sidecar
-COPY --chown=scu:scu services/storage/client-sdk /build/services/storage/client-sdk
 
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
 RUN pip --no-cache-dir install \

@@ -65,8 +65,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return borderStyle;
     },
 
-    TOP_OFFSET: osparc.navigation.NavigationBar.HEIGHT + 46,
-
     ZOOM_VALUES: [
       0.2,
       0.3,
@@ -96,6 +94,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
   properties: {
     study: {
       check: "osparc.data.model.Study",
+      apply: "__applyStudy",
       nullable: false
     },
 
@@ -129,6 +128,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __startHint: null,
     __dropHint: null,
     __panning: null,
+
+    __applyStudy: function(study) {
+      study.getWorkbench().addListener("reloadModel", () => {
+        this.__reloadCurrentModel();
+      }, this);
+    },
 
     _addItemsToLayout: function() {
       this.__addInputNodesLayout();
@@ -315,7 +320,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const maxHeight = this.getBounds().height - osparc.component.workbench.ServiceCatalog.Height;
       const posX = Math.min(winPos.x, maxLeft);
       const posY = Math.min(winPos.y, maxHeight);
-      srvCat.moveTo(posX + this.__getSidePanelWidth(), posY + this.self().TOP_OFFSET);
+      srvCat.moveTo(posX + this.__getLeftOffset(), posY + this.__getTopOffset());
       return srvCat;
     },
 
@@ -367,6 +372,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     _addNodeUIToWorkbench: function(nodeUI, position) {
+      if (!("x" in position) || isNaN(position["x"]) || position["x"] < 0) {
+        console.error("not a valid position");
+        return;
+      }
       this.__updateWorkbenchLayoutSize(position);
 
       const node = nodeUI.getNode();
@@ -445,7 +454,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
 
       nodeUI.addListener("tap", e => {
-        this.__activeNodeChanged(nodeUI, e.isCtrlPressed());
+        this.activeNodeChanged(nodeUI, e.isCtrlPressed());
         e.stopPropagation();
       }, this);
 
@@ -488,7 +497,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       qx.event.message.Bus.dispatchByName("changeWorkbenchSelection", []);
     },
 
-    __activeNodeChanged: function(activeNode, isControlPressed = false) {
+    activeNodeChanged: function(activeNode, isControlPressed = false) {
       if (isControlPressed) {
         if (this.__selectedNodes.includes(activeNode)) {
           const index = this.__selectedNodes.indexOf(activeNode);
@@ -529,6 +538,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       // build representation
       const nodeUI1 = this.getNodeUI(node1Id);
       const nodeUI2 = this.getNodeUI(node2Id);
+      if (nodeUI1.getCurrentBounds() === null || nodeUI2.getCurrentBounds() === null) {
+        console.error("bounds not ready");
+        return null;
+      }
       const port1 = nodeUI1.getOutputPort();
       const port2 = nodeUI2.getInputPort();
       if (port1 && port2) {
@@ -824,16 +837,22 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    __getSidePanelWidth: function() {
-      const sidePanelWidth = window.innerWidth - this.getInnerSize().width;
-      return sidePanelWidth;
+    __getLeftOffset: function() {
+      const leftOffset = window.innerWidth - this.getInnerSize().width;
+      return leftOffset;
+    },
+
+    __getTopOffset: function() {
+      // const topOffset = osparc.navigation.NavigationBar.HEIGHT + osparc.desktop.WorkbenchView.TAB_BUTTON_HEIGHT + 53;
+      const topOffset = window.innerHeight - this.getInnerSize().height;
+      return topOffset;
     },
 
     __pointerEventToWorkbenchPos: function(pointerEvent, scale = false) {
-      const leftOffset = this.__getSidePanelWidth();
+      const leftOffset = this.__getLeftOffset();
       const inputNodesLayoutWidth = this.__inputNodesLayout && this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
       const x = pointerEvent.getDocumentLeft() - leftOffset - inputNodesLayoutWidth;
-      const y = pointerEvent.getDocumentTop() - this.self().TOP_OFFSET;
+      const y = pointerEvent.getDocumentTop() - this.__getTopOffset();
       if (scale) {
         return this.__scaleCoordinates(x, y);
       }
@@ -1019,7 +1038,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    _loadModel: function(model) {
+    __reloadCurrentModel: function() {
+      if (this._currentModel) {
+        this.loadModel(this._currentModel);
+      }
+    },
+
+    _loadModel: async function(model) {
       this.clearAll();
       this.resetSelectedNodes();
       this._currentModel = model;
@@ -1038,11 +1063,22 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
         // create nodes
         let nodes = isContainer ? model.getInnerNodes() : model.getNodes();
+        const nodeUIs = [];
         for (const nodeId in nodes) {
           const node = nodes[nodeId];
           const nodeUI = this._createNodeUI(nodeId);
           this.__createDragDropMechanism(nodeUI);
           this._addNodeUIToWorkbench(nodeUI, node.getPosition());
+          nodeUIs.push(nodeUI);
+        }
+
+        const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+        const allNodesVisible = nodeUIss => nodeUIss.every(nodeUI => nodeUI.getCurrentBounds() !== null);
+
+        let tries = 0;
+        while (!allNodesVisible(nodeUIs) && tries < 10) {
+          await sleep(50);
+          tries++;
         }
 
         // create edges
@@ -1244,10 +1280,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     _addEventListeners: function() {
       this.addListener("appear", () => {
         // Reset filters and sidebars
-        osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
-        osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "visible");
+        // osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
+        // osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "visible");
 
-        qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", false);
+        // qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", false);
 
         this.addListener("resize", () => this.__updateAllEdges(), this);
       });
@@ -1283,8 +1319,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       this.addListener("disappear", () => {
         // Reset filters
-        osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
-        osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "excluded");
+        // osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
+        // osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "excluded");
 
         commandDel.setEnabled(false);
         commandEsc.setEnabled(false);

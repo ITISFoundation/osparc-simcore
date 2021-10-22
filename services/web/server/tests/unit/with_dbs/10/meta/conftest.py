@@ -21,7 +21,7 @@ from simcore_postgres_database.models.projects_version_control import (
     projects_vc_snapshots,
 )
 from simcore_service_webserver import catalog
-from simcore_service_webserver._meta import api_vtag as vtag
+from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.log import setup_logging
@@ -164,9 +164,7 @@ def do_update_user_project(
     logged_user: UserDict, client: TestClient, faker: Faker
 ) -> Callable[[UUID], Awaitable]:
     async def _doit(project_uuid: UUID) -> None:
-        resp: aiohttp.ClientResponse = await client.get(
-            f"{vtag}/projects/{project_uuid}"
-        )
+        resp: aiohttp.ClientResponse = await client.get(f"{VX}/projects/{project_uuid}")
 
         assert resp.status == 200
         body = await resp.json()
@@ -181,7 +179,7 @@ def do_update_user_project(
                 "inputs": {"x": faker.pyint(), "y": faker.pyint()},
             }
         }
-        resp = await client.put(f"{vtag}/projects/{project_uuid}", json=project)
+        resp = await client.put(f"{VX}/projects/{project_uuid}", json=project)
         body = await resp.json()
         assert resp.status == 200, str(body)
 
@@ -202,7 +200,7 @@ def do_delete_user_project(
     async def _doit(project_uuid: UUID) -> None:
 
         resp: aiohttp.ClientResponse = await client.delete(
-            f"{vtag}/projects/{project_uuid}"
+            f"{VX}/projects/{project_uuid}"
         )
         assert resp.status == 204
 

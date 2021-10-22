@@ -3,6 +3,7 @@ services:
   api-server:
     image: ${DOCKER_REGISTRY:-itisfoundation}/api-server:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       - WEBSERVER_HOST=${WEBSERVER_HOST:-webserver}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
@@ -26,57 +27,60 @@ services:
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
+      - CATALOG_BACKGROUND_TASK_REST_TIME=${CATALOG_BACKGROUND_TASK_REST_TIME:-60}
+      - CATALOG_DEV_FEATURES_ENABLED=${CATALOG_DEV_FEATURES_ENABLED}
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
       - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - LOG_LEVEL=${LOG_LEVEL:-WARNING}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_PORT=${POSTGRES_PORT}
-      - LOG_LEVEL=${LOG_LEVEL:-WARNING}
-      - BACKGROUND_TASK_REST_TIME=${CATALOG_BACKGROUND_TASK_REST_TIME:-60}
-      - CATALOG_DEV_FEATURES_ENABLED=${CATALOG_DEV_FEATURES_ENABLED}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - TRACING_THRIFT_COMPACT_ENDPOINT=${TRACING_THRIFT_COMPACT_ENDPOINT}
     networks:
       - default
 
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
-      - DEFAULT_MAX_NANO_CPUS=${DEFAULT_MAX_NANO_CPUS:-0}
       - DEFAULT_MAX_MEMORY=${DEFAULT_MAX_MEMORY:-0}
-      - REGISTRY_URL=${REGISTRY_URL}
-      - REGISTRY_PATH=${REGISTRY_PATH}
-      - REGISTRY_AUTH=${REGISTRY_AUTH}
-      - REGISTRY_USER=${REGISTRY_USER}
-      - REGISTRY_PW=${REGISTRY_PW}
-      - REGISTRY_SSL=${REGISTRY_SSL}
-      - DIRECTOR_REGISTRY_CACHING=${DIRECTOR_REGISTRY_CACHING}
+      - DEFAULT_MAX_NANO_CPUS=${DEFAULT_MAX_NANO_CPUS:-0}
       - DIRECTOR_REGISTRY_CACHING_TTL=${DIRECTOR_REGISTRY_CACHING_TTL}
-      - DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS=${DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS}
+      - DIRECTOR_REGISTRY_CACHING=${DIRECTOR_REGISTRY_CACHING}
+      - DIRECTOR_SELF_SIGNED_SSL_FILENAME=${DIRECTOR_SELF_SIGNED_SSL_FILENAME}
       - DIRECTOR_SELF_SIGNED_SSL_SECRET_ID=${DIRECTOR_SELF_SIGNED_SSL_SECRET_ID}
       - DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME=${DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME}
-      - DIRECTOR_SELF_SIGNED_SSL_FILENAME=${DIRECTOR_SELF_SIGNED_SSL_FILENAME}
-      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - S3_ENDPOINT=${S3_ENDPOINT}
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-      - S3_SECRET_KEY=${S3_SECRET_KEY}
-      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
-      - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
+      - DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS=${DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS}
       - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX:-undefined}
-      - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
+      - LOGLEVEL=${LOG_LEVEL:-WARNING}
       - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - REGISTRY_AUTH=${REGISTRY_AUTH}
+      - REGISTRY_PATH=${REGISTRY_PATH}
+      - REGISTRY_PW=${REGISTRY_PW}
+      - REGISTRY_SSL=${REGISTRY_SSL}
+      - REGISTRY_URL=${REGISTRY_URL}
+      - REGISTRY_USER=${REGISTRY_USER}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
+      - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
+      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - TRACING_ENABLED=${TRACING_ENABLED:-True}
       - TRACING_ZIPKIN_ENDPOINT=${TRACING_ZIPKIN_ENDPOINT:-http://jaeger:9411}
       - TRAEFIK_SIMCORE_ZONE=${TRAEFIK_SIMCORE_ZONE:-internal_simcore_stack}
-      - LOGLEVEL=${LOG_LEVEL:-WARNING}
-      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
@@ -91,6 +95,7 @@ services:
   director-v2:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director-v2:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       - DASK_SCHEDULER_HOST=${DASK_SCHEDULER_HOST:-dask-scheduler}
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
@@ -105,6 +110,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
       - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
       - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
+      - TRACING_THRIFT_COMPACT_ENDPOINT=${TRACING_THRIFT_COMPACT_ENDPOINT}
     env_file:
       - ../.env
     volumes:
@@ -122,6 +128,7 @@ services:
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=8000
@@ -150,6 +157,7 @@ services:
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       - CATALOG_HOST=${CATALOG_HOST:-catalog}
       - CATALOG_PORT=${CATALOG_PORT:-8000}
@@ -192,6 +200,7 @@ services:
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    # hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     deploy: &dask-sidecar-deploy
       mode: global
       endpoint_mode: dnsrr
@@ -207,41 +216,41 @@ services:
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment: &sidecar-environment
       DASK_SCHEDULER_HOST: ${DASK_SCHEDULER_HOST:-dask-scheduler}
-      DEFAULT_MAX_NANO_CPUS: ${DEFAULT_MAX_NANO_CPUS:-0}
       DEFAULT_MAX_MEMORY: ${DEFAULT_MAX_MEMORY:-0}
+      DEFAULT_MAX_NANO_CPUS: ${DEFAULT_MAX_NANO_CPUS:-0}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_USER: ${POSTGRES_USER}
+      RABBIT_CHANNELS: ${RABBIT_CHANNELS}
       RABBIT_HOST: ${RABBIT_HOST}
+      RABBIT_PASSWORD: ${RABBIT_PASSWORD}
       RABBIT_PORT: ${RABBIT_PORT}
       RABBIT_USER: ${RABBIT_USER}
-      RABBIT_PASSWORD: ${RABBIT_PASSWORD}
-      RABBIT_CHANNELS: ${RABBIT_CHANNELS}
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
-      POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      S3_ENDPOINT: ${S3_ENDPOINT}
-      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
-      S3_SECRET_KEY: ${S3_SECRET_KEY}
-      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
-      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
-      REGISTRY_URL: ${REGISTRY_URL}
       REGISTRY_PATH: ${REGISTRY_PATH}
-      REGISTRY_USER: ${REGISTRY_USER}
       REGISTRY_PW: ${REGISTRY_PW}
-      SWARM_STACK_NAME: ${SWARM_STACK_NAME:-simcore}
-      SIDECAR_LOGLEVEL: ${LOG_LEVEL:-WARNING}
+      REGISTRY_URL: ${REGISTRY_URL}
+      REGISTRY_USER: ${REGISTRY_USER}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
       SIDECAR_HOST_HOSTNAME_PATH: ${SIDECAR_HOST_HOSTNAME_PATH:-/home/scu/hostname}
+      SIDECAR_LOGLEVEL: ${LOG_LEVEL:-WARNING}
       START_AS_MODE_CPU: ${SIDECAR_FORCE_CPU_NODE:-0}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      SWARM_STACK_NAME: ${SWARM_STACK_NAME:-simcore}
     networks:
       - computational_services_subnet
 
   dask-scheduler:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: dask-scheduler
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       <<: *sidecar-environment
       DASK_START_AS_SCHEDULER: 1
@@ -253,30 +262,33 @@ services:
   datcore-adapter:
     image: ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     networks:
       - storage_subnet
+    environment:
+      - TRACING_THRIFT_COMPACT_ENDPOINT=${TRACING_THRIFT_COMPACT_ENDPOINT}
 
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
+      - BF_API_KEY=${BF_API_KEY}
+      - BF_API_SECRET=${BF_API_SECRET}
       - DATCORE_ADAPTER_HOST=${DATCORE_ADAPTER_HOST:-datcore-adapter}
-      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_SECURE=${S3_SECURE}
       - STORAGE_LOGLEVEL=${LOG_LEVEL:-WARNING}
       - STORAGE_MONITORING_ENABLED=1
-      - S3_ENDPOINT=${S3_ENDPOINT}
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-      - S3_SECRET_KEY=${S3_SECRET_KEY}
-      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
-      - S3_SECURE=${S3_SECURE}
-      - BF_API_SECRET=${BF_API_SECRET}
-      - BF_API_KEY=${BF_API_KEY}
-      - TRACING_ENABLED=${TRACING_ENABLED:-True}
       - TRACING_ZIPKIN_ENDPOINT=${TRACING_ZIPKIN_ENDPOINT:-http://jaeger:9411}
     deploy:
       placement:
@@ -291,6 +303,7 @@ services:
   rabbit:
     image: itisfoundation/rabbitmq:3.8.0-management
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD}
@@ -308,23 +321,25 @@ services:
   migration:
     image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
-      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
     networks:
       - default
 
   postgres:
     image: "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f"
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - type: tmpfs
@@ -375,6 +390,7 @@ services:
   redis:
     image: "redis:5.0.9-alpine@sha256:b011c1ca7fa97ed92d6c5995e5dd752dc37fe157c1b60ce96a6e35701851dabc"
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     networks:
       - default
       - computational_services_subnet
@@ -387,6 +403,7 @@ services:
   traefik:
     image: traefik:v2.4.13
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     command:
       - "--api=true"
       - "--api.dashboard=true"

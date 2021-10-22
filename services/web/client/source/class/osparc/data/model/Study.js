@@ -169,10 +169,6 @@ qx.Class.define("osparc.data.model.Study", {
     }
   },
 
-  events: {
-    "changeParameters": "qx.event.type.Event"
-  },
-
   statics: {
     createMyNewStudyObject: function() {
       let myNewStudyObject = {};

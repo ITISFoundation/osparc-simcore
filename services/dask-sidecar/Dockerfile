@@ -73,14 +73,13 @@ RUN apt-get update \
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 RUN pip --no-cache-dir install --upgrade \
-  pip~=21.2.3  \
+  pip~=21.3  \
   wheel \
   setuptools
 
 # copy dask-sidecar and dependencies
 COPY --chown=scu:scu packages /build/packages
 COPY --chown=scu:scu services/sidecar /build/services/sidecar
-COPY --chown=scu:scu services/storage/client-sdk /build/services/storage/client-sdk
 COPY --chown=scu:scu services/dask-sidecar /build/services/dask-sidecar
 
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)

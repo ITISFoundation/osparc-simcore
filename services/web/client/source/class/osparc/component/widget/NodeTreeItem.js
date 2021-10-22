@@ -40,11 +40,12 @@
 qx.Class.define("osparc.component.widget.NodeTreeItem", {
   extend: qx.ui.tree.VirtualTreeItem,
 
-  construct: function(study) {
-    this.__study = study;
-
+  construct: function() {
     this.base(arguments);
 
+    this.getContentElement().setStyles({
+      "border-radius": "6px"
+    });
     this.__setNotHoveredStyle();
     this.__attachEventHandlers();
   },
@@ -53,19 +54,20 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
     nodeId : {
       check : "String",
       event: "changeNodeId",
-      apply: "_applyNodeId",
+      apply: "__applyNodeId",
       nullable : true
     }
   },
 
   events: {
-    "openNode": "qx.event.type.Data",
+    "fullscreenNode": "qx.event.type.Data",
     "renameNode": "qx.event.type.Data",
+    "showInfo": "qx.event.type.Data",
     "deleteNode": "qx.event.type.Data"
   },
 
   members: {
-    __study: null,
+    __optionsMenu: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -78,50 +80,77 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
           this.addWidget(control);
           break;
         }
-        case "open-btn": {
-          const part = this.getChildControl("buttons");
+        case "fullscreen-button": {
           control = new qx.ui.form.Button().set({
+            icon: "@MaterialIcons/fullscreen/14",
             backgroundColor: "transparent",
-            toolTipText: this.tr("Open"),
-            icon: "@FontAwesome5Solid/edit/9"
+            toolTipText: this.tr("Full Screen"),
+            alignY: "middle",
+            visibility: "excluded"
           });
-          control.addListener("execute", () => this.fireDataEvent("openNode", this.getNodeId()));
+          control.addListener("execute", () => this.fireDataEvent("fullscreenNode", this.getNodeId()));
+          const part = this.getChildControl("buttons");
           part.add(control);
           break;
         }
-        case "rename-btn": {
+        case "options-menu-button": {
+          const optionsMenu = this.__optionsMenu = new qx.ui.menu.Menu().set({
+            position: "bottom-right"
+          });
+          control = new qx.ui.form.MenuButton().set({
+            menu: optionsMenu,
+            icon: "@FontAwesome5Solid/ellipsis-v/9",
+            allowGrowX: false,
+            alignY: "middle"
+          });
           const part = this.getChildControl("buttons");
-          control = new qx.ui.form.Button().set({
+          part.add(control);
+          break;
+        }
+        case "options-rename-button": {
+          control = new qx.ui.menu.Button().set({
             backgroundColor: "transparent",
-            toolTipText: this.tr("Rename"),
-            icon: "@FontAwesome5Solid/i-cursor/9"
+            label: this.tr("Rename"),
+            icon: "@FontAwesome5Solid/i-cursor/10"
           });
           control.addListener("execute", () => this.fireDataEvent("renameNode", this.getNodeId()));
-          part.add(control);
+          const optionsMenu = this.getChildControl("options-menu-button");
+          optionsMenu.getMenu().add(control);
           break;
         }
-        case "delete-btn": {
-          const part = this.getChildControl("buttons");
-          control = new qx.ui.form.Button().set({
+        case "options-info-button": {
+          control = new qx.ui.menu.Button().set({
             backgroundColor: "transparent",
-            toolTipText: this.tr("Delete"),
-            icon: "@FontAwesome5Solid/trash/9"
+            label: this.tr("Information"),
+            icon: "@FontAwesome5Solid/info/10"
+          });
+          control.addListener("execute", () => this.fireDataEvent("showInfo", this.getNodeId()));
+          const optionsMenu = this.getChildControl("options-menu-button");
+          optionsMenu.getMenu().add(control);
+          break;
+        }
+        case "options-delete-button": {
+          control = new qx.ui.menu.Button().set({
+            backgroundColor: "transparent",
+            label: this.tr("Delete"),
+            icon: "@FontAwesome5Solid/trash/10"
           });
           control.addListener("execute", () => this.fireDataEvent("deleteNode", this.getNodeId()));
-          part.add(control);
+          const optionsMenu = this.getChildControl("options-menu-button");
+          optionsMenu.getMenu().add(control);
           break;
         }
         case "node-id": {
           control = new qx.ui.basic.Label().set({
-            maxWidth: 250
+            maxWidth: 70,
+            alignY: "middle"
           });
           this.bind("nodeId", control, "value", {
             converter: value => value && value.substring(0, 8)
           });
           const permissions = osparc.data.Permissions.getInstance();
-          control.setVisibility(permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded");
-          permissions.addListener("changeRole", () => {
-            control.setVisibility(permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded");
+          permissions.bind("role", control, "visibility", {
+            converter: () => permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded"
           });
           this.addWidget(control);
         }
@@ -137,6 +166,11 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
 
       // The standard tree icon follows
       this.addIcon();
+      this.getChildControl("icon").set({
+        alignX: "center",
+        alignY: "middle",
+        width: 22
+      });
 
       // The label
       this.addLabel();
@@ -150,37 +184,21 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         flex: 1
       });
 
-      this.getChildControl("open-btn");
-      const studyId = this.__study.getUuid();
-      const readOnly = this.__study.isReadOnly();
-      this.getChildControl("rename-btn").setEnabled(!readOnly);
-      this.getChildControl("delete-btn").setEnabled(!readOnly && studyId !== this.getNodeId());
+      this.getChildControl("fullscreen-button");
+      this.getChildControl("options-rename-button");
+      this.getChildControl("options-info-button");
+      this.getChildControl("options-delete-button");
       this.getChildControl("node-id");
     },
 
-    _applyNodeId: function(nodeId) {
+    __applyNodeId: function(nodeId) {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
+      osparc.utils.Utils.setIdToWidget(this, "nodeTreeItem");
       if (nodeId === study.getUuid()) {
-        osparc.utils.Utils.setIdToWidget(this, "nodeTreeItem_root");
+        osparc.utils.Utils.setMoreToWidget(this, "root");
       } else {
-        osparc.utils.Utils.setIdToWidget(this, "nodeTreeItem_" + nodeId);
+        osparc.utils.Utils.setMoreToWidget(this, nodeId);
       }
-      const opnBtn = this.getChildControl("open-btn");
-      osparc.utils.Utils.setIdToWidget(opnBtn, "openNodeBtn_"+this.getNodeId());
-    },
-
-    __setHoveredStyle: function() {
-      this.getContentElement().setStyles({
-        "border-radius": "4px",
-        "border": "1px solid " + qx.theme.manager.Color.getInstance().resolve("background-selected")
-      });
-    },
-
-    __setNotHoveredStyle: function() {
-      this.getContentElement().setStyles({
-        "border-radius": "4px",
-        "border": "1px solid transparent"
-      });
     },
 
     __attachEventHandlers: function() {
@@ -189,33 +207,33 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         this.__setHoveredStyle();
       });
       this.addListener("mouseout", () => {
-        if (!this.hasState("selected")) {
+        if (this.__optionsMenu.isVisible()) {
+          const hideButtonsIfMouseOut = event => {
+            if (osparc.utils.Utils.isMouseOnElement(this.__optionsMenu, event, 5)) {
+              return;
+            }
+            document.removeEventListener("mousemove", hideButtonsIfMouseOut);
+            this.getChildControl("buttons").exclude();
+            this.__optionsMenu.exclude();
+          };
+          document.addEventListener("mousemove", hideButtonsIfMouseOut);
+        } else {
           this.getChildControl("buttons").exclude();
         }
         this.__setNotHoveredStyle();
       });
     },
 
-    // overridden
-    addState: function(state) {
-      this.base(arguments, state);
-
-      if (state === "selected") {
-        this.getChildControl("buttons").show();
-      }
+    __setHoveredStyle: function() {
+      this.getContentElement().setStyles({
+        "border": "1px solid " + qx.theme.manager.Color.getInstance().resolve("background-selected")
+      });
     },
 
-    // overridden
-    removeState: function(state) {
-      this.base(arguments, state);
-      if (state === "selected") {
-        this.getChildControl("buttons").exclude();
-        const studyId = this.__study.getUuid();
-        const readOnly = this.__study.isReadOnly();
-        this.getChildControl("rename-btn").setEnabled(!readOnly);
-        // disable delete button if the study is read only or if it's the study node item
-        this.getChildControl("delete-btn").setEnabled(!readOnly && studyId !== this.getNodeId());
-      }
+    __setNotHoveredStyle: function() {
+      this.getContentElement().setStyles({
+        "border": "1px solid transparent"
+      });
     }
   }
 });

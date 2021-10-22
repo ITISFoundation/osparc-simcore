@@ -7,6 +7,7 @@ import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_state import RunningState
+from servicelib.async_utils import run_sequentially_in_context
 from starlette import status
 from starlette.requests import Request
 from tenacity import (
@@ -32,7 +33,6 @@ from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.director_v0 import DirectorV0Client
-from ...utils.async_utils import run_sequentially_in_context
 from ...utils.computations import (
     get_pipeline_state_from_task_states,
     is_pipeline_running,

@@ -295,16 +295,14 @@ async function openNode(page, pos) {
 
   const children = await utils.getNodeTreeItemIDs(page);
   console.log("children", children);
-  if (children.length < pos + 1) {
+  if (pos >= children.length) {
     console.log("Node tree items not found");
     return null;
   }
 
-  const nodeWidgetId = children[pos];
-  const childId = '[osparc-test-id="' + nodeWidgetId + '"]';
-  const nodeId = nodeWidgetId.replace("nodeTreeItem_", "");
+  const nodeId = children[pos];
+  const childId = '[osparc-test-more="' + nodeId + '"]';
   await utils.waitAndClick(page, childId);
-  await utils.waitAndClick(page, '[osparc-test-id="openNodeBtn_' + nodeId + '"]');
 
   return nodeId;
 }
@@ -326,16 +324,11 @@ async function restoreIFrame(page) {
   await utils.waitAndClick(page, '[osparc-test-id="restoreBtn"]')
 }
 
-async function maximizeIFrame(page) {
-  console.log("Maximizing iFrame");
-
-  await utils.waitAndClick(page, '[osparc-test-id="maximizeBtn"]')
-}
-
 async function openNodeFiles(page) {
   console.log("Opening Data produced by Node");
 
-  await utils.waitAndClick(page, '[osparc-test-id="nodeViewFilesBtn"]')
+  await utils.waitAndClick(page, '[osparc-test-id="outputsTabButton"]');
+  await utils.waitAndClick(page, '[osparc-test-id="nodeOutputFilesBtn"]');
 }
 
 async function checkDataProducedByNode(page, nFiles = 1, itemSuffix = 'NodeFiles') {
@@ -398,7 +391,6 @@ module.exports = {
   openNode,
   openLastNode,
   restoreIFrame,
-  maximizeIFrame,
   openNodeFiles,
   checkDataProducedByNode,
   downloadSelectedFile,

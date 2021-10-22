@@ -3,21 +3,20 @@ from typing import Optional, Pattern
 
 import sqlalchemy as sa
 from aiohttp import web
-
+from aiopg.sa.engine import Engine
 from pydantic import BaseModel, ValidationError, validator
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from ._meta import api_vtag
+from ._meta import API_VTAG
 from .constants import (
     APP_DB_ENGINE_KEY,
     APP_PRODUCTS_KEY,
-    RQ_PRODUCT_KEY,
     RQ_PRODUCT_FRONTEND_KEY,
+    RQ_PRODUCT_KEY,
     X_PRODUCT_NAME_HEADER,
 )
 from .db_models import products
-from .statics import FRONTEND_APPS_AVAILABLE, FRONTEND_APP_DEFAULT
-from aiopg.sa.engine import Engine
+from .statics import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
 
 log = logging.getLogger(__name__)
 
@@ -77,7 +76,7 @@ async def discover_product_middleware(request, handler):
     #
 
     # API entrypoints: api calls
-    if request.path.startswith(f"/{api_vtag}"):
+    if request.path.startswith(f"/{API_VTAG}"):
         product_name = (
             discover_product_by_request_header(request)
             or discover_product_by_hostname(request)

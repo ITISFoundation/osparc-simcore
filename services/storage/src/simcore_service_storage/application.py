@@ -30,14 +30,16 @@ def create(settings: Settings) -> web.Application:
     app = create_safe_application(None)
     app[APP_CONFIG_KEY] = settings
 
-    if settings.STORAGE_TRACING.enabled:
+    if settings.STORAGE_TRACING:
         setup_tracing(
             app,
-            "simcore_service_storage",
-            settings.STORAGE_HOST,
-            settings.STORAGE_PORT,
-            settings.STORAGE_TRACING.dict(),
+            service_name="simcore_service_storage",
+            host=settings.STORAGE_HOST,
+            port=settings.STORAGE_PORT,
+            jaeger_base_url=f"{settings.STORAGE_TRACING.TRACING_ZIPKIN_ENDPOINT}",
+            skip_routes=None,
         )
+
     setup_db(app)  # -> postgres service
     setup_s3(app)  # -> minio service
     setup_dsm(app)  # core subsystem. Needs s3 and db setups done

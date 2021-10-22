@@ -205,8 +205,9 @@ qx.Class.define("osparc.data.model.Node", {
 
   events: {
     "retrieveInputs": "qx.event.type.Data",
-    "filePickerRequested": "qx.event.type.Data",
+    "fileRequested": "qx.event.type.Data",
     "parameterNodeRequested": "qx.event.type.Data",
+    "filePickerRequested": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data",
     "outputListChanged": "qx.event.type.Event",
     "changeInputNodes": "qx.event.type.Event"
@@ -556,7 +557,7 @@ qx.Class.define("osparc.data.model.Node", {
       }, this);
 
       [
-        "filePickerRequested",
+        "fileRequested",
         "parameterNodeRequested"
       ].forEach(nodeRequestSignal => {
         propsForm.addListener(nodeRequestSignal, e => {
@@ -567,6 +568,15 @@ qx.Class.define("osparc.data.model.Node", {
           });
         }, this);
       });
+
+      propsForm.addListener("filePickerRequested", e => {
+        const data = e.getData();
+        this.fireDataEvent("filePickerRequested", {
+          portId: data.portId,
+          nodeId: this.getNodeId(),
+          file: data.file
+        });
+      }, this);
     },
 
     __addSettingsEditor: function(inputs) {
@@ -736,8 +746,9 @@ qx.Class.define("osparc.data.model.Node", {
           .then(compatible => {
             if (compatible) {
               resolve(this.getPropsForm().addPortLink(toPortId, fromNodeId, fromPortId));
+            } else {
+              resolve(false);
             }
-            resolve(false);
           });
       });
     },
@@ -1036,6 +1047,20 @@ qx.Class.define("osparc.data.model.Node", {
           break;
         }
         case "pending": {
+          if (data["service_message"]) {
+            const serviceId = data["service_uuid"];
+            const serviceName = this.getLabel();
+            const serviceMessage = data["service_message"];
+            const msg = `The service "${serviceName}" is waiting for available ` +
+              `resources. Please inform support and provide the following message ` +
+              `in case this does not resolve in a few minutes: "${serviceId}" ` +
+              `reported "${serviceMessage}"`;
+            const msgData = {
+              nodeId: this.getNodeId(),
+              msg: msg
+            };
+            this.fireDataEvent("showInLogger", msgData);
+          }
           status.setInteractive("pending");
           const interval = 10000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
@@ -1214,8 +1239,8 @@ qx.Class.define("osparc.data.model.Node", {
 
     getPosition: function() {
       return {
-        x: this.__posX,
-        y: this.__posY
+        x: this.__posX || 0,
+        y: this.__posY || 0
       };
     },
 

@@ -14,6 +14,8 @@ import requests
 import tenacity
 from docker import DockerClient
 from docker.models.services import Service
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 from yarl import URL
 
 logger = logging.getLogger(__name__)
@@ -63,6 +65,7 @@ def core_services_running(
 
 
 def test_all_services_up(
+    docker_registry: str,
     core_services_running: List[Service],
     core_stack_name: str,
     core_stack_compose: Dict[str, Any],
@@ -172,8 +175,8 @@ def test_product_frontend_app_served(
     # the webserver takes time to start
     # TODO: determine wait times with pre-calibration step
     @tenacity.retry(
-        wait=tenacity.wait_fixed(2),
-        stop=tenacity.stop_after_attempt(20),
+        wait=wait_fixed(10),
+        stop=stop_after_attempt(20),
     )
     def request_test_url():
         resp = requests.get(test_url)

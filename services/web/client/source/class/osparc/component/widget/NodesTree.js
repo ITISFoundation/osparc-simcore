@@ -18,9 +18,7 @@
 /**
  * Widget that shows workbench hierarchy in tree view.
  *
- * It contains:
- * - Toolbar for adding, removing or renaming nodes
- * - VirtualTree populated with NodeTreeItems
+ * VirtualTree populated with NodeTreeItems
  *
  *   Helps the user navigating through nodes and gives a hierarchical view of containers. Also allows
  * some operations.
@@ -36,23 +34,26 @@
  */
 
 qx.Class.define("osparc.component.widget.NodesTree", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.tree.VirtualTree,
 
   construct: function() {
-    this.base(arguments);
+    this.base(arguments, null, "label", "children");
 
-    this._setLayout(new qx.ui.layout.VBox());
-
-    this.__tree = this._createChildControlImpl("tree");
+    this.set({
+      decorator: "service-tree",
+      openMode: "none",
+      contentPadding: 0,
+      padding: 0
+    });
+    osparc.utils.Utils.setIdToWidget(this, "nodesTree");
 
     this.__attachEventHandlers();
   },
 
   events: {
     "nodeSelected": "qx.event.type.Data",
-    "removeNode": "qx.event.type.Data",
-    "exportNode": "qx.event.type.Data",
-    "changeSelectedNode": "qx.event.type.Data"
+    "fullscreenNode": "qx.event.type.Data",
+    "removeNode": "qx.event.type.Data"
   },
 
   properties: {
@@ -84,48 +85,27 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   },
 
   members: {
-    __tree: null,
     __currentNodeId: null,
-
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "tree":
-          control = this.__buildTree();
-          this._add(control, {
-            flex: 1
-          });
-          break;
-      }
-
-      return control || this.base(arguments, id);
-    },
 
     _applyStudy: function() {
       this.populateTree();
     },
+
+    getCurrentNodeId: function() {
+      return this.__currentNodeId;
+    },
+
 
     setCurrentNodeId: function(nodeId) {
       this.__currentNodeId = nodeId;
     },
 
     __getOneSelectedRow: function() {
-      const selection = this.__tree.getSelection();
+      const selection = this.getSelection();
       if (selection && selection.toArray().length > 0) {
         return selection.toArray()[0];
       }
       return null;
-    },
-
-    __buildTree: function() {
-      const tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
-        decorator: "service-tree",
-        openMode: "none",
-        contentPadding: 0,
-        padding: 0
-      });
-      osparc.utils.Utils.setIdToWidget(tree, "nodesTree");
-      return tree;
     },
 
     populateTree: function() {
@@ -138,20 +118,17 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         isContainer: true
       };
       let newModel = qx.data.marshal.Json.createModel(data, true);
-      let oldModel = this.__tree.getModel();
+      let oldModel = this.getModel();
       if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
         study.bind("name", newModel, "label");
-        this.__tree.setModel(newModel);
-        this.__tree.setDelegate({
+        this.setModel(newModel);
+        this.setDelegate({
           createItem: () => {
-            const nodeTreeItem = new osparc.component.widget.NodeTreeItem(study);
-            nodeTreeItem.addListener("openNode", e => this.__openItem(e.getData()));
+            const nodeTreeItem = new osparc.component.widget.NodeTreeItem();
+            nodeTreeItem.addListener("fullscreenNode", e => this.__openFullscreen(e.getData()));
             nodeTreeItem.addListener("renameNode", e => this.__openItemRenamer(e.getData()));
+            nodeTreeItem.addListener("showInfo", e => this.__openNodeInfo(e.getData()));
             nodeTreeItem.addListener("deleteNode", e => this.__deleteNode(e.getData()));
-            const readOnly = study.isReadOnly();
-            // disable rename and delete button if the study is read only
-            nodeTreeItem.getChildControl("rename-btn").setEnabled(!readOnly);
-            nodeTreeItem.getChildControl("delete-btn").setEnabled(!readOnly);
             return nodeTreeItem;
           },
           bindItem: (c, item, id) => {
@@ -162,14 +139,31 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               node.bind("label", item.getModel(), "label");
             }
             c.bindProperty("label", "label", null, item, id);
+            if (item.getModel().getNodeId() === study.getUuid()) {
+              item.setIcon("@FontAwesome5Solid/home/14");
+              item.getChildControl("options-delete-button").exclude();
+            }
+            if (node) {
+              if (node.isDynamic()) {
+                item.getChildControl("fullscreen-button").show();
+              }
+              if (node.isFilePicker()) {
+                const icon = osparc.utils.Services.getIcon("file");
+                item.setIcon(icon+"14");
+              } else if (node.isParameter()) {
+                const icon = osparc.utils.Services.getIcon("parameter");
+                item.setIcon(icon+"14");
+              } else {
+                const icon = osparc.utils.Services.getIcon(node.getMetaData().type);
+                if (icon) {
+                  item.setIcon(icon+"14");
+                }
+              }
+            }
           },
           configureItem: item => {
-            item.addListener("dbltap", () => {
-              this.__openItem(item.getModel().getNodeId());
-              this.__selectedItem(item);
-            }, this);
             item.addListener("tap", () => {
-              this.__selectedItem(item);
+              this.__openItem(item.getModel().getNodeId());
               this.nodeSelected(item.getModel().getNodeId());
             }, this);
           }
@@ -192,29 +186,12 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     __getSelection: function() {
-      let treeSelection = this.__tree.getSelection();
+      let treeSelection = this.getSelection();
       if (treeSelection.length < 1) {
         return null;
       }
       let selectedItem = treeSelection.toArray()[0];
       return selectedItem;
-    },
-
-    __selectedItem: function(item) {
-      const nodeId = item.getModel().getNodeId();
-      this.fireDataEvent("changeSelectedNode", nodeId);
-    },
-
-    __exportDAG: function() {
-      const selectedItem = this.__getSelection();
-      if (selectedItem) {
-        if (selectedItem.getIsContainer()) {
-          const nodeId = selectedItem.getNodeId();
-          this.fireDataEvent("exportNode", nodeId);
-        } else {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only Groups can be exported."), "ERROR");
-        }
-      }
     },
 
     __openItem: function(nodeId) {
@@ -223,8 +200,14 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       }
     },
 
+    __openFullscreen: function(nodeId) {
+      if (nodeId) {
+        this.fireDataEvent("fullscreenNode", nodeId);
+      }
+    },
+
     __openItemRenamer: function(nodeId) {
-      const renameItem = nodeId === undefined ? this.__getSelection() : this.__getNodeInTree(this.__tree.getModel(), nodeId);
+      const renameItem = nodeId === undefined ? this.__getSelection() : this.__getNodeInTree(this.getModel(), nodeId);
       if (renameItem) {
         const treeItemRenamer = new osparc.component.widget.Renamer(renameItem.getLabel());
         treeItemRenamer.addListener("labelChanged", e => {
@@ -253,6 +236,17 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       }
     },
 
+    __openNodeInfo: function(nodeId) {
+      if (nodeId) {
+        const node = this.getStudy().getWorkbench().getNode(nodeId);
+        const serviceDetails = new osparc.servicecard.Large(node.getMetaData());
+        const title = this.tr("Service information");
+        const width = 600;
+        const height = 700;
+        osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+      }
+    },
+
     __deleteNode: function(nodeId) {
       if (nodeId === undefined) {
         const selectedItem = this.__getSelection();
@@ -266,22 +260,22 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     nodeSelected: function(nodeId) {
-      const dataModel = this.__tree.getModel();
+      const dataModel = this.getModel();
       const item = this.__getNodeInTree(dataModel, nodeId);
       if (item) {
-        this.__tree.openNodeAndParents(item);
-        this.__tree.setSelection(new qx.data.Array([item]));
+        this.openNodeAndParents(item);
+        this.setSelection(new qx.data.Array([item]));
       }
     },
 
     __attachEventHandlers: function() {
-      this.addListener("keypress", function(keyEvent) {
+      this.addListener("keypress", keyEvent => {
         if (keyEvent.getKeyIdentifier() === "Delete") {
           this.__deleteNode();
         }
       }, this);
 
-      this.addListener("keypress", function(keyEvent) {
+      this.addListener("keypress", keyEvent => {
         if (keyEvent.getKeyIdentifier() === "F2") {
           this.__openItemRenamer();
         }
