@@ -32,6 +32,13 @@ MATCH_IMAGE_START = f"{MATCH_SIMCORE_REGISTRY}/"
 MATCH_IMAGE_END = f":{MATCH_SERVICE_VERSION}"
 
 
+# Proxy resources
+RESERVATION_MEMORY_50MB = 52430000
+RESERVATION_CPU_1_PERCENT = 10000000
+LIMIT_MEMORY_250MB = 262144000
+LIMIT_CPU_10_PERCENT = 100000000
+
+
 log = logging.getLogger(__name__)
 
 
@@ -120,10 +127,14 @@ async def get_dynamic_proxy_spec(
                 ]
             },
             "Resources": {
-                # MEMORY from 50 MB and maxes at 250 MB
-                # CPU from 1% and maxes at 10%
-                "Limits": {"MemoryBytes": 262144000, "NanoCPUs": 100000000},
-                "Reservations": {"MemoryBytes": 52430000, "NanoCPUs": 10000000},
+                "Limits": {
+                    "MemoryBytes": LIMIT_MEMORY_250MB,
+                    "NanoCPUs": LIMIT_CPU_10_PERCENT,
+                },
+                "Reservations": {
+                    "MemoryBytes": RESERVATION_MEMORY_50MB,
+                    "NanoCPUs": RESERVATION_CPU_1_PERCENT,
+                },
             },
             "RestartPolicy": {
                 "Condition": "on-failure",
