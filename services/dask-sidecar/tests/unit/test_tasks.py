@@ -13,10 +13,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from typing import Dict, List
+from unittest import mock
 from uuid import uuid4
 
 import fsspec
 import pytest
+from _pytest.fixtures import FixtureRequest
 from _pytest.logging import LogCaptureFixture
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.events import (
@@ -124,8 +126,8 @@ class ServiceExampleParam:
     integration_version: IntegrationVersion
 
 
-@pytest.fixture()
-def ubuntu_task(ftp_server: List[URL]) -> ServiceExampleParam:
+@pytest.fixture(params=["0.0.0", "1.0.0"])
+def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampleParam:
     """Creates a console task in an ubuntu distro that checks for the expected files and error in case they are missing"""
     # defines the inputs of the task
     input_data = TaskInputData.parse_obj(
@@ -216,7 +218,7 @@ def ubuntu_task(ftp_server: List[URL]) -> ServiceExampleParam:
             "This file is named: file_2",
             "This file is named: file_3",
         ],
-        integration_version=version.parse("1.0.0"),
+        integration_version=version.parse(request.param),
     )
 
 
@@ -234,8 +236,9 @@ def test_run_computational_sidecar_real_fct(
     caplog: LogCaptureFixture,
     mocker: MockerFixture,
 ):
-    mocker.patch(
+    mocked_get_integration_version = mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
+        autospec=True,
         return_value=task.service_version,
     )
     caplog.set_level(logging.INFO)
@@ -246,6 +249,10 @@ def test_run_computational_sidecar_real_fct(
         task.input_data,
         task.output_data_keys,
         task.command,
+    )
+
+    mocked_get_integration_version.assert_called_once_with(
+        mock.ANY, task.docker_basic_auth, task.service_key, task.service_version
     )
     for event in [TaskProgressEvent, TaskStateEvent, TaskLogEvent]:
         dask_subsystem_mock["dask_event_publish"].assert_any_call(  # type: ignore
