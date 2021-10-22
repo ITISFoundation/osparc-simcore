@@ -34,6 +34,21 @@ def _compose_info_on_engine(app: FastAPI) -> str:
     return stm.getvalue()
 
 
+async def _close_engine(engine: Engine) -> None:
+    engine.close()
+    await engine.wait_closed()
+
+
+async def _raise_if_migration_not_ready(engine: Engine):
+    async with engine.acquire() as conn:
+        version_num = await conn.scalar('SELECT "version_num" FROM "alembic_version"')
+        head_version_num = get_current_head()
+        if version_num != head_version_num:
+            raise RuntimeError(
+                f"Migration is incomplete, expected {head_version_num} and got {version_num}"
+            )
+
+
 @retry(**pg_retry_policy)
 async def connect_to_db(app: FastAPI) -> None:
     logger.debug("Connecting db ...")
@@ -48,20 +63,10 @@ async def connect_to_db(app: FastAPI) -> None:
 
     logger.debug("Checking db migrationn ...")
     try:
-        async with engine.acquire() as conn:
-            version_num = await conn.scalar(
-                'SELECT "version_num" FROM "alembic_version"'
-            )
-            head_version_num = get_current_head()
-            if version_num != head_version_num:
-                raise RuntimeError(
-                    f"Migration is incomplete, expected {head_version_num} and got {version_num}"
-                )
-
+        await _raise_if_migration_not_ready(engine)
     except Exception:
-        # WARNING: engine must be closed because retry will create a new engine
-        engine.close()
-        await engine.wait_closed()
+        # NOTE: engine must be closed because retry will create a new engine
+        await _close_engine(engine)
         raise
     else:
         logger.debug("Migration up-to-date")
@@ -75,6 +80,6 @@ async def close_db_connection(app: FastAPI) -> None:
     logger.debug("Disconnecting db ...")
 
     if engine := app.state.engine:
-        engine.close()
-        await engine.wait_closed()
+        await _close_engine(engine)
+
     logger.debug("Disconnected from %s", engine.dsn)
