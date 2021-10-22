@@ -141,7 +141,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
             c.bindProperty("label", "label", null, item, id);
             if (item.getModel().getNodeId() === study.getUuid()) {
               item.setIcon("@FontAwesome5Solid/home/14");
-              item.getChildControl("options-menu-button").exclude();
+              item.getChildControl("options-delete-button").exclude();
             }
             if (node) {
               if (node.isDynamic()) {
