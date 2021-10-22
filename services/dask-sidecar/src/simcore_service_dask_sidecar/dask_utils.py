@@ -1,18 +1,19 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager, suppress
+from enum import Enum
 from typing import Any, AsyncIterator, Awaitable, Dict, Optional, cast
 
 import distributed
-from dask_task_models_library.container_tasks.events import TaskCancelEvent, TaskEvent
+from dask_task_models_library.container_tasks.events import (
+    TaskCancelEvent,
+    TaskEvent,
+    TaskLogEvent,
+    TaskProgressEvent,
+)
 from distributed.worker import TaskState, get_worker
 
 from .boot_mode import BootMode
-
-
-def _get_current_task_state() -> Optional[TaskState]:
-    worker = get_worker()
-    return worker.tasks.get(worker.get_current_task())
 
 
 def create_dask_worker_logger(name: str) -> logging.Logger:
@@ -22,8 +23,9 @@ def create_dask_worker_logger(name: str) -> logging.Logger:
 logger = create_dask_worker_logger(__name__)
 
 
-def publish_event(dask_pub: distributed.Pub, event: TaskEvent) -> None:
-    dask_pub.put(event.json())
+def _get_current_task_state() -> Optional[TaskState]:
+    worker = get_worker()
+    return worker.tasks.get(worker.get_current_task())
 
 
 def is_current_task_aborted(sub: distributed.Sub) -> bool:
@@ -103,3 +105,30 @@ async def monitor_task_abortion(task_name: str) -> AsyncIterator[Awaitable[None]
                 task_name,
             )
             periodically_checking_task.cancel()
+
+
+def publish_event(dask_pub: distributed.Pub, event: TaskEvent) -> None:
+    dask_pub.put(event.json())
+
+
+class LogType(Enum):
+    LOG = 1
+    PROGRESS = 2
+    INSTRUMENTATION = 3
+
+
+def publish_task_logs(
+    progress_pub: distributed.Pub,
+    logs_pub: distributed.Pub,
+    log_type: LogType,
+    message_prefix: str,
+    message: str,
+) -> None:
+    logger.info("[%s - %s]: %s", message_prefix, log_type.name, message)
+    if log_type == LogType.PROGRESS:
+        publish_event(
+            progress_pub,
+            TaskProgressEvent.from_dask_worker(progress=float(message)),
+        )
+    else:
+        publish_event(logs_pub, TaskLogEvent.from_dask_worker(log=message))

@@ -3,7 +3,6 @@ import json
 import re
 from contextlib import asynccontextmanager
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
 from pprint import pformat
 from typing import Any, AsyncIterator, Awaitable, Dict, List, Tuple
@@ -13,16 +12,12 @@ from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from dask_task_models_library.container_tasks.events import (
-    TaskLogEvent,
-    TaskProgressEvent,
-)
 from distributed.pubsub import Pub
 from packaging import version
 from pydantic import ByteSize
 
 from ..boot_mode import BootMode
-from ..dask_utils import create_dask_worker_logger, publish_event
+from ..dask_utils import LogType, create_dask_worker_logger, publish_task_logs
 from ..settings import Settings
 from .models import (
     LEGACY_INTEGRATION_VERSION,
@@ -116,12 +111,6 @@ def to_datetime(docker_timestamp: str) -> datetime:
     )
 
 
-class LogType(Enum):
-    LOG = 1
-    PROGRESS = 2
-    INSTRUMENTATION = 3
-
-
 DOCKER_LOG_REGEXP = re.compile(
     r"^([0-9]+-[0-9]+-[0-9]+T[0-9]+:[0-9]+:[0-9]+.[0-9]+.) (.+)$"
 )
@@ -165,7 +154,7 @@ async def parse_line(line: str) -> Tuple[LogType, str, str]:
     return (log_type, timestamp, log)
 
 
-async def publish_logs(
+async def publish_container_logs(
     service_key: str,
     service_version: str,
     container: DockerContainer,
@@ -175,22 +164,13 @@ async def publish_logs(
     log_type: LogType,
     message: str,
 ) -> None:
-    logger.info(
-        "[%s:%s - %s%s - %s]: %s",
-        service_key,
-        service_version,
-        container.id,
-        container_name,
-        log_type.name,
-        message,
+    return publish_task_logs(
+        progress_pub,
+        logs_pub,
+        log_type,
+        message_prefix=f"{service_key}:{service_version} - {container.id}:{container_name}",
+        message=message,
     )
-    if log_type == LogType.PROGRESS:
-        publish_event(
-            progress_pub,
-            TaskProgressEvent.from_dask_worker(progress=float(message)),
-        )
-    else:
-        publish_event(logs_pub, TaskLogEvent.from_dask_worker(log=message))
 
 
 LEGACY_SERVICE_LOG_FILE_NAME = "log.dat"
@@ -206,9 +186,6 @@ async def _parse_container_log_file(
     task_volumes: TaskSharedVolumes,
 ):
     log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
-    # log_file.write_text(
-    #     f"log file for {service_key}:{service_version} running as {container_name}:{container.id}"
-    # )
     logger.debug("monitoring legacy-style container log file in %s", log_file)
 
     async with aiofiles.open(log_file, mode="r") as file_pointer:
@@ -217,7 +194,7 @@ async def _parse_container_log_file(
         async for line in file_pointer:
             # try to read line
             log_type, _, message = await parse_line(line)
-            await publish_logs(
+            await publish_container_logs(
                 service_key=service_key,
                 service_version=service_version,
                 container=container,
@@ -251,7 +228,7 @@ async def _parse_container_docker_logs(
         stdout=True, stderr=True, follow=True, timestamps=True
     ):
         log_type, latest_log_timestamp, message = await parse_line(log_line)
-        await publish_logs(
+        await publish_container_logs(
             service_key=service_key,
             service_version=service_version,
             container=container,
@@ -277,7 +254,7 @@ async def _parse_container_docker_logs(
     )
     for log_line in missing_logs:
         log_type, latest_log_timestamp, message = await parse_line(log_line)
-        await publish_logs(
+        await publish_container_logs(
             service_key=service_key,
             service_version=service_version,
             container=container,
@@ -417,9 +394,6 @@ async def get_integration_version(
     service_key: str,
     service_version: str,
 ) -> version.Version:
-
-    INTEGRATION_VERSION_LABEL = "io.simcore.integration-version"
-
     image_cfg = await docker_client.images.inspect(
         f"{docker_auth.server_address}/{service_key}:{service_version}"
     )
@@ -427,13 +401,19 @@ async def get_integration_version(
     integration_version = LEGACY_INTEGRATION_VERSION
     # image labels are set to None when empty
     if image_labels := image_cfg["Config"].get("Labels"):
-        version.Version(
-            json.loads(
-                image_labels.get(INTEGRATION_VERSION_LABEL, {}).get(
-                    "integration-version", f"{LEGACY_INTEGRATION_VERSION}"
-                )
-            )
+        logger.debug("found following image labels: %s", pformat(image_labels))
+        service_integration_label = image_labels.get(
+            "io.simcore.integration-version", {}
         )
+
+        service_integration_label = json.loads(service_integration_label).get(
+            "integration-version", f"{LEGACY_INTEGRATION_VERSION}"
+        )
+        logger.debug(
+            "found following integration version: %s",
+            pformat(service_integration_label),
+        )
+        integration_version = version.Version(service_integration_label)
 
     logger.info(
         "%s:%s has integration version %s",
