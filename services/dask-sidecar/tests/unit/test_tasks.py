@@ -86,17 +86,8 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, MockerFixture]:
     dask_task_mock.resource_restrictions = {}
     dask_distributed_worker_mock.return_value.tasks.get.return_value = dask_task_mock
 
-    # mock dask loggers
-    for logger in [
-        "simcore_service_dask_sidecar.tasks.log",
-        "simcore_service_dask_sidecar.computational_sidecar.core.logger",
-        "simcore_service_dask_sidecar.computational_sidecar.docker_utils.logger",
-    ]:
-
-        mocker.patch(
-            logger,
-            logging.getLogger(__name__),
-        )
+    # ensure dask logger propagates
+    logging.getLogger("distributed").propagate = True
 
     # mock dask event worker
     dask_distributed_worker_events_mock = mocker.patch(
@@ -223,6 +214,7 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
             f"{c} >> ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME}"
             for c in list_of_commands
         ]
+    # set the final command to generate the output file(s) (files and json output)
     list_of_commands += [
         f"echo {jsonized_outputs} > ${{OUTPUT_FOLDER}}/{output_json_file_name}",
         "echo 'some data for the output file' > ${OUTPUT_FOLDER}/a_outputfile",
@@ -252,6 +244,14 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
     )
 
 
+@pytest.fixture()
+def caplog_info_level(caplog: LogCaptureFixture) -> LogCaptureFixture:
+    with caplog.at_level(
+        logging.INFO,
+    ):
+        yield caplog
+
+
 @pytest.mark.parametrize(
     "task",
     [
@@ -259,19 +259,19 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
     ],
 )
 def test_run_computational_sidecar_real_fct(
+    caplog_info_level: LogCaptureFixture,
     loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
     dask_subsystem_mock: Dict[str, MockerFixture],
     task: ServiceExampleParam,
-    caplog: LogCaptureFixture,
     mocker: MockerFixture,
 ):
+
     mocked_get_integration_version = mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
         autospec=True,
         return_value=task.integration_version,
     )
-    caplog.set_level(logging.INFO)
     output_data = run_computational_sidecar(
         task.docker_basic_auth,
         task.service_key,
@@ -294,14 +294,14 @@ def test_run_computational_sidecar_real_fct(
         r = re.compile(
             rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: (.+) ({log})"
         )
-        search_results = list(filter(r.search, caplog.messages))
+        search_results = list(filter(r.search, caplog_info_level.messages))
         assert (
             len(search_results) > 0
-        ), f"Could not find '{log}' in worker_logs:\n {pformat(caplog.messages, width=240)}"
+        ), f"Could not find '{log}' in worker_logs:\n {pformat(caplog_info_level.messages, width=240)}"
     for log in task.expected_logs:
         assert re.search(
             rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: (.+) ({log})",
-            caplog.text,
+            caplog_info_level.text,
         )
     # check that the task produce the expected data, not less not more
     for k, v in task.expected_output_data.items():

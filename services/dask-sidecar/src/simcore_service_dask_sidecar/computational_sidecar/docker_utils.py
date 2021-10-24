@@ -320,9 +320,6 @@ async def monitor_container_logs(
                 logs_pub,
             )
         else:
-            # NOTE: ensure the file is present
-            log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
-            log_file.touch()
             await _parse_container_log_file(
                 container,
                 service_key,
@@ -362,6 +359,10 @@ async def managed_monitor_container_log_task(
 ) -> AsyncIterator[Awaitable[None]]:
     monitoring_task = None
     try:
+        if integration_version == LEGACY_INTEGRATION_VERSION:
+            # NOTE: ensure the file is present before the container is started (necessary for old services)
+            log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
+            log_file.touch()
         monitoring_task = asyncio.create_task(
             monitor_container_logs(
                 container,
