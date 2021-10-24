@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=no-member
+# pylint: disable=too-many-instance-attributes
 
 import asyncio
 import json
@@ -37,6 +38,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from packaging import version
+from pydantic import AnyUrl
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
@@ -117,6 +119,7 @@ class ServiceExampleParam:
     command: List[str]
     input_data: TaskInputData
     output_data_keys: TaskOutputDataSchema
+    log_file_url: AnyUrl
     expected_output_data: TaskOutputData
     expected_logs: List[str]
     integration_version: version.Version
@@ -220,6 +223,12 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         "echo 'some data for the output file' > ${OUTPUT_FOLDER}/a_outputfile",
     ]
 
+    log_file_url = AnyUrl(
+        f"{next(iter(ftp_server)).with_path('log.dat')}",
+        scheme=next(iter(ftp_server)).with_path("log.dat").scheme,
+        host=next(iter(ftp_server)).with_path("log.dat").host,
+    )
+
     return ServiceExampleParam(
         docker_basic_auth=DockerBasicAuth(
             server_address="docker.io", username="pytest", password=""
@@ -233,6 +242,7 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         ],
         input_data=input_data,
         output_data_keys=expected_output_keys,
+        log_file_url=log_file_url,
         expected_output_data=expected_output_data,
         expected_logs=[
             '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
@@ -278,6 +288,7 @@ def test_run_computational_sidecar_real_fct(
         task.service_version,
         task.input_data,
         task.output_data_keys,
+        task.log_file_url,
         task.command,
     )
     mocked_get_integration_version.assert_called_once_with(
@@ -316,6 +327,13 @@ def test_run_computational_sidecar_real_fct(
             with fsspec.open(f"{v.url}") as fp:
                 assert fp.details.get("size") > 0
 
+    # check the task has created a log file
+    with fsspec.open(f"{task.log_file_url}", mode="rt") as fp:
+        saved_logs = fp.read()
+    assert saved_logs
+    for log in task.expected_logs:
+        assert log in saved_logs
+
 
 @pytest.mark.parametrize(
     "task",
@@ -338,6 +356,7 @@ def test_run_computational_sidecar_dask(
         task.service_version,
         task.input_data,
         task.output_data_keys,
+        task.log_file_url,
         task.command,
         resources={},
     )
@@ -372,7 +391,7 @@ def test_run_computational_sidecar_dask(
                 assert fp.details.get("size") > 0
 
 
-def test_uploading_withfsspec(ftpserver: ProcessFTPServer):
+async def test_uploading_withfsspec(ftpserver: ProcessFTPServer):
     ftp_server_base_url = ftpserver.get_login_data(style="url")
     open_file = fsspec.open(
         f"{ftp_server_base_url}/test_file.txt",

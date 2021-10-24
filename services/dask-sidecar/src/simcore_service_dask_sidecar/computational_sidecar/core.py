@@ -25,6 +25,7 @@ from distributed import Pub
 from models_library.projects_state import RunningState
 from packaging import version
 from pydantic import ValidationError
+from pydantic.networks import AnyUrl
 from yarl import URL
 
 from ..boot_mode import BootMode
@@ -53,6 +54,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     service_version: str
     input_data: TaskInputData
     output_data_keys: TaskOutputDataSchema
+    log_file_url: AnyUrl
     boot_mode: BootMode
     task_max_resources: Dict[str, Any]
     _state_pub: Pub = field(init=False)
@@ -194,6 +196,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     logs_pub=self._logs_pub,
                     integration_version=integration_version,
                     task_volumes=task_volumes,
+                    log_file_url=self.log_file_url,
                 ):
                     # run the container
                     await container.start()

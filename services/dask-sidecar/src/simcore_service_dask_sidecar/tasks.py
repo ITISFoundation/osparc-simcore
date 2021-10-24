@@ -14,6 +14,7 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputDataSchema,
 )
 from distributed.worker import logger
+from pydantic.networks import AnyUrl
 
 from .computational_sidecar.core import ComputationalSidecar
 from .dask_utils import (
@@ -78,6 +79,7 @@ async def _run_computational_sidecar_async(
     service_version: str,
     input_data: TaskInputData,
     output_data_keys: TaskOutputDataSchema,
+    log_file_url: AnyUrl,
     command: List[str],
 ) -> TaskOutputData:
     log.debug(
@@ -98,6 +100,7 @@ async def _run_computational_sidecar_async(
             service_version=service_version,
             input_data=input_data,
             output_data_keys=output_data_keys,
+            log_file_url=log_file_url,
             docker_auth=docker_auth,
             boot_mode=sidecar_bootmode,
             task_max_resources=task_max_resources,
@@ -112,6 +115,7 @@ def run_computational_sidecar(
     service_version: str,
     input_data: TaskInputData,
     output_data_keys: TaskOutputDataSchema,
+    log_file_url: AnyUrl,
     command: List[str],
 ) -> TaskOutputData:
     task = asyncio.get_event_loop().create_task(
@@ -121,6 +125,7 @@ def run_computational_sidecar(
             service_version,
             input_data,
             output_data_keys,
+            log_file_url,
             command,
         ),
         name=f"run_computational_sidecar_{uuid4()}",

@@ -8,6 +8,7 @@ from pprint import pformat
 from typing import Any, AsyncIterator, Awaitable, Dict, List, Tuple
 
 import aiofiles
+import fsspec
 from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
@@ -15,6 +16,7 @@ from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from distributed.pubsub import Pub
 from packaging import version
 from pydantic import ByteSize
+from pydantic.networks import AnyUrl
 
 from ..boot_mode import BootMode
 from ..dask_utils import LogType, create_dask_worker_logger, publish_task_logs
@@ -184,6 +186,7 @@ async def _parse_container_log_file(
     progress_pub: Pub,
     logs_pub: Pub,
     task_volumes: TaskSharedVolumes,
+    log_file_url: AnyUrl,
 ):
     log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
     logger.debug("monitoring legacy-style container log file in %s", log_file)
@@ -222,6 +225,20 @@ async def _parse_container_log_file(
             "monitoring legacy-style container log file: completed reading of %s",
             log_file,
         )
+        logger.debug(
+            "monitoring legacy-style container log file: copying log file from %s to %s...",
+            log_file,
+            log_file_url,
+        )
+        # copy the log file to the log_file_url
+        async with aiofiles.open(log_file, mode="rb") as src:
+            with fsspec.open(f"{log_file_url}", "wb") as dst:
+                dst.write(await src.read())
+        logger.debug(
+            "monitoring legacy-style container log file: copying log file from %s to %s completed",
+            log_file,
+            log_file_url,
+        )
 
 
 async def _parse_container_docker_logs(
@@ -231,6 +248,7 @@ async def _parse_container_docker_logs(
     container_name: str,
     progress_pub: Pub,
     logs_pub: Pub,
+    log_file_url: AnyUrl,
 ):
     latest_log_timestamp = DEFAULT_TIME_STAMP
     logger.debug(
@@ -239,11 +257,11 @@ async def _parse_container_docker_logs(
         container_name,
     )
     # TODO: move that file somewhere else
-    async with aiofiles.tempfile.TemporaryFile("w") as log_fp:
+    async with aiofiles.tempfile.NamedTemporaryFile("wb+", delete=False) as log_fp:
         async for log_line in container.log(
             stdout=True, stderr=True, follow=True, timestamps=True
         ):
-            await log_fp.write(log_line)
+            await log_fp.write(log_line.encode("utf-8"))
             log_type, latest_log_timestamp, message = await parse_line(log_line)
             await publish_container_logs(
                 service_key=service_key,
@@ -270,7 +288,7 @@ async def _parse_container_docker_logs(
             since=to_datetime(latest_log_timestamp).strftime("%s"),
         )
         for log_line in missing_logs:
-            await log_fp.write(log_line)
+            await log_fp.write(log_line.encode("utf-8"))
             log_type, latest_log_timestamp, message = await parse_line(log_line)
             await publish_container_logs(
                 service_key=service_key,
@@ -282,10 +300,29 @@ async def _parse_container_docker_logs(
                 log_type=log_type,
                 message=message,
             )
+
+        logger.debug(
+            "monitoring 1.0+ container logs from container %s:%s: completed",
+            container.id,
+            container_name,
+        )
+        logger.debug(
+            "monitoring 1.0+ container logs from container %s:%s: copying log file to %s...",
+            container.id,
+            container_name,
+            log_file_url,
+        )
+        log_file_name = Path(log_fp.name)
+    # copy the log file to the log_file_url
+    async with aiofiles.open(log_file_name, mode="rb") as src:
+        with fsspec.open(f"{log_file_url}", "wb") as dst:
+            dst.write(await src.read())
+
     logger.debug(
-        "monitoring 1.0+ container logs from container %s:%s: completed",
+        "monitoring 1.0+ container logs from container %s:%s: copying log file to %s completed",
         container.id,
         container_name,
+        log_file_url,
     )
 
 
@@ -297,6 +334,7 @@ async def monitor_container_logs(
     logs_pub: Pub,
     integration_version: version.Version,
     task_volumes: TaskSharedVolumes,
+    log_file_url: AnyUrl,
 ) -> None:
     """Services running with integration version 0.0.0 are logging into a file
     that must be available in task_volumes.log / log.dat
@@ -322,6 +360,7 @@ async def monitor_container_logs(
                 container_name,
                 progress_pub,
                 logs_pub,
+                log_file_url,
             )
         else:
             await _parse_container_log_file(
@@ -332,6 +371,7 @@ async def monitor_container_logs(
                 progress_pub,
                 logs_pub,
                 task_volumes,
+                log_file_url,
             )
 
         logger.info(
@@ -360,6 +400,7 @@ async def managed_monitor_container_log_task(
     logs_pub: Pub,
     integration_version: version.Version,
     task_volumes: TaskSharedVolumes,
+    log_file_url: AnyUrl,
 ) -> AsyncIterator[Awaitable[None]]:
     monitoring_task = None
     try:
@@ -376,6 +417,7 @@ async def managed_monitor_container_log_task(
                 logs_pub,
                 integration_version,
                 task_volumes,
+                log_file_url,
             ),
             name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
         )
