@@ -25,6 +25,7 @@ from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from pydantic.networks import AnyUrl
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
@@ -43,6 +44,7 @@ from ..models.schemas.services import NodeRequirements
 from ..utils.dask import (
     compute_input_data,
     compute_output_data_schema,
+    compute_service_log_file_upload_link,
     generate_dask_job_id,
     parse_output_data,
 )
@@ -254,6 +256,7 @@ class DaskClient:
             service_version: str,
             input_data: TaskInputData,
             output_data_keys: TaskOutputDataSchema,
+            log_file_url: AnyUrl,
             command: List[str],
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
@@ -268,6 +271,7 @@ class DaskClient:
                 service_version,
                 input_data,
                 output_data_keys,
+                log_file_url,
                 command,
             )
 
@@ -308,6 +312,9 @@ class DaskClient:
             output_data_keys = await compute_output_data_schema(
                 self.app, user_id, project_id, node_id
             )
+            log_file_url = await compute_service_log_file_upload_link(
+                user_id, project_id, node_id
+            )
             try:
                 task_future = self.client.submit(
                     remote_fct,
@@ -320,6 +327,7 @@ class DaskClient:
                     service_version=node_image.tag,
                     input_data=input_data,
                     output_data_keys=output_data_keys,
+                    log_file_url=log_file_url,
                     command=["run"],
                     key=job_id,
                     resources=dask_resources,

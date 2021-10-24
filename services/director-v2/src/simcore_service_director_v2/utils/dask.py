@@ -146,3 +146,17 @@ async def compute_output_data_schema(
             )
 
     return TaskOutputDataSchema.parse_obj(output_data_schema)
+
+
+async def compute_service_log_file_upload_link(
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+) -> AnyUrl:
+    value_link = await port_utils.get_upload_link_from_storage(
+        user_id=user_id,
+        project_id=f"{project_id}",
+        node_id=f"{node_id}",
+        file_name="log.dat",
+    )
+    return value_link
