@@ -238,46 +238,50 @@ async def _parse_container_docker_logs(
         container.id,
         container_name,
     )
-    async for log_line in container.log(
-        stdout=True, stderr=True, follow=True, timestamps=True
-    ):
-        log_type, latest_log_timestamp, message = await parse_line(log_line)
-        await publish_container_logs(
-            service_key=service_key,
-            service_version=service_version,
-            container=container,
-            container_name=container_name,
-            progress_pub=progress_pub,
-            logs_pub=logs_pub,
-            log_type=log_type,
-            message=message,
-        )
+    # TODO: move that file somewhere else
+    async with aiofiles.tempfile.TemporaryFile("w") as log_fp:
+        async for log_line in container.log(
+            stdout=True, stderr=True, follow=True, timestamps=True
+        ):
+            await log_fp.write(log_line)
+            log_type, latest_log_timestamp, message = await parse_line(log_line)
+            await publish_container_logs(
+                service_key=service_key,
+                service_version=service_version,
+                container=container,
+                container_name=container_name,
+                progress_pub=progress_pub,
+                logs_pub=logs_pub,
+                log_type=log_type,
+                message=message,
+            )
 
-    logger.debug(
-        "monitoring 1.0+ container logs from container %s:%s: getting remaining logs",
-        container.id,
-        container_name,
-    )
-    # NOTE: The log stream may be interrupted before all the logs are gathered!
-    # therefore it is needed to get the remaining logs
-    missing_logs = await container.log(
-        stdout=True,
-        stderr=True,
-        timestamps=True,
-        since=to_datetime(latest_log_timestamp).strftime("%s"),
-    )
-    for log_line in missing_logs:
-        log_type, latest_log_timestamp, message = await parse_line(log_line)
-        await publish_container_logs(
-            service_key=service_key,
-            service_version=service_version,
-            container=container,
-            container_name=container_name,
-            progress_pub=progress_pub,
-            logs_pub=logs_pub,
-            log_type=log_type,
-            message=message,
+        logger.debug(
+            "monitoring 1.0+ container logs from container %s:%s: getting remaining logs",
+            container.id,
+            container_name,
         )
+        # NOTE: The log stream may be interrupted before all the logs are gathered!
+        # therefore it is needed to get the remaining logs
+        missing_logs = await container.log(
+            stdout=True,
+            stderr=True,
+            timestamps=True,
+            since=to_datetime(latest_log_timestamp).strftime("%s"),
+        )
+        for log_line in missing_logs:
+            await log_fp.write(log_line)
+            log_type, latest_log_timestamp, message = await parse_line(log_line)
+            await publish_container_logs(
+                service_key=service_key,
+                service_version=service_version,
+                container=container,
+                container_name=container_name,
+                progress_pub=progress_pub,
+                logs_pub=logs_pub,
+                log_type=log_type,
+                message=message,
+            )
     logger.debug(
         "monitoring 1.0+ container logs from container %s:%s: completed",
         container.id,
