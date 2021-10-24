@@ -30,6 +30,7 @@ from yarl import URL
 
 from ..boot_mode import BootMode
 from ..dask_utils import create_dask_worker_logger, publish_event
+from ..file_utils import copy_file_to_remote
 from ..settings import Settings
 from .docker_utils import (
     create_container_config,
@@ -127,22 +128,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                         output_params.file_mapping
                         or URL(output_params.url).path.strip("/")
                     )
-                    if output_params.url.scheme == "http":
-                        # NOTE: special case for http scheme when uploading. this is typically a S3 put presigned link.
-                        # Therefore, we need to use the http filesystem directly in order to call the put_file function.
-                        # writing on httpfilesystem is disabled by default.
-                        fs = fsspec.filesystem(
-                            "http",
-                            headers={
-                                "Content-Length": f"{src_path.stat().st_size}",
-                            },
-                        )
-                        fs.put_file(src_path, f"{output_params.url}", method="PUT")
-                    else:
-                        with src_path.open("rb") as src, fsspec.open(
-                            f"{output_params.url}", "wb"
-                        ) as dst:
-                            dst.write(src.read())
+                    await copy_file_to_remote(src_path, output_params.url)
 
                     logger.info("retrieved output file %s", src_path)
             logger.info("retrieved outputs data:\n%s", pformat(output_data.dict()))

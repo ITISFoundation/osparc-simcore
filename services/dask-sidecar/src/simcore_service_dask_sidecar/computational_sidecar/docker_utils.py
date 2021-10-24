@@ -8,7 +8,6 @@ from pprint import pformat
 from typing import Any, AsyncIterator, Awaitable, Dict, List, Tuple
 
 import aiofiles
-import fsspec
 from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
@@ -20,6 +19,7 @@ from pydantic.networks import AnyUrl
 
 from ..boot_mode import BootMode
 from ..dask_utils import LogType, create_dask_worker_logger, publish_task_logs
+from ..file_utils import copy_file_to_remote
 from ..settings import Settings
 from .models import (
     LEGACY_INTEGRATION_VERSION,
@@ -231,9 +231,8 @@ async def _parse_container_log_file(
             log_file_url,
         )
         # copy the log file to the log_file_url
-        async with aiofiles.open(log_file, mode="rb") as src:
-            with fsspec.open(f"{log_file_url}", "wb") as dst:
-                dst.write(await src.read())
+        await copy_file_to_remote(log_file, log_file_url)
+
         logger.debug(
             "monitoring legacy-style container log file: copying log file from %s to %s completed",
             log_file,
@@ -314,9 +313,8 @@ async def _parse_container_docker_logs(
         )
         log_file_name = Path(log_fp.name)
     # copy the log file to the log_file_url
-    async with aiofiles.open(log_file_name, mode="rb") as src:
-        with fsspec.open(f"{log_file_url}", "wb") as dst:
-            dst.write(await src.read())
+    await copy_file_to_remote(log_file_name, log_file_url)
+    log_file_name.unlink()
 
     logger.debug(
         "monitoring 1.0+ container logs from container %s:%s: copying log file to %s completed",
