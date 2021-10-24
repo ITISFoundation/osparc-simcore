@@ -280,7 +280,6 @@ def test_run_computational_sidecar_real_fct(
         task.output_data_keys,
         task.command,
     )
-
     mocked_get_integration_version.assert_called_once_with(
         mock.ANY, task.docker_basic_auth, task.service_key, task.service_version
     )
@@ -292,7 +291,7 @@ def test_run_computational_sidecar_real_fct(
     # check that the task produces expected logs
     for log in task.expected_logs:
         r = re.compile(
-            rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: (.+) ({log})"
+            rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: ({log})"
         )
         search_results = list(filter(r.search, caplog_info_level.messages))
         assert (
@@ -300,7 +299,7 @@ def test_run_computational_sidecar_real_fct(
         ), f"Could not find '{log}' in worker_logs:\n {pformat(caplog_info_level.messages, width=240)}"
     for log in task.expected_logs:
         assert re.search(
-            rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: (.+) ({log})",
+            rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: ({log})",
             caplog_info_level.text,
         )
     # check that the task produce the expected data, not less not more
@@ -351,7 +350,7 @@ def test_run_computational_sidecar_dask(
     worker_logs = [log for _, log in dask_client.get_worker_logs()[worker_name]]  # type: ignore
     for log in task.expected_logs:
         r = re.compile(
-            rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: (.+) ({log})"
+            rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: ({log})"
         )
         search_results = list(filter(r.search, worker_logs))
         assert (

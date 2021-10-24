@@ -124,11 +124,11 @@ async def parse_line(line: str) -> Tuple[LogType, str, str]:
     match = re.search(DOCKER_LOG_REGEXP, line)
     if not match:
         # default return as log
-        return (LogType.LOG, DEFAULT_TIME_STAMP, f"[task] {line}")
+        return (LogType.LOG, DEFAULT_TIME_STAMP, f"{line}")
 
     log_type = LogType.LOG
     timestamp = match.group(1)
-    log = f"[task] {match.group(2)}"
+    log = f"{match.group(2)}"
     # now look for progress
     match = re.search(PROGRESS_REGEXP, log.lower())
     if match:
@@ -168,7 +168,7 @@ async def publish_container_logs(
         progress_pub,
         logs_pub,
         log_type,
-        message_prefix=f"{service_key}:{service_version} - {container.id}:{container_name}",
+        message_prefix=f"{service_key}:{service_version} - {container.id}{container_name}",
         message=message,
     )
 

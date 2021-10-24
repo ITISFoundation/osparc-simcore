@@ -111,7 +111,7 @@ def test_to_datetime(docker_time: str, expected_datetime: datetime):
             (
                 LogType.LOG,
                 "2021-10-05T09:53:48.873236400Z",
-                "[task] hello from the logs",
+                "hello from the logs",
             ),
         ),
         (
@@ -119,7 +119,7 @@ def test_to_datetime(docker_time: str, expected_datetime: datetime):
             (
                 LogType.LOG,
                 DEFAULT_TIME_STAMP,
-                "[task] This is not an expected docker log",
+                "This is not an expected docker log",
             ),
         ),
         (
@@ -127,7 +127,7 @@ def test_to_datetime(docker_time: str, expected_datetime: datetime):
             (
                 LogType.LOG,
                 "2021-10-05T09:53:48.873236400Z",
-                "[task] [progress] this is some whatever progress without number",
+                "[progress] this is some whatever progress without number",
             ),
         ),
         (
@@ -159,7 +159,7 @@ def test_to_datetime(docker_time: str, expected_datetime: datetime):
             (
                 LogType.LOG,
                 "2021-10-05T09:53:48.873236400Z",
-                "[task] Progress: this is some progress",
+                "Progress: this is some progress",
             ),
         ),
         (
@@ -187,7 +187,7 @@ def test_to_datetime(docker_time: str, expected_datetime: datetime):
             (
                 LogType.LOG,
                 "2021-10-05T09:53:48.873236400Z",
-                "[task] any kind of message even with progress inside",
+                "any kind of message even with progress inside",
             ),
         ),
         (
