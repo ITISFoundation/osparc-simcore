@@ -159,7 +159,7 @@ class DynamicSidecarClient:
             raise e
 
     async def get_entrypoint_container_name(
-        self, dynamic_sidecar_endpoint: str, swarm_network_name: str
+        self, dynamic_sidecar_endpoint: str, dynamic_sidecar_network_name: str
     ) -> str:
         """
         While this API raises EntrypointContainerNotFoundError
@@ -168,7 +168,7 @@ class DynamicSidecarClient:
         """
         url = get_url(
             dynamic_sidecar_endpoint,
-            f"/{self.API_VERSION}/containers/entrypoint?swarm_network_name={swarm_network_name}",
+            f"/{self.API_VERSION}/containers/entrypoint?dynamic_sidecar_network_name={dynamic_sidecar_network_name}",
         )
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:

@@ -255,11 +255,9 @@ class CreateUserServices(DynamicSchedulerEvent):
             before_sleep=before_sleep_log(logger, logging.WARNING),
         ):
             with attempt:
-                entrypoint_container = (
-                    await dynamic_sidecar_client.get_entrypoint_container_name(
-                        dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
-                        swarm_network_name=scheduler_data.dynamic_sidecar_network_name,
-                    )
+                entrypoint_container = await dynamic_sidecar_client.get_entrypoint_container_name(
+                    dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
+                    dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
                 )
                 logger.info(
                     "Fetched container entrypoint name %s", entrypoint_container

@@ -241,7 +241,7 @@ async def get_container_logs(
     },
 )
 async def get_entrypoint_container_name(
-    swarm_network_name: str,
+    dynamic_sidecar_network_name: str,
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> Union[str, Dict[str, Any]]:
     """
@@ -263,14 +263,14 @@ async def get_entrypoint_container_name(
     spec_services = compose_spec["services"]
     for service in spec_services:
         service_content = spec_services[service]
-        if swarm_network_name in service_content.get("networks", {}):
+        if dynamic_sidecar_network_name in service_content.get("networks", {}):
             container_name = service_content["container_name"]
             break
 
     if container_name is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
-            detail=f"No container found for network={swarm_network_name}",
+            detail=f"No container found for network={dynamic_sidecar_network_name}",
         )
 
     return f"{container_name}"
