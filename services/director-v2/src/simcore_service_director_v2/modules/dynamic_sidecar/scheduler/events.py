@@ -254,6 +254,8 @@ class CreateUserServices(DynamicSchedulerEvent):
             retry_error_cls=EntrypointContainerNotFoundError,
             before_sleep=before_sleep_log(logger, logging.WARNING),
         ):
+            # TODO: refactor, this needs to stop waiting when the service is marked for removal
+            # after merging of https://github.com/ITISFoundation/osparc-simcore/pull/2509
             with attempt:
                 entrypoint_container = await dynamic_sidecar_client.get_entrypoint_container_name(
                     dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
