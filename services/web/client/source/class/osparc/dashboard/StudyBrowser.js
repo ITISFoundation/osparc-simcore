@@ -571,14 +571,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(saveAsTemplateButton);
       }
 
-      if (osparc.data.model.Study.hasSlideshow(studyData) && osparc.data.Permissions.getInstance().canDo("study.slides")) {
-        const startAsGuidedModeButton = this.__getStartAsGuidedModeButton(studyData);
-        menu.add(startAsGuidedModeButton);
-
-        const startAsAppButton = this.__getStartAsAppButton(studyData);
-        menu.add(startAsAppButton);
-      }
-
       const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
       if (deleteButton) {
         menu.addSeparator();
@@ -685,22 +677,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }, this);
       }, this);
       return saveAsTemplateButton;
-    },
-
-    __getStartAsGuidedModeButton: function(studyData) {
-      const startAsGuidedModeButton = new qx.ui.menu.Button(this.tr("Start Guided mode"));
-      startAsGuidedModeButton.addListener("execute", () => {
-        this._startStudy(studyData, "guided");
-      }, this);
-      return startAsGuidedModeButton;
-    },
-
-    __getStartAsAppButton: function(studyData) {
-      const startAsAppButton = new qx.ui.menu.Button(this.tr("Start App mode"));
-      startAsAppButton.addListener("execute", () => {
-        this._startStudy(studyData, "app");
-      }, this);
-      return startAsAppButton;
     },
 
     __getDeleteStudyMenuButton: function(studyData) {

@@ -760,6 +760,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       if (node.hasOutputs()) {
         this.__outputsPage.getChildControl("button").show();
+
         const portTree = new osparc.component.widget.inputs.NodeOutputTree(node, node.getMetaData().outputs).set({
           allowGrowY: false
         });
