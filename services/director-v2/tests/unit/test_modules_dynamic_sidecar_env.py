@@ -4,6 +4,9 @@ from typing import Dict
 from _pytest.monkeypatch import MonkeyPatch
 from settings_library.docker_registry import RegistrySettings
 from settings_library.rabbit import RabbitSettings
+from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
+    SchedulerData,
+)
 from simcore_service_director_v2.modules.dynamic_sidecar.env import (
     get_dynamic_sidecar_env_vars,
 )
@@ -32,7 +35,9 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
 }
 
 
-def test_dynamic_sidecar_env_vars(monkeypatch: MonkeyPatch) -> None:
+def test_dynamic_sidecar_env_vars(
+    monkeypatch: MonkeyPatch, scheduler_data_from_http_request: SchedulerData
+) -> None:
     for key, value in MOCKED_BASE_REGISTRY_ENV_VARS.items():
         monkeypatch.setenv(key, value)
 
@@ -40,7 +45,7 @@ def test_dynamic_sidecar_env_vars(monkeypatch: MonkeyPatch) -> None:
     rabbit_settings = RabbitSettings()
 
     dynamic_sidecar_env_vars = get_dynamic_sidecar_env_vars(
-        registry_settings, rabbit_settings
+        scheduler_data_from_http_request, registry_settings, rabbit_settings
     )
     print("dynamic_sidecar_env_vars:", dynamic_sidecar_env_vars)
 

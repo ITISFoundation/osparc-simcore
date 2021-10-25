@@ -4,12 +4,9 @@ from contextlib import suppress
 from typing import Any, Callable, Coroutine, Dict, Optional, cast
 
 from fastapi import FastAPI
-from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
-from models_library.users import UserID
-from settings_library.rabbit import RabbitSettings
 
 from .rabbitmq import RabbitMQ
+from .settings import DynamicSidecarSettings
 from .utils import docker_client
 
 logger = logging.getLogger(__name__)
@@ -21,23 +18,17 @@ async def _logs_fetcher_worker(
     logger.info("Started log fetching for container %s", container_name)
     async with docker_client() as docker:
         container = await docker.containers.get(container_name)
+        logger.debug("Old logs from %s", container_name)
+        # first of all recover logs one shot and send them
+        old_logs = await container.log(stdout=True, stderr=True, follow=False)
+        for line in old_logs:
+            logger.debug("[OLD LOGS] %s", line)
+            await dispatch_log(container_name=container_name, message=line)
 
-        # TODO: where to fetch these values, maybe we need to
-        # attach them when startign the container via ENV vars
-        # and recover them from there
-        # not present on the containers
-        user_id: UserID = None
-        project_id: ProjectID = None
-        node_id: NodeID = None
-
+        logger.debug("Streaming logs from %s", container_name)
         async for line in container.log(stdout=True, stderr=True, follow=True):
-            await dispatch_log(
-                container_name=container_name,
-                message=line,
-                user_id=user_id,
-                project_id=project_id,
-                node_id=node_id,
-            )
+            logger.debug("[NEW LOGS] %s", line)
+            await dispatch_log(container_name=container_name, message=line)
 
 
 def _format_log(container_name: str, message: str) -> str:
@@ -46,22 +37,17 @@ def _format_log(container_name: str, message: str) -> str:
 
 class BackgroundLogFetcher:
     def __init__(self, app: FastAPI) -> None:
+        self._settings: DynamicSidecarSettings = app.state.settings
         self._log_processor_tasks: Dict[str, Task[None]] = {}
 
-        rabbit_settings: RabbitSettings = app.state.settings.RABBIT_SETTINGS
-        self.rabbit_mq: RabbitMQ = RabbitMQ(rabbit_settings=rabbit_settings)
+        self.rabbit_mq: RabbitMQ = RabbitMQ(
+            rabbit_settings=self._settings.RABBIT_SETTINGS
+        )
 
     async def start_fetcher(self) -> None:
         await self.rabbit_mq.connect()
 
-    async def _dispatch_logs(
-        self,
-        container_name: str,
-        message: str,
-        user_id: UserID,
-        project_id: ProjectID,
-        node_id: NodeID,
-    ) -> None:
+    async def _dispatch_logs(self, container_name: str, message: str) -> None:
         message = _format_log(container_name, message)
 
         # logs from the containers will be logged at warning level to
@@ -72,7 +58,10 @@ class BackgroundLogFetcher:
         # sending the logs to the UI to facilitate the
         # user debugging process
         await self.rabbit_mq.post_log_message(
-            user_id=user_id, project_id=project_id, node_id=node_id, log_msg=message
+            user_id=self._settings.USER_ID,
+            project_id=self._settings.PROJECT_ID,
+            node_id=self._settings.NODE_ID,
+            log_msg=message,
         )
 
     async def start_log_feching(self, container_name: str) -> None:

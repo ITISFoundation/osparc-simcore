@@ -310,6 +310,7 @@ services:
     networks:
       - default
       - computational_services_subnet
+      - interactive_services_subnet
     healthcheck:
       # see https://www.rabbitmq.com/monitoring.html#individual-checks for info about health-checks available in rabbitmq
       test: rabbitmq-diagnostics -q status

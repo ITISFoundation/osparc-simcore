@@ -4,9 +4,13 @@ from typing import Dict
 from settings_library.docker_registry import RegistrySettings
 from settings_library.rabbit import RabbitSettings
 
+from ...models.schemas.dynamic_services import SchedulerData
+
 
 def get_dynamic_sidecar_env_vars(
-    registry_settings: RegistrySettings, rabbit_settings: RabbitSettings
+    scheduler_data: SchedulerData,
+    registry_settings: RegistrySettings,
+    rabbit_settings: RabbitSettings,
 ) -> Dict[str, str]:
     return {
         "REGISTRY_AUTH": str(registry_settings.REGISTRY_AUTH),
@@ -20,4 +24,7 @@ def get_dynamic_sidecar_env_vars(
         "RABBIT_USER": str(rabbit_settings.RABBIT_USER),
         "RABBIT_PASSWORD": str(rabbit_settings.RABBIT_PASSWORD.get_secret_value()),
         "RABBIT_CHANNELS": json.dumps(rabbit_settings.RABBIT_CHANNELS),
+        "USER_ID": f"{scheduler_data.user_id}",
+        "PROJECT_ID": f"{scheduler_data.project_id}",
+        "NODE_ID": f"{scheduler_data.node_uuid}",
     }

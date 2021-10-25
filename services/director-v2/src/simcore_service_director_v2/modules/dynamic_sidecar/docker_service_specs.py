@@ -585,6 +585,7 @@ async def get_dynamic_sidecar_spec(
                     "SIMCORE_HOST_NAME": scheduler_data.service_name,
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
                     **get_dynamic_sidecar_env_vars(
+                        scheduler_data,
                         dynamic_sidecar_settings.REGISTRY,
                         dynamic_sidecar_settings.RABBIT_SETTINGS,
                     ),

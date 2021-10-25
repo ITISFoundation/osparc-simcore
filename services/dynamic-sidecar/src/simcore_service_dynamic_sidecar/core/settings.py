@@ -2,6 +2,9 @@ import logging
 from typing import Any, Optional
 
 from models_library.basic_types import BootModeEnum, PortInt
+from models_library.projects import ProjectID
+from models_library.projects_nodes import NodeID
+from models_library.users import UserID
 from pydantic import BaseSettings, Field, PositiveInt, validator
 from settings_library.docker_registry import RegistrySettings
 from settings_library.rabbit import RabbitSettings
@@ -86,6 +89,9 @@ class DynamicSidecarSettings(BaseSettings):
     registry: RegistrySettings
 
     RABBIT_SETTINGS: ToChangeRabbitSettings
+    USER_ID: UserID = Field(..., env="USER_ID")
+    PROJECT_ID: ProjectID = Field(..., env="PROJECT_ID")
+    NODE_ID: NodeID = Field(..., env="NODE_ID")
 
     @property
     def is_development_mode(self) -> bool:

@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any, AsyncGenerator
 from unittest import mock
+from uuid import uuid4
 
 import aiodocker
 import pytest
@@ -21,7 +22,7 @@ from simcore_service_dynamic_sidecar.core.shared_handlers import (
 from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope="module")
 def app() -> FastAPI:
     with mock.patch.dict(
         os.environ,
@@ -33,6 +34,9 @@ def app() -> FastAPI:
             "REGISTRY_PW": "test",
             "REGISTRY_SSL": "false",
             "RABBIT_ENABLED": "false",
+            "USER_ID": "1",
+            "PROJECT_ID": f"{uuid4()}",
+            "NODE_ID": f"{uuid4()}",
         },
     ):
         return assemble_application()
