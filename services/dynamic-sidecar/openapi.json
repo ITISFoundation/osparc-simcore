@@ -231,10 +231,10 @@
           {
             "required": true,
             "schema": {
-              "title": "Swarm Network Name",
+              "title": "Dynamic Sidecar Network Name",
               "type": "string"
             },
-            "name": "swarm_network_name",
+            "name": "dynamic_sidecar_network_name",
             "in": "query"
           }
         ],
