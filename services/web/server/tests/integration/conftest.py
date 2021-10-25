@@ -20,7 +20,6 @@ from pprint import pprint
 from typing import Dict, List
 from unittest import mock
 
-import mock
 import pytest
 import trafaret_config
 import yaml
