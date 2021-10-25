@@ -87,7 +87,7 @@ def _create_rabbit_message(
     message_name: str, node_uuid: str, user_id: str, project_id: str, param: Any
 ) -> Dict:
     message = {
-        "channel": message_name.title(),
+        "channel": message_name,
         "node_id": node_uuid,
         "user_id": user_id,
         "project_id": project_id,
