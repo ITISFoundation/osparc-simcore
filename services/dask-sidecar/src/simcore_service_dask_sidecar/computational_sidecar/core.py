@@ -83,21 +83,18 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 destination_path = task_volumes.inputs_folder / (
                     input_params.file_mapping or URL(input_params.url).path.strip("/")
                 )
-                with fsspec.open(f"{input_params.url}") as src, destination_path.open(
-                    "wb"
-                ) as dest:
+                await self._publish_sidecar_log(f"getting {destination_path.name}...")
+                with fsspec.open(
+                    f"{input_params.url}", compression="infer"
+                ) as src, destination_path.open("wb") as dest:
                     dest.write(src.read())
-
-                logger.info("wrote input file %s", destination_path)
-
+                await self._publish_sidecar_log(f"{destination_path.name} downloaded.")
             else:
                 input_data[input_key] = input_params
         input_data_file.write_text(json.dumps(input_data))
 
-        logger.info(
-            "wrote inputs data file in %s, containing %s",
-            input_data_file,
-            pformat(input_data),
+        await self._publish_sidecar_log(
+            f"Wrote all input files in /inputs/{input_data_file.name} downloaded."
         )
 
     async def _retrieve_output_data(
@@ -128,9 +125,12 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                         output_params.file_mapping
                         or URL(output_params.url).path.strip("/")
                     )
+                    await self._publish_sidecar_log(
+                        f"retrieved output {src_path}, uploading..."
+                    )
                     await copy_file_to_remote(src_path, output_params.url)
-
-                    logger.info("retrieved output file %s", src_path)
+                    await self._publish_sidecar_log(f"uploaded {src_path}.")
+            await self._publish_sidecar_log(f"retrieved all outputs.")
             logger.info("retrieved outputs data:\n%s", pformat(output_data.dict()))
             return output_data
 
@@ -139,15 +139,25 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 self.service_key, self.service_version
             ) from exc
 
-    async def run(self, command: List[str]) -> TaskOutputData:
-        publish_event(
-            self._state_pub, TaskStateEvent.from_dask_worker(state=RunningState.STARTED)
-        )
+    async def _publish_sidecar_log(self, log: str) -> None:
         publish_event(
             self._logs_pub,
-            TaskLogEvent.from_dask_worker(
-                log=f"[sidecar] Starting task for {self.service_key}:{self.service_version}..."
-            ),
+            TaskLogEvent.from_dask_worker(log=f"[sidecar] {log}"),
+        )
+        logger.info(log)
+
+    async def _publish_sidecar_state(
+        self, state: RunningState, msg: Optional[str] = None
+    ) -> None:
+        publish_event(
+            self._state_pub,
+            TaskStateEvent.from_dask_worker(state=state, msg=msg),
+        )
+
+    async def run(self, command: List[str]) -> TaskOutputData:
+        await self._publish_sidecar_state(RunningState.STARTED)
+        await self._publish_sidecar_log(
+            f"Starting task for {self.service_key}:{self.service_version}..."
         )
 
         settings = Settings.create_from_envs()
@@ -155,19 +165,14 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         async with Docker() as docker_client, TaskSharedVolumes(
             Path(f"{settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER}/{run_id}")
         ) as task_volumes:
-            publish_event(
-                self._logs_pub,
-                TaskLogEvent.from_dask_worker(
-                    log=f"[sidecar] Pulling image for {self.service_key}:{self.service_version}..."
-                ),
+            await self._publish_sidecar_log(
+                f"Pulling image for {self.service_key}:{self.service_version}..."
             )
             await pull_image(
                 docker_client, self.docker_auth, self.service_key, self.service_version
             )
-            publish_event(
-                self._logs_pub,
-                TaskLogEvent.from_dask_worker(log="[sidecar] Image pulled."),
-            )
+            await self._publish_sidecar_log("Image pulled.")
+
             integration_version = await get_integration_version(
                 docker_client, self.docker_auth, self.service_key, self.service_version
             )
@@ -187,9 +192,8 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
 
             # set up the inputs
             await self._write_input_data(task_volumes, integration_version)
-            publish_event(
-                self._logs_pub,
-                TaskLogEvent.from_dask_worker(log="[sidecar] Configuration done."),
+            await self._publish_sidecar_log(
+                "Configuration completed, starting container..."
             )
 
             # run the image
@@ -204,14 +208,11 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     task_volumes=task_volumes,
                     log_file_url=self.log_file_url,
                 ):
-                    publish_event(
-                        self._logs_pub,
-                        TaskLogEvent.from_dask_worker(
-                            log="[sidecar] Starting container..."
-                        ),
-                    )
                     # run the container
                     await container.start()
+                    await self._publish_sidecar_log(
+                        f"Container started as '{container.id}'..."
+                    )
                     # get the logs
                     # wait until the container finished, either success or fail or timeout
                     while (container_data := await container.show())["State"][
@@ -219,18 +220,13 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     ]:
                         await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
                     if container_data["State"]["ExitCode"] > 0:
-                        publish_event(
-                            self._state_pub,
-                            TaskStateEvent.from_dask_worker(
-                                state=RunningState.FAILED,
-                                msg=f"error while running container {container.id} for {self.service_key}:{self.service_version}",
-                            ),
+                        await self._publish_sidecar_state(
+                            RunningState.FAILED,
+                            msg=f"error while running container {container.id} for {self.service_key}:{self.service_version}",
                         )
-                        publish_event(
-                            self._logs_pub,
-                            TaskLogEvent.from_dask_worker(
-                                log=f"[sidecar] task failed with exit code{container_data['State']['ExitCode']}"
-                            ),
+
+                        await self._publish_sidecar_log(
+                            f"task FAILED with exit code '{container_data['State']['ExitCode']}'"
                         )
 
                         # the container had an error
@@ -252,12 +248,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             results = await self._retrieve_output_data(
                 task_volumes, integration_version
             )
-            publish_event(
-                self._logs_pub,
-                TaskLogEvent.from_dask_worker(
-                    log="[sidecar] task completed successfully"
-                ),
-            )
+            await self._publish_sidecar_log("task completed successfully")
             return results
 
     async def __aenter__(self) -> "ComputationalSidecar":
