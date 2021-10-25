@@ -303,7 +303,7 @@ qx.Class.define("osparc.component.form.Auto", {
             if (qx.lang.Type.isNumber(data)) {
               return String(data);
             }
-            return data;
+            return null;
           }
         },
         { // target2model

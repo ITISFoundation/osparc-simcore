@@ -43,6 +43,10 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
   construct: function() {
     this.base(arguments);
 
+    this.set({
+      indent: 8
+    });
+
     this.getContentElement().setStyles({
       "border-radius": "6px"
     });
@@ -175,12 +179,11 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       // The label
       this.addLabel();
       const label = this.getChildControl("label");
-      if (label) {
-        label.setMaxWidth(150);
-      }
-
-      // All else should be right justified
-      this.addWidget(new qx.ui.core.Spacer(), {
+      label.set({
+        allowGrowX: true,
+        allowShrinkX: true
+      });
+      label.setLayoutProperties({
         flex: 1
       });
 
