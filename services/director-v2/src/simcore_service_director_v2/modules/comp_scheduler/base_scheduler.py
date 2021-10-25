@@ -377,7 +377,7 @@ class BaseCompScheduler(ABC):
             ],
             return_exceptions=True,
         )
-        for r in results:
+        for r, t in zip(results, tasks_to_reqs):
             if isinstance(
                 r,
                 (
@@ -412,9 +412,9 @@ class BaseCompScheduler(ABC):
                     "Unexpected error happened when scheduling task due to following error %s",
                     f"{r}",
                 )
-                # await comp_tasks_repo.set_project_tasks_state(
-                #     project_id, [r.node_id], RunningState.FAILED
-                # )
+                await comp_tasks_repo.set_project_tasks_state(
+                    project_id, [t], RunningState.FAILED
+                )
 
     def _wake_up_scheduler_now(self) -> None:
         self.wake_up_event.set()
