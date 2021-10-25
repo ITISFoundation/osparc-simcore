@@ -1,7 +1,7 @@
 import logging
 from asyncio import CancelledError, Task, create_task
 from contextlib import suppress
-from typing import Any, Callable, Coroutine, Dict
+from typing import Any, Callable, Coroutine, Dict, Optional, cast
 
 from fastapi import FastAPI
 from models_library.projects import ProjectID
@@ -22,7 +22,10 @@ async def _logs_fetcher_worker(
     async with docker_client() as docker:
         container = await docker.containers.get(container_name)
 
-        # TODO: inspect the container and fetch from the labels
+        # TODO: where to fetch these values, maybe we need to
+        # attach them when startign the container via ENV vars
+        # and recover them from there
+        # not present on the containers
         user_id: UserID = None
         project_id: ProjectID = None
         node_id: NodeID = None
@@ -95,17 +98,40 @@ class BackgroundLogFetcher:
             await self.stop_log_fetching(container_name)
 
 
-async def setup_background_log_fetching(app: FastAPI) -> None:
-    app.state.background_log_fetcher = BackgroundLogFetcher(app)
+def _get_background_log_fetcher(app: FastAPI) -> Optional[BackgroundLogFetcher]:
+    if hasattr(app.state, "background_log_fetcher"):
+        return cast(BackgroundLogFetcher, app.state.background_log_fetcher)
+    return None
 
-    await app.state.background_log_fetcher.start_fetcher()
-    logger.info("Started background container log fetcher")
+
+async def start_log_fetching(app: FastAPI, container_name: str) -> None:
+    """start fetching logs from service"""
+    background_log_fetcher = _get_background_log_fetcher(app)
+    if background_log_fetcher is not None:
+        await background_log_fetcher.start_log_feching(container_name)
 
 
-async def stop_background_log_fetching(app: FastAPI) -> None:
-    if app.state.background_log_fetcher is None:
-        logger.warning("No background_log_fetcher to stop")
-        return
+async def stop_log_fetching(app: FastAPI, container_name: str) -> None:
+    """stop fetching logs from service"""
+    background_log_fetcher = _get_background_log_fetcher(app)
+    if background_log_fetcher is not None:
+        await background_log_fetcher.stop_log_fetching(container_name)
 
-    await app.state.background_log_fetcher.stop_fetcher()
-    logger.info("stopped background container log fetcher")
+
+def setup_background_log_fetcher(app: FastAPI) -> None:
+    async def on_startup() -> None:
+        app.state.background_log_fetcher = BackgroundLogFetcher(app)
+
+        await app.state.background_log_fetcher.start_fetcher()
+        logger.info("Started background container log fetcher")
+
+    async def on_shutdown() -> None:
+        if app.state.background_log_fetcher is None:
+            logger.warning("No background_log_fetcher to stop")
+            return
+
+        await app.state.background_log_fetcher.stop_fetcher()
+        logger.info("stopped background container log fetcher")
+
+    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", on_shutdown)
