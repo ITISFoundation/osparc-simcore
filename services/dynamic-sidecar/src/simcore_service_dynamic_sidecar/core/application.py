@@ -63,7 +63,7 @@ def assemble_application() -> FastAPI:
     if dynamic_sidecar_settings.is_development_mode:
         remote_debug_setup(application)
 
-    if dynamic_sidecar_settings.RABBIT_SETTINGS:
+    if dynamic_sidecar_settings.RABBIT_SETTINGS.RABBIT_ENABLED:
         setup_background_log_fetcher(application)
 
     # add routing paths

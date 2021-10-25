@@ -2,10 +2,15 @@ import logging
 from typing import Any, Optional
 
 from models_library.basic_types import BootModeEnum, PortInt
-from pydantic import Field, PositiveInt, validator
-from settings_library.base import BaseSettings
+from pydantic import BaseSettings, Field, PositiveInt, validator
 from settings_library.docker_registry import RegistrySettings
 from settings_library.rabbit import RabbitSettings
+
+
+# Remove when merging
+# https://github.com/ITISFoundation/osparc-simcore/pull/2509
+class ToChangeRabbitSettings(RabbitSettings):
+    RABBIT_ENABLED: bool = True
 
 
 class DynamicSidecarSettings(BaseSettings):
@@ -13,6 +18,7 @@ class DynamicSidecarSettings(BaseSettings):
     def create(cls, **settings_kwargs: Any) -> "DynamicSidecarSettings":
         return cls(
             registry=RegistrySettings(),
+            RABBIT_SETTINGS=RabbitSettings(),
             **settings_kwargs,
         )
 
@@ -79,7 +85,7 @@ class DynamicSidecarSettings(BaseSettings):
 
     registry: RegistrySettings
 
-    RABBIT_SETTINGS: Optional[RabbitSettings] = None
+    RABBIT_SETTINGS: ToChangeRabbitSettings
 
     @property
     def is_development_mode(self) -> bool:

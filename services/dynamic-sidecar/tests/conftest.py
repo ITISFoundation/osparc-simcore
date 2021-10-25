@@ -32,7 +32,7 @@ def app() -> FastAPI:
             "REGISTRY_user": "test",
             "REGISTRY_PW": "test",
             "REGISTRY_SSL": "false",
-            "RABBIT_SETTINGS": "null",
+            "RABBIT_ENABLED": "false",
         },
     ):
         return assemble_application()
