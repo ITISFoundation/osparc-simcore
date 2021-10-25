@@ -130,7 +130,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     )
                     await copy_file_to_remote(src_path, output_params.url)
                     await self._publish_sidecar_log(f"uploaded {src_path}.")
-            await self._publish_sidecar_log(f"retrieved all outputs.")
+            await self._publish_sidecar_log("retrieved all outputs.")
             logger.info("retrieved outputs data:\n%s", pformat(output_data.dict()))
             return output_data
 
