@@ -5,7 +5,6 @@ from pydantic.types import PositiveInt
 from ....core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
 
-# Proxy resources
 MEMORY_50MB = 52430000
 CPU_1_PERCENT = 10000000
 
