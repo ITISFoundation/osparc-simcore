@@ -27,8 +27,9 @@ TEMPORARY_PORT_NUMBER = 65_534
 
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 
-ServiceId = constr(max_length=64)
-NetworkId = constr(max_length=64)
+SHA256 = constr(max_length=64, regex=r"\b[A-Fa-f0-9]{64}\b")
+ServiceId = SHA256
+NetworkId = SHA256
 
 logger = logging.getLogger()
 
