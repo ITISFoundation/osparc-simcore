@@ -1,6 +1,5 @@
-import asyncio
+import zipfile
 from pathlib import Path
-from shutil import make_archive
 
 import aiofiles
 import fsspec
@@ -17,37 +16,35 @@ async def copy_file_to_remote(src_path: Path, dst_url: AnyUrl) -> None:
     if dst_url.scheme == "http":
         file_to_upload = src_path
         logger.debug("detected http presigned link! Uploading...")
-        if Path(URL(dst_url).path).suffix == ".zip" and src_path.suffix != ".zip":
-            logger.debug("detected destination is a zip, compressing %s", src_path)
-            async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
-                archive_file = await asyncio.get_event_loop().run_in_executor(
-                    None,
-                    make_archive,
-                    Path(URL(dst_url).path).stem,
-                    "zip",
-                    tmp_dir,
-                    src_path,
-                    logger,
-                )
-                logger.debug("compression to %s done", tmp_dir)
-                archive_file = Path(archive_file)
-                assert archive_file.exists  # no sec
-                file_to_upload = archive_file
+        async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
+            if Path(URL(dst_url).path).suffix == ".zip" and src_path.suffix != ".zip":
+                logger.debug("detected destination is a zip, compressing %s", src_path)
 
-        # NOTE: special case for http scheme when uploading. this is typically a S3 put presigned link.
-        # Therefore, we need to use the http filesystem directly in order to call the put_file function.
-        # writing on httpfilesystem is disabled by default.
+                compressed_dest_file = Path(tmp_dir) / Path(URL(dst_url).path).name
+                with zipfile.ZipFile(
+                    compressed_dest_file,
+                    "w",
+                    compression=zipfile.ZIP_DEFLATED,
+                ) as zf:
+                    zf.write(src_path, "logs.dat")
+                logger.debug("compression to %s done", compressed_dest_file)
 
-        fs = fsspec.filesystem(
-            "http",
-            headers={
-                "Content-Length": f"{file_to_upload.stat().st_size}",
-            },
-            asynchronous=True,
-        )
-        await fs._put_file(  # pylint: disable=protected-access
-            file_to_upload, f"{dst_url}", method="PUT"
-        )
+                file_to_upload = compressed_dest_file
+
+            # NOTE: special case for http scheme when uploading. this is typically a S3 put presigned link.
+            # Therefore, we need to use the http filesystem directly in order to call the put_file function.
+            # writing on httpfilesystem is disabled by default.
+
+            fs = fsspec.filesystem(
+                "http",
+                headers={
+                    "Content-Length": f"{file_to_upload.stat().st_size}",
+                },
+                asynchronous=True,
+            )
+            await fs._put_file(  # pylint: disable=protected-access
+                file_to_upload, f"{dst_url}", method="PUT"
+            )
     else:
         logger.debug("Uploading...")
         async with aiofiles.open(src_path, "rb") as src:

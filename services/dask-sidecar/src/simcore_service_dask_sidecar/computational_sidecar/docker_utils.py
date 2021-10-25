@@ -258,7 +258,9 @@ async def _parse_container_docker_logs(
         container_name,
     )
     # TODO: move that file somewhere else
-    async with aiofiles.tempfile.NamedTemporaryFile("wb+", delete=False) as log_fp:
+    async with aiofiles.tempfile.NamedTemporaryFile(
+        "wb+", delete=False, suffix=".dat"
+    ) as log_fp:
         async for log_line in container.log(
             stdout=True, stderr=True, follow=True, timestamps=True
         ):
@@ -308,6 +310,7 @@ async def _parse_container_docker_logs(
             container_name,
         )
         log_file_name = Path(log_fp.name)
+
         logger.debug(
             "monitoring 1.0+ container logs from container %s:%s: copying log file from %s to %s...",
             container.id,
