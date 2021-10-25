@@ -380,6 +380,15 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
     )
 
 
+@pytest.fixture
+def mock_garbage_collector_task(mocker):
+    """patch the setup of the garbage collector so we can call it manually"""
+    mocker.patch(
+        "simcore_service_webserver.resource_manager.module_setup.setup_garbage_collector",
+        return_value="",
+    )
+
+
 async def test_t2_cleanup_resources_after_browser_is_closed(
     mock_garbage_collector_task,
     simcore_services_ready,
