@@ -1,13 +1,19 @@
 from pathlib import Path
 from typing import Optional
 
-from pydantic import Field, NonNegativeInt
+from models_library.basic_types import LogLevel
+from pydantic import Field, NonNegativeInt, validator
 from settings_library.base import BaseCustomSettings
+from settings_library.logging_utils import MixinLoggingSettings
 
 
-class Settings(BaseCustomSettings):
+class Settings(BaseCustomSettings, MixinLoggingSettings):
     SC_BUILD_TARGET: Optional[str] = None
     SC_BOOT_MODE: Optional[str] = None
+    LOG_LEVEL: LogLevel = Field(
+        LogLevel.INFO.value,
+        env=["DASK_SIDECAR_LOGLEVEL", "SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+    )
 
     SWARM_STACK_NAME: str = "simcore"
 
@@ -58,3 +64,8 @@ class Settings(BaseCustomSettings):
     @classmethod
     def create_from_envs(cls) -> "Settings":
         return cls()
+
+    @validator("LOG_LEVEL", pre=True)
+    @classmethod
+    def _validate_loglevel(cls, value) -> str:
+        return cls.validate_log_level(value)

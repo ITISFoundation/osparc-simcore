@@ -16,6 +16,7 @@ from distributed.pubsub import Pub
 from packaging import version
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
+from yarl import URL
 
 from ..boot_mode import BootMode
 from ..dask_utils import LogType, create_dask_worker_logger, publish_task_logs
@@ -231,7 +232,8 @@ async def _parse_container_log_file(
             log_file_url,
         )
         # copy the log file to the log_file_url
-        await copy_file_to_remote(log_file, log_file_url)
+        file_to_upload = log_file
+        await copy_file_to_remote(file_to_upload, log_file_url)
 
         logger.debug(
             "monitoring legacy-style container log file: copying log file from %s to %s completed",
@@ -305,15 +307,18 @@ async def _parse_container_docker_logs(
             container.id,
             container_name,
         )
+        log_file_name = Path(log_fp.name)
         logger.debug(
-            "monitoring 1.0+ container logs from container %s:%s: copying log file to %s...",
+            "monitoring 1.0+ container logs from container %s:%s: copying log file from %s to %s...",
             container.id,
             container_name,
+            log_file_name,
             log_file_url,
         )
-        log_file_name = Path(log_fp.name)
+
     # copy the log file to the log_file_url
-    await copy_file_to_remote(log_file_name, log_file_url)
+    file_to_upload = log_file_name
+    await copy_file_to_remote(file_to_upload, log_file_url)
     log_file_name.unlink()
 
     logger.debug(

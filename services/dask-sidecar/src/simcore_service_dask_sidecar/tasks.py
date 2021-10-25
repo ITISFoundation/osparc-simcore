@@ -57,9 +57,10 @@ async def dask_setup(worker: distributed.Worker) -> None:
     """This is a special function recognized by the dask worker when starting with flag --preload"""
     settings = Settings.create_from_envs()
     # set up logging
-    if settings.SC_BOOT_MODE and settings.SC_BOOT_MODE.lower().startswith("debug"):
+    logging.basicConfig(level=settings.LOG_LEVEL.value)
+    logging.root.setLevel(level=settings.LOG_LEVEL.value)
+    logger.setLevel(level=settings.LOG_LEVEL.value)
 
-        logger.setLevel(logging.DEBUG)
     logger.info("Setting up worker...")
     logger.info("Settings: %s", pformat(settings.dict()))
 
