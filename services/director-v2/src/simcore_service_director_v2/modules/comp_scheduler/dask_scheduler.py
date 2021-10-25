@@ -9,14 +9,16 @@ from dask_task_models_library.container_tasks.events import (
     TaskProgressEvent,
     TaskStateEvent,
 )
+from dask_task_models_library.container_tasks.io import TaskOutputData
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.projects_state import RunningState
 
 from ...core.settings import DaskSchedulerSettings
 from ...models.domains.comp_tasks import CompTaskAtDB, Image
 from ...models.schemas.constants import ClusterID, UserID
 from ...modules.dask_client import DaskClient
-from ...utils.dask import parse_dask_job_id
+from ...utils.dask import parse_dask_job_id, parse_output_data
 from ...utils.scheduler import get_repository
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ..rabbitmq import RabbitMQClient
@@ -80,6 +82,16 @@ class DaskScheduler(BaseCompScheduler):
             "received task state update: %s",
             task_state_event,
         )
+
+        if task_state_event.state == RunningState.SUCCESS:
+            # we need to parse the results
+            assert task_state_event.msg  # no sec
+            await parse_output_data(
+                self.db_engine,
+                task_state_event.job_id,
+                TaskOutputData.parse_raw(task_state_event.msg),
+            )
+
         *_, project_id, node_id = parse_dask_job_id(task_state_event.job_id)
 
         comp_tasks_repo: CompTasksRepository = get_repository(

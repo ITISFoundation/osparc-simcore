@@ -3,6 +3,7 @@ from pprint import pformat
 from typing import Optional, Tuple
 from uuid import uuid4
 
+from aiopg.sa.engine import Engine
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
@@ -60,7 +61,9 @@ async def _create_node_ports(
     )
 
 
-async def parse_output_data(app: FastAPI, job_id: str, data: TaskOutputData) -> None:
+async def parse_output_data(
+    db_engine: Engine, job_id: str, data: TaskOutputData
+) -> None:
     (
         service_key,
         service_version,
@@ -78,8 +81,12 @@ async def parse_output_data(app: FastAPI, job_id: str, data: TaskOutputData) -> 
         node_id,
     )
 
-    ports = await _create_node_ports(
-        app=app, user_id=user_id, project_id=project_id, node_id=node_id
+    db_manager = node_ports_v2.DBManager(db_engine=db_engine)
+    ports = await node_ports_v2.ports(
+        user_id=user_id,
+        project_id=f"{project_id}",
+        node_uuid=f"{node_id}",
+        db_manager=db_manager,
     )
     for port_key, port_value in data.items():
         value_to_transfer: Optional[links.ItemValue] = None

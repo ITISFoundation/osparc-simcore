@@ -1,6 +1,6 @@
 import asyncio
 import collections
-import concurrent.futures
+import contextlib
 import functools
 import logging
 from dataclasses import dataclass, field
@@ -46,7 +46,6 @@ from ..utils.dask import (
     compute_output_data_schema,
     compute_service_log_file_upload_link,
     generate_dask_job_id,
-    parse_output_data,
 )
 
 logger = logging.getLogger(__name__)
@@ -63,18 +62,20 @@ CLUSTER_RESOURCE_MOCK_USAGE: float = 1e-9
 
 def _done_dask_callback(
     dask_future: dask.distributed.Future,
-    app: FastAPI,
     task_to_future_map: Dict[str, dask.distributed.Future],
     user_callback: Callable[[], None],
-    loop: asyncio.AbstractEventLoop,
 ):
-    # NOTE: here we are called in a separate task
+    # NOTE: BEWARE we are called in a separate thread!!
     job_id = dask_future.key
     try:
         dask_pub = distributed.Pub(TaskStateEvent.topic_name())
         if dask_future.status == "error":
             dask_pub.put(
-                TaskStateEvent(job_id=job_id, state=RunningState.FAILED).json()
+                TaskStateEvent(
+                    job_id=job_id,
+                    state=RunningState.FAILED,
+                    msg=f"{dask_future.exception(2)}",
+                ).json()
             )
         elif dask_future.cancelled():
             dask_pub.put(
@@ -83,40 +84,19 @@ def _done_dask_callback(
         else:
             # this gets the data out of the dask backend
             task_output_data = dask_future.result(timeout=5)
-            try:
-                # this callback is called in a secondary thread so we need to get back to the main
-                # thread for database accesses or else we ge into loop issues
-                future = asyncio.run_coroutine_threadsafe(
-                    parse_output_data(app, job_id, task_output_data), loop
-                )
-                future.result(timeout=5)
-                dask_pub.put(
-                    TaskStateEvent(job_id=job_id, state=RunningState.SUCCESS).json(),
-                )
-
-            except concurrent.futures.TimeoutError:
-                logger.error(
-                    "parsing output data of job %s timed-out, please check.",
-                    job_id,
-                    exc_info=True,
-                )
-                dask_pub.put(
-                    TaskStateEvent(job_id=job_id, state=RunningState.FAILED).json(),
-                )
-            except concurrent.futures.CancelledError:
-                logger.warning(
-                    "parsing output data of job %s was cancelled, please check.",
-                    job_id,
-                    exc_info=True,
-                )
-                dask_pub.put(
-                    TaskStateEvent(job_id=job_id, state=RunningState.FAILED).json(),
-                )
+            dask_pub.put(
+                TaskStateEvent(
+                    job_id=job_id,
+                    state=RunningState.SUCCESS,
+                    msg=task_output_data.json(),
+                ).json(),
+            )
 
     except dask.distributed.TimeoutError:
         logger.error(
-            "fetching result of '%s' timed-out, please check",
+            "fetching result of '%s' timed-out, please check dask client: %s",
             job_id,
+            dask_future.client.asynchronous,
             exc_info=True,
         )
     finally:
@@ -183,6 +163,8 @@ class DaskClient:
     async def delete(self) -> None:
         for task in self._subscribed_tasks:
             task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
 
         await self.app.state.dask_client.client.close()
 
@@ -213,9 +195,22 @@ class DaskClient:
         ):
             dask_sub = distributed.Sub(dask_sub_topic_name)
 
-            async for event in dask_sub:
-                logger.debug("received event %s", event)
-                await handler(event)
+            while True:
+                try:
+                    async for event in dask_sub:
+                        logger.debug("received event %s", event)
+                        await handler(event)
+                except asyncio.CancelledError:
+                    logger.debug(
+                        "cancelled dask sub handler for %s", dask_sub_topic_name
+                    )
+                    raise
+                except Exception:  # pylint: disable=broad-except
+                    logger.exception(
+                        "unknown exception in dask sub handler for %s",
+                        dask_sub_topic_name,
+                        exc_info=True,
+                    )
 
         for dask_sub, handler in [
             (
@@ -336,10 +331,8 @@ class DaskClient:
                 task_future.add_done_callback(
                     functools.partial(
                         _done_dask_callback,
-                        app=self.app,
                         task_to_future_map=self._taskid_to_future_map,
                         user_callback=callback,
-                        loop=asyncio.get_event_loop(),
                     )
                 )
 

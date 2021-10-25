@@ -7,6 +7,7 @@
 
 import asyncio
 import json
+import logging
 from collections import namedtuple
 from copy import deepcopy
 from pathlib import Path

@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, List
+from typing import Dict, Iterable, List
 from unittest import mock
 from uuid import uuid4
 
@@ -255,7 +255,7 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
 
 
 @pytest.fixture()
-def caplog_info_level(caplog: LogCaptureFixture) -> LogCaptureFixture:
+def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
     with caplog.at_level(
         logging.INFO,
     ):
