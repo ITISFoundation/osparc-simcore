@@ -115,7 +115,9 @@ async def _publish_messages(
     rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
     log_messages = [
-        _create_rabbit_message("log", node_uuid, user_id, project_id, f"log number {n}")
+        _create_rabbit_message(
+            "logger", node_uuid, user_id, project_id, f"log number {n}"
+        )
         for n in range(num_messages)
     ]
     progress_messages = [
