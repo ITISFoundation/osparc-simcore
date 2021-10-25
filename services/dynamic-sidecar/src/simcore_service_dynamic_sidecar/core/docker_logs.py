@@ -34,7 +34,7 @@ async def _logs_fetcher_worker(
 def _get_logger_for_(container_name: str) -> logging.Logger:
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(
-        logging.Formatter("%(name)-20s %(levelname)-4s %(message)s")
+        logging.Formatter("[%(levelname)-4s:%(name)-20s] %(message)s")
     )
     container_logger = logging.getLogger(container_name)
     container_logger.addHandler(stream_handler)
@@ -59,8 +59,6 @@ class BackgroundLogFetcher:
         await self.rabbit_mq.connect()
 
     async def _dispatch_logs(self, container_name: str, message: str) -> None:
-        message = _format_log(container_name, message)
-
         # logs from the containers will be logged at warning level to
         # make sure they are not lost in production environments
         # as these are very important to debug issues from users
@@ -72,7 +70,7 @@ class BackgroundLogFetcher:
             user_id=self._settings.USER_ID,
             project_id=self._settings.PROJECT_ID,
             node_id=self._settings.NODE_ID,
-            log_msg=message,
+            log_msg=_format_log(container_name, message),
         )
 
     async def start_log_feching(self, container_name: str) -> None:
