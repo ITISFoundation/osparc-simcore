@@ -1,8 +1,12 @@
+import json
 from typing import Dict
 
 from _pytest.monkeypatch import MonkeyPatch
 from settings_library.docker_registry import RegistrySettings
-from simcore_service_director_v2.utils.registry import get_dynamic_sidecar_env_vars
+from settings_library.rabbit import RabbitSettings
+from simcore_service_director_v2.modules.dynamic_sidecar.env import (
+    get_dynamic_sidecar_env_vars,
+)
 
 MOCKED_PASSWORD = "pwd"
 
@@ -20,6 +24,11 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
     "REGISTRY_USER",
     "REGISTRY_PW",
     "REGISTRY_SSL",
+    "RABBIT_HOST",
+    "RABBIT_PORT",
+    "RABBIT_USER",
+    "RABBIT_PASSWORD",
+    "RABBIT_CHANNELS",
 }
 
 
@@ -28,8 +37,11 @@ def test_dynamic_sidecar_env_vars(monkeypatch: MonkeyPatch) -> None:
         monkeypatch.setenv(key, value)
 
     registry_settings = RegistrySettings()
+    rabbit_settings = RabbitSettings()
 
-    dynamic_sidecar_env_vars = get_dynamic_sidecar_env_vars(registry_settings)
+    dynamic_sidecar_env_vars = get_dynamic_sidecar_env_vars(
+        registry_settings, rabbit_settings
+    )
     print("dynamic_sidecar_env_vars:", dynamic_sidecar_env_vars)
 
     assert len(dynamic_sidecar_env_vars) == len(EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES)
@@ -56,3 +68,14 @@ def test_dynamic_sidecar_env_vars(monkeypatch: MonkeyPatch) -> None:
 
     assert str(registry_settings.REGISTRY_PW) == "**********"
     assert registry_settings.REGISTRY_PW.get_secret_value() == MOCKED_PASSWORD
+
+    assert dynamic_sidecar_env_vars["RABBIT_HOST"] == str(rabbit_settings.RABBIT_HOST)
+    assert dynamic_sidecar_env_vars["RABBIT_PORT"] == str(rabbit_settings.RABBIT_PORT)
+    assert dynamic_sidecar_env_vars["RABBIT_USER"] == str(rabbit_settings.RABBIT_USER)
+    assert str(rabbit_settings.RABBIT_PASSWORD) == "**********"
+    assert dynamic_sidecar_env_vars["RABBIT_PASSWORD"] == str(
+        rabbit_settings.RABBIT_PASSWORD.get_secret_value()
+    )
+    assert json.dumps(
+        dynamic_sidecar_env_vars["RABBIT_CHANNELS"] == rabbit_settings.RABBIT_CHANNELS
+    )
