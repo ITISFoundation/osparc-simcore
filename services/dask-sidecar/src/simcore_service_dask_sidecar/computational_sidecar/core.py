@@ -29,7 +29,7 @@ from pydantic.networks import AnyUrl
 from yarl import URL
 
 from ..boot_mode import BootMode
-from ..dask_utils import create_dask_worker_logger, publish_event, publish_task_logs
+from ..dask_utils import create_dask_worker_logger, publish_event
 from ..file_utils import copy_file_to_remote
 from ..settings import Settings
 from .docker_utils import (
