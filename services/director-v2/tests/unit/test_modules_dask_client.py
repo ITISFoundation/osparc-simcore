@@ -23,6 +23,7 @@ from distributed.worker import TaskState
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from pydantic import AnyUrl
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
@@ -173,6 +174,10 @@ def mock_node_ports(mocker: MockerFixture):
         "simcore_service_director_v2.modules.dask_client.compute_output_data_schema",
         return_value=TaskOutputDataSchema.parse_obj({}),
     )
+    mocker.patch(
+        "simcore_service_director_v2.modules.dask_client.compute_service_log_file_upload_link",
+        return_value=AnyUrl("", scheme="", host=""),
+    )
 
 
 @pytest.mark.parametrize("image, expected_annotations", _image_to_req_params())
@@ -202,6 +207,7 @@ async def test_send_computation_task(
         service_version: str,
         input_data: TaskInputData,
         output_data_keys: TaskOutputDataSchema,
+        log_file_url: AnyUrl,
         command: List[str],
     ) -> TaskOutputData:
         from dask.distributed import get_worker
