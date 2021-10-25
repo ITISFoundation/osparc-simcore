@@ -1,8 +1,9 @@
+# pylint: disable=redefined-builtin
+
+import json
 import logging
 import traceback
-
-# pylint: disable=redefined-builtin
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from fastapi import (
     APIRouter,
@@ -233,21 +234,39 @@ async def get_container_logs(
 
 
 @containers_router.get(
-    "/containers/entrypoint",
+    "/containers/name",
     responses={
         status.HTTP_404_NOT_FOUND: {
             "description": "No entrypoint container found or spec is not yet present"
         },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Filters could not be parsed"
+        },
     },
 )
 async def get_entrypoint_container_name(
-    dynamic_sidecar_network_name: str,
+    filters: str = Query(
+        ...,
+        description=(
+            "JSON encoded dictionary. FastAPI does not "
+            "allow for dict as type in query parameters"
+        ),
+    ),
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> Union[str, Dict[str, Any]]:
     """
     Searches for the container's name given the network
     on which the proxy communicates with it.
+    Supported filters:
+        network: name of the network
     """
+    filters_dict: Dict[str, str] = json.loads(filters)
+    if not isinstance(filters_dict, dict):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Provided filters, could not parsed {filters_dict}",
+        )
+    network_name = filters_dict.get("network", None)
 
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
@@ -263,14 +282,14 @@ async def get_entrypoint_container_name(
     spec_services = compose_spec["services"]
     for service in spec_services:
         service_content = spec_services[service]
-        if dynamic_sidecar_network_name in service_content.get("networks", {}):
+        if network_name in service_content.get("networks", {}):
             container_name = service_content["container_name"]
             break
 
     if container_name is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
-            detail=f"No container found for network={dynamic_sidecar_network_name}",
+            detail=f"No container found for network={network_name}",
         )
 
     return f"{container_name}"

@@ -1,3 +1,4 @@
+import json
 import logging
 import traceback
 from typing import Any, Dict
@@ -166,9 +167,10 @@ class DynamicSidecarClient:
         it should be called again, because in the menwhile the containers
         might still be starting.
         """
+        filters = json.dumps({"network": dynamic_sidecar_network_name})
         url = get_url(
             dynamic_sidecar_endpoint,
-            f"/{self.API_VERSION}/containers/entrypoint?dynamic_sidecar_network_name={dynamic_sidecar_network_name}",
+            f"/{self.API_VERSION}/containers/name?filters={filters}",
         )
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:

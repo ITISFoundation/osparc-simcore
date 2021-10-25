@@ -219,22 +219,24 @@
         }
       }
     },
-    "/v1/containers/entrypoint": {
+    "/v1/containers/name": {
       "get": {
         "tags": [
           "containers"
         ],
         "summary": "Get Entrypoint Container Name",
-        "description": "Searches for the container's name given the network\non which the proxy communicates with it.",
-        "operationId": "get_entrypoint_container_name_v1_containers_entrypoint_get",
+        "description": "Searches for the container's name given the network\non which the proxy communicates with it.\nSupported filters:\n    network: name of the network",
+        "operationId": "get_entrypoint_container_name_v1_containers_name_get",
         "parameters": [
           {
+            "description": "JSON encoded dictionary. FastAPI does not allow for dict as type in query parameters",
             "required": true,
             "schema": {
-              "title": "Dynamic Sidecar Network Name",
-              "type": "string"
+              "title": "Filters",
+              "type": "string",
+              "description": "JSON encoded dictionary. FastAPI does not allow for dict as type in query parameters"
             },
-            "name": "dynamic_sidecar_network_name",
+            "name": "filters",
             "in": "query"
           }
         ],
@@ -251,14 +253,7 @@
             "description": "No entrypoint container found or spec is not yet present"
           },
           "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
+            "description": "Filters could not be parsed"
           }
         }
       }
