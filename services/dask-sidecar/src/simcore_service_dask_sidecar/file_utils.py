@@ -19,5 +19,5 @@ async def copy_file_to_remote(src_path: Path, dst_url: AnyUrl) -> None:
         fs.put_file(src_path, f"{dst_url}", method="PUT")
     else:
         async with aiofiles.open(src_path, "rb") as src:
-            with fsspec.open(f"{dst_url}", "wb") as dst:
+            with fsspec.open(f"{dst_url}", "wb", compression="infer") as dst:
                 dst.write(await src.read())

@@ -157,6 +157,6 @@ async def compute_service_log_file_upload_link(
         user_id=user_id,
         project_id=f"{project_id}",
         node_id=f"{node_id}",
-        file_name="log.dat",
+        file_name="logs.zip",
     )
     return value_link
