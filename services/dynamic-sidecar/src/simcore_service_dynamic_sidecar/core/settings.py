@@ -2,7 +2,8 @@ import logging
 from typing import Any, Optional
 
 from models_library.basic_types import BootModeEnum, PortInt
-from pydantic import BaseSettings, Field, PositiveInt, validator
+from pydantic import Field, PositiveInt, validator
+from settings_library.base import BaseSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.rabbit import RabbitSettings
 
@@ -77,7 +78,8 @@ class DynamicSidecarSettings(BaseSettings):
     )
 
     registry: RegistrySettings
-    RABBIT_SETTINGS: RabbitSettings
+
+    RABBIT_SETTINGS: Optional[RabbitSettings] = None
 
     @property
     def is_development_mode(self) -> bool:
