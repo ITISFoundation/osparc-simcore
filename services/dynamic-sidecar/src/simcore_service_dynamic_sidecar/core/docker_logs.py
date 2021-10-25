@@ -31,6 +31,16 @@ async def _logs_fetcher_worker(
             await dispatch_log(container_name=container_name, message=line)
 
 
+def _get_logger_for_(container_name: str) -> logging.Logger:
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(
+        logging.Formatter("%(name)-20s %(levelname)-4s %(message)s")
+    )
+    container_logger = logging.getLogger(container_name)
+    container_logger.addHandler(stream_handler)
+    return container_logger
+
+
 def _format_log(container_name: str, message: str) -> str:
     return f"[{container_name}] {message}"
 
@@ -43,6 +53,7 @@ class BackgroundLogFetcher:
         self.rabbit_mq: RabbitMQ = RabbitMQ(
             rabbit_settings=self._settings.RABBIT_SETTINGS
         )
+        self._container_loggers: Dict[str, logging.Logger] = {}
 
     async def start_fetcher(self) -> None:
         await self.rabbit_mq.connect()
@@ -53,7 +64,7 @@ class BackgroundLogFetcher:
         # logs from the containers will be logged at warning level to
         # make sure they are not lost in production environments
         # as these are very important to debug issues from users
-        logger.warning(message)
+        self._container_loggers[container_name].warning(message)
 
         # sending the logs to the UI to facilitate the
         # user debugging process
@@ -70,6 +81,7 @@ class BackgroundLogFetcher:
                 container_name=container_name, dispatch_log=self._dispatch_logs
             )
         )
+        self._container_loggers[container_name] = _get_logger_for_(container_name)
 
         logger.debug("Subscribed to fetch logs from '%s'", container_name)
 
@@ -80,6 +92,7 @@ class BackgroundLogFetcher:
             task.cancel()
             await task
         del self._log_processor_tasks[container_name]
+        del self._container_loggers[container_name]
         logger.debug("Logs fetch stopped from '%s'", container_name)
 
     async def stop_fetcher(self) -> None:
