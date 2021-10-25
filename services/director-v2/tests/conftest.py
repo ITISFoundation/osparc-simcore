@@ -48,6 +48,7 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.minio_service",
     "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
@@ -56,7 +57,9 @@ pytest_plugins = [
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
     "pytest_simcore.simcore_dask_service",
+    "pytest_simcore.simcore_dask_service",
     "pytest_simcore.simcore_services",
+    "pytest_simcore.simcore_storage_service",
     "pytest_simcore.tmp_path_extra",
 ]
 
