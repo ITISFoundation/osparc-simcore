@@ -9,7 +9,6 @@ from servicelib.aiohttp.aiopg_utils import (
     get_pg_engine_stateinfo,
     init_pg_tables,
     is_pg_responsive,
-    raise_if_not_responsive,
 )
 from servicelib.common_aiopg_utils import (
     close_engine,
@@ -32,7 +31,6 @@ async def _ensure_pg_ready(dsn: DataSourceName, min_size: int, max_size: int) ->
 
     engine = await create_pg_engine(dsn, minsize=min_size, maxsize=max_size)
     try:
-        await raise_if_not_responsive(engine)
         await raise_if_migration_not_ready(engine)
     except Exception:
         await close_engine(engine)

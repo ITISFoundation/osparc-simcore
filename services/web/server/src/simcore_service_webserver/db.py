@@ -12,7 +12,6 @@ from servicelib.aiohttp.aiopg_utils import (
     PostgresRetryPolicyUponInitialization,
     get_pg_engine_stateinfo,
     is_pg_responsive,
-    raise_if_not_responsive,
 )
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
@@ -38,7 +37,6 @@ async def _ensure_pg_ready(dsn: DataSourceName, min_size: int, max_size: int) ->
 
     engine = await create_pg_engine(dsn, minsize=min_size, maxsize=max_size)
     try:
-        await raise_if_not_responsive(engine)
         await raise_if_migration_not_ready(engine)
     except Exception:
         await close_engine(engine)
