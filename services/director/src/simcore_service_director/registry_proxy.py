@@ -39,7 +39,7 @@ class ServiceType(enum.Enum):
 
 
 async def _basic_auth_registry_request(
-    app: web.Application, path: str, method: str, **kwargs
+    app: web.Application, path: str, method: str, **session_kwargs
 ) -> Tuple[Dict, Dict]:
     if not config.REGISTRY_URL:
         raise exceptions.DirectorException("URL to registry is not defined")
@@ -60,13 +60,13 @@ async def _basic_auth_registry_request(
     session = app[APP_CLIENT_SESSION_KEY]
     try:
         async with session.request(
-            method.lower(), url, auth=auth, **kwargs
+            method.lower(), url, auth=auth, **session_kwargs
         ) as response:
             if response.status == HTTPStatus.UNAUTHORIZED:
                 logger.debug("Registry unauthorized request: %s", await response.text())
                 # basic mode failed, test with other auth mode
                 resp_data, resp_headers = await _auth_registry_request(
-                    url, method, response.headers, session, **kwargs
+                    url, method, response.headers, session, **session_kwargs
                 )
 
             elif response.status == HTTPStatus.NOT_FOUND:
@@ -173,13 +173,13 @@ async def registry_request(
     path: str,
     method: str = "GET",
     no_cache: bool = False,
-    **kwargs,
+    **session_kwargs,
 ) -> Tuple[Dict, Dict]:
     logger.debug(
         "Request to registry: path=%s, method=%s. no_cache=%s", path, method, no_cache
     )
     return await cache_requests(_basic_auth_registry_request, no_cache)(
-        app, path, method, **kwargs
+        app, path, method, **session_kwargs
     )
 
 
