@@ -104,7 +104,7 @@ async def get_upload_link_from_storage(
         store_name=config.STORE,
         s3_object=s3_object,
     )
-    return AnyUrl(f"{link}", scheme=link.scheme, host=link.host or "")
+    return parse_obj_as(AnyUrl, f"{link}")
 
 
 async def pull_file_from_store(

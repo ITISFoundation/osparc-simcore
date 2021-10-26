@@ -39,6 +39,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from packaging import version
 from pydantic import AnyUrl
+from pydantic.tools import parse_obj_as
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
@@ -223,10 +224,8 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         "echo 'some data for the output file' > ${OUTPUT_FOLDER}/a_outputfile",
     ]
 
-    log_file_url = AnyUrl(
-        f"{next(iter(ftp_server)).with_path('log.dat')}",
-        scheme=next(iter(ftp_server)).with_path("log.dat").scheme,
-        host=next(iter(ftp_server)).with_path("log.dat").host,
+    log_file_url = parse_obj_as(
+        AnyUrl, f"{next(iter(ftp_server)).with_path('log.dat')}"
     )
 
     return ServiceExampleParam(

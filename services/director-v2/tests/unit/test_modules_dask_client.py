@@ -24,6 +24,7 @@ from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import AnyUrl
+from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
@@ -176,7 +177,7 @@ def mock_node_ports(mocker: MockerFixture):
     )
     mocker.patch(
         "simcore_service_director_v2.modules.dask_client.compute_service_log_file_upload_link",
-        return_value=AnyUrl("", scheme="", host=""),
+        return_value=parse_obj_as(AnyUrl, ""),
     )
 
 
