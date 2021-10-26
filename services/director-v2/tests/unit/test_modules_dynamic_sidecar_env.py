@@ -1,5 +1,6 @@
 import json
 from typing import Dict
+from uuid import UUID
 
 from _pytest.monkeypatch import MonkeyPatch
 from settings_library.docker_registry import RegistrySettings
@@ -32,6 +33,9 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
     "RABBIT_USER",
     "RABBIT_PASSWORD",
     "RABBIT_CHANNELS",
+    "USER_ID",
+    "PROJECT_ID",
+    "NODE_ID",
 }
 
 
@@ -84,3 +88,7 @@ def test_dynamic_sidecar_env_vars(
     assert json.dumps(
         dynamic_sidecar_env_vars["RABBIT_CHANNELS"] == rabbit_settings.RABBIT_CHANNELS
     )
+
+    assert int(dynamic_sidecar_env_vars["USER_ID"]) >= 0
+    assert UUID(dynamic_sidecar_env_vars["PROJECT_ID"])
+    assert UUID(dynamic_sidecar_env_vars["NODE_ID"])
