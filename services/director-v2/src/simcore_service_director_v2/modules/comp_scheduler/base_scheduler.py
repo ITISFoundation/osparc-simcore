@@ -375,8 +375,8 @@ class BaseCompScheduler(ABC):
                     user_id,
                     project_id,
                     cluster_id,
-                    {t: r},
-                    self._wake_up_scheduler_now,
+                    scheduled_tasks={t: r},
+                    callback=self._wake_up_scheduler_now,
                 )
                 for t, r in tasks_to_reqs.items()
             ],

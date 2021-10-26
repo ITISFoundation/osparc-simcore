@@ -24,7 +24,6 @@ from dask_task_models_library.container_tasks.io import (
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.projects_state import RunningState
 from pydantic.networks import AnyUrl
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
@@ -42,9 +41,11 @@ from ..models.domains.comp_tasks import Image
 from ..models.schemas.constants import ClusterID, UserID
 from ..models.schemas.services import NodeRequirements
 from ..utils.dask import (
+    UserCompleteCB,
     compute_input_data,
     compute_output_data_schema,
     compute_service_log_file_upload_link,
+    done_dask_callback,
     generate_dask_job_id,
 )
 
@@ -58,50 +59,6 @@ dask_retry_policy = dict(
 )
 
 CLUSTER_RESOURCE_MOCK_USAGE: float = 1e-9
-
-
-def _done_dask_callback(
-    dask_future: dask.distributed.Future,
-    task_to_future_map: Dict[str, dask.distributed.Future],
-    user_callback: Callable[[], None],
-):
-    # NOTE: BEWARE we are called in a separate thread!!
-    job_id = dask_future.key
-    try:
-        dask_pub = distributed.Pub(TaskStateEvent.topic_name())
-        if dask_future.status == "error":
-            dask_pub.put(
-                TaskStateEvent(
-                    job_id=job_id,
-                    state=RunningState.FAILED,
-                    msg=f"{dask_future.exception(timeout=5)}",
-                ).json()
-            )
-        elif dask_future.cancelled():
-            dask_pub.put(
-                TaskStateEvent(job_id=job_id, state=RunningState.ABORTED).json(),
-            )
-        else:
-            # this gets the data out of the dask backend
-            task_output_data = dask_future.result(timeout=5)
-            dask_pub.put(
-                TaskStateEvent(
-                    job_id=job_id,
-                    state=RunningState.SUCCESS,
-                    msg=task_output_data.json(),
-                ).json(),
-            )
-
-    except dask.distributed.TimeoutError:
-        logger.error(
-            "fetching result of '%s' timed-out, please check",
-            job_id,
-            exc_info=True,
-        )
-    finally:
-        # remove the future from the dict to remove any handle to the future, so the worker can free the memory
-        task_to_future_map.pop(job_id)
-        user_callback()
 
 
 def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
@@ -238,7 +195,7 @@ class DaskClient:
         project_id: ProjectID,
         cluster_id: ClusterID,
         tasks: Dict[NodeID, Image],
-        callback: Callable[[], None],
+        callback: UserCompleteCB,
         remote_fct: Callable = None,
     ) -> List[Tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
@@ -329,9 +286,10 @@ class DaskClient:
                 )
                 task_future.add_done_callback(
                     functools.partial(
-                        _done_dask_callback,
+                        done_dask_callback,
                         task_to_future_map=self._taskid_to_future_map,
                         user_callback=callback,
+                        main_loop=asyncio.get_event_loop(),
                     )
                 )
 

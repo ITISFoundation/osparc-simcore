@@ -19,7 +19,7 @@ from ...models.domains.comp_tasks import CompTaskAtDB, Image
 from ...models.schemas.constants import ClusterID, UserID
 from ...modules.dask_client import DaskClient
 from ...utils.dask import parse_dask_job_id, parse_output_data
-from ...utils.scheduler import get_repository
+from ...utils.scheduler import COMPLETED_STATES, get_repository
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ..rabbitmq import RabbitMQClient
 from .base_scheduler import BaseCompScheduler
@@ -56,7 +56,7 @@ class DaskScheduler(BaseCompScheduler):
             project_id=project_id,
             cluster_id=cluster_id,
             tasks=scheduled_tasks,
-            callback=callback,
+            callback=self._on_task_completed,
         )
         logger.debug("started following tasks (node_id, job_id)[%s]", task_job_ids)
         # update the database so we do have the correct job_ids there
@@ -76,6 +76,34 @@ class DaskScheduler(BaseCompScheduler):
     async def _reconnect_backend(self) -> None:
         await self.dask_client.reconnect_client()
 
+    async def _on_task_completed(self, event: TaskStateEvent) -> None:
+        logger.warning(
+            "received task compeltion: %s",
+            event,
+        )
+        *_, project_id, node_id = parse_dask_job_id(event.job_id)
+
+        assert event.state in COMPLETED_STATES  # no sec
+
+        if event.state == RunningState.SUCCESS:
+            logger.info("task %s completed successfully", event.job_id)
+            # we need to parse the results
+            assert event.msg  # no sec
+            await parse_output_data(
+                self.db_engine,
+                event.job_id,
+                TaskOutputData.parse_raw(event.msg),
+            )
+        elif event.state == RunningState.ABORTED:
+            logger.info("task %s was aborted", event.job_id)
+        else:
+            logger.info("task %s failed", event.job_id)
+
+        await CompTasksRepository(self.db_engine).set_project_tasks_state(
+            project_id, [node_id], event.state
+        )
+        self._wake_up_scheduler_now()
+
     async def _task_state_change_handler(self, event: str) -> None:
         task_state_event = TaskStateEvent.parse_raw(event)
         logger.debug(
@@ -83,21 +111,8 @@ class DaskScheduler(BaseCompScheduler):
             task_state_event,
         )
 
-        if task_state_event.state == RunningState.SUCCESS:
-            # we need to parse the results
-            assert task_state_event.msg  # no sec
-            await parse_output_data(
-                self.db_engine,
-                task_state_event.job_id,
-                TaskOutputData.parse_raw(task_state_event.msg),
-            )
-
         *_, project_id, node_id = parse_dask_job_id(task_state_event.job_id)
-
-        comp_tasks_repo: CompTasksRepository = get_repository(
-            self.db_engine, CompTasksRepository
-        )  # type: ignore
-        await comp_tasks_repo.set_project_tasks_state(
+        await CompTasksRepository(self.db_engine).set_project_tasks_state(
             project_id, [node_id], task_state_event.state
         )
 

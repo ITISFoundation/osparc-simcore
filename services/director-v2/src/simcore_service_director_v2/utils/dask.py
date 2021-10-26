@@ -1,9 +1,12 @@
+import asyncio
 import logging
 from pprint import pformat
-from typing import Optional, Tuple
+from typing import Awaitable, Callable, Dict, Optional, Tuple
 from uuid import uuid4
 
+import dask.distributed
 from aiopg.sa.engine import Engine
+from dask_task_models_library.container_tasks.events import TaskStateEvent
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
@@ -13,6 +16,7 @@ from dask_task_models_library.container_tasks.io import (
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.projects_state import RunningState
 from pydantic import AnyUrl
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import links, port_utils
@@ -168,3 +172,53 @@ async def compute_service_log_file_upload_link(
         file_name=LOGS_FILE_NAME,
     )
     return value_link
+
+
+UserCompleteCB = Callable[[TaskStateEvent], Awaitable[None]]
+
+
+def done_dask_callback(
+    dask_future: dask.distributed.Future,
+    task_to_future_map: Dict[str, dask.distributed.Future],
+    user_callback: UserCompleteCB,
+    main_loop: asyncio.AbstractEventLoop,
+):
+    # NOTE: BEWARE we are called in a separate thread!!
+    job_id = dask_future.key
+    event_data: Optional[TaskStateEvent] = None
+    logger.debug("task '%s' completed with status %s", job_id, dask_future.status)
+    try:
+        if dask_future.status == "error":
+            event_data = TaskStateEvent(
+                job_id=job_id,
+                state=RunningState.FAILED,
+                msg=f"{dask_future.exception(timeout=5)}",
+            )
+        elif dask_future.cancelled():
+            event_data = TaskStateEvent(job_id=job_id, state=RunningState.ABORTED)
+        else:
+            event_data = TaskStateEvent(
+                job_id=job_id,
+                state=RunningState.SUCCESS,
+                msg=dask_future.result(timeout=5).json(),
+            )
+    except dask.distributed.TimeoutError:
+        event_data = TaskStateEvent(
+            job_id=job_id,
+            state=RunningState.FAILED,
+            msg=f"Timeout error getting results of '{job_id}'",
+        )
+        logger.error(
+            "fetching result of '%s' timed-out, please check",
+            job_id,
+            exc_info=True,
+        )
+    finally:
+        # remove the future from the dict to remove any handle to the future, so the worker can free the memory
+        task_to_future_map.pop(job_id)
+        logger.debug("dispatching callback to finish task '%s'", job_id)
+        assert event_data  # no sec
+        try:
+            asyncio.run_coroutine_threadsafe(user_callback(event_data), main_loop)
+        except Exception:  # pylint: disable=broad-except
+            logger.exception("Unexpected issue while transmitting state to main thread")
