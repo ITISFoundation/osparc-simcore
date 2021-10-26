@@ -4,11 +4,11 @@ from aiopg.sa.engine import Engine
 
 from .utils_migration import get_current_head
 
-ENGINE_ATTRS = "closed driver dsn freesize maxsize minsize name size timeout".split()
+_ENGINE_ATTRS = "closed driver dsn freesize maxsize minsize name size timeout".split()
 
 
 def get_pg_engine_info(engine: Engine) -> Dict[str, Any]:
-    return {attr: getattr(engine, attr, None) for attr in ENGINE_ATTRS}
+    return {attr: getattr(engine, attr, None) for attr in _ENGINE_ATTRS}
 
 
 def get_pg_engine_stateinfo(engine: Engine) -> Dict[str, Any]:

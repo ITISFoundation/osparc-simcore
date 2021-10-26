@@ -5,7 +5,6 @@ import orjson
 from aiopg.sa import Engine, create_engine
 from aiopg.sa.engine import get_dialect
 from fastapi import FastAPI
-from servicelib.common_aiopg_utils import ENGINE_ATTRS
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
 from settings_library.postgres import PostgresSettings
 from simcore_postgres_database.utils_aiopg import (
