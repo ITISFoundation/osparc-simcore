@@ -2,7 +2,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from typing import Any, Dict, Iterator
 
-import simcore_postgres_database.cli as pg_cli
+import simcore_postgres_database.cli
 import sqlalchemy as sa
 from simcore_postgres_database.models.base import metadata
 
@@ -23,8 +23,8 @@ def migrated_pg_tables_context(
         )
     )
 
-    pg_cli.discover.callback(**postgres_config)
-    pg_cli.upgrade.callback("head")
+    simcore_postgres_database.cli.discover.callback(**postgres_config)
+    simcore_postgres_database.cli.upgrade.callback("head")
 
     yield cfg
 
@@ -34,8 +34,8 @@ def migrated_pg_tables_context(
     # E.g. 'alembic_version' table is not deleted and keeps head version or routines
     # like 'notify_comp_tasks_changed' remain undeleted
     #
-    pg_cli.downgrade.callback("base")
-    pg_cli.clean.callback()  # just cleans discover cache
+    simcore_postgres_database.cli.downgrade.callback("base")
+    simcore_postgres_database.cli.clean.callback()  # just cleans discover cache
 
     # FIXME: migration downgrade fails to remove User types
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
