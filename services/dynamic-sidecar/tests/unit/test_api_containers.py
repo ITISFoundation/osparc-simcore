@@ -8,6 +8,7 @@ from typing import Any, Dict, List
 
 import faker
 import pytest
+import yaml
 from async_asgi_testclient import TestClient
 from fastapi import status
 from pytest_mock.plugin import MockerFixture
@@ -17,6 +18,7 @@ from simcore_service_dynamic_sidecar.core.shared_handlers import (
     write_file_and_run_command,
 )
 from simcore_service_dynamic_sidecar.core.utils import async_command
+from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
 
 DEFAULT_COMMAND_TIMEOUT = 5.0
@@ -27,14 +29,23 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-def compose_spec() -> str:
+def dynamic_sidecar_network_name() -> str:
+    return "entrypoint_container_network"
+
+
+@pytest.fixture
+def compose_spec(dynamic_sidecar_network_name: str) -> str:
     return json.dumps(
         {
             "version": "3",
             "services": {
-                "first-box": {"image": "busybox"},
+                "first-box": {
+                    "image": "busybox",
+                    "networks": [dynamic_sidecar_network_name],
+                },
                 "second-box": {"image": "busybox"},
             },
+            "networks": {dynamic_sidecar_network_name: {}},
         }
     )
 
@@ -213,7 +224,7 @@ async def test_containers_down_missing_spec(
         f"/{API_VTAG}/containers:down",
         query_string=dict(command_timeout=DEFAULT_COMMAND_TIMEOUT),
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
+    assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
     assert response.json() == {"detail": "No spec for docker-compose down was found"}
 
 
@@ -369,3 +380,57 @@ async def test_container_push_output_ports(
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
+
+
+def _get_entrypoint_container_name(
+    test_client: TestClient, dynamic_sidecar_network_name: str
+) -> str:
+    parsed_spec = parse_compose_spec(
+        test_client.application.state.shared_store.compose_spec
+    )
+    container_name = None
+    for service_name, service_details in parsed_spec["services"].items():
+        if dynamic_sidecar_network_name in service_details.get("networks", []):
+            container_name = service_name
+            break
+    assert container_name is not None
+    return container_name
+
+
+async def test_containers_entrypoint_name_ok(
+    test_client: TestClient,
+    dynamic_sidecar_network_name: str,
+    started_containers: List[str],
+) -> None:
+    filters = json.dumps({"network": dynamic_sidecar_network_name})
+    response = await test_client.get(f"/{API_VTAG}/containers/name?filters={filters}")
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert response.json() == _get_entrypoint_container_name(
+        test_client, dynamic_sidecar_network_name
+    )
+
+
+async def test_containers_entrypoint_name_containers_not_started(
+    test_client: TestClient,
+    dynamic_sidecar_network_name: str,
+    started_containers: List[str],
+) -> None:
+    entrypoint_container = _get_entrypoint_container_name(
+        test_client, dynamic_sidecar_network_name
+    )
+
+    # remove the container from the spec
+    parsed_spec = parse_compose_spec(
+        test_client.application.state.shared_store.compose_spec
+    )
+    del parsed_spec["services"][entrypoint_container]
+    test_client.application.state.shared_store.compose_spec = yaml.safe_dump(
+        parsed_spec
+    )
+
+    filters = json.dumps({"network": dynamic_sidecar_network_name})
+    response = await test_client.get(f"/{API_VTAG}/containers/name?filters={filters}")
+    assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
+    assert response.json() == {
+        "detail": "No container found for network=entrypoint_container_network"
+    }

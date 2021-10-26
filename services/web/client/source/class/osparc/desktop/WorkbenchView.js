@@ -25,7 +25,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   construct: function() {
     this.base(arguments, "horizontal");
 
-    this.getChildControl("splitter").setWidth(1);
+    this.setOffset(2);
+    osparc.desktop.WorkbenchView.decorateSplitter(this.getChildControl("splitter"));
 
     this.__sidePanels = this.getChildControl("side-panels");
     this.getChildControl("main-panel-tabs");
@@ -33,6 +34,26 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     this.__workbenchUI = this.__workbenchPanel.getMainView();
 
     this.__attachEventHandlers();
+  },
+
+  statics: {
+    TAB_BUTTON_HEIGHT: 50,
+
+    decorateSplitter: function(splitter) {
+      splitter.setWidth(2);
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const binaryColor = osparc.utils.Utils.getRoundedBinaryColor(colorManager.resolve("background-main"));
+      splitter.setBackgroundColor(binaryColor);
+      colorManager.addListener("changeTheme", () => {
+        const newBinaryColor = osparc.utils.Utils.getRoundedBinaryColor(colorManager.resolve("background-main"));
+        splitter.setBackgroundColor(newBinaryColor);
+      }, this);
+    }
+  },
+
+  events: {
+    "collapseNavBar": "qx.event.type.Event",
+    "expandNavBar": "qx.event.type.Event"
   },
 
   properties: {
@@ -63,38 +84,100 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       switch (id) {
         case "side-panels": {
           control = new qx.ui.splitpane.Pane("horizontal").set({
-            minWidth: 0,
-            width: Math.min(parseInt(window.innerWidth * 0.4), 550)
+            offset: 2,
+            width: Math.min(parseInt(window.innerWidth * (0.16+0.24)), 550)
           });
-          control.getChildControl("splitter").setWidth(1);
-          osparc.utils.Utils.addBorder(control, 2, "right");
+          osparc.desktop.WorkbenchView.decorateSplitter(control.getChildControl("splitter"));
           this.add(control, 0); // flex 0
+          break;
+        }
+        case "collapsible-view-left": {
+          const sidePanels = this.getChildControl("side-panels");
+          control = new osparc.component.widget.CollapsibleViewLight().set({
+            minWidth: 15,
+            width: Math.min(parseInt(window.innerWidth * 0.16), 240)
+          });
+          const caretExpandedLayout = control.getChildControl("caret-expanded-layout");
+          caretExpandedLayout.addAt(this.__createCollapsibleViewSpacer(), 0);
+          const caretCollapsedLayout = control.getChildControl("caret-collapsed-layout");
+          caretCollapsedLayout.addAt(this.__createCollapsibleViewSpacer(), 0);
+          control.bind("collapsed", control, "maxWidth", {
+            converter: collapsed => collapsed ? 15 : null
+          });
+          control.bind("collapsed", sidePanels, "width", {
+            converter: collapsed => this.__getSidePanelsNewWidth(collapsed, sidePanels, control)
+          });
+          control.addListener("changeCollapsed", e => {
+            const collapsed = e.getData();
+            const collapsibleViewLeft = this.getChildControl("collapsible-view-right");
+            // if both panes are collapsed set the maxWidth of the layout to 2*15
+            if (collapsed && collapsibleViewLeft.isCollapsed()) {
+              sidePanels.setMaxWidth(2*15);
+            } else {
+              sidePanels.setMaxWidth(null);
+            }
+          }, this);
+          // flex 0 by default, this will be changed if "collapsible-view-right" gets collapsed
+          sidePanels.add(control, 0);
+          break;
+        }
+        case "collapsible-view-right": {
+          const sidePanels = this.getChildControl("side-panels");
+          control = new osparc.component.widget.CollapsibleViewLight().set({
+            minWidth: 15,
+            width: Math.min(parseInt(window.innerWidth * 0.24), 310)
+          });
+          const caretExpandedLayout = control.getChildControl("caret-expanded-layout");
+          caretExpandedLayout.addAt(this.__createCollapsibleViewSpacer(), 0);
+          const caretCollapsedLayout = control.getChildControl("caret-collapsed-layout");
+          caretCollapsedLayout.addAt(this.__createCollapsibleViewSpacer(), 0);
+          control.bind("collapsed", control, "maxWidth", {
+            converter: collapsed => collapsed ? 15 : null
+          });
+          control.bind("collapsed", sidePanels, "width", {
+            converter: collapsed => this.__getSidePanelsNewWidth(collapsed, sidePanels, control)
+          });
+          control.addListener("changeCollapsed", e => {
+            // switch flex to 1 if the secondary pane gets collapsed
+            const collapsed = e.getData();
+            const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
+            collapsibleViewLeft.setLayoutProperties({flex: collapsed ? 1 : 0});
+            control.setLayoutProperties({flex: collapsed ? 0 : 1});
+
+            // if both panes are collapsed set the maxWidth of the layout to 2*15
+            if (collapsed && collapsibleViewLeft.isCollapsed()) {
+              sidePanels.setMaxWidth(2*15);
+            } else {
+              sidePanels.setMaxWidth(null);
+            }
+          }, this);
+          sidePanels.add(control, 1); // flex 1
           break;
         }
         case "side-panel-left-tabs": {
           control = new qx.ui.tabview.TabView().set({
-            minWidth: 250,
-            contentPadding: 6,
+            contentPadding: 8,
             barPosition: "top"
           });
-          osparc.utils.Utils.addBorder(control, 2, "right");
-          const sidePanels = this.getChildControl("side-panels");
-          sidePanels.add(control, 1); // flex 1
+          const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
+          collapsibleViewLeft.setContent(control);
+          control.setBackgroundColor("background-main-lighter+");
+          collapsibleViewLeft.getChildControl("expand-button").setBackgroundColor("background-main-lighter+");
+          collapsibleViewLeft.getChildControl("collapse-button").setBackgroundColor("background-main-lighter+");
           break;
         }
         case "side-panel-right-tabs": {
           control = new qx.ui.tabview.TabView().set({
-            minWidth: 300,
-            contentPadding: 6,
+            contentPadding: 8,
             barPosition: "top"
           });
-          const sidePanels = this.getChildControl("side-panels");
-          sidePanels.add(control, 1); // flex 1
+          const collapsibleViewRight = this.getChildControl("collapsible-view-right");
+          collapsibleViewRight.setContent(control);
           break;
         }
         case "main-panel-tabs": {
           control = new qx.ui.tabview.TabView().set({
-            contentPadding: 0,
+            contentPadding: 2,
             barPosition: "top"
           });
           this.add(control, 1); // flex 1
@@ -102,6 +185,17 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
       }
       return control || this.base(arguments, id);
+    },
+
+    __getSidePanelsNewWidth: function(collapsed, sidePanels, collapsibleView) {
+      const content = collapsibleView.getContent();
+      if (sidePanels && sidePanels.getBounds() && content && content.getBounds()) {
+        const oldWidth = sidePanels.getBounds().width;
+        const contentWidth = content.getBounds().width;
+        // if collapsed set width to show collapse button only
+        return collapsed ? (oldWidth - contentWidth) : (oldWidth + contentWidth);
+      }
+      return null;
     },
 
     _applyStudy: function(study) {
@@ -113,14 +207,25 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__workbenchPanel.getToolbar().setStudy(study);
     },
 
-    __createTabPage: function(icon, tooltip, widget) {
+    __createTabPage: function(icon, tooltip, widget, backgroundColor = "background-main") {
       const tabPage = new qx.ui.tabview.Page().set({
         layout: new qx.ui.layout.VBox(5),
-        backgroundColor: "background-main",
+        backgroundColor,
         icon: icon+"/24"
       });
-      tabPage.getChildControl("button").set({
-        toolTipText: tooltip
+      const tabPageBtn = tabPage.getChildControl("button").set({
+        toolTipText: tooltip,
+        paddingTop: 12,
+        height: this.self().TAB_BUTTON_HEIGHT,
+        alignX: "center",
+        alignY: "middle",
+        backgroundColor
+      });
+      tabPageBtn.getContentElement().setStyles({
+        "border": "0px"
+      });
+      tabPageBtn.bind("value", tabPageBtn, "backgroundColor", {
+        converter: val => val ? backgroundColor : "contrasted-background+"
       });
       if (widget) {
         tabPage.add(widget, {
@@ -141,39 +246,52 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __initPrimaryColumn: function() {
+      const primaryColumnBGColor = "background-main-lighter+";
       const study = this.getStudy();
 
       const tabViewPrimary = this.getChildControl("side-panel-left-tabs");
       this.__removePages(tabViewPrimary);
+      tabViewPrimary.setBackgroundColor(primaryColumnBGColor);
+      const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
+      collapsibleViewLeft.getChildControl("expand-button").setBackgroundColor(primaryColumnBGColor);
+      collapsibleViewLeft.getChildControl("collapse-button").setBackgroundColor(primaryColumnBGColor);
+
 
       const topBar = tabViewPrimary.getChildControl("bar");
       this.__addTopBarSpacer(topBar);
 
-      const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
+      const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(0)).set({
+        backgroundColor: primaryColumnBGColor
+      });
 
       const studyTreeItem = this.__studyTreeItem = new osparc.component.widget.StudyTitleOnlyTree().set({
-        minHeight: 21,
-        maxHeight: 24
+        alignY: "middle",
+        minHeight: 32,
+        maxHeight: 32,
+        backgroundColor: primaryColumnBGColor,
+        marginBottom: 5
       });
       studyTreeItem.setStudy(study);
       homeAndNodesTree.add(studyTreeItem);
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree().set({
+        backgroundColor: primaryColumnBGColor,
         hideRoot: true
       });
       nodesTree.setStudy(study);
       homeAndNodesTree.add(nodesTree, {
         flex: 1
       });
-      const nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree);
+      const nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, primaryColumnBGColor);
       tabViewPrimary.add(nodesPage);
 
       const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
+        backgroundColor: primaryColumnBGColor,
         dragMechanism: true,
         hideRoot: true
       });
       filesTree.populateTree();
-      const storagePage = this.__storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTree);
+      const storagePage = this.__storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTree, primaryColumnBGColor);
       tabViewPrimary.add(storagePage);
 
       this.__addTopBarSpacer(topBar);
@@ -213,6 +331,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const topBar = tabViewMain.getChildControl("bar");
       this.__addTopBarSpacer(topBar);
 
+
       this.__workbenchUI.setStudy(study);
       this.__workbenchUI.loadModel(study.getWorkbench());
       const workbenchPanelPage = this.__workbenchPanelPage = this.__createTabPage("@FontAwesome5Solid/object-group", this.tr("Workbench"), this.__workbenchPanel);
@@ -227,7 +346,31 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       osparc.utils.Utils.setIdToWidget(logsPage.getChildControl("button"), "loggerTabButton");
       tabViewMain.add(logsPage);
 
+
       this.__addTopBarSpacer(topBar);
+
+
+      const collapseExpandNavBarStack = new qx.ui.container.Stack();
+
+      const collapseNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-up/14").set({
+        backgroundColor: "contrasted-background+"
+      });
+      collapseExpandNavBarStack.add(collapseNavBarBtn);
+      collapseNavBarBtn.addListener("execute", () => {
+        collapseExpandNavBarStack.setSelection([collapseExpandNavBarStack.getSelectables()[1]]);
+        this.fireEvent("collapseNavBar");
+      });
+
+      const expandNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-down/14").set({
+        backgroundColor: "contrasted-background+"
+      });
+      collapseExpandNavBarStack.add(expandNavBarBtn);
+      expandNavBarBtn.addListener("execute", () => {
+        collapseExpandNavBarStack.setSelection([collapseExpandNavBarStack.getSelectables()[0]]);
+        this.fireEvent("expandNavBar");
+      });
+
+      topBar.add(collapseExpandNavBarStack);
     },
 
     __removePages: function(tabView) {
@@ -242,10 +385,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __addTopBarSpacer: function(tabViewTopBar) {
-      const spacer = new qx.ui.core.Spacer();
+      const spacer = new qx.ui.core.Widget().set({
+        backgroundColor: "contrasted-background+"
+      });
       tabViewTopBar.add(spacer, {
         flex: 1
       });
+    },
+
+    __createCollapsibleViewSpacer: function() {
+      const spacer = new qx.ui.core.Widget().set({
+        backgroundColor: "contrasted-background+",
+        height: this.self().TAB_BUTTON_HEIGHT
+      });
+      return spacer;
     },
 
     __connectEvents: function() {
@@ -288,7 +441,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         if (node) {
           this.__populateSecondPanel(node);
           this.__openIframeTab(node);
-          this.__maximizeIframe(true);
+          node.getLoadingPage().maximizeIFrame(true);
+          node.getIFrame().maximizeIFrame(true);
         }
         const nodeUI = workbenchUI.getNodeUI(nodeId);
         if (nodeUI) {
@@ -594,26 +748,31 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __populateSecondPanelNode: function(node) {
       this.__settingsPage.getChildControl("button").show();
-      this.__outputsPage.getChildControl("button").show();
       this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
 
       if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
-        this.__settingsPage.add(node.getPropsForm(), {
+        const scrollContariner = new qx.ui.container.Scroll();
+        scrollContariner.add(node.getPropsForm());
+        this.__settingsPage.add(scrollContariner, {
           flex: 1
         });
       }
 
-      const portTree = new osparc.component.widget.inputs.NodeOutputTree(node, node.getMetaData().outputs).set({
-        allowGrowY: false
-      });
-      this.__outputsPage.add(portTree);
+      if (node.hasOutputs()) {
+        this.__outputsPage.getChildControl("button").show();
 
-      const outputFilesBtn = new qx.ui.form.Button(this.tr("Artifacts"), "@FontAwesome5Solid/folder-open/14").set({
-        allowGrowX: false
-      });
-      osparc.utils.Utils.setIdToWidget(outputFilesBtn, "nodeOutputFilesBtn");
-      outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
-      this.__outputsPage.add(outputFilesBtn);
+        const portTree = new osparc.component.widget.inputs.NodeOutputTree(node, node.getMetaData().outputs).set({
+          allowGrowY: false
+        });
+        this.__outputsPage.add(portTree);
+
+        const outputFilesBtn = new qx.ui.form.Button(this.tr("Artifacts"), "@FontAwesome5Solid/folder-open/14").set({
+          allowGrowX: false
+        });
+        osparc.utils.Utils.setIdToWidget(outputFilesBtn, "nodeOutputFilesBtn");
+        outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
+        this.__outputsPage.add(outputFilesBtn);
+      }
     },
 
     getLogger: function() {
@@ -799,7 +958,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.nodeSelected(dynamicNode.getNodeId());
           qx.event.Timer.once(() => {
             this.__openIframeTab(dynamicNode);
-            this.__maximizeIframe(true);
+            dynamicNode.getLoadingPage().maximizeIFrame(true);
+            dynamicNode.getIFrame().maximizeIFrame(true);
           }, this, 10);
           return;
         }

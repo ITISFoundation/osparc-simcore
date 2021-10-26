@@ -321,14 +321,7 @@ async function openLastNode(page) {
 async function restoreIFrame(page) {
   console.log("Restoring iFrame");
 
-  await utils.waitAndClick(page, '[osparc-test-id="iframeTabButton"]')
   await utils.waitAndClick(page, '[osparc-test-id="restoreBtn"]')
-}
-
-async function maximizeIFrame(page) {
-  console.log("Maximizing iFrame");
-
-  await utils.waitAndClick(page, '[osparc-test-id="maximizeBtn"]')
 }
 
 async function openNodeFiles(page) {
@@ -398,7 +391,6 @@ module.exports = {
   openNode,
   openLastNode,
   restoreIFrame,
-  maximizeIFrame,
   openNodeFiles,
   checkDataProducedByNode,
   downloadSelectedFile,

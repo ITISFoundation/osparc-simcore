@@ -44,7 +44,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     fl.setColumnFlex(this.self().gridPos.info, 0);
     fl.setColumnAlign(this.self().gridPos.info, "left", "middle");
     fl.setColumnFlex(this.self().gridPos.ctrlField, 1);
-    fl.setColumnMinWidth(this.self().gridPos.ctrlField, 100);
+    fl.setColumnMinWidth(this.self().gridPos.ctrlField, 50);
   },
 
   properties: {
@@ -234,10 +234,6 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
 
     _getLabelFieldChild: function(portId) {
       return this._getLayoutChild(portId, this.self().gridPos.label);
-    },
-
-    _getInfoFieldChild: function(portId) {
-      return this._getLayoutChild(portId, this.self().gridPos.info);
     },
 
     _getCtrlFieldChild: function(portId) {

@@ -5,10 +5,9 @@ from typing import Any, Dict, List, Optional
 import yaml
 from fastapi.applications import FastAPI
 from models_library.service_settings_labels import ComposeSpecLabel, PathMappingsLabel
-from pydantic import PositiveInt
 
 from ...core.settings import DynamicSidecarSettings
-from .docker_service_specs_settings import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
+from .docker_service_specs import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
 
 CONTAINER_NAME = "container"
 BASE_SERVICE_SPEC: Dict[str, Any] = {
@@ -17,14 +16,15 @@ BASE_SERVICE_SPEC: Dict[str, Any] = {
 }
 
 
-def _inject_traefik_configuration(
+def _inject_proxy_network_configuration(
     service_spec: Dict[str, Any],
     target_container: str,
     dynamic_sidecar_network_name: str,
-    simcore_traefik_zone: str,
-    service_port: PositiveInt,
 ) -> None:
-    """Injects configuration to allow the service to be accessible on the uuid.services.SERVICE_DNS"""
+    """
+    Injects network configuration to allow the service
+    to be accessible on `uuid.services.SERVICE_DNS`
+    """
 
     # add external network to existing networks defined in the container
     service_spec["networks"] = {
@@ -34,31 +34,11 @@ def _inject_traefik_configuration(
         }
     }
 
-    # Inject Traefik rules on target container
-    target_container_spec = service_spec["services"][target_container]
-
     # attach overlay network to container
+    target_container_spec = service_spec["services"][target_container]
     container_networks = target_container_spec.get("networks", [])
     container_networks.append(dynamic_sidecar_network_name)
     target_container_spec["networks"] = container_networks
-
-    # expose spawned container to the internet
-    labels = target_container_spec.get("labels", [])
-    labels.extend(
-        [
-            f"io.simcore.zone={simcore_traefik_zone}",
-            "traefik.enable=true",
-            f"traefik.http.services.{target_container}.loadbalancer.server.port={service_port}",
-            f"traefik.http.services.{target_container}.loadbalancer.healthcheck.path=/",
-            f"traefik.http.services.{target_container}.loadbalancer.healthcheck.interval=5s",
-            f"traefik.http.services.{target_container}.loadbalancer.healthcheck.timeout=3s",
-            f"traefik.http.routers.{target_container}.entrypoints=http",
-            f"traefik.http.routers.{target_container}.rule=PathPrefix(`/`)",
-        ]
-    )
-
-    # put back updated labels
-    target_container_spec["labels"] = labels
 
 
 def _inject_paths_mappings(
@@ -102,7 +82,6 @@ def _replace_env_vars_in_compose_spec(
 
 
 async def assemble_spec(
-    # pylint: disable=too-many-arguments
     app: FastAPI,
     service_key: str,
     service_tag: str,
@@ -110,8 +89,6 @@ async def assemble_spec(
     compose_spec: ComposeSpecLabel,
     container_http_entry: Optional[str],
     dynamic_sidecar_network_name: str,
-    simcore_traefik_zone: str,
-    service_port: PositiveInt,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -135,12 +112,10 @@ async def assemble_spec(
 
     assert container_name is not None  # nosec
 
-    _inject_traefik_configuration(
+    _inject_proxy_network_configuration(
         service_spec,
         target_container=container_name,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
-        simcore_traefik_zone=simcore_traefik_zone,
-        service_port=service_port,
     )
 
     _inject_paths_mappings(service_spec, paths_mapping)

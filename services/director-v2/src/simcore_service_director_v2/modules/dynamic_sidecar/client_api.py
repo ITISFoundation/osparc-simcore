@@ -1,3 +1,4 @@
+import json
 import logging
 import traceback
 from typing import Any, Dict, List, Optional
@@ -8,7 +9,11 @@ from starlette import status
 
 from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.dynamic_services import SchedulerData
-from .errors import DynamicSchedulerException, DynamicSidecarNetworkError
+from .errors import (
+    DynamicSchedulerException,
+    DynamicSidecarNetworkError,
+    EntrypointContainerNotFoundError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +46,8 @@ class DynamicSidecarClient:
     # For each request a separate client will be created.
     # The previous implementation (with a shared client) raised
     # RuntimeErrors because resources were already locked.
+
+    API_VERSION = "v1"
 
     def __init__(self, app: FastAPI):
         dynamic_sidecar_settings: DynamicSidecarSettings = (
@@ -78,7 +85,7 @@ class DynamicSidecarClient:
         returns dict containing docker inspect result form
         all dynamic-sidecar started containers
         """
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
+        url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers")
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:
                 response = await client.get(url=url)
@@ -98,7 +105,7 @@ class DynamicSidecarClient:
     async def containers_docker_status(
         self, dynamic_sidecar_endpoint: str
     ) -> Dict[str, Dict[str, str]]:
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
+        url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers")
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:
                 response = await client.get(url=url, params=dict(only_status=True))
@@ -119,7 +126,7 @@ class DynamicSidecarClient:
         self, dynamic_sidecar_endpoint: str, compose_spec: str
     ) -> None:
         """returns: True if the compose up was submitted correctly"""
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
+        url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers")
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:
                 response = await client.post(url, data=compose_spec)
@@ -139,7 +146,7 @@ class DynamicSidecarClient:
 
     async def begin_service_destruction(self, dynamic_sidecar_endpoint: str) -> None:
         """runs docker compose down on the started spec"""
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers:down")
+        url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers:down")
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:
                 response = await client.post(url)
@@ -226,6 +233,31 @@ class DynamicSidecarClient:
         except httpx.HTTPError as e:
             log_httpx_http_error(url, "PUT", traceback.format_exc())
             raise e
+
+    async def get_entrypoint_container_name(
+        self, dynamic_sidecar_endpoint: str, dynamic_sidecar_network_name: str
+    ) -> str:
+        """
+        While this API raises EntrypointContainerNotFoundError
+        it should be called again, because in the menwhile the containers
+        might still be starting.
+        """
+        filters = json.dumps({"network": dynamic_sidecar_network_name})
+        url = get_url(
+            dynamic_sidecar_endpoint,
+            f"/{self.API_VERSION}/containers/name?filters={filters}",
+        )
+        try:
+            async with httpx.AsyncClient(timeout=self._base_timeout) as client:
+                response = await client.get(url=url)
+                if response.status_code == status.HTTP_404_NOT_FOUND:
+                    raise EntrypointContainerNotFoundError()
+                response.raise_for_status()
+
+                return response.json()
+        except httpx.HTTPError:
+            log_httpx_http_error(url, "GET", traceback.format_exc())
+            raise
 
 
 async def setup_api_client(app: FastAPI) -> None:
