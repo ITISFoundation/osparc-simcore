@@ -2,10 +2,10 @@ import logging
 from typing import List, cast
 
 from fastapi import FastAPI
-from simcore_service_director_v2.modules.rabbitmq import RabbitMQClient
 
 from ...core.errors import ConfigurationError
 from ...models.domains.comp_runs import CompRunsAtDB
+from ...modules.rabbitmq import RabbitMQClient
 from ...utils.scheduler import SCHEDULED_STATES, get_repository
 from ..celery import CeleryClient
 from ..dask_client import DaskClient
