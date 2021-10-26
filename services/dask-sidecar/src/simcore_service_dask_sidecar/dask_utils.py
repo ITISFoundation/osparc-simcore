@@ -40,7 +40,7 @@ def is_current_task_aborted(sub: distributed.Sub) -> bool:
         msg = sub.get(timeout="100ms")
         if msg:
             cancel_event = TaskCancelEvent.parse_raw(msg)  # type: ignore
-            return cancel_event.job_id == task.key
+            return bool(cancel_event.job_id == task.key)
     return False
 
 

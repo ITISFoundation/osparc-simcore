@@ -38,7 +38,7 @@ class GracefulKiller:
     kill_now = False
     worker = None
 
-    def __init__(self, worker):
+    def __init__(self, worker: distributed.Worker):
         signal.signal(signal.SIGINT, self.exit_gracefully)
         signal.signal(signal.SIGTERM, self.exit_gracefully)
         self.worker = worker

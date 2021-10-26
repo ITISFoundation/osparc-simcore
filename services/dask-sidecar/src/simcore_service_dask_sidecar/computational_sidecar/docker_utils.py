@@ -187,7 +187,7 @@ async def _parse_container_log_file(
     logs_pub: Pub,
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
-):
+) -> None:
     log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
     logger.debug("monitoring legacy-style container log file in %s", log_file)
 
@@ -249,7 +249,7 @@ async def _parse_container_docker_logs(
     progress_pub: Pub,
     logs_pub: Pub,
     log_file_url: AnyUrl,
-):
+) -> None:
     latest_log_timestamp = DEFAULT_TIME_STAMP
     logger.debug(
         "monitoring 1.0+ container logs from container %s:%s",
