@@ -96,9 +96,9 @@ class RabbitMQ(BaseModel):
             self._logs_exchange,
             data={
                 "Channel": "Log",
-                "Node": node_id,
-                "user_id": user_id,
-                "project_id": project_id,
+                "Node": f"{node_id}",
+                "user_id": f"{user_id}",
+                "project_id": f"{project_id}",
                 "Messages": log_msg if isinstance(log_msg, list) else [log_msg],
             },
         )
