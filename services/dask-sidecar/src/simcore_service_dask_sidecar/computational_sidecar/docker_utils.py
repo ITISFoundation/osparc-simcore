@@ -19,7 +19,7 @@ from pydantic.networks import AnyUrl
 
 from ..boot_mode import BootMode
 from ..dask_utils import LogType, create_dask_worker_logger, publish_task_logs
-from ..file_utils import copy_file_to_remote
+from ..file_utils import push_file_to_remote
 from ..settings import Settings
 from .models import (
     LEGACY_INTEGRATION_VERSION,
@@ -232,7 +232,7 @@ async def _parse_container_log_file(
         )
         # copy the log file to the log_file_url
         file_to_upload = log_file
-        await copy_file_to_remote(file_to_upload, log_file_url)
+        await push_file_to_remote(file_to_upload, log_file_url)
 
         logger.debug(
             "monitoring legacy-style container log file: copying log file from %s to %s completed",
@@ -257,71 +257,71 @@ async def _parse_container_docker_logs(
         container_name,
     )
     # TODO: move that file somewhere else
-    async with aiofiles.tempfile.NamedTemporaryFile(
-        "wb+", delete=False, suffix=".dat"
-    ) as log_fp:
-        async for log_line in container.log(
-            stdout=True, stderr=True, follow=True, timestamps=True
-        ):
-            await log_fp.write(log_line.encode("utf-8"))
-            log_type, latest_log_timestamp, message = await parse_line(log_line)
-            await publish_container_logs(
-                service_key=service_key,
-                service_version=service_version,
-                container=container,
-                container_name=container_name,
-                progress_pub=progress_pub,
-                logs_pub=logs_pub,
-                log_type=log_type,
-                message=message,
-            )
+    async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
+        log_file_path = (
+            Path(tmp_dir) / f"{service_key.split(sep='/')[-1]}_{service_version}.logs"
+        )
+        log_file_path.parent.mkdir(parents=True, exist_ok=True)
+        async with aiofiles.open(log_file_path, mode="wb+") as log_fp:
+            async for log_line in container.log(
+                stdout=True, stderr=True, follow=True, timestamps=True
+            ):
+                await log_fp.write(log_line.encode("utf-8"))
+                log_type, latest_log_timestamp, message = await parse_line(log_line)
+                await publish_container_logs(
+                    service_key=service_key,
+                    service_version=service_version,
+                    container=container,
+                    container_name=container_name,
+                    progress_pub=progress_pub,
+                    logs_pub=logs_pub,
+                    log_type=log_type,
+                    message=message,
+                )
 
-        logger.debug(
-            "monitoring 1.0+ container logs from container %s:%s: getting remaining logs",
-            container.id,
-            container_name,
-        )
-        # NOTE: The log stream may be interrupted before all the logs are gathered!
-        # therefore it is needed to get the remaining logs
-        missing_logs = await container.log(
-            stdout=True,
-            stderr=True,
-            timestamps=True,
-            since=to_datetime(latest_log_timestamp).strftime("%s"),
-        )
-        for log_line in missing_logs:
-            await log_fp.write(log_line.encode("utf-8"))
-            log_type, latest_log_timestamp, message = await parse_line(log_line)
-            await publish_container_logs(
-                service_key=service_key,
-                service_version=service_version,
-                container=container,
-                container_name=container_name,
-                progress_pub=progress_pub,
-                logs_pub=logs_pub,
-                log_type=log_type,
-                message=message,
+            logger.debug(
+                "monitoring 1.0+ container logs from container %s:%s: getting remaining logs",
+                container.id,
+                container_name,
             )
+            # NOTE: The log stream may be interrupted before all the logs are gathered!
+            # therefore it is needed to get the remaining logs
+            missing_logs = await container.log(
+                stdout=True,
+                stderr=True,
+                timestamps=True,
+                since=to_datetime(latest_log_timestamp).strftime("%s"),
+            )
+            for log_line in missing_logs:
+                await log_fp.write(log_line.encode("utf-8"))
+                log_type, latest_log_timestamp, message = await parse_line(log_line)
+                await publish_container_logs(
+                    service_key=service_key,
+                    service_version=service_version,
+                    container=container,
+                    container_name=container_name,
+                    progress_pub=progress_pub,
+                    logs_pub=logs_pub,
+                    log_type=log_type,
+                    message=message,
+                )
 
         logger.debug(
             "monitoring 1.0+ container logs from container %s:%s: completed",
             container.id,
             container_name,
         )
-        log_file_name = Path(log_fp.name)
 
         logger.debug(
             "monitoring 1.0+ container logs from container %s:%s: copying log file from %s to %s...",
             container.id,
             container_name,
-            log_file_name,
+            log_file_path,
             log_file_url,
         )
 
-    # copy the log file to the log_file_url
-    file_to_upload = log_file_name
-    await copy_file_to_remote(file_to_upload, log_file_url)
-    log_file_name.unlink()
+        # copy the log file to the log_file_url
+        await push_file_to_remote(log_file_path, log_file_url)
 
     logger.debug(
         "monitoring 1.0+ container logs from container %s:%s: copying log file to %s completed",

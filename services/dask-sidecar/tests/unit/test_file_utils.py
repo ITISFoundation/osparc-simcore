@@ -6,8 +6,8 @@ import fsspec
 from pydantic import AnyUrl, parse_obj_as
 from pytest_localftpserver.servers import ProcessFTPServer
 from simcore_service_dask_sidecar.file_utils import (
-    copy_file_to_remote,
     pull_file_from_remote,
+    push_file_to_remote,
 )
 
 
@@ -21,7 +21,7 @@ async def test_copy_file_to_remote(ftpserver: ProcessFTPServer, tmp_path: Path):
     src_path.write_text(TEXT_IN_FILE)
     assert src_path.exists()
 
-    await copy_file_to_remote(src_path, destination_url)
+    await push_file_to_remote(src_path, destination_url)
 
     open_file = fsspec.open(destination_url, mode="rt")
     with open_file as fp:
@@ -40,7 +40,7 @@ async def test_copy_file_to_remote_compresses_if_zip_destination(
     src_path.write_text(TEXT_IN_FILE)
     assert src_path.exists()
 
-    await copy_file_to_remote(src_path, destination_url)
+    await push_file_to_remote(src_path, destination_url)
 
     open_files = fsspec.open_files(f"zip://*::{destination_url}", mode="rt")
     assert len(open_files) == 1

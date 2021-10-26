@@ -29,7 +29,7 @@ from yarl import URL
 
 from ..boot_mode import BootMode
 from ..dask_utils import create_dask_worker_logger, publish_event
-from ..file_utils import copy_file_to_remote, pull_file_from_remote
+from ..file_utils import pull_file_from_remote, push_file_to_remote
 from ..settings import Settings
 from .docker_utils import (
     create_container_config,
@@ -124,7 +124,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     await self._publish_sidecar_log(
                         f"retrieved output {src_path}, uploading..."
                     )
-                    await copy_file_to_remote(src_path, output_params.url)
+                    await push_file_to_remote(src_path, output_params.url)
                     await self._publish_sidecar_log(f"uploaded {src_path}.")
             await self._publish_sidecar_log("retrieved all outputs.")
             logger.info("retrieved outputs data:\n%s", pformat(output_data.dict()))

@@ -16,7 +16,7 @@ logger = create_dask_worker_logger(__name__)
 
 async def pull_file_from_remote(src_url: AnyUrl, dst_path: Path) -> None:
     logger.debug("pulling '%s' to local destination '%s'", src_url, dst_path)
-    src_mime_type, _ = mimetypes.guess_type(f"{src_url}")
+    src_mime_type, _ = mimetypes.guess_type(f"{src_url.path}")
     dst_mime_type, _ = mimetypes.guess_type(dst_path)
 
     filesystem_cfg = {
@@ -46,15 +46,19 @@ async def pull_file_from_remote(src_url: AnyUrl, dst_path: Path) -> None:
         dst_path.unlink()
 
 
-async def copy_file_to_remote(src_path: Path, dst_url: AnyUrl) -> None:
+async def push_file_to_remote(src_path: Path, dst_url: AnyUrl) -> None:
     logger.debug("copying '%s' to remote in '%s'", src_path, dst_url)
     async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
         file_to_upload = src_path
 
-        if Path(URL(dst_url).path).suffix == ".zip" and src_path.suffix != ".zip":
+        dst_mime_type, _ = mimetypes.guess_type(f"{dst_url.path}")
+        src_mime_type, _ = mimetypes.guess_type(src_path)
+        if dst_mime_type == "application/zip" and src_mime_type != "application/zip":
             archive_file_path = Path(tmp_dir) / Path(URL(dst_url).path).name
             logger.debug("src %s shall be zipped into %s", src_path, archive_file_path)
-            with zipfile.ZipFile(archive_file_path, mode="w") as zfp:
+            with zipfile.ZipFile(
+                archive_file_path, mode="w", compression=zipfile.ZIP_DEFLATED
+            ) as zfp:
                 await asyncio.get_event_loop().run_in_executor(
                     None, zfp.write, src_path, src_path.name
                 )
@@ -62,7 +66,6 @@ async def copy_file_to_remote(src_path: Path, dst_url: AnyUrl) -> None:
             file_to_upload = archive_file_path
 
         if dst_url.scheme in ["http", "https"]:
-            file_to_upload = src_path
             logger.debug("destination is a http presigned link")
             # NOTE: special case for http scheme when uploading. this is typically a S3 put presigned link.
             # Therefore, we need to use the http filesystem directly in order to call the put_file function.
