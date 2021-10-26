@@ -1,55 +1,21 @@
 import logging
-from io import StringIO
 
 from aiopg.sa import Engine, create_engine
 from fastapi import FastAPI
-from simcore_postgres_database.utils_migration import get_current_head
+from servicelib.common_aiopg_utils import (
+    ENGINE_ATTRS,
+    PostgresRetryPolicyUponInitialization,
+    close_engine,
+    raise_if_migration_not_ready,
+)
 from tenacity import retry
-from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_attempt
-from tenacity.wait import wait_fixed
 
 from ..core.settings import PostgresSettings
 
 logger = logging.getLogger(__name__)
 
 
-ENGINE_ATTRS = "closed driver dsn freesize maxsize minsize name size timeout".split()
-
-
-pg_retry_policy = dict(
-    wait=wait_fixed(5),
-    stop=stop_after_attempt(20),
-    before_sleep=before_sleep_log(logger, logging.WARNING),
-    reraise=True,
-)
-
-
-def _compose_info_on_engine(app: FastAPI) -> str:
-    engine = app.state.engine
-    stm = StringIO()
-    print("Setup engine:", end=" ", file=stm)
-    for attr in ENGINE_ATTRS:
-        print(f"{attr}={getattr(engine, attr)}", end="; ", file=stm)
-    return stm.getvalue()
-
-
-async def _close_engine(engine: Engine) -> None:
-    engine.close()
-    await engine.wait_closed()
-
-
-async def _raise_if_migration_not_ready(engine: Engine):
-    async with engine.acquire() as conn:
-        version_num = await conn.scalar('SELECT "version_num" FROM "alembic_version"')
-        head_version_num = get_current_head()
-        if version_num != head_version_num:
-            raise RuntimeError(
-                f"Migration is incomplete, expected {head_version_num} and got {version_num}"
-            )
-
-
-@retry(**pg_retry_policy)
+@retry(**PostgresRetryPolicyUponInitialization(logger).kwargs)
 async def connect_to_db(app: FastAPI) -> None:
     logger.debug("Connecting db ...")
     cfg: PostgresSettings = app.state.settings.CATALOG_POSTGRES
@@ -63,23 +29,25 @@ async def connect_to_db(app: FastAPI) -> None:
 
     logger.debug("Checking db migrationn ...")
     try:
-        await _raise_if_migration_not_ready(engine)
+        await raise_if_migration_not_ready(engine)
     except Exception:
         # NOTE: engine must be closed because retry will create a new engine
-        await _close_engine(engine)
+        await close_engine(engine)
         raise
-    else:
-        logger.debug("Migration up-to-date")
+    logger.debug("Migration up-to-date")
 
     app.state.engine = engine
 
-    logger.debug(_compose_info_on_engine(app))
+    logger.debug(
+        "Setup engine: %s",
+        " ".join(f"{attr}={getattr(engine, attr)}" for attr in ENGINE_ATTRS),
+    )
 
 
 async def close_db_connection(app: FastAPI) -> None:
     logger.debug("Disconnecting db ...")
 
     if engine := app.state.engine:
-        await _close_engine(engine)
+        await close_engine(engine)
 
     logger.debug("Disconnected from %s", engine.dsn)
