@@ -1,4 +1,5 @@
 import asyncio
+import mimetypes
 import zipfile
 from pathlib import Path
 
@@ -10,6 +11,32 @@ from yarl import URL
 from .dask_utils import create_dask_worker_logger
 
 logger = create_dask_worker_logger(__name__)
+
+
+async def pull_file_from_remote(src_url: AnyUrl, dst_path: Path) -> None:
+    logger.debug("pulling '%s' to local destination '%s'", src_url, dst_path)
+    src_mime_type, _ = mimetypes.guess_type(f"{src_url}")
+    dst_mime_type, _ = mimetypes.guess_type(dst_path)
+
+    fs = fsspec.filesystem(
+        protocol=src_url.scheme,
+        username=src_url.user,
+        password=src_url.password,
+        port=int(src_url.port),
+        host=src_url.host,
+    )
+    await asyncio.get_event_loop().run_in_executor(
+        None, fs.get_file, src_url.path, dst_path
+    )
+    if src_mime_type == "application/zip" and dst_mime_type != "application/zip":
+        logger.debug("%s is a zip file and will be now uncompressed", dst_path)
+        with zipfile.ZipFile(dst_path, "r") as zip_obj:
+            await asyncio.get_event_loop().run_in_executor(
+                None, zip_obj.extractall, dst_path.parents[0]
+            )
+        # finally remove the zip archive
+        logger.debug("%s uncompressed", dst_path)
+        dst_path.unlink()
 
 
 async def copy_file_to_remote(src_path: Path, dst_url: AnyUrl) -> None:
@@ -44,9 +71,16 @@ async def copy_file_to_remote(src_path: Path, dst_url: AnyUrl) -> None:
                 file_to_upload, f"{dst_url}", method="PUT"
             )
         else:
-            logger.debug("Uploading...")
-            # FIXME: should upload by chunks and async
-            async with aiofiles.open(file_to_upload, "rb") as src:
-                with fsspec.open(f"{dst_url}", "wb") as dst:
-                    dst.write(await src.read())
+            logger.debug("Uploading %s to %s...", file_to_upload, dst_url)
+            fs = fsspec.filesystem(
+                protocol=dst_url.scheme,
+                username=dst_url.user,
+                password=dst_url.password,
+                port=int(dst_url.port),
+                host=dst_url.host,
+            )
+            await asyncio.get_event_loop().run_in_executor(
+                None, fs.put_file, file_to_upload, dst_url.path
+            )
+
     logger.debug("Upload complete")
