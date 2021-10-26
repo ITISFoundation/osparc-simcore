@@ -4,11 +4,17 @@ from typing import Dict, Optional
 import attr
 import sqlalchemy as sa
 from aiopg.sa import create_engine
-from tenacity import before_sleep_log, stop_after_attempt, wait_fixed
+from aiopg.sa.engine import Engine
+from simcore_postgres_database.utils_migration import get_current_head
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 log = logging.getLogger(__name__)
 
+
 DSN = "postgresql://{user}:{password}@{host}:{port}/{database}"
+ENGINE_ATTRS = "closed driver dsn freesize maxsize minsize name size timeout".split()
 
 
 @attr.s(auto_attribs=True)
@@ -88,3 +94,27 @@ class PostgresRetryPolicyUponInitialization:
             before_sleep=before_sleep_log(logger, logging.INFO),
             reraise=True,
         )
+
+
+class DBMigrationError(RuntimeError):
+    pass
+
+
+async def raise_if_migration_not_ready(engine: Engine):
+    """Ensures db migration is complete
+
+    :raises DBMigrationError
+    :raises
+    """
+    async with engine.acquire() as conn:
+        version_num = await conn.scalar('SELECT "version_num" FROM "alembic_version"')
+        head_version_num = get_current_head()
+        if version_num != head_version_num:
+            raise DBMigrationError(
+                f"Migration is incomplete, expected {head_version_num} but got {version_num}"
+            )
+
+
+async def close_engine(engine: Engine) -> None:
+    engine.close()
+    await engine.wait_closed()
