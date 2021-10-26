@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Dict, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Optional, Tuple, Type
 
 from models_library.services import PROPERTY_KEY_RE, ServiceProperty
 from pydantic import AnyUrl, Field, PrivateAttr, validator
@@ -35,8 +35,8 @@ class Port(ServiceProperty):
     default_value: Optional[DataItemValue] = Field(None, alias="defaultValue")
     value: Optional[DataItemValue]
 
-    _py_value_type: Tuple[Type[ItemConcreteValue]] = PrivateAttr()
-    _py_value_converter: Type[ItemConcreteValue] = PrivateAttr()
+    _py_value_type: Tuple[Type[ItemConcreteValue], ...] = PrivateAttr()
+    _py_value_converter: Callable[[Any], ItemConcreteValue] = PrivateAttr()
     _node_ports = PrivateAttr()
     _used_default_value: bool = PrivateAttr(False)
 
