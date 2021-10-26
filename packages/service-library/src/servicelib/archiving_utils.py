@@ -22,8 +22,8 @@ def _full_file_path_from_dir_and_subdirs(dir_path: Path) -> Iterator[Path]:
 
 
 def _strip_directory_from_path(input_path: Path, to_strip: Path) -> Path:
-    to_strip = f"{str(to_strip)}/"
-    return Path(str(input_path).replace(to_strip, ""))
+    _to_strip = f"{str(to_strip)}/"
+    return Path(str(input_path).replace(_to_strip, ""))
 
 
 def _read_in_chunks(file_object, chunk_size=1024 * 8):

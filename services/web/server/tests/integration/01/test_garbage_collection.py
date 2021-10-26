@@ -29,6 +29,7 @@ from simcore_service_webserver.groups_api import (
 )
 from simcore_service_webserver.login.module_setup import setup_login
 from simcore_service_webserver.projects.module_setup import setup_projects
+from simcore_service_webserver.resource_manager import garbage_collector
 from simcore_service_webserver.resource_manager.module_setup import (
     setup_resource_manager,
 )
@@ -55,7 +56,7 @@ API_VERSION = "v0"
 GARBAGE_COLLECTOR_INTERVAL = 1
 SERVICE_DELETION_DELAY = 1
 # ensure enough time has passed and GC was triggered
-WAIT_FOR_COMPLETE_GC_CYCLE = GARBAGE_COLLECTOR_INTERVAL + SERVICE_DELETION_DELAY + 1
+WAIT_FOR_COMPLETE_GC_CYCLE = GARBAGE_COLLECTOR_INTERVAL + SERVICE_DELETION_DELAY + 2
 
 
 @pytest.fixture(autouse=True)
@@ -347,18 +348,31 @@ async def assert_one_owner_for_project(
 ################ end utils
 
 
+@pytest.fixture
+def mock_garbage_collector_task(mocker):
+    """patch the setup of the garbage collector so we can call it manually"""
+    mocker.patch(
+        "simcore_service_webserver.resource_manager.module_setup.setup_garbage_collector",
+        return_value="",
+    )
+
+
 async def test_t1_while_guest_is_connected_no_resources_are_removed(
-    client, socketio_client_factory: Callable, aiopg_engine, redis_client
+    mock_garbage_collector_task,
+    client,
+    socketio_client_factory: Callable,
+    aiopg_engine,
+    redis_client,
 ):
     """while a GUEST user is connected GC will not remove none of its projects nor the user itself"""
     logged_guest_user = await login_guest_user(client)
     empty_guest_user_project = await new_project(client, logged_guest_user)
-
     assert await assert_users_count(aiopg_engine, 1) is True
     assert await assert_projects_count(aiopg_engine, 1) is True
 
     await connect_to_socketio(client, logged_guest_user, socketio_client_factory)
-    await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
+    await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
+    await garbage_collector.collect_garbage(app=client.app)
 
     assert await assert_user_in_database(aiopg_engine, logged_guest_user) is True
     assert (
@@ -367,6 +381,7 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
 
 
 async def test_t2_cleanup_resources_after_browser_is_closed(
+    mock_garbage_collector_task,
     simcore_services,
     client,
     socketio_client_factory: Callable,
@@ -382,7 +397,8 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     sio_connection_data = await connect_to_socketio(
         client, logged_guest_user, socketio_client_factory
     )
-    await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
+    await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
+    await garbage_collector.collect_garbage(app=client.app)
 
     # check user and project are still in the DB
     assert await assert_user_in_database(aiopg_engine, logged_guest_user) is True
@@ -391,7 +407,8 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     )
 
     await disconnect_user_from_socketio(client, sio_connection_data)
-    await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
+    await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
+    await garbage_collector.collect_garbage(app=client.app)
 
     # check user and project are no longer in the DB
     async with aiopg_engine.acquire() as conn:

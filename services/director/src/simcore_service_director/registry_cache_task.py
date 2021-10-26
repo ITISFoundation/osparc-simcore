@@ -1,11 +1,11 @@
 import asyncio
 import logging
+from typing import AsyncIterator
 
 from aiohttp import web
-
+from servicelib.utils import logged_gather
 from simcore_service_director import config, exceptions, registry_proxy
 from simcore_service_director.config import APP_REGISTRY_CACHE_DATA_KEY
-from servicelib.utils import logged_gather
 
 _logger = logging.getLogger(__name__)
 
@@ -14,6 +14,7 @@ TASK_NAME: str = __name__ + "_registry_caching_task"
 
 async def registry_caching_task(app: web.Application) -> None:
     try:
+
         _logger.info("%s: initializing cache...", TASK_NAME)
         app[APP_REGISTRY_CACHE_DATA_KEY].clear()
         await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
@@ -59,7 +60,7 @@ async def registry_caching_task(app: web.Application) -> None:
         app[APP_REGISTRY_CACHE_DATA_KEY].clear()
 
 
-async def setup_registry_caching_task(app: web.Application) -> None:
+async def setup_registry_caching_task(app: web.Application) -> AsyncIterator[None]:
     app[APP_REGISTRY_CACHE_DATA_KEY] = {}
     app[TASK_NAME] = asyncio.get_event_loop().create_task(registry_caching_task(app))
 
