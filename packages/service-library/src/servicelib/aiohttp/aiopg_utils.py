@@ -32,15 +32,6 @@ from ..common_aiopg_utils import DataSourceName
 log = logging.getLogger(__name__)
 
 
-def get_pg_engine_stateinfo(engine: Engine) -> Dict[str, Any]:
-    return {
-        "size": engine.size,
-        "acquired": engine.size - engine.freesize,
-        "free": engine.freesize,
-        "reserved": {"min": engine.minsize, "max": engine.maxsize},
-    }
-
-
 async def raise_if_not_responsive(engine: Engine):
     async with engine.acquire() as conn:
         # pylint: disable=protected-access

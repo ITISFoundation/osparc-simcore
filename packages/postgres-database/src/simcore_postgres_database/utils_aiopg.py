@@ -1,8 +1,28 @@
+from typing import Any, Dict
+
 from aiopg.sa.engine import Engine
 
 from .utils_migration import get_current_head
 
 ENGINE_ATTRS = "closed driver dsn freesize maxsize minsize name size timeout".split()
+
+
+def get_pg_engine_info(engine: Engine) -> Dict[str, Any]:
+    return {attr: getattr(engine, attr, None) for attr in ENGINE_ATTRS}
+
+
+def get_pg_engine_stateinfo(engine: Engine) -> Dict[str, Any]:
+    return {
+        "size": engine.size,
+        "acquired": engine.size - engine.freesize,
+        "free": engine.freesize,
+        "reserved": {"min": engine.minsize, "max": engine.maxsize},
+    }
+
+
+async def close_engine(engine: Engine) -> None:
+    engine.close()
+    await engine.wait_closed()
 
 
 class DBMigrationError(RuntimeError):
@@ -22,8 +42,3 @@ async def raise_if_migration_not_ready(engine: Engine):
             raise DBMigrationError(
                 f"Migration is incomplete, expected {head_version_num} but got {version_num}"
             )
-
-
-async def close_engine(engine: Engine) -> None:
-    engine.close()
-    await engine.wait_closed()
