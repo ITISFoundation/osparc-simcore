@@ -18,16 +18,9 @@ async def _logs_fetcher_worker(
     logger.info("Started log fetching for container %s", container_name)
     async with docker_client() as docker:
         container = await docker.containers.get(container_name)
-        logger.debug("Old logs from %s", container_name)
-        # first of all recover logs one shot and send them
-        old_logs = await container.log(stdout=True, stderr=True, follow=False)
-        for line in old_logs:
-            logger.debug("[OLD LOGS] %s", line)
-            await dispatch_log(container_name=container_name, message=line)
 
         logger.debug("Streaming logs from %s", container_name)
         async for line in container.log(stdout=True, stderr=True, follow=True):
-            logger.debug("[NEW LOGS] %s", line)
             await dispatch_log(container_name=container_name, message=line)
 
 
@@ -72,6 +65,7 @@ class BackgroundLogFetcher:
             node_id=self._settings.NODE_ID,
             log_msg=_format_log(container_name, message),
         )
+        logging.error("Log posted via rabbitmq")
 
     async def start_log_feching(self, container_name: str) -> None:
         self._log_processor_tasks[container_name] = create_task(
