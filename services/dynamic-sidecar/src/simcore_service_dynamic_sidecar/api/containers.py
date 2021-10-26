@@ -1,7 +1,8 @@
+# pylint: disable=redefined-builtin
+
+import json
 import logging
 import traceback
-
-# pylint: disable=redefined-builtin
 from typing import Any, Dict, List, Union
 
 from fastapi import (
@@ -19,7 +20,11 @@ from ..core.dependencies import get_application_health, get_settings, get_shared
 from ..core.settings import DynamicSidecarSettings
 from ..core.shared_handlers import remove_the_compose_spec, write_file_and_run_command
 from ..core.utils import assemble_container_names, docker_client
-from ..core.validation import InvalidComposeSpec, validate_compose_spec
+from ..core.validation import (
+    InvalidComposeSpec,
+    parse_compose_spec,
+    validate_compose_spec,
+)
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
 
@@ -28,7 +33,7 @@ logger = logging.getLogger(__name__)
 containers_router = APIRouter(tags=["containers"])
 
 
-async def task_docker_compose_up(
+async def _task_docker_compose_up(
     settings: DynamicSidecarSettings,
     shared_store: SharedStore,
     application_health: ApplicationHealth = Depends(get_application_health),
@@ -65,7 +70,15 @@ def _raise_if_container_is_missing(id: str, container_names: List[str]) -> None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=message)
 
 
-@containers_router.post("/containers", status_code=status.HTTP_202_ACCEPTED)
+@containers_router.post(
+    "/containers",
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Cannot validate submitted compose spec"
+        }
+    },
+)
 async def runs_docker_compose_up(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -89,12 +102,21 @@ async def runs_docker_compose_up(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
 
     # run docker-compose in a background queue and return early
-    background_tasks.add_task(task_docker_compose_up, settings, shared_store)
+    background_tasks.add_task(_task_docker_compose_up, settings, shared_store)
 
     return shared_store.container_names
 
 
-@containers_router.post("/containers:down", response_class=PlainTextResponse)
+@containers_router.post(
+    "/containers:down",
+    response_class=PlainTextResponse,
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "No compose spec found"},
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Error while shutting down containers"
+        },
+    },
+)
 async def runs_docker_compose_down(
     command_timeout: float = Query(
         10.0, description="docker-compose down command timeout default"
@@ -108,7 +130,7 @@ async def runs_docker_compose_down(
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
         raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_404_NOT_FOUND,
             detail="No spec for docker-compose down was found",
         )
 
@@ -119,7 +141,7 @@ async def runs_docker_compose_down(
     )
 
     if not finished_without_errors:
-        logger.warning("docker-compose command finished with errors\n%s", stdout)
+        logger.warning("docker-compose down command finished with errors\n%s", stdout)
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=stdout)
 
     return stdout
@@ -209,6 +231,68 @@ async def get_container_logs(
 
         container_logs: str = await container_instance.log(**args)
         return container_logs
+
+
+@containers_router.get(
+    "/containers/name",
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "No entrypoint container found or spec is not yet present"
+        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Filters could not be parsed"
+        },
+    },
+)
+async def get_entrypoint_container_name(
+    filters: str = Query(
+        ...,
+        description=(
+            "JSON encoded dictionary. FastAPI does not "
+            "allow for dict as type in query parameters"
+        ),
+    ),
+    shared_store: SharedStore = Depends(get_shared_store),
+) -> Union[str, Dict[str, Any]]:
+    """
+    Searches for the container's name given the network
+    on which the proxy communicates with it.
+    Supported filters:
+        network: name of the network
+    """
+    filters_dict: Dict[str, str] = json.loads(filters)
+    if not isinstance(filters_dict, dict):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Provided filters, could not parsed {filters_dict}",
+        )
+    network_name = filters_dict.get("network", None)
+
+    stored_compose_content = shared_store.compose_spec
+    if stored_compose_content is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail="No spec for docker-compose down was found",
+        )
+
+    compose_spec = parse_compose_spec(stored_compose_content)
+
+    container_name = None
+
+    spec_services = compose_spec["services"]
+    for service in spec_services:
+        service_content = spec_services[service]
+        if network_name in service_content.get("networks", {}):
+            container_name = service_content["container_name"]
+            break
+
+    if container_name is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=f"No container found for network={network_name}",
+        )
+
+    return f"{container_name}"
 
 
 @containers_router.get(

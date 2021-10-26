@@ -13,7 +13,7 @@ from models_library.service_settings_labels import (
     PathMappingsLabel,
     SimcoreServiceLabels,
 )
-from pydantic import BaseModel, Extra, Field, PositiveInt, PrivateAttr
+from pydantic import BaseModel, Extra, Field, PositiveInt, PrivateAttr, constr
 
 from ..constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
@@ -27,6 +27,9 @@ TEMPORARY_PORT_NUMBER = 65_534
 
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 
+SHA256 = constr(max_length=64, regex=r"\b[A-Fa-f0-9]{64}\b")
+ServiceId = SHA256
+NetworkId = SHA256
 
 logger = logging.getLogger()
 
@@ -141,12 +144,28 @@ class DynamicSidecar(BaseModel):
         scription="docker inspect results from all the container ran at regular intervals",
     )
 
+    was_dynamic_sidecar_started: bool = False
     were_services_created: bool = Field(
         False,
         description=(
             "when True no longer will the Docker api "
             "be used to check if the services were started"
         ),
+    )
+
+    # below had already been validated and
+    # used only to start the proxy
+    dynamic_sidecar_id: Optional[ServiceId] = Field(
+        None, description="returned by the docker engine; used for starting the proxy"
+    )
+    dynamic_sidecar_network_id: Optional[NetworkId] = Field(
+        None, description="returned by the docker engine; used for starting the proxy"
+    )
+    swarm_network_id: Optional[NetworkId] = Field(
+        None, description="returned by the docker engine; used for starting the proxy"
+    )
+    swarm_network_name: Optional[str] = Field(
+        None, description="used for starting the proxy"
     )
 
     @property

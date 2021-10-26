@@ -7,8 +7,8 @@ from models_library.basic_types import LogLevel
 from simcore_service_director_v2.core.settings import (
     AppSettings,
     BootModeEnum,
+    DynamicSidecarProxySettings,
     DynamicSidecarSettings,
-    DynamicSidecarTraefikSettings,
     RegistrySettings,
 )
 
@@ -49,7 +49,7 @@ def test_dynamic_sidecar_settings(image: str) -> None:
         SIMCORE_SERVICES_NETWORK_NAME="test",
         TRAEFIK_SIMCORE_ZONE="",
         SWARM_STACK_NAME="",
-        DYNAMIC_SIDECAR_TRAEFIK_SETTINGS=DynamicSidecarTraefikSettings(),
+        DYNAMIC_SIDECAR_PROXY_SETTINGS=DynamicSidecarProxySettings(),
         REGISTRY=RegistrySettings(
             REGISTRY_URL="http://te.st",
             REGISTRY_AUTH=True,

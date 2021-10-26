@@ -250,7 +250,7 @@ async def get_dynamic_sidecar_state(service_id: str) -> Tuple[ServiceState, str]
     return service_state, message
 
 
-async def are_services_missing(
+async def is_dynamic_sidecar_missing(
     node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> bool:
     """Used to check if the service should be created"""

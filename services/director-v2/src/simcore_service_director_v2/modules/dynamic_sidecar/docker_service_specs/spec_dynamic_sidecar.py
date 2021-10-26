@@ -11,12 +11,12 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import ServiceKeyVersion
 
-from ...api.dependencies.director_v0 import DirectorV0Client
-from ...core.settings import DynamicSidecarSettings, DynamicSidecarTraefikSettings
-from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
-from ...models.schemas.dynamic_services import SchedulerData, ServiceType
-from ...utils.registry import get_dynamic_sidecar_env_vars
-from .errors import DynamicSidecarError
+from ....api.dependencies.director_v0 import DirectorV0Client
+from ....core.settings import DynamicSidecarSettings
+from ....models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
+from ....models.schemas.dynamic_services import SchedulerData, ServiceType
+from ....utils.registry import get_dynamic_sidecar_env_vars
+from ..errors import DynamicSidecarError
 
 # Notes on below env var names:
 # - SIMCORE_REGISTRY will be replaced by the url of the simcore docker registry
@@ -38,100 +38,6 @@ def extract_service_port_from_compose_start_spec(
     create_service_params: Dict[str, Any]
 ) -> int:
     return create_service_params["labels"]["service_port"]
-
-
-async def get_dynamic_proxy_spec(
-    scheduler_data: SchedulerData,
-    dynamic_sidecar_settings: DynamicSidecarSettings,
-    dynamic_sidecar_network_id: str,
-    swarm_network_id: str,
-    swarm_network_name: str,
-    dynamic_sidecar_node_id: str,
-) -> Dict[str, Any]:
-    """
-    The Traefik proxy is the entrypoint which forwards
-    all the network requests to dynamic service.
-    The proxy is used to create network isolation
-    from the rest of the platform.
-    """
-
-    mounts = [
-        # docker socket needed to use the docker api
-        {
-            "Source": "/var/run/docker.sock",
-            "Target": "/var/run/docker.sock",
-            "Type": "bind",
-            "ReadOnly": True,
-        }
-    ]
-    traefik_settings: DynamicSidecarTraefikSettings = (
-        dynamic_sidecar_settings.DYNAMIC_SIDECAR_TRAEFIK_SETTINGS
-    )
-
-    return {
-        "labels": {
-            # TODO: let's use a pydantic model with descriptions
-            "io.simcore.zone": f"{dynamic_sidecar_settings.TRAEFIK_SIMCORE_ZONE}",
-            "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,
-            "traefik.docker.network": swarm_network_name,
-            "traefik.enable": "true",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {scheduler_data.request_dns}",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolallowmethods": "GET,OPTIONS,PUT,POST,DELETE,PATCH,HEAD",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accessControlAllowOriginList": f"{scheduler_data.request_scheme}://{scheduler_data.request_dns}",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolmaxage": "100",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.addvaryheader": "true",
-            f"traefik.http.services.{scheduler_data.proxy_service_name}.loadbalancer.server.port": "80",
-            f"traefik.http.routers.{scheduler_data.proxy_service_name}.entrypoints": "http",
-            f"traefik.http.routers.{scheduler_data.proxy_service_name}.priority": "10",
-            f"traefik.http.routers.{scheduler_data.proxy_service_name}.rule": f"hostregexp(`{scheduler_data.node_uuid}.services.{{host:.+}}`)",
-            f"traefik.http.routers.{scheduler_data.proxy_service_name}.middlewares": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}_gzip@docker, {scheduler_data.proxy_service_name}-security-headers",
-            "type": ServiceType.DEPENDENCY.value,
-            "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
-            "study_id": f"{scheduler_data.project_id}",
-            "user_id": f"{scheduler_data.user_id}",
-            "uuid": f"{scheduler_data.node_uuid}",  # needed for removal when project is closed
-        },
-        "name": scheduler_data.proxy_service_name,
-        "networks": [swarm_network_id, dynamic_sidecar_network_id],
-        "task_template": {
-            "ContainerSpec": {
-                "Env": {},
-                "Hosts": [],
-                "Image": f"traefik:{traefik_settings.DYNAMIC_SIDECAR_TRAEFIK_VERSION}",
-                "Init": True,
-                "Labels": {},
-                "Command": [
-                    "traefik",
-                    f"--log.level={traefik_settings.DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL}",
-                    f"--accesslog={traefik_settings.access_log_as_string}",
-                    "--entryPoints.http.address=:80",
-                    "--entryPoints.http.forwardedHeaders.insecure",
-                    "--providers.docker.endpoint=unix:///var/run/docker.sock",
-                    f"--providers.docker.network={scheduler_data.dynamic_sidecar_network_name}",
-                    "--providers.docker.exposedByDefault=false",
-                    f"--providers.docker.constraints=Label(`io.simcore.zone`, `{scheduler_data.simcore_traefik_zone}`)",
-                    # TODO: add authentication once a middleware is in place
-                    # something like https://doc.traefik.io/traefik/middlewares/forwardauth/
-                ],
-                "Mounts": mounts,
-            },
-            "Placement": {
-                "Constraints": [
-                    "node.platform.os == linux",
-                    f"node.id == {dynamic_sidecar_node_id}",
-                ]
-            },
-            "Resources": {  # starts from 100 MB and maxes at 250 MB with 10% max CPU usage
-                "Limits": {"MemoryBytes": 262144000, "NanoCPUs": 100000000},
-                "Reservations": {"MemoryBytes": 104857600, "NanoCPUs": 100000000},
-            },
-            "RestartPolicy": {
-                "Condition": "on-failure",
-                "Delay": 5000000,
-                "MaxAttempts": 2,
-            },
-        },
-    }
 
 
 def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:

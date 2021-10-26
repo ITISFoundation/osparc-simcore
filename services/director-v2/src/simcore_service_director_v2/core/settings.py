@@ -67,32 +67,11 @@ class CelerySettings(BaseCelerySettings):
     CELERY_PUBLICATION_TIMEOUT: int = 60
 
 
-class DynamicSidecarTraefikSettings(BaseCustomSettings):
-    DYNAMIC_SIDECAR_TRAEFIK_VERSION: str = Field(
-        "v2.4.13",
-        description="current version of the Traefik image to be pulled and used from dockerhub",
+class DynamicSidecarProxySettings(BaseCustomSettings):
+    DYNAMIC_SIDECAR_CADDY_VERSION: str = Field(
+        "2.4.5-alpine",
+        description="current version of the Caddy image to be pulled and used from dockerhub",
     )
-    DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL: str = Field(
-        "warn", description="set Treafik's loglevel to be used"
-    )
-
-    DYNAMIC_SIDECAR_TRAEFIK_ACCESS_LOG: bool = Field(
-        False, description="enables or disables access log"
-    )
-
-    @validator("DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL", pre=True)
-    @classmethod
-    def validate_log_level(cls, v) -> str:
-        if v not in SUPPORTED_TRAEFIK_LOG_LEVELS:
-            message = (
-                "Got log level '{v}', expected one of '{SUPPORTED_TRAEFIK_LOG_LEVELS}'"
-            )
-            raise ValueError(message)
-        return v
-
-    @cached_property
-    def access_log_as_string(self) -> str:
-        return str(self.DYNAMIC_SIDECAR_TRAEFIK_ACCESS_LOG).lower()
 
 
 class DynamicSidecarSettings(BaseCustomSettings):
@@ -147,6 +126,14 @@ class DynamicSidecarSettings(BaseCustomSettings):
             "twards the dynamic-sidecar, as is the case with the above timeout field."
         ),
     )
+    DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START: PositiveFloat = Field(
+        60.0 * 60.0,
+        description=(
+            "After running `docker-compose up`, images might need to be pulled "
+            "before everything is started. Using default 1hour timeout to let this "
+            "operation finish."
+        ),
+    )
 
     TRAEFIK_SIMCORE_ZONE: str = Field(
         ...,
@@ -158,7 +145,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
         description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
     )
 
-    DYNAMIC_SIDECAR_TRAEFIK_SETTINGS: DynamicSidecarTraefikSettings
+    DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings
 
     REGISTRY: RegistrySettings
 
