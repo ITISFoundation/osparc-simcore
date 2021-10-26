@@ -116,6 +116,13 @@ class ServiceRemovalState(BaseModel):
         None,
         description="when True, saves the internal state and upload outputs of the service",
     )
+    was_removed: bool = Field(
+        False,
+        description=(
+            "Will be True when the removal finished. Used primarily "
+            "to cancel retrying long running operations."
+        ),
+    )
 
     def mark_to_remove(self, can_save: Optional[bool]) -> None:
         self.can_remove = True
@@ -123,6 +130,7 @@ class ServiceRemovalState(BaseModel):
 
     def mark_removed(self) -> None:
         self.can_remove = False
+        self.was_removed = True
 
 
 class DynamicSidecar(BaseModel):
