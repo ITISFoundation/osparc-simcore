@@ -27,7 +27,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
-from ..common_aiopg_utils import DataSourceName, PostgresRetryPolicyUponInitialization
+from ..common_aiopg_utils import DataSourceName
 
 log = logging.getLogger(__name__)
 
@@ -153,6 +153,5 @@ def retry_pg_api(func):
 
 __all__ = [
     "DBAPIError",
-    "PostgresRetryPolicyUponInitialization",
     "PostgresRetryPolicyUponOperation",
 ]
