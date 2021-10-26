@@ -177,7 +177,7 @@ def mock_node_ports(mocker: MockerFixture):
     )
     mocker.patch(
         "simcore_service_director_v2.modules.dask_client.compute_service_log_file_upload_link",
-        return_value=parse_obj_as(AnyUrl, ""),
+        return_value=parse_obj_as(AnyUrl, "file://undefined"),
     )
 
 
