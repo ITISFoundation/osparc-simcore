@@ -12,6 +12,8 @@ aiofiles==0.5.0
     # via fastapi
 aiopg==1.2.1
     # via -r requirements/_base.in
+alembic==1.7.4
+    # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 aniso8601==7.0.0
     # via graphene
 async-exit-stack==1.0.1
@@ -71,6 +73,17 @@ idna==2.10
     #   requests
     #   rfc3986
     #   yarl
+importlib-metadata==4.8.1
+    # via alembic
+importlib-resources==5.3.0 ; python_version < "3.9"
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   alembic
 itsdangerous==1.1.0
     # via fastapi
 jaeger-client==4.8.0
@@ -84,8 +97,12 @@ jinja2==2.11.3
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
+mako==1.1.5
+    # via alembic
 markupsafe==1.1.1
-    # via jinja2
+    # via
+    #   jinja2
+    #   mako
 multidict==5.1.0
     # via yarl
 opentracing==2.4.0
@@ -171,6 +188,7 @@ sqlalchemy==1.3.23
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
+    #   alembic
 starlette==0.14.2
     # via fastapi
 tenacity==6.3.1
@@ -218,3 +236,7 @@ websockets==8.1
     # via uvicorn
 yarl==1.6.3
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
+zipp==3.6.0
+    # via
+    #   importlib-metadata
+    #   importlib-resources

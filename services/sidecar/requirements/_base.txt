@@ -51,8 +51,12 @@ aioredlock==0.5.2
     # via -r requirements/_base.in
 aiormq==3.2.3
     # via aio-pika
-alembic==1.7.3
-    # via -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_migration.in
+alembic==1.7.4
+    # via
+    #   -c requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_migration.in
 amqp==5.0.6
     # via kombu
 async-timeout==3.0.1
@@ -115,7 +119,11 @@ idna==2.10
     #   email-validator
     #   requests
     #   yarl
-importlib-resources==5.2.2 ; python_version < "3.9"
+importlib-metadata==4.8.1
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
+    #   alembic
+importlib-resources==5.3.0 ; python_version < "3.9"
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -123,16 +131,21 @@ importlib-resources==5.2.2 ; python_version < "3.9"
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   alembic
 kombu==5.1.0
     # via celery
-mako==1.1.4
-    # via alembic
+mako==1.1.5
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
+    #   alembic
 markupsafe==2.0.1
-    # via mako
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
+    #   mako
 multidict==5.1.0
     # via
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
@@ -269,8 +282,11 @@ yarl==1.6.3
     #   aio-pika
     #   aiohttp
     #   aiormq
-zipp==3.5.0
-    # via importlib-resources
+zipp==3.6.0
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
+    #   importlib-metadata
+    #   importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
