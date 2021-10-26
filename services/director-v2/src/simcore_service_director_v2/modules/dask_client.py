@@ -74,7 +74,7 @@ def _done_dask_callback(
                 TaskStateEvent(
                     job_id=job_id,
                     state=RunningState.FAILED,
-                    msg=f"{dask_future.exception(2)}",
+                    msg=f"{dask_future.exception(timeout=5)}",
                 ).json()
             )
         elif dask_future.cancelled():
@@ -94,9 +94,8 @@ def _done_dask_callback(
 
     except dask.distributed.TimeoutError:
         logger.error(
-            "fetching result of '%s' timed-out, please check dask client: %s",
+            "fetching result of '%s' timed-out, please check",
             job_id,
-            dask_future.client.asynchronous,
             exc_info=True,
         )
     finally:

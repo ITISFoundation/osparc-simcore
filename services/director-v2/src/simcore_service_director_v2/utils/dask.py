@@ -160,10 +160,11 @@ async def compute_service_log_file_upload_link(
     project_id: ProjectID,
     node_id: NodeID,
 ) -> AnyUrl:
+    LOGS_FILE_NAME = "logs.zip"
     value_link = await port_utils.get_upload_link_from_storage(
         user_id=user_id,
         project_id=f"{project_id}",
         node_id=f"{node_id}",
-        file_name="logs.zip",
+        file_name=LOGS_FILE_NAME,
     )
     return value_link
