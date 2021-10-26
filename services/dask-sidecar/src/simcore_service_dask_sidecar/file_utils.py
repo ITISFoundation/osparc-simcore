@@ -2,6 +2,7 @@ import asyncio
 import mimetypes
 import zipfile
 from pathlib import Path
+from pprint import pformat
 
 import aiofiles
 import fsspec
@@ -18,15 +19,21 @@ async def pull_file_from_remote(src_url: AnyUrl, dst_path: Path) -> None:
     src_mime_type, _ = mimetypes.guess_type(f"{src_url}")
     dst_mime_type, _ = mimetypes.guess_type(dst_path)
 
-    fs = fsspec.filesystem(
-        protocol=src_url.scheme,
-        username=src_url.user,
-        password=src_url.password,
-        port=int(src_url.port),
-        host=src_url.host,
-    )
+    filesystem_cfg = {
+        "protocol": src_url.scheme,
+    }
+    if src_url.scheme not in ["http", "https"]:
+        filesystem_cfg["host"] = src_url.host
+        filesystem_cfg["username"] = src_url.user
+        filesystem_cfg["password"] = src_url.password
+        filesystem_cfg["port"] = int(src_url.port)
+    logger.debug("file system configuration is %s", pformat(filesystem_cfg))
+    fs = fsspec.filesystem(**filesystem_cfg)
     await asyncio.get_event_loop().run_in_executor(
-        None, fs.get_file, src_url.path, dst_path
+        None,
+        fs.get_file,
+        src_url.path if src_url.scheme not in ["http", "https"] else src_url,
+        dst_path,
     )
     if src_mime_type == "application/zip" and dst_mime_type != "application/zip":
         logger.debug("%s is a zip file and will be now uncompressed", dst_path)
@@ -54,7 +61,7 @@ async def copy_file_to_remote(src_path: Path, dst_url: AnyUrl) -> None:
             logger.debug("%s created.", archive_file_path)
             file_to_upload = archive_file_path
 
-        if dst_url.scheme == "http":
+        if dst_url.scheme in ["http", "https"]:
             file_to_upload = src_path
             logger.debug("destination is a http presigned link")
             # NOTE: special case for http scheme when uploading. this is typically a S3 put presigned link.
