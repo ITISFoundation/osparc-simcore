@@ -348,31 +348,35 @@ async def assert_one_owner_for_project(
 ################ end utils
 
 
-async def test_t1_while_guest_is_connected_no_resources_are_removed(
-    client, socketio_client_factory: Callable, aiopg_engine, redis_client
-):
-    """while a GUEST user is connected GC will not remove none of its projects nor the user itself"""
-    logged_guest_user = await login_guest_user(client)
-    empty_guest_user_project = await new_project(client, logged_guest_user)
-
-    assert await assert_users_count(aiopg_engine, 1) is True
-    assert await assert_projects_count(aiopg_engine, 1) is True
-
-    await connect_to_socketio(client, logged_guest_user, socketio_client_factory)
-    await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
-
-    assert await assert_user_in_database(aiopg_engine, logged_guest_user) is True
-    assert (
-        await assert_project_in_database(aiopg_engine, empty_guest_user_project) is True
-    )
-
-
 @pytest.fixture
 def mock_garbage_collector_task(mocker):
     """patch the setup of the garbage collector so we can call it manually"""
     mocker.patch(
         "simcore_service_webserver.resource_manager.module_setup.setup_garbage_collector",
         return_value="",
+    )
+
+
+async def test_t1_while_guest_is_connected_no_resources_are_removed(
+    mock_garbage_collector_task,
+    client,
+    socketio_client_factory: Callable,
+    aiopg_engine,
+    redis_client,
+):
+    """while a GUEST user is connected GC will not remove none of its projects nor the user itself"""
+    logged_guest_user = await login_guest_user(client)
+    empty_guest_user_project = await new_project(client, logged_guest_user)
+    assert await assert_users_count(aiopg_engine, 1) is True
+    assert await assert_projects_count(aiopg_engine, 1) is True
+
+    await connect_to_socketio(client, logged_guest_user, socketio_client_factory)
+    await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
+    await garbage_collector.collect_garbage(app=client.app)
+
+    assert await assert_user_in_database(aiopg_engine, logged_guest_user) is True
+    assert (
+        await assert_project_in_database(aiopg_engine, empty_guest_user_project) is True
     )
 
 
