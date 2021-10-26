@@ -63,33 +63,6 @@ def is_responsive(url, code=200) -> bool:
     return False
 
 
-def is_postgres_responsive(url) -> bool:
-    """Check if something responds to ``url``"""
-    try:
-        engine = sa.create_engine(url)
-        conn = engine.connect()
-        conn.close()
-    except sa.exc.OperationalError:
-        return False
-    return True
-
-
-def create_tables(url, engine=None):
-    if not engine:
-        engine = sa.create_engine(url)
-
-    metadata.drop_all(bind=engine)
-    metadata.create_all(bind=engine, tables=PG_TABLES_NEEDED_FOR_STORAGE)
-    return engine
-
-
-def drop_tables(url, engine=None):
-    if not engine:
-        engine = sa.create_engine(url)
-
-    metadata.drop_all(bind=engine)
-
-
 def insert_metadata(url: str, fmd: FileMetaData):
     # FIXME: E1120:No value for argument 'dml' in method call
     # pylint: disable=E1120
