@@ -7,10 +7,8 @@ from typing import AsyncIterator, Dict, Iterator, List
 
 import aiopg.sa
 import pytest
-import simcore_postgres_database.cli as pg_cli
 import sqlalchemy as sa
 import tenacity
-from simcore_postgres_database.models.base import metadata
 from sqlalchemy.orm import sessionmaker
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
