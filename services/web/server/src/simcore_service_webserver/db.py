@@ -16,8 +16,11 @@ from servicelib.aiohttp.aiopg_utils import (
 )
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from servicelib.common_aiopg_utils import create_pg_engine
-from simcore_postgres_database.utils_migration import get_current_head
+from servicelib.common_aiopg_utils import (
+    close_engine,
+    create_pg_engine,
+    raise_if_migration_not_ready,
+)
 from tenacity import retry
 
 from .db_config import CONFIG_SECTION_NAME, assert_valid_config
@@ -28,21 +31,6 @@ THIS_SERVICE_NAME = "postgres"
 log = logging.getLogger(__name__)
 
 
-async def _close_engine(engine: Engine) -> None:
-    engine.close()
-    await engine.wait_closed()
-
-
-async def _raise_if_migration_not_ready(engine: Engine):
-    async with engine.acquire() as conn:
-        version_num = await conn.scalar('SELECT "version_num" FROM "alembic_version"')
-        head_version_num = get_current_head()
-        if version_num != head_version_num:
-            raise RuntimeError(
-                f"Migration is incomplete, expected {head_version_num} and got {version_num}"
-            )
-
-
 @retry(**PostgresRetryPolicyUponInitialization(log).kwargs)
 async def _ensure_pg_ready(dsn: DataSourceName, min_size: int, max_size: int) -> Engine:
 
@@ -51,9 +39,9 @@ async def _ensure_pg_ready(dsn: DataSourceName, min_size: int, max_size: int) ->
     engine = await create_pg_engine(dsn, minsize=min_size, maxsize=max_size)
     try:
         await raise_if_not_responsive(engine)
-        await _raise_if_migration_not_ready(engine)
+        await raise_if_migration_not_ready(engine)
     except Exception:
-        await _close_engine(engine)
+        await close_engine(engine)
         raise
 
     return engine  # type: ignore # tenacity rules guarantee exit with exc
@@ -81,7 +69,7 @@ async def postgres_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
         log.critical("app does not hold right db engine. Somebody has changed it??")
 
     for engine in [aiopg_engine]:
-        await _close_engine(engine)
+        await close_engine(engine)
 
         log.debug(
             "engine '%s' after shutdown: closed=%s, size=%d",
