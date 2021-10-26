@@ -6,12 +6,15 @@ import asyncio
 import json
 import logging
 import socket
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Iterable, Optional, Tuple
 
 import aio_pika
 import pytest
 import tenacity
 from models_library.settings.rabbit import RabbitConfig
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 from .helpers.utils_docker import get_service_published_port
 
@@ -31,16 +34,12 @@ async def rabbit_config(
 ) -> RabbitConfig:
     prefix = testing_environ_vars["SWARM_STACK_NAME"]
     assert f"{prefix}_rabbit" in docker_stack["services"]
-
     rabbit_config = RabbitConfig(
         user=testing_environ_vars["RABBIT_USER"],
         password=testing_environ_vars["RABBIT_PASSWORD"],
         host="127.0.0.1",
         port=get_service_published_port("rabbit", testing_environ_vars["RABBIT_PORT"]),
-        channels={
-            "log": "logs_channel",
-            "instrumentation": "instrumentation_channel",
-        },
+        channels=json.loads(testing_environ_vars["RABBIT_CHANNELS"]),
     )
 
     url = rabbit_config.dsn
@@ -57,7 +56,7 @@ async def rabbit_service(rabbit_config: RabbitConfig, monkeypatch) -> RabbitConf
     monkeypatch.setenv("RABBIT_PASSWORD", rabbit_config.password.get_secret_value())
     monkeypatch.setenv("RABBIT_CHANNELS", json.dumps(rabbit_config.channels))
 
-    return RabbitConfig
+    return rabbit_config
 
 
 @pytest.fixture(scope="function")
@@ -126,7 +125,7 @@ async def rabbit_exchange(
 async def rabbit_queue(
     rabbit_channel: aio_pika.Channel,
     rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
-) -> aio_pika.Queue:
+) -> Iterable[aio_pika.Queue]:
     (logs_exchange, instrumentation_exchange) = rabbit_exchange
     # declare queue
     queue = await rabbit_channel.declare_queue(exclusive=True)
@@ -141,9 +140,9 @@ async def rabbit_queue(
 
 
 @tenacity.retry(
-    wait=tenacity.wait_fixed(5),
-    stop=tenacity.stop_after_attempt(60),
-    before_sleep=tenacity.before_sleep_log(log, logging.INFO),
+    wait=wait_fixed(5),
+    stop=stop_after_attempt(60),
+    before_sleep=before_sleep_log(log, logging.INFO),
     reraise=True,
 )
 async def wait_till_rabbit_responsive(url: str) -> None:

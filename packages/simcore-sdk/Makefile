@@ -8,6 +8,7 @@
 # by sanderegg, pcrespov
 #
 include ../../scripts/common.Makefile
+include ../../scripts/common-package.Makefile
 
 
 .PHONY: install-dev install-prod install-ci
