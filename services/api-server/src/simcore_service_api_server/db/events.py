@@ -1,12 +1,11 @@
 import logging
-from io import StringIO
 
 from aiopg.sa import Engine, create_engine
 from fastapi import FastAPI
-from servicelib.common_aiopg_utils import (
-    ENGINE_ATTRS,
-    PostgresRetryPolicyUponInitialization,
+from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
+from simcore_postgres_database.utils_aiopg import (
     close_engine,
+    get_pg_engine_info,
     raise_if_migration_not_ready,
 )
 from tenacity import retry
@@ -44,7 +43,7 @@ async def connect_to_db(app: FastAPI) -> None:
     app.state.engine = engine
     logger.debug(
         "Setup engine: %s",
-        " ".join(f"{attr}={getattr(engine, attr)}" for attr in ENGINE_ATTRS),
+        get_pg_engine_info(engine),
     )
 
 

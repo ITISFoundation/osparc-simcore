@@ -7,14 +7,13 @@ import aiopg.sa
 import tenacity
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
-from servicelib.common_aiopg_utils import (
-    DataSourceName,
-    PostgresRetryPolicyUponInitialization,
+from servicelib.common_aiopg_utils import DataSourceName, create_pg_engine
+from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
+from simcore_postgres_database.models.comp_tasks import comp_tasks
+from simcore_postgres_database.utils_aiopg import (
     close_engine,
-    create_pg_engine,
     raise_if_migration_not_ready,
 )
-from simcore_postgres_database.models.comp_tasks import comp_tasks
 from sqlalchemy import and_
 
 from . import config
@@ -72,7 +71,7 @@ class DBContextManager:
             user=config.POSTGRES_USER,
             password=config.POSTGRES_PW,
             host=config.POSTGRES_ENDPOINT.split(":")[0],
-            port=config.POSTGRES_ENDPOINT.split(":")[1],
+            port=int(config.POSTGRES_ENDPOINT.split(":")[1]),
         )  # type: ignore
 
         engine = await _ensure_postgres_ready(dsn)

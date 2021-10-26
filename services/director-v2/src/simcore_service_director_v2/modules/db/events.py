@@ -1,18 +1,18 @@
 import logging
-from io import StringIO
 from typing import Any
 
 import orjson
 from aiopg.sa import Engine, create_engine
 from aiopg.sa.engine import get_dialect
 from fastapi import FastAPI
-from servicelib.common_aiopg_utils import (
-    ENGINE_ATTRS,
-    PostgresRetryPolicyUponInitialization,
+from servicelib.common_aiopg_utils import ENGINE_ATTRS
+from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
+from settings_library.postgres import PostgresSettings
+from simcore_postgres_database.utils_aiopg import (
     close_engine,
+    get_pg_engine_info,
     raise_if_migration_not_ready,
 )
-from settings_library.postgres import PostgresSettings
 from tenacity import retry
 
 logger = logging.getLogger(__name__)
@@ -49,10 +49,7 @@ async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
         logger.debug("Migration up-to-date")
 
     app.state.engine = engine
-    logger.debug(
-        "Setup engine: %s",
-        " ".join(f"{attr}={getattr(engine, attr)}" for attr in ENGINE_ATTRS),
-    )
+    logger.debug("Setup engine: %s", get_pg_engine_info(engine))
 
 
 async def close_db_connection(app: FastAPI) -> None:

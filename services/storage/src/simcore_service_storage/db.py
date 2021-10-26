@@ -5,14 +5,14 @@ from aiohttp import web
 from aiopg.sa import Engine
 from servicelib.aiohttp.aiopg_utils import (
     DataSourceName,
-    PostgresRetryPolicyUponInitialization,
-    get_pg_engine_stateinfo,
     init_pg_tables,
     is_pg_responsive,
 )
-from servicelib.common_aiopg_utils import (
+from servicelib.common_aiopg_utils import create_pg_engine
+from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
+from simcore_postgres_database.utils_aiopg import (
     close_engine,
-    create_pg_engine,
+    get_pg_engine_stateinfo,
     raise_if_migration_not_ready,
 )
 from tenacity import retry
