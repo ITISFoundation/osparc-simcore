@@ -7,7 +7,6 @@ from types import TracebackType
 from typing import Any, Awaitable, Dict, List, Optional, Type
 from uuid import uuid4
 
-import fsspec
 from aiodocker import Docker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.events import (
