@@ -1,7 +1,7 @@
 import warnings
-from typing import Dict, Optional
+from typing import Dict
 
-from pydantic import BaseSettings, Extra, validator
+from pydantic import BaseSettings, Extra
 from pydantic.networks import AnyUrl
 from pydantic.types import PositiveInt, SecretStr
 
@@ -25,28 +25,22 @@ class RabbitConfig(BaseSettings):
     user: str = "simcore"
     password: SecretStr = SecretStr("simcore")
 
-    dsn: Optional[RabbitDsn] = None
-
     # channels
     channels: Dict[str, str] = {
         "log": "comp.backend.channels.log",
+        "progress": "comp.backend.channels.progress",
         "instrumentation": "comp.backend.channels.instrumentation",
     }
 
-    @validator("dsn", pre=True)
-    @classmethod
-    def autofill_dsn(cls, v, values):
-        if not v and all(
-            key in values for key in cls.__fields__ if key not in ["dsn", "channels"]
-        ):
-            return RabbitDsn.build(
-                scheme="amqp",
-                user=values["user"],
-                password=values["password"].get_secret_value(),
-                host=values["host"],
-                port=f"{values['port']}",
-            )
-        return v
+    @property
+    def dsn(self) -> str:
+        return RabbitDsn.build(
+            scheme="amqp",
+            user=self.user,
+            password=self.password.get_secret_value(),
+            host=self.host,
+            port=f"{self.port}",
+        )
 
     class Config:
         env_prefix = "RABBIT_"
