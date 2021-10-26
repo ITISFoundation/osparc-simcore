@@ -5,12 +5,14 @@ from typing import Optional
 
 import aiopg.sa
 import tenacity
+from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
 from servicelib.common_aiopg_utils import (
     DataSourceName,
     PostgresRetryPolicyUponInitialization,
+    close_engine,
     create_pg_engine,
-    is_postgres_responsive,
+    raise_if_migration_not_ready,
 )
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from sqlalchemy import and_
@@ -47,9 +49,14 @@ async def _get_node_from_db(
 
 
 @tenacity.retry(**PostgresRetryPolicyUponInitialization().kwargs)
-async def wait_till_postgres_responsive(dsn: DataSourceName) -> None:
-    if not is_postgres_responsive(dsn):
-        raise Exception
+async def _ensure_postgres_ready(dsn: DataSourceName) -> Engine:
+    engine = await create_pg_engine(dsn, minsize=1, maxsize=4)
+    try:
+        await raise_if_migration_not_ready(engine)
+    except Exception:
+        await close_engine(engine)
+        raise
+    return engine
 
 
 class DBContextManager:
@@ -66,9 +73,9 @@ class DBContextManager:
             password=config.POSTGRES_PW,
             host=config.POSTGRES_ENDPOINT.split(":")[0],
             port=config.POSTGRES_ENDPOINT.split(":")[1],
-        )
-        await wait_till_postgres_responsive(dsn)
-        engine = await create_pg_engine(dsn, minsize=1, maxsize=4)
+        )  # type: ignore
+
+        engine = await _ensure_postgres_ready(dsn)
         return engine
 
     async def __aenter__(self):
@@ -79,8 +86,7 @@ class DBContextManager:
 
     async def __aexit__(self, exc_type, exc, tb):
         if self._db_engine and self._db_engine_created:
-            self._db_engine.close()
-            await self._db_engine.wait_closed()
+            await close_engine(self._db_engine)
             log.debug(
                 "engine '%s' after shutdown: closed=%s, size=%d",
                 self._db_engine.dsn,
