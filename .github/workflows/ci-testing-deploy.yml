@@ -1919,7 +1919,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-director-v2-02:
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
+    timeout-minutes: 40 # if this timeout gets too small, then split the tests
     name: "[int] director-v2 02"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
