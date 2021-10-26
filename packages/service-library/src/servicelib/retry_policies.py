@@ -25,6 +25,6 @@ class PostgresRetryPolicyUponInitialization:
         self.kwargs = dict(
             wait=wait_fixed(self.WAIT_SECS),
             stop=stop_after_attempt(self.ATTEMPTS_COUNT),
-            before_sleep=before_sleep_log(logger, logging.INFO),
+            before_sleep=before_sleep_log(logger, logging.WARNING),
             reraise=True,
         )
