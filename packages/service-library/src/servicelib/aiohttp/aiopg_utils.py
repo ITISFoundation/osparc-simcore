@@ -11,10 +11,11 @@
     SEE for extra keywords: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
 """
 # TODO: Towards implementing https://github.com/ITISFoundation/osparc-simcore/issues/1195
+# TODO: deprecate this module. Move utils into retry_policies, simcore_postgres_database.utils_aiopg
 
 import functools
 import logging
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import sqlalchemy as sa
 from aiohttp import web
