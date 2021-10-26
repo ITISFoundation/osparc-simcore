@@ -21,14 +21,14 @@ from simcore_postgres_database.utils import (
     hide_url_pass,
     raise_if_not_responsive,
 )
-from simcore_postgres_database.utils_migration import (
-    DEFAULT_INI,
+from simcore_postgres_database.utils_cli import (
     DISCOVERED_CACHE,
     get_alembic_config_from_cache,
     get_service_published_port,
     load_cache,
     reset_cache,
 )
+from simcore_postgres_database.utils_migration import DEFAULT_INI
 from tenacity import Retrying
 from tenacity.after import after_log
 from tenacity.wait import wait_fixed
