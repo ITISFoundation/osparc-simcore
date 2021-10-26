@@ -38,7 +38,8 @@ from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.module_setup import setup_socketio
 from simcore_service_webserver.users import setup_users
 from socketio.exceptions import ConnectionError as SocketConnectionError
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+from tenacity import retry, retry_if_exception_type, wait_fixed
+from tenacity.stop import stop_after_delay
 from yarl import URL
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -160,7 +161,7 @@ def _assert_sleeper_services_completed(
 
     @retry(
         reraise=True,
-        stop=stop_after_attempt(TIMEOUT_SECONDS / WAIT_TIME),
+        stop=stop_after_delay(TIMEOUT_SECONDS),
         wait=wait_fixed(WAIT_TIME),
         retry=retry_if_exception_type(AssertionError),
     )
@@ -259,18 +260,13 @@ async def test_start_pipeline(
     )
 
     if not error:
-        # starting again should be disallowed
+        # starting again should be disallowed, since it's already running
         resp = await client.post(url_start)
         assert (
             resp.status == web.HTTPForbidden.status_code
             if user_role == UserRole.GUEST
             else expected.forbidden.status_code
         )
-        # FIXME: to PC: I have an issue here with how the webserver middleware transforms errors (see director_v2.py)
-        # await assert_status(
-        #     resp,
-        #     web.HTTPForbidden if user_role == UserRole.GUEST else expected.forbidden,
-        # )
 
         assert "pipeline_id" in data
         assert data["pipeline_id"] == project_id
@@ -282,9 +278,11 @@ async def test_start_pipeline(
             mock_workbench_adjacency_list,
             check_outputs=False,
         )
+        # wait for the computation to stop
         _assert_sleeper_services_completed(
             project_id, postgres_session, StateType.SUCCESS, mock_workbench_payload
         )
+        # restart the computation
         resp = await client.post(url_start)
         data, error = await assert_status(
             resp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
@@ -302,6 +300,7 @@ async def test_start_pipeline(
         resp, web.HTTPNoContent if user_role == UserRole.GUEST else expected.no_content
     )
     if not error:
+        # now wait for it to stop
         _assert_sleeper_services_completed(
             project_id, postgres_session, StateType.ABORTED, mock_workbench_payload
         )
