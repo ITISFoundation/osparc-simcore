@@ -19,6 +19,8 @@ async def _logs_fetcher_worker(
     async with docker_client() as docker:
         container = await docker.containers.get(container_name)
 
+        # TODO: how to stop this?
+
         logger.debug("Streaming logs from %s", container_name)
         async for line in container.log(stdout=True, stderr=True, follow=True):
             await dispatch_log(container_name=container_name, message=line)
@@ -78,14 +80,14 @@ class BackgroundLogFetcher:
         logger.debug("Subscribed to fetch logs from '%s'", container_name)
 
     async def stop_log_fetching(self, container_name: str) -> None:
-        logger.debug("Stopping logs fetch from '%s'", container_name)
+        logger.debug("Stopping logs fetching from container '%s'", container_name)
         task = self._log_processor_tasks[container_name]
         with suppress(CancelledError):
             task.cancel()
             await task
         del self._log_processor_tasks[container_name]
         del self._container_loggers[container_name]
-        logger.debug("Logs fetch stopped from '%s'", container_name)
+        logger.debug("Logs fetching stopped for container '%s'", container_name)
 
     async def stop_fetcher(self) -> None:
         for container_name in list(self._log_processor_tasks.keys()):
