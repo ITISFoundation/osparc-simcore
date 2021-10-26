@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Callable, Optional
+from typing import AsyncIterable, Awaitable, Callable, Iterable, Optional
 from uuid import uuid4
 
 import pytest
@@ -23,7 +23,7 @@ def client_session_id_factory() -> Callable[[], str]:
 
 
 @pytest.fixture()
-def socketio_url_factory(client) -> Callable:
+def socketio_url_factory(client) -> Iterable[Callable[[Optional[TestClient]], str]]:
     def create_url(client_override: Optional[TestClient] = None) -> str:
         SOCKET_IO_PATH = "/socket.io/"
         return str((client_override or client).make_url(SOCKET_IO_PATH))
@@ -32,7 +32,9 @@ def socketio_url_factory(client) -> Callable:
 
 
 @pytest.fixture()
-async def security_cookie_factory(client: TestClient) -> Callable:
+async def security_cookie_factory(
+    client: TestClient,
+) -> AsyncIterable[Callable[[Optional[TestClient]], Awaitable[str]]]:
     async def creator(client_override: Optional[TestClient] = None) -> str:
         # get the cookie by calling the root entrypoint
         resp = await (client_override or client).get("/v0/")
@@ -55,7 +57,9 @@ async def socketio_client_factory(
     socketio_url_factory: Callable,
     security_cookie_factory: Callable,
     client_session_id_factory: Callable,
-) -> Callable[[str, Optional[TestClient]], socketio.AsyncClient]:
+) -> AsyncIterable[
+    Callable[[Optional[str], Optional[TestClient]], Awaitable[socketio.AsyncClient]]
+]:
     clients = []
 
     async def connect(
@@ -67,6 +71,7 @@ async def socketio_client_factory(
 
         sio = socketio.AsyncClient(ssl_verify=False)
         # enginio 3.10.0 introduced ssl verification
+        assert client_session_id
         url = str(
             URL(socketio_url_factory(client)).with_query(
                 {"client_session_id": client_session_id}
