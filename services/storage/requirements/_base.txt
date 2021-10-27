@@ -31,6 +31,8 @@ aiopg==1.3.1
     #   -r requirements/_base.in
 aiozipkin==0.7.1
     # via -r requirements/../../../packages/service-library/requirements/_aiohttp.in
+alembic==1.7.4
+    # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 async-timeout==3.0.1
     # via
     #   aiohttp
@@ -61,6 +63,17 @@ idna==2.10
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   email-validator
     #   yarl
+importlib-metadata==4.8.1
+    # via alembic
+importlib-resources==5.3.0 ; python_version < "3.9"
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   alembic
 isodate==0.6.0
     # via
     #   openapi-core
@@ -85,10 +98,13 @@ lazy-object-proxy==1.4.3
     # via
     #   -r requirements/../../../packages/service-library/requirements/_aiohttp.in
     #   openapi-core
+mako==1.1.5
+    # via alembic
 markupsafe==1.1.1
     # via
     #   aiohttp-swagger
     #   jinja2
+    #   mako
 minio==7.0.4
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -160,6 +176,7 @@ sqlalchemy==1.3.24
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
+    #   alembic
 strict-rfc3339==0.7
     # via openapi-core
 tenacity==8.0.1
@@ -196,6 +213,10 @@ yarl==1.5.1
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiohttp
+zipp==3.6.0
+    # via
+    #   importlib-metadata
+    #   importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

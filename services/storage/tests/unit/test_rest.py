@@ -49,6 +49,7 @@ def client(
     aiohttp_unused_port,
     aiohttp_client: TestClient,
     postgres_service,
+    postgres_service_url,
     minio_service,
     osparc_api_specs_dir,
     monkeypatch,
