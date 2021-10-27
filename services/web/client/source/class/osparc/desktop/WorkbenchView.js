@@ -278,7 +278,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         hideRoot: true
       });
       nodesTree.setStudy(study);
-      homeAndNodesTree.add(nodesTree);
+      homeAndNodesTree.add(nodesTree, {
+        flex: 1
+      });
 
       const addNewNodeBtn = new qx.ui.form.Button().set({
         label: this.tr("Add new node"),
