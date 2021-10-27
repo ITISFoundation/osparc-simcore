@@ -143,16 +143,15 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           bindItem: (c, item, id) => {
             c.bindDefaultProperties(item, id);
             c.bindProperty("nodeId", "nodeId", null, item, id);
-            const node = study.getWorkbench().getNode(item.getModel().getNodeId());
-            if (node) {
-              node.bind("label", item.getModel(), "label");
-            }
             c.bindProperty("label", "label", null, item, id);
+            const node = study.getWorkbench().getNode(item.getModel().getNodeId());
             if (item.getModel().getNodeId() === study.getUuid()) {
               item.setIcon("@FontAwesome5Solid/home/14");
               item.getChildControl("options-delete-button").exclude();
-            }
-            if (node) {
+            } else if (node) {
+              node.bind("label", item.getModel(), "label");
+
+              // set icon
               if (node.isFilePicker()) {
                 const icon = osparc.utils.Services.getIcon("file");
                 item.setIcon(icon+"14");
@@ -160,20 +159,27 @@ qx.Class.define("osparc.component.widget.NodesTree", {
                 const icon = osparc.utils.Services.getIcon("parameter");
                 item.setIcon(icon+"14");
               } else {
-                if (node.isDynamic()) {
-                  item.getChildControl("fullscreen-button").show();
-                  node.getStatus().bind("interactive", item.getChildControl("icon"), "textColor", {
-                    converter: output => osparc.utils.StatusUI.getColor(output)
-                  }, this);
-                } else if (node.isComputational()) {
-                  node.getStatus().bind("running", item.getChildControl("icon"), "textColor", {
-                    converter: output => osparc.utils.StatusUI.getColor(output)
-                  }, this);
-                }
                 const icon = osparc.utils.Services.getIcon(node.getMetaData().type);
                 if (icon) {
                   item.setIcon(icon+"14");
                 }
+              }
+
+              // bind running/interactive status to icon color
+              if (node.isDynamic()) {
+                item.getChildControl("fullscreen-button").show();
+                node.getStatus().bind("interactive", item.getChildControl("icon"), "textColor", {
+                  converter: output => osparc.utils.StatusUI.getColor(output)
+                }, this);
+              } else if (node.isComputational()) {
+                node.getStatus().bind("running", item.getChildControl("icon"), "textColor", {
+                  converter: output => osparc.utils.StatusUI.getColor(output)
+                }, this);
+              }
+
+              // add fullscreen
+              if (node.isDynamic()) {
+                item.getChildControl("fullscreen-button").show();
               }
             }
           },
