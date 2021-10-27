@@ -65,21 +65,29 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   },
 
   statics: {
+    getSortingValue: function(node) {
+      if (node.isFilePicker()) {
+        return osparc.utils.Services.getSorting("file");
+      } else if (node.isParameter()) {
+        return osparc.utils.Services.getSorting("parameter");
+      }
+      return osparc.utils.Services.getSorting(node.getMetaData().type);
+    },
+
     convertModel: function(nodes) {
-      let children = [];
+      const children = [];
       for (let nodeId in nodes) {
         const node = nodes[nodeId];
-        let nodeInTree = {
-          label: "",
-          nodeId: node.getNodeId()
+        const nodeInTree = {
+          label: node.getLabel(),
+          children: node.isContainer() ? this.convertModel(node.getInnerNodes()) : [],
+          isContainer: node.isContainer(),
+          nodeId: node.getNodeId(),
+          sortingValue: this.self().getSortingValue(node)
         };
-        nodeInTree.label = node.getLabel();
-        nodeInTree.isContainer = node.isContainer();
-        if (node.isContainer()) {
-          nodeInTree.children = this.convertModel(node.getInnerNodes());
-        }
         children.push(nodeInTree);
       }
+      children.sort((firstEl, secondEl) => firstEl.sortingValue - secondEl.sortingValue);
       return children;
     }
   },
@@ -111,11 +119,12 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     populateTree: function() {
       const study = this.getStudy();
       const topLevelNodes = study.getWorkbench().getNodes();
-      let data = {
+      const data = {
         label: study.getName(),
         children: this.self().convertModel(topLevelNodes),
+        isContainer: true,
         nodeId: study.getUuid(),
-        isContainer: true
+        sortingValue: 0
       };
       let newModel = qx.data.marshal.Json.createModel(data, true);
       let oldModel = this.getModel();
