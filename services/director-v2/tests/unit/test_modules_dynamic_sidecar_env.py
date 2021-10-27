@@ -85,8 +85,8 @@ def test_dynamic_sidecar_env_vars(
     assert dynamic_sidecar_env_vars["RABBIT_PASSWORD"] == str(
         rabbit_settings.RABBIT_PASSWORD.get_secret_value()
     )
-    assert json.dumps(
-        dynamic_sidecar_env_vars["RABBIT_CHANNELS"] == rabbit_settings.RABBIT_CHANNELS
+    assert dynamic_sidecar_env_vars["RABBIT_CHANNELS"] == json.dumps(
+        rabbit_settings.RABBIT_CHANNELS
     )
 
     assert int(dynamic_sidecar_env_vars["USER_ID"]) >= 0
