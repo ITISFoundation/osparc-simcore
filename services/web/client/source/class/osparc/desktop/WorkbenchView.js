@@ -272,7 +272,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const topBar = tabViewPrimary.getChildControl("bar");
       this.__addTopBarSpacer(topBar);
 
-      const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+      const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
         backgroundColor: primaryColumnBGColor
       });
 
@@ -287,19 +287,19 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree().set({
         backgroundColor: primaryColumnBGColor,
-        hideRoot: true
+        hideRoot: true,
+        allowGrowY: true,
+        minHeight: 5
       });
       nodesTree.setStudy(study);
-      homeAndNodesTree.add(nodesTree, {
-        flex: 1
-      });
+      homeAndNodesTree.add(nodesTree);
 
       const addNewNodeBtn = new qx.ui.form.Button().set({
         label: this.tr("Add new node"),
         icon: "@FontAwesome5Solid/plus/14",
         allowGrowX: false,
         alignX: "left",
-        marginLeft: 10
+        marginLeft: 14
       });
       addNewNodeBtn.addListener("execute", () => this.__workbenchUI.openServiceCatalog());
       homeAndNodesTree.add(addNewNodeBtn);

@@ -190,6 +190,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
             }, this);
           }
         });
+        this.setHeight(newModel.getChildren().length*21 + 5);
       }
     },
 
