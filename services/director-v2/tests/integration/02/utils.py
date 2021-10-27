@@ -321,6 +321,14 @@ async def _inspect_service_and_print_logs(
         formatted_inspect = json.dumps(service_details, indent=2)
         print(f"{formatted_inspect}\n{SEPARATOR}")
 
+        # print containers inspect to see them all
+        for container in await docker_client.containers.list():
+            container_inspect = await container.show()
+            formatted_container_inspect = json.dumps(container_inspect, indent=2)
+            container_name = container_inspect["Name"][1:]
+            print(f"Container inspect: {container_name}")
+            print(f"{formatted_container_inspect}\n{SEPARATOR}")
+
         logs = await docker_client.services.logs(
             service_details["ID"], stdout=True, stderr=True
         )
