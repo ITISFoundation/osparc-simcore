@@ -23,6 +23,7 @@ pytest-icdiff
 pytest-lazy-fixture
 async-asgi-testclient
 nest-asyncio    # required for async tests and mixing starlette test_client
+minio
 
 # fixtures
 Faker
