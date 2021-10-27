@@ -61,10 +61,6 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
             assert self.DASK_SCHEDULER_HOST is not None  # nosec
         return as_worker
 
-    @classmethod
-    def create_from_envs(cls) -> "Settings":
-        return cls()
-
     @validator("LOG_LEVEL", pre=True)
     @classmethod
     def _validate_loglevel(cls, value: Any) -> str:
