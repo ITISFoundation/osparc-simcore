@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import cast
 
 import fsspec
+from faker import Faker
 from pydantic import AnyUrl, parse_obj_as
 from pytest_localftpserver.servers import ProcessFTPServer
 from simcore_service_dask_sidecar.file_utils import (
@@ -11,13 +12,15 @@ from simcore_service_dask_sidecar.file_utils import (
 )
 
 
-async def test_copy_file_to_remote(ftpserver: ProcessFTPServer, tmp_path: Path):
+async def test_copy_file_to_remote(
+    ftpserver: ProcessFTPServer, tmp_path: Path, faker: Faker
+):
     ftp_server_base_url = ftpserver.get_login_data(style="url")
 
-    file_on_remote = f"{ftp_server_base_url}/some_remote_filename"
+    file_on_remote = f"{ftp_server_base_url}/{faker.file_name()}"
     destination_url = parse_obj_as(AnyUrl, file_on_remote)
-    src_path = tmp_path / "some_file"
-    TEXT_IN_FILE = "This is some test data in the file"
+    src_path = tmp_path / faker.file_name()
+    TEXT_IN_FILE = faker.text()
     src_path.write_text(TEXT_IN_FILE)
     assert src_path.exists()
 
@@ -29,14 +32,14 @@ async def test_copy_file_to_remote(ftpserver: ProcessFTPServer, tmp_path: Path):
 
 
 async def test_copy_file_to_remote_compresses_if_zip_destination(
-    ftpserver: ProcessFTPServer, tmp_path: Path
+    ftpserver: ProcessFTPServer, tmp_path: Path, faker: Faker
 ):
     ftp_server_base_url = ftpserver.get_login_data(style="url")
 
-    file_on_remote = f"{ftp_server_base_url}/some_remote_zip_filename.zip"
+    file_on_remote = f"{ftp_server_base_url}/{faker.file_name()}.zip"
     destination_url = parse_obj_as(AnyUrl, file_on_remote)
-    src_path = tmp_path / "some_file"
-    TEXT_IN_FILE = "This is some test data in the file"
+    src_path = tmp_path / faker.file_name()
+    TEXT_IN_FILE = faker.text()
     src_path.write_text(TEXT_IN_FILE)
     assert src_path.exists()
 
@@ -48,7 +51,9 @@ async def test_copy_file_to_remote_compresses_if_zip_destination(
         assert fp.read() == TEXT_IN_FILE
 
 
-async def test_pull_file_from_remote(ftpserver: ProcessFTPServer, tmp_path: Path):
+async def test_pull_file_from_remote(
+    ftpserver: ProcessFTPServer, tmp_path: Path, faker: Faker
+):
     ftp_server = cast(dict, ftpserver.get_login_data())
     ftp_server["password"] = ftp_server["passwd"]
     del ftp_server["passwd"]
@@ -57,20 +62,22 @@ async def test_pull_file_from_remote(ftpserver: ProcessFTPServer, tmp_path: Path
 
     # put some file on the remote
     fs = fsspec.filesystem("ftp", **ftp_server)
-    with fs.open("some_normal_file", mode="wt") as fp:
-        fp.write("Hello world normal file!")
+    TEXT_IN_FILE = faker.text()
+    file_name = faker.file_name()
+    with fs.open(file_name, mode="wt") as fp:
+        fp.write(TEXT_IN_FILE)
 
     ftp_server_url_login_data = ftpserver.get_login_data(style="url")
 
-    src_url = parse_obj_as(AnyUrl, f"{ftp_server_url_login_data}/some_normal_file")
-    dst_path = tmp_path / "pulled_file"
+    src_url = parse_obj_as(AnyUrl, f"{ftp_server_url_login_data}/{file_name}")
+    dst_path = tmp_path / faker.file_name()
     await pull_file_from_remote(src_url, dst_path)
     assert dst_path.exists()
-    assert dst_path.read_text() == "Hello world normal file!"
+    assert dst_path.read_text() == TEXT_IN_FILE
 
 
 async def test_pull_compressed_zip_file_from_remote(
-    ftpserver: ProcessFTPServer, tmp_path: Path
+    ftpserver: ProcessFTPServer, tmp_path: Path, faker: Faker
 ):
     ftp_server = cast(dict, ftpserver.get_login_data())
     ftp_server["password"] = ftp_server["passwd"]
@@ -79,16 +86,16 @@ async def test_pull_compressed_zip_file_from_remote(
     del ftp_server["user"]
 
     # put some zip file on the remote
-    local_zip_file_path = tmp_path / "my_test_zip.zip"
-    local_test_file = tmp_path / "my_test_text_file"
-    local_test_file.write_text("Hello world normal file!")
+    local_zip_file_path = tmp_path / f"{faker.file_name()}.zip"
+    local_test_file = tmp_path / faker.file_name()
+    local_test_file.write_text(faker.text())
     assert local_test_file.exists()
     with zipfile.ZipFile(
         local_zip_file_path, compression=zipfile.ZIP_DEFLATED, mode="w"
     ) as zfp:
         zfp.write(local_test_file, local_test_file.name)
 
-    ftp_zip_file_path = "my_zip.zip"
+    ftp_zip_file_path = f"{faker.file_name()}.zip"
     fs = fsspec.filesystem("ftp", **ftp_server)
     fs.put_file(local_zip_file_path, ftp_zip_file_path)
     assert fs.exists(ftp_zip_file_path)
@@ -100,15 +107,15 @@ async def test_pull_compressed_zip_file_from_remote(
     download_folder = tmp_path / "download"
     download_folder.mkdir(parents=True, exist_ok=True)
     assert download_folder.exists()
-    dst_path = download_folder / "pulled_file.zip"
+    dst_path = download_folder / f"{faker.file_name()}.zip"
     await pull_file_from_remote(src_url, dst_path)
     assert dst_path.exists()
     dst_path.unlink()
 
     # USE-CASE 2: if destination is not a zip, then we decompress
     assert download_folder.exists()
-    dst_path = download_folder / "pulled_file"
+    dst_path = download_folder / faker.file_name()
     await pull_file_from_remote(src_url, dst_path)
     assert not dst_path.exists()
-    expected_download_file_path = download_folder / "my_test_text_file"
+    expected_download_file_path = download_folder / local_test_file.name
     assert expected_download_file_path.exists()

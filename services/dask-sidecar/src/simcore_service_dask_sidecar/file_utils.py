@@ -35,7 +35,9 @@ async def pull_file_from_remote(src_url: AnyUrl, dst_path: Path) -> None:
     await asyncio.get_event_loop().run_in_executor(
         None,
         fs.get_file,
-        src_url.path if src_url.scheme not in HTTP_FILE_SYSTEM_SCHEMES else src_url,
+        f"{src_url.path}"
+        if src_url.scheme not in HTTP_FILE_SYSTEM_SCHEMES
+        else src_url,
         dst_path,
     )
     if src_mime_type == "application/zip" and dst_mime_type != "application/zip":
@@ -56,6 +58,7 @@ async def push_file_to_remote(src_path: Path, dst_url: AnyUrl) -> None:
 
         dst_mime_type, _ = mimetypes.guess_type(f"{dst_url.path}")
         src_mime_type, _ = mimetypes.guess_type(src_path)
+
         if dst_mime_type == "application/zip" and src_mime_type != "application/zip":
             archive_file_path = Path(tmp_dir) / Path(URL(dst_url).path).name
             logger.debug("src %s shall be zipped into %s", src_path, archive_file_path)
@@ -66,6 +69,7 @@ async def push_file_to_remote(src_path: Path, dst_url: AnyUrl) -> None:
                     None, zfp.write, src_path, src_path.name
                 )
             logger.debug("%s created.", archive_file_path)
+            assert archive_file_path.exists()  # no sec
             file_to_upload = archive_file_path
 
         if dst_url.scheme in HTTP_FILE_SYSTEM_SCHEMES:
