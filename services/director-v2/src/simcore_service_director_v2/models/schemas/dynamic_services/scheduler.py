@@ -107,6 +107,32 @@ class DockerContainerInspect(BaseModel):
         )
 
 
+class ServiceRemovalState(BaseModel):
+    can_remove: bool = Field(
+        False,
+        description="when True, marks the service as ready to be removed",
+    )
+    can_save: Optional[bool] = Field(
+        None,
+        description="when True, saves the internal state and upload outputs of the service",
+    )
+    was_removed: bool = Field(
+        False,
+        description=(
+            "Will be True when the removal finished. Used primarily "
+            "to cancel retrying long running operations."
+        ),
+    )
+
+    def mark_to_remove(self, can_save: Optional[bool]) -> None:
+        self.can_remove = True
+        self.can_save = can_save
+
+    def mark_removed(self) -> None:
+        self.can_remove = False
+        self.was_removed = True
+
+
 class DynamicSidecar(BaseModel):
     status: Status = Field(
         Status.create_as_initially_ok(),
@@ -150,6 +176,24 @@ class DynamicSidecar(BaseModel):
         description=(
             "when True no longer will the Docker api "
             "be used to check if the services were started"
+        ),
+    )
+
+    service_environment_prepared: bool = Field(
+        False,
+        description=(
+            "True when the environment setup required by the "
+            "dynamic-sidecars created services was completed."
+            "Example: nodeports data downloaded, globally "
+            "shared service data fetched, etc.."
+        ),
+    )
+
+    service_removal_state: ServiceRemovalState = Field(
+        default_factory=ServiceRemovalState,
+        description=(
+            "stores information used during service removal "
+            "from the dynamic-sidecar scheduler"
         ),
     )
 

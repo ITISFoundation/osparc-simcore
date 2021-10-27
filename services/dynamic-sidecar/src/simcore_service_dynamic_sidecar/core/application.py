@@ -3,10 +3,14 @@ from typing import Any, Callable, Coroutine
 
 from fastapi import FastAPI
 
-from .._meta import __version__, api_vtag
+from .._meta import API_VTAG, __version__
 from ..api import main_router
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
+from ..modules.directory_watcher import (
+    setup_directory_watcher,
+    teardown_directory_watcher,
+)
 from .remote_debug import setup as remote_debug_setup
 from .settings import DynamicSidecarSettings
 from .shared_handlers import on_shutdown_handler
@@ -46,8 +50,8 @@ def assemble_application() -> FastAPI:
     logger.debug(dynamic_sidecar_settings.json(indent=2))
 
     application = FastAPI(
-        debug=dynamic_sidecar_settings.debug,
-        openapi_url=f"/api/{api_vtag}/openapi.json",
+        debug=dynamic_sidecar_settings.DEBUG,
+        openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
     )
 
@@ -69,13 +73,15 @@ def assemble_application() -> FastAPI:
         app: FastAPI,
     ) -> Callable[[], Coroutine[Any, Any, None]]:
         async def on_startup() -> None:
-            await login_registry(app.state.settings.registry)
+            await setup_directory_watcher()
+            await login_registry(app.state.settings.REGISTRY_SETTINGS)
             print(WELCOME_MSG, flush=True)
 
         return on_startup
 
     # setting up handler for lifecycle
     async def on_shutdown() -> None:
+        await teardown_directory_watcher()
         await on_shutdown_handler(application)
         logger.info("shutdown cleanup completed")
 

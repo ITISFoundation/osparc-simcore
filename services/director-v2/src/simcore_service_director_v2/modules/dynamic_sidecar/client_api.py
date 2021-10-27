@@ -1,7 +1,7 @@
 import json
 import logging
 import traceback
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 import httpx
 from fastapi import FastAPI
@@ -58,6 +58,10 @@ class DynamicSidecarClient:
         self._heatlth_request_timeout: httpx.Timeout = httpx.Timeout(1.0, connect=1.0)
         self._base_timeout = httpx.Timeout(
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
+            connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+        )
+        self._save_restore_timeout = httpx.Timeout(
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
             connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
 
@@ -126,7 +130,7 @@ class DynamicSidecarClient:
         try:
             async with httpx.AsyncClient(timeout=self._base_timeout) as client:
                 response = await client.post(url, data=compose_spec)
-            if response.status_code != 202:
+            if response.status_code != status.HTTP_202_ACCEPTED:
                 message = (
                     f"ERROR during service creation request: "
                     f"status={response.status_code}, body={response.text}"
@@ -157,6 +161,77 @@ class DynamicSidecarClient:
             logger.info("Compose down result %s", response.text)
         except httpx.HTTPError as e:
             log_httpx_http_error(url, "POST", traceback.format_exc())
+            raise e
+
+    async def service_save_state(self, dynamic_sidecar_endpoint: str) -> None:
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/state:save")
+        try:
+            async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
+                response = await client.post(url)
+            if response.status_code != status.HTTP_204_NO_CONTENT:
+                message = (
+                    f"ERROR while saving service state: "
+                    f"status={response.status_code}, body={response.text}"
+                )
+                logging.warning(message)
+                raise DynamicSchedulerException(message)
+        except httpx.HTTPError as e:
+            log_httpx_http_error(url, "PUT", traceback.format_exc())
+            raise e
+
+    async def service_restore_state(self, dynamic_sidecar_endpoint: str) -> None:
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/state:restore")
+        try:
+            async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
+                response = await client.post(url)
+            if response.status_code != status.HTTP_204_NO_CONTENT:
+                message = (
+                    f"ERROR while restoring service state: "
+                    f"status={response.status_code}, body={response.text}"
+                )
+                logging.warning(message)
+                raise DynamicSchedulerException(message)
+        except httpx.HTTPError as e:
+            log_httpx_http_error(url, "PUT", traceback.format_exc())
+            raise e
+
+    async def service_pull_input_ports(
+        self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
+    ) -> int:
+        port_keys = [] if port_keys is None else port_keys
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports/inputs:pull")
+        try:
+            async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
+                response = await client.post(url, json=port_keys)
+            if response.status_code != status.HTTP_200_OK:
+                message = (
+                    f"ERROR while restoring service state: "
+                    f"status={response.status_code}, body={response.text}"
+                )
+                logging.warning(message)
+                raise DynamicSchedulerException(message)
+            return int(response.text)
+        except httpx.HTTPError as e:
+            log_httpx_http_error(url, "PUT", traceback.format_exc())
+            raise e
+
+    async def service_push_output_ports(
+        self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
+    ) -> None:
+        port_keys = [] if port_keys is None else port_keys
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports/outputs:push")
+        try:
+            async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
+                response = await client.post(url, json=port_keys)
+            if response.status_code != status.HTTP_204_NO_CONTENT:
+                message = (
+                    f"ERROR while restoring service state: "
+                    f"status={response.status_code}, body={response.text}"
+                )
+                logging.warning(message)
+                raise DynamicSchedulerException(message)
+        except httpx.HTTPError as e:
+            log_httpx_http_error(url, "PUT", traceback.format_exc())
             raise e
 
     async def get_entrypoint_container_name(

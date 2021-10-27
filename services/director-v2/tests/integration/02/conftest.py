@@ -7,7 +7,7 @@ import pytest
 
 @pytest.fixture
 def network_name() -> str:
-    return "test_swarm_network_name"
+    return "pytest-simcore_interactive_services_subnet"
 
 
 @pytest.fixture

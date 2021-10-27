@@ -12,6 +12,7 @@ from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
 from async_timeout import timeout
 from pydantic import PositiveInt
+from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from utils import ensure_network_cleanup, patch_dynamic_service_url
@@ -100,7 +101,9 @@ async def test_client(
 
 
 @pytest.fixture
-async def ensure_services_stopped(start_request_data: Dict[str, Any]) -> None:
+async def ensure_services_stopped(
+    start_request_data: Dict[str, Any], test_client: TestClient
+) -> None:
     yield
     # ensure service cleanup when done testing
     async with aiodocker.Docker() as docker_client:
@@ -113,7 +116,31 @@ async def ensure_services_stopped(start_request_data: Dict[str, Any]) -> None:
                 delete_result = await docker_client.services.delete(service_name)
                 assert delete_result is True
 
+        scheduler_interval = (
+            test_client.application.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS
+        )
+        # sleep enough to ensure the observation cycle properly stopped the service
+        await asyncio.sleep(2 * scheduler_interval)
+
         await ensure_network_cleanup(docker_client, project_id)
+
+
+@pytest.fixture
+def mock_service_state(mocker: MockerFixture) -> None:
+    """because the monitor is disabled some functionality needs to be mocked"""
+
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.client_api.DynamicSidecarClient.service_save_state",
+        side_effect=lambda *args, **kwargs: None,
+    )
+
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.client_api.DynamicSidecarClient.service_restore_state",
+        side_effect=lambda *args, **kwargs: None,
+    )
+
+
+# TESTS
 
 
 async def test_start_status_stop(
@@ -121,6 +148,7 @@ async def test_start_status_stop(
     node_uuid: str,
     start_request_data: Dict[str, Any],
     ensure_services_stopped: None,
+    mock_service_state: None,
 ):
     # starting the service
     headers = {

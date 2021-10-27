@@ -20,15 +20,15 @@ TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 logger = logging.getLogger(__name__)
 
 
-async def login_registry(settings: RegistrySettings) -> None:
-    def create_docker_config_file(settings: RegistrySettings) -> None:
+async def login_registry(registry_settings: RegistrySettings) -> None:
+    def create_docker_config_file(registry_settings: RegistrySettings) -> None:
+        user = registry_settings.REGISTRY_USER
+        password = registry_settings.REGISTRY_PW.get_secret_value()
         docker_config = {
             "auths": {
-                f"{settings.resolved_registry_url}": {
+                f"{registry_settings.resolved_registry_url}": {
                     "auth": base64.b64encode(
-                        f"{settings.REGISTRY_USER}:{settings.REGISTRY_PW.get_secret_value()}".encode(
-                            "utf-8"
-                        )
+                        f"{user}:{password}".encode("utf-8")
                     ).decode("utf-8")
                 }
             }
@@ -37,9 +37,9 @@ async def login_registry(settings: RegistrySettings) -> None:
         conf_file.parent.mkdir(exist_ok=True, parents=True)
         conf_file.write_text(json.dumps(docker_config))
 
-    if settings.REGISTRY_AUTH:
+    if registry_settings.REGISTRY_AUTH:
         await asyncio.get_event_loop().run_in_executor(
-            None, create_docker_config_file, settings
+            None, create_docker_config_file, registry_settings
         )
 
 

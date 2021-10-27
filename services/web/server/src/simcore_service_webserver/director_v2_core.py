@@ -11,6 +11,7 @@ from models_library.settings.services_common import ServicesCommonSettings
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
+from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
 from yarl import URL
 
 from .director_v2_settings import Directorv2Settings, get_client_session, get_settings
@@ -63,11 +64,11 @@ async def _request_director_v2(
             )
 
             # NOTE:
-            # sometimes director-v0 (via redirects)
-            # replies in plain text and this is considered an error
-            #
-            if response.status != expected_status.status_code or isinstance(
-                payload, str
+            # - `sometimes director-v0` (via redirects) replies
+            #   in plain text and this is considered an error
+            # - `director-v2` and `director-v0` can reply with 204 no content
+            if response.status != expected_status.status_code or (
+                response.status != web.HTTPNoContent and isinstance(payload, str)
             ):
                 raise DirectorServiceError(response.status, reason=str(payload))
 
@@ -319,13 +320,51 @@ async def stop_services(
     await logged_gather(*services_to_stop)
 
 
+def _retry_parameters() -> Dict[str, Any]:
+    return dict(stop=stop_after_attempt(3), wait=wait_exponential(), reraise=True)
+
+
 @log_decorator(logger=log)
 async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
     settings: Directorv2Settings = get_settings(app)
     backend_url = URL(settings.endpoint) / "dynamic_services" / f"{node_uuid}"
-    service_state = await _request_director_v2(
-        app, "GET", backend_url, expected_status=web.HTTPOk
-    )
+
+    # sometimes the director-v2 cannot be reached causing the service to fail
+    # retrying 3 times before giving up for good
+    async for attempt in AsyncRetrying(**_retry_parameters()):
+        with attempt:
+            service_state = await _request_director_v2(
+                app, "GET", backend_url, expected_status=web.HTTPOk
+            )
 
     assert isinstance(service_state, dict)  # nosec
     return service_state
+
+
+@log_decorator(logger=log)
+async def retrieve(
+    app: web.Application, node_uuid: str, port_keys: List[str]
+) -> DataBody:
+    # when triggering retrieve endpoint
+    # this will allow to sava bigger datasets from the services
+    timeout = ServicesCommonSettings().storage_service_upload_download_timeout
+
+    director2_settings: Directorv2Settings = get_settings(app)
+    backend_url = (
+        URL(director2_settings.endpoint) / "dynamic_services" / f"{node_uuid}:retrieve"
+    )
+    body = dict(port_keys=port_keys)
+
+    async for attempt in AsyncRetrying(**_retry_parameters()):
+        with attempt:
+            retry_result = await _request_director_v2(
+                app,
+                "POST",
+                backend_url,
+                expected_status=web.HTTPOk,
+                data=body,
+                timeout=timeout,
+            )
+
+    assert isinstance(retry_result, dict)  # nosec
+    return retry_result
