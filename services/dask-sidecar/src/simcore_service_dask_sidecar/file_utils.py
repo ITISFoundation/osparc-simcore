@@ -3,6 +3,7 @@ import mimetypes
 import zipfile
 from pathlib import Path
 from pprint import pformat
+from typing import Final
 
 import aiofiles
 import fsspec
@@ -13,6 +14,8 @@ from .dask_utils import create_dask_worker_logger
 
 logger = create_dask_worker_logger(__name__)
 
+HTTP_FILE_SYSTEM_SCHEMES: Final = ["http", "https"]
+
 
 async def pull_file_from_remote(src_url: AnyUrl, dst_path: Path) -> None:
     logger.debug("pulling '%s' to local destination '%s'", src_url, dst_path)
@@ -22,7 +25,7 @@ async def pull_file_from_remote(src_url: AnyUrl, dst_path: Path) -> None:
     filesystem_cfg = {
         "protocol": src_url.scheme,
     }
-    if src_url.scheme not in ["http", "https"]:
+    if src_url.scheme not in HTTP_FILE_SYSTEM_SCHEMES:
         filesystem_cfg["host"] = src_url.host
         filesystem_cfg["username"] = src_url.user
         filesystem_cfg["password"] = src_url.password
@@ -32,7 +35,7 @@ async def pull_file_from_remote(src_url: AnyUrl, dst_path: Path) -> None:
     await asyncio.get_event_loop().run_in_executor(
         None,
         fs.get_file,
-        src_url.path if src_url.scheme not in ["http", "https"] else src_url,
+        src_url.path if src_url.scheme not in HTTP_FILE_SYSTEM_SCHEMES else src_url,
         dst_path,
     )
     if src_mime_type == "application/zip" and dst_mime_type != "application/zip":
@@ -65,7 +68,7 @@ async def push_file_to_remote(src_path: Path, dst_url: AnyUrl) -> None:
             logger.debug("%s created.", archive_file_path)
             file_to_upload = archive_file_path
 
-        if dst_url.scheme in ["http", "https"]:
+        if dst_url.scheme in HTTP_FILE_SYSTEM_SCHEMES:
             logger.debug("destination is a http presigned link")
             # NOTE: special case for http scheme when uploading. this is typically a S3 put presigned link.
             # Therefore, we need to use the http filesystem directly in order to call the put_file function.
