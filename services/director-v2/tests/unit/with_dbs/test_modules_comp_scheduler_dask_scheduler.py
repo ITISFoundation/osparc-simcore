@@ -7,8 +7,8 @@
 
 
 import asyncio
+import unittest.mock
 from typing import Any, Callable, Dict, Iterator, List
-from unittest.mock import call
 
 import aiopg
 import pytest
@@ -295,12 +295,12 @@ async def test_proper_pipeline_is_scheduled(
     # check the dask client was properly called
     mocked_dask_client.assert_has_calls(
         calls=[
-            call(
+            unittest.mock.call(
                 user_id=user_id,
                 project_id=sleepers_project.uuid,
                 cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
                 tasks={k: v},
-                callback=scheduler._wake_up_scheduler_now,
+                callback=unittest.mock.ANY,
             )
             for k, v in {
                 f"{sleeper_tasks[1].node_id}": sleeper_tasks[1].image,
@@ -354,7 +354,7 @@ async def test_proper_pipeline_is_scheduled(
         tasks={
             f"{sleeper_tasks[2].node_id}": sleeper_tasks[2].image,
         },
-        callback=scheduler._wake_up_scheduler_now,
+        callback=unittest.mock.ANY,
     )
     mocked_dask_client.reset_mock()
 
