@@ -15,7 +15,7 @@ aiopg==1.2.1
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   -r requirements/_test.in
-alembic==1.7.3
+alembic==1.7.4
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
@@ -71,7 +71,12 @@ idna==2.10
     #   -c requirements/_packages.txt
     #   requests
     #   yarl
-importlib-resources==5.2.2 ; python_version < "3.9"
+importlib-metadata==4.8.1
+    # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
+    #   alembic
+importlib-resources==5.3.0 ; python_version < "3.9"
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -85,7 +90,7 @@ jsonschema==3.2.0
     # via -r requirements/_test.in
 lazy-object-proxy==1.6.0
     # via astroid
-mako==1.1.4
+mako==1.1.5
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
@@ -221,10 +226,11 @@ yarl==1.6.3
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   aiohttp
-zipp==3.5.0
+zipp==3.6.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
+    #   importlib-metadata
     #   importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:

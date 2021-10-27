@@ -20,6 +20,10 @@ import pytest
 import simcore_service_storage
 from aiohttp import web
 from aiopg.sa import create_engine
+from pytest_simcore.helpers.utils_postgres import (
+    is_postgres_responsive,
+    migrated_pg_tables_context,
+)
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_storage.constants import SIMCORE_S3_STR
 from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
@@ -137,12 +141,12 @@ def postgres_service(docker_services, docker_ip):
 
     # Wait until service is responsive.
     docker_services.wait_until_responsive(
-        check=lambda: tests.utils.is_postgres_responsive(url),
+        check=lambda: is_postgres_responsive(url),
         timeout=30.0,
         pause=0.1,
     )
 
-    postgres_service = {
+    return {
         "user": USER,
         "password": PASS,
         "db": DATABASE,
@@ -152,8 +156,6 @@ def postgres_service(docker_services, docker_ip):
         "minsize": 1,
         "maxsize": 4,
     }
-
-    return postgres_service
 
 
 @pytest.fixture(scope="function")
@@ -166,11 +168,8 @@ def postgres_service_url(postgres_service, docker_services, docker_ip) -> str:
         port=docker_services.port_for("postgres", 5432),
     )
 
-    tests.utils.create_tables(url)
-
-    yield url
-
-    tests.utils.drop_tables(url)
+    with migrated_pg_tables_context(postgres_service) as cfg:
+        yield cfg["dsn"]
 
 
 @pytest.fixture(scope="function")
