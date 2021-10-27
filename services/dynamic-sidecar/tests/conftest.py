@@ -5,7 +5,7 @@ import os
 import random
 import sys
 from pathlib import Path
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, AsyncIterable
 from unittest import mock
 from uuid import uuid4
 
@@ -43,7 +43,7 @@ def app() -> FastAPI:
 
 
 @pytest.fixture
-async def test_client(app: FastAPI) -> TestClient:
+async def test_client(app: FastAPI) -> AsyncIterable[TestClient]:
     async with TestClient(app) as client:
         yield client
 

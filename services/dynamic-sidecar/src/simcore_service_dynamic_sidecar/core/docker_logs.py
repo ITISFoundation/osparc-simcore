@@ -59,7 +59,6 @@ class BackgroundLogFetcher:
             node_id=self._settings.NODE_ID,
             log_msg=f"[{container_name}] {message}",
         )
-        logging.error("Log posted via rabbitmq")
 
     async def start_log_feching(self, container_name: str) -> None:
         self._log_processor_tasks[container_name] = create_task(
@@ -83,6 +82,7 @@ class BackgroundLogFetcher:
     async def stop_fetcher(self) -> None:
         for container_name in list(self._log_processor_tasks.keys()):
             await self.stop_log_fetching(container_name)
+        await self.rabbit_mq.close()
 
 
 def _get_background_log_fetcher(app: FastAPI) -> Optional[BackgroundLogFetcher]:
