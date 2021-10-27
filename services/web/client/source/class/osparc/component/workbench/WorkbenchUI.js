@@ -314,12 +314,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return inputOutputNodesLayout;
     },
 
-    createServiceCatalog: function(winPos, nodePos) {
+    openServiceCatalog: function(winPos, nodePos) {
       const srvCat = new osparc.component.workbench.ServiceCatalog();
       const maxLeft = this.getBounds().width - osparc.component.workbench.ServiceCatalog.Width;
       const maxHeight = this.getBounds().height - osparc.component.workbench.ServiceCatalog.Height;
-      const posX = Math.min(winPos.x, maxLeft);
-      const posY = Math.min(winPos.y, maxHeight);
+      const posX = winPos ? Math.min(winPos.x, maxLeft) : 100;
+      const posY = winPos ? Math.min(winPos.y, maxHeight) : 100;
       srvCat.moveTo(posX + this.__getLeftOffset(), posY + this.__getTopOffset());
       srvCat.addListener("addService", e => {
         const {
@@ -337,6 +337,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           });
         }
       }, this);
+      srvCat.open();
       return srvCat;
     },
 
@@ -388,9 +389,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     _addNodeUIToWorkbench: function(nodeUI, position) {
-      if (!("x" in position) || isNaN(position["x"]) || position["x"] < 0) {
-        console.error("not a valid position");
-        return;
+      if (position === undefined || !("x" in position) || isNaN(position["x"]) || position["x"] < 0) {
+        position = {
+          x: 10,
+          y: 10
+        };
       }
       this.__updateWorkbenchLayoutSize(position);
 
@@ -697,10 +700,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
         if (this.__tempEdgeNodeId === dragNodeId) {
           const winPos = this.__unscaleCoordinates(this.__pointerPos.x, this.__pointerPos.y);
-          const srvCat = this.createServiceCatalog(winPos, this.__pointerPos);
+          const srvCat = this.openServiceCatalog(winPos, this.__pointerPos);
           this.__tempEdgeIsInput === true ? srvCat.setContext(null, dragNodeId) : srvCat.setContext(dragNodeId, null);
           srvCat.addListener("close", () => this.__removeTempEdge(), this);
-          srvCat.open();
         }
         qx.bom.Element.removeListener(
           this.__desktop,
@@ -1310,8 +1312,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         }
         const winPos = this.__pointerEventToWorkbenchPos(pointerEvent, false);
         const nodePos = this.__pointerEventToWorkbenchPos(pointerEvent, true);
-        const srvCat = this.createServiceCatalog(winPos, nodePos);
-        srvCat.open();
+        this.openServiceCatalog(winPos, nodePos);
       }, this);
 
       this.__workbenchLayout.addListener("resize", () => this.__updateHint(), this);

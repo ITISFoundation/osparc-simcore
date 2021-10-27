@@ -260,7 +260,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const topBar = tabViewPrimary.getChildControl("bar");
       this.__addTopBarSpacer(topBar);
 
-      const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(0)).set({
+      const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         backgroundColor: primaryColumnBGColor
       });
 
@@ -268,8 +268,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         alignY: "middle",
         minHeight: 32,
         maxHeight: 32,
-        backgroundColor: primaryColumnBGColor,
-        marginBottom: 5
+        backgroundColor: primaryColumnBGColor
       });
       studyTreeItem.setStudy(study);
       homeAndNodesTree.add(studyTreeItem);
@@ -279,9 +278,18 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         hideRoot: true
       });
       nodesTree.setStudy(study);
-      homeAndNodesTree.add(nodesTree, {
-        flex: 1
+      homeAndNodesTree.add(nodesTree);
+
+      const addNewNodeBtn = new qx.ui.form.Button().set({
+        label: this.tr("Add new node"),
+        icon: "@FontAwesome5Solid/plus/14",
+        allowGrowX: false,
+        alignX: "left",
+        marginLeft: 10
       });
+      addNewNodeBtn.addListener("execute", () => this.__workbenchUI.openServiceCatalog());
+      homeAndNodesTree.add(addNewNodeBtn);
+
       const nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, primaryColumnBGColor);
       tabViewPrimary.add(nodesPage);
 
