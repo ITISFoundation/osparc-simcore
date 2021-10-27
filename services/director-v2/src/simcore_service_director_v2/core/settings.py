@@ -98,6 +98,10 @@ class DynamicSidecarSettings(BaseCustomSettings):
         False,
         description="exposes the service on localhost for debuging and testing",
     )
+    PROXY_EXPOSE_PORT: bool = Field(
+        False,
+        description="exposes the proxy on localhost for debuging and testing",
+    )
 
     SIMCORE_SERVICES_NETWORK_NAME: str = Field(
         ...,
