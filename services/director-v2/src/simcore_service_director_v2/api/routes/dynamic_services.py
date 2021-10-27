@@ -4,7 +4,7 @@ from typing import Coroutine, List, Optional, Union, cast
 from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Request
 from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
@@ -13,7 +13,7 @@ from models_library.services import ServiceKeyVersion
 from starlette import status
 from starlette.datastructures import URL
 
-from ...core.settings import DynamicServicesSettings
+from ...core.settings import DynamicServicesSettings, DynamicSidecarSettings
 from ...models.domains.dynamic_services import (
     DynamicServiceCreate,
     DynamicServiceOut,
@@ -163,18 +163,18 @@ async def get_dynamic_sidecar_status(
 )
 async def stop_dynamic_service(
     node_uuid: NodeID,
-    save_state: Optional[bool] = True,
+    can_save: Optional[bool] = True,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> Union[NoContentResponse, RedirectResponse]:
     try:
-        await scheduler.remove_service(node_uuid, save_state)
+        await scheduler.mark_service_for_removal(node_uuid, can_save)
     except DynamicSidecarNotFoundError:
         # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0
         redirection_url = director_v0_client.client.base_url.copy_with(
             path=f"/v0/running_interactive_services/{node_uuid}",
-            params={"save_state": bool(save_state)},
+            params={"can_save": bool(can_save)},
         )
 
         return RedirectResponse(str(redirection_url))
@@ -190,18 +190,39 @@ async def stop_dynamic_service(
 )
 @log_decorator(logger=logger)
 async def service_retrieve_data_on_ports(
+    request: Request,
+    node_uuid: NodeID,
     retrieve_settings: RetrieveDataIn,
-    service_base_url: URL = Depends(get_service_base_url),
-    services_client: ServicesClient = Depends(get_services_client),
-):
-    # the handling of client/server errors is already encapsulated in the call to request
-    resp = await services_client.request(
-        "POST",
-        f"{service_base_url}/retrieve",
-        data=retrieve_settings.json(by_alias=True),
-        timeout=httpx.Timeout(
-            5.0, read=60 * 60.0
-        ),  # this call waits for the service to download data
-    )
-    # validate and return
-    return RetrieveDataOutEnveloped.parse_obj(resp.json())
+    scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
+) -> RetrieveDataOutEnveloped:
+    try:
+        return await scheduler.retrieve_service_inputs(
+            node_uuid, retrieve_settings.port_keys
+        )
+    except DynamicSidecarNotFoundError:
+        # in case of legacy service, no redirect will be used
+        # makes request to director-v0 and sends back reply
+
+        service_base_url: URL = await get_service_base_url(
+            node_uuid, get_director_v0_client(request)
+        )
+        services_client: ServicesClient = get_services_client(request)
+
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            request.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
+        timeout = httpx.Timeout(
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+        )
+
+        # this call waits for the service to download data
+        response = await services_client.request(
+            "POST",
+            f"{service_base_url}/retrieve",
+            data=retrieve_settings.json(by_alias=True),
+            timeout=timeout,
+        )
+
+        # validate and return
+        return RetrieveDataOutEnveloped.parse_obj(response.json())

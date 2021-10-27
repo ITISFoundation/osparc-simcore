@@ -11,7 +11,10 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from pytest_lazyfixture import lazy_fixture
-from simcore_service_director_v2.core.settings import DynamicSidecarSettings
+from simcore_service_director_v2.core.settings import (
+    AppSettings,
+    DynamicSidecarSettings,
+)
 from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs import (
     get_dynamic_sidecar_spec,
@@ -24,6 +27,10 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs im
 def mocked_env(monkeypatch: MonkeyPatch) -> Iterator[Dict[str, str]]:
     env_vars: Dict[str, str] = {
         "DYNAMIC_SIDECAR_IMAGE": "local/dynamic-sidecar:MOCK",
+        "POSTGRES_HOST": "test_host",
+        "POSTGRES_USER": "test_user",
+        "POSTGRES_PASSWORD": "test_password",
+        "POSTGRES_DB": "test_db",
     }
 
     with monkeypatch.context() as m:
@@ -79,6 +86,7 @@ async def test_get_dynamic_proxy_spec(
         dynamic_sidecar_network_id=dynamic_sidecar_network_id,
         swarm_network_id=swarm_network_id,
         settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
+        app_settings=AppSettings.create_from_envs(),
     )
     assert dynamic_sidecar_spec
     pprint(dynamic_sidecar_spec)

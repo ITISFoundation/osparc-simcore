@@ -2,11 +2,24 @@ import asyncio
 import logging
 from collections import deque
 from functools import wraps
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Deque, Dict, List, Optional
 
 import attr
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    Queue = asyncio.Queue
+else:
+
+    class FakeGenericMeta(type):
+        def __getitem__(self, item):
+            return self
+
+    class Queue(
+        asyncio.Queue, metaclass=FakeGenericMeta
+    ):  # pylint: disable=function-redefined
+        pass
 
 
 @attr.s(auto_attribs=True)
@@ -30,7 +43,9 @@ async def stop_sequential_workers() -> None:
     logger.info("All run_sequentially_in_context pending workers stopped")
 
 
-def run_sequentially_in_context(target_args: List[str] = None):
+def run_sequentially_in_context(
+    target_args: List[str] = None,
+) -> Callable[[Any], Any]:
     """All request to function with same calling context will be run sequentially.
 
     Example:
@@ -68,15 +83,17 @@ def run_sequentially_in_context(target_args: List[str] = None):
     """
     target_args = [] if target_args is None else target_args
 
-    def internal(decorated_function):
-        def get_context(args, kwargs: Dict) -> Context:
+    def internal(
+        decorated_function: Callable[[Any], Optional[Any]]
+    ) -> Callable[[Any], Optional[Any]]:
+        def get_context(args: Any, kwargs: Dict[Any, Any]) -> Context:
             arg_names = decorated_function.__code__.co_varnames[
                 : decorated_function.__code__.co_argcount
             ]
             search_args = dict(zip(arg_names, args))
             search_args.update(kwargs)
 
-            key_parts = deque()
+            key_parts: Deque[str] = deque()
             for arg in target_args:
                 sub_args = arg.split(".")
                 main_arg = sub_args[0]
@@ -108,13 +125,13 @@ def run_sequentially_in_context(target_args: List[str] = None):
             return _sequential_jobs_contexts[key]
 
         @wraps(decorated_function)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             context: Context = get_context(args, kwargs)
 
             if not context.initialized:
                 context.initialized = True
 
-                async def worker(in_q: asyncio.Queue, out_q: asyncio.Queue):
+                async def worker(in_q: Queue, out_q: Queue) -> None:
                     while True:
                         awaitable = await in_q.get()
                         in_q.task_done()
@@ -137,7 +154,7 @@ def run_sequentially_in_context(target_args: List[str] = None):
                     worker(context.in_queue, context.out_queue)
                 )
 
-            await context.in_queue.put(decorated_function(*args, **kwargs))
+            await context.in_queue.put(decorated_function(*args, **kwargs))  # type: ignore
 
             wrapped_result = await context.out_queue.get()
             if isinstance(wrapped_result, Exception):
