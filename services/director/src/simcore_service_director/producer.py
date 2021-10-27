@@ -542,8 +542,15 @@ async def _get_service_state(
             datetime_str = datetime_str[:N]
         return datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
 
-    task_state_update_time = _to_datetime(last_task["Status"]["Timestamp"])
-    log.debug("%s %s: time %s", service["ID"], task_state, task_state_update_time)
+    try:
+        task_state_update_time = _to_datetime(last_task["Status"]["Timestamp"])
+        log.debug("%s %s: time %s", service["ID"], task_state, task_state_update_time)
+    except:
+        log.exception(
+            "This could be 'unconverted data remains: Z'",
+            last_task["Status"]["Timestamp"],
+        )
+        raise
 
     last_task_state = ServiceState.STARTING  # default
     last_task_error_msg = (
