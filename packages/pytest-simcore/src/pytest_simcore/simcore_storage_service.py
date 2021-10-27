@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 import os
 from copy import deepcopy
-from typing import Dict
+from typing import Dict, Iterable
 
 import aiohttp
 import pytest
@@ -16,7 +16,7 @@ from .helpers.utils_docker import get_service_published_port
 
 
 @pytest.fixture(scope="module")
-def storage_endpoint(docker_stack: Dict, testing_environ_vars: Dict) -> URL:
+def storage_endpoint(docker_stack: Dict, testing_environ_vars: Dict) -> Iterable[URL]:
     prefix = testing_environ_vars["SWARM_STACK_NAME"]
     assert f"{prefix}_storage" in docker_stack["services"]
 
@@ -39,7 +39,7 @@ async def storage_service(
 ) -> URL:
     await wait_till_storage_responsive(storage_endpoint)
 
-    yield storage_endpoint
+    return storage_endpoint
 
 
 # HELPERS --

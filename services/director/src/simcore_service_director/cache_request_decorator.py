@@ -2,7 +2,6 @@ from functools import wraps
 from typing import Coroutine, Dict, Tuple
 
 from aiohttp import web
-
 from simcore_service_director import config
 
 
@@ -20,7 +19,7 @@ def cache_requests(func: Coroutine, no_cache: bool = False):
 
         resp_data, resp_headers = await func(app, url, method, *args, **kwargs)
 
-        if is_cache_enabled:
+        if is_cache_enabled and not no_cache:
             cache_data = app[config.APP_REGISTRY_CACHE_DATA_KEY]
             cache_data[cache_key] = (resp_data, resp_headers)
 
