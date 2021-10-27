@@ -359,7 +359,7 @@ async def assert_service_is_available(  # pylint: disable=redefined-outer-name
     print(f"checking service @ {service_address}")
 
     async for attempt in AsyncRetrying(
-        wait=wait_fixed(1.5), stop=stop_after_attempt(600), reraise=True
+        wait=wait_fixed(1), stop=stop_after_attempt(60), reraise=True
     ):
         with attempt:
             async with httpx.AsyncClient() as client:
