@@ -7,7 +7,6 @@
 
 import asyncio
 import json
-import logging
 from collections import namedtuple
 from copy import deepcopy
 from pathlib import Path
@@ -31,6 +30,7 @@ from shared_comp_utils import (
     assert_pipeline_status,
     create_pipeline,
 )
+from simcore_sdk.node_ports_common import config as node_ports_config
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from starlette import status
 from starlette.testclient import TestClient
