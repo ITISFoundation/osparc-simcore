@@ -10,4 +10,8 @@ class TaskValueError(PydanticErrorMixin, ValueError):
 
 class ServiceRuntimeError(PydanticErrorMixin, RuntimeError):
     code = "service_runtime_error"
-    msg_template = "The service {service_key}:{service_version} in container {container_id} failed with code {exit_code}. Last logs:\n{service_logs}"
+    msg_template = (
+        "The service {service_key}:{service_version}"
+        " in container {container_id} failed with code"
+        " {exit_code}. Last logs:\n{service_logs}"
+    )
