@@ -29,9 +29,12 @@ aiopg==1.2.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-alembic==1.7.3
+alembic==1.7.4
     # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
     #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_migration.in
 async-timeout==3.0.1
     # via
@@ -87,24 +90,32 @@ idna==2.10
     #   email-validator
     #   requests
     #   yarl
-importlib-resources==5.2.2 ; python_version < "3.9"
+importlib-metadata==4.8.1
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
+    #   -c requirements/_base.txt
+    #   alembic
+importlib-resources==5.3.0 ; python_version < "3.9"
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
-mako==1.1.4
+mako==1.1.5
     # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
     #   -c requirements/_base.txt
     #   alembic
 markupsafe==2.0.1
     # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
     #   -c requirements/_base.txt
     #   mako
 multidict==5.1.0
@@ -240,7 +251,9 @@ yarl==1.6.3
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiohttp
-zipp==3.5.0
+zipp==3.6.0
     # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
     #   -c requirements/_base.txt
+    #   importlib-metadata
     #   importlib-resources

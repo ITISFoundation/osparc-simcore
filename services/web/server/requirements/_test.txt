@@ -13,8 +13,10 @@ aiohttp==3.7.4.post0
     #   pytest-aiohttp
 aioresponses==0.7.2
     # via -r requirements/_test.in
-alembic==1.7.3
-    # via -r requirements/_test.in
+alembic==1.7.4
+    # via
+    #   -c requirements/_packages.txt
+    #   -r requirements/_test.in
 amqp==5.0.6
     # via
     #   -c requirements/_base.txt
@@ -120,9 +122,14 @@ idna==2.10
     #   -c requirements/_packages.txt
     #   requests
     #   yarl
-importlib-resources==5.2.2 ; python_version < "3.9"
+importlib-metadata==4.8.1
+    # via
+    #   -c requirements/_packages.txt
+    #   alembic
+importlib-resources==5.3.0 ; python_version < "3.9"
     # via
     #   -c requirements/../../../../requirements/constraints.txt
+    #   -c requirements/_packages.txt
     #   alembic
 iniconfig==1.1.1
     # via pytest
@@ -148,10 +155,13 @@ lazy-object-proxy==1.4.3
     #   -c requirements/_packages.txt
     #   astroid
 mako==1.1.5
-    # via alembic
+    # via
+    #   -c requirements/_packages.txt
+    #   alembic
 markupsafe==1.1.1
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   mako
 mccabe==0.6.1
     # via pylint
@@ -332,8 +342,11 @@ yarl==1.5.1
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   aiohttp
-zipp==3.5.0
-    # via importlib-resources
+zipp==3.6.0
+    # via
+    #   -c requirements/_packages.txt
+    #   importlib-metadata
+    #   importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
