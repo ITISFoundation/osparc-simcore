@@ -153,9 +153,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               item.getChildControl("options-delete-button").exclude();
             }
             if (node) {
-              if (node.isDynamic()) {
-                item.getChildControl("fullscreen-button").show();
-              }
               if (node.isFilePicker()) {
                 const icon = osparc.utils.Services.getIcon("file");
                 item.setIcon(icon+"14");
@@ -163,10 +160,16 @@ qx.Class.define("osparc.component.widget.NodesTree", {
                 const icon = osparc.utils.Services.getIcon("parameter");
                 item.setIcon(icon+"14");
               } else {
+                if (node.isDynamic()) {
+                  item.getChildControl("fullscreen-button").show();
+                }
                 const icon = osparc.utils.Services.getIcon(node.getMetaData().type);
                 if (icon) {
                   item.setIcon(icon+"14");
                 }
+                node.getStatus().bind("running", item.getChildControl("icon"), "textColor", {
+                  converter: output => osparc.utils.StatusUI.getColor(output)
+                }, this);
               }
             }
           },
