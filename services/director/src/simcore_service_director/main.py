@@ -10,6 +10,8 @@ from simcore_service_director import registry_cache_task, resources
 from simcore_service_director.monitoring import setup_app_monitoring
 from simcore_service_director.rest import routing
 
+from .registry_proxy import setup_registry
+
 log = logging.getLogger(__name__)
 
 
@@ -19,6 +21,7 @@ def setup_app() -> web.Application:
 
     # NOTE: ensure client session is context is run first, then any further get_client_sesions will be correctly closed
     app.cleanup_ctx.append(persistent_client_session)
+    app.cleanup_ctx.append(setup_registry)
 
     registry_cache_task.setup(app)
 
