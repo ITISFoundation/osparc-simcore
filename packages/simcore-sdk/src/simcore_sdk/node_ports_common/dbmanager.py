@@ -17,7 +17,7 @@ from simcore_postgres_database.utils_aiopg import (
 from sqlalchemy import and_
 
 from . import config
-from .exceptions import NodeNotFound, NodeportsException
+from .exceptions import NodeNotFound
 
 log = logging.getLogger(__name__)
 
