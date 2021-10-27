@@ -3,7 +3,7 @@
 
 import asyncio
 import os
-from typing import Dict, Iterable
+from typing import AsyncIterable, Dict, Iterable
 from unittest import mock
 from unittest.mock import AsyncMock
 from uuid import uuid4
@@ -63,7 +63,7 @@ def mock_rabbitmq(mocker) -> Iterable[Dict[str, AsyncMock]]:
 
 
 @pytest.fixture
-async def container_name() -> str:
+async def container_name() -> AsyncIterable[str]:
     # docker run -it --rm busybox echo "test message"
     async with aiodocker.Docker() as client:
         container = await client.containers.run(
@@ -74,7 +74,9 @@ async def container_name() -> str:
         )
         container_inspect = await container.show()
 
-        return container_inspect["Name"][1:]
+        yield container_inspect["Name"][1:]
+
+        await container.delete()
 
 
 # TESTS
