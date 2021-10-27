@@ -167,13 +167,12 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
               // bind running/interactive status to icon color
               if (node.isDynamic()) {
-                item.getChildControl("fullscreen-button").show();
                 node.getStatus().bind("interactive", item.getChildControl("icon"), "textColor", {
-                  converter: output => osparc.utils.StatusUI.getColor(output)
+                  converter: status => osparc.utils.StatusUI.getColor(status)
                 }, this);
               } else if (node.isComputational()) {
                 node.getStatus().bind("running", item.getChildControl("icon"), "textColor", {
-                  converter: output => osparc.utils.StatusUI.getColor(output)
+                  converter: status => osparc.utils.StatusUI.getColor(status)
                 }, this);
               }
 
