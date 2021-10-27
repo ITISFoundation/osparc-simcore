@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from pprint import pformat
 from typing import Optional
 
 import pytest
@@ -25,14 +26,14 @@ from faker import Faker
         TaskOutputData,
     ),
 )
-def test_io_models_examples(model_cls):
-    examples = model_cls.Config.schema_extra["examples"]
+def test_io_models_examples(model_cls, model_cls_examples):
+    for name, example in model_cls_examples.items():
+        print(name, ":", pformat(example))
 
-    for index, example in enumerate(examples):
-        print(f"{index:-^10}:\n", example)
+        model_instance = model_cls(**example)
 
-        model_instance = model_cls.parse_obj(example)
-        assert model_instance
+        assert model_instance, f"Failed with {name}"
+        print(name, ":", model_instance)
 
 
 def _create_fake_outputs(
