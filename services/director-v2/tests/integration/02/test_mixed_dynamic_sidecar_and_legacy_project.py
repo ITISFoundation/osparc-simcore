@@ -145,6 +145,7 @@ async def director_v2_client(
 
     monkeypatch.setenv("SC_BOOT_MODE", "production")
     monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "true")
+    monkeypatch.setenv("PROXY_EXPOSE_PORT", "true")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", network_name)
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")

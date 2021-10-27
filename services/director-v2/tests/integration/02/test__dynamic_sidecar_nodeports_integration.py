@@ -11,7 +11,18 @@ from collections import namedtuple
 from itertools import tee
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Set, Tuple, cast
+from typing import (
+    Any,
+    AsyncIterable,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Set,
+    Tuple,
+    cast,
+)
 from uuid import uuid4
 
 import aiodocker
@@ -211,7 +222,7 @@ def workbench_dynamic_services(
 
 
 @pytest.fixture
-async def db_manager(postgres_dsn: Dict[str, str]) -> Iterator[DBManager]:
+async def db_manager(postgres_dsn: Dict[str, str]) -> AsyncIterable[DBManager]:
     dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
         **postgres_dsn
     )
@@ -238,6 +249,7 @@ async def fast_api_app(
 
     monkeypatch.setenv("SC_BOOT_MODE", "production")
     monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "true")
+    monkeypatch.setenv("PROXY_EXPOSE_PORT", "true")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", network_name)
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
@@ -254,7 +266,7 @@ async def fast_api_app(
 @pytest.fixture
 async def director_v2_client(
     loop: BaseEventLoop, fast_api_app: FastAPI
-) -> httpx.AsyncClient:
+) -> AsyncIterable[httpx.AsyncClient]:
     async with LifespanManager(fast_api_app):
         async with httpx.AsyncClient(
             app=fast_api_app, base_url="http://testserver/v2"
@@ -273,7 +285,7 @@ async def cleanup_services_and_networks(
     workbench_dynamic_services: Dict[str, Node],
     current_study: ProjectAtDB,
     director_v2_client: httpx.AsyncClient,
-) -> Iterator[None]:
+) -> AsyncIterable[None]:
     yield None
     # ensure service cleanup when done testing
     async with aiodocker.Docker() as docker_client:

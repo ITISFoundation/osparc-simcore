@@ -102,6 +102,37 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
     return endpoint
 
 
+async def _get_proxy_port(node_uuid: str) -> PositiveInt:
+    """
+    Normally director-v2 talks via docker-netwoks with the started proxy.
+    Since the director-v2 was started outside docker and is not
+    running in a container, the service port needs to be exposed and the
+    url needs to be changed to 172.17.0.1 (docker localhost)
+
+    returns: the local endpoint
+    """
+    service_name = f"{DYNAMIC_PROXY_SERVICE_PREFIX}_{node_uuid}"
+    port = None
+
+    async with aiodocker.Docker() as docker_client:
+        async with timeout(SERVICE_WAS_CREATED_BY_DIRECTOR_V2):
+            # it takes a bit of time for the port to be auto generated
+            # keep trying until it is there
+            while port is None:
+                services = await docker_client.services.list()
+                for service in services:
+                    if service["Spec"]["Name"] == service_name:
+                        ports = service["Endpoint"].get("Ports", [])
+                        if len(ports) == 1:
+                            port = ports[0]["PublishedPort"]
+                            break
+
+                await asyncio.sleep(1)
+
+    assert port is not None
+    return port
+
+
 async def handle_307_if_required(
     director_v2_client: httpx.AsyncClient, director_v0_url: URL, result: httpx.Response
 ) -> Union[httpx.Response, requests.Response]:
@@ -270,16 +301,6 @@ async def assert_stop_service(
     assert result.text == ""
 
 
-def _run_command(command: str) -> str:
-    # using asyncio.create_subprocess_shell is slower
-    # and sometimes ir randomly hangs forever
-
-    print(f"Running: '{command}'")
-    command_result = os.popen(command).read()
-    print(command_result)
-    return command_result
-
-
 async def _inspect_service_and_print_logs(
     tag: str, service_name: str, is_legacy: bool
 ) -> None:
@@ -307,40 +328,38 @@ async def _inspect_service_and_print_logs(
         print(f"{formatted_logs}\n{SEPARATOR} - {tag}")
 
 
-async def port_forward_service(  # pylint: disable=redefined-outer-name
-    service_name: str, is_legacy: bool, internal_port: PositiveInt
+def _run_command(command: str) -> str:
+    # using asyncio.create_subprocess_shell is slower
+    # and sometimes ir randomly hangs forever
+
+    print(f"Running: '{command}'")
+    command_result = os.popen(command).read()
+    print(command_result)
+    return command_result
+
+
+async def _port_forward_legacy_service(  # pylint: disable=redefined-outer-name
+    service_name: str, internal_port: PositiveInt
 ) -> PositiveInt:
     """Updates the service configuration and makes it so it can be used"""
     # By updating the service spec the container will be recreated.
     # It works in this case, since we do not care about the internal
     # state of the application
-    target_service = service_name
 
-    if is_legacy:
-        # Legacy services are started --endpoint-mode dnsrr, it needs to
-        # be changed to vip otherwise the port forward will not work
-        result = _run_command(
-            f"docker service update {service_name} --endpoint-mode=vip"
-        )
-        assert "verify: Service converged" in result
-    else:
-        # For a non legacy service, the service_name points to the dynamic-sidecar,
-        # but traffic is handeled by the proxy,
-        target_service = service_name.replace(
-            DYNAMIC_SIDECAR_SERVICE_PREFIX, DYNAMIC_PROXY_SERVICE_PREFIX
-        )
-        # The default prot for the proxy is 80
-        internal_port = 80
+    # Legacy services are started --endpoint-mode dnsrr, it needs to
+    # be changed to vip otherwise the port forward will not work
+    result = _run_command(f"docker service update {service_name} --endpoint-mode=vip")
+    assert "verify: Service converged" in result
 
     # Finally forward the port on a random assigned port.
     result = _run_command(
-        f"docker service update {target_service} --publish-add :{internal_port}"
+        f"docker service update {service_name} --publish-add :{internal_port}"
     )
     assert "verify: Service converged" in result
 
     # inspect service and fetch the port
     async with aiodocker.Docker() as docker_client:
-        service_details = await docker_client.services.inspect(target_service)
+        service_details = await docker_client.services.inspect(service_name)
         ports = service_details["Endpoint"]["Ports"]
 
         assert len(ports) == 1, service_details
@@ -395,10 +414,13 @@ async def assert_services_reply_200(
             service_name=service_data["service_host"],
             is_legacy=is_legacy(node_data),
         )
-        exposed_port = await port_forward_service(
-            service_name=service_data["service_host"],
-            is_legacy=is_legacy(node_data),
-            internal_port=service_data["service_port"],
+        exposed_port = (
+            await _port_forward_legacy_service(
+                service_name=service_data["service_host"],
+                internal_port=service_data["service_port"],
+            )
+            if is_legacy(node_data)
+            else await _get_proxy_port(node_uuid=service_uuid)
         )
         await _inspect_service_and_print_logs(
             tag=f"after_port_forward {service_uuid}",
