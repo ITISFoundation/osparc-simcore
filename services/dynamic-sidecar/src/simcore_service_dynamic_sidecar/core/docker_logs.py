@@ -19,25 +19,18 @@ async def _logs_fetcher_worker(
     async with docker_client() as docker:
         container = await docker.containers.get(container_name)
 
-        # TODO: how to stop this?
-
         logger.debug("Streaming logs from %s", container_name)
         async for line in container.log(stdout=True, stderr=True, follow=True):
             await dispatch_log(container_name=container_name, message=line)
 
 
-def _get_logger_for_(container_name: str) -> logging.Logger:
+def _setup_logger(container_name: str) -> None:
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(
         logging.Formatter("[%(levelname)-4s:%(name)-20s] %(message)s")
     )
     container_logger = logging.getLogger(container_name)
     container_logger.addHandler(stream_handler)
-    return container_logger
-
-
-def _format_log(container_name: str, message: str) -> str:
-    return f"[{container_name}] {message}"
 
 
 class BackgroundLogFetcher:
@@ -48,7 +41,6 @@ class BackgroundLogFetcher:
         self.rabbit_mq: RabbitMQ = RabbitMQ(
             rabbit_settings=self._settings.RABBIT_SETTINGS
         )
-        self._container_loggers: Dict[str, logging.Logger] = {}
 
     async def start_fetcher(self) -> None:
         await self.rabbit_mq.connect()
@@ -57,7 +49,7 @@ class BackgroundLogFetcher:
         # logs from the containers will be logged at warning level to
         # make sure they are not lost in production environments
         # as these are very important to debug issues from users
-        self._container_loggers[container_name].warning(message)
+        logging.getLogger(container_name).warning(message)
 
         # sending the logs to the UI to facilitate the
         # user debugging process
@@ -65,7 +57,7 @@ class BackgroundLogFetcher:
             user_id=self._settings.USER_ID,
             project_id=self._settings.PROJECT_ID,
             node_id=self._settings.NODE_ID,
-            log_msg=_format_log(container_name, message),
+            log_msg=f"[{container_name}] {message}",
         )
         logging.error("Log posted via rabbitmq")
 
@@ -75,7 +67,7 @@ class BackgroundLogFetcher:
                 container_name=container_name, dispatch_log=self._dispatch_logs
             )
         )
-        self._container_loggers[container_name] = _get_logger_for_(container_name)
+        _setup_logger(container_name)
 
         logger.debug("Subscribed to fetch logs from '%s'", container_name)
 
@@ -86,7 +78,6 @@ class BackgroundLogFetcher:
             task.cancel()
             await task
         del self._log_processor_tasks[container_name]
-        del self._container_loggers[container_name]
         logger.debug("Logs fetching stopped for container '%s'", container_name)
 
     async def stop_fetcher(self) -> None:
