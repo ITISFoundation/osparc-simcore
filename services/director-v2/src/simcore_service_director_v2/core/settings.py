@@ -98,6 +98,10 @@ class DynamicSidecarSettings(BaseCustomSettings):
         False,
         description="exposes the service on localhost for debuging and testing",
     )
+    PROXY_EXPOSE_PORT: bool = Field(
+        False,
+        description="exposes the proxy on localhost for debuging and testing",
+    )
 
     SIMCORE_SERVICES_NETWORK_NAME: str = Field(
         ...,
@@ -126,8 +130,16 @@ class DynamicSidecarSettings(BaseCustomSettings):
             "twards the dynamic-sidecar, as is the case with the above timeout field."
         ),
     )
+    DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: PositiveFloat = Field(
+        60 * MINS,
+        description=(
+            "When saving and restoring the state of a dynamic service, depending on the payload "
+            "some services take longer or shorter to save and restore. Across the "
+            "platform this value is set to 1 hour."
+        ),
+    )
     DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START: PositiveFloat = Field(
-        60.0 * 60.0,
+        60.0 * MINS,
         description=(
             "After running `docker-compose up`, images might need to be pulled "
             "before everything is started. Using default 1hour timeout to let this "

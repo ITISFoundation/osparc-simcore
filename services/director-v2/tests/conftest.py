@@ -259,6 +259,8 @@ def user_id() -> PositiveInt:
 @pytest.fixture(scope="module")
 def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Dict:
     with postgres_db.connect() as con:
+        # removes all users before continuing
+        con.execute(users.delete())
         result = con.execute(
             users.insert()
             .values(
@@ -276,7 +278,7 @@ def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Dict:
 
         yield dict(user)
 
-        con.execute(users.delete().where(users.c.id == user["id"]))
+        con.execute(users.delete().where(users.c.id == user_id))
 
 
 @pytest.fixture

@@ -30,6 +30,40 @@ qx.Class.define("osparc.utils.Utils", {
   type: "static",
 
   statics: {
+    computeServiceUrl: function(resp) {
+      const data = {
+        srvUrl: null,
+        isDynamicV2: null
+      };
+      const isDynamicV2 = resp["boot_type"] === "V2" || false;
+      data["isDynamicV2"] = isDynamicV2;
+      if (isDynamicV2) {
+        // dynamic service
+        const srvUrl = window.location.protocol + "//" + resp["service_uuid"] + ".services." + window.location.host;
+        data["srvUrl"] = srvUrl;
+      } else {
+        // old implementation
+        const servicePath = resp["service_basepath"];
+        const entryPointD = resp["entry_point"];
+        if (servicePath) {
+          const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
+          const srvUrl = servicePath + entryPoint;
+          data["srvUrl"] = srvUrl;
+        }
+      }
+      return data;
+    },
+
+    computeServiceRetrieveUrl: function(srvUrl) {
+      const urlRetrieve = srvUrl + "/retrieve";
+      return urlRetrieve.replace("//retrieve", "/retrieve");
+    },
+
+    computeServiceV2RetrieveUrl: function(studyId, nodeId) {
+      const urlBase = window.location.protocol + "//" + window.location.host + "/v0";
+      return urlBase + "/projects/" + studyId + "/nodes/" + nodeId + ":retrieve";
+    },
+
     setZoom: function(el, zoom) {
       const transformOrigin = [0, 0];
       const p = ["webkit", "moz", "ms", "o"];
