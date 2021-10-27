@@ -165,7 +165,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
                   node.getStatus().bind("interactive", item.getChildControl("icon"), "textColor", {
                     converter: output => osparc.utils.StatusUI.getColor(output)
                   }, this);
-                } else if (node.isComputational()) {{
+                } else if (node.isComputational()) {
                   node.getStatus().bind("running", item.getChildControl("icon"), "textColor", {
                     converter: output => osparc.utils.StatusUI.getColor(output)
                   }, this);
