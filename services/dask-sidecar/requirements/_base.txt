@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
-aiodocker==0.19.1
+aiodocker==0.21.0
     # via -r requirements/_base.in
 aiofiles==0.7.0
     # via -r requirements/_base.in

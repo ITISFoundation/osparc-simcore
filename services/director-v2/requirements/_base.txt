@@ -34,9 +34,17 @@ aiohttp==3.7.4.post0
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   aiodocker
 aiopg==1.2.1
-    # via -r requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/_base.in
+aiormq==3.3.1
+    # via aio-pika
 alembic==1.7.4
-    # via -r requirements/../../../packages/postgres-database/requirements/_base.in
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
+    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_migration.in
 amqp==5.0.6
     # via kombu
 aniso8601==7.0.0
@@ -166,7 +174,9 @@ idna==2.10
     #   rfc3986
     #   yarl
 importlib-metadata==4.8.1
-    # via alembic
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
+    #   alembic
 importlib-resources==5.3.0 ; python_version < "3.9"
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -176,6 +186,11 @@ importlib-resources==5.3.0 ; python_version < "3.9"
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   alembic
 itsdangerous==1.1.0
@@ -208,9 +223,12 @@ locket==0.2.1
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   partd
 mako==1.1.5
-    # via alembic
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
+    #   alembic
 markupsafe==2.0.1
     # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   jinja2
@@ -497,6 +515,7 @@ zict==2.0.0
     #   distributed
 zipp==3.6.0
     # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
     #   importlib-metadata
     #   importlib-resources
 
