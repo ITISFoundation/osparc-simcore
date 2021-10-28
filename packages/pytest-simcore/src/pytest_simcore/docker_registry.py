@@ -230,12 +230,14 @@ def jupyter_service(docker_registry: str, node_meta_schema: Dict) -> Dict[str, s
     )
 
 
-DY_STATIC_FILE_SERVER_VERSION = "1.0.5"
+@pytest.fixture(scope="session", params=["2.0.2"])
+def dy_static_file_server_version(request):
+    return request.param
 
 
 @pytest.fixture(scope="session")
 def dy_static_file_server_service(
-    docker_registry: str, node_meta_schema: Dict
+    docker_registry: str, node_meta_schema: Dict, dy_static_file_server_version: str
 ) -> Dict[str, str]:
     """
     Adds the below service in docker registry
@@ -243,7 +245,7 @@ def dy_static_file_server_service(
     """
     return _pull_push_service(
         "itisfoundation/dy-static-file-server",
-        DY_STATIC_FILE_SERVER_VERSION,
+        dy_static_file_server_version,
         docker_registry,
         node_meta_schema,
     )
@@ -251,7 +253,7 @@ def dy_static_file_server_service(
 
 @pytest.fixture(scope="session")
 def dy_static_file_server_dynamic_sidecar_service(
-    docker_registry: str, node_meta_schema: Dict
+    docker_registry: str, node_meta_schema: Dict, dy_static_file_server_version: str
 ) -> Dict[str, str]:
     """
     Adds the below service in docker registry
@@ -259,7 +261,7 @@ def dy_static_file_server_dynamic_sidecar_service(
     """
     return _pull_push_service(
         "itisfoundation/dy-static-file-server-dynamic-sidecar",
-        DY_STATIC_FILE_SERVER_VERSION,
+        dy_static_file_server_version,
         docker_registry,
         node_meta_schema,
     )
@@ -267,7 +269,7 @@ def dy_static_file_server_dynamic_sidecar_service(
 
 @pytest.fixture(scope="session")
 def dy_static_file_server_dynamic_sidecar_compose_spec_service(
-    docker_registry: str, node_meta_schema: Dict
+    docker_registry: str, node_meta_schema: Dict, dy_static_file_server_version: str
 ) -> Dict[str, str]:
     """
     Adds the below service in docker registry
@@ -275,7 +277,7 @@ def dy_static_file_server_dynamic_sidecar_compose_spec_service(
     """
     return _pull_push_service(
         "itisfoundation/dy-static-file-server-dynamic-sidecar-compose-spec",
-        DY_STATIC_FILE_SERVER_VERSION,
+        dy_static_file_server_version,
         docker_registry,
         node_meta_schema,
     )

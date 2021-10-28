@@ -18,6 +18,7 @@ pytest-mock
 pytest-runner
 pytest-sugar
 pytest-xdist
+pytest-lazy-fixture
 
 # mockups/fixtures
 alembic

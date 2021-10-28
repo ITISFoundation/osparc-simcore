@@ -99,6 +99,21 @@ async def get_node(request: web.Request) -> web.Response:
 
 @routes.delete(f"/{VTAG}/projects/{{project_uuid}}/nodes/{{node_uuid}}")
 @login_required
+@permission_required("project.node.read")
+async def post_retrieve(request: web.Request) -> web.Response:
+    try:
+        node_uuid = request.match_info["node_id"]
+        data = await request.json()
+        port_keys = data.get("port_keys", [])
+    except KeyError as err:
+        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+
+    return web.json_response(
+        await director_v2_api.retrieve(request.app, node_uuid, port_keys)
+    )
+
+
+@login_required
 @permission_required("project.node.delete")
 async def delete_node(request: web.Request) -> web.Response:
     user_id: int = request[RQT_USERID_KEY]

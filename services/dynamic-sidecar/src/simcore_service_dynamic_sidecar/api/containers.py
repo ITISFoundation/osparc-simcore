@@ -3,7 +3,8 @@
 import json
 import logging
 import traceback
-from typing import Any, Dict, List, Union
+from collections import deque
+from typing import Any, Awaitable, Deque, Dict, List, Optional, Union
 
 from fastapi import (
     APIRouter,
@@ -13,9 +14,11 @@ from fastapi import (
     HTTPException,
     Query,
     Request,
+    Response,
     status,
 )
 from fastapi.responses import PlainTextResponse
+from servicelib.utils import logged_gather
 
 from ..core.dependencies import (
     get_application,
@@ -34,6 +37,9 @@ from ..core.validation import (
 )
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
+from ..modules import nodeports
+from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
+from ..modules.mounted_fs import MountedVolumes, get_mounted_volumes
 
 logger = logging.getLogger(__name__)
 
@@ -238,10 +244,8 @@ async def get_container_logs(
         description="Enabling this parameter will include timestamps in logs",
     ),
     shared_store: SharedStore = Depends(get_shared_store),
-) -> Union[str, Dict[str, Any]]:
+) -> List[str]:
     """Returns the logs of a given container if found"""
-    # TODO: remove from here and dump directly into the logs of this service
-    # do this in PR#1887
     _raise_if_container_is_missing(id, shared_store.container_names)
 
     async with docker_client() as docker:
@@ -251,7 +255,7 @@ async def get_container_logs(
         if timestamps:
             args["timestamps"] = True
 
-        container_logs: str = await container_instance.log(**args)
+        container_logs: List[str] = await container_instance.log(**args)
         return container_logs
 
 
@@ -334,6 +338,87 @@ async def inspect_container(
         container_instance = await docker.containers.get(id)
         inspect_result: Dict[str, Any] = await container_instance.show()
         return inspect_result
+
+
+@containers_router.post(
+    "/containers/state:restore",
+    summary="Restores the state of the dynamic service",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def restore_state() -> Response:
+    """
+    When restoring the state:
+    - pull inputs via nodeports
+    - pull all the extra state paths
+    """
+    mounted_volumes: MountedVolumes = get_mounted_volumes()
+
+    awaitables: Deque[Awaitable[Optional[Any]]] = deque()
+
+    for state_path in mounted_volumes.disk_state_paths():
+        logger.debug("Downloading state %s", state_path)
+        awaitables.append(pull_path_if_exists(state_path))
+
+    await logged_gather(*awaitables)
+
+    # SEE https://github.com/tiangolo/fastapi/issues/2253
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@containers_router.post(
+    "/containers/state:save",
+    summary="Stores the state of the dynamic service",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def save_state() -> Response:
+    mounted_volumes: MountedVolumes = get_mounted_volumes()
+
+    awaitables: Deque[Awaitable[Optional[Any]]] = deque()
+
+    for state_path in mounted_volumes.disk_state_paths():
+        logger.debug("Saving state %s", state_path)
+        awaitables.append(upload_path_if_exists(state_path))
+
+    await logged_gather(*awaitables)
+
+    # SEE https://github.com/tiangolo/fastapi/issues/2253
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@containers_router.post(
+    "/containers/ports/inputs:pull",
+    summary="Pull input ports data",
+    response_model=None,
+    status_code=status.HTTP_200_OK,
+)
+async def pull_input_ports(port_keys: Optional[List[str]] = None) -> int:
+    port_keys = [] if port_keys is None else port_keys
+    mounted_volumes: MountedVolumes = get_mounted_volumes()
+
+    transferred_bytes = await nodeports.download_inputs(
+        mounted_volumes.disk_inputs_path, port_keys=port_keys
+    )
+    return transferred_bytes
+
+
+@containers_router.post(
+    "/containers/ports/outputs:push",
+    summary="Push output ports data",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def push_output_ports(port_keys: Optional[List[str]] = None) -> Response:
+    port_keys = [] if port_keys is None else port_keys
+    mounted_volumes: MountedVolumes = get_mounted_volumes()
+
+    await nodeports.upload_outputs(
+        mounted_volumes.disk_outputs_path, port_keys=port_keys
+    )
+
+    # SEE https://github.com/tiangolo/fastapi/issues/2253
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 __all__ = ["containers_router"]

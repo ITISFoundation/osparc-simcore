@@ -55,3 +55,9 @@ To deploy the application in a single-node swarm
   - [whoami](http://127.0.0.1:8080/whoami): test service to check traefik
 
 See details in [docker-compose.local.yml](docker-compose.local.yml).
+
+##### Local registry
+
+```!bash
+  make local-registry 
+```

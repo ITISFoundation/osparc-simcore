@@ -1,9 +1,10 @@
+import json
 from copy import deepcopy
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import yaml
 from fastapi.applications import FastAPI
-from models_library.service_settings_labels import ComposeSpecLabel
+from models_library.service_settings_labels import ComposeSpecLabel, PathMappingsLabel
 
 from ...core.settings import DynamicSidecarSettings
 from .docker_service_specs import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
@@ -33,13 +34,26 @@ def _inject_proxy_network_configuration(
         }
     }
 
-    # Inject Traefik rules on target container
-    target_container_spec = service_spec["services"][target_container]
-
     # attach overlay network to container
+    target_container_spec = service_spec["services"][target_container]
     container_networks = target_container_spec.get("networks", [])
     container_networks.append(dynamic_sidecar_network_name)
     target_container_spec["networks"] = container_networks
+
+
+def _inject_paths_mappings(
+    service_spec: Dict[str, Any], path_mappings: PathMappingsLabel
+) -> None:
+    for service_name in service_spec["services"]:
+        service_content = service_spec["services"][service_name]
+
+        environment_vars: List[str] = service_content.get("environment", [])
+        environment_vars.append(f"DY_SIDECAR_PATH_INPUTS={path_mappings.inputs_path}")
+        environment_vars.append(f"DY_SIDECAR_PATH_OUTPUTS={path_mappings.outputs_path}")
+        str_path_mappings = json.dumps([str(x) for x in path_mappings.state_paths])
+        environment_vars.append(f"DY_SIDECAR_STATE_PATHS={str_path_mappings}")
+
+        service_content["environment"] = environment_vars
 
 
 def _assemble_from_service_key_and_tag(
@@ -71,6 +85,7 @@ async def assemble_spec(
     app: FastAPI,
     service_key: str,
     service_tag: str,
+    paths_mapping: PathMappingsLabel,
     compose_spec: ComposeSpecLabel,
     container_http_entry: Optional[str],
     dynamic_sidecar_network_name: str,
@@ -102,6 +117,8 @@ async def assemble_spec(
         target_container=container_name,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
     )
+
+    _inject_paths_mappings(service_spec, paths_mapping)
 
     stringified_service_spec = yaml.safe_dump(service_spec)
     stringified_service_spec = _replace_env_vars_in_compose_spec(

@@ -794,7 +794,7 @@
               "type": "boolean",
               "default": true
             },
-            "name": "save_state",
+            "name": "can_save",
             "in": "query"
           }
         ],
