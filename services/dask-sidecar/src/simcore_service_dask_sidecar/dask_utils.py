@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import logging
 from contextlib import asynccontextmanager, suppress
 from enum import Enum
@@ -105,6 +106,8 @@ async def monitor_task_abortion(task_name: str) -> AsyncIterator[Awaitable[None]
                 task_name,
             )
             periodically_checking_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await periodically_checking_task
 
 
 def publish_event(dask_pub: distributed.Pub, event: TaskEvent) -> None:
