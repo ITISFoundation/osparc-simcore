@@ -104,6 +104,15 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, MockerFixture]:
         "simcore_service_dask_sidecar.computational_sidecar.core.Pub",
         autospec=True,
     )
+    mocker.patch(
+        "simcore_service_dask_sidecar.dask_utils.distributed.Sub",
+        autospec=True,
+    )
+    mocker.patch(
+        "simcore_service_dask_sidecar.dask_utils.is_current_task_aborted",
+        autospec=True,
+        return_value=False,
+    )
 
     return {
         "dask_client": dask_client_mock,
