@@ -124,8 +124,8 @@ class TaskOutputData(DictModel[PortKey, PortValue]):
         output_data_file = output_folder / output_file_ext
         if output_data_file.exists():
             with suppress(json.JSONDecodeError):
-                # in case the loading throw, then the data will be missing
-                # and we will get a validation error when reading the file in
+                # NOTE: The suppression here is ok, since if the data is empty,
+                # there will be a validation error anyway
                 data = json.loads(output_data_file.read_text())
 
         for output_key, output_params in schema.items():
