@@ -75,7 +75,6 @@ def test_dynamic_sidecar_env_vars(
         registry_settings.REGISTRY_SSL
     )
 
-    assert str(registry_settings.REGISTRY_PW) == "**********"
     assert registry_settings.REGISTRY_PW.get_secret_value() == MOCKED_PASSWORD
 
     assert dynamic_sidecar_env_vars["RABBIT_HOST"] == str(rabbit_settings.RABBIT_HOST)
