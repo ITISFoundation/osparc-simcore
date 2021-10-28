@@ -17,16 +17,16 @@ cloudpickle==1.6.0
     #   -c requirements/./_base.txt
     #   dask
     #   distributed
-dask==2021.09.1
+dask==2021.10.0
     # via
     #   -c requirements/./_base.txt
     #   -r requirements/_dask-complete.in
     #   distributed
-distributed==2021.09.1
+distributed==2021.10.0
     # via
     #   -c requirements/./_base.txt
     #   dask
-fsspec==2021.9.0
+fsspec==2021.10.1
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -122,7 +122,7 @@ tornado==6.1
     #   -c requirements/./_base.txt
     #   bokeh
     #   distributed
-typing-extensions==3.10.0.2
+typing-extensions==3.10.0.2 ; python_version < "3.9"
     # via
     #   -c requirements/./_base.txt
     #   bokeh

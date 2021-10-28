@@ -167,7 +167,7 @@ toml==0.10.2
     #   pylint
     #   pytest
     #   pytest-cov
-typing-extensions==3.10.0.2
+typing-extensions==3.10.0.2 ; python_version < "3.9"
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
