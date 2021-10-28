@@ -145,7 +145,6 @@ async def create_minimal_computational_graph_based_on_selection(
     complete_dag: nx.DiGraph, selected_nodes: List[NodeID], force_restart: bool
 ) -> nx.DiGraph:
     nodes_data_view: nx.classes.reportviews.NodeDataView = complete_dag.nodes.data()
-
     try:
         # first pass, traversing in topological order to correctly get the dependencies, set the nodes states
         await _set_computational_nodes_states(complete_dag)
@@ -176,7 +175,9 @@ async def create_minimal_computational_graph_based_on_selection(
                     and node_needs_computation(nodes_data_view, n)
                 )
             )
-            if force_restart:
+            if force_restart and _is_node_computational(
+                nodes_data_view[f"{node}"]["key"]
+            ):
                 minimal_nodes_selection.add(f"{node}")
 
     return complete_dag.subgraph(minimal_nodes_selection)
