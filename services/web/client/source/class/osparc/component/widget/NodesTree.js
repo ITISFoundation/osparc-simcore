@@ -87,7 +87,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         };
         children.push(nodeInTree);
       }
-      children.sort((firstEl, secondEl) => firstEl.sortingValue - secondEl.sortingValue);
+      // children.sort((firstEl, secondEl) => firstEl.sortingValue - secondEl.sortingValue);
       return children;
     }
   },
@@ -187,9 +187,12 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               this.__openItem(item.getModel().getNodeId());
               this.nodeSelected(item.getModel().getNodeId());
             }, this);
-          }
+          },
+          sorter: (itemA, itemB) => itemA.getSortingValue() - itemB.getSortingValue()
         });
-        this.setHeight(newModel.getChildren().length*21 + 5);
+        const nChildren = newModel.getChildren().length;
+        console.log(nChildren);
+        this.setHeight(nChildren*21 + 12);
       }
     },
 
