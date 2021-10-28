@@ -12,7 +12,7 @@ bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
 cfgv==3.3.1
     # via pre-commit
-click==7.1.2
+click==8.0.3
     # via
     #   -c requirements/_base.txt
     #   black
@@ -21,7 +21,7 @@ distlib==0.3.3
     # via virtualenv
 filelock==3.3.1
     # via virtualenv
-identify==2.3.0
+identify==2.3.1
     # via pre-commit
 isort==5.9.3
     # via
@@ -44,24 +44,23 @@ platformdirs==2.4.0
     #   virtualenv
 pre-commit==2.15.0
     # via -r requirements/../../../requirements/devenv.txt
-pyyaml==5.4.1
+pyyaml==6.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   pre-commit
-regex==2021.10.21
+regex==2021.10.23
     # via black
-six==1.15.0
+six==1.16.0
     # via
-    #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   virtualenv
 toml==0.10.2
     # via
     #   -c requirements/_test.txt
     #   pre-commit
-tomli==1.2.1
+tomli==1.2.2
     # via
     #   black
     #   pep517
@@ -70,7 +69,7 @@ typing-extensions==3.10.0.2
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
-virtualenv==20.8.1
+virtualenv==20.9.0
     # via pre-commit
 wheel==0.37.0
     # via pip-tools
