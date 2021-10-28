@@ -11,7 +11,6 @@ import uuid
 from pathlib import Path
 from typing import Any, AsyncGenerator, AsyncIterable, Iterator, List
 from unittest import mock
-from uuid import uuid4
 
 import aiodocker
 import pytest
@@ -28,6 +27,7 @@ from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedSt
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 
 
+@pytest.fixture(scope="session")
 def mock_dy_volumes() -> Iterator[Path]:
     with tempfile.TemporaryDirectory() as temp_dir:
         yield Path(temp_dir)
@@ -82,6 +82,7 @@ def mock_environment(
             "DY_SIDECAR_USER_ID": "1",
             "DY_SIDECAR_PROJECT_ID": f"{uuid.uuid4()}",
             "DY_SIDECAR_NODE_ID": f"{uuid.uuid4()}",
+            "RABBIT_SETTINGS": "null",
         },
     ), mock.patch.object(mounted_fs, "DY_VOLUMES", mock_dy_volumes):
         print(os.environ)

@@ -2,8 +2,10 @@
 # pylint: disable=unused-argument
 
 import asyncio
+import json
 import os
-from typing import AsyncIterable, Dict, Iterable
+from pathlib import Path
+from typing import AsyncIterable, Dict, Iterable, List
 from unittest import mock
 from unittest.mock import AsyncMock
 from uuid import uuid4
@@ -18,6 +20,7 @@ from simcore_service_dynamic_sidecar.core.docker_logs import (
     start_log_fetching,
     stop_log_fetching,
 )
+from simcore_service_dynamic_sidecar.modules import mounted_fs
 
 pytestmark = pytest.mark.asyncio
 
@@ -25,23 +28,31 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture(scope="module")
-def app() -> FastAPI:
+def app(
+    mock_dy_volumes: Path,
+    inputs_dir: Path,
+    outputs_dir: Path,
+    state_paths_dirs: List[Path],
+) -> Iterable[FastAPI]:
     with mock.patch.dict(
         os.environ,
         {
             "SC_BOOT_MODE": "production",
             "DYNAMIC_SIDECAR_compose_namespace": "test-space",
-            "REGISTRY_auth": "false",
-            "REGISTRY_user": "test",
+            "REGISTRY_AUTH": "false",
+            "REGISTRY_USER": "test",
             "REGISTRY_PW": "test",
             "REGISTRY_SSL": "false",
-            "RABBIT_ENABLED": "true",
-            "USER_ID": "1",
-            "PROJECT_ID": f"{uuid4()}",
-            "NODE_ID": f"{uuid4()}",
+            "DY_SIDECAR_USER_ID": "1",
+            "DY_SIDECAR_PROJECT_ID": f"{uuid4()}",
+            "DY_SIDECAR_NODE_ID": f"{uuid4()}",
+            "DY_SIDECAR_PATH_INPUTS": str(inputs_dir),
+            "DY_SIDECAR_PATH_OUTPUTS": str(outputs_dir),
+            "DY_SIDECAR_STATE_PATHS": json.dumps([str(x) for x in state_paths_dirs]),
         },
-    ):
-        return assemble_application()
+    ), mock.patch.object(mounted_fs, "DY_VOLUMES", mock_dy_volumes):
+        print(os.environ)
+        yield assemble_application()
 
 
 @pytest.fixture

@@ -8,17 +8,15 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
 from pydantic import Field, PositiveInt, validator
-from settings_library.base import BaseSettings
+from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.rabbit import RabbitSettings
 
 
-class DynamicSidecarSettings(BaseSettings):
+class DynamicSidecarSettings(BaseCustomSettings):
     @classmethod
     def create(cls, **settings_kwargs: Any) -> "DynamicSidecarSettings":
-        return cls(
-            RABBIT_SETTINGS=RabbitSettings(),
-            REGISTRY_SETTINGS=RegistrySettings(),
+        return cls.create_from_envs(
             **settings_kwargs,
         )
 
@@ -96,10 +94,7 @@ class DynamicSidecarSettings(BaseSettings):
 
     REGISTRY_SETTINGS: RegistrySettings
 
-    RABBIT_SETTINGS: RabbitSettings
-    USER_ID: UserID = Field(..., env="USER_ID")
-    PROJECT_ID: ProjectID = Field(..., env="PROJECT_ID")
-    NODE_ID: NodeID = Field(..., env="NODE_ID")
+    RABBIT_SETTINGS: Optional[RabbitSettings]
 
     @property
     def is_development_mode(self) -> bool:

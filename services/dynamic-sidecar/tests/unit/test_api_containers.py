@@ -145,6 +145,15 @@ def mock_port_keys() -> List[str]:
     return ["first_port", "second_port"]
 
 
+@pytest.fixture
+def mutable_settings(test_client: TestClient) -> DynamicSidecarSettings:
+    settings: DynamicSidecarSettings = test_client.application.state.settings
+    # disable mutability for this test
+    settings.__config__.allow_mutation = True
+    settings.__config__.frozen = False
+    return settings
+
+
 # TESTS
 
 
@@ -161,14 +170,13 @@ async def test_start_containers_wrong_spec(test_client: TestClient) -> None:
 
 
 async def test_start_same_space_twice(
-    test_client: TestClient, compose_spec: str
+    compose_spec: str, mutable_settings: DynamicSidecarSettings
 ) -> None:
-    settings: DynamicSidecarSettings = test_client.application.state.settings
-    settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_1"
-    await assert_compose_spec_pulled(compose_spec, settings)
+    mutable_settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_1"
+    await assert_compose_spec_pulled(compose_spec, mutable_settings)
 
-    settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_2"
-    await assert_compose_spec_pulled(compose_spec, settings)
+    mutable_settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_2"
+    await assert_compose_spec_pulled(compose_spec, mutable_settings)
 
 
 async def test_compose_up(

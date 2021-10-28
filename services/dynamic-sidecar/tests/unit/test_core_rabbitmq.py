@@ -22,9 +22,9 @@ pytestmark = pytest.mark.asyncio
 
 
 pytest_plugins = [
-    "pytest_simcore.rabbit_service",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.tmp_path_extra",
 ]
@@ -112,16 +112,16 @@ async def test_rabbitmq(
     assert len(incoming_data) == 2, f"missing incoming data: {pformat(incoming_data)}"
 
     assert incoming_data[0] == {
-        "Channel": "Log",
-        "Messages": [log_msg],
-        "Node": f"{node_id}",
+        "channel": "Log",
+        "messages": [log_msg],
+        "node": f"{node_id}",
         "project_id": f"{project_id}",
         "user_id": f"{user_id}",
     }
     assert incoming_data[1] == {
-        "Channel": "Log",
-        "Messages": log_messages,
-        "Node": f"{node_id}",
+        "channel": "Log",
+        "messages": log_messages,
+        "node": f"{node_id}",
         "project_id": f"{project_id}",
         "user_id": f"{user_id}",
     }

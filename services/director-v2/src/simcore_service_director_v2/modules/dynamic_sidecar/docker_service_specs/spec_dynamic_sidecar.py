@@ -9,7 +9,6 @@ from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
 from ..env import get_dynamic_sidecar_env_vars
-from ..errors import DynamicSidecarError
 from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
 from .settings import inject_settings_to_create_service_params
 

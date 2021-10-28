@@ -8,10 +8,7 @@ from ..api import main_router
 from ..core.docker_logs import setup_background_log_fetcher
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
-from ..modules.directory_watcher import (
-    setup_directory_watcher,
-    teardown_directory_watcher,
-)
+from ..modules.directory_watcher import setup_directory_watcher
 from .remote_debug import setup as remote_debug_setup
 from .settings import DynamicSidecarSettings
 from .shared_handlers import on_shutdown_handler
@@ -67,15 +64,16 @@ def assemble_application() -> FastAPI:
     if dynamic_sidecar_settings.is_development_mode:
         remote_debug_setup(application)
 
-    if dynamic_sidecar_settings.RABBIT_SETTINGS.RABBIT_ENABLED:
+    if dynamic_sidecar_settings.RABBIT_SETTINGS:
         setup_background_log_fetcher(application)
 
     # add routing paths
     application.include_router(main_router)
 
+    setup_directory_watcher(application)
+
     def create_start_app_handler() -> Callable[[], Coroutine[Any, Any, None]]:
         async def on_startup() -> None:
-            await setup_directory_watcher()
             await login_registry(application.state.settings.REGISTRY_SETTINGS)
             print(WELCOME_MSG, flush=True)
 
@@ -83,7 +81,6 @@ def assemble_application() -> FastAPI:
 
     def create_stop_app_handler() -> Callable[[], Coroutine[Any, Any, None]]:
         async def on_shutdown() -> None:
-            await teardown_directory_watcher()
             await on_shutdown_handler(application)
             logger.info("shutdown cleanup completed")
 

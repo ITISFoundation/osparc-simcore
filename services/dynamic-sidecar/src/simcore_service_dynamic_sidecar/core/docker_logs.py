@@ -54,9 +54,9 @@ class BackgroundLogFetcher:
         # sending the logs to the UI to facilitate the
         # user debugging process
         await self.rabbit_mq.post_log_message(
-            user_id=self._settings.USER_ID,
-            project_id=self._settings.PROJECT_ID,
-            node_id=self._settings.NODE_ID,
+            user_id=self._settings.DY_SIDECAR_USER_ID,
+            project_id=self._settings.DY_SIDECAR_PROJECT_ID,
+            node_id=self._settings.DY_SIDECAR_NODE_ID,
             log_msg=f"[{container_name}] {message}",
         )
 
