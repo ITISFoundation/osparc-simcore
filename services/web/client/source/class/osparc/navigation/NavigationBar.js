@@ -100,6 +100,71 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       1: "workbench",
       2: "guided",
       3: "app"
+    },
+
+    openActivityManager: function() {
+      const activityWindow = new osparc.ui.window.SingletonWindow("activityManager", qx.locale.Manager.tr("Activity manager")).set({
+        height: 600,
+        width: 800,
+        layout: new qx.ui.layout.Grow(),
+        appearance: "service-window",
+        showMinimize: false,
+        contentPadding: 0
+      });
+      activityWindow.add(new osparc.component.service.manager.ActivityManager());
+      activityWindow.center();
+      activityWindow.open();
+    },
+
+    openPreferences: function() {
+      const preferencesWindow = new osparc.desktop.preferences.PreferencesWindow();
+      preferencesWindow.center();
+      preferencesWindow.open();
+    },
+
+    openGithubIssueInfoDialog: function() {
+      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
+        qx.locale.Manager.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")
+      );
+      const contBtn = new qx.ui.toolbar.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
+      contBtn.addListener("execute", () => {
+        window.open(osparc.utils.issue.Github.getNewIssueUrl());
+        issueConfirmationWindow.close();
+      }, this);
+      const loginBtn = new qx.ui.toolbar.Button(qx.locale.Manager.tr("Log in in GitHub"), "@FontAwesome5Solid/external-link-alt/12");
+      loginBtn.addListener("execute", () => window.open("https://github.com/login"), this);
+      issueConfirmationWindow.addButton(contBtn);
+      issueConfirmationWindow.addButton(loginBtn);
+      issueConfirmationWindow.addCancelButton();
+      issueConfirmationWindow.open();
+    },
+
+    openFogbugzIssueInfoDialog: function() {
+      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
+        qx.locale.Manager.tr("To create an issue in Fogbugz, you must have an account in Fogbugz and be already logged-in.")
+      );
+      const contBtn = new qx.ui.toolbar.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
+      contBtn.addListener("execute", () => {
+        const statics = this.__serverStatics;
+        if (statics) {
+          const fbNewIssueUrl = osparc.utils.issue.Fogbugz.getNewIssueUrl(statics);
+          if (fbNewIssueUrl) {
+            window.open(fbNewIssueUrl);
+            issueConfirmationWindow.close();
+          }
+        }
+      }, this);
+      const loginBtn = new qx.ui.toolbar.Button(qx.locale.Manager.tr("Log in in Fogbugz"), "@FontAwesome5Solid/external-link-alt/12");
+      loginBtn.addListener("execute", () => {
+        const statics = this.__serverStatics;
+        if (statics && statics.fogbugzLoginUrl) {
+          window.open(statics.fogbugzLoginUrl);
+        }
+      }, this);
+      issueConfirmationWindow.addButton(contBtn);
+      issueConfirmationWindow.addButton(loginBtn);
+      issueConfirmationWindow.addCancelButton();
+      issueConfirmationWindow.open();
     }
   },
 
@@ -271,12 +336,12 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       });
 
       const newGHIssueBtn = new qx.ui.menu.Button(this.tr("Issue in GitHub"));
-      newGHIssueBtn.addListener("execute", this.__openGithubIssueInfoDialog, this);
+      newGHIssueBtn.addListener("execute", this.self().openGithubIssueInfoDialog, this);
       menu.add(newGHIssueBtn);
 
       if (osparc.utils.Utils.isInZ43()) {
         const newFogbugzIssueBtn = new qx.ui.menu.Button(this.tr("Issue in Fogbugz"));
-        newFogbugzIssueBtn.addListener("execute", this.__openFogbugzIssueInfoDialog, this);
+        newFogbugzIssueBtn.addListener("execute", this.self().openFogbugzIssueInfoDialog, this);
         menu.add(newFogbugzIssueBtn);
       }
 
@@ -300,11 +365,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       });
 
       const activityManager = new qx.ui.menu.Button(this.tr("Activity manager"));
-      activityManager.addListener("execute", this.__openActivityManager, this);
+      activityManager.addListener("execute", this.self().openActivityManager, this);
       menu.add(activityManager);
 
       const preferences = new qx.ui.menu.Button(this.tr("Preferences"));
-      preferences.addListener("execute", this.__onOpenAccountSettings, this);
+      preferences.addListener("execute", this.self().openPreferences, this);
       osparc.utils.Utils.setIdToWidget(preferences, "userMenuPreferencesBtn");
       menu.add(preferences);
 
@@ -318,9 +383,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       menu.addSeparator();
 
       const logout = new qx.ui.menu.Button(this.tr("Logout"));
-      logout.addListener("execute", e => {
-        qx.core.Init.getApplication().logout();
-      });
+      logout.addListener("execute", () => qx.core.Init.getApplication().logout());
       osparc.utils.Utils.setIdToWidget(logout, "userMenuLogoutBtn");
       menu.add(logout);
 
@@ -338,71 +401,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       osparc.utils.Utils.setIdToWidget(userBtn, "userMenuMainBtn");
 
       return userBtn;
-    },
-
-    __onOpenAccountSettings: function() {
-      const preferencesWindow = new osparc.desktop.preferences.PreferencesWindow();
-      preferencesWindow.center();
-      preferencesWindow.open();
-    },
-
-    __openActivityManager: function() {
-      const activityWindow = new osparc.ui.window.SingletonWindow("activityManager", this.tr("Activity manager")).set({
-        height: 600,
-        width: 800,
-        layout: new qx.ui.layout.Grow(),
-        appearance: "service-window",
-        showMinimize: false,
-        contentPadding: 0
-      });
-      activityWindow.add(new osparc.component.service.manager.ActivityManager());
-      activityWindow.center();
-      activityWindow.open();
-    },
-
-    __openGithubIssueInfoDialog: function() {
-      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
-        this.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")
-      );
-      const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
-      contBtn.addListener("execute", () => {
-        window.open(osparc.utils.issue.Github.getNewIssueUrl());
-        issueConfirmationWindow.close();
-      }, this);
-      const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in GitHub"), "@FontAwesome5Solid/external-link-alt/12");
-      loginBtn.addListener("execute", () => window.open("https://github.com/login"), this);
-      issueConfirmationWindow.addButton(contBtn);
-      issueConfirmationWindow.addButton(loginBtn);
-      issueConfirmationWindow.addCancelButton();
-      issueConfirmationWindow.open();
-    },
-
-    __openFogbugzIssueInfoDialog: function() {
-      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
-        this.tr("To create an issue in Fogbugz, you must have an account in Fogbugz and be already logged-in.")
-      );
-      const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
-      contBtn.addListener("execute", () => {
-        const statics = this.__serverStatics;
-        if (statics) {
-          const fbNewIssueUrl = osparc.utils.issue.Fogbugz.getNewIssueUrl(statics);
-          if (fbNewIssueUrl) {
-            window.open(fbNewIssueUrl);
-            issueConfirmationWindow.close();
-          }
-        }
-      }, this);
-      const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in Fogbugz"), "@FontAwesome5Solid/external-link-alt/12");
-      loginBtn.addListener("execute", () => {
-        const statics = this.__serverStatics;
-        if (statics && statics.fogbugzLoginUrl) {
-          window.open(statics.fogbugzLoginUrl);
-        }
-      }, this);
-      issueConfirmationWindow.addButton(contBtn);
-      issueConfirmationWindow.addButton(loginBtn);
-      issueConfirmationWindow.addCancelButton();
-      issueConfirmationWindow.open();
     },
 
     _applyStudy: function(study) {
