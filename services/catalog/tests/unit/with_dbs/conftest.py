@@ -5,7 +5,7 @@
 
 import itertools
 import random
-from typing import Any, Callable, Dict, Iterator, List, Tuple
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Tuple
 
 import pytest
 import respx
@@ -34,14 +34,14 @@ def app(
     service_test_environ: None,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
-) -> FastAPI:
+) -> Iterable[FastAPI]:
     monkeypatch.setenv("CATALOG_TRACING", "null")
     app = init_app()
     yield app
 
 
 @pytest.fixture
-def client(app: FastAPI) -> TestClient:
+def client(app: FastAPI) -> Iterable[TestClient]:
     with TestClient(app) as cli:
         # Note: this way we ensure the events are run in the application
         yield cli
