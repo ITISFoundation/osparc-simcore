@@ -7,11 +7,6 @@ LEGACY_INTEGRATION_VERSION = version.Version("0")
 
 
 class ContainerHostConfig(BaseModel):
-    # autoremove: bool = Field(
-    #     True,
-    #     alias="AutoRemove",
-    #     description="Automatically remove the container when the container's process exits. This has no effect if RestartPolicy is set",
-    # )
     binds: List[str] = Field(
         ..., alias="Binds", description="A list of volume bindings for this container"
     )
