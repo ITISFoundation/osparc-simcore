@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 from pprint import pformat
-from typing import Any, AsyncIterator, Awaitable, Dict, List, Tuple
+from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List, Tuple
 
 import aiofiles
 from aiodocker import Docker, DockerError
@@ -41,7 +41,7 @@ async def create_container_config(
     task_max_resources: Dict[str, Any],
 ) -> DockerContainerConfig:
 
-    return DockerContainerConfig(
+    config = DockerContainerConfig(
         Env=[
             *[
                 f"{name.upper()}_FOLDER=/{name}s"
@@ -66,6 +66,8 @@ async def create_container_config(
             NanoCPUs=int(task_max_resources.get("CPU", 1) * 1e9),
         ),
     )
+    logger.debug("Container configuration: \n%s", pformat(config.dict()))
+    return config
 
 
 @asynccontextmanager
@@ -434,12 +436,17 @@ async def managed_monitor_container_log_task(
             monitoring_task.cancel()
 
 
+LogPublishingCB = Callable[[str], Awaitable[None]]
+
+
 async def pull_image(
     docker_client: Docker,
     docker_auth: DockerBasicAuth,
     service_key: str,
     service_version: str,
+    log_publishing_cb: LogPublishingCB,
 ) -> None:
+
     async for pull_progress in docker_client.images.pull(
         f"{docker_auth.server_address}/{service_key}:{service_version}",
         stream=True,
@@ -448,13 +455,10 @@ async def pull_image(
             "password": docker_auth.password.get_secret_value(),
         },
     ):
-        logger.info(
-            "pulling %s:%s: %s",
-            service_key,
-            service_version,
-            pformat(pull_progress),
+        log_publishing_cb(
+            f"Pulling {service_key}:{service_version}: {pull_progress}..."
         )
-    logger.info("%s:%s pulled", service_key, service_version)
+    log_publishing_cb(f"{service_key}:{service_version} pulled")
 
 
 async def get_integration_version(
