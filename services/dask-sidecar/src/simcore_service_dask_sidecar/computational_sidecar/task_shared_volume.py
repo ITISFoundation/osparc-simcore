@@ -1,3 +1,4 @@
+import asyncio
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -59,4 +60,4 @@ class TaskSharedVolumes:
         exc: Optional[BaseException],
         tb: Optional[TracebackType],
     ) -> None:
-        self.cleanup()
+        await asyncio.get_event_loop().run_in_executor(None, self.cleanup)
