@@ -89,7 +89,7 @@ def test_create_task_output_from_task_with_optional_fields_as_required(
                 assert task_output_data.get(key) is not None
 
 
-def test_create_Task_output_from_task_throws_when_there_are_missing_files(
+def test_create_task_output_from_task_throws_when_there_are_missing_files(
     tmp_path: Path, faker: Faker
 ):
     task_output_schema = TaskOutputDataSchema.parse_obj(
@@ -110,7 +110,7 @@ def test_create_Task_output_from_task_throws_when_there_are_missing_files(
         )
 
 
-def test_create_Task_output_from_task_does_not_throw_when_there_are_optional_missing_files(
+def test_create_task_output_from_task_does_not_throw_when_there_are_optional_missing_files(
     tmp_path: Path, faker: Faker
 ):
     task_output_schema = TaskOutputDataSchema.parse_obj(
@@ -131,7 +131,7 @@ def test_create_Task_output_from_task_does_not_throw_when_there_are_optional_mis
     assert len(task_output_data) == 0
 
 
-def test_create_Task_output_from_task_throws_when_there_are_entries(
+def test_create_task_output_from_task_throws_when_there_are_entries(
     tmp_path: Path, faker: Faker
 ):
     task_output_schema = TaskOutputDataSchema.parse_obj(
@@ -150,7 +150,7 @@ def test_create_Task_output_from_task_throws_when_there_are_entries(
         )
 
 
-def test_create_Task_output_from_task_does_not_throw_when_there_are_optional_entries(
+def test_create_task_output_from_task_does_not_throw_when_there_are_optional_entries(
     tmp_path: Path, faker: Faker
 ):
     task_output_schema = TaskOutputDataSchema.parse_obj(
