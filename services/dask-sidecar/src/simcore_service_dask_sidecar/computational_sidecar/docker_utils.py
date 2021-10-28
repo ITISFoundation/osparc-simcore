@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 from pprint import pformat
-from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List, Tuple
+from typing import Any, AsyncIterator, Awaitable, Callable, Dict, Final, List, Tuple
 
 import aiofiles
 from aiodocker import Docker, DockerError
@@ -177,7 +177,8 @@ async def publish_container_logs(
     )
 
 
-LEGACY_SERVICE_LOG_FILE_NAME = "log.dat"
+LEGACY_SERVICE_LOG_FILE_NAME: Final[str] = "log.dat"
+PARSE_LOG_INTERVAL_S: Final[float] = 0.5
 
 
 async def _parse_container_log_file(
@@ -209,7 +210,7 @@ async def _parse_container_log_file(
                     message=message,
                 )
 
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(PARSE_LOG_INTERVAL_S)
         # finish reading the logs if possible
         async for line in file_pointer:
             log_type, _, message = await parse_line(line)
